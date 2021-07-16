@@ -1,0 +1,20 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Login should render the Login Component correctly 1`] = `
+<div
+  className="login-wrapper"
+>
+  <div
+    className="login-txt"
+  >
+    You need to login to access the content of the website.
+  </div>
+  <button
+    className="login-btn"
+    id="login-button"
+    onClick={[Function]}
+  >
+    Login
+  </button>
+</div>
+`;

@@ -1,0 +1,35 @@
+.form-content-right{
+    display: block;
+    max-width: 50%;
+    width: 50%;
+    height: fit-content;
+    margin-left:60%;
+    background-color: #f6f6fa;
+    outline-style: solid;
+    outline-width: 1px;
+    outline-color: #ececf0;
+    padding:1%;
+ 
+  }
+  
+  .upload-json-btn{
+    display: block;
+    margin-top: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  
+  .input-file{
+    display: block;
+    padding-top: 1%;
+  }
+
+  .error{
+    color: #898a8d;
+    font-size: 12px; 
+  }
+
+  .option{
+    font-weight:bold;
+    padding-bottom: 5%;
+  }
