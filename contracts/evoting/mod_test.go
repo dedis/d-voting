@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -22,8 +23,16 @@ import (
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/util/random"
 )
+
+var dummyElectionIdBuff = []byte("dummyID")
+var fakeElectionID = hex.EncodeToString(dummyElectionIdBuff)
+
+func fakeProver(proof.Suite, string, proof.Verifier, []byte) error {
+	return nil
+}
 
 func TestExecute(t *testing.T) {
 	fakeDkg := fakeDKG{
@@ -37,7 +46,7 @@ func TestExecute(t *testing.T) {
 
 	contract = NewContract([]byte{}, fakeAccess{}, fakeDkg)
 	err = contract.Execute(fakeStore{}, makeStep(t))
-	require.EqualError(t, err, "'evoting:command' not found in tx arg")
+	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, CmdArg))
 
 	contract.cmd = fakeCmd{err: fake.GetError()}
 
@@ -80,7 +89,7 @@ func TestCommand_CreateElection(t *testing.T) {
 	}
 
 	dummyCreateElectionTransaction := types.CreateElectionTransaction{
-		ElectionID: "dummyId",
+		ElectionID: "dummyID",
 		Title:      "dummyTitle",
 		AdminId:    "dummyAdminId",
 	}
@@ -94,16 +103,16 @@ func TestCommand_CreateElection(t *testing.T) {
 	}
 
 	err := cmd.createElection(fake.NewSnapshot(), makeStep(t), fakeActor)
-	require.EqualError(t, err, "'evoting:createElectionArgs' not found in tx arg")
+	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, CreateElectionArg))
 
 	err = cmd.createElection(fake.NewSnapshot(), makeStep(t, CreateElectionArg, "dummy"), fakeActor)
 	require.EqualError(t, err, "failed to unmarshal CreateElectionTransaction : "+
 		"invalid character 'd' looking for beginning of value")
 
 	err = cmd.createElection(fake.NewBadSnapshot(), makeStep(t, CreateElectionArg, string(js)), fakeActor)
-	require.EqualError(t, err, "failed to decode ElectionID : encoding/hex: invalid byte: U+0075 'u'")
+	require.EqualError(t, err, "failed to decode Election ID: encoding/hex: invalid byte: U+0075 'u'")
 
-	dummyCreateElectionTransaction.ElectionID = hex.EncodeToString([]byte("dummyId"))
+	dummyCreateElectionTransaction.ElectionID = hex.EncodeToString([]byte("dummyID"))
 	js, _ = json.Marshal(dummyCreateElectionTransaction)
 	err = cmd.createElection(fake.NewBadSnapshot(), makeStep(t, CreateElectionArg, string(js)), fakeActor)
 	require.EqualError(t, err, fake.Err("failed to set value"))
@@ -122,7 +131,7 @@ func TestCommand_CreateElection(t *testing.T) {
 	require.Equal(t, dummyCreateElectionTransaction.ElectionID, string(election.ElectionID))
 	require.Equal(t, dummyCreateElectionTransaction.Title, election.Title)
 	require.Equal(t, dummyCreateElectionTransaction.AdminId, election.AdminId)
-	require.Equal(t, types.Open, int(election.Status))
+	require.Equal(t, types.Open, election.Status)
 
 }
 
@@ -132,10 +141,10 @@ func TestCommand_CastVote(t *testing.T) {
 		err:   nil,
 	}
 
-	dummyElectionIdBuff, _ := hex.DecodeString("dummyId")
+	dummyElectionIdBuff := []byte("dummyID")
 
 	dummyCastVoteTransaction := types.CastVoteTransaction{
-		ElectionID: "dummyId",
+		ElectionID: fakeElectionID,
 		UserId:     "dummyUserId",
 		Ballot:     []byte{10},
 	}
@@ -143,17 +152,18 @@ func TestCommand_CastVote(t *testing.T) {
 
 	dummyElection := types.Election{
 		Title:            "dummyTitle",
-		ElectionID:       "dummyId",
+		ElectionID:       types.ID(fakeElectionID),
 		AdminId:          "dummyAdminId",
 		Status:           0,
-		Pubkey:           nil,
+		Pubkey:           []byte{},
 		EncryptedBallots: map[string][]byte{},
 		ShuffledBallots:  nil,
-		Proofs:           nil,
+		ShuffleProofs:    nil,
 		DecryptedBallots: nil,
 		ShuffleThreshold: 0,
 	}
-	jsElection, _ := json.Marshal(dummyElection)
+	jsElection, err := json.Marshal(dummyElection)
+	require.NoError(t, err)
 
 	contract := NewContract([]byte{}, fakeAccess{}, fakeDkg)
 
@@ -161,8 +171,8 @@ func TestCommand_CastVote(t *testing.T) {
 		Contract: &contract,
 	}
 
-	err := cmd.castVote(fake.NewSnapshot(), makeStep(t))
-	require.EqualError(t, err, "'evoting:castVoteArgs' not found in tx arg")
+	err = cmd.castVote(fake.NewSnapshot(), makeStep(t))
+	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, CastVoteArg))
 
 	err = cmd.castVote(fake.NewSnapshot(), makeStep(t, CastVoteArg, "dummy"))
 	require.EqualError(t, err, "failed to unmarshal CastVoteTransaction: "+
@@ -179,7 +189,7 @@ func TestCommand_CastVote(t *testing.T) {
 
 	_ = snap.Set(dummyElectionIdBuff, jsElection)
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
-	require.EqualError(t, err, "the election is not open")
+	require.EqualError(t, err, fmt.Sprintf("the election is not open, current status: %d", types.Initial))
 
 	dummyElection.Status = types.Open
 
@@ -204,27 +214,26 @@ func TestCommand_CloseElection(t *testing.T) {
 		err:   nil,
 	}
 
-	dummyElectionIdBuff, _ := hex.DecodeString("dummyId")
-
 	dummyCloseElectionTransaction := types.CloseElectionTransaction{
-		ElectionID: "dummyId",
+		ElectionID: fakeElectionID,
 		UserId:     "dummyUserId",
 	}
 	jsCloseElectionTransaction, _ := json.Marshal(dummyCloseElectionTransaction)
 
 	dummyElection := types.Election{
 		Title:            "dummyTitle",
-		ElectionID:       "dummyId",
+		ElectionID:       types.ID(fakeElectionID),
 		AdminId:          "dummyAdminId",
 		Status:           0,
 		Pubkey:           nil,
 		EncryptedBallots: map[string][]byte{},
 		ShuffledBallots:  nil,
-		Proofs:           nil,
+		ShuffleProofs:    nil,
 		DecryptedBallots: nil,
 		ShuffleThreshold: 0,
 	}
-	jsElection, _ := json.Marshal(dummyElection)
+	jsElection, err := json.Marshal(dummyElection)
+	require.NoError(t, err)
 
 	contract := NewContract([]byte{}, fakeAccess{}, fakeDkg)
 
@@ -232,8 +241,8 @@ func TestCommand_CloseElection(t *testing.T) {
 		Contract: &contract,
 	}
 
-	err := cmd.closeElection(fake.NewSnapshot(), makeStep(t))
-	require.EqualError(t, err, "'evoting:closeElectionArgs' not found in tx arg")
+	err = cmd.closeElection(fake.NewSnapshot(), makeStep(t))
+	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, CloseElectionArg))
 
 	err = cmd.closeElection(fake.NewSnapshot(), makeStep(t, CloseElectionArg, "dummy"))
 	require.EqualError(t, err, "failed to unmarshal CloseElectionTransaction: "+
@@ -255,7 +264,7 @@ func TestCommand_CloseElection(t *testing.T) {
 	dummyCloseElectionTransaction.UserId = "dummyAdminId"
 	jsCloseElectionTransaction, _ = json.Marshal(dummyCloseElectionTransaction)
 	err = cmd.closeElection(snap, makeStep(t, CloseElectionArg, string(jsCloseElectionTransaction)))
-	require.EqualError(t, err, "the election is not open")
+	require.EqualError(t, err, fmt.Sprintf("the election is not open, current status: %d", types.Initial))
 
 	dummyElection.Status = types.Open
 	jsElection, _ = json.Marshal(dummyElection)
@@ -278,7 +287,7 @@ func TestCommand_CloseElection(t *testing.T) {
 	election := new(types.Election)
 	_ = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
 
-	require.Equal(t, types.Closed, int(election.Status))
+	require.Equal(t, types.Closed, election.Status)
 
 }
 
@@ -288,12 +297,10 @@ func TestCommand_ShuffleBallots(t *testing.T) {
 		err:   nil,
 	}
 
-	dummyElectionIdBuff, _ := hex.DecodeString("dummyId")
-
 	k := 3
 
 	dummyShuffleBallotsTransaction := types.ShuffleBallotsTransaction{
-		ElectionID:      "dummyId",
+		ElectionID:      fakeElectionID,
 		Round:           2,
 		ShuffledBallots: make([][]byte, 3),
 		Proof:           nil,
@@ -302,13 +309,13 @@ func TestCommand_ShuffleBallots(t *testing.T) {
 
 	dummyElection := types.Election{
 		Title:            "dummyTitle",
-		ElectionID:       "dummyId",
+		ElectionID:       types.ID(fakeElectionID),
 		AdminId:          "dummyAdminId",
 		Status:           0,
 		Pubkey:           nil,
 		EncryptedBallots: map[string][]byte{},
 		ShuffledBallots:  map[int][][]byte{},
-		Proofs:           map[int][]byte{},
+		ShuffleProofs:    map[int][]byte{},
 		DecryptedBallots: nil,
 		ShuffleThreshold: 0,
 	}
@@ -318,10 +325,11 @@ func TestCommand_ShuffleBallots(t *testing.T) {
 
 	cmd := evotingCommand{
 		Contract: &contract,
+		prover:   fakeProver,
 	}
 
 	err := cmd.shuffleBallots(fake.NewSnapshot(), makeStep(t))
-	require.EqualError(t, err, "'evoting:shuffleBallotsArgs' not found in tx arg")
+	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, ShuffleBallotsArg))
 
 	err = cmd.shuffleBallots(fake.NewSnapshot(), makeStep(t, ShuffleBallotsArg, "dummy"))
 	require.EqualError(t, err, "failed to unmarshal ShuffleBallotsTransaction: "+
@@ -421,7 +429,7 @@ func TestCommand_ShuffleBallots(t *testing.T) {
 
 	for i := 0; i < k; i++ {
 		ballot := []byte("badCiphertext")
-		dummyElection.EncryptedBallots["user"+strconv.Itoa(i)] = ballot
+		dummyElection.EncryptedBallots[fmt.Sprintf("user%d", i)] = ballot
 	}
 
 	jsElection, _ = json.Marshal(dummyElection)
@@ -435,7 +443,7 @@ func TestCommand_ShuffleBallots(t *testing.T) {
 			C: []byte("fakeVoteC"),
 		}
 		js, _ := json.Marshal(ballot)
-		dummyElection.EncryptedBallots["user"+strconv.Itoa(i)] = js
+		dummyElection.EncryptedBallots[fmt.Sprintf("user%d", i)] = js
 	}
 
 	jsElection, _ = json.Marshal(dummyElection)
@@ -449,7 +457,7 @@ func TestCommand_ShuffleBallots(t *testing.T) {
 			C: []byte("fakeVoteC"),
 		}
 		js, _ := json.Marshal(ballot)
-		dummyElection.EncryptedBallots["user"+strconv.Itoa(i)] = js
+		dummyElection.EncryptedBallots[fmt.Sprintf("user%d", i)] = js
 	}
 
 	jsElection, _ = json.Marshal(dummyElection)
@@ -463,7 +471,7 @@ func TestCommand_ShuffleBallots(t *testing.T) {
 			C: CsMarshalled[i],
 		}
 		js, _ := json.Marshal(ballot)
-		dummyElection.EncryptedBallots["user"+strconv.Itoa(i)] = js
+		dummyElection.EncryptedBallots[fmt.Sprintf("user%d", i)] = js
 	}
 
 	jsElection, _ = json.Marshal(dummyElection)
@@ -500,13 +508,11 @@ func TestCommand_DecryptBallots(t *testing.T) {
 		err:   nil,
 	}
 
-	dummyElectionIdBuff, _ := hex.DecodeString("dummyId")
-
 	ballot1 := types.Ballot{Vote: "vote1"}
 	ballot2 := types.Ballot{Vote: "vote2"}
 
 	dummyDecryptBallotsTransaction := types.DecryptBallotsTransaction{
-		ElectionID:       "dummyId",
+		ElectionID:       fakeElectionID,
 		UserId:           "dummyUserId",
 		DecryptedBallots: []types.Ballot{ballot1, ballot2},
 	}
@@ -514,13 +520,13 @@ func TestCommand_DecryptBallots(t *testing.T) {
 
 	dummyElection := types.Election{
 		Title:            "dummyTitle",
-		ElectionID:       "dummyId",
+		ElectionID:       types.ID(fakeElectionID),
 		AdminId:          "dummyAdminId",
 		Status:           0,
 		Pubkey:           nil,
 		EncryptedBallots: map[string][]byte{},
 		ShuffledBallots:  nil,
-		Proofs:           nil,
+		ShuffleProofs:    nil,
 		DecryptedBallots: []types.Ballot{},
 		ShuffleThreshold: 0,
 	}
@@ -533,7 +539,7 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	}
 
 	err := cmd.decryptBallots(fake.NewSnapshot(), makeStep(t))
-	require.EqualError(t, err, "'evoting:decryptBallotsArgs' not found in tx arg")
+	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, DecryptBallotsArg))
 
 	err = cmd.decryptBallots(fake.NewSnapshot(), makeStep(t, DecryptBallotsArg, "dummy"))
 	require.EqualError(t, err, "failed to unmarshal DecryptBallotsTransaction: "+
@@ -555,7 +561,7 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	dummyDecryptBallotsTransaction.UserId = "dummyAdminId"
 	jsDecryptBallotsTransaction, _ = json.Marshal(dummyDecryptBallotsTransaction)
 	err = cmd.decryptBallots(snap, makeStep(t, DecryptBallotsArg, string(jsDecryptBallotsTransaction)))
-	require.EqualError(t, err, "the ballots are not shuffled")
+	require.EqualError(t, err, fmt.Sprintf("the ballots are not shuffled, current status: %d", types.Initial))
 
 	dummyElection.Status = types.ShuffledBallots
 
@@ -572,7 +578,7 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	_ = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
 
 	require.Equal(t, dummyDecryptBallotsTransaction.DecryptedBallots, election.DecryptedBallots)
-	require.Equal(t, types.ResultAvailable, int(election.Status))
+	require.Equal(t, types.ResultAvailable, election.Status)
 
 }
 
@@ -582,23 +588,21 @@ func TestCommand_CancelElection(t *testing.T) {
 		err:   nil,
 	}
 
-	dummyElectionIdBuff, _ := hex.DecodeString("dummyId")
-
 	dummyCancelElectionTransaction := types.CancelElectionTransaction{
-		ElectionID: "dummyId",
+		ElectionID: fakeElectionID,
 		UserId:     "dummyUserId",
 	}
 	jsCancelElectionTransaction, _ := json.Marshal(dummyCancelElectionTransaction)
 
 	dummyElection := types.Election{
 		Title:            "dummyTitle",
-		ElectionID:       "dummyId",
+		ElectionID:       types.ID(fakeElectionID),
 		AdminId:          "dummyAdminId",
 		Status:           1,
 		Pubkey:           nil,
 		EncryptedBallots: map[string][]byte{},
 		ShuffledBallots:  nil,
-		Proofs:           nil,
+		ShuffleProofs:    nil,
 		DecryptedBallots: nil,
 		ShuffleThreshold: 0,
 	}
@@ -611,7 +615,7 @@ func TestCommand_CancelElection(t *testing.T) {
 	}
 
 	err := cmd.cancelElection(fake.NewSnapshot(), makeStep(t))
-	require.EqualError(t, err, "'evoting:cancelElectionArgs' not found in tx arg")
+	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, CancelElectionArg))
 
 	err = cmd.cancelElection(fake.NewSnapshot(), makeStep(t, CancelElectionArg, "dummy"))
 	require.EqualError(t, err, "failed to unmarshal CancelElectionTransaction: "+
@@ -641,7 +645,7 @@ func TestCommand_CancelElection(t *testing.T) {
 	election := new(types.Election)
 	_ = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
 
-	require.Equal(t, types.Canceled, int(election.Status))
+	require.Equal(t, types.Canceled, election.Status)
 
 }
 
