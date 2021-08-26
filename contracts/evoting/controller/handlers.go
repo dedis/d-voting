@@ -15,6 +15,7 @@ import (
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/kyber/v3"
+	"golang.org/x/xerrors"
 )
 
 // Login responds with the user token.
@@ -58,46 +59,17 @@ func (h *HTTP) CreateElection(w http.ResponseWriter, r *http.Request) {
 		Format:           createElectionRequest.Format,
 	}
 
-	js, err := json.Marshal(createElectionTransaction)
+	payload, err := json.Marshal(createElectionTransaction)
 	if err != nil {
 		http.Error(w, "failed to marshal CreateElectionTransaction: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	h.Lock()
-
-	manager := getManager(h.signer, h.client)
-
-	err = manager.Sync()
+	err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCreateElection, evoting.CreateElectionArg, payload)
 	if err != nil {
-		http.Error(w, "failed to sync manager: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	tx, err := createTransaction(manager, evoting.CmdCreateElection, evoting.CreateElectionArg, js)
-	if err != nil {
-		http.Error(w, "failed to create transaction: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	watchCtx, cancel := context.WithTimeout(r.Context(), inclusionTimeout)
-	defer cancel()
-
-	events := h.orderingSvc.Watch(watchCtx)
-
-	err = h.pool.Add(tx)
-	if err != nil {
-		http.Error(w, "failed to add transaction to the pool: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	ok := h.waitForTxnID(events, tx.GetID())
-	if !ok {
-		http.Error(w, "transaction not accepted within timeout", http.StatusInternalServerError)
-		return
-	}
-
-	h.Unlock()
 
 	response := types.CreateElectionResponse{
 		ElectionID: electionID,
@@ -136,60 +108,32 @@ func (h *HTTP) CastVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Lock()
-	manager := getManager(h.signer, h.client)
-
-	err = manager.Sync()
-	if err != nil {
-		http.Error(w, "failed to sync manager: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	castVoteTransaction := types.CastVoteTransaction{
 		ElectionID: castVoteRequest.ElectionID,
 		UserId:     castVoteRequest.UserId,
 		Ballot:     castVoteRequest.Ballot,
 	}
 
-	js, err := json.Marshal(castVoteTransaction)
+	payload, err := json.Marshal(castVoteTransaction)
 	if err != nil {
 		http.Error(w, "failed to marshal CastVoteTransaction: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	tx, err := createTransaction(manager, evoting.CmdCastVote, evoting.CastVoteArg, js)
+	err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCastVote, evoting.CastVoteArg, payload)
 	if err != nil {
-		http.Error(w, "failed to create transaction: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	watchCtx, cancel := context.WithTimeout(r.Context(), inclusionTimeout)
-	defer cancel()
-
-	events := h.orderingSvc.Watch(watchCtx)
-
-	err = h.pool.Add(tx)
-	if err != nil {
-		http.Error(w, "failed to add transaction to the pool: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	accepted := h.waitForTxnID(events, tx.GetID())
-	if !accepted {
-		http.Error(w, "transaction not accepted within timeout", http.StatusInternalServerError)
-		return
-	}
-	h.Unlock()
 
 	response := types.CastVoteResponse{}
-
 	w.Header().Set("Content-Type", "application/json")
+
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		http.Error(w, "failed to write in ResponseWriter: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 }
 
 // ElectionIDs returns a list of all election IDs.
@@ -352,50 +296,22 @@ func (h *HTTP) CloseElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Lock()
-	manager := getManager(h.signer, h.client)
-
-	err = manager.Sync()
-	if err != nil {
-		http.Error(w, "failed to sync manager: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	closeElectionTransaction := types.CloseElectionTransaction{
 		ElectionID: closeElectionRequest.ElectionID,
 		UserId:     closeElectionRequest.UserId,
 	}
 
-	js, err := json.Marshal(closeElectionTransaction)
+	payload, err := json.Marshal(closeElectionTransaction)
 	if err != nil {
 		http.Error(w, "failed to marshal CloseElectionTransaction: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	tx, err := createTransaction(manager, evoting.CmdCloseElection, evoting.CloseElectionArg, js)
+	err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCloseElection, evoting.CloseElectionArg, payload)
 	if err != nil {
-		http.Error(w, "failed to create transaction: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	watchCtx, cancel := context.WithTimeout(r.Context(), inclusionTimeout)
-	defer cancel()
-
-	events := h.orderingSvc.Watch(watchCtx)
-
-	err = h.pool.Add(tx)
-	if err != nil {
-		http.Error(w, "failed to add transaction to the pool: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	ok := h.waitForTxnID(events, tx.GetID())
-	if !ok {
-		http.Error(w, "transaction not accepted within timeout", http.StatusInternalServerError)
-		return
-	}
-
-	h.Unlock()
 
 	response := types.CloseElectionResponse{}
 	w.Header().Set("Content-Type", "application/json")
@@ -585,50 +501,23 @@ func (h *HTTP) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		decryptedBallots = append(decryptedBallots, types.Ballot{Vote: string(message)})
 	}
 
-	h.Lock()
-	manager := getManager(h.signer, h.client)
-
-	err = manager.Sync()
-	if err != nil {
-		http.Error(w, "failed to sync manager: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	decryptBallotsTransaction := types.DecryptBallotsTransaction{
 		ElectionID:       decryptBallotsRequest.ElectionID,
 		UserId:           decryptBallotsRequest.UserId,
 		DecryptedBallots: decryptedBallots,
 	}
 
-	js, err := json.Marshal(decryptBallotsTransaction)
+	payload, err := json.Marshal(decryptBallotsTransaction)
 	if err != nil {
 		http.Error(w, "failed to marshal DecryptBallotsTransaction: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	tx, err := createTransaction(manager, evoting.CmdDecryptBallots, evoting.DecryptBallotsArg, js)
+	err = h.submitAndWaitForTxn(r.Context(), evoting.CmdDecryptBallots, evoting.DecryptBallotsArg, payload)
 	if err != nil {
-		http.Error(w, "failed to create transaction: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	watchCtx, cancel := context.WithTimeout(r.Context(), inclusionTimeout)
-	defer cancel()
-
-	events := h.orderingSvc.Watch(watchCtx)
-
-	err = h.pool.Add(tx)
-	if err != nil {
-		http.Error(w, "failed to add transaction to the pool: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	ok := h.waitForTxnID(events, tx.GetID())
-	if !ok {
-		http.Error(w, "transaction not accepted within timeout", http.StatusInternalServerError)
-		return
-	}
-	h.Unlock()
 
 	response := types.DecryptBallotsResponse{}
 	w.Header().Set("Content-Type", "application/json")
@@ -712,49 +601,22 @@ func (h *HTTP) CancelElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Lock()
-	manager := getManager(h.signer, h.client)
-
-	err = manager.Sync()
-	if err != nil {
-		http.Error(w, "failed to sync manager: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	cancelElectionTransaction := types.CancelElectionTransaction{
 		ElectionID: cancelElectionRequest.ElectionID,
 		UserId:     cancelElectionRequest.UserId,
 	}
 
-	js, err := json.Marshal(cancelElectionTransaction)
+	payload, err := json.Marshal(cancelElectionTransaction)
 	if err != nil {
 		http.Error(w, "failed to marshal CancelElectionTransaction: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	tx, err := createTransaction(manager, evoting.CmdCancelElection, evoting.CancelElectionArg, js)
+	err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCancelElection, evoting.CancelElectionArg, payload)
 	if err != nil {
-		http.Error(w, "failed to create transaction: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	watchCtx, cancel := context.WithTimeout(r.Context(), inclusionTimeout)
-	defer cancel()
-
-	events := h.orderingSvc.Watch(watchCtx)
-
-	err = h.pool.Add(tx)
-	if err != nil {
-		http.Error(w, "failed to add transaction to the pool: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	ok := h.waitForTxnID(events, tx.GetID())
-	if !ok {
-		http.Error(w, "transaction not accepted within timeout", http.StatusInternalServerError)
-		return
-	}
-	h.Unlock()
 
 	response := types.CancelElectionResponse{}
 	w.Header().Set("Content-Type", "application/json")
@@ -763,4 +625,39 @@ func (h *HTTP) CancelElection(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to write in ResponseWriter: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h *HTTP) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
+	cmdArg string, payload []byte) error {
+	h.Lock()
+	defer h.Unlock()
+
+	manager := getManager(h.signer, h.client)
+
+	err := manager.Sync()
+	if err != nil {
+		return xerrors.Errorf("failed to sync manager: %v", err)
+	}
+
+	tx, err := createTransaction(manager, cmd, cmdArg, payload)
+	if err != nil {
+		return xerrors.Errorf("failed to create transaction: %v", err)
+	}
+
+	watchCtx, cancel := context.WithTimeout(ctx, inclusionTimeout)
+	defer cancel()
+
+	events := h.orderingSvc.Watch(watchCtx)
+
+	err = h.pool.Add(tx)
+	if err != nil {
+		return xerrors.Errorf("failed to add transaction to the pool: %v", err)
+	}
+
+	ok := h.waitForTxnID(events, tx.GetID())
+	if !ok {
+		return xerrors.Errorf("transaction not processed within timeout")
+	}
+
+	return nil
 }
