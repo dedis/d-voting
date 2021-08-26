@@ -9,6 +9,7 @@ import (
 	"go.dedis.ch/dela/core/execution"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/store"
+	"go.dedis.ch/dela/cosi/threshold"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/shuffle"
@@ -49,7 +50,7 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step,
 		return xerrors.Errorf("failed to marshall dkg public key : %v", err)
 	}
 
-	if 3*createElectionTxn.ShuffleThreshold < 2*len(createElectionTxn.Members)+1 {
+	if createElectionTxn.ShuffleThreshold < threshold.ByzantineThreshold(len(createElectionTxn.Members)) {
 		return xerrors.Errorf("the shuffle threshold is too low: we require 3T >= 2N + 1")
 	}
 
