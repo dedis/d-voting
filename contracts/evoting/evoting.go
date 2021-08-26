@@ -49,9 +49,8 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step,
 		return xerrors.Errorf("failed to marshall dkg public key : %v", err)
 	}
 
-	// TODO: this should perhaps be an integer check with a floor/ceil used
-	if float64(createElectionTxn.ShuffleThreshold) < (float64(2) / 3 * float64(len(createElectionTxn.Members))) {
-		return xerrors.Errorf("the threshold is too low, it should be at least 2/3 of the length of the roster")
+	if 3*createElectionTxn.ShuffleThreshold < 2*len(createElectionTxn.Members)+1 {
+		return xerrors.Errorf("the shuffle threshold is too low: we require 3T >= 2N + 1")
 	}
 
 	election := types.Election{
