@@ -28,25 +28,27 @@ func (m controller) SetCommands(builder node.Builder) {
 	cmd.SetDescription("interact with the evoting service")
 
 	// memcoin --config /tmp/node1 e-voting initHttpServer --portNumber 8080
-	sub := cmd.SetSubCommand("initHttpServer")
-	sub.SetDescription("initialize the HTTP server")
+	sub := cmd.SetSubCommand("serve")
+	sub.SetDescription("Serve the HTTP server")
+
 	sub.SetFlags(cli.StringFlag{
-		Name:     "portNumber",
-		Usage:    "port number of the HTTP server",
+		Name:     "listen-addr",
+		Usage:    "address to listen requests on",
+		Required: false,
+	})
+	sub.SetFlags(cli.StringFlag{
+		Name:     "signer",
+		Usage:    "Path to signer's private key",
 		Required: true,
 	})
 
-	sub.SetAction(builder.MakeAction(&initHttpServerAction{
-		client: &Client{
-			Nonce: 0,
-		},
-	}))
+	sub.SetAction(builder.MakeAction(&serveAction{}))
 
 	sub = cmd.SetSubCommand("scenarioTest")
 	sub.SetDescription("evoting scenario test")
 	sub.SetFlags(cli.StringSliceFlag{
 		Name:     "member",
-		Usage:    "nodes participating in SHUFFLE",
+		Usage:    "nodes participating in Shuffle",
 		Required: true,
 	})
 	sub.SetAction(builder.MakeAction(&scenarioTestAction{}))
