@@ -1,5 +1,12 @@
 package types
 
+import (
+	"crypto/rand"
+	"encoding/hex"
+
+	"golang.org/x/xerrors"
+)
+
 type ElectionsMetadata struct {
 	ElectionsIds []string
 }
@@ -40,4 +47,15 @@ type DecryptBallotsTransaction struct {
 type CancelElectionTransaction struct {
 	ElectionID string
 	UserId     string
+}
+
+// RandomID returns the hex encoding of a randomly created 32 byte ID.
+func RandomID() (string, error) {
+	buf := make([]byte, 32)
+	n, err := rand.Read(buf)
+	if err != nil || n != 32 {
+		return "", xerrors.Errorf("failed to fill buffer with random data: %v", err)
+	}
+
+	return hex.EncodeToString(buf), nil
 }
