@@ -1,13 +1,14 @@
 package controller
 
 import (
+	"strings"
+
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
 	"golang.org/x/xerrors"
-	"strings"
 )
 
 // NewController returns a new controller initializer
@@ -31,16 +32,18 @@ func (m controller) SetCommands(builder node.Builder) {
 	sub := cmd.SetSubCommand("serve")
 	sub.SetDescription("Serve the HTTP server")
 
-	sub.SetFlags(cli.StringFlag{
-		Name:     "listen-addr",
-		Usage:    "address to listen requests on",
-		Required: false,
-	})
-	sub.SetFlags(cli.StringFlag{
-		Name:     "signer",
-		Usage:    "Path to signer's private key",
-		Required: true,
-	})
+	sub.SetFlags(
+		cli.StringFlag{
+			Name:     "listen-addr",
+			Usage:    "address to listen requests on",
+			Required: false,
+		},
+		cli.StringFlag{
+			Name:     "signer",
+			Usage:    "Path to signer's private key",
+			Required: true,
+		},
+	)
 
 	sub.SetAction(builder.MakeAction(&serveAction{}))
 

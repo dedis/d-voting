@@ -366,7 +366,7 @@ func (h *HTTP) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !(len(election.EncryptedBallots) > 1) {
+	if !(len(election.EncryptedBallots.Ballots) > 1) {
 		http.Error(w, "only one vote has been casted !", http.StatusNotAcceptable)
 		return
 	}
@@ -463,7 +463,7 @@ func (h *HTTP) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 	Ks := make([]kyber.Point, 0, len(election.ShuffledBallots))
 	Cs := make([]kyber.Point, 0, len(election.ShuffledBallots))
 
-	for _, v := range election.ShuffledBallots[election.ShuffleThreshold] {
+	for _, v := range election.ShuffledBallots[election.ShuffleThreshold-1] {
 		ciphertext := new(types.Ciphertext)
 		err = json.NewDecoder(bytes.NewBuffer(v)).Decode(ciphertext)
 		if err != nil {

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -105,23 +106,26 @@ func (h *Handler) HandleStartShuffleMessage(startShuffleMessage types.StartShuff
 			return xerrors.Errorf("the election must be closed")
 		}
 
-		encryptedBallotsMap := election.EncryptedBallots
-
-		encryptedBallots := make([][]byte, 0, len(encryptedBallotsMap))
+		encryptedBallots := make([][]byte, 0, len(election.EncryptedBallots.Ballots))
 
 		if round == 1 {
-			for _, value := range encryptedBallotsMap {
-				encryptedBallots = append(encryptedBallots, value)
-			}
+			encryptedBallots = append([][]byte{}, election.EncryptedBallots.Ballots...)
+			// for _, value := range encryptedBallotsMap {
+			// 	encryptedBallots = append(encryptedBallots, value)
+			// }
 		} else {
-			if len(election.ShuffledBallots[round-1]) != len(encryptedBallotsMap) {
+			if len(election.ShuffledBallots) != round-1 {
+				return xerrors.Errorf("number of shuffled ballots must equal the round number: %d != %d", len(election.ShuffledBallots), round-1)
+			}
+
+			if len(election.ShuffledBallots[round-2]) != len(election.EncryptedBallots.Ballots) {
 				return xerrors.Errorf("the election must be closed")
 			}
-			encryptedBallots = election.ShuffledBallots[round-1]
+			encryptedBallots = election.ShuffledBallots[round-2]
 		}
 
-		Ks := make([]kyber.Point, 0, len(encryptedBallotsMap))
-		Cs := make([]kyber.Point, 0, len(encryptedBallotsMap))
+		Ks := make([]kyber.Point, 0, len(election.EncryptedBallots.Ballots))
+		Cs := make([]kyber.Point, 0, len(election.EncryptedBallots.Ballots))
 
 		for _, v := range encryptedBallots {
 			ciphertext := new(electionTypes.Ciphertext)
@@ -220,23 +224,27 @@ func (h *Handler) HandleStartShuffleMessage(startShuffleMessage types.StartShuff
 		if err != nil {
 			return xerrors.Errorf("failed to make transaction: %v", err.Error())
 		}
+
 		dela.Logger.Info().Msg("TRANSACTION NONCE : " + strconv.Itoa(int(tx.GetNonce())))
+
 		watchCtx, cancel := context.WithTimeout(context.Background(), shuffleTransactionTimeout)
 
-		err = h.p.Add(tx)
+		// err = h.p.Add(tx)
 
 		events := h.service.Watch(watchCtx)
 
-		// err = h.p.Add(tx)
+		err = h.p.Add(tx)
 		if err != nil {
 			cancel()
 			return xerrors.Errorf("failed to add transaction to the pool: %v", err.Error())
 		}
+
 		notAccepted := false
 
 	loopTxs:
 		for event := range events {
 			for _, res := range event.Transactions {
+				fmt.Println("Tx", res.GetTransaction().GetID(), "expected", tx.GetID())
 				if !bytes.Equal(res.GetTransaction().GetID(), tx.GetID()) {
 					continue
 				}

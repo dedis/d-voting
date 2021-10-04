@@ -91,7 +91,7 @@ func auth(allowlist ...string) func(http.Handler) http.Handler {
 				req := &tokenReq{}
 				err := json.NewDecoder(r.Body).Decode(&req)
 				if err != nil {
-					http.Error(w, "failed to parse token"+err.Error(), http.StatusInternalServerError)
+					http.Error(w, "failed to parse token: "+err.Error(), http.StatusInternalServerError)
 					return
 				}
 
@@ -117,7 +117,7 @@ func NewHTTP(listenAddr string, signer crypto.Signer, client *Client,
 		mux: mux,
 		server: &http.Server{
 			Addr:    listenAddr,
-			Handler: logging(logger)(auth(loginEndpoint)(mux)),
+			Handler: logging(logger)(mux),
 		},
 		logger:       logger,
 		listenAddr:   listenAddr,

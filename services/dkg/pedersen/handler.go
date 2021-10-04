@@ -449,7 +449,7 @@ func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionId strin
 		return false, xerrors.Errorf("failed to unmarshal Election: %v", err)
 	}
 
-	for _, v := range election.ShuffledBallots[election.ShuffleThreshold] {
+	for _, v := range election.ShuffledBallots[election.ShuffleThreshold-1] {
 		ciphertext := new(evotingTypes.Ciphertext)
 		err = json.NewDecoder(bytes.NewBuffer(v)).Decode(ciphertext)
 		if err != nil {

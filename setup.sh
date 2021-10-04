@@ -49,4 +49,4 @@ memcoin --config /tmp/node2 shuffle init
 memcoin --config /tmp/node3 shuffle init
 
 echo "${GREEN}[7/7]${NC} starting and listening on http server"
-memcoin --config /tmp/node1 e-voting initHttpServer --portNumber 1000
+LLVL=info memcoin --config /tmp/node1 e-voting serve --listen-addr :1000 --signer private.key

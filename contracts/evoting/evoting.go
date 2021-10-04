@@ -3,6 +3,7 @@ package evoting
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/dkg"
@@ -50,8 +51,11 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step,
 		return xerrors.Errorf("failed to marshall dkg public key : %v", err)
 	}
 
-	if createElectionTxn.ShuffleThreshold < threshold.ByzantineThreshold(len(createElectionTxn.Members)) {
-		return xerrors.Errorf("the shuffle threshold is too low: we require 3T >= 2N + 1")
+	minThreshold := threshold.ByzantineThreshold(len(createElectionTxn.Members))
+
+	if createElectionTxn.ShuffleThreshold < minThreshold {
+		return xerrors.Errorf("the shuffle threshold is too low: we require 3T >= 2N + 1, "+
+			"found %d < %d", createElectionTxn.ShuffleThreshold, minThreshold)
 	}
 
 	election := types.Election{
@@ -60,16 +64,16 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step,
 		AdminId:          createElectionTxn.AdminId,
 		Status:           types.Open,
 		Pubkey:           publicKeyBuf,
-		EncryptedBallots: map[string][]byte{},
-		ShuffledBallots:  map[int][][]byte{},
-		ShuffleProofs:    map[int][]byte{},
+		EncryptedBallots: &types.EncryptedBallots{},
+		ShuffledBallots:  [][][]byte{},
+		ShuffledProofs:   [][]byte{},
 		DecryptedBallots: []types.Ballot{},
 		ShuffleThreshold: createElectionTxn.ShuffleThreshold,
 		Members:          createElectionTxn.Members,
 		Format:           createElectionTxn.Format,
 	}
 
-	electionJson, err := json.Marshal(election)
+	electionJSON, err := json.Marshal(election)
 	if err != nil {
 		return xerrors.Errorf("failed to marshal Election : %v", err)
 	}
@@ -79,7 +83,7 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step,
 		return xerrors.Errorf(errDecodeElectionID, err)
 	}
 
-	err = snap.Set(electionIDBuff, electionJson)
+	err = snap.Set(electionIDBuff, electionJSON)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
@@ -102,12 +106,12 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step,
 
 	electionsMetadata.ElectionsIds = append(electionsMetadata.ElectionsIds, createElectionTxn.ElectionID)
 
-	electionMetadataJson, err := json.Marshal(electionsMetadata)
+	electionMetadataJSON, err := json.Marshal(electionsMetadata)
 	if err != nil {
 		return xerrors.Errorf("failed to marshal ElectionsMetadata: %v", err)
 	}
 
-	err = snap.Set([]byte(ElectionsMetadataKey), electionMetadataJson)
+	err = snap.Set([]byte(ElectionsMetadataKey), electionMetadataJSON)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
@@ -148,7 +152,9 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 		return xerrors.Errorf("the election is not open, current status: %d", election.Status)
 	}
 
-	election.EncryptedBallots[castVoteTransaction.UserId] = castVoteTransaction.Ballot
+	election.EncryptedBallots.CastVote(castVoteTransaction.UserId, castVoteTransaction.Ballot)
+
+	// election.EncryptedBallots[castVoteTransaction.UserId] = castVoteTransaction.Ballot
 
 	electionMarshaled, err = json.Marshal(election)
 	if err != nil {
@@ -208,17 +214,24 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("the election is not closed")
 	}
 
-	if len(election.ShuffledBallots) != shuffleBallotsTransaction.Round-1 {
-		return xerrors.Errorf("wrong number of shuffled ballots: expected '%d', got '%d'",
-			shuffleBallotsTransaction.Round-1, len(election.ShuffledBallots))
+	// Round starts at 1
+	expectedRound := len(election.ShuffledBallots) + 1
+	fmt.Println("expected round:", expectedRound)
+
+	if shuffleBallotsTransaction.Round != expectedRound {
+		return xerrors.Errorf("wrong shuffle round: expected round %d, "+
+			"transaction is for round %s", expectedRound+1, shuffleBallotsTransaction.Round)
 	}
 
-	KsShuffled := make([]kyber.Point, 0, len(shuffleBallotsTransaction.ShuffledBallots))
-	CsShuffled := make([]kyber.Point, 0, len(shuffleBallotsTransaction.ShuffledBallots))
-	for _, shuffledBallot := range shuffleBallotsTransaction.ShuffledBallots {
+	// Unmarshal the shuffled ballots from the transaction
+	KsShuffled := make([]kyber.Point, len(shuffleBallotsTransaction.ShuffledBallots))
+	CsShuffled := make([]kyber.Point, len(shuffleBallotsTransaction.ShuffledBallots))
+
+	for i, shuffledBallot := range shuffleBallotsTransaction.ShuffledBallots {
 		ciphertext := &types.Ciphertext{}
 		err = json.Unmarshal(shuffledBallot, ciphertext)
 		if err != nil {
+			fmt.Println("ciphertext:", string(shuffledBallot))
 			return xerrors.Errorf("failed to unmarshal Ciphertext: %v", err)
 		}
 
@@ -234,37 +247,42 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 			return xerrors.Errorf("failed to unmarshal C kyber.Point: %v", err)
 		}
 
-		KsShuffled = append(KsShuffled, K)
-		CsShuffled = append(CsShuffled, C)
+		KsShuffled[i] = K
+		CsShuffled[i] = C
 	}
 
+	// get the election public key
 	pubKey := suite.Point()
 	err = pubKey.UnmarshalBinary(election.Pubkey)
 	if err != nil {
 		return xerrors.Errorf("failed to unmarshal public key: %v", err)
 	}
 
-	Ks := make([]kyber.Point, 0, len(KsShuffled))
-	Cs := make([]kyber.Point, 0, len(CsShuffled))
+	// unmarshal the current election shuffled ballots if any, or the encrypted
+	// ballots.
+	Ks := make([]kyber.Point, len(KsShuffled))
+	Cs := make([]kyber.Point, len(CsShuffled))
 
-	encryptedBallotsMap := election.EncryptedBallots
-
-	encryptedBallots := make([][]byte, 0, len(encryptedBallotsMap))
+	encryptedBallots := make([][]byte, len(election.EncryptedBallots.Ballots))
 
 	if shuffleBallotsTransaction.Round == 1 {
-		for _, encryptedBallot := range encryptedBallotsMap {
-			encryptedBallots = append(encryptedBallots, encryptedBallot)
+		fmt.Println("this is the first round")
+		for i, encryptedBallot := range election.EncryptedBallots.Ballots {
+			encryptedBallots[i] = encryptedBallot
 		}
 	}
 
 	if shuffleBallotsTransaction.Round > 1 {
-		encryptedBallots = election.ShuffledBallots[shuffleBallotsTransaction.Round-1]
+		// get the election's last shuffled ballots
+		fmt.Println("this is not the first round:", election.ShuffledBallots)
+		encryptedBallots = election.ShuffledBallots[len(election.ShuffledBallots)-1]
 	}
 
-	for _, encryptedBallot := range encryptedBallots {
+	for i, encryptedBallot := range encryptedBallots {
 		ciphertext := &types.Ciphertext{}
 		err = json.Unmarshal(encryptedBallot, ciphertext)
 		if err != nil {
+			fmt.Println("ciphertext2:", string(encryptedBallot))
 			return xerrors.Errorf("failed to unmarshal Ciphertext: %v", err)
 		}
 
@@ -280,8 +298,8 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 			return xerrors.Errorf("failed to unmarshal C kyber.Point: %v", err)
 		}
 
-		Ks = append(Ks, K)
-		Cs = append(Cs, C)
+		Ks[i] = K
+		Cs[i] = C
 	}
 
 	// todo: add trusted nodes in election struct
@@ -292,12 +310,14 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("proof verification failed: %v", err)
 	}
 
-	if shuffleBallotsTransaction.Round == election.ShuffleThreshold {
+	// append the new shuffled ballots and the proof to the lists
+	election.ShuffledBallots = append(election.ShuffledBallots, shuffleBallotsTransaction.ShuffledBallots)
+	election.ShuffledProofs = append(election.ShuffledProofs, shuffleBallotsTransaction.Proof)
+
+	// in case we have enough shuffled ballots, we update the status
+	if len(election.ShuffledBallots) >= election.ShuffleThreshold {
 		election.Status = types.ShuffledBallots
 	}
-
-	election.ShuffledBallots[shuffleBallotsTransaction.Round] = shuffleBallotsTransaction.ShuffledBallots
-	election.ShuffleProofs[shuffleBallotsTransaction.Round] = shuffleBallotsTransaction.Proof
 
 	electionBuf, err := json.Marshal(election)
 	if err != nil {
@@ -313,6 +333,8 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
+
+	fmt.Println("election has new shuffled ballots, len=", len(election.ShuffledBallots))
 
 	return nil
 }
@@ -380,7 +402,7 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 		return xerrors.Errorf("the election is not open, current status: %d", election.Status)
 	}
 
-	if len(election.EncryptedBallots) <= 1 {
+	if len(election.EncryptedBallots.Ballots) <= 1 {
 		return xerrors.Errorf("at least two ballots are required")
 	}
 

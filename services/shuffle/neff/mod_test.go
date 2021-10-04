@@ -47,7 +47,7 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	actor.rpc = rpc
 
 	err = actor.Shuffle(fakeAuthority, electionId)
-	require.EqualError(t, err, fake.Err("got an error from '%!s(<nil>)' while receiving"))
+	require.EqualError(t, err, fake.Err("got an error from '<nil>' while receiving"))
 
 	recv := fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), nil))
 

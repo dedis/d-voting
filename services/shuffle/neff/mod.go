@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	shuffleTimeout = time.Second * 300
+	shuffleTimeout = time.Second * 30
 	protocolName   = "PairShuffle"
 )
 
@@ -122,7 +122,7 @@ func (a *Actor) Shuffle(co crypto.CollectiveAuthority, electionId string) (err e
 	addr, msg, err := receiver.Recv(ctx)
 
 	if err != nil {
-		return xerrors.Errorf("got an error from '%s' while "+
+		return xerrors.Errorf("got an error from '%v' while "+
 			"receiving: %v", addr, err)
 	}
 	_, ok := msg.(types.EndShuffle)

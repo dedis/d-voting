@@ -5,12 +5,14 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting"
@@ -57,7 +59,7 @@ type serveAction struct{}
 // Execute implements node.ActionTemplate. It implements the handling of
 // endpoints and start the HTTP server
 func (a *serveAction) Execute(ctx node.Context) error {
-	listenAddr := ctx.Flags.String("listenAddr")
+	listenAddr := ctx.Flags.String("listen-addr")
 	signerFilePath := ctx.Flags.String("signer")
 
 	signer, err := getSigner(signerFilePath)
@@ -107,7 +109,7 @@ func (a *serveAction) Execute(ctx node.Context) error {
 		orderingSvc, p, m)
 	go func() {
 		ch := make(chan os.Signal, 1)
-		signal.Notify(ch, os.Interrupt)
+		signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 
 		<-ch
 		srv.Stop()
@@ -228,13 +230,15 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		AdminId:          "adminId",
 		Token:            "token",
 		Members:          roster,
-		ShuffleThreshold: 2,
+		ShuffleThreshold: 3,
 	}
 
 	js, err := json.Marshal(createSimpleElectionRequest)
 	if err != nil {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
+
+	fmt.Println("create election js:", string(js))
 
 	resp, err := http.Post(url+strconv.Itoa(1000)+createElectionEndpoint, "application/json", bytes.NewBuffer(js))
 	if err != nil {
@@ -474,10 +478,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set unmarshal SimpleElection : %v", err)
 	}
 
-	dela.Logger.Info().Msg("Length encrypted ballots : " + strconv.Itoa(len(election.EncryptedBallots)))
-	dela.Logger.Info().Msg("Ballot of user1 : " + string(election.EncryptedBallots["user1"]))
-	dela.Logger.Info().Msg("Ballot of user2 : " + string(election.EncryptedBallots["user2"]))
-	dela.Logger.Info().Msg("Ballot of user3 : " + string(election.EncryptedBallots["user3"]))
+	dela.Logger.Info().Msg("Length encrypted ballots : " + strconv.Itoa(len(election.EncryptedBallots.Ballots)))
+	dela.Logger.Info().Msg("Ballot of user1 : " + string(election.EncryptedBallots.Ballots[0]))
+	dela.Logger.Info().Msg("Ballot of user2 : " + string(election.EncryptedBallots.Ballots[1]))
+	dela.Logger.Info().Msg("Ballot of user3 : " + string(election.EncryptedBallots.Ballots[2]))
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 
@@ -574,7 +578,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 	dela.Logger.Info().Msg("Number of shuffled ballots : " + strconv.Itoa(len(election.ShuffledBallots)))
-	dela.Logger.Info().Msg("Number of encrypted ballots : " + strconv.Itoa(len(election.EncryptedBallots)))
+	dela.Logger.Info().Msg("Number of encrypted ballots : " + strconv.Itoa(len(election.EncryptedBallots.Ballots)))
 
 	// ###################################### SHUFFLE BALLOTS ##################
 
@@ -668,6 +672,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 	dela.Logger.Info().Msg("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
+
+	if len(election.DecryptedBallots) != 3 {
+		return xerrors.Errorf("unexpected number of decrypted ballot: %d != 3", len(election.DecryptedBallots))
+	}
+
 	dela.Logger.Info().Msg(election.DecryptedBallots[0].Vote)
 	dela.Logger.Info().Msg(election.DecryptedBallots[1].Vote)
 	dela.Logger.Info().Msg(election.DecryptedBallots[2].Vote)
