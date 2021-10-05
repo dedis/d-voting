@@ -449,27 +449,13 @@ func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionId strin
 		return false, xerrors.Errorf("failed to unmarshal Election: %v", err)
 	}
 
-	for _, v := range election.ShuffledBallots[election.ShuffleThreshold-1] {
-		ciphertext := new(evotingTypes.Ciphertext)
-		err = json.NewDecoder(bytes.NewBuffer(v)).Decode(ciphertext)
+	for _, ct := range election.ShuffledBallots[election.ShuffleThreshold-1] {
+		kPrime, cPrime, err := ct.GetPoints()
 		if err != nil {
-			return false, xerrors.Errorf("failed to unmarshal Ciphertext: %v", err)
+			return false, xerrors.Errorf("failed to get points: %v", err)
 		}
 
-		Kprime := suite.Point()
-		err = Kprime.UnmarshalBinary(ciphertext.K)
-		if err != nil {
-			return false, xerrors.Errorf("failed to unmarshal Kyber.Point: %v", err)
-		}
-
-		Cprime := suite.Point()
-
-		err = Cprime.UnmarshalBinary(ciphertext.C)
-		if err != nil {
-			return false, xerrors.Errorf("failed to unmarshal Kyber.Point: %v", err)
-		}
-
-		if Kprime.Equal(K) && Cprime.Equal(C) {
+		if kPrime.Equal(K) && cPrime.Equal(C) {
 			return true, nil
 		}
 	}

@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
@@ -14,7 +13,6 @@ import (
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
-	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
 )
 
@@ -460,39 +458,16 @@ func (h *HTTP) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Ks := make([]kyber.Point, 0, len(election.ShuffledBallots))
-	Cs := make([]kyber.Point, 0, len(election.ShuffledBallots))
-
-	for _, v := range election.ShuffledBallots[election.ShuffleThreshold-1] {
-		ciphertext := new(types.Ciphertext)
-		err = json.NewDecoder(bytes.NewBuffer(v)).Decode(ciphertext)
-		if err != nil {
-			http.Error(w, "failed to unmarshal Ciphertext: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		K := suite.Point()
-		err = K.UnmarshalBinary(ciphertext.K)
-		if err != nil {
-			http.Error(w, "failed to unmarshal Kyber.Point: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		C := suite.Point()
-		err = C.UnmarshalBinary(ciphertext.C)
-		if err != nil {
-			http.Error(w, "failed to unmarshal Kyber.Point: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		Ks = append(Ks, K)
-		Cs = append(Cs, C)
+	ks, cs, err := election.ShuffledBallots[election.ShuffleThreshold-1].GetKsCs()
+	if err != nil {
+		http.Error(w, "failed to get ks, cs:"+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffledBallots))
 
-	for i := 0; i < len(Ks); i++ {
-		message, err := h.dkgActor.Decrypt(Ks[i], Cs[i], string(election.ElectionID))
+	for i := 0; i < len(ks); i++ {
+		message, err := h.dkgActor.Decrypt(ks[i], cs[i], string(election.ElectionID))
 		if err != nil {
 			http.Error(w, "failed to decrypt (K,C): "+err.Error(), http.StatusInternalServerError)
 			return

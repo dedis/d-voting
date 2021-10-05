@@ -5,8 +5,10 @@ import (
 	"time"
 
 	evotingController "github.com/dedis/d-voting/contracts/evoting/controller"
+	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/shuffle"
 	"github.com/dedis/d-voting/services/shuffle/neff/types"
+	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
 	"go.dedis.ch/dela/core/txn/pool"
@@ -24,6 +26,13 @@ import (
 const (
 	shuffleTimeout = time.Second * 30
 	protocolName   = "PairShuffle"
+
+	// waitN is the number of time we check if the shuffling is done. Must be at
+	// least one.
+	waitN = 20
+	// waitT is the time we wait before retrying to check if the shuffling is
+	// done.
+	waitT = time.Second * 3
 )
 
 // NeffShuffle allows one to initialize a new SHUFFLE protocol.
@@ -65,6 +74,7 @@ func (n NeffShuffle) Listen() (shuffle.Actor, error) {
 		rpc:     mino.MustCreateRPC(n.mino, "shuffle", h, n.factory),
 		factory: n.factory,
 		mino:    n.mino,
+		service: n.service,
 	}
 
 	return a, nil
@@ -80,6 +90,7 @@ type Actor struct {
 	mino    mino.Mino
 	factory serde.Factory
 	// startRes *state
+	service ordering.Service
 }
 
 // Shuffle must be called by ONE of the actor to shuffle the list of ElGamal
@@ -93,7 +104,7 @@ func (a *Actor) Shuffle(co crypto.CollectiveAuthority, electionId string) (err e
 	ctx, cancel := context.WithTimeout(context.Background(), shuffleTimeout)
 	defer cancel()
 
-	sender, receiver, err := a.rpc.Stream(ctx, co)
+	sender, _, err := a.rpc.Stream(ctx, co)
 	if err != nil {
 		return xerrors.Errorf("failed to stream: %v", err)
 	}
@@ -115,24 +126,45 @@ func (a *Actor) Shuffle(co crypto.CollectiveAuthority, electionId string) (err e
 	errs := sender.Send(message, addrs...)
 	err = <-errs
 	if err != nil {
-		return xerrors.Errorf("failed to send first message: %v", err)
+		return xerrors.Errorf("failed to start shuffle: %v", err)
 	}
 
-	// todo add timeout, ask noémien and gaurav about every timeout
-	addr, msg, err := receiver.Recv(ctx)
-
+	err = a.waitAndCheckShuffling(message.GetElectionId())
 	if err != nil {
-		return xerrors.Errorf("got an error from '%v' while "+
-			"receiving: %v", addr, err)
-	}
-	_, ok := msg.(types.EndShuffle)
-	if !ok {
-		cancel()
-		return xerrors.Errorf("expected to receive an EndShuffle message, but "+
-			"go the following: %T", msg)
+		return xerrors.Errorf("failed to wait and check shuffling: %v", err)
 	}
 
 	return nil
+}
+
+// waitAndCheckShuffling periodically checks the state of the election. It
+// returns an error if the shuffling is not done after a while.
+func (a *Actor) waitAndCheckShuffling(electionID string) error {
+	var election *electionTypes.Election
+	var err error
+
+	for i := 0; i < waitN; i++ {
+		election, err = getElection(a.service, electionID)
+		if err != nil {
+			return xerrors.Errorf("failed to get election: %v", err)
+		}
+
+		round := len(election.ShuffledBallots)
+		dela.Logger.Info().Msgf("SHUFFLE / ROUND : %d", round)
+
+		// if the threshold is reached that means we have enough
+		// shuffling.
+		if round >= election.ShuffleThreshold {
+			dela.Logger.Info().Msgf("shuffle done with round n°%d", round)
+			return nil
+		}
+
+		dela.Logger.Info().Msgf("waiting a while before checking election: %d", i)
+		time.Sleep(waitT)
+	}
+
+	return xerrors.Errorf("threshold of shuffling not reached: %d < %d",
+		len(election.ShuffledBallots), election.ShuffleThreshold)
 }
 
 // Todo : this is useless in the new implementation, maybe remove ?
@@ -144,5 +176,4 @@ func (a *Actor) Verify(suiteName string, Ks []kyber.Point, Cs []kyber.Point,
 
 	verifier := shuffleKyber.Verifier(suite, nil, pubKey, Ks, Cs, KsShuffled, CsShuffled)
 	return proof.HashVerify(suite, protocolName, verifier, prf)
-
 }

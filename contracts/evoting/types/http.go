@@ -1,5 +1,15 @@
 package types
 
+import (
+	"fmt"
+
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/suites"
+	"golang.org/x/xerrors"
+)
+
+var suite = suites.MustFind("Ed25519")
+
 type LoginResponse struct {
 	UserID string
 	Token  string
@@ -26,17 +36,67 @@ type CreateElectionResponse struct {
 type CastVoteRequest struct {
 	ElectionID string
 	UserId     string
-	Ballot     []byte
+	Ballot     Ciphertext
 	Token      string
 }
 
 type CastVoteResponse struct {
 }
 
-// Wraps the ciphertext pairs
+// Ciphertext wraps K, C kyber points into their binary representation
 type Ciphertext struct {
 	K []byte
 	C []byte
+}
+
+// GetPoints returns the kyber.Point curve points
+func (ct Ciphertext) GetPoints() (k kyber.Point, c kyber.Point, err error) {
+	k = suite.Point()
+	c = suite.Point()
+
+	err = k.UnmarshalBinary(ct.K)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("failed to unmarshal K: %v", err)
+	}
+
+	err = c.UnmarshalBinary(ct.C)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("failed to unmarshal C: %v", err)
+	}
+
+	return k, c, nil
+}
+
+// Copy returns a copy of Ciphertext
+func (ct Ciphertext) Copy() Ciphertext {
+	return Ciphertext{
+		K: append([]byte{}, ct.K...),
+		C: append([]byte{}, ct.C...),
+	}
+}
+
+// String returns a string representation of a ciphertext
+func (ct Ciphertext) String() string {
+	return fmt.Sprintf("{K: %x, C: %x}", ct.K, ct.C)
+}
+
+// FromPoints fills the ciphertext with k, c
+func (ct *Ciphertext) FromPoints(k, c kyber.Point) error {
+	buf, err := k.MarshalBinary()
+	if err != nil {
+		return xerrors.Errorf("failed to marshall k: %v", err)
+	}
+
+	ct.K = buf
+
+	buf, err = c.MarshalBinary()
+	if err != nil {
+		return xerrors.Errorf("failed to marshall c: %v", err)
+	}
+
+	ct.C = buf
+
+	return nil
 }
 
 type CloseElectionRequest struct {

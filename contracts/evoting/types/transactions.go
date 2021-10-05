@@ -23,7 +23,7 @@ type CreateElectionTransaction struct {
 type CastVoteTransaction struct {
 	ElectionID string
 	UserId     string
-	Ballot     []byte
+	Ballot     Ciphertext
 }
 
 type CloseElectionTransaction struct {
@@ -34,7 +34,7 @@ type CloseElectionTransaction struct {
 type ShuffleBallotsTransaction struct {
 	ElectionID      string
 	Round           int
-	ShuffledBallots [][]byte
+	ShuffledBallots Ciphertexts
 	Proof           []byte
 }
 

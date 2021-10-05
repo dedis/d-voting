@@ -1,5 +1,10 @@
 package types
 
+import (
+	"go.dedis.ch/kyber/v3"
+	"golang.org/x/xerrors"
+)
+
 type ID string
 
 // todo : status should be string ?
@@ -25,12 +30,11 @@ type Election struct {
 
 	// EncryptedBallots is a map from User ID to their ballot ciphertext
 	// EncryptedBallots map[string][]byte
-	EncryptedBallots *EncryptedBallots
+	EncryptedBallots EncryptedBallots
 
-	// ShuffledBallots is a map from shuffle round to shuffled ciphertexts
-	// ShuffledBallots map[int][][]byte
-	// Dimensions: <round, ballots, ballot>
-	ShuffledBallots [][][]byte
+	// ShuffledBallots contains the list of shuffled ciphertext for each
+	// shuffling round.
+	ShuffledBallots []Ciphertexts
 
 	// ShufleProofs is a map from shuffle round to shuffle proofs
 	// ShuffleProofs map[int][]byte
@@ -51,11 +55,11 @@ type Ballot struct {
 // user ID.
 type EncryptedBallots struct {
 	UserIDs []string
-	Ballots [][]byte
+	Ballots Ciphertexts
 }
 
 // CastVote updates a user's vote or add a new vote and its associated user.
-func (e *EncryptedBallots) CastVote(userID string, encryptedVote []byte) {
+func (e *EncryptedBallots) CastVote(userID string, encryptedVote Ciphertext) {
 	for i, u := range e.UserIDs {
 		if u == userID {
 			e.Ballots[i] = encryptedVote
@@ -64,19 +68,19 @@ func (e *EncryptedBallots) CastVote(userID string, encryptedVote []byte) {
 	}
 
 	e.UserIDs = append(e.UserIDs, userID)
-	e.Ballots = append(e.Ballots, encryptedVote)
+	e.Ballots = append(e.Ballots, encryptedVote.Copy())
 }
 
 // GetBallotFromUser returns the ballot associated to a user. Returns nil if
 // user is not found.
-func (e *EncryptedBallots) GetBallotFromUser(userID string) []byte {
+func (e *EncryptedBallots) GetBallotFromUser(userID string) (Ciphertext, bool) {
 	for i, u := range e.UserIDs {
 		if u == userID {
-			return e.Ballots[i]
+			return e.Ballots[i].Copy(), true
 		}
 	}
 
-	return nil
+	return Ciphertext{}, false
 }
 
 // DeleteUser removes a user and its associated votes if found.
@@ -90,4 +94,48 @@ func (e *EncryptedBallots) DeleteUser(userID string) bool {
 	}
 
 	return false
+}
+
+// Ciphertexts represents a list of Ciphertext
+type Ciphertexts []Ciphertext
+
+// GetKsCs returns corresponding kyber.Points from the ciphertexts
+func (c Ciphertexts) GetKsCs() (ks []kyber.Point, cs []kyber.Point, err error) {
+	ks = make([]kyber.Point, len(c))
+	cs = make([]kyber.Point, len(c))
+
+	for i, ct := range c {
+		k, c, err := ct.GetPoints()
+		if err != nil {
+			return nil, nil, xerrors.Errorf("failed to get points: %v", err)
+		}
+
+		ks[i] = k
+		cs[i] = c
+	}
+
+	return ks, cs, nil
+}
+
+// InitFromKsCs sets the ciphertext based on ks, cs
+func (c *Ciphertexts) InitFromKsCs(ks []kyber.Point, cs []kyber.Point) error {
+	if len(ks) != len(cs) {
+		return xerrors.Errorf("ks and cs must have same length: %d != %d",
+			len(ks), len(cs))
+	}
+
+	*c = make([]Ciphertext, len(ks))
+
+	for i := range ks {
+		var ct Ciphertext
+
+		err := ct.FromPoints(ks[i], cs[i])
+		if err != nil {
+			return xerrors.Errorf("failed to init ciphertext: %v", err)
+		}
+
+		(*c)[i] = ct
+	}
+
+	return nil
 }

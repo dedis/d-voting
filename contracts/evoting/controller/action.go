@@ -479,9 +479,9 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	dela.Logger.Info().Msg("Length encrypted ballots : " + strconv.Itoa(len(election.EncryptedBallots.Ballots)))
-	dela.Logger.Info().Msg("Ballot of user1 : " + string(election.EncryptedBallots.Ballots[0]))
-	dela.Logger.Info().Msg("Ballot of user2 : " + string(election.EncryptedBallots.Ballots[1]))
-	dela.Logger.Info().Msg("Ballot of user3 : " + string(election.EncryptedBallots.Ballots[2]))
+	dela.Logger.Info().Msgf("Ballot of user1 : %s", election.EncryptedBallots.Ballots[0])
+	dela.Logger.Info().Msgf("Ballot of user2 : %s", election.EncryptedBallots.Ballots[1])
+	dela.Logger.Info().Msgf("Ballot of user3 : %s", election.EncryptedBallots.Ballots[2])
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 
@@ -686,30 +686,26 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	return nil
 }
 
-func marshallBallot(vote string, actor dkg.Actor) ([]byte, error) {
+func marshallBallot(vote string, actor dkg.Actor) (types.Ciphertext, error) {
 
 	K, C, _, err := actor.Encrypt([]byte(vote))
 	if err != nil {
-		return nil, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
+		return types.Ciphertext{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
 	}
 
 	Kmarshalled, err := K.MarshalBinary()
 	if err != nil {
-		return nil, xerrors.Errorf("failed to marshall the K element of the ciphertext pair: %v", err)
+		return types.Ciphertext{}, xerrors.Errorf("failed to marshall the K element of the ciphertext pair: %v", err)
 	}
 
 	Cmarshalled, err := C.MarshalBinary()
 	if err != nil {
-		return nil, xerrors.Errorf("failed to marshall the C element of the ciphertext pair: %v", err)
+		return types.Ciphertext{}, xerrors.Errorf("failed to marshall the C element of the ciphertext pair: %v", err)
 	}
 
 	ballot := types.Ciphertext{K: Kmarshalled, C: Cmarshalled}
-	js, err := json.Marshal(ballot)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to marshall Ciphertext: %v", err)
-	}
 
-	return js, nil
+	return ballot, nil
 
 }
 
