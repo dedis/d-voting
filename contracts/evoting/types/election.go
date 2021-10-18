@@ -46,6 +46,21 @@ type Election struct {
 	Format           string
 }
 
+//TODO: Use the ShuffleInstance in the election struct: We will need a []ShuffleInstance
+
+// ShuffleInstance is an instance of a shuffle, it contains the shuffled ballots, the proofs and the
+// identity of the shuffler.
+type ShuffleInstance struct {
+	// ShuffledBallots contains the list of shuffled ciphertext for this round
+	ShuffledBallots Ciphertexts
+
+	// ShuffleProofs is the proof of the shuffle for this round
+	ShuffleProofs []byte
+
+	//Shuffler is the identity of the node who made the given shuffle.
+	Shuffler CollectiveAuthorityMember
+}
+
 // Ballot contains all information about a simple ballot
 type Ballot struct {
 	Vote string
