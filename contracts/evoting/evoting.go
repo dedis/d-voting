@@ -63,8 +63,7 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step,
 		Status:           types.Open,
 		Pubkey:           publicKeyBuf,
 		EncryptedBallots: types.EncryptedBallots{},
-		ShuffledBallots:  []types.Ciphertexts{},
-		ShuffledProofs:   [][]byte{},
+		ShuffleInstances: []types.ShuffleInstance{},
 		DecryptedBallots: []types.Ballot{},
 		ShuffleThreshold: createElectionTxn.ShuffleThreshold,
 		Members:          createElectionTxn.Members,
@@ -215,11 +214,22 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	}
 
 	// Round starts at 0
-	expectedRound := len(election.ShuffledBallots)
+	expectedRound := len(election.ShuffleInstances)
 
 	if shuffleBallotsTransaction.Round != expectedRound {
 		return xerrors.Errorf("wrong shuffle round: expected round %d, "+
 			"transaction is for round %s", expectedRound, shuffleBallotsTransaction.Round)
+	}
+
+	//Chek the node who submitted the shuffle did not already submit an accepted shuffle
+	if shuffleBallotsTransaction.Round > 0 {
+		shuffler := step.Current.GetIdentity()
+		for i, shuffleInstance := range election.ShuffleInstances {
+			if shuffler.Equal(shuffleInstance) { //TODO : Define Equal ?????
+				return xerrors.Errorf("the node %v already submitted a shuffle that has been accepted in round %v", shuffler, i)
+			}
+
+		}
 	}
 
 	ksShuffled, csShuffled, err := shuffleBallotsTransaction.ShuffledBallots.GetKsCs()
@@ -240,7 +250,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		encryptedBallots = election.EncryptedBallots.Ballots
 	} else {
 		// get the election's last shuffled ballots
-		encryptedBallots = election.ShuffledBallots[len(election.ShuffledBallots)-1]
+		encryptedBallots = election.ShuffleInstances[len(election.ShuffleInstances)-1].ShuffledBallots
 	}
 
 	ks, cs, err := encryptedBallots.GetKsCs()
@@ -257,11 +267,10 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	}
 
 	// append the new shuffled ballots and the proof to the lists
-	election.ShuffledBallots = append(election.ShuffledBallots, shuffleBallotsTransaction.ShuffledBallots)
-	election.ShuffledProofs = append(election.ShuffledProofs, shuffleBallotsTransaction.Proof)
+	election.ShuffleInstances = append(election.ShuffleInstances, types.ShuffleInstance{ShuffledBallots: shuffleBallotsTransaction.ShuffledBallots, ShuffleProofs: shuffleBallotsTransaction.Proof, Shuffler: step.Current.GetIdentity()})
 
 	// in case we have enough shuffled ballots, we update the status
-	if len(election.ShuffledBallots) >= election.ShuffleThreshold {
+	if len(election.ShuffleInstances) >= election.ShuffleThreshold {
 		election.Status = types.ShuffledBallots
 	}
 
