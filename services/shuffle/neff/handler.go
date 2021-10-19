@@ -91,7 +91,19 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 			return xerrors.Errorf("failed to get election: %v", err)
 		}
 
-		round := len(election.ShuffledBallots)
+		round := len(election.ShuffleInstances)
+
+		//check all shuffles are made by different nodes
+		if round > 0 {
+			//TODO : use a hash set and compare sizes ?
+			for i, s1 := range election.ShuffleInstances {
+				for j, s2 := range election.ShuffleInstances {
+					if s1.Shuffler.Equal(s2.Shuffler) {
+						return xerrors.Errorf("Shuffle for rounds %v and %v have been made by the same node", i, j)
+					}
+				}
+			}
+		}
 
 		// check if the threshold is reached
 		if round >= election.ShuffleThreshold {
@@ -139,7 +151,7 @@ func makeTx(election *electionTypes.Election, manager txn.Manager) (txn.Transact
 
 	shuffleBallotsTransaction := electionTypes.ShuffleBallotsTransaction{
 		ElectionID:      string(election.ElectionID),
-		Round:           len(election.ShuffledBallots),
+		Round:           len(election.ShuffleInstances),
 		ShuffledBallots: shuffledBallots,
 		Proof:           shuffleProof,
 	}
@@ -177,9 +189,11 @@ func makeTx(election *electionTypes.Election, manager txn.Manager) (txn.Transact
 	return tx, nil
 }
 
+//TODO : replace by getShuffleInstance which would ba appended at the end of current slice in the "Election"
+
 // getShuffledBallots returns the shuffled ballots with the shuffling proof.
 func getShuffledBallots(election *electionTypes.Election) (electionTypes.Ciphertexts, []byte, error) {
-	round := len(election.ShuffledBallots)
+	round := len(election.ShuffleInstances)
 
 	var encryptedBallots electionTypes.Ciphertexts
 
@@ -187,7 +201,7 @@ func getShuffledBallots(election *electionTypes.Election) (electionTypes.Ciphert
 		encryptedBallots = election.EncryptedBallots.Ballots
 		fmt.Println("encrypted ballots:", election.EncryptedBallots)
 	} else {
-		encryptedBallots = election.ShuffledBallots[round-1]
+		encryptedBallots = election.ShuffleInstances[round-1].ShuffledBallots
 	}
 
 	ks, cs, err := encryptedBallots.GetKsCs()
