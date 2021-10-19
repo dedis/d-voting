@@ -219,7 +219,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 
 	if shuffleBallotsTransaction.Round != expectedRound {
 		return xerrors.Errorf("wrong shuffle round: expected round %d, "+
-			"transaction is for round %s", expectedRound, shuffleBallotsTransaction.Round)
+			"transaction is for round %d", expectedRound, shuffleBallotsTransaction.Round)
 	}
 
 	ksShuffled, csShuffled, err := shuffleBallotsTransaction.ShuffledBallots.GetKsCs()

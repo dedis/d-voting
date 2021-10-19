@@ -44,11 +44,10 @@ type NeffShuffle struct {
 	service ordering.Service
 	p       pool.Pool
 	blocks  *blockstore.InDisk
-	signer  crypto.Signer
 }
 
 // NewNeffShuffle returns a new NeffShuffle factory.
-func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool, blocks *blockstore.InDisk, signer crypto.Signer) *NeffShuffle {
+func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool, blocks *blockstore.InDisk) *NeffShuffle {
 	factory := types.NewMessageFactory(m.GetAddressFactory())
 
 	return &NeffShuffle{
@@ -57,18 +56,17 @@ func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool, blocks *blocks
 		service: s,
 		p:       p,
 		blocks:  blocks,
-		signer:  signer,
 	}
 }
 
 // Listen implements shuffle.SHUFFLE. It must be called on each node that
 // participates in the SHUFFLE. Creates the RPC.
-func (n NeffShuffle) Listen() (shuffle.Actor, error) {
+func (n NeffShuffle) Listen(signer crypto.Signer) (shuffle.Actor, error) {
 	client := &evotingController.Client{
 		Nonce:  0,
 		Blocks: n.blocks,
 	}
-	h := NewHandler(n.mino.GetAddress(), n.service, n.p, n.signer, client)
+	h := NewHandler(n.mino.GetAddress(), n.service, n.p, signer, client)
 
 	a := &Actor{
 		rpc:     mino.MustCreateRPC(n.mino, "shuffle", h, n.factory),

@@ -17,7 +17,7 @@ import (
 )
 
 // Login responds with the user token.
-func (s *HTTP) Login(w http.ResponseWriter, r *http.Request) {
+func (h *votingProxy) Login(w http.ResponseWriter, r *http.Request) {
 	userID := uuid.NewV4()
 	userToken := token
 
@@ -35,7 +35,7 @@ func (s *HTTP) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateElection allows creating an election.
-func (h *HTTP) CreateElection(w http.ResponseWriter, r *http.Request) {
+func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
 	createElectionRequest := &types.CreateElectionRequest{}
 	err := json.NewDecoder(r.Body).Decode(createElectionRequest)
 	if err != nil {
@@ -82,7 +82,7 @@ func (h *HTTP) CreateElection(w http.ResponseWriter, r *http.Request) {
 }
 
 // CastVote is used to cast a vote in an election.
-func (h *HTTP) CastVote(w http.ResponseWriter, r *http.Request) {
+func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
 	castVoteRequest := &types.CastVoteRequest{}
 	err := json.NewDecoder(r.Body).Decode(castVoteRequest)
 	if err != nil {
@@ -135,7 +135,7 @@ func (h *HTTP) CastVote(w http.ResponseWriter, r *http.Request) {
 }
 
 // ElectionIDs returns a list of all election IDs.
-func (h *HTTP) ElectionIDs(w http.ResponseWriter, r *http.Request) {
+func (h *votingProxy) ElectionIDs(w http.ResponseWriter, r *http.Request) {
 	getAllElectionsIdsRequest := &types.GetAllElectionsIdsRequest{}
 	err := json.NewDecoder(r.Body).Decode(getAllElectionsIdsRequest)
 	if err != nil {
@@ -160,7 +160,7 @@ func (h *HTTP) ElectionIDs(w http.ResponseWriter, r *http.Request) {
 }
 
 // ElectionInfo returns the information for a gien election.
-func (h *HTTP) ElectionInfo(w http.ResponseWriter, r *http.Request) {
+func (h *votingProxy) ElectionInfo(w http.ResponseWriter, r *http.Request) {
 	getElectionInfoRequest := &types.GetElectionInfoRequest{}
 	err := json.NewDecoder(r.Body).Decode(getElectionInfoRequest)
 	if err != nil {
@@ -216,7 +216,7 @@ func (h *HTTP) ElectionInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 // AllElectionInfo returns the information for all elections.
-func (h *HTTP) AllElectionInfo(w http.ResponseWriter, r *http.Request) {
+func (h *votingProxy) AllElectionInfo(w http.ResponseWriter, r *http.Request) {
 	getAllElectionsInfoRequest := &types.GetAllElectionsInfoRequest{}
 	err := json.NewDecoder(r.Body).Decode(getAllElectionsInfoRequest)
 	if err != nil {
@@ -275,7 +275,7 @@ func (h *HTTP) AllElectionInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 // CloseElection closes an election.
-func (h *HTTP) CloseElection(w http.ResponseWriter, r *http.Request) {
+func (h *votingProxy) CloseElection(w http.ResponseWriter, r *http.Request) {
 	closeElectionRequest := &types.CloseElectionRequest{}
 	err := json.NewDecoder(r.Body).Decode(closeElectionRequest)
 	if err != nil {
@@ -321,7 +321,7 @@ func (h *HTTP) CloseElection(w http.ResponseWriter, r *http.Request) {
 }
 
 // ShuffleBallots shuffles the ballots in an election.
-func (h *HTTP) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
+func (h *votingProxy) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
 	shuffleBallotsRequest := &types.ShuffleBallotsRequest{}
 	err := json.NewDecoder(r.Body).Decode(shuffleBallotsRequest)
 	if err != nil {
@@ -410,7 +410,7 @@ func (h *HTTP) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
 }
 
 // DecryptBallots decrypts the shuffled ballots in an election.
-func (h *HTTP) DecryptBallots(w http.ResponseWriter, r *http.Request) {
+func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 	decryptBallotsRequest := &types.DecryptBallotsRequest{}
 	err := json.NewDecoder(r.Body).Decode(decryptBallotsRequest)
 	if err != nil {
@@ -504,7 +504,7 @@ func (h *HTTP) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 }
 
 // ElectionResult calculates and returns the results of the election.
-func (h *HTTP) ElectionResult(w http.ResponseWriter, r *http.Request) {
+func (h *votingProxy) ElectionResult(w http.ResponseWriter, r *http.Request) {
 	getElectionResultRequest := &types.GetElectionResultRequest{}
 	err := json.NewDecoder(r.Body).Decode(getElectionResultRequest)
 	if err != nil {
@@ -557,7 +557,7 @@ func (h *HTTP) ElectionResult(w http.ResponseWriter, r *http.Request) {
 }
 
 // CancelElection cancels an election.
-func (h *HTTP) CancelElection(w http.ResponseWriter, r *http.Request) {
+func (h *votingProxy) CancelElection(w http.ResponseWriter, r *http.Request) {
 	cancelElectionRequest := new(types.CancelElectionRequest)
 	err := json.NewDecoder(r.Body).Decode(cancelElectionRequest)
 	if err != nil {
@@ -602,7 +602,7 @@ func (h *HTTP) CancelElection(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *HTTP) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
+func (h *votingProxy) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
 	cmdArg string, payload []byte) error {
 	h.Lock()
 	defer h.Unlock()

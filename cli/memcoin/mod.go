@@ -47,6 +47,8 @@ import (
 
 	_ "github.com/dedis/d-voting/services/dkg/pedersen/json"
 	_ "github.com/dedis/d-voting/services/shuffle/neff/json"
+
+	gapi "go.dedis.ch/dela-apps/gapi/controller"
 )
 
 func main() {
@@ -81,6 +83,7 @@ func runWithCfg(args []string, cfg config) error {
 		proxy.NewController(),
 		shuffle.NewController(),
 		evoting.NewController(),
+		gapi.NewController(),
 	)
 
 	app := builder.Build()

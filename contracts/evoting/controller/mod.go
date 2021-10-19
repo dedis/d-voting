@@ -29,15 +29,10 @@ func (m controller) SetCommands(builder node.Builder) {
 	cmd.SetDescription("interact with the evoting service")
 
 	// memcoin --config /tmp/node1 e-voting initHttpServer --portNumber 8080
-	sub := cmd.SetSubCommand("serve")
-	sub.SetDescription("Serve the HTTP server")
+	sub := cmd.SetSubCommand("registerHandlers")
+	sub.SetDescription("register the e-voting handlers on the default proxy")
 
 	sub.SetFlags(
-		cli.StringFlag{
-			Name:     "listen-addr",
-			Usage:    "address to listen requests on",
-			Required: false,
-		},
 		cli.StringFlag{
 			Name:     "signer",
 			Usage:    "Path to signer's private key",
@@ -45,15 +40,22 @@ func (m controller) SetCommands(builder node.Builder) {
 		},
 	)
 
-	sub.SetAction(builder.MakeAction(&serveAction{}))
+	sub.SetAction(builder.MakeAction(&registerAction{}))
 
 	sub = cmd.SetSubCommand("scenarioTest")
 	sub.SetDescription("evoting scenario test")
-	sub.SetFlags(cli.StringSliceFlag{
-		Name:     "member",
-		Usage:    "nodes participating in Shuffle",
-		Required: true,
-	})
+	sub.SetFlags(
+		cli.StringSliceFlag{
+			Name:     "member",
+			Usage:    "nodes participating in Shuffle",
+			Required: true,
+		},
+		cli.StringFlag{
+			Name:  "proxy-addr",
+			Usage: "base address of the proxy",
+			Value: "http://localhost:8081",
+		},
+	)
 	sub.SetAction(builder.MakeAction(&scenarioTestAction{}))
 }
 

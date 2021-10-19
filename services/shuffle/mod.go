@@ -9,7 +9,7 @@ import (
 type Shuffle interface {
 	// Listen starts the RPC. This function should be called on each node that
 	// wishes to participate in a shuffle.
-	Listen() (Actor, error)
+	Listen(signer crypto.Signer) (Actor, error)
 }
 
 // Actor defines the primitives to use a shuffle protocol

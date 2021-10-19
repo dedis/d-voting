@@ -8,11 +8,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"os/signal"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting"
@@ -27,16 +24,16 @@ import (
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/core/txn/signed"
+	"go.dedis.ch/dela/cosi/threshold"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/bls"
 	"go.dedis.ch/dela/crypto/ed25519"
 	"go.dedis.ch/dela/crypto/loader"
 	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/mino/proxy"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 )
-
-const url = "http://localhost:"
 
 const token = "token"
 const inclusionTimeout = 2 * time.Second
@@ -54,12 +51,11 @@ var getManager = func(signer crypto.Signer, s signed.Client) txn.Manager {
 // initHttpServer is an action to initialize the shuffle protocol
 //
 // - implements node.ActionTemplate
-type serveAction struct{}
+type registerAction struct{}
 
-// Execute implements node.ActionTemplate. It implements the handling of
-// endpoints and start the HTTP server
-func (a *serveAction) Execute(ctx node.Context) error {
-	listenAddr := ctx.Flags.String("listen-addr")
+// Execute implements node.ActionTemplate. It registers the handlers using the
+// default proxy from the the injector.
+func (a *registerAction) Execute(ctx node.Context) error {
 	signerFilePath := ctx.Flags.String("signer")
 
 	signer, err := getSigner(signerFilePath)
@@ -105,17 +101,15 @@ func (a *serveAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve shuffle actor: %v", err)
 	}
 
-	srv := NewHTTP(listenAddr, signer, client, dkgActor, shuffleActor,
+	var proxy proxy.Proxy
+	err = ctx.Injector.Resolve(&proxy)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve proxy: %v", err)
+	}
+
+	registerVotingProxy(proxy, signer, client, dkgActor, shuffleActor,
 		orderingSvc, p, m)
-	go func() {
-		ch := make(chan os.Signal, 1)
-		signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 
-		<-ch
-		srv.Stop()
-	}()
-
-	srv.Listen()
 	return nil
 }
 
@@ -193,6 +187,7 @@ type scenarioTestAction struct {
 
 // Execute implements node.ActionTemplate. It creates
 func (a *scenarioTestAction) Execute(ctx node.Context) error {
+	proxyAddr := ctx.Flags.String("proxy-addr")
 
 	var service ordering.Service
 	err := ctx.Injector.Resolve(&service)
@@ -230,7 +225,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		AdminId:          "adminId",
 		Token:            "token",
 		Members:          roster,
-		ShuffleThreshold: 3,
+		ShuffleThreshold: threshold.ByzantineThreshold(len(roster)),
 	}
 
 	js, err := json.Marshal(createSimpleElectionRequest)
@@ -240,7 +235,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Println("create election js:", string(js))
 
-	resp, err := http.Post(url+strconv.Itoa(1000)+createElectionEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err := http.Post(proxyAddr+createElectionEndpoint, "application/json", bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -300,7 +295,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(url+strconv.Itoa(1000)+getElectionInfoEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err = http.Post(proxyAddr+getElectionInfoEndpoint, "application/json", bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -347,7 +342,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(url+strconv.Itoa(1000)+closeElectionEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err = http.Post(proxyAddr+closeElectionEndpoint, "application/json", bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -407,7 +402,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(url+strconv.Itoa(1000)+castVoteEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err = http.Post(proxyAddr+castVoteEndpoint, "application/json", bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -431,7 +426,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(url+strconv.Itoa(1000)+castVoteEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err = http.Post(proxyAddr+castVoteEndpoint, "application/json", bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -455,7 +450,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(url+strconv.Itoa(1000)+castVoteEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err = http.Post(proxyAddr+castVoteEndpoint, "application/json", bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -502,7 +497,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(url+strconv.Itoa(1000)+closeElectionEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err = http.Post(proxyAddr+closeElectionEndpoint, "application/json", bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -548,7 +543,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(url+strconv.Itoa(1000)+shuffleBallotsEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err = http.Post(proxyAddr+shuffleBallotsEndpoint, "application/json", bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -597,7 +592,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(url+strconv.Itoa(1000)+decryptBallotsEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err = http.Post(proxyAddr+decryptBallotsEndpoint, "application/json", bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -644,7 +639,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(url+strconv.Itoa(1000)+getElectionResultEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err = http.Post(proxyAddr+getElectionResultEndpoint, "application/json", bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}

@@ -22,7 +22,7 @@ func TestController_SetCommands(t *testing.T) {
 	require.Equal(t, "serve", call.Get(2, 0))
 	require.Equal(t, "Serve the HTTP server", call.Get(3, 0))
 	require.Len(t, call.Get(4, 0), 1)
-	require.IsType(t, &serveAction{}, call.Get(6, 0))
+	require.IsType(t, &registerAction{}, call.Get(6, 0))
 	require.Nil(t, call.Get(7, 0))
 
 	require.Equal(t, "scenarioTest", call.Get(8, 0))

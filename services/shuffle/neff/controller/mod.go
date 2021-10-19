@@ -14,8 +14,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const signerFilePath = "private.key"
-
 // NewController returns a new controller initializer
 func NewController() node.Initializer {
 	return controller{}
@@ -33,6 +31,11 @@ func (m controller) SetCommands(builder node.Builder) {
 	cmd.SetDescription("interact with the SHUFFLE service")
 
 	sub := cmd.SetSubCommand("init")
+	sub.SetFlags(cli.StringFlag{
+		Name:     "signer",
+		Usage:    "path to the private key",
+		Required: true,
+	})
 	sub.SetDescription("initialize the SHUFFLE protocol")
 	sub.SetAction(builder.MakeAction(&initAction{}))
 }
@@ -64,12 +67,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to resolve blockstore.InDisk: %v", err)
 	}
 
-	signer, _ := getSigner(signerFilePath)
-	// if err != nil {
-	// return xerrors.Errorf("failed to getSigner: %v", err)
-	// }
-
-	neffShuffle := neff.NewNeffShuffle(no, service, p, blocks, signer)
+	neffShuffle := neff.NewNeffShuffle(no, service, p, blocks)
 
 	inj.Inject(neffShuffle)
 
