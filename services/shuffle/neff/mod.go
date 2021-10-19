@@ -149,8 +149,10 @@ func (a *Actor) waitAndCheckShuffling(electionID string) error {
 			return xerrors.Errorf("failed to get election: %v", err)
 		}
 
-		round := len(election.ShuffledBallots)
+		round := len(election.ShuffleInstances)
 		dela.Logger.Info().Msgf("SHUFFLE / ROUND : %d", round)
+
+		//TODO: Check id of shuffler ?
 
 		// if the threshold is reached that means we have enough
 		// shuffling.
@@ -164,10 +166,11 @@ func (a *Actor) waitAndCheckShuffling(electionID string) error {
 	}
 
 	return xerrors.Errorf("threshold of shuffling not reached: %d < %d",
-		len(election.ShuffledBallots), election.ShuffleThreshold)
+		len(election.ShuffleInstances), election.ShuffleThreshold)
 }
 
 // Todo : this is useless in the new implementation, maybe remove ?
+
 // Verify allows to verify a Shuffle
 func (a *Actor) Verify(suiteName string, Ks []kyber.Point, Cs []kyber.Point,
 	pubKey kyber.Point, KsShuffled []kyber.Point, CsShuffled []kyber.Point, prf []byte) (err error) {
