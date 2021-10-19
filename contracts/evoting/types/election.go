@@ -32,21 +32,14 @@ type Election struct {
 	// EncryptedBallots map[string][]byte
 	EncryptedBallots EncryptedBallots
 
-	// ShuffledBallots contains the list of shuffled ciphertext for each
-	// shuffling round.
-	ShuffledBallots []Ciphertexts
-
-	// ShufleProofs is a map from shuffle round to shuffle proofs
-	// ShuffleProofs map[int][]byte
-	ShuffledProofs [][]byte
+	//ShuffleInstances is all the shuffles, along with their proof and identity of shuffler.
+	ShuffleInstances []ShuffleInstance
 
 	DecryptedBallots []Ballot
 	ShuffleThreshold int
 	Members          []CollectiveAuthorityMember
 	Format           string
 }
-
-//TODO: Use the ShuffleInstance in the election struct: We will need a []ShuffleInstance
 
 // ShuffleInstance is an instance of a shuffle, it contains the shuffled ballots, the proofs and the
 // identity of the shuffler.
