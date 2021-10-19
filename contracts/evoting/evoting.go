@@ -222,13 +222,12 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	}
 
 	//Chek the node who submitted the shuffle did not already submit an accepted shuffle
+	shuffler := step.Current.GetIdentity()
 	if shuffleBallotsTransaction.Round > 0 {
-		shuffler := step.Current.GetIdentity()
 		for i, shuffleInstance := range election.ShuffleInstances {
 			if shuffler.Equal(shuffleInstance) { //TODO : Define Equal ?????
 				return xerrors.Errorf("the node %v already submitted a shuffle that has been accepted in round %v", shuffler, i)
 			}
-
 		}
 	}
 
@@ -267,7 +266,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	}
 
 	// append the new shuffled ballots and the proof to the lists
-	election.ShuffleInstances = append(election.ShuffleInstances, types.ShuffleInstance{ShuffledBallots: shuffleBallotsTransaction.ShuffledBallots, ShuffleProofs: shuffleBallotsTransaction.Proof, Shuffler: step.Current.GetIdentity()})
+	election.ShuffleInstances = append(election.ShuffleInstances, types.ShuffleInstance{ShuffledBallots: shuffleBallotsTransaction.ShuffledBallots, ShuffleProofs: shuffleBallotsTransaction.Proof, Shuffler: shuffler})
 
 	// in case we have enough shuffled ballots, we update the status
 	if len(election.ShuffleInstances) >= election.ShuffleThreshold {
