@@ -23,6 +23,7 @@ import (
 const (
 	loginEndpoint               = "/evoting/login"
 	createElectionEndpoint      = "/evoting/create"
+	openElectionEndpoint        = "/evoting/open"
 	castVoteEndpoint            = "/evoting/cast"
 	getAllElectionsIdsEndpoint  = "/evoting/allids"
 	getElectionInfoEndpoint     = "/evoting/info"
@@ -72,6 +73,7 @@ func registerVotingProxy(proxy proxy.Proxy, signer crypto.Signer, client *Client
 
 	proxy.RegisterHandler(loginEndpoint, h.Login)
 	proxy.RegisterHandler(createElectionEndpoint, h.CreateElection)
+	proxy.RegisterHandler(openElectionEndpoint, h.OpenElection)
 	proxy.RegisterHandler(castVoteEndpoint, h.CastVote)
 	proxy.RegisterHandler(getAllElectionsIdsEndpoint, h.ElectionIDs)
 	proxy.RegisterHandler(getElectionInfoEndpoint, h.ElectionInfo)

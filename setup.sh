@@ -41,7 +41,7 @@ echo "${GREEN}[5/7]${NC} init DKG"
 memcoin --config /tmp/node1 dkg init
 memcoin --config /tmp/node2 dkg init
 memcoin --config /tmp/node3 dkg init
-memcoin --config /tmp/node1 dkg setup --member $(memcoin --config /tmp/node1 dkg export) --member $(memcoin --config /tmp/node2 dkg export) --member $(memcoin --config /tmp/node3 dkg export)
+# memcoin --config /tmp/node1 dkg setup --electionID ???
 
 echo "${GREEN}[6/7]${NC} init shuffle"
 memcoin --config /tmp/node1 shuffle init --signer private.key
@@ -51,3 +51,5 @@ memcoin --config /tmp/node3 shuffle init --signer private.key
 echo "${GREEN}[7/7]${NC} starting http proxy"
 memcoin --config /tmp/node1 proxy start --clientaddr 127.0.0.1:8081
 memcoin --config /tmp/node1 e-voting registerHandlers --signer private.key
+
+memcoin --config /tmp/node1 dkg registerHandlers

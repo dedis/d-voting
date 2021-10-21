@@ -21,21 +21,26 @@ type CollectiveAuthorityMember struct {
 }
 
 type CreateElectionRequest struct {
-	Title            string
-	AdminId          string
-	Token            string
-	Members          []CollectiveAuthorityMember
-	ShuffleThreshold int
-	Format           string
+	Title   string
+	AdminID string
+	Token   string
+	Format  string
+}
+
+type OpenElectionRequest struct {
+	// ElectionID is hex-encoded
+	ElectionID string
 }
 
 type CreateElectionResponse struct {
+	// ElectionID is hex-encoded
 	ElectionID string
 }
 
 type CastVoteRequest struct {
+	// ElectionID is hex-encoded
 	ElectionID string
-	UserId     string
+	UserID     string
 	Ballot     Ciphertext
 	Token      string
 }
@@ -100,8 +105,9 @@ func (ct *Ciphertext) FromPoints(k, c kyber.Point) error {
 }
 
 type CloseElectionRequest struct {
+	// ElectionID is hex-encoded
 	ElectionID string
-	UserId     string
+	UserID     string
 	Token      string
 }
 
@@ -109,8 +115,9 @@ type CloseElectionResponse struct {
 }
 
 type ShuffleBallotsRequest struct {
+	// ElectionID is hex-encoded
 	ElectionID string
-	UserId     string
+	UserID     string
 	Token      string
 }
 
@@ -119,8 +126,9 @@ type ShuffleBallotsResponse struct {
 }
 
 type DecryptBallotsRequest struct {
+	// ElectionID is hex-encoded
 	ElectionID string
-	UserId     string
+	UserID     string
 	Token      string
 }
 
@@ -128,6 +136,7 @@ type DecryptBallotsResponse struct {
 }
 
 type GetElectionResultRequest struct {
+	// ElectionID is hex-encoded
 	ElectionID string
 	// UserId   string
 	Token string
@@ -138,12 +147,14 @@ type GetElectionResultResponse struct {
 }
 
 type GetElectionInfoRequest struct {
+	// ElectionID is hex-encoded
 	ElectionID string
 	// UserId string
 	Token string
 }
 
 type GetElectionInfoResponse struct {
+	// ElectionID is hex-encoded
 	ElectionID string
 	Title      string
 	Status     uint16
@@ -162,19 +173,21 @@ type GetAllElectionsInfoResponse struct {
 	AllElectionsInfo []GetElectionInfoResponse
 }
 
-type GetAllElectionsIdsRequest struct {
+type GetAllElectionsIDsRequest struct {
 	// UserId string
 	Token string
 }
 
-type GetAllElectionsIdsResponse struct {
+type GetAllElectionsIDsResponse struct {
 	// UserId         string
-	ElectionsIds []string
+	// ElectionsIDs is a slice of hex-encoded election IDs
+	ElectionsIDs []string
 }
 
 type CancelElectionRequest struct {
+	// ElectionID is hex-encoded
 	ElectionID string
-	UserId     string
+	UserID     string
 	Token      string
 }
 

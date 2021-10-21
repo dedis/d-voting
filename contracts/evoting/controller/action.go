@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -24,7 +25,6 @@ import (
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/core/txn/signed"
-	"go.dedis.ch/dela/cosi/threshold"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/bls"
 	"go.dedis.ch/dela/crypto/ed25519"
@@ -201,31 +201,14 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve actor: %v", err)
 	}
 
-	pubkey, err := dkgActor.GetPublicKey()
-	if err != nil {
-		return xerrors.Errorf("failed to retrieve the public key: %v", err)
-	}
-
-	pubkeyBuf, err := pubkey.MarshalBinary()
-	if err != nil {
-		return xerrors.Errorf("failed to encode pubkey: %v", err)
-	}
-
 	// ###################################### CREATE SIMPLE ELECTION ######
 
 	dela.Logger.Info().Msg("----------------------- CREATE SIMPLE ELECTION : ")
 
-	roster, err := a.readMembers(ctx)
-	if err != nil {
-		return xerrors.Errorf("failed to read roster: %v", err)
-	}
-
 	createSimpleElectionRequest := types.CreateElectionRequest{
-		Title:            "TitleTest",
-		AdminId:          "adminId",
-		Token:            "token",
-		Members:          roster,
-		ShuffleThreshold: threshold.ByzantineThreshold(len(roster)),
+		Title:   "TitleTest",
+		AdminID: "adminId",
+		Token:   "token",
 	}
 
 	js, err := json.Marshal(createSimpleElectionRequest)
@@ -240,6 +223,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return xerrors.Errorf("failed to read the body of the response: %v", err)
@@ -248,45 +236,87 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("Response body : " + string(body))
 	resp.Body.Close()
 
-	createSimpleElectionResponse := new(types.CreateElectionResponse)
+	var electionResponse types.CreateElectionResponse
 
-	err = json.NewDecoder(bytes.NewBuffer(body)).Decode(createSimpleElectionResponse)
+	err = json.Unmarshal(body, &electionResponse)
 	if err != nil {
-		return xerrors.Errorf("failed to set unmarshal CastVoteTransaction : %v", err)
+		return xerrors.Errorf("failed to unmarshal create election response: %v", err)
 	}
 
-	electionId := createSimpleElectionResponse.ElectionID
+	electionID := electionResponse.ElectionID
 
-	electionIDBuff, err := hex.DecodeString(createSimpleElectionResponse.ElectionID)
+	electionIDBuf, err := hex.DecodeString(electionID)
 	if err != nil {
 		return xerrors.Errorf("failed to decode electionID: %v", err)
 	}
 
-	proof, err := service.GetProof(electionIDBuff)
+	proof, err := service.GetProof(electionIDBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to read on the blockchain: %v", err)
 	}
 
 	dela.Logger.Info().Msg("Proof : " + string(proof.GetValue()))
+
 	election := new(types.Election)
 	err = json.NewDecoder(bytes.NewBuffer(proof.GetValue())).Decode(election)
 	if err != nil {
 		return xerrors.Errorf("failed to unmarshal SimpleElection : %v", err)
 	}
 
+	// sanity check, the electionID returned and the one stored in the election
+	// type must be the same.
+	if election.ElectionID != electionID {
+		return xerrors.Errorf("electionID mismatch: %s != %s", election.ElectionID, electionID)
+	}
+
 	dela.Logger.Info().Msg("Title of the election : " + election.Title)
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
-	dela.Logger.Info().Msg("Admin Id of the election : " + election.AdminId)
+	dela.Logger.Info().Msg("Admin Id of the election : " + election.AdminID)
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 
-	// ##################################### CREATE SIMPLE ELECTION ############
+	// ##################################### SETUP DKG #########################
+
+	resp, err = http.Post(proxyAddr+"/evoting/dkg", "application/json", bytes.NewBuffer([]byte(electionID)))
+	if err != nil {
+		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
+
+	pubkeyBuf, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return xerrors.Errorf("failed to read body: %v", err)
+	}
+
+	pubKey := suite.Point()
+	err = pubKey.UnmarshalBinary(pubkeyBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to unmarshal pubkey: %v", err)
+	}
+
+	fmt.Printf("Pubkey: %v\n", pubKey)
+
+	// ##################################### OPEN ELECTION #####################
+
+	resp, err = http.Post(proxyAddr+"/evoting/open", "application/json", bytes.NewBuffer([]byte(electionID)))
+	if err != nil {
+		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
 
 	// ##################################### GET ELECTION INFO #################
 
 	dela.Logger.Info().Msg("----------------------- GET ELECTION INFO : ")
 
 	getElectionInfoRequest := types.GetElectionInfoRequest{
-		ElectionID: electionId,
+		ElectionID: electionID,
 		Token:      token,
 	}
 
@@ -300,6 +330,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
+
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return xerrors.Errorf("failed to read the body of the response: %v", err)
@@ -308,7 +343,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("Response body : " + string(body))
 	resp.Body.Close()
 
-	proof, err = service.GetProof(electionIDBuff)
+	proof, err = service.GetProof(electionIDBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to read on the blockchain: %v", err)
 	}
@@ -322,7 +357,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("Title of the election : " + election.Title)
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
-	dela.Logger.Info().Msg("Pubkey of the election : " + string(election.Pubkey))
+	dela.Logger.Info().Msgf("Pubkey of the election : %x", election.Pubkey)
 	dela.Logger.Info().
 		Hex("DKG public key", pubkeyBuf).
 		Msg("DKG public key")
@@ -332,8 +367,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("----------------------- CLOSE ELECTION : ")
 
 	closeElectionRequest := types.CloseElectionRequest{
-		ElectionID: electionId,
-		UserId:     "adminId",
+		ElectionID: electionID,
+		UserID:     "adminId",
 		Token:      token,
 	}
 
@@ -347,6 +382,13 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
 
+	// Expecting an error since there must be at least two ballots before
+	// closing
+	if resp.StatusCode != http.StatusInternalServerError {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
+
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return xerrors.Errorf("failed to read the body of the response: %v", err)
@@ -355,7 +397,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("Response body : " + string(body))
 	resp.Body.Close()
 
-	proof, err = service.GetProof(electionIDBuff)
+	proof, err = service.GetProof(electionIDBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to read on the blockchain: %v", err)
 	}
@@ -368,7 +410,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	dela.Logger.Info().Msg("Title of the election : " + election.Title)
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
-	dela.Logger.Info().Msg("Admin Id of the election : " + election.AdminId)
+	dela.Logger.Info().Msg("Admin Id of the election : " + election.AdminID)
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 
 	// ##################################### CAST BALLOTS ######################
@@ -391,8 +433,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	castVoteRequest := types.CastVoteRequest{
-		ElectionID: electionId,
-		UserId:     "user1",
+		ElectionID: electionID,
+		UserID:     "user1",
 		Ballot:     ballot1,
 		Token:      token,
 	}
@@ -407,6 +449,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
+
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return xerrors.Errorf("failed to read the body of the response: %v", err)
@@ -415,8 +462,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	resp.Body.Close()
 
 	castVoteRequest = types.CastVoteRequest{
-		ElectionID: electionId,
-		UserId:     "user2",
+		ElectionID: electionID,
+		UserID:     "user2",
 		Ballot:     ballot2,
 		Token:      token,
 	}
@@ -431,6 +478,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
+
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return xerrors.Errorf("failed to read the body of the response: %v", err)
@@ -439,8 +491,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	resp.Body.Close()
 
 	castVoteRequest = types.CastVoteRequest{
-		ElectionID: electionId,
-		UserId:     "user3",
+		ElectionID: electionID,
+		UserID:     "user3",
 		Ballot:     ballot3,
 		Token:      token,
 	}
@@ -455,6 +507,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
+
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return xerrors.Errorf("failed to read the body of the response: %v", err)
@@ -462,7 +519,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("Response body : " + string(body))
 	resp.Body.Close()
 
-	proof, err = service.GetProof(electionIDBuff)
+	proof, err = service.GetProof(electionIDBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to read on the blockchain: %v", err)
 	}
@@ -487,8 +544,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("----------------------- CLOSE ELECTION : ")
 
 	closeElectionRequest = types.CloseElectionRequest{
-		ElectionID: electionId,
-		UserId:     "adminId",
+		ElectionID: electionID,
+		UserID:     "adminId",
 		Token:      token,
 	}
 
@@ -502,6 +559,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
+
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return xerrors.Errorf("failed to read the body of the response: %v", err)
@@ -510,7 +572,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("Response body : " + string(body))
 	resp.Body.Close()
 
-	proof, err = service.GetProof(electionIDBuff)
+	proof, err = service.GetProof(electionIDBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to read on the blockchain: %v", err)
 	}
@@ -523,7 +585,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	dela.Logger.Info().Msg("Title of the election : " + election.Title)
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
-	dela.Logger.Info().Msg("Admin Id of the election : " + election.AdminId)
+	dela.Logger.Info().Msg("Admin Id of the election : " + election.AdminID)
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 
 	// ##################################### CLOSE ELECTION ####################
@@ -533,8 +595,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("----------------------- SHUFFLE BALLOTS : ")
 
 	shuffleBallotsRequest := types.ShuffleBallotsRequest{
-		ElectionID: electionId,
-		UserId:     "adminId",
+		ElectionID: electionID,
+		UserID:     "adminId",
 		Token:      token,
 	}
 
@@ -548,6 +610,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
+
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return xerrors.Errorf("failed to read the body of the response: %v", err)
@@ -558,7 +625,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	// time.Sleep(20 * time.Second)
 
-	proof, err = service.GetProof(electionIDBuff)
+	proof, err = service.GetProof(electionIDBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to read on the blockchain: %v", err)
 	}
@@ -582,8 +649,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("----------------------- DECRYPT BALLOTS : ")
 
 	decryptBallotsRequest := types.DecryptBallotsRequest{
-		ElectionID: electionId,
-		UserId:     "adminId",
+		ElectionID: electionID,
+		UserID:     "adminId",
 		Token:      token,
 	}
 
@@ -597,6 +664,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
+
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return xerrors.Errorf("failed to read the body of the response: %v", err)
@@ -605,7 +677,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("Response body : " + string(body))
 	resp.Body.Close()
 
-	proof, err = service.GetProof(electionIDBuff)
+	proof, err = service.GetProof(electionIDBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to read on the blockchain: %v", err)
 	}
@@ -630,7 +702,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("----------------------- GET ELECTION RESULT : ")
 
 	getElectionResultRequest := types.GetElectionResultRequest{
-		ElectionID: electionId,
+		ElectionID: electionID,
 		Token:      token,
 	}
 
@@ -644,6 +716,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
+
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return xerrors.Errorf("failed to read the body of the response: %v", err)
@@ -652,7 +729,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("Response body : " + string(body))
 	resp.Body.Close()
 
-	proof, err = service.GetProof(electionIDBuff)
+	proof, err = service.GetProof(electionIDBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to read on the blockchain: %v", err)
 	}

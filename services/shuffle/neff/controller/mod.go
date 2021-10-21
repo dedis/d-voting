@@ -5,8 +5,10 @@ import (
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
 	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/cosi"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/bls"
 	"go.dedis.ch/dela/crypto/loader"
@@ -49,6 +51,12 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to resolve mino.Mino: %v", err)
 	}
 
+	var cosi cosi.CollectiveSigning
+	err = inj.Resolve(&cosi)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve cosi.CollectiveSigning: %v", err)
+	}
+
 	var p pool.Pool
 	err = inj.Resolve(&p)
 	if err != nil {
@@ -67,7 +75,13 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to resolve blockstore.InDisk: %v", err)
 	}
 
-	neffShuffle := neff.NewNeffShuffle(no, service, p, blocks)
+	var rosterFac authority.Factory
+	err = inj.Resolve(&rosterFac)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve authority.Factory")
+	}
+
+	neffShuffle := neff.NewNeffShuffle(no, service, p, blocks, rosterFac)
 
 	inj.Inject(neffShuffle)
 

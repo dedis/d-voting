@@ -16,9 +16,8 @@ type Shuffle interface {
 type Actor interface {
 
 	// Shuffle must be called by ONE of the actor to shuffle the list of ElGamal
-	// pairs.
-	// Each node represented by a player must first execute Listen().
-	Shuffle(co crypto.CollectiveAuthority, electionId string) (err error)
+	// pairs. Each node represented by a player must first execute Listen().
+	Shuffle(electionID []byte) (err error)
 
 	// Verify allows to verify a shuffle
 	Verify(suiteName string, Ks []kyber.Point, Cs []kyber.Point, pubKey kyber.Point, KsShuffled []kyber.Point,

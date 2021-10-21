@@ -45,11 +45,6 @@ func (m controller) SetCommands(builder node.Builder) {
 	sub = cmd.SetSubCommand("scenarioTest")
 	sub.SetDescription("evoting scenario test")
 	sub.SetFlags(
-		cli.StringSliceFlag{
-			Name:     "member",
-			Usage:    "nodes participating in Shuffle",
-			Required: true,
-		},
 		cli.StringFlag{
 			Name:  "proxy-addr",
 			Usage: "base address of the proxy",
@@ -78,7 +73,7 @@ type Client struct {
 }
 
 // GetNonce implements signed.Client
-func (c *Client) GetNonce(access.Identity) (uint64, error) {
+func (c *Client) GetNonce(id access.Identity) (uint64, error) {
 	blockLink, err := c.Blocks.Last()
 	if err != nil {
 		return 0, xerrors.Errorf("failed to fetch last block: %v", err)

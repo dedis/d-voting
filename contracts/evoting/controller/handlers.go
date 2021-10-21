@@ -2,17 +2,16 @@ package controller
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	uuid "github.com/satori/go.uuid"
-	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
-	"go.dedis.ch/dela/crypto"
-	"go.dedis.ch/dela/mino"
 	"golang.org/x/xerrors"
 )
 
@@ -43,18 +42,10 @@ func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	electionID, err := types.RandomID()
-	if err != nil {
-		http.Error(w, "failed to create id: "+err.Error(), http.StatusInternalServerError)
-	}
-
 	createElectionTransaction := types.CreateElectionTransaction{
-		ElectionID:       electionID,
-		Title:            createElectionRequest.Title,
-		AdminId:          createElectionRequest.AdminId,
-		ShuffleThreshold: createElectionRequest.ShuffleThreshold,
-		Members:          createElectionRequest.Members,
-		Format:           createElectionRequest.Format,
+		Title:   createElectionRequest.Title,
+		AdminID: createElectionRequest.AdminID,
+		Format:  createElectionRequest.Format,
 	}
 
 	payload, err := json.Marshal(createElectionTransaction)
@@ -63,14 +54,18 @@ func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCreateElection, evoting.CreateElectionArg, payload)
+	txID, err := h.submitAndWaitForTxn(r.Context(), evoting.CmdCreateElection, evoting.CreateElectionArg, payload)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	hash := sha256.New()
+	hash.Write(txID)
+	electionID := hash.Sum(nil)
+
 	response := types.CreateElectionResponse{
-		ElectionID: electionID,
+		ElectionID: hex.EncodeToString(electionID),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -79,6 +74,42 @@ func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to write in ResponseWriter: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+// OpenElection allows opening an election, which sets the public key based on
+// the DKG actor.
+// Body: hex-encoded electionID
+func (h *votingProxy) OpenElection(w http.ResponseWriter, r *http.Request) {
+	electionIDHex, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "failed to read body: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// sanity check that this is a well hex-encoded string
+	_, err = hex.DecodeString(string(electionIDHex))
+	if err != nil {
+		http.Error(w, "failed to decode electionID: "+string(electionIDHex), http.StatusBadRequest)
+		return
+	}
+
+	openElecTransaction := types.OpenElectionTransaction{
+		ElectionID: string(electionIDHex),
+	}
+
+	payload, err := json.Marshal(openElecTransaction)
+	if err != nil {
+		http.Error(w, "failed to marshal OpenElectionTransaction: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdOpenElection, evoting.OpenElectionArg, payload)
+	if err != nil {
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 }
 
 // CastVote is used to cast a vote in an election.
@@ -91,7 +122,7 @@ func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if castVoteRequest.Token != token {
-		http.Error(w, "fnvalid token", http.StatusUnauthorized)
+		http.Error(w, "invalid token", http.StatusUnauthorized)
 		return
 	}
 
@@ -101,14 +132,16 @@ func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !contains(electionsMetadata.ElectionsIds, castVoteRequest.ElectionID) {
+	fmt.Println("election metadata:", electionsMetadata, castVoteRequest.ElectionID)
+
+	if !electionsMetadata.ElectionsIDs.Contains(castVoteRequest.ElectionID) {
 		http.Error(w, "the election does not exist", http.StatusNotFound)
 		return
 	}
 
 	castVoteTransaction := types.CastVoteTransaction{
 		ElectionID: castVoteRequest.ElectionID,
-		UserId:     castVoteRequest.UserId,
+		UserID:     castVoteRequest.UserID,
 		Ballot:     castVoteRequest.Ballot,
 	}
 
@@ -118,7 +151,7 @@ func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCastVote, evoting.CastVoteArg, payload)
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCastVote, evoting.CastVoteArg, payload)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -136,8 +169,8 @@ func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
 
 // ElectionIDs returns a list of all election IDs.
 func (h *votingProxy) ElectionIDs(w http.ResponseWriter, r *http.Request) {
-	getAllElectionsIdsRequest := &types.GetAllElectionsIdsRequest{}
-	err := json.NewDecoder(r.Body).Decode(getAllElectionsIdsRequest)
+	getAllElectionsIDsRequest := &types.GetAllElectionsIDsRequest{}
+	err := json.NewDecoder(r.Body).Decode(getAllElectionsIDsRequest)
 	if err != nil {
 		http.Error(w, "failed to decode GetElectionInfoRequest: "+err.Error(), http.StatusBadRequest)
 		return
@@ -149,7 +182,7 @@ func (h *votingProxy) ElectionIDs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := types.GetAllElectionsIdsResponse{ElectionsIds: electionsMetadata.ElectionsIds}
+	response := types.GetAllElectionsIDsResponse{ElectionsIDs: electionsMetadata.ElectionsIDs}
 
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
@@ -174,7 +207,7 @@ func (h *votingProxy) ElectionInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !contains(electionsMetadata.ElectionsIds, getElectionInfoRequest.ElectionID) {
+	if !contains(electionsMetadata.ElectionsIDs, getElectionInfoRequest.ElectionID) {
 		http.Error(w, "the election does not exist", http.StatusNotFound)
 		return
 	}
@@ -230,9 +263,9 @@ func (h *votingProxy) AllElectionInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	allElectionsInfo := make([]types.GetElectionInfoResponse, 0, len(electionsMetadata.ElectionsIds))
+	allElectionsInfo := make([]types.GetElectionInfoResponse, 0, len(electionsMetadata.ElectionsIDs))
 
-	for _, id := range electionsMetadata.ElectionsIds {
+	for _, id := range electionsMetadata.ElectionsIDs {
 		electionIDBuff, err := hex.DecodeString(id)
 		if err != nil {
 			http.Error(w, "failed to decode electionID: "+err.Error(), http.StatusInternalServerError)
@@ -289,14 +322,14 @@ func (h *votingProxy) CloseElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !contains(electionsMetadata.ElectionsIds, closeElectionRequest.ElectionID) {
+	if !contains(electionsMetadata.ElectionsIDs, closeElectionRequest.ElectionID) {
 		http.Error(w, "the election does not exist", http.StatusNotFound)
 		return
 	}
 
 	closeElectionTransaction := types.CloseElectionTransaction{
 		ElectionID: closeElectionRequest.ElectionID,
-		UserId:     closeElectionRequest.UserId,
+		UserID:     closeElectionRequest.UserID,
 	}
 
 	payload, err := json.Marshal(closeElectionTransaction)
@@ -305,7 +338,7 @@ func (h *votingProxy) CloseElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCloseElection, evoting.CloseElectionArg, payload)
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCloseElection, evoting.CloseElectionArg, payload)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -335,7 +368,7 @@ func (h *votingProxy) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !contains(electionsMetadata.ElectionsIds, shuffleBallotsRequest.ElectionID) {
+	if !contains(electionsMetadata.ElectionsIDs, shuffleBallotsRequest.ElectionID) {
 		http.Error(w, "the election does not exist", http.StatusNotFound)
 		return
 	}
@@ -369,36 +402,19 @@ func (h *votingProxy) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if election.AdminId != shuffleBallotsRequest.UserId {
+	if election.AdminID != shuffleBallotsRequest.UserID {
 		http.Error(w, "only the admin can shuffle the ballots !", http.StatusUnauthorized)
 		return
 	}
 
-	addrs := make([]mino.Address, len(election.Members))
-	pubkeys := make([]crypto.PublicKey, len(election.Members))
-
-	for i, member := range election.Members {
-		addr, pubkey, err := decodeMember(member.Address, member.PublicKey, h.mino)
-		if err != nil {
-			http.Error(w, "failed to decode CollectiveAuthorityMember: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		addrs[i] = addr
-		pubkeys[i] = pubkey
-	}
-
-	collectiveAuthority := authority.New(addrs, pubkeys)
-
-	err = h.shuffleActor.Shuffle(collectiveAuthority, string(election.ElectionID))
-
+	err = h.shuffleActor.Shuffle(electionIDBuff)
 	if err != nil {
 		http.Error(w, "failed to shuffle: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	response := types.ShuffleBallotsResponse{
-		Message: fmt.Sprintf("shuffle started for nodes %v", addrs),
+		Message: fmt.Sprintf("shuffle started"),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -424,7 +440,7 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !contains(electionsMetadata.ElectionsIds, decryptBallotsRequest.ElectionID) {
+	if !contains(electionsMetadata.ElectionsIDs, decryptBallotsRequest.ElectionID) {
 		http.Error(w, "The election does not exist", http.StatusNotFound)
 		return
 	}
@@ -453,7 +469,7 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if election.AdminId != decryptBallotsRequest.UserId {
+	if election.AdminID != decryptBallotsRequest.UserID {
 		http.Error(w, "only the admin can decrypt the ballots!", http.StatusUnauthorized)
 		return
 	}
@@ -467,7 +483,7 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffledBallots))
 
 	for i := 0; i < len(ks); i++ {
-		message, err := h.dkgActor.Decrypt(ks[i], cs[i], string(election.ElectionID))
+		message, err := h.dkgActor.Decrypt(ks[i], cs[i], electionIDBuff)
 		if err != nil {
 			http.Error(w, "failed to decrypt (K,C): "+err.Error(), http.StatusInternalServerError)
 			return
@@ -478,7 +494,7 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 
 	decryptBallotsTransaction := types.DecryptBallotsTransaction{
 		ElectionID:       decryptBallotsRequest.ElectionID,
-		UserId:           decryptBallotsRequest.UserId,
+		UserID:           decryptBallotsRequest.UserID,
 		DecryptedBallots: decryptedBallots,
 	}
 
@@ -488,7 +504,7 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.submitAndWaitForTxn(r.Context(), evoting.CmdDecryptBallots, evoting.DecryptBallotsArg, payload)
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdDecryptBallots, evoting.DecryptBallotsArg, payload)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -518,7 +534,7 @@ func (h *votingProxy) ElectionResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !contains(electionsMetadata.ElectionsIds, getElectionResultRequest.ElectionID) {
+	if !contains(electionsMetadata.ElectionsIDs, getElectionResultRequest.ElectionID) {
 		http.Error(w, "The election does not exist", http.StatusNotFound)
 		return
 	}
@@ -571,14 +587,14 @@ func (h *votingProxy) CancelElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !contains(electionsMetadata.ElectionsIds, cancelElectionRequest.ElectionID) {
+	if !contains(electionsMetadata.ElectionsIDs, cancelElectionRequest.ElectionID) {
 		http.Error(w, "the election does not exist", http.StatusNotFound)
 		return
 	}
 
 	cancelElectionTransaction := types.CancelElectionTransaction{
 		ElectionID: cancelElectionRequest.ElectionID,
-		UserId:     cancelElectionRequest.UserId,
+		UserID:     cancelElectionRequest.UserID,
 	}
 
 	payload, err := json.Marshal(cancelElectionTransaction)
@@ -587,7 +603,7 @@ func (h *votingProxy) CancelElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCancelElection, evoting.CancelElectionArg, payload)
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCancelElection, evoting.CancelElectionArg, payload)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -602,8 +618,10 @@ func (h *votingProxy) CancelElection(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// submitAndWaitForTxn submits a transaction and waits for it to be included.
+// Returns the transaction ID.
 func (h *votingProxy) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
-	cmdArg string, payload []byte) error {
+	cmdArg string, payload []byte) ([]byte, error) {
 	h.Lock()
 	defer h.Unlock()
 
@@ -611,12 +629,12 @@ func (h *votingProxy) submitAndWaitForTxn(ctx context.Context, cmd evoting.Comma
 
 	err := manager.Sync()
 	if err != nil {
-		return xerrors.Errorf("failed to sync manager: %v", err)
+		return nil, xerrors.Errorf("failed to sync manager: %v", err)
 	}
 
 	tx, err := createTransaction(manager, cmd, cmdArg, payload)
 	if err != nil {
-		return xerrors.Errorf("failed to create transaction: %v", err)
+		return nil, xerrors.Errorf("failed to create transaction: %v", err)
 	}
 
 	watchCtx, cancel := context.WithTimeout(ctx, inclusionTimeout)
@@ -626,13 +644,13 @@ func (h *votingProxy) submitAndWaitForTxn(ctx context.Context, cmd evoting.Comma
 
 	err = h.pool.Add(tx)
 	if err != nil {
-		return xerrors.Errorf("failed to add transaction to the pool: %v", err)
+		return nil, xerrors.Errorf("failed to add transaction to the pool: %v", err)
 	}
 
 	ok := h.waitForTxnID(events, tx.GetID())
 	if !ok {
-		return xerrors.Errorf("transaction not processed within timeout")
+		return nil, xerrors.Errorf("transaction not processed within timeout")
 	}
 
-	return nil
+	return tx.GetID(), nil
 }
