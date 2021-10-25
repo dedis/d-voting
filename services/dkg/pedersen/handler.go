@@ -215,7 +215,7 @@ func (h *Handler) start(start types.Start, receivedDeals []types.Deal,
 			"pubKey: %d := %d", len(start.GetAddresses()), len(start.GetPublicKeys()))
 	}
 
-	// 1. Create the DKG
+	// create the DKG
 	threshold := threshold.ByzantineThreshold(len(start.GetPublicKeys()))
 	d, err := pedersen.NewDistKeyGenerator(suite, h.privKey, start.GetPublicKeys(), threshold)
 	if err != nil {
@@ -223,7 +223,7 @@ func (h *Handler) start(start types.Start, receivedDeals []types.Deal,
 	}
 	h.dkg = d
 
-	// 2. Send my Deals to the other nodes
+	// send my Deals to the other nodes
 	deals, err := d.Deals()
 	if err != nil {
 		return xerrors.Errorf("failed to compute the deals: %v", err)

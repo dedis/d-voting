@@ -16,7 +16,7 @@ type DKG interface {
 
 // Actor defines the primitives to use a DKG protocol
 type Actor interface {
-	// Setup must be first called by ONE of the actor to use the subsequent
+	// Setup must be first called by ONE of the actors to use the subsequent
 	// functions. It creates the public distributed key and the private share on
 	// each node. Each node represented by a player must first execute Listen().
 	Setup(electionID []byte) (pubKey kyber.Point, err error)
