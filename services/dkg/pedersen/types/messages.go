@@ -20,8 +20,6 @@ func RegisterMessageFormat(c serde.Format, f serde.FormatEngine) {
 //
 // - implements serde.Message
 type Start struct {
-	// threshold
-	thres int
 	// the full list of addresses that will participate in the DKG
 	addresses []mino.Address
 	// the corresponding kyber.Point pub keys of the addresses
@@ -29,17 +27,11 @@ type Start struct {
 }
 
 // NewStart creates a new start message.
-func NewStart(thres int, addrs []mino.Address, pubkeys []kyber.Point) Start {
+func NewStart(addrs []mino.Address, pubkeys []kyber.Point) Start {
 	return Start{
-		thres:     thres,
 		addresses: addrs,
 		pubkeys:   pubkeys,
 	}
-}
-
-// GetThreshold returns the threshold.
-func (s Start) GetThreshold() int {
-	return s.thres
 }
 
 // GetAddresses returns the list of addresses.
@@ -373,4 +365,58 @@ func (f MessageFactory) Deserialize(ctx serde.Context, data []byte) (serde.Messa
 	}
 
 	return msg, nil
+}
+
+// GetPeerPubKey ...
+//
+// - implements serde.Message
+type GetPeerPubKey struct {
+}
+
+// NewGetPeerPubKey creates a new get peer pubkey message.
+func NewGetPeerPubKey() GetPeerPubKey {
+	return GetPeerPubKey{}
+}
+
+// Serialize implements serde.Message.
+func (s GetPeerPubKey) Serialize(ctx serde.Context) ([]byte, error) {
+	format := msgFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, s)
+	if err != nil {
+		return nil, xerrors.Errorf("couldn't encode GetPeerPubKey: %v", err)
+	}
+
+	return data, nil
+}
+
+// GetPeerPubKeyResp ...
+//
+// - implements serde.Message
+type GetPeerPubKeyResp struct {
+	pubkey kyber.Point
+}
+
+// NewGetPeerPubKeyResp creates a new get peer pubkey message.
+func NewGetPeerPubKeyResp(pubkey kyber.Point) GetPeerPubKeyResp {
+	return GetPeerPubKeyResp{
+		pubkey: pubkey,
+	}
+}
+
+// Serialize implements serde.Message.
+func (s GetPeerPubKeyResp) Serialize(ctx serde.Context) ([]byte, error) {
+	format := msgFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, s)
+	if err != nil {
+		return nil, xerrors.Errorf("couldn't encode GetPeerPubKeyResp: %v", err)
+	}
+
+	return data, nil
+}
+
+// GetPublicKey returns the public key of the LTS.
+func (s GetPeerPubKeyResp) GetPublicKey() kyber.Point {
+	return s.pubkey
 }

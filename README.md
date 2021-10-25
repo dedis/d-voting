@@ -44,13 +44,20 @@ Then you should be able to run the setup script:
 ./setup.sh
 ```
 
-This script will block once the http server is started.
-
-In case you want to restart with a fresh state, do not forget to remove the
-node's data:
+This script will setup the nodes and services. If you restart do not forget to
+remove the old state:
 
 ```
 rm -rf /tmp/node*
+```
+
+# Run the scenario test
+
+If nodes are running and `setup.sh` has been called, you can run a test
+scenario:
+
+```
+LLVL=info memcoin --config /tmp/node1 e-voting scenarioTest
 ```
 
 # Use the frontend

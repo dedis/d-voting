@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-	"strconv"
+	"fmt"
 	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting"
@@ -20,14 +20,13 @@ import (
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
-	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/proof"
 	shuffleKyber "go.dedis.ch/kyber/v3/shuffle"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 )
 
-const shuffleTransactionTimeout = time.Second * 1
+const watchTimeout = time.Second * 2
 
 // const endShuffleTimeout = time.Second * 50
 
@@ -66,14 +65,14 @@ func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 		return xerrors.Errorf("failed to receive: %v", err)
 	}
 
-	switch msg := msg.(type) {
+	dela.Logger.Info().Msgf("message received from: %v", from)
 
+	switch msg := msg.(type) {
 	case types.StartShuffle:
-		err := h.HandleStartShuffleMessage(msg, from, out, in)
+		err := h.handleStartShuffle(msg.GetElectionId())
 		if err != nil {
 			return xerrors.Errorf("failed to handle StartShuffle message: %v", err)
 		}
-
 	default:
 		return xerrors.Errorf("expected StartShuffle message, got: %T", msg)
 	}
@@ -81,243 +80,178 @@ func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 	return nil
 }
 
-func (h *Handler) HandleStartShuffleMessage(startShuffleMessage types.StartShuffle, from mino.Address, out mino.Sender,
-	in mino.Receiver) error {
-
+func (h *Handler) handleStartShuffle(electionID string) error {
 	dela.Logger.Info().Msg("Starting the neff shuffle protocol ...")
+	manager := getManager(h.signer, h.client)
 
-	dela.Logger.Info().Msg("SHUFFLE / RECEIVED FROM  : " + from.String())
-
-	election, err := h.getElection(startShuffleMessage)
-	if err != nil {
-		return xerrors.Errorf("failed to get election: %v", err)
-	}
-
-	for round := 1; round <= election.ShuffleThreshold; round++ {
-		dela.Logger.Info().Msgf("SHUFFLE / ROUND : %d", round)
-
-		election, err := h.getElection(startShuffleMessage)
+	// loop until the threshold is reached or our transaction has been accepted
+	for {
+		election, err := getElection(h.service, electionID)
 		if err != nil {
 			return xerrors.Errorf("failed to get election: %v", err)
 		}
 
+		round := len(election.ShuffledBallots)
+
+		// check if the threshold is reached
+		if round >= election.ShuffleThreshold {
+			dela.Logger.Info().Msgf("shuffle done with round n°%d", round)
+			return nil
+		}
+
 		if election.Status != electionTypes.Closed {
-			return xerrors.Errorf("the election must be closed")
+			return xerrors.Errorf("the election must be closed: %s", election.Status)
 		}
 
-		encryptedBallotsMap := election.EncryptedBallots
-
-		encryptedBallots := make([][]byte, 0, len(encryptedBallotsMap))
-
-		if round == 1 {
-			for _, value := range encryptedBallotsMap {
-				encryptedBallots = append(encryptedBallots, value)
-			}
-		} else {
-			if len(election.ShuffledBallots[round-1]) != len(encryptedBallotsMap) {
-				return xerrors.Errorf("the election must be closed")
-			}
-			encryptedBallots = election.ShuffledBallots[round-1]
-		}
-
-		Ks := make([]kyber.Point, 0, len(encryptedBallotsMap))
-		Cs := make([]kyber.Point, 0, len(encryptedBallotsMap))
-
-		for _, v := range encryptedBallots {
-			ciphertext := new(electionTypes.Ciphertext)
-			err = json.NewDecoder(bytes.NewBuffer(v)).Decode(ciphertext)
-			if err != nil {
-				return xerrors.Errorf("failed to unmarshal Ciphertext: %v", err)
-			}
-
-			K := suite.Point()
-			err = K.UnmarshalBinary(ciphertext.K)
-			if err != nil {
-				return xerrors.Errorf("failed to unmarshal K: %v", err)
-			}
-
-			C := suite.Point()
-			err = C.UnmarshalBinary(ciphertext.C)
-			if err != nil {
-				return xerrors.Errorf("failed to unmarshal C: %v", err)
-			}
-
-			Ks = append(Ks, K)
-			Cs = append(Cs, C)
-		}
-
-		pubKey := suite.Point()
-		err = pubKey.UnmarshalBinary(election.Pubkey)
+		tx, err := makeTx(election, manager)
 		if err != nil {
-			return xerrors.Errorf("couldn't unmarshal public key: %v", err)
+			return xerrors.Errorf("failed to make tx: %v", err)
 		}
 
-		rand := suite.RandomStream()
-		Kbar, Cbar, prover := shuffleKyber.Shuffle(suite, nil, pubKey, Ks, Cs, rand)
-		shuffleProof, err := proof.HashProve(suite, protocolName, prover)
-		if err != nil {
-			return xerrors.Errorf("Shuffle proof failed: %v", err.Error())
-		}
-
-		shuffledBallots := make([][]byte, 0, len(Kbar))
-
-		for i := 0; i < len(Kbar); i++ {
-
-			kMarshalled, err := Kbar[i].MarshalBinary()
-			if err != nil {
-				return xerrors.Errorf("failed to marshall kyber.Point: %v", err.Error())
-			}
-
-			cMarshalled, err := Cbar[i].MarshalBinary()
-			if err != nil {
-				return xerrors.Errorf("failed to marshall kyber.Point: %v", err.Error())
-			}
-
-			ciphertext := electionTypes.Ciphertext{K: kMarshalled, C: cMarshalled}
-			js, err := json.Marshal(ciphertext)
-			if err != nil {
-				return xerrors.Errorf("failed to marshall Ciphertext: %v", err.Error())
-			}
-
-			shuffledBallots = append(shuffledBallots, js)
-
-		}
-
-		manager := getManager(h.signer, h.client)
-
-		err = manager.Sync()
-		if err != nil {
-			return xerrors.Errorf("failed to sync manager: %v", err.Error())
-		}
-
-		shuffleBallotsTransaction := electionTypes.ShuffleBallotsTransaction{
-			ElectionID:      startShuffleMessage.GetElectionId(),
-			Round:           round,
-			ShuffledBallots: shuffledBallots,
-			Proof:           shuffleProof,
-		}
-
-		js, err := json.Marshal(shuffleBallotsTransaction)
-		if err != nil {
-			return xerrors.Errorf("failed to marshal ShuffleBallotsTransaction: %v", err.Error())
-		}
-
-		args := make([]txn.Arg, 3)
-		args[0] = txn.Arg{
-			Key:   native.ContractArg,
-			Value: []byte(evoting.ContractName),
-		}
-		args[1] = txn.Arg{
-			Key:   evoting.CmdArg,
-			Value: []byte(evoting.CmdShuffleBallots),
-		}
-		args[2] = txn.Arg{
-			Key:   evoting.ShuffleBallotsArg,
-			Value: js,
-		}
-
-		tx, err := manager.Make(args...)
-		if err != nil {
-			return xerrors.Errorf("failed to make transaction: %v", err.Error())
-		}
-		dela.Logger.Info().Msg("TRANSACTION NONCE : " + strconv.Itoa(int(tx.GetNonce())))
-		watchCtx, cancel := context.WithTimeout(context.Background(), shuffleTransactionTimeout)
-
-		err = h.p.Add(tx)
+		watchCtx, cancel := context.WithTimeout(context.Background(), watchTimeout)
+		defer cancel()
 
 		events := h.service.Watch(watchCtx)
 
-		// err = h.p.Add(tx)
+		dela.Logger.Info().Msgf("sending shuffling tx with nonce %d", tx.GetNonce())
+
+		err = h.p.Add(tx)
 		if err != nil {
-			cancel()
 			return xerrors.Errorf("failed to add transaction to the pool: %v", err.Error())
 		}
-		notAccepted := false
 
-	loopTxs:
-		for event := range events {
-			for _, res := range event.Transactions {
-				if !bytes.Equal(res.GetTransaction().GetID(), tx.GetID()) {
-					continue
-				}
-
-				dela.Logger.Info().
-					Hex("id", tx.GetID()).
-					Msg("transaction included in the block")
-
-				accepted, msg := res.GetStatus()
-
-				if !accepted {
-					notAccepted = true
-					dela.Logger.Info().Msg("Denied : " + msg)
-					break loopTxs
-				} else {
-					dela.Logger.Info().Msg("ACCEPTED")
-
-					if round == election.ShuffleThreshold {
-						message := types.EndShuffle{}
-						addrs := make([]mino.Address, 0, len(startShuffleMessage.GetAddresses())-1)
-						for _, addr := range startShuffleMessage.GetAddresses() {
-							if !(addr.Equal(h.me)) {
-								addrs = append(addrs, addr)
-							}
-						}
-						errs := out.Send(message, addrs...)
-						err = <-errs
-						if err != nil {
-							cancel()
-							return xerrors.Errorf("failed to send EndShuffle message: %v", err)
-						}
-						dela.Logger.Info().Msg("SENT END SHUFFLE MESSAGES")
-					} else {
-						dela.Logger.Info().Msg("WAITING FOR END SHUFFLE MESSAGE")
-						addr, msg, err := in.Recv(context.Background())
-						if err != nil {
-							cancel()
-							return xerrors.Errorf("got an error from '%s' while "+
-								"receiving: %v", addr, err)
-						}
-						_, ok := msg.(types.EndShuffle)
-						if !ok {
-							cancel()
-							return xerrors.Errorf("expected to receive an EndShuffle message, but "+
-								"go the following: %T", msg)
-						}
-						dela.Logger.Info().Msg("RECEIVED END SHUFFLE MESSAGE")
-					}
-
-					if startShuffleMessage.GetAddresses()[0].Equal(h.me) {
-						message := types.EndShuffle{}
-						errs := out.Send(message, from)
-						err = <-errs
-						if err != nil {
-							cancel()
-							return xerrors.Errorf("failed to send EndShuffle message: %v", err)
-						}
-					}
-					cancel()
-					return nil
-				}
-			}
-			if notAccepted {
-				break
-			}
+		accepted, msg := watchTx(events, tx.GetID())
+		if accepted {
+			dela.Logger.Info().Msg("our shuffling contribution has " +
+				"been accepted, we are exitting the process")
+			return nil
 		}
-		cancel()
-		dela.Logger.Info().Msg("NEXT ROUND")
 
+		dela.Logger.Info().Msg("shuffling contribution denied : " + msg)
 	}
-	dela.Logger.Info().Msg("Shuffle is done without your contribution")
-	return nil
 }
 
-func (h *Handler) getElection(startShuffleMessage types.StartShuffle) (*electionTypes.Election, error) {
-	electionIDBuff, err := hex.DecodeString(startShuffleMessage.GetElectionId())
+func makeTx(election *electionTypes.Election, manager txn.Manager) (txn.Transaction, error) {
+	shuffledBallots, shuffleProof, err := getShuffledBallots(election)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get shuffled ballots: %v", err)
+	}
+
+	shuffleBallotsTransaction := electionTypes.ShuffleBallotsTransaction{
+		ElectionID:      string(election.ElectionID),
+		Round:           len(election.ShuffledBallots),
+		ShuffledBallots: shuffledBallots,
+		Proof:           shuffleProof,
+	}
+
+	js, err := json.Marshal(shuffleBallotsTransaction)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to marshal "+
+			"ShuffleBallotsTransaction: %v", err.Error())
+	}
+
+	args := make([]txn.Arg, 3)
+	args[0] = txn.Arg{
+		Key:   native.ContractArg,
+		Value: []byte(evoting.ContractName),
+	}
+	args[1] = txn.Arg{
+		Key:   evoting.CmdArg,
+		Value: []byte(evoting.CmdShuffleBallots),
+	}
+	args[2] = txn.Arg{
+		Key:   evoting.ShuffleBallotsArg,
+		Value: js,
+	}
+
+	err = manager.Sync()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to sync manager: %v", err.Error())
+	}
+
+	tx, err := manager.Make(args...)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to make transaction: %v", err.Error())
+	}
+
+	return tx, nil
+}
+
+// getShuffledBallots returns the shuffled ballots with the shuffling proof.
+func getShuffledBallots(election *electionTypes.Election) (electionTypes.Ciphertexts, []byte, error) {
+	round := len(election.ShuffledBallots)
+
+	var encryptedBallots electionTypes.Ciphertexts
+
+	if round == 0 {
+		encryptedBallots = election.EncryptedBallots.Ballots
+		fmt.Println("encrypted ballots:", election.EncryptedBallots)
+	} else {
+		encryptedBallots = election.ShuffledBallots[round-1]
+	}
+
+	ks, cs, err := encryptedBallots.GetKsCs()
+	if err != nil {
+		return nil, nil, xerrors.Errorf("failed to get ks, cs: %v", err)
+	}
+
+	pubKey := suite.Point()
+
+	err = pubKey.UnmarshalBinary(election.Pubkey)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("couldn't unmarshal public key: %v", err)
+	}
+
+	rand := suite.RandomStream()
+	Kbar, Cbar, prover := shuffleKyber.Shuffle(suite, nil, pubKey, ks, cs, rand)
+
+	shuffleProof, err := proof.HashProve(suite, protocolName, prover)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("Shuffle proof failed: %v", err.Error())
+	}
+
+	var shuffledBallots electionTypes.Ciphertexts
+
+	err = shuffledBallots.InitFromKsCs(Kbar, Cbar)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("failed to init ciphertexts: %v", err)
+	}
+
+	return shuffledBallots, shuffleProof, nil
+}
+
+// watchTx checks the transaction to find one that match txID. Return if the
+// transaction has been accepted or not. Will also return false if/when the
+// events chan is closed, which is expected to happen.
+func watchTx(events <-chan ordering.Event, txID []byte) (bool, string) {
+	for event := range events {
+		for _, res := range event.Transactions {
+			if !bytes.Equal(res.GetTransaction().GetID(), txID) {
+				continue
+			}
+
+			dela.Logger.Info().Hex("id", txID).Msg("transaction included in the block")
+
+			accepted, msg := res.GetStatus()
+			if accepted {
+				return true, ""
+			}
+
+			return false, msg
+		}
+	}
+
+	return false, "watch timeout"
+}
+
+// getElection returns the election state from the global state.
+func getElection(service ordering.Service, electionID string) (*electionTypes.Election, error) {
+	electionIDBuff, err := hex.DecodeString(electionID)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to decode election id: %v", err)
 	}
 
-	prf, err := h.service.GetProof(electionIDBuff)
+	prf, err := service.GetProof(electionIDBuff)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to read on the blockchain: %v", err)
 	}

@@ -1,13 +1,14 @@
 package controller
 
 import (
+	"strings"
+
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
 	"golang.org/x/xerrors"
-	"strings"
 )
 
 // NewController returns a new controller initializer
@@ -28,29 +29,28 @@ func (m controller) SetCommands(builder node.Builder) {
 	cmd.SetDescription("interact with the evoting service")
 
 	// memcoin --config /tmp/node1 e-voting initHttpServer --portNumber 8080
-	sub := cmd.SetSubCommand("serve")
-	sub.SetDescription("Serve the HTTP server")
+	sub := cmd.SetSubCommand("registerHandlers")
+	sub.SetDescription("register the e-voting handlers on the default proxy")
 
-	sub.SetFlags(cli.StringFlag{
-		Name:     "listen-addr",
-		Usage:    "address to listen requests on",
-		Required: false,
-	})
-	sub.SetFlags(cli.StringFlag{
-		Name:     "signer",
-		Usage:    "Path to signer's private key",
-		Required: true,
-	})
+	sub.SetFlags(
+		cli.StringFlag{
+			Name:     "signer",
+			Usage:    "Path to signer's private key",
+			Required: true,
+		},
+	)
 
-	sub.SetAction(builder.MakeAction(&serveAction{}))
+	sub.SetAction(builder.MakeAction(&registerAction{}))
 
 	sub = cmd.SetSubCommand("scenarioTest")
 	sub.SetDescription("evoting scenario test")
-	sub.SetFlags(cli.StringSliceFlag{
-		Name:     "member",
-		Usage:    "nodes participating in Shuffle",
-		Required: true,
-	})
+	sub.SetFlags(
+		cli.StringFlag{
+			Name:  "proxy-addr",
+			Usage: "base address of the proxy",
+			Value: "http://localhost:8081",
+		},
+	)
 	sub.SetAction(builder.MakeAction(&scenarioTestAction{}))
 }
 
@@ -73,7 +73,7 @@ type Client struct {
 }
 
 // GetNonce implements signed.Client
-func (c *Client) GetNonce(access.Identity) (uint64, error) {
+func (c *Client) GetNonce(id access.Identity) (uint64, error) {
 	blockLink, err := c.Blocks.Last()
 	if err != nil {
 		return 0, xerrors.Errorf("failed to fetch last block: %v", err)

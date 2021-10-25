@@ -5,16 +5,16 @@ import (
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
 	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/cosi"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/bls"
 	"go.dedis.ch/dela/crypto/loader"
 	"go.dedis.ch/dela/mino"
 	"golang.org/x/xerrors"
 )
-
-const signerFilePath = "private.key"
 
 // NewController returns a new controller initializer
 func NewController() node.Initializer {
@@ -33,6 +33,11 @@ func (m controller) SetCommands(builder node.Builder) {
 	cmd.SetDescription("interact with the SHUFFLE service")
 
 	sub := cmd.SetSubCommand("init")
+	sub.SetFlags(cli.StringFlag{
+		Name:     "signer",
+		Usage:    "path to the private key",
+		Required: true,
+	})
 	sub.SetDescription("initialize the SHUFFLE protocol")
 	sub.SetAction(builder.MakeAction(&initAction{}))
 }
@@ -44,6 +49,12 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 	err := inj.Resolve(&no)
 	if err != nil {
 		return xerrors.Errorf("failed to resolve mino.Mino: %v", err)
+	}
+
+	var cosi cosi.CollectiveSigning
+	err = inj.Resolve(&cosi)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve cosi.CollectiveSigning: %v", err)
 	}
 
 	var p pool.Pool
@@ -64,12 +75,13 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to resolve blockstore.InDisk: %v", err)
 	}
 
-	signer, _ := getSigner(signerFilePath)
-	// if err != nil {
-	// return xerrors.Errorf("failed to getSigner: %v", err)
-	// }
+	var rosterFac authority.Factory
+	err = inj.Resolve(&rosterFac)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve authority.Factory")
+	}
 
-	neffShuffle := neff.NewNeffShuffle(no, service, p, blocks, signer)
+	neffShuffle := neff.NewNeffShuffle(no, service, p, blocks, rosterFac)
 
 	inj.Inject(neffShuffle)
 

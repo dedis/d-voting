@@ -5,7 +5,10 @@ import (
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/execution"
 	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/store"
+	"go.dedis.ch/dela/serde"
+	"go.dedis.ch/dela/serde/json"
 
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/suites"
@@ -33,6 +36,8 @@ const (
 
 	CreateElectionArg = "evoting:create_election"
 
+	OpenElectionArg = "evoting:open_election"
+
 	CastVoteArg = "evoting:cast_vote"
 
 	CancelElectionArg = "evoting:cancel_election"
@@ -50,7 +55,8 @@ const (
 
 // commands defines the commands of the evoting contract.
 type commands interface {
-	createElection(snap store.Snapshot, step execution.Step, dkgActor dkg.Actor) error
+	createElection(snap store.Snapshot, step execution.Step) error
+	openElection(snap store.Snapshot, step execution.Step, dkgActor dkg.Actor) error
 	castVote(snap store.Snapshot, step execution.Step) error
 	closeElection(snap store.Snapshot, step execution.Step) error
 	shuffleBallots(snap store.Snapshot, step execution.Step) error
@@ -63,6 +69,8 @@ type Command string
 
 const (
 	CmdCreateElection Command = "CREATE_ELECTION"
+
+	CmdOpenElection Command = "OPEN_ELECTION"
 
 	CmdCastVote Command = "CAST_VOTE"
 
@@ -100,15 +108,25 @@ type Contract struct {
 	cmd commands
 
 	pedersen dkg.DKG
+
+	rosterFac authority.Factory
+	rosterKey []byte
+
+	context serde.Context
 }
 
 // NewContract creates a new Value contract
-func NewContract(aKey []byte, srvc access.Service, pedersen dkg.DKG) Contract {
+func NewContract(aKey, rKey []byte, srvc access.Service, pedersen dkg.DKG, rFac authority.Factory) Contract {
 	contract := Contract{
 		// indexElection:     map[string]struct{}{},
 		access:    srvc,
 		accessKey: aKey,
 		pedersen:  pedersen,
+
+		rosterKey: rKey,
+		rosterFac: rFac,
+
+		context: json.NewContext(),
 	}
 
 	contract.cmd = evotingCommand{Contract: &contract, prover: proof.HashVerify}
@@ -132,13 +150,18 @@ func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 
 	switch Command(cmd) {
 	case CmdCreateElection:
+		err = c.cmd.createElection(snap, step)
+		if err != nil {
+			return xerrors.Errorf("failed to create election: %v", err)
+		}
+	case CmdOpenElection:
 		dkgActor, err := c.pedersen.GetLastActor()
 		if err != nil {
 			return xerrors.Errorf("failed to get dkgActor: %v", err)
 		}
-		err = c.cmd.createElection(snap, step, dkgActor)
+		err = c.cmd.openElection(snap, step, dkgActor)
 		if err != nil {
-			return xerrors.Errorf("failed to create election: %v", err)
+			return xerrors.Errorf("failed to open election: %v", err)
 		}
 	case CmdCastVote:
 		err := c.cmd.castVote(snap, step)

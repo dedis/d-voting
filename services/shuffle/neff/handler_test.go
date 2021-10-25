@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strconv"
 	"testing"
@@ -115,12 +116,11 @@ func TestHandler_StartShuffle(t *testing.T) {
 	election := electionTypes.Election{
 		Title:            "dummyTitle",
 		ElectionID:       electionTypes.ID(dummyId),
-		AdminId:          "dummyAdminId",
+		AdminID:          "dummyAdminID",
 		Status:           0,
 		Pubkey:           nil,
-		EncryptedBallots: map[string][]byte{},
-		ShuffledBallots:  map[int][][]byte{},
-		Proofs:           nil,
+		EncryptedBallots: &electionTypes.EncryptedBallots{},
+		ShuffledBallots:  [][][]byte{},
 		DecryptedBallots: nil,
 		ShuffleThreshold: 1,
 	}
@@ -136,7 +136,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 	require.EqualError(t, err, "the election must be closed")
 
 	election.Status = electionTypes.Closed
-	election.EncryptedBallots["fakeUser"] = []byte("fakeVote")
+	election.EncryptedBallots.CastVote("fakeUser", []byte("fakeVote"))
 
 	service = FakeService{
 		err:        nil,
@@ -148,7 +148,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 	err = handler.HandleStartShuffleMessage(startShuffle, from, nil, nil)
 	require.EqualError(t, err, "failed to unmarshal Ciphertext: invalid character 'k' in literal false (expecting 'l')")
 
-	delete(election.EncryptedBallots, "fakeUser")
+	election.EncryptedBallots.DeleteUser("fakeUser")
 
 	for i := 0; i < k; i++ {
 		ballot := electionTypes.Ciphertext{
@@ -156,7 +156,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 			C: []byte("fakeVoteC"),
 		}
 		js, _ := json.Marshal(ballot)
-		election.EncryptedBallots["dummyUser"+strconv.Itoa(i)] = js
+		election.EncryptedBallots.CastVote("dummyUser"+strconv.Itoa(i), js)
 	}
 
 	service = FakeService{
@@ -175,7 +175,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 			C: []byte("fakeVoteC"),
 		}
 		js, _ := json.Marshal(ballot)
-		election.EncryptedBallots["dummyUser"+strconv.Itoa(i)] = js
+		election.EncryptedBallots.CastVote("dummyUser"+strconv.Itoa(i), js)
 	}
 
 	service = FakeService{
@@ -195,7 +195,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 			C: CsMarshalled[i],
 		}
 		js, _ := json.Marshal(ballot)
-		election.EncryptedBallots["dummyUser"+strconv.Itoa(i)] = js
+		election.EncryptedBallots.CastVote("dummyUser"+strconv.Itoa(i), js)
 	}
 
 	service = FakeService{
@@ -293,6 +293,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 
 	badSender := fake.NewBadSender()
 
+	fmt.Println("##### sending..")
 	err = handler.HandleStartShuffleMessage(startShuffle, from, badSender, nil)
 	require.EqualError(t, err, fake.Err("failed to send EndShuffle message"))
 
@@ -335,7 +336,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 	// all transactions got denied
 	require.NoError(t, err)
 
-	for _, value := range election.EncryptedBallots {
+	for _, value := range election.EncryptedBallots.Ballots {
 		election.ShuffledBallots[1] = append(election.ShuffledBallots[1], value)
 	}
 
@@ -410,18 +411,16 @@ func (f *FakeService) Watch(ctx context.Context) <-chan ordering.Event {
 
 	results := make([]validation.TransactionResult, 3)
 
-	electionIDBuffDummy1, _ := hex.DecodeString("dummyId1")
 	results[0] = FakeTransactionResult{
 		status:      true,
 		message:     "",
-		transaction: FakeTransaction{nonce: 10, id: electionIDBuffDummy1},
+		transaction: FakeTransaction{nonce: 10, id: []byte("dummyId1")},
 	}
 
-	electionIDBuffDummy2, _ := hex.DecodeString("dummyId2")
 	results[1] = FakeTransactionResult{
 		status:      true,
 		message:     "",
-		transaction: FakeTransaction{nonce: 11, id: electionIDBuffDummy2},
+		transaction: FakeTransaction{nonce: 11, id: []byte("dummyId2")},
 	}
 
 	results[2] = FakeTransactionResult{
@@ -433,6 +432,7 @@ func (f *FakeService) Watch(ctx context.Context) <-chan ordering.Event {
 	f.status = true
 
 	channel := make(chan ordering.Event, 1)
+	fmt.Println("watch", results[0])
 	channel <- ordering.Event{
 		Index:        0,
 		Transactions: results,

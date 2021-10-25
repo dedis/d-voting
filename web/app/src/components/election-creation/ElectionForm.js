@@ -35,7 +35,7 @@ const ElectionForm = ({setShowModal, setTextModal}) => {
         //create the JSON object
         const election = {};
         election['Title']=electionName;
-        election['AdminId'] = sessionStorage.getItem('id');
+        election['AdminID'] = sessionStorage.getItem('id');
         election['ShuffleThreshold'] = SHUFFLE_THRESHOLD;
         election['Members'] = COLLECTIVE_AUTHORITY_MEMBERS;
         election['Format'] = JSON.stringify({'Candidates' : candidates});

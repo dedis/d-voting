@@ -91,7 +91,7 @@ func TestCommand_CreateElection(t *testing.T) {
 	dummyCreateElectionTransaction := types.CreateElectionTransaction{
 		ElectionID: "dummyID",
 		Title:      "dummyTitle",
-		AdminId:    "dummyAdminId",
+		AdminID:    "dummyAdminID",
 	}
 
 	js, _ := json.Marshal(dummyCreateElectionTransaction)
@@ -130,7 +130,7 @@ func TestCommand_CreateElection(t *testing.T) {
 
 	require.Equal(t, dummyCreateElectionTransaction.ElectionID, string(election.ElectionID))
 	require.Equal(t, dummyCreateElectionTransaction.Title, election.Title)
-	require.Equal(t, dummyCreateElectionTransaction.AdminId, election.AdminId)
+	require.Equal(t, dummyCreateElectionTransaction.AdminID, election.AdminID)
 	require.Equal(t, types.Open, election.Status)
 
 }
@@ -153,12 +153,12 @@ func TestCommand_CastVote(t *testing.T) {
 	dummyElection := types.Election{
 		Title:            "dummyTitle",
 		ElectionID:       types.ID(fakeElectionID),
-		AdminId:          "dummyAdminId",
+		AdminID:          "dummyAdminID",
 		Status:           0,
 		Pubkey:           []byte{},
-		EncryptedBallots: map[string][]byte{},
+		EncryptedBallots: &types.EncryptedBallots{},
 		ShuffledBallots:  nil,
-		ShuffleProofs:    nil,
+		ShuffledProofs:   nil,
 		DecryptedBallots: nil,
 		ShuffleThreshold: 0,
 	}
@@ -205,7 +205,8 @@ func TestCommand_CastVote(t *testing.T) {
 	election := new(types.Election)
 	_ = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
 
-	require.Equal(t, dummyCastVoteTransaction.Ballot, election.EncryptedBallots[dummyCastVoteTransaction.UserId])
+	require.Equal(t, dummyCastVoteTransaction.Ballot, election.EncryptedBallots.Ballots[0])
+	require.Equal(t, dummyCastVoteTransaction.UserId, election.EncryptedBallots.UserIDs[0])
 }
 
 func TestCommand_CloseElection(t *testing.T) {
@@ -223,12 +224,12 @@ func TestCommand_CloseElection(t *testing.T) {
 	dummyElection := types.Election{
 		Title:            "dummyTitle",
 		ElectionID:       types.ID(fakeElectionID),
-		AdminId:          "dummyAdminId",
+		AdminID:          "dummyAdminID",
 		Status:           0,
 		Pubkey:           nil,
-		EncryptedBallots: map[string][]byte{},
+		EncryptedBallots: &types.EncryptedBallots{},
 		ShuffledBallots:  nil,
-		ShuffleProofs:    nil,
+		ShuffledProofs:   nil,
 		DecryptedBallots: nil,
 		ShuffleThreshold: 0,
 	}
@@ -261,7 +262,7 @@ func TestCommand_CloseElection(t *testing.T) {
 	err = cmd.closeElection(snap, makeStep(t, CloseElectionArg, string(jsCloseElectionTransaction)))
 	require.EqualError(t, err, "only the admin can close the election")
 
-	dummyCloseElectionTransaction.UserId = "dummyAdminId"
+	dummyCloseElectionTransaction.UserId = "dummyAdminID"
 	jsCloseElectionTransaction, _ = json.Marshal(dummyCloseElectionTransaction)
 	err = cmd.closeElection(snap, makeStep(t, CloseElectionArg, string(jsCloseElectionTransaction)))
 	require.EqualError(t, err, fmt.Sprintf("the election is not open, current status: %d", types.Initial))
@@ -273,8 +274,11 @@ func TestCommand_CloseElection(t *testing.T) {
 	err = cmd.closeElection(snap, makeStep(t, CloseElectionArg, string(jsCloseElectionTransaction)))
 	require.EqualError(t, err, "at least two ballots are required")
 
-	dummyElection.EncryptedBallots["dummyUser1"] = []byte("dummyBallot1")
-	dummyElection.EncryptedBallots["dummyUser2"] = []byte("dummyBallot2")
+	// dummyElection.EncryptedBallots["dummyUser1"] = []byte("dummyBallot1")
+	// dummyElection.EncryptedBallots["dummyUser2"] = []byte("dummyBallot2")
+	dummyElection.EncryptedBallots.CastVote("dummyUser1", []byte("dummyBallot1"))
+	dummyElection.EncryptedBallots.CastVote("dummyUser2", []byte("dummyBallot2"))
+
 	jsElection, _ = json.Marshal(dummyElection)
 	_ = snap.Set(dummyElectionIdBuff, jsElection)
 
@@ -288,7 +292,6 @@ func TestCommand_CloseElection(t *testing.T) {
 	_ = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
 
 	require.Equal(t, types.Closed, election.Status)
-
 }
 
 func TestCommand_ShuffleBallots(t *testing.T) {
@@ -310,12 +313,12 @@ func TestCommand_ShuffleBallots(t *testing.T) {
 	dummyElection := types.Election{
 		Title:            "dummyTitle",
 		ElectionID:       types.ID(fakeElectionID),
-		AdminId:          "dummyAdminId",
+		AdminID:          "dummyAdminID",
 		Status:           0,
 		Pubkey:           nil,
-		EncryptedBallots: map[string][]byte{},
-		ShuffledBallots:  map[int][][]byte{},
-		ShuffleProofs:    map[int][]byte{},
+		EncryptedBallots: &types.EncryptedBallots{},
+		ShuffledBallots:  [][][]byte{},
+		ShuffledProofs:   [][]byte{},
 		DecryptedBallots: nil,
 		ShuffleThreshold: 0,
 	}
@@ -429,7 +432,7 @@ func TestCommand_ShuffleBallots(t *testing.T) {
 
 	for i := 0; i < k; i++ {
 		ballot := []byte("badCiphertext")
-		dummyElection.EncryptedBallots[fmt.Sprintf("user%d", i)] = ballot
+		dummyElection.EncryptedBallots.CastVote(fmt.Sprintf("user%d", i), ballot)
 	}
 
 	jsElection, _ = json.Marshal(dummyElection)
@@ -443,7 +446,7 @@ func TestCommand_ShuffleBallots(t *testing.T) {
 			C: []byte("fakeVoteC"),
 		}
 		js, _ := json.Marshal(ballot)
-		dummyElection.EncryptedBallots[fmt.Sprintf("user%d", i)] = js
+		dummyElection.EncryptedBallots.CastVote(fmt.Sprintf("user%d", i), js)
 	}
 
 	jsElection, _ = json.Marshal(dummyElection)
@@ -457,7 +460,7 @@ func TestCommand_ShuffleBallots(t *testing.T) {
 			C: []byte("fakeVoteC"),
 		}
 		js, _ := json.Marshal(ballot)
-		dummyElection.EncryptedBallots[fmt.Sprintf("user%d", i)] = js
+		dummyElection.EncryptedBallots.CastVote(fmt.Sprintf("user%d", i), js)
 	}
 
 	jsElection, _ = json.Marshal(dummyElection)
@@ -471,7 +474,7 @@ func TestCommand_ShuffleBallots(t *testing.T) {
 			C: CsMarshalled[i],
 		}
 		js, _ := json.Marshal(ballot)
-		dummyElection.EncryptedBallots[fmt.Sprintf("user%d", i)] = js
+		dummyElection.EncryptedBallots.CastVote(fmt.Sprintf("user%d", i), js)
 	}
 
 	jsElection, _ = json.Marshal(dummyElection)
@@ -521,12 +524,12 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	dummyElection := types.Election{
 		Title:            "dummyTitle",
 		ElectionID:       types.ID(fakeElectionID),
-		AdminId:          "dummyAdminId",
+		AdminID:          "dummyAdminID",
 		Status:           0,
 		Pubkey:           nil,
-		EncryptedBallots: map[string][]byte{},
+		EncryptedBallots: &types.EncryptedBallots{},
 		ShuffledBallots:  nil,
-		ShuffleProofs:    nil,
+		ShuffledProofs:   nil,
 		DecryptedBallots: []types.Ballot{},
 		ShuffleThreshold: 0,
 	}
@@ -558,7 +561,7 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	err = cmd.decryptBallots(snap, makeStep(t, DecryptBallotsArg, string(jsDecryptBallotsTransaction)))
 	require.EqualError(t, err, "only the admin can decrypt the ballots")
 
-	dummyDecryptBallotsTransaction.UserId = "dummyAdminId"
+	dummyDecryptBallotsTransaction.UserId = "dummyAdminID"
 	jsDecryptBallotsTransaction, _ = json.Marshal(dummyDecryptBallotsTransaction)
 	err = cmd.decryptBallots(snap, makeStep(t, DecryptBallotsArg, string(jsDecryptBallotsTransaction)))
 	require.EqualError(t, err, fmt.Sprintf("the ballots are not shuffled, current status: %d", types.Initial))
@@ -597,12 +600,12 @@ func TestCommand_CancelElection(t *testing.T) {
 	dummyElection := types.Election{
 		Title:            "dummyTitle",
 		ElectionID:       types.ID(fakeElectionID),
-		AdminId:          "dummyAdminId",
+		AdminID:          "dummyAdminID",
 		Status:           1,
 		Pubkey:           nil,
-		EncryptedBallots: map[string][]byte{},
+		EncryptedBallots: &types.EncryptedBallots{},
 		ShuffledBallots:  nil,
-		ShuffleProofs:    nil,
+		ShuffledProofs:   nil,
 		DecryptedBallots: nil,
 		ShuffleThreshold: 0,
 	}
@@ -634,7 +637,7 @@ func TestCommand_CancelElection(t *testing.T) {
 	err = cmd.cancelElection(snap, makeStep(t, CancelElectionArg, string(jsCancelElectionTransaction)))
 	require.EqualError(t, err, "only the admin can cancel the election")
 
-	dummyCancelElectionTransaction.UserId = "dummyAdminId"
+	dummyCancelElectionTransaction.UserId = "dummyAdminID"
 	jsCancelElectionTransaction, _ = json.Marshal(dummyCancelElectionTransaction)
 	err = cmd.cancelElection(snap, makeStep(t, CancelElectionArg, string(jsCancelElectionTransaction)))
 	require.NoError(t, err)
