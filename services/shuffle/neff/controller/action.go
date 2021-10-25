@@ -22,7 +22,14 @@ func (a *initAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve shuffle: %v", err)
 	}
 
-	actor, err := neffShuffle.Listen()
+	keyPath := ctx.Flags.String("signer")
+
+	signer, err := getSigner(keyPath)
+	if err != nil {
+		return xerrors.Errorf("failed to get signer: %v", err)
+	}
+
+	actor, err := neffShuffle.Listen(signer)
 
 	if err != nil {
 		return xerrors.Errorf("failed to initialize the neff shuffle	protocol: %v", err)

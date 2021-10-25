@@ -67,13 +67,21 @@ type DecryptReply struct {
 	I int64
 }
 
+type GetPeerPubKey struct{}
+
+type GetPeerPubKeyResp struct {
+	PublicKey PublicKey
+}
+
 type Message struct {
-	Start          *Start          `json:",omitempty"`
-	Deal           *Deal           `json:",omitempty"`
-	Response       *Response       `json:",omitempty"`
-	StartDone      *StartDone      `json:",omitempty"`
-	DecryptRequest *DecryptRequest `json:",omitempty"`
-	DecryptReply   *DecryptReply   `json:",omitempty"`
+	Start             *Start             `json:",omitempty"`
+	Deal              *Deal              `json:",omitempty"`
+	Response          *Response          `json:",omitempty"`
+	StartDone         *StartDone         `json:",omitempty"`
+	DecryptRequest    *DecryptRequest    `json:",omitempty"`
+	DecryptReply      *DecryptReply      `json:",omitempty"`
+	GetPeerPubKey     *GetPeerPubKey     `json:",omitempty"`
+	GetPeerPubKeyResp *GetPeerPubKeyResp `json:",omitempty"`
 }
 
 // MsgFormat is the engine to encode and decode dkg messages in JSON format.
@@ -117,7 +125,6 @@ func (f msgFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, error) 
 		}
 
 		start := Start{
-			Threshold:  in.GetThreshold(),
 			Addresses:  addrs,
 			PublicKeys: pubkeys,
 		}
@@ -189,6 +196,19 @@ func (f msgFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, error) 
 		}
 
 		m = Message{DecryptReply: &resp}
+	case types.GetPeerPubKey:
+		m = Message{
+			GetPeerPubKey: &GetPeerPubKey{},
+		}
+	case types.GetPeerPubKeyResp:
+		v, err := in.GetPublicKey().MarshalBinary()
+		if err != nil {
+			return nil, xerrors.Errorf("failed to marshal pubkey: %v", err)
+		}
+
+		m = Message{GetPeerPubKeyResp: &GetPeerPubKeyResp{
+			PublicKey: v,
+		}}
 	default:
 		return nil, xerrors.Errorf("unsupported message of type '%T'", msg)
 	}
@@ -285,6 +305,20 @@ func (f msgFormat) Decode(ctx serde.Context, data []byte) (serde.Message, error)
 		return resp, nil
 	}
 
+	if m.GetPeerPubKey != nil {
+		return types.NewGetPeerPubKey(), nil
+	}
+
+	if m.GetPeerPubKeyResp != nil {
+		v := f.suite.Point()
+		err = v.UnmarshalBinary(m.GetPeerPubKeyResp.PublicKey)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to unmarshal pubkey: %v", err)
+		}
+
+		return types.NewGetPeerPubKeyResp(v), nil
+	}
+
 	return nil, xerrors.New("message is empty")
 }
 
@@ -312,7 +346,7 @@ func (f msgFormat) decodeStart(ctx serde.Context, start *Start) (serde.Message, 
 		pubkeys[i] = point
 	}
 
-	s := types.NewStart(start.Threshold, addrs, pubkeys)
+	s := types.NewStart(addrs, pubkeys)
 
 	return s, nil
 }

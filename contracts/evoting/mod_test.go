@@ -91,7 +91,7 @@ func TestCommand_CreateElection(t *testing.T) {
 	dummyCreateElectionTransaction := types.CreateElectionTransaction{
 		ElectionID: "dummyID",
 		Title:      "dummyTitle",
-		AdminId:    "dummyAdminId",
+		AdminID:    "dummyAdminID",
 	}
 
 	js, _ := json.Marshal(dummyCreateElectionTransaction)
@@ -130,7 +130,7 @@ func TestCommand_CreateElection(t *testing.T) {
 
 	require.Equal(t, dummyCreateElectionTransaction.ElectionID, string(election.ElectionID))
 	require.Equal(t, dummyCreateElectionTransaction.Title, election.Title)
-	require.Equal(t, dummyCreateElectionTransaction.AdminId, election.AdminId)
+	require.Equal(t, dummyCreateElectionTransaction.AdminID, election.AdminID)
 	require.Equal(t, types.Open, election.Status)
 
 }
@@ -153,7 +153,7 @@ func TestCommand_CastVote(t *testing.T) {
 	dummyElection := types.Election{
 		Title:            "dummyTitle",
 		ElectionID:       types.ID(fakeElectionID),
-		AdminId:          "dummyAdminId",
+		AdminID:          "dummyAdminID",
 		Status:           0,
 		Pubkey:           []byte{},
 		EncryptedBallots: &types.EncryptedBallots{},
@@ -224,7 +224,7 @@ func TestCommand_CloseElection(t *testing.T) {
 	dummyElection := types.Election{
 		Title:            "dummyTitle",
 		ElectionID:       types.ID(fakeElectionID),
-		AdminId:          "dummyAdminId",
+		AdminID:          "dummyAdminID",
 		Status:           0,
 		Pubkey:           nil,
 		EncryptedBallots: &types.EncryptedBallots{},
@@ -262,7 +262,7 @@ func TestCommand_CloseElection(t *testing.T) {
 	err = cmd.closeElection(snap, makeStep(t, CloseElectionArg, string(jsCloseElectionTransaction)))
 	require.EqualError(t, err, "only the admin can close the election")
 
-	dummyCloseElectionTransaction.UserId = "dummyAdminId"
+	dummyCloseElectionTransaction.UserId = "dummyAdminID"
 	jsCloseElectionTransaction, _ = json.Marshal(dummyCloseElectionTransaction)
 	err = cmd.closeElection(snap, makeStep(t, CloseElectionArg, string(jsCloseElectionTransaction)))
 	require.EqualError(t, err, fmt.Sprintf("the election is not open, current status: %d", types.Initial))
@@ -313,7 +313,7 @@ func TestCommand_ShuffleBallots(t *testing.T) {
 	dummyElection := types.Election{
 		Title:            "dummyTitle",
 		ElectionID:       types.ID(fakeElectionID),
-		AdminId:          "dummyAdminId",
+		AdminID:          "dummyAdminID",
 		Status:           0,
 		Pubkey:           nil,
 		EncryptedBallots: &types.EncryptedBallots{},
@@ -524,7 +524,7 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	dummyElection := types.Election{
 		Title:            "dummyTitle",
 		ElectionID:       types.ID(fakeElectionID),
-		AdminId:          "dummyAdminId",
+		AdminID:          "dummyAdminID",
 		Status:           0,
 		Pubkey:           nil,
 		EncryptedBallots: &types.EncryptedBallots{},
@@ -561,7 +561,7 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	err = cmd.decryptBallots(snap, makeStep(t, DecryptBallotsArg, string(jsDecryptBallotsTransaction)))
 	require.EqualError(t, err, "only the admin can decrypt the ballots")
 
-	dummyDecryptBallotsTransaction.UserId = "dummyAdminId"
+	dummyDecryptBallotsTransaction.UserId = "dummyAdminID"
 	jsDecryptBallotsTransaction, _ = json.Marshal(dummyDecryptBallotsTransaction)
 	err = cmd.decryptBallots(snap, makeStep(t, DecryptBallotsArg, string(jsDecryptBallotsTransaction)))
 	require.EqualError(t, err, fmt.Sprintf("the ballots are not shuffled, current status: %d", types.Initial))
@@ -600,7 +600,7 @@ func TestCommand_CancelElection(t *testing.T) {
 	dummyElection := types.Election{
 		Title:            "dummyTitle",
 		ElectionID:       types.ID(fakeElectionID),
-		AdminId:          "dummyAdminId",
+		AdminID:          "dummyAdminID",
 		Status:           1,
 		Pubkey:           nil,
 		EncryptedBallots: &types.EncryptedBallots{},
@@ -637,7 +637,7 @@ func TestCommand_CancelElection(t *testing.T) {
 	err = cmd.cancelElection(snap, makeStep(t, CancelElectionArg, string(jsCancelElectionTransaction)))
 	require.EqualError(t, err, "only the admin can cancel the election")
 
-	dummyCancelElectionTransaction.UserId = "dummyAdminId"
+	dummyCancelElectionTransaction.UserId = "dummyAdminID"
 	jsCancelElectionTransaction, _ = json.Marshal(dummyCancelElectionTransaction)
 	err = cmd.cancelElection(snap, makeStep(t, CancelElectionArg, string(jsCancelElectionTransaction)))
 	require.NoError(t, err)

@@ -2,7 +2,10 @@ package controller
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strings"
 
 	"github.com/dedis/d-voting/services/dkg"
@@ -12,6 +15,7 @@ import (
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/ed25519"
 	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/mino/proxy"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
@@ -56,18 +60,18 @@ type setupAction struct {
 // Execute implements node.ActionTemplate. It reads the list of members and
 // request the setup.
 func (a *setupAction) Execute(ctx node.Context) error {
-	roster, err := a.readMembers(ctx)
-	if err != nil {
-		return xerrors.Errorf("failed to read roster: %v", err)
-	}
-
 	var actor dkg.Actor
-	err = ctx.Injector.Resolve(&actor)
+	err := ctx.Injector.Resolve(&actor)
 	if err != nil {
 		return xerrors.Errorf("failed to resolve actor: %v", err)
 	}
 
-	pubkey, err := actor.Setup(roster, roster.Len())
+	electionIDBuf, err := hex.DecodeString(ctx.Flags.String("electionID"))
+	if err != nil {
+		return xerrors.Errorf("failed to decode electionID: %v", err)
+	}
+
+	pubkey, err := actor.Setup(electionIDBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to setup DKG: %v", err)
 	}
@@ -178,7 +182,7 @@ func (a *exportInfoAction) Execute(ctx node.Context) error {
 	return nil
 }
 
-// Wraps the ciphertext pairs
+// Ciphertext wraps the ciphertext pairs
 type Ciphertext struct {
 	K []byte
 	C []byte
@@ -214,4 +218,64 @@ func (a *getPublicKeyAction) Execute(ctx node.Context) error {
 		Msg("DKG public key")
 
 	return nil
+}
+
+// registerHandlersAction is an action that registers the proxy handlers
+//
+// - implements node.ActionTemplate
+type registerHandlersAction struct {
+}
+
+// Execute implements node.ActionTemplate. It retrieves the collective
+// public key from the DKG service and prints it.
+func (a *registerHandlersAction) Execute(ctx node.Context) error {
+	var proxy proxy.Proxy
+	err := ctx.Injector.Resolve(&proxy)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve proxy: %v", err)
+	}
+
+	var dkgActor dkg.Actor
+	err = ctx.Injector.Resolve(&dkgActor)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve dkg.Actor: %v", err)
+	}
+
+	proxy.RegisterHandler("/evoting/dkg", getHandler(dkgActor))
+
+	dela.Logger.Info().Msg("DKG handler registered")
+
+	return nil
+}
+
+// Body: electionID in HEX form
+// Response: pubKey in marshalled binary
+func getHandler(dkgActor dkg.Actor) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		electionIDHex, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "failed to read body: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		electionIDBuf, err := hex.DecodeString(string(electionIDHex))
+		if err != nil {
+			http.Error(w, "failed to decode electionID: "+string(electionIDHex), http.StatusBadRequest)
+			return
+		}
+
+		pubKey, err := dkgActor.Setup(electionIDBuf)
+		if err != nil {
+			http.Error(w, "failed to setup: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		pubKeyBuf, err := pubKey.MarshalBinary()
+		if err != nil {
+			http.Error(w, "failed to marshal the pubKey: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Write(pubKeyBuf)
+	}
 }

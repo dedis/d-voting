@@ -116,7 +116,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 	election := electionTypes.Election{
 		Title:            "dummyTitle",
 		ElectionID:       electionTypes.ID(dummyId),
-		AdminId:          "dummyAdminId",
+		AdminID:          "dummyAdminID",
 		Status:           0,
 		Pubkey:           nil,
 		EncryptedBallots: &electionTypes.EncryptedBallots{},

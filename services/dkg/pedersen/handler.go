@@ -12,6 +12,7 @@ import (
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/cosi/threshold"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
@@ -75,16 +76,18 @@ type Handler struct {
 	startRes  *state
 	service   ordering.Service
 	evoting   bool
+	pubkey    kyber.Point
 }
 
 // NewHandler creates a new handler
-func NewHandler(privKey kyber.Scalar, me mino.Address, service ordering.Service, evoting bool) *Handler {
+func NewHandler(privKey kyber.Scalar, me mino.Address, service ordering.Service, evoting bool, pubkey kyber.Point) *Handler {
 	return &Handler{
 		privKey:  privKey,
 		me:       me,
 		startRes: &state{},
 		service:  service,
 		evoting:  evoting,
+		pubkey:   pubkey,
 	}
 }
 
@@ -182,6 +185,16 @@ mainSwitch:
 				"reply: %v", err)
 		}
 
+	case types.GetPeerPubKey:
+		response := types.NewGetPeerPubKeyResp(h.pubkey)
+		errs := out.Send(response, from)
+		err = <-errs
+		if err != nil {
+			return xerrors.Errorf("got an error while sending the get peer pubkey resp "+
+				"reply: %v", err)
+		}
+		goto mainSwitch
+
 	default:
 		return xerrors.Errorf("expected Start message, decrypt request or "+
 			"Deal as first message, got: %T", msg)
@@ -203,7 +216,8 @@ func (h *Handler) start(start types.Start, receivedDeals []types.Deal,
 	}
 
 	// 1. Create the DKG
-	d, err := pedersen.NewDistKeyGenerator(suite, h.privKey, start.GetPublicKeys(), start.GetThreshold())
+	threshold := threshold.ByzantineThreshold(len(start.GetPublicKeys()))
+	d, err := pedersen.NewDistKeyGenerator(suite, h.privKey, start.GetPublicKeys(), threshold)
 	if err != nil {
 		return xerrors.Errorf("failed to create new DKG: %v", err)
 	}

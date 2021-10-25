@@ -23,11 +23,15 @@ const (
 
 // Election contains all information about a simple election
 type Election struct {
-	Title      string
-	ElectionID ID
-	AdminId    string
-	Status     status // Initial | Open | Closed | Shuffling | Decrypting
-	Pubkey     []byte
+	Title string
+
+	// ElectionID is the hex-encoded SHA256 of the transaction ID that creates
+	// the election
+	ElectionID string
+
+	AdminID string
+	Status  status // Initial | Open | Closed | Shuffling | Decrypting
+	Pubkey  []byte
 
 	// EncryptedBallots is a map from User ID to their ballot ciphertext
 	// EncryptedBallots map[string][]byte
@@ -36,10 +40,18 @@ type Election struct {
 	//ShuffleInstances is all the shuffles, along with their proof and identity of shuffler.
 	ShuffleInstances []ShuffleInstance
 
-	DecryptedBallots []Ballot
+	// ShuffleThreshold is set based on the roster. We save it so we don't have
+	// to compute it based on the roster each time we need it.
 	ShuffleThreshold int
-	Members          []CollectiveAuthorityMember
+
+	DecryptedBallots []Ballot
 	Format           string
+
+	// roster is once set when the election is created based on the current
+	// roster of the node stored in the global state. The roster won't change
+	// during an election and will be used for DKG and Neff. Its type is
+	// authority.Authority.
+	RosterBuf []byte
 }
 
 // ShuffleInstance is an instance of a shuffle, it contains the shuffled ballots, the proofs and the

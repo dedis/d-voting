@@ -9,9 +9,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/dedis/d-voting/services/dkg"
-
-	"github.com/dedis/d-voting/contracts/evoting"
 	"go.dedis.ch/dela/contracts/value"
 	"go.dedis.ch/dela/crypto"
 
@@ -43,9 +40,6 @@ const privateKeyFile = "private.key"
 
 // valueAccessKey is the access key used for the value contract.
 var valueAccessKey = [32]byte{2}
-
-// evotingAccessKey is the access key used for the evoting contract.
-var evotingAccessKey = [32]byte{3}
 
 func blsSigner() encoding.BinaryMarshaler {
 	return bls.NewSigner()
@@ -120,12 +114,6 @@ func (m miniController) OnStart(flags cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("injector: %v", err)
 	}
 
-	var dkgPedersen dkg.DKG
-	err = inj.Resolve(&dkgPedersen)
-	if err != nil {
-		return xerrors.Errorf("injector: %v", err)
-	}
-
 	signer, err := m.getSigner(flags)
 	if err != nil {
 		return xerrors.Errorf("signer: %v", err)
@@ -141,8 +129,6 @@ func (m miniController) OnStart(flags cli.Flags, inj node.Injector) error {
 	cosipbft.RegisterRosterContract(exec, rosterFac, access)
 
 	value.RegisterContract(exec, value.NewContract(valueAccessKey[:], access))
-
-	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], access, dkgPedersen))
 
 	txFac := signed.NewTransactionFactory()
 	vs := simple.NewService(exec, txFac)
@@ -198,15 +184,14 @@ func (m miniController) OnStart(flags cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("service: %v", err)
 	}
 
-	dkgPedersen.SetService(srvc)
-
 	inj.Inject(srvc)
 	inj.Inject(cosi)
 	inj.Inject(pool)
 	inj.Inject(vs)
 	inj.Inject(exec)
-	inj.Inject(&access)
+	inj.Inject(access)
 	inj.Inject(blocks)
+	inj.Inject(rosterFac)
 
 	return nil
 }

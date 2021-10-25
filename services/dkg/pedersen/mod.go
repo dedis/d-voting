@@ -1,18 +1,23 @@
 package pedersen
 
 import (
+	"bytes"
+	"encoding/hex"
+	"encoding/json"
 	"time"
 
+	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 
-	"go.dedis.ch/dela/crypto/ed25519"
+	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 
 	"github.com/dedis/d-voting/internal/tracing"
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
-	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/serde"
+	jsonserde "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
@@ -46,34 +51,47 @@ type Pedersen struct {
 	mino    mino.Mino
 	factory serde.Factory
 	actor   dkg.Actor
-	service ordering.Service
 	evoting bool
+
+	// set be the SetMissingStuff()
+	service   ordering.Service
+	rosterFac authority.Factory
+
+	pubkey kyber.Point
 }
 
 // NewPedersen returns a new DKG Pedersen factory
-func NewPedersen(m mino.Mino, evoting bool) (*Pedersen, kyber.Point) {
+func NewPedersen(m mino.Mino, evoting bool, service ordering.Service,
+	rosterFac authority.Factory) (*Pedersen, kyber.Point) {
+
 	factory := types.NewMessageFactory(m.GetAddressFactory())
 
 	privkey := suite.Scalar().Pick(suite.RandomStream())
 	pubkey := suite.Point().Mul(privkey, nil)
 
 	return &Pedersen{
-		privKey: privkey,
-		mino:    m,
-		factory: factory,
-		evoting: evoting,
+		privKey:   privkey,
+		mino:      m,
+		factory:   factory,
+		evoting:   evoting,
+		service:   service,
+		rosterFac: rosterFac,
+		pubkey:    pubkey,
 	}, pubkey
 }
 
 // Listen implements dkg.DKG. It must be called on each node that participates
 // in the DKG. Creates the RPC.
 func (s *Pedersen) Listen() (dkg.Actor, error) {
-	h := NewHandler(s.privKey, s.mino.GetAddress(), s.service, s.evoting)
+	h := NewHandler(s.privKey, s.mino.GetAddress(), s.service, s.evoting, s.pubkey)
 
 	a := &Actor{
-		rpc:      mino.MustCreateRPC(s.mino, "dkgevoting", h, s.factory),
-		factory:  s.factory,
-		startRes: h.startRes,
+		rpc:       mino.MustCreateRPC(s.mino, "dkgevoting", h, s.factory),
+		factory:   s.factory,
+		startRes:  h.startRes,
+		service:   s.service,
+		rosterFac: s.rosterFac,
+		context:   jsonserde.NewContext(),
 	}
 
 	s.actor = a
@@ -81,6 +99,7 @@ func (s *Pedersen) Listen() (dkg.Actor, error) {
 	return a, nil
 }
 
+// GetLastActor ...
 func (s *Pedersen) GetLastActor() (dkg.Actor, error) {
 	if s.actor != nil {
 		return s.actor, nil
@@ -89,56 +108,93 @@ func (s *Pedersen) GetLastActor() (dkg.Actor, error) {
 	}
 }
 
-func (s *Pedersen) SetService(service ordering.Service) {
-	s.service = service
-}
-
 // Actor allows one to perform DKG operations like encrypt/decrypt a message
 //
 // - implements dkg.Actor
 type Actor struct {
-	rpc      mino.RPC
-	factory  serde.Factory
-	startRes *state
+	rpc       mino.RPC
+	factory   serde.Factory
+	startRes  *state
+	service   ordering.Service
+	rosterFac authority.Factory
+	context   serde.Context
 }
 
 // Setup implement dkg.Actor. It initializes the DKG.
-func (a *Actor) Setup(co crypto.CollectiveAuthority, threshold int) (kyber.Point, error) {
-
+func (a *Actor) Setup(electionID []byte) (kyber.Point, error) {
 	if a.startRes.Done() {
 		return nil, xerrors.Errorf("startRes is already done, only one setup call is allowed")
+	}
+
+	proof, err := a.service.GetProof(electionID)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to read on the blockchain: %v", err)
+	}
+
+	election := new(electionTypes.Election)
+	err = json.NewDecoder(bytes.NewBuffer(proof.GetValue())).Decode(election)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to unmarshal Election: %v", err)
+	}
+
+	roster, err := a.rosterFac.AuthorityOf(a.context, election.RosterBuf)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to deserialize roster: %v", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), setupTimeout)
 	defer cancel()
 	ctx = context.WithValue(ctx, tracing.ProtocolKey, protocolNameSetup)
 
-	sender, receiver, err := a.rpc.Stream(ctx, co)
+	sender, receiver, err := a.rpc.Stream(ctx, roster)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to stream: %v", err)
 	}
 
-	addrs := make([]mino.Address, 0, co.Len())
-	pubkeys := make([]kyber.Point, 0, co.Len())
+	addrs := make([]mino.Address, 0, roster.Len())
 
-	addrIter := co.AddressIterator()
-	pubkeyIter := co.PublicKeyIterator()
+	addrIter := roster.AddressIterator()
 
-	for addrIter.HasNext() && pubkeyIter.HasNext() {
+	for addrIter.HasNext() {
 		addrs = append(addrs, addrIter.GetNext())
-
-		pubkey := pubkeyIter.GetNext()
-		edKey, ok := pubkey.(ed25519.PublicKey)
-		if !ok {
-			return nil, xerrors.Errorf("expected ed25519.PublicKey, got '%T'", pubkey)
-		}
-
-		pubkeys = append(pubkeys, edKey.GetPoint())
 	}
 
-	message := types.NewStart(threshold, addrs, pubkeys)
+	// get the peer DKG pub keys
+	getPeerKey := types.NewGetPeerPubKey()
+	errs := sender.Send(getPeerKey, addrs...)
+	err = <-errs
+	if err != nil {
+		return nil, xerrors.Errorf("failed to send getPeerKey message: %v", err)
+	}
 
-	errs := sender.Send(message, addrs...)
+	dkgPeerPubkeys := make([]kyber.Point, 0, len(addrs))
+	associatedAddrs := make([]mino.Address, 0, len(addrs))
+
+	for i := 0; i < len(addrs); i++ {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancel()
+
+		from, msg, err := receiver.Recv(ctx)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to receive peer pubkey: %v", err)
+		}
+
+		dela.Logger.Info().Msgf("received a response from %v", from)
+
+		resp, ok := msg.(types.GetPeerPubKeyResp)
+		if !ok {
+			return nil, xerrors.Errorf("received an unexpected message: %T - %s", resp, resp)
+		}
+
+		dkgPeerPubkeys = append(dkgPeerPubkeys, resp.GetPublicKey())
+		associatedAddrs = append(associatedAddrs, from)
+
+		dela.Logger.Info().Msgf("Pub key: %s", resp.GetPublicKey().String())
+	}
+
+	message := types.NewStart(associatedAddrs, dkgPeerPubkeys)
+
+	errs = sender.Send(message, addrs...)
 	err = <-errs
 	if err != nil {
 		return nil, xerrors.Errorf("failed to send start: %v", err)
@@ -148,7 +204,10 @@ func (a *Actor) Setup(co crypto.CollectiveAuthority, threshold int) (kyber.Point
 
 	for i := 0; i < len(addrs); i++ {
 
-		addr, msg, err := receiver.Recv(context.Background())
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+		defer cancel()
+
+		addr, msg, err := receiver.Recv(ctx)
 		if err != nil {
 			return nil, xerrors.Errorf("got an error from '%s' while "+
 				"receiving: %v", addr, err)
@@ -212,7 +271,7 @@ func (a *Actor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte,
 // decrypt the  message.
 // TODO: perform a re-encryption instead of gathering the private shares, which
 // should never happen.
-func (a *Actor) Decrypt(K, C kyber.Point, electionId string) ([]byte, error) {
+func (a *Actor) Decrypt(K, C kyber.Point, electionID []byte) ([]byte, error) {
 
 	if !a.startRes.Done() {
 		return nil, xerrors.Errorf("you must first initialize DKG. " +
@@ -238,7 +297,7 @@ func (a *Actor) Decrypt(K, C kyber.Point, electionId string) ([]byte, error) {
 		addrs = append(addrs, iterator.GetNext())
 	}
 
-	message := types.NewDecryptRequest(K, C, electionId)
+	message := types.NewDecryptRequest(K, C, hex.EncodeToString(electionID))
 
 	err = <-sender.Send(message, addrs...)
 	if err != nil {

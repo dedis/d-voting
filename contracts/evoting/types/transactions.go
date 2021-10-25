@@ -8,27 +8,56 @@ import (
 )
 
 type ElectionsMetadata struct {
-	ElectionsIds []string
+	ElectionsIDs ElectionIDs
+}
+
+// ElectionIDs is a slice of hex-encoded election IDs
+type ElectionIDs []string
+
+// Contains checks if el is present
+func (e ElectionIDs) Contains(el string) bool {
+	for _, e1 := range e {
+		if e1 == el {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Add adds an election ID or returns an error if already present
+func (e *ElectionIDs) Add(id string) error {
+	if e.Contains(id) {
+		return xerrors.Errorf("id '%s' already exist")
+	}
+
+	*e = append(*e, id)
+
+	return nil
 }
 
 type CreateElectionTransaction struct {
-	ElectionID       string
-	Title            string
-	AdminId          string
-	ShuffleThreshold int
-	Members          []CollectiveAuthorityMember
-	Format           string
+	Title   string
+	AdminID string
+	Format  string
+}
+
+type OpenElectionTransaction struct {
+	// ElectionID is hex-encoded
+	ElectionID string
 }
 
 type CastVoteTransaction struct {
+	// ElectionID is hex-encoded
 	ElectionID string
-	UserId     string
+	UserID     string
 	Ballot     Ciphertext
 }
 
 type CloseElectionTransaction struct {
+	// ElectionID is hex-encoded
 	ElectionID string
-	UserId     string
+	UserID     string
 }
 
 type ShuffleBallotsTransaction struct {
@@ -39,14 +68,16 @@ type ShuffleBallotsTransaction struct {
 }
 
 type DecryptBallotsTransaction struct {
+	// ElectionID is hex-encoded
 	ElectionID       string
-	UserId           string
+	UserID           string
 	DecryptedBallots []Ballot
 }
 
 type CancelElectionTransaction struct {
+	// ElectionID is hex-encoded
 	ElectionID string
-	UserId     string
+	UserID     string
 }
 
 // RandomID returns the hex encoding of a randomly created 32 byte ID.

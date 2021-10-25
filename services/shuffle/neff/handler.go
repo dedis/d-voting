@@ -146,7 +146,7 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 func makeTx(election *electionTypes.Election, manager txn.Manager) (txn.Transaction, error) {
 	shuffledBallots, shuffleProof, err := getShuffledBallots(election)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to shuffle ballots: %v", err)
+		return nil, xerrors.Errorf("failed to get shuffled ballots: %v", err)
 	}
 
 	shuffleBallotsTransaction := electionTypes.ShuffleBallotsTransaction{
