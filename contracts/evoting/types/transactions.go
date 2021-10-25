@@ -3,7 +3,6 @@ package types
 import (
 	"crypto/rand"
 	"encoding/hex"
-
 	"golang.org/x/xerrors"
 )
 
@@ -65,6 +64,7 @@ type ShuffleBallotsTransaction struct {
 	Round           int
 	ShuffledBallots Ciphertexts
 	Proof           []byte
+	Signature       []byte
 }
 
 type DecryptBallotsTransaction struct {
