@@ -52,11 +52,12 @@ type NeffShuffle struct {
 	blocks        *blockstore.InDisk
 	rosterFactory authority.Factory
 	context       serde.Context
+	signer        crypto.Signer
 }
 
 // NewNeffShuffle returns a new NeffShuffle factory.
 func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool,
-	blocks *blockstore.InDisk, rosterFac authority.Factory) *NeffShuffle {
+	blocks *blockstore.InDisk, rosterFac authority.Factory, signer crypto.Signer) *NeffShuffle {
 
 	factory := types.NewMessageFactory(m.GetAddressFactory())
 
@@ -68,6 +69,7 @@ func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool,
 		blocks:        blocks,
 		rosterFactory: rosterFac,
 		context:       jsonserde.NewContext(),
+		signer:        signer,
 	}
 }
 

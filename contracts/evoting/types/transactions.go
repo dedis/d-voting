@@ -65,6 +65,7 @@ type ShuffleBallotsTransaction struct {
 	ShuffledBallots Ciphertexts
 	Proof           []byte
 	Signature       []byte
+	Signer          CollectiveAuthorityMember
 }
 
 type DecryptBallotsTransaction struct {
