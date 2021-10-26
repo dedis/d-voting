@@ -290,15 +290,22 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 			"transaction is for round %d", expectedRound, shuffleBallotsTransaction.Round)
 	}
 
+	shuffler := shuffleBallotsTransaction.Signer
+
+	//Check the shuffler is a valid member of the shuffle:
+	//TODO
+
 	//Chek the node who submitted the shuffle did not already submit an accepted shuffle
-	shuffler := step.Current.GetIdentity()
 	if shuffleBallotsTransaction.Round > 0 {
 		for i, shuffleInstance := range election.ShuffleInstances {
-			if shuffler.Equal(shuffleInstance) { //TODO : Define Equal ?????
+			if shuffler.PublicKey == shuffleInstance.Shuffler.PublicKey { //TODO : Is it good enough?
 				return xerrors.Errorf("the node %v already submitted a shuffle that has been accepted in round %v", shuffler, i)
 			}
 		}
 	}
+
+	//Check the shuffler indeed signed the transaction:
+	//TODO
 
 	ksShuffled, csShuffled, err := shuffleBallotsTransaction.ShuffledBallots.GetKsCs()
 	if err != nil {

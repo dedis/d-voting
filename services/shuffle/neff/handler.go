@@ -95,15 +95,15 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 
 		//check all shuffles are made by different nodes
 		if round > 0 {
-			//TODO : use a hash set and compare sizes ?
 			for i, s1 := range election.ShuffleInstances {
 				for j, s2 := range election.ShuffleInstances {
-					if s1.Shuffler.Equal(s2.Shuffler) {
+					if s1.Shuffler.PublicKey == s2.Shuffler.PublicKey {
 						return xerrors.Errorf("Shuffle for rounds %v and %v have been made by the same node", i, j)
 					}
 				}
 			}
 		}
+		//TODO any more checks ? (signature made by shuffler, shuffler part of shuffle ?)
 
 		// check if the threshold is reached
 		if round >= election.ShuffleThreshold {
@@ -154,6 +154,7 @@ func makeTx(election *electionTypes.Election, manager txn.Manager) (txn.Transact
 		Round:           len(election.ShuffleInstances),
 		ShuffledBallots: shuffledBallots,
 		Proof:           shuffleProof,
+		//TODO Sign and add signer
 	}
 
 	js, err := json.Marshal(shuffleBallotsTransaction)
