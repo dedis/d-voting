@@ -37,22 +37,24 @@ var suite = suites.MustFind("Ed25519")
 // - implements mino.Handler
 type Handler struct {
 	mino.UnsupportedHandler
-	me      mino.Address
-	service ordering.Service
-	p       pool.Pool
-	signer  crypto.Signer
-	client  *evotingController.Client
+	me            mino.Address
+	service       ordering.Service
+	p             pool.Pool
+	signer        crypto.Signer
+	client        *evotingController.Client
+	shuffleSigner crypto.Signer
 }
 
 // NewHandler creates a new handler
 func NewHandler(me mino.Address, service ordering.Service, p pool.Pool,
-	signer crypto.Signer, client *evotingController.Client) *Handler {
+	signer crypto.Signer, client *evotingController.Client, shuffleSigner crypto.Signer) *Handler {
 	return &Handler{
-		me:      me,
-		service: service,
-		p:       p,
-		signer:  signer,
-		client:  client,
+		me:            me,
+		service:       service,
+		p:             p,
+		signer:        signer,
+		client:        client,
+		shuffleSigner: shuffleSigner,
 	}
 }
 
@@ -115,7 +117,7 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 			return xerrors.Errorf("the election must be closed: %s", election.Status)
 		}
 
-		tx, err := makeTx(election, manager)
+		tx, err := makeTx(election, manager, h.shuffleSigner)
 		if err != nil {
 			return xerrors.Errorf("failed to make tx: %v", err)
 		}
@@ -143,10 +145,25 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 	}
 }
 
-func makeTx(election *electionTypes.Election, manager txn.Manager) (txn.Transaction, error) {
+func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner crypto.Signer) (txn.Transaction, error) {
 	shuffledBallots, shuffleProof, err := getShuffledBallots(election)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get shuffled ballots: %v", err)
+	}
+
+	//signe shuffle:
+	shuffle, err := json.Marshal(shuffledBallots)
+	if err != nil {
+		return nil, xerrors.Errorf("Could not marshal ballots: %v", err)
+	}
+
+	signature, err := shuffleSigner.Sign(append(shuffle, shuffleProof...))
+	if err != nil {
+		return nil, xerrors.Errorf("Could not sign the shuffle : %v", err)
+	}
+	encodedSignature, err := signature.MarshalBinary()
+	if err != nil {
+		return nil, xerrors.Errorf("Could not encode signature as []byte : %v ", err)
 	}
 
 	shuffleBallotsTransaction := electionTypes.ShuffleBallotsTransaction{
@@ -154,7 +171,8 @@ func makeTx(election *electionTypes.Election, manager txn.Manager) (txn.Transact
 		Round:           len(election.ShuffleInstances),
 		ShuffledBallots: shuffledBallots,
 		Proof:           shuffleProof,
-		//TODO Sign and add signer
+		Signature:       encodedSignature,
+		//TODO add Signer
 	}
 
 	js, err := json.Marshal(shuffleBallotsTransaction)

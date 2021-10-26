@@ -80,7 +80,7 @@ func (n NeffShuffle) Listen(signer crypto.Signer) (shuffle.Actor, error) {
 		Nonce:  0,
 		Blocks: n.blocks,
 	}
-	h := NewHandler(n.mino.GetAddress(), n.service, n.p, signer, client)
+	h := NewHandler(n.mino.GetAddress(), n.service, n.p, signer, client, n.signer)
 
 	a := &Actor{
 		rpc:       mino.MustCreateRPC(n.mino, "shuffle", h, n.factory),
