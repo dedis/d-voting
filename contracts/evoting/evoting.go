@@ -2,8 +2,11 @@ package evoting
 
 import (
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/crypto/bls"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/dkg"
@@ -305,7 +308,33 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	}
 
 	//Check the shuffler indeed signed the transaction:
-	//TODO
+	signerPubKeyBuf, err := base64.StdEncoding.DecodeString(shuffleBallotsTransaction.Signer.PublicKey)
+	if err != nil {
+		return xerrors.Errorf("base64 address: %v", err)
+	}
+
+	signerPubKey, err := bls.NewPublicKey(signerPubKeyBuf)
+	if err != nil {
+		return xerrors.Errorf("could decode public key of signer : %v ", err)
+	}
+
+	shuffle, err := json.Marshal(shuffleBallotsTransaction.ShuffledBallots)
+	if err != nil {
+		return xerrors.Errorf("Could not marshal ballots: %v", err)
+	}
+
+	signature := &bls.Signature{} //OR CRYPTO ?
+
+	err = json.Unmarshal(shuffleBallotsTransaction.Signature, signature)
+	if err != nil {
+		return xerrors.Errorf("Could not unmarshal shuffle signature : %v ", err)
+	}
+
+	//Check the signature matches the shuffle using the shuffler's public key:
+	err = signerPubKey.Verify(append(shuffle, shuffleBallotsTransaction.Proof...), signature)
+	if err != nil {
+		return xerrors.Errorf("Signature does not match the Shuffle : %v ", err)
+	}
 
 	ksShuffled, csShuffled, err := shuffleBallotsTransaction.ShuffledBallots.GetKsCs()
 	if err != nil {
