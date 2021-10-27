@@ -6,6 +6,8 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"math/rand"
+
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/dkg"
 	"go.dedis.ch/dela/core/execution"
@@ -19,7 +21,6 @@ import (
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/shuffle"
 	"golang.org/x/xerrors"
-	"math/rand"
 )
 
 // evotingCommand implements the commands of the Evoting contract.
@@ -59,17 +60,17 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 	// Get the electionID, which is the SHA256 of the transaction ID
 	h := sha256.New()
 	h.Write(step.Current.GetID())
-	electionIDBuff := h.Sum(nil)
+	electionIDBuf := h.Sum(nil)
 
 	if !createElectionTxn.Configuration.IsValid() {
 		return xerrors.Errorf("configuration of election is incoherent or has duplicated IDs")
 	}
 
 	election := types.Election{
+		ElectionID: hex.EncodeToString(electionIDBuf),
 		Configuration: createElectionTxn.Configuration,
-		ElectionID:    hex.EncodeToString(electionIDBuff),
-		AdminID:       createElectionTxn.AdminID,
-		Status:        types.Open,
+		AdminID:    createElectionTxn.AdminID,
+		Status:     types.Initial,
 		// Pubkey is set by the opening command
 		BallotSize:          createElectionTxn.Configuration.MaxBallotSize(),
 		PublicBulletinBoard: types.PublicBulletinBoard{},
@@ -84,7 +85,7 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("failed to marshal Election : %v", err)
 	}
 
-	err = snap.Set(electionIDBuff, electionJSON)
+	err = snap.Set(electionIDBuf, electionJSON)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
@@ -161,8 +162,10 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step, d
 		return xerrors.Errorf("pubkey is already set: %s", election.Pubkey)
 	}
 
-	if election.Status != types.Open {
-		return xerrors.Errorf("the election is not open, current status: %d", election.Status)
+	if election.Status != types.Initial {
+		return xerrors.Errorf("the election was opened before, current status: %d", election.Status)
+	} else {
+		election.Status = types.Open
 	}
 
 	pubkeyBuf, err := pubkey.MarshalBinary()
