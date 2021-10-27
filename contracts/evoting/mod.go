@@ -129,6 +129,7 @@ func NewContract(aKey, rKey []byte, srvc access.Service, pedersen dkg.DKG, rFac 
 		context: json.NewContext(),
 	}
 
+	// TODO Why can't this be above?
 	contract.cmd = evotingCommand{Contract: &contract, prover: proof.HashVerify}
 
 	return contract

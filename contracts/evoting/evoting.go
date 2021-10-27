@@ -123,7 +123,7 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 }
 
 // openElection set the public key on the election. The public key is fetched
-// from the DKG actor. It works only if DKG is setup.
+// from the DKG actor. It works only if DKG is set up.
 func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step, dkgActor dkg.Actor) error {
 	pubkey, err := dkgActor.GetPublicKey()
 	if err != nil {
@@ -242,7 +242,6 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 	}
 
 	return nil
-
 }
 
 // shuffleBallots implements commands. It performs the SHUFFLE_BALLOTS command

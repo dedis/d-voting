@@ -82,6 +82,7 @@ func NewPedersen(m mino.Mino, evoting bool, service ordering.Service,
 
 // Listen implements dkg.DKG. It must be called on each node that participates
 // in the DKG. Creates the RPC.
+// TODO: Listen is not a good name; it's when you listen to the stream that you listen
 func (s *Pedersen) Listen() (dkg.Actor, error) {
 	h := NewHandler(s.privKey, s.mino.GetAddress(), s.service, s.evoting, s.pubkey)
 
@@ -167,10 +168,11 @@ func (a *Actor) Setup(electionID []byte) (kyber.Point, error) {
 		return nil, xerrors.Errorf("failed to send getPeerKey message: %v", err)
 	}
 
-	dkgPeerPubkeys := make([]kyber.Point, 0, len(addrs))
-	associatedAddrs := make([]mino.Address, 0, len(addrs))
+	lenAddrs := len(addrs)
+	dkgPeerPubkeys := make([]kyber.Point, 0, lenAddrs)
+	associatedAddrs := make([]mino.Address, 0, lenAddrs)
 
-	for i := 0; i < len(addrs); i++ {
+	for i := 0; i < lenAddrs; i++ {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 		defer cancel()
 
@@ -189,7 +191,7 @@ func (a *Actor) Setup(electionID []byte) (kyber.Point, error) {
 		dkgPeerPubkeys = append(dkgPeerPubkeys, resp.GetPublicKey())
 		associatedAddrs = append(associatedAddrs, from)
 
-		dela.Logger.Info().Msgf("Pub key: %s", resp.GetPublicKey().String())
+		dela.Logger.Info().Msgf("Public key: %s", resp.GetPublicKey().String())
 	}
 
 	message := types.NewStart(associatedAddrs, dkgPeerPubkeys)
@@ -200,9 +202,9 @@ func (a *Actor) Setup(electionID []byte) (kyber.Point, error) {
 		return nil, xerrors.Errorf("failed to send start: %v", err)
 	}
 
-	dkgPubKeys := make([]kyber.Point, len(addrs))
+	dkgPubKeys := make([]kyber.Point, lenAddrs)
 
-	for i := 0; i < len(addrs); i++ {
+	for i := 0; i < lenAddrs; i++ {
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 		defer cancel()
