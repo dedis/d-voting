@@ -2,7 +2,10 @@ package types
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"golang.org/x/xerrors"
 )
 
@@ -64,8 +67,10 @@ type ShuffleBallotsTransaction struct {
 	Round           int
 	ShuffledBallots Ciphertexts
 	Proof           []byte
-	Signature       []byte
-	Signer          CollectiveAuthorityMember
+	//Signature should be obtained using SignShuffle()
+	Signature []byte
+	//PublicKey is the public key of the signer.
+	PublicKey []byte
 }
 
 type DecryptBallotsTransaction struct {
@@ -90,4 +95,22 @@ func RandomID() (string, error) {
 	}
 
 	return hex.EncodeToString(buf), nil
+}
+
+//HashShuffle hashes a given shuffle so that it can be signed or a signature can be verified, using a common template.
+func HashShuffle(shuffle ShuffleBallotsTransaction, electionID string) ([]byte, error) {
+	hash := sha256.New()
+	id, err := base64.StdEncoding.DecodeString(electionID)
+	if err != nil {
+		return nil, xerrors.Errorf("Could not decode electionId : %v", err)
+	}
+	hash.Write(id)
+	shuffledBallots, err := json.Marshal(shuffle.ShuffledBallots)
+	if err != nil {
+		return nil, xerrors.Errorf("Could not marshal shuffled ballots : %v", err)
+	}
+	hash.Write(shuffledBallots)
+	hash.Write(shuffle.Proof)
+
+	return hash.Sum(nil), nil
 }
