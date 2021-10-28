@@ -52,7 +52,7 @@ type NeffShuffle struct {
 	blocks        *blockstore.InDisk
 	rosterFactory authority.Factory
 	context       serde.Context
-	signer        crypto.Signer
+	nodeSigner    crypto.Signer
 }
 
 // NewNeffShuffle returns a new NeffShuffle factory.
@@ -69,7 +69,7 @@ func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool,
 		blocks:        blocks,
 		rosterFactory: rosterFac,
 		context:       jsonserde.NewContext(),
-		signer:        signer,
+		nodeSigner:    signer,
 	}
 }
 
@@ -80,7 +80,7 @@ func (n NeffShuffle) Listen(signer crypto.Signer) (shuffle.Actor, error) {
 		Nonce:  0,
 		Blocks: n.blocks,
 	}
-	h := NewHandler(n.mino.GetAddress(), n.service, n.p, signer, client, n.signer)
+	h := NewHandler(n.mino.GetAddress(), n.service, n.p, signer, client, n.nodeSigner)
 
 	a := &Actor{
 		rpc:       mino.MustCreateRPC(n.mino, "shuffle", h, n.factory),
