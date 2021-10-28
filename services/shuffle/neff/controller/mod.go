@@ -85,7 +85,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to resolve authority.Factory")
 	}
 
-	signer, err := getPrivateSigner(ctx)
+	signer, err := getNodeSigner(ctx)
 	if err != nil {
 		return xerrors.Errorf("failed to get Signer for the shuffle : %v", err)
 	}
@@ -121,8 +121,8 @@ func getSigner(filePath string) (crypto.Signer, error) {
 	return signer, nil
 }
 
-//getPrivateSigner creates a signer wit
-func getPrivateSigner(flags cli.Flags) (crypto.AggregateSigner, error) {
+//getNodeSigner creates a signer wit
+func getNodeSigner(flags cli.Flags) (crypto.AggregateSigner, error) {
 	loader := loader.NewFileLoader(filepath.Join(flags.Path("config"), privateKeyFile))
 
 	signerData, err := loader.LoadOrCreate(generator{newFn: blsSigner})
