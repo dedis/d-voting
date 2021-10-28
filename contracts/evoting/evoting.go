@@ -1,11 +1,12 @@
 package evoting
 
 import (
+	"bytes"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"go.dedis.ch/dela/crypto"
+	_ "go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/bls"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
@@ -293,45 +294,40 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 			"transaction is for round %d", expectedRound, shuffleBallotsTransaction.Round)
 	}
 
-	shuffler := shuffleBallotsTransaction.Signer
+	shufflerPublicKey := shuffleBallotsTransaction.PublicKey
 
-	//Check the shuffler is a valid member of the shuffle:
-	//TODO
+	//Check the shuffler is a valid member of the roster:
+	//TODO get the roster using the context in the Contract, then get pubKey iterator
 
 	//Chek the node who submitted the shuffle did not already submit an accepted shuffle
 	if shuffleBallotsTransaction.Round > 0 {
 		for i, shuffleInstance := range election.ShuffleInstances {
-			if shuffler.PublicKey == shuffleInstance.Shuffler.PublicKey { //TODO : Is it good enough?
-				return xerrors.Errorf("the node %v already submitted a shuffle that has been accepted in round %v", shuffler, i)
+			if bytes.Compare(shufflerPublicKey, shuffleInstance.ShufflerPublicKey) == 0 {
+				return xerrors.Errorf("a node already submitted a shuffle that has been accepted in round %v", i)
 			}
 		}
 	}
 
 	//Check the shuffler indeed signed the transaction:
-	signerPubKeyBuf, err := base64.StdEncoding.DecodeString(shuffleBallotsTransaction.Signer.PublicKey)
-	if err != nil {
-		return xerrors.Errorf("base64 address: %v", err)
-	}
-
-	signerPubKey, err := bls.NewPublicKey(signerPubKeyBuf)
+	signerPubKey, err := bls.NewPublicKey(shuffleBallotsTransaction.PublicKey)
 	if err != nil {
 		return xerrors.Errorf("could decode public key of signer : %v ", err)
 	}
 
-	shuffle, err := json.Marshal(shuffleBallotsTransaction.ShuffledBallots)
-	if err != nil {
-		return xerrors.Errorf("Could not marshal ballots: %v", err)
-	}
-
-	signature := &bls.Signature{} //OR CRYPTO ?
+	var signature crypto.Signature
 
 	err = json.Unmarshal(shuffleBallotsTransaction.Signature, signature)
 	if err != nil {
 		return xerrors.Errorf("Could not unmarshal shuffle signature : %v ", err)
 	}
 
+	shuffleHash, err := types.HashShuffle(*shuffleBallotsTransaction, election.ElectionID)
+	if err != nil {
+		return xerrors.Errorf("Could not hash shuffle : %v")
+	}
+
 	//Check the signature matches the shuffle using the shuffler's public key:
-	err = signerPubKey.Verify(append(shuffle, shuffleBallotsTransaction.Proof...), signature)
+	err = signerPubKey.Verify(shuffleHash, signature)
 	if err != nil {
 		return xerrors.Errorf("Signature does not match the Shuffle : %v ", err)
 	}
@@ -371,7 +367,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	}
 
 	// append the new shuffled ballots and the proof to the lists
-	election.ShuffleInstances = append(election.ShuffleInstances, types.ShuffleInstance{ShuffledBallots: shuffleBallotsTransaction.ShuffledBallots, ShuffleProofs: shuffleBallotsTransaction.Proof, Shuffler: shuffler})
+	election.ShuffleInstances = append(election.ShuffleInstances, types.ShuffleInstance{ShuffledBallots: shuffleBallotsTransaction.ShuffledBallots, ShuffleProofs: shuffleBallotsTransaction.Proof, ShufflerPublicKey: shufflerPublicKey})
 
 	// in case we have enough shuffled ballots, we update the status
 	if len(election.ShuffleInstances) >= election.ShuffleThreshold {
