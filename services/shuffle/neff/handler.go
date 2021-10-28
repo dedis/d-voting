@@ -99,13 +99,12 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 		if round > 0 {
 			for i, s1 := range election.ShuffleInstances {
 				for j, s2 := range election.ShuffleInstances {
-					if s1.Shuffler.PublicKey == s2.Shuffler.PublicKey {
+					if bytes.Compare(s1.ShufflerPublicKey, s2.ShufflerPublicKey) == 0 {
 						return xerrors.Errorf("Shuffle for rounds %v and %v have been made by the same node", i, j)
 					}
 				}
 			}
 		}
-		//TODO any more checks ? (signature made by shuffler, shuffler part of shuffle ?)
 
 		// check if the threshold is reached
 		if round >= election.ShuffleThreshold {
@@ -151,29 +150,37 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 		return nil, xerrors.Errorf("failed to get shuffled ballots: %v", err)
 	}
 
-	//signe shuffle:
-	shuffle, err := json.Marshal(shuffledBallots)
-	if err != nil {
-		return nil, xerrors.Errorf("Could not marshal ballots: %v", err)
-	}
-
-	signature, err := shuffleSigner.Sign(append(shuffle, shuffleProof...))
-	if err != nil {
-		return nil, xerrors.Errorf("Could not sign the shuffle : %v", err)
-	}
-	encodedSignature, err := signature.MarshalBinary()
-	if err != nil {
-		return nil, xerrors.Errorf("Could not encode signature as []byte : %v ", err)
-	}
-
 	shuffleBallotsTransaction := electionTypes.ShuffleBallotsTransaction{
 		ElectionID:      string(election.ElectionID),
 		Round:           len(election.ShuffleInstances),
 		ShuffledBallots: shuffledBallots,
 		Proof:           shuffleProof,
-		Signature:       encodedSignature,
-		//TODO add Signer
 	}
+
+	//Sign the shuffle:
+	shuffleHash, err := electionTypes.HashShuffle(shuffleBallotsTransaction, election.ElectionID)
+	if err != nil {
+		return nil, xerrors.Errorf("Could not hash the shuffle while creating transaction: %v", err)
+	}
+
+	signature, err := shuffleSigner.Sign(shuffleHash)
+	if err != nil {
+		return nil, xerrors.Errorf("Could not sign the shuffle : %v", err)
+	}
+
+	encodedSignature, err := signature.MarshalBinary()
+	if err != nil {
+		return nil, xerrors.Errorf("Could not encode signature as []byte : %v ", err)
+	}
+
+	publicKey, err := shuffleSigner.GetPublicKey().MarshalBinary()
+	if err != nil {
+		return nil, xerrors.Errorf("Could not unmarshal public key from nodeSigner: %v", err)
+	}
+
+	//Complete transaction:
+	shuffleBallotsTransaction.PublicKey = publicKey
+	shuffleBallotsTransaction.Signature = encodedSignature
 
 	js, err := json.Marshal(shuffleBallotsTransaction)
 	if err != nil {
@@ -207,8 +214,6 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 
 	return tx, nil
 }
-
-//TODO : replace by getShuffleInstance which would ba appended at the end of current slice in the "Election"
 
 // getShuffledBallots returns the shuffled ballots with the shuffling proof.
 func getShuffledBallots(election *electionTypes.Election) (electionTypes.Ciphertexts, []byte, error) {
