@@ -10,6 +10,7 @@ import (
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering/cosipbft"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/core/store/kv"
 	"go.dedis.ch/dela/cosi/threshold"
 	"go.dedis.ch/dela/mino"
 	"golang.org/x/xerrors"
@@ -38,10 +39,21 @@ func (m controller) SetCommands(builder node.Builder) {
 	sub.SetDescription("initialize the DKG protocol")
 	sub.SetAction(builder.MakeAction(&initAction{}))
 
+	// memcoin --config /tmp/node1 dkg linkToElection --member $(memcoin --config
+	// /tmp/node1 dkg export) --member $(memcoin --config /tmp/node2 dkg export)
+	sub = cmd.SetSubCommand("linkToElection")
+	sub.SetDescription("initialize the DKG actors for a new election")
+	sub.SetFlags(cli.StringFlag{
+		Name:     "electionID",
+		Usage:    "the election ID, formatted in hexadecimal",
+		Required: true,
+	})
+
+	sub.SetAction(builder.MakeAction(&setupAction{}))
 	// memcoin --config /tmp/node1 dkg setup --member $(memcoin --config
 	// /tmp/node1 dkg export) --member $(memcoin --config /tmp/node2 dkg export)
 	sub = cmd.SetSubCommand("setup")
-	sub.SetDescription("creates the public distributed key and the private share on each node")
+	sub.SetDescription("create the public distributed key and the private share on each node")
 	sub.SetFlags(cli.StringFlag{
 		Name:     "electionID",
 		Usage:    "the election ID, formatted in hexadecimal",
@@ -54,7 +66,7 @@ func (m controller) SetCommands(builder node.Builder) {
 	sub.SetAction(builder.MakeAction(&exportInfoAction{}))
 
 	sub = cmd.SetSubCommand("getPublicKey")
-	sub.SetDescription("prints the distributed public Key")
+	sub.SetDescription("print the distributed public key")
 	sub.SetAction(builder.MakeAction(&getPublicKeyAction{}))
 
 	sub = cmd.SetSubCommand("registerHandlers")
@@ -100,6 +112,16 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to resolve *cosipbft.Service")
 	}
 
+	// TODO This is an interface
+	var dkgMap *kv.Bucket
+	// var dkgMap *dkgMap
+	err = inj.Resolve(&dkgMap)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve *kv.Bucket")
+	}
+
+	// TODO There should be one of these PER ELECTION
+	// It's this dkg that will be stored in the dkgMap
 	dkg, pubkey := pedersen.NewPedersen(no, true, srvc, rosterFac)
 
 	pubkeyBuf, err := pubkey.MarshalBinary()
@@ -115,6 +137,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		Msg("perdersen public key")
 
 	rosterKey := [32]byte{}
+	// TODO This shouldn't take dkg as input, but rather the map?
 	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:], access, dkg, rosterFac))
 
 	return nil

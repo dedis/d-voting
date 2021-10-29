@@ -107,6 +107,8 @@ type Contract struct {
 
 	cmd commands
 
+	// TODO: Replace
+	// dkgMap *kv.Bucket 
 	pedersen dkg.DKG
 
 	rosterFac authority.Factory
@@ -116,11 +118,15 @@ type Contract struct {
 }
 
 // NewContract creates a new Value contract
+// TODO: Replace
+// func NewContract(aKey, rKey []byte, srvc access.Service, dkgMap dkgMap, rFac authority.Factory) Contract {
 func NewContract(aKey, rKey []byte, srvc access.Service, pedersen dkg.DKG, rFac authority.Factory) Contract {
 	contract := Contract{
 		// indexElection:     map[string]struct{}{},
 		access:    srvc,
 		accessKey: aKey,
+		// TODO: Replace
+		// dkgMap: dkgMap, 
 		pedersen:  pedersen,
 
 		rosterKey: rKey,
@@ -129,7 +135,6 @@ func NewContract(aKey, rKey []byte, srvc access.Service, pedersen dkg.DKG, rFac 
 		context: json.NewContext(),
 	}
 
-	// TODO Why can't this be above?
 	contract.cmd = evotingCommand{Contract: &contract, prover: proof.HashVerify}
 
 	return contract
