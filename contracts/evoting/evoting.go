@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"go.dedis.ch/dela/crypto"
 	_ "go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/bls"
 
@@ -297,7 +296,24 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	shufflerPublicKey := shuffleBallotsTransaction.PublicKey
 
 	//Check the shuffler is a valid member of the roster:
-	//TODO get the roster using the context in the Contract, then get pubKey iterator
+	roster, err := e.rosterFac.AuthorityOf(e.Contract.context, election.RosterBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to deserialize roster: %v", err)
+	}
+	pubKeyIterator := roster.PublicKeyIterator()
+	shufflerIsAMember := false
+	for pubKeyIterator.HasNext() {
+		key, err := pubKeyIterator.GetNext().MarshalBinary()
+		if err != nil {
+			return xerrors.Errorf("failed to serialize a public from the roster : %v ", err)
+		}
+		if bytes.Compare(shufflerPublicKey, key) == 0 {
+			shufflerIsAMember = true
+		}
+	}
+	if !shufflerIsAMember {
+		return xerrors.Errorf("The public key of the shuffler is not registered in the roster")
+	}
 
 	//Chek the node who submitted the shuffle did not already submit an accepted shuffle
 	if shuffleBallotsTransaction.Round > 0 {
@@ -314,11 +330,10 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("could decode public key of signer : %v ", err)
 	}
 
-	var signature crypto.Signature
-
-	err = json.Unmarshal(shuffleBallotsTransaction.Signature, signature)
+	//TODO Doc of SignatureOf would hint that this is not the right method to use there
+	signature, err := bls.NewSignatureFactory().SignatureOf(e.context, shuffleBallotsTransaction.Signature)
 	if err != nil {
-		return xerrors.Errorf("Could not unmarshal shuffle signature : %v ", err)
+		return xerrors.Errorf("Could node deserialize shuffle signature : %v", err)
 	}
 
 	shuffleHash, err := types.HashShuffle(*shuffleBallotsTransaction, election.ElectionID)
