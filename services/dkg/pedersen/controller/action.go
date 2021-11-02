@@ -17,6 +17,7 @@ import (
 	"go.dedis.ch/dela/crypto/ed25519"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/proxy"
+	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
@@ -33,8 +34,14 @@ type initAction struct {
 }
 
 // Execute implements node.ActionTemplate. It creates an actor from
-// the dkgPedersen instance
+// the dkgPedersen instance and links it to an election.
 func (a *initAction) Execute(ctx node.Context) error {
+	electionIDBuf, err := hex.DecodeString(ctx.Flags.String("electionID"))
+	if err != nil {
+		return xerrors.Errorf("failed to decode electionID: %v", err)
+	}
+	// TODO: Check that election ID corresponds to a real election
+
 	var dkgPedersen dkg.DKG
 	err := ctx.Injector.Resolve(&dkgPedersen)
 	if err != nil {
@@ -48,38 +55,16 @@ func (a *initAction) Execute(ctx node.Context) error {
 
 	ctx.Injector.Inject(actor)
 	dela.Logger.Info().Msg("DKG has been initialized successfully")
-	return nil
-}
 
-// linkToElectionAction is an action to link a pre-existing DKG service to an election
-//
-// - implements node.ActionTemplate
-type linkToElectionAction struct {
-}
-
-// Execute implements node.ActionTemplate. It creates an actor from
-// the dkgPedersen instance
-func (a *linkToElectionAction) Execute(ctx node.Context) error {
 	var dkgMap kv.Bucket
 	err := ctx.Injector.Resolve(&dkgMap)
 	if err != nil {
 		return xerrors.Errorf("failed to resolve dkgMap: %v", err)
 	}
 
-	var dkg dkg.DKG
-	// TODO: This doesn't seem to work
-	err := ctx.Injector.Resolve(&dkg)
-	if err != nil {
-		return xerrors.Errorf("failed to resolve dkg: %v", err)
-	}
-
-	electionIDBuf, err := hex.DecodeString(ctx.Flags.String("electionID"))
-	if err != nil {
-		return xerrors.Errorf("failed to decode electionID: %v", err)
-	}
-
-	// TODO: dkg is not a byte array
-	dkgMap.Set(dkg, electionIDBuf)
+	// TODO: How to use the fact that actor has factory and context attributes?
+	actorBuf := serde.Serialize(actor.context)
+	dkgMap.Set(electionIDBuf, actorBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to decode electionID: %v", err)
 	}

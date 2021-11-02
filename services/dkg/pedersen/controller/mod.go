@@ -35,14 +35,10 @@ func (m controller) SetCommands(builder node.Builder) {
 	cmd := builder.SetCommand("dkg")
 	cmd.SetDescription("interact with the DKG service")
 
+	// memcoin --config /tmp/node1 dkg init --electionID electionID
 	sub := cmd.SetSubCommand("init")
-	sub.SetDescription("initialize the DKG protocol")
+	sub.SetDescription("initialize the DKG protocol for a given election")
 	sub.SetAction(builder.MakeAction(&initAction{}))
-
-	// memcoin --config /tmp/node1 dkg linkToElection --member $(memcoin --config
-	// /tmp/node1 dkg export) --member $(memcoin --config /tmp/node2 dkg export)
-	sub = cmd.SetSubCommand("linkToElection")
-	sub.SetDescription("initialize the DKG actors for a new election")
 	sub.SetFlags(cli.StringFlag{
 		Name:     "electionID",
 		Usage:    "the election ID, formatted in hexadecimal",
