@@ -1,7 +1,6 @@
 package types
 
 import (
-	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
 )
@@ -64,8 +63,7 @@ type ShuffleInstance struct {
 	ShuffleProofs []byte
 
 	//Shuffler is the identity of the node who made the given shuffle.
-	Shuffler access.Identity // How could we use CollectiveAuthorityMember ??
-
+	ShufflerPublicKey []byte
 }
 
 // Ballot contains all information about a simple ballot
