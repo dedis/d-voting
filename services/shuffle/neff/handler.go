@@ -20,6 +20,7 @@ import (
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
+	jsondela "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3/proof"
 	shuffleKyber "go.dedis.ch/kyber/v3/shuffle"
 	"go.dedis.ch/kyber/v3/suites"
@@ -95,17 +96,6 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 
 		round := len(election.ShuffleInstances)
 
-		//check all shuffles are made by different nodes
-		if round > 0 {
-			for i, s1 := range election.ShuffleInstances {
-				for j, s2 := range election.ShuffleInstances {
-					if bytes.Compare(s1.ShufflerPublicKey, s2.ShufflerPublicKey) == 0 {
-						return xerrors.Errorf("Shuffle for rounds %v and %v have been made by the same node", i, j)
-					}
-				}
-			}
-		}
-
 		// check if the threshold is reached
 		if round >= election.ShuffleThreshold {
 			dela.Logger.Info().Msgf("shuffle done with round n°%d", round)
@@ -168,7 +158,7 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 		return nil, xerrors.Errorf("Could not sign the shuffle : %v", err)
 	}
 
-	encodedSignature, err := signature.MarshalBinary()
+	encodedSignature, err := signature.Serialize(jsondela.NewContext())
 	if err != nil {
 		return nil, xerrors.Errorf("Could not encode signature as []byte : %v ", err)
 	}

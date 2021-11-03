@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	_ "go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/bls"
+	_ "go.dedis.ch/dela/crypto/bls/json"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/dkg"
@@ -330,7 +331,6 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("could decode public key of signer : %v ", err)
 	}
 
-	//TODO Doc of SignatureOf would hint that this is not the right method to use there
 	signature, err := bls.NewSignatureFactory().SignatureOf(e.context, shuffleBallotsTransaction.Signature)
 	if err != nil {
 		return xerrors.Errorf("Could node deserialize shuffle signature : %v", err)
