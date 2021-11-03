@@ -765,17 +765,11 @@ func marshallBallot(vote string, actor dkg.Actor) (types.Ciphertext, error) {
 		return types.Ciphertext{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
 	}
 
-	Kmarshalled, err := K.MarshalBinary()
+	var ballot types.Ciphertext
+	err = ballot.FromPoints(K, C)
 	if err != nil {
-		return types.Ciphertext{}, xerrors.Errorf("failed to marshall the K element of the ciphertext pair: %v", err)
+		return types.Ciphertext{}, err
 	}
-
-	Cmarshalled, err := C.MarshalBinary()
-	if err != nil {
-		return types.Ciphertext{}, xerrors.Errorf("failed to marshall the C element of the ciphertext pair: %v", err)
-	}
-
-	ballot := types.Ciphertext{K: Kmarshalled, C: Cmarshalled}
 
 	return ballot, nil
 
