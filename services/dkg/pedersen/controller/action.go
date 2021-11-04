@@ -48,7 +48,7 @@ func (a *initAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve dkg: %v", err)
 	}
 
-	actor, err := dkgPedersen.Listen()
+	actor, err := dkgPedersen.Listen(electionIDBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to start the RPC: %v", err)
 	}

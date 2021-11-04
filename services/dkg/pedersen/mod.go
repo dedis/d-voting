@@ -83,11 +83,15 @@ func NewPedersen(m mino.Mino, evoting bool, service ordering.Service,
 // Listen implements dkg.DKG. It must be called on each node that participates
 // in the DKG. Creates the RPC.
 // TODO: Listen is not a good name; it's when you open the stream that you listen
-func (s *Pedersen) Listen() (dkg.Actor, error) {
+// Something like NewActor
+func (s *Pedersen) Listen(electionID []byte) (dkg.Actor, error) {
 	h := NewHandler(s.privKey, s.mino.GetAddress(), s.service, s.evoting, s.pubkey)
 
+	no := s.mino.WithSegment(hex.EncodeToString(electionID))
+	rpc := mino.MustCreateRPC(no, "dkgevoting", h, s.factory) 
+
 	a := &Actor{
-		rpc:       mino.MustCreateRPC(s.mino, "dkgevoting", h, s.factory),
+		rpc:       rpc,
 		factory:   s.factory,
 		startRes:  h.startRes,
 		service:   s.service,

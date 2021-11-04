@@ -8,7 +8,7 @@ import (
 type DKG interface {
 	// Listen starts the RPC. This function should be called on each node that
 	// wishes to participate in a DKG.
-	Listen() (Actor, error)
+	Listen(electionID []byte) (Actor, error)
 
 	// GetLastActor allows to retrieve the last generated Actor
 	GetLastActor() (Actor, error)
