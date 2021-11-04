@@ -51,7 +51,14 @@ remove the old state:
 rm -rf /tmp/node*
 ```
 
-# Run the scenario test
+# Testing
+## Automate the memcoin setup using tmux
+If you have `tmux` installed, you can start a `tmux` session that will execute the above setup by running:
+```
+./test.sh
+```
+
+## Run the scenario test
 
 If nodes are running and `setup.sh` has been called, you can run a test
 scenario:
