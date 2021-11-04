@@ -130,7 +130,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 
 	dela.Logger.Info().
 		Hex("public key", pubkeyBuf).
-		Msg("perdersen public key")
+		Msg("pedersen public key")
 
 	rosterKey := [32]byte{}
 	// TODO This shouldn't take dkg as input, but rather the map?
