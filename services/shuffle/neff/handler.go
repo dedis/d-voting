@@ -103,7 +103,7 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 		}
 
 		if election.Status != electionTypes.Closed {
-			return xerrors.Errorf("the election must be closed: %s", election.Status)
+			return xerrors.Errorf("the election must be closed: but status is %v", election.Status)
 		}
 
 		tx, err := makeTx(election, manager, h.shuffleSigner)
@@ -199,7 +199,7 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 
 	tx, err := manager.Make(args...)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to make transaction: %v", err.Error())
+		return nil, xerrors.Errorf("failed to use manager: %v", err.Error())
 	}
 
 	return tx, nil
