@@ -2,6 +2,7 @@ import {React, useContext, useState} from 'react';
 import {Translations} from '../language/Translations';
 import {LanguageContext} from '../language/LanguageContext';
 import {SIGNIN_ENDPOINT} from '../utils/Endpoints';
+import {GET_TEQ_EENDPOINT} from '../utils/ExpressEndoints';
 import './Login.css';
 import PropTypes from 'prop-types';
 
@@ -12,7 +13,7 @@ const Login = ({setToken}) => {
     const [context, ] = useContext(LanguageContext);
 
     const handleClick = async() => {
-        try{
+        /*try{
             const response = await fetch(SIGNIN_ENDPOINT,request);        
             if(!response.ok){
                 throw Error(response.statusText);
@@ -25,7 +26,29 @@ const Login = ({setToken}) => {
         } catch(error){
             setLoginError(error);
             console.log(error);
+        }*/
+
+
+        try{
+            fetch(GET_TEQ_EENDPOINT).then(resp => {
+                console.log(resp);
+                const json_data = resp.json();
+                json_data.then(result => {
+                    window.location = result['url'];
+                });
+
+                //window.location = resp_json['url'];
+
+            }).catch(error => {
+                console.log(error);
+            });
+
+        } catch (error){
+            console.log(error);
         }
+
+
+
 
         return (<div>
             {loginError === null? <div></div>: Translations[context].errorServerDown}
