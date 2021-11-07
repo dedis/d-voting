@@ -3,7 +3,6 @@ package types
 import (
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"golang.org/x/xerrors"
@@ -100,7 +99,7 @@ func RandomID() (string, error) {
 //HashShuffle hashes a given shuffle so that it can be signed or a signature can be verified, using a common template.
 func HashShuffle(shuffle ShuffleBallotsTransaction, electionID string) ([]byte, error) {
 	hash := sha256.New()
-	id, err := base64.StdEncoding.DecodeString(electionID)
+	id, err := hex.DecodeString(electionID)
 	if err != nil {
 		return nil, xerrors.Errorf("Could not decode electionId : %v", err)
 	}
