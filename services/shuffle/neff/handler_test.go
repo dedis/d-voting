@@ -92,8 +92,6 @@ func TestHandler_StartShuffle(t *testing.T) {
 
 	//from := fake.NewAddress(0)
 
-	//TODO refactor error testing :
-
 	//err := handler.HandleStartShuffleMessage(startShuffle, from, nil, nil)
 	//equire.EqualError(t, err, "failed to get election: failed to decode election id: encoding/hex: invalid byte: U+0075 'u'")
 
