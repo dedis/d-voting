@@ -296,11 +296,12 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 
 	shufflerPublicKey := shuffleBallotsTransaction.PublicKey
 
-	//Check the shuffler is a valid member of the roster:
+	// Check the shuffler is a valid member of the roster:
 	roster, err := e.rosterFac.AuthorityOf(e.Contract.context, election.RosterBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to deserialize roster: %v", err)
 	}
+
 	pubKeyIterator := roster.PublicKeyIterator()
 	shufflerIsAMember := false
 	for pubKeyIterator.HasNext() {
@@ -308,24 +309,22 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		if err != nil {
 			return xerrors.Errorf("failed to serialize a public from the roster : %v ", err)
 		}
-		if bytes.Compare(shufflerPublicKey, key) == 0 {
+		if bytes.Equal(shufflerPublicKey, key) {
 			shufflerIsAMember = true
 		}
 	}
 	if !shufflerIsAMember {
-		return xerrors.Errorf("The public key of the shuffler is not registered in the roster")
+		return xerrors.Errorf("public key of the shuffler not found in roster: %x", shufflerPublicKey)
 	}
 
-	//Chek the node who submitted the shuffle did not already submit an accepted shuffle
-	if shuffleBallotsTransaction.Round > 0 {
-		for i, shuffleInstance := range election.ShuffleInstances {
-			if bytes.Compare(shufflerPublicKey, shuffleInstance.ShufflerPublicKey) == 0 {
-				return xerrors.Errorf("a node already submitted a shuffle that has been accepted in round %v", i)
-			}
+	// Chek the node who submitted the shuffle did not already submit an accepted shuffle
+	for i, shuffleInstance := range election.ShuffleInstances {
+		if bytes.Equal(shufflerPublicKey, shuffleInstance.ShufflerPublicKey) {
+			return xerrors.Errorf("a node already submitted a shuffle that has been accepted in round %v", i)
 		}
 	}
 
-	//Check the shuffler indeed signed the transaction:
+	// Check the shuffler indeed signed the transaction:
 	signerPubKey, err := bls.NewPublicKey(shuffleBallotsTransaction.PublicKey)
 	if err != nil {
 		return xerrors.Errorf("could decode public key of signer : %v ", err)
@@ -341,7 +340,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("Could not hash shuffle : %v")
 	}
 
-	//Check the signature matches the shuffle using the shuffler's public key:
+	// Check the signature matches the shuffle using the shuffler's public key:
 	err = signerPubKey.Verify(shuffleHash, signature)
 	if err != nil {
 		return xerrors.Errorf("Signature does not match the Shuffle : %v ", err)
