@@ -184,8 +184,6 @@ func (a *Actor) waitAndCheckShuffling(electionID string) error {
 		round := len(election.ShuffleInstances)
 		dela.Logger.Info().Msgf("SHUFFLE / ROUND : %d", round)
 
-		//TODO: Check id of shuffler ?
-
 		// if the threshold is reached that means we have enough
 		// shuffling.
 		if round >= election.ShuffleThreshold {
