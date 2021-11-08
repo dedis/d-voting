@@ -121,7 +121,7 @@ func getSigner(filePath string) (crypto.Signer, error) {
 	return signer, nil
 }
 
-//getNodeSigner creates a signer wit
+//getNodeSigner creates a signer with the node's private key
 func getNodeSigner(flags cli.Flags) (crypto.AggregateSigner, error) {
 	loader := loader.NewFileLoader(filepath.Join(flags.Path("config"), privateKeyFile))
 
