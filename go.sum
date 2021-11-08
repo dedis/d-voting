@@ -70,8 +70,6 @@ github.com/urfave/cli/v2 v2.2.0/go.mod h1:SE9GqnLQmjVa0iPEY0f1w3ygNIYcIJ0OKPMoW2
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 go.dedis.ch/dela v0.0.0-20211018150429-1fdbe35cd189 h1:DQ7qRaTKjHXgSt1IttLMiQJkSs2QTcFA/qjWUP2zcmU=
 go.dedis.ch/dela v0.0.0-20211018150429-1fdbe35cd189/go.mod h1:GVQ2MumgCcAkor2MmfRCoqTBsFjaaqt7HfJpQLhMGok=
-go.dedis.ch/dela-apps v0.0.0-20211018160019-66dd03cda388 h1:jFxtzQjfTgvA+3znbnkpTu4NYsl6dXu24BLzAKDqQWU=
-go.dedis.ch/dela-apps v0.0.0-20211018160019-66dd03cda388/go.mod h1:MoJSdm3LXkNtiKEK3eiBKgqFhory4v8sBr7ldFP/vFc=
 go.dedis.ch/dela-apps v0.0.0-20211019120455-a0db752a0ba0 h1:gPrJd+7QUuADpfToMKr80maGnjGPeB7ft7iNrkAtwGY=
 go.dedis.ch/dela-apps v0.0.0-20211019120455-a0db752a0ba0/go.mod h1:MoJSdm3LXkNtiKEK3eiBKgqFhory4v8sBr7ldFP/vFc=
 go.dedis.ch/fixbuf v1.0.3 h1:hGcV9Cd/znUxlusJ64eAlExS+5cJDIyTyEG+otu5wQs=

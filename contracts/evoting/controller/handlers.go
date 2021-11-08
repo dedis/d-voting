@@ -480,7 +480,7 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances)) //TODO: Why this capacity ?
+	decryptedBallots := make([]types.Ballot, len(election.ShuffleInstances))
 
 	for i := 0; i < len(ks); i++ {
 		message, err := h.dkgActor.Decrypt(ks[i], cs[i], electionIDBuff)
