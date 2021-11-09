@@ -17,7 +17,6 @@ import (
 	"go.dedis.ch/dela/crypto/ed25519"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/proxy"
-	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
@@ -41,9 +40,11 @@ func (a *initAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to decode electionID: %v", err)
 	}
 	// TODO: Check that election ID corresponds to a real election
+	// ElectionMetadataKey has a list of election ids (types transaction.go)
+	// electionMetadata.ElectionIDs.contains(electionId)
 
 	var dkgPedersen dkg.DKG
-	err := ctx.Injector.Resolve(&dkgPedersen)
+	err = ctx.Injector.Resolve(&dkgPedersen)
 	if err != nil {
 		return xerrors.Errorf("failed to resolve dkg: %v", err)
 	}
@@ -56,22 +57,42 @@ func (a *initAction) Execute(ctx node.Context) error {
 	ctx.Injector.Inject(actor)
 	dela.Logger.Info().Msg("DKG has been initialized successfully")
 
-	var dkgMap kv.Bucket
-	err := ctx.Injector.Resolve(&dkgMap)
+	var dkgMap kv.DB
+	err = ctx.Injector.Resolve(&dkgMap)
 	if err != nil {
 		return xerrors.Errorf("failed to resolve dkgMap: %v", err)
 	}
 
-	// TODO: How to use the fact that actor has factory and context attributes?
-	actorBuf := serde.Serialize(actor.context)
-	dkgMap.Set(electionIDBuf, actorBuf)
+	// TODO: Will need actor to implement serde
+	// actorData, err := actor.Serialize(json.NewContext())
+	// Dummy for now
+	actorData, err := hex.DecodeString(ctx.Flags.String("actor"))
 	if err != nil {
-		return xerrors.Errorf("failed to decode electionID: %v", err)
+		xerrors.Errorf("actor serialization failed: %v", err)
+	}
+	// actorBuf := serde.Serialize(actor.context)
+	err = dkgMap.Update(func(tx kv.WritableTx) error {
+		// TODO: What name should this have
+		// It should be put in one place
+		bucket, err := tx.GetBucketOrCreate([]byte("dkgmap"))
+		if err != nil {
+			return err
+		}
+
+		err = bucket.Set(electionIDBuf, actorData)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		xerrors.Errorf("database write failed: %v", err)
 	}
 
 	// TODO Needed?
 	ctx.Injector.Inject(dkgMap)
-	dela.Logger.Info().Msgf("DKG was successfully linked to election: %v", electionIDBuf)
+	dela.Logger.Info().Msgf("DKG was successfully linked to election %v", electionIDBuf)
 	return nil
 }
 
@@ -85,6 +106,7 @@ type setupAction struct {
 // Execute implements node.ActionTemplate. It reads the list of members and
 // request the setup.
 func (a *setupAction) Execute(ctx node.Context) error {
+	// TODO: This should now be obtained from dkgMap
 	var actor dkg.Actor
 	err := ctx.Injector.Resolve(&actor)
 	if err != nil {
@@ -253,6 +275,7 @@ type registerHandlersAction struct {
 
 // Execute implements node.ActionTemplate. It retrieves the collective
 // public key from the DKG service and prints it.
+// TODO I guess the handler does that, but not this method?
 func (a *registerHandlersAction) Execute(ctx node.Context) error {
 	var proxy proxy.Proxy
 	err := ctx.Injector.Resolve(&proxy)

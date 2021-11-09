@@ -108,16 +108,12 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to resolve *cosipbft.Service")
 	}
 
-	// TODO This is an interface
-	var dkgMap *kv.Bucket
-	// var dkgMap *dkgMap
+	var dkgMap kv.DB
 	err = inj.Resolve(&dkgMap)
 	if err != nil {
-		return xerrors.Errorf("failed to resolve *kv.Bucket")
+		return xerrors.Errorf("failed to resolve kv.DB")
 	}
 
-	// TODO There should be one of these PER ELECTION
-	// It's this dkg that will be stored in the dkgMap
 	dkg, pubkey := pedersen.NewPedersen(no, true, srvc, rosterFac)
 
 	pubkeyBuf, err := pubkey.MarshalBinary()

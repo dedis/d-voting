@@ -84,6 +84,7 @@ func (a *registerAction) Execute(ctx node.Context) error {
 
 	client := &Client{Blocks: blocks}
 
+	// TODO
 	var dkgActor dkg.Actor
 	err = ctx.Injector.Resolve(&dkgActor)
 	if err != nil {

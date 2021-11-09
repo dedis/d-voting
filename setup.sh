@@ -53,5 +53,4 @@ memcoin --config /tmp/node3 shuffle init --signer private.key
 echo "${GREEN}[7/7]${NC} starting http proxy"
 memcoin --config /tmp/node1 proxy start --clientaddr 127.0.0.1:8081
 memcoin --config /tmp/node1 e-voting registerHandlers --signer private.key
-
 memcoin --config /tmp/node1 dkg registerHandlers
