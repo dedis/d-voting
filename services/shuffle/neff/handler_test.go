@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"io"
 	"strconv"
 	"testing"
@@ -41,6 +42,42 @@ func TestHandler_Stream(t *testing.T) {
 	)
 	err = handler.Stream(fake.Sender{}, receiver)
 	require.EqualError(t, err, "expected StartShuffle message, got: fake.Message")
+
+	receiver = fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), types.NewStartShuffle("dummyID", make([]mino.Address, 0))))
+	err = handler.Stream(fake.Sender{}, receiver)
+	require.EqualError(t, err, "failed to handle StartShuffle message: failed to get election: failed to decode election id: encoding/hex: invalid byte: U+0075 'u'")
+
+	//Test successful Shuffle round from message:
+	dummyId := hex.EncodeToString([]byte("dummyId"))
+	election := initFakeElection(dummyId)
+
+	fakePool := FakePool{}
+	service := FakeService{
+		err:        nil,
+		election:   election,
+		electionId: electionTypes.ID(dummyId),
+		pool:       &fakePool,
+		status:     true,
+	}
+
+	handler.service = &service
+	handler.p = &fakePool
+	handler.me = fake.NewAddress(0)
+	handler.shuffleSigner = fake.NewSigner()
+	handler.signer = fake.NewSigner()
+	handler.client = &evotingController.Client{
+		Nonce: 0,
+		Blocks: FakeBlockStore{
+			getErr:  nil,
+			lastErr: nil,
+		},
+	}
+
+	receiver = fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), types.NewStartShuffle(dummyId, make([]mino.Address, 0))))
+	err = handler.Stream(fake.Sender{}, receiver)
+
+	require.NoError(t, err)
+
 }
 
 func TestHandler_StartShuffle(t *testing.T) {
@@ -85,22 +122,10 @@ func TestHandler_StartShuffle(t *testing.T) {
 	}
 	handler.service = &badService
 
-	//badDummyId := "dummyId"
-	//startShuffle := types.NewStartShuffle(
-	//	badDummyId,
-	//	nil)
-
-	//from := fake.NewAddress(0)
-
-	//err := handler.HandleStartShuffleMessage(startShuffle, from, nil, nil)
-	//equire.EqualError(t, err, "failed to get election: failed to decode election id: encoding/hex: invalid byte: U+0075 'u'")
-
 	dummyId := hex.EncodeToString([]byte("dummyId"))
-	//startShuffle = types.NewStartShuffle(
-	//	dummyId,
-	//	nil)
-	//err = handler.HandleStartShuffleMessage(startShuffle, from, nil, nil)
-	//require.EqualError(t, err, "failed to get election: failed to read on the blockchain: fake error")
+
+	err := handler.handleStartShuffle(dummyId)
+	require.EqualError(t, err, "failed to get election: failed to read on the blockchain: fake error")
 
 	service := FakeService{
 		err:        nil,
@@ -109,8 +134,8 @@ func TestHandler_StartShuffle(t *testing.T) {
 	}
 	handler.service = &service
 
-	//err = handler.HandleStartShuffleMessage(startShuffle, from, nil, nil)
-	//require.EqualError(t, err, "failed to get election: failed to unmarshal Election: json: cannot unmarshal string into Go value of type types.Election")
+	err = handler.handleStartShuffle(dummyId)
+	require.EqualError(t, err, "failed to get election: failed to unmarshal Election: json: cannot unmarshal string into Go value of type types.Election")
 
 	election := electionTypes.Election{
 		Title:            "dummyTitle",
@@ -131,7 +156,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 	}
 	handler.service = &service
 
-	err := handler.handleStartShuffle(dummyId)
+	err = handler.handleStartShuffle(dummyId)
 	require.EqualError(t, err, "the election must be closed: but status is 0")
 
 	election.Status = electionTypes.Closed
@@ -301,22 +326,11 @@ func TestHandler_StartShuffle(t *testing.T) {
 	handler.service = &service
 	handler.p = &fakePool
 
-	//startShuffle := types.NewStartShuffle(
-	//	dummyId,
-	//	[]mino.Address{fake.NewAddress(0), fake.NewAddress(1)})
-
-	//badSender := fake.NewBadSender()
-
-	//fmt.Println("##### sending..")
-	//err = handler.handleStartShuffle(dummyId)
-	//require.EqualError(t, err, fake.Err("failed to send EndShuffle message"))
-
-	//fakeSender := fake.Sender{}
-
-	err = handler.handleStartShuffle(dummyId) //TODO: loops because watch times out
+	err = handler.handleStartShuffle(dummyId)
 	require.NoError(t, err)
 
-	election.ShuffleThreshold = 2
+	//Test with reached threshold:
+	election.ShuffleThreshold = 0
 	service = FakeService{
 		err:        nil,
 		election:   election,
@@ -325,18 +339,11 @@ func TestHandler_StartShuffle(t *testing.T) {
 		status:     true,
 	}
 	handler.service = &service
-	//badReceiver := fake.NewBadReceiver()
-	//err = handler.HandleStartShuffleMessage(startShuffle, from, fakeSender, badReceiver)
-	//require.EqualError(t, err, fake.Err("got an error from '%!s(<nil>)' while receiving"))
-	//
-	//fakeReceiver := fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), nil))
-	//err = handler.HandleStartShuffleMessage(startShuffle, from, fakeSender, fakeReceiver)
-	//require.EqualError(t, err, "expected to receive an EndShuffle message, but go the following: <nil>")
-	//
-	//fakeReceiver = fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), types.NewEndShuffle()))
-	//err = handler.HandleStartShuffleMessage(startShuffle, from, fakeSender, fakeReceiver)
-	//require.NoError(t, err)
 
+	err = handler.handleStartShuffle(dummyId)
+	require.NoError(t, err)
+
+	//Test with service not working :
 	election.ShuffleThreshold = 1
 	service = FakeService{
 		err:        nil,
@@ -347,13 +354,16 @@ func TestHandler_StartShuffle(t *testing.T) {
 	}
 	service.status = false
 	handler.service = &service
-	err = handler.handleStartShuffle(dummyId) //TODO: loops because watch times out
+	err = handler.handleStartShuffle(dummyId)
 	// all transactions got denied
 	require.NoError(t, err)
 
+	//Test with a shuffle already started :
+	shuffledBallots := electionTypes.Ciphertexts{}
 	for _, value := range election.EncryptedBallots.Ballots {
-		election.ShuffleInstances[1].ShuffledBallots = append(election.ShuffleInstances[1].ShuffledBallots, value)
+		shuffledBallots = append(shuffledBallots, value)
 	}
+	election.ShuffleInstances = append(election.ShuffleInstances, electionTypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
 
 	election.ShuffleThreshold = 2
 	fakePool = FakePool{}
@@ -365,13 +375,59 @@ func TestHandler_StartShuffle(t *testing.T) {
 		status:     false,
 	}
 
-	err = handler.handleStartShuffle(dummyId) //TODO: loops because watch times out
+	err = handler.handleStartShuffle(dummyId)
 	require.NoError(t, err)
 
 }
 
 // -----------------------------------------------------------------------------
 // Utility functions
+
+func initFakeElection(electionId string) electionTypes.Election {
+	RandomStream := suite.RandomStream()
+	h := suite.Scalar().Pick(RandomStream)
+	pubKey := suite.Point().Mul(h, nil)
+	pubKeyMarshalled, _ := pubKey.MarshalBinary()
+	election := electionTypes.Election{
+		Title:            "dummyTitle",
+		ElectionID:       electionId,
+		AdminID:          "dummyAdminID",
+		Status:           electionTypes.Closed,
+		Pubkey:           pubKeyMarshalled,
+		EncryptedBallots: electionTypes.EncryptedBallots{},
+		ShuffleInstances: []electionTypes.ShuffleInstance{},
+		DecryptedBallots: nil,
+		ShuffleThreshold: 1,
+	}
+	k := 3
+	KsMarshalled := make([][]byte, 0, k)
+	CsMarshalled := make([][]byte, 0, k)
+	for i := 0; i < k; i++ {
+		// Embed the message into a curve point
+		message := "Ballot" + strconv.Itoa(i)
+		M := suite.Point().Embed([]byte(message), random.New())
+
+		// ElGamal-encrypt the point to produce ciphertext (K,C).
+		k := suite.Scalar().Pick(random.New()) // ephemeral private key
+		K := suite.Point().Mul(k, nil)         // ephemeral DH public key
+		S := suite.Point().Mul(k, pubKey)      // ephemeral DH shared secret
+		C := S.Add(S, M)                       // message blinded with secret
+
+		Kmarshalled, _ := K.MarshalBinary()
+		Cmarshalled, _ := C.MarshalBinary()
+
+		KsMarshalled = append(KsMarshalled, Kmarshalled)
+		CsMarshalled = append(CsMarshalled, Cmarshalled)
+	}
+	for i := 0; i < k; i++ {
+		ballot := electionTypes.Ciphertext{
+			K: KsMarshalled[i],
+			C: CsMarshalled[i],
+		}
+		election.EncryptedBallots.CastVote("dummyUser"+strconv.Itoa(i), ballot)
+	}
+	return election
+}
 
 // FakeProof
 // - implements ordering.Proof
