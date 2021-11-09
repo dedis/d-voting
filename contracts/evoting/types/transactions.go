@@ -97,19 +97,19 @@ func RandomID() (string, error) {
 }
 
 //HashShuffle hashes a given shuffle so that it can be signed or a signature can be verified, using a common template.
-func HashShuffle(shuffle ShuffleBallotsTransaction, electionID string) ([]byte, error) {
+func (s ShuffleBallotsTransaction) HashShuffle(electionID string) ([]byte, error) {
 	hash := sha256.New()
 	id, err := hex.DecodeString(electionID)
 	if err != nil {
 		return nil, xerrors.Errorf("Could not decode electionId : %v", err)
 	}
 	hash.Write(id)
-	shuffledBallots, err := json.Marshal(shuffle.ShuffledBallots)
+	shuffledBallots, err := json.Marshal(s.ShuffledBallots)
 	if err != nil {
 		return nil, xerrors.Errorf("Could not marshal shuffled ballots : %v", err)
 	}
 	hash.Write(shuffledBallots)
-	hash.Write(shuffle.Proof)
+	hash.Write(s.Proof)
 
 	return hash.Sum(nil), nil
 }

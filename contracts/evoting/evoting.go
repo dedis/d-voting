@@ -335,7 +335,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("Could node deserialize shuffle signature : %v", err)
 	}
 
-	shuffleHash, err := types.HashShuffle(*shuffleBallotsTransaction, election.ElectionID)
+	shuffleHash, err := shuffleBallotsTransaction.HashShuffle(election.ElectionID)
 	if err != nil {
 		return xerrors.Errorf("Could not hash shuffle : %v")
 	}

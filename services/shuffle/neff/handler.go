@@ -110,6 +110,10 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 		if err != nil {
 			return xerrors.Errorf("failed to make tx: %v", err)
 		}
+		err = h.p.Add(tx)
+		if err != nil {
+			return xerrors.Errorf("failed to add transaction to the pool: %v", err.Error())
+		}
 
 		watchCtx, cancel := context.WithTimeout(context.Background(), watchTimeout)
 		defer cancel()
@@ -117,11 +121,6 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 		events := h.service.Watch(watchCtx)
 
 		dela.Logger.Info().Msgf("sending shuffling tx with nonce %d", tx.GetNonce())
-
-		err = h.p.Add(tx)
-		if err != nil {
-			return xerrors.Errorf("failed to add transaction to the pool: %v", err.Error())
-		}
 
 		accepted, msg := watchTx(events, tx.GetID())
 		if accepted {
@@ -148,7 +147,7 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 	}
 
 	//Sign the shuffle:
-	shuffleHash, err := electionTypes.HashShuffle(shuffleBallotsTransaction, election.ElectionID)
+	shuffleHash, err := shuffleBallotsTransaction.HashShuffle(election.ElectionID)
 	if err != nil {
 		return nil, xerrors.Errorf("Could not hash the shuffle while creating transaction: %v", err)
 	}
