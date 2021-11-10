@@ -27,7 +27,6 @@ crypto bls signer new --save private.key
 ```
 
 # Run the nodes
-
 In three different terminal sessions, from the root folder:
 
 ```
@@ -48,7 +47,7 @@ This script will setup the nodes and services. If you restart do not forget to
 remove the old state:
 
 ```
-rm -rf /tmp/node*
+rm -rf /tmp/node{1,2,3}
 ```
 
 # Testing
@@ -57,6 +56,15 @@ If you have `tmux` installed, you can start a `tmux` session that will execute t
 ```
 ./test.sh
 ```
+You can move around the panes by pressing `Ctrl+B` followed by an arrow key.
+
+To end the session, in a different terminal run:
+```
+tmux kill-session -t d-voting-test
+```
+or kill each pane then the session with `Ctrl+D`.
+
+You'll have to delete the state files manually (see "Run the nodes").
 
 ## Run the scenario test
 

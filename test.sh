@@ -7,7 +7,7 @@ command -v tmux >/dev/null 2>&1 || { echo >&2 "tmux is not on your PATH!"; exit 
 # Launch session
 s="d-voting-test"
 
-tmux list-sessions | rg "^$s:" >/dev/null 2>&1 && { echo >&2 "A session with the name $s already exists; delete it and try again"; exit 1; }
+tmux list-sessions | rg "^$s:" >/dev/null 2>&1 && { echo >&2 "A session with the name $s already exists; kill it and try again"; exit 1; }
 
 tmux new -s $s -d
 
@@ -20,8 +20,6 @@ master="tmux send-keys -t $s:0.%0"
 node1="tmux send-keys -t $s:0.%1"
 node2="tmux send-keys -t $s:0.%2"
 node3="tmux send-keys -t $s:0.%3"
-
-$master "hello" C-m
 
 $node1 "LLVL=info memcoin --config /tmp/node1 start --port 2001" C-m
 $node2 "LLVL=info memcoin --config /tmp/node2 start --port 2002" C-m
