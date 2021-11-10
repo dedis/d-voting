@@ -87,6 +87,7 @@ func NewPedersen(m mino.Mino, evoting bool, service ordering.Service,
 func (s *Pedersen) Listen(electionID []byte) (dkg.Actor, error) {
 	h := NewHandler(s.privKey, s.mino.GetAddress(), s.service, s.evoting, s.pubkey)
 
+	// Link the actor to an RPC by the election ID
 	no := s.mino.WithSegment(hex.EncodeToString(electionID))
 	rpc := mino.MustCreateRPC(no, "dkgevoting", h, s.factory) 
 
@@ -337,7 +338,7 @@ func (a *Actor) Decrypt(K, C kyber.Point, electionID []byte) ([]byte, error) {
 
 	decryptedMessage, err := res.Data()
 	if err != nil {
-		return []byte{}, xerrors.Errorf("failed to get embeded data: %v", err)
+		return []byte{}, xerrors.Errorf("failed to get embedded data: %v", err)
 	}
 
 	return decryptedMessage, nil
