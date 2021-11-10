@@ -374,6 +374,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 		pool:       &fakePool,
 		status:     false,
 	}
+	handler = *NewHandler(handler.me, &service, &fakePool, handler.signer, handler.client, handler.shuffleSigner)
 
 	err = handler.handleStartShuffle(dummyId)
 	require.NoError(t, err)
