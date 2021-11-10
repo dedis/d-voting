@@ -110,17 +110,17 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 		if err != nil {
 			return xerrors.Errorf("failed to make tx: %v", err)
 		}
+
 		err = h.p.Add(tx)
 		if err != nil {
 			return xerrors.Errorf("failed to add transaction to the pool: %v", err.Error())
 		}
+		dela.Logger.Info().Msgf("sending shuffling tx with nonce %d", tx.GetNonce())
 
 		watchCtx, cancel := context.WithTimeout(context.Background(), watchTimeout)
 		defer cancel()
 
 		events := h.service.Watch(watchCtx)
-
-		dela.Logger.Info().Msgf("sending shuffling tx with nonce %d", tx.GetNonce())
 
 		accepted, msg := watchTx(events, tx.GetID())
 		if accepted {
