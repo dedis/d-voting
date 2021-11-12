@@ -9,6 +9,7 @@ import (
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/core/store/kv"
 
 	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 
@@ -47,49 +48,90 @@ const (
 //
 // - implements dkg.DKG
 type Pedersen struct {
-	privKey kyber.Scalar
 	mino    mino.Mino
 	factory serde.Factory
-	actor   dkg.Actor
-	evoting bool
+	actors  map[string]dkg.Actor
 
 	// set be the SetMissingStuff()
 	service   ordering.Service
 	rosterFac authority.Factory
-
-	pubkey kyber.Point
 }
 
 // NewPedersen returns a new DKG Pedersen factory
-func NewPedersen(m mino.Mino, evoting bool, service ordering.Service,
-	rosterFac authority.Factory) (*Pedersen, kyber.Point) {
+func NewPedersen(m mino.Mino, service ordering.Service,
+	rosterFac authority.Factory, dkgMap kv.DB) *Pedersen {
+	// TODO Check that there isn't one running already?
 
 	factory := types.NewMessageFactory(m.GetAddressFactory())
 
-	privkey := suite.Scalar().Pick(suite.RandomStream())
-	pubkey := suite.Point().Mul(privkey, nil)
-
-	return &Pedersen{
-		privKey:   privkey,
+	s := &Pedersen{
 		mino:      m,
 		factory:   factory,
-		evoting:   evoting,
 		service:   service,
 		rosterFac: rosterFac,
-		pubkey:    pubkey,
-	}, pubkey
+		actors:    make(map[string]dkg.Actor),
+	}
+
+	// Use dkgMap to fill the actors map
+	err := dkgMap.View(func(tx kv.ReadableTx) error {
+		bucket := tx.GetBucket([]byte("dkgmap"))
+		if bucket == nil {
+			return nil
+		}
+
+		return bucket.ForEach(func(electionID, keyPairBuf []byte) error {
+			keyPair := KeyPair{}
+
+			// err := json.Unmarshal(&keyPairBuf, )
+			// if err != nil {
+			//         return err
+			// }
+
+			// Adds actor to s.actors
+			_, err := s.NewActor(electionID, keyPair)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
+	})
+	if err != nil {
+		panic("database read failed: " + err.Error())
+	}
+
+	return s
 }
 
 // Listen implements dkg.DKG. It must be called on each node that participates
 // in the DKG. Creates the RPC.
-// TODO: Listen is not a good name; it's when you open the stream that you listen
-// Something like NewActor
 func (s *Pedersen) Listen(electionID []byte) (dkg.Actor, error) {
-	h := NewHandler(s.privKey, s.mino.GetAddress(), s.service, s.evoting, s.pubkey)
+	// TODO First check that electionID is the ID of a running election
+
+	actor, exists := s.actors[hex.EncodeToString(electionID)]
+	if exists {
+		return actor, nil
+	}
+
+	return s.NewActor(electionID, NewKeyPair())
+}
+
+// NewActor initializes a dkg.Actor with an RPC specific to the election with the given keypair
+func (s *Pedersen) NewActor(electionID []byte, keyPair KeyPair) (dkg.Actor, error) {
+
+	actor, exists := s.actors[hex.EncodeToString(electionID)]
+	if exists {
+		return actor, nil
+	}
+
+	privKey := keyPair.privKey
+	pubKey := keyPair.pubKey
+
+	h := NewHandler(privKey, s.mino.GetAddress(), s.service, pubKey)
 
 	// Link the actor to an RPC by the election ID
 	no := s.mino.WithSegment(hex.EncodeToString(electionID))
-	rpc := mino.MustCreateRPC(no, "dkgevoting", h, s.factory) 
+	rpc := mino.MustCreateRPC(no, "dkgevoting", h, s.factory)
 
 	a := &Actor{
 		rpc:       rpc,
@@ -98,14 +140,19 @@ func (s *Pedersen) Listen(electionID []byte) (dkg.Actor, error) {
 		service:   s.service,
 		rosterFac: s.rosterFac,
 		context:   jsonserde.NewContext(),
+
+		privkey: privKey,
+		pubkey:  pubKey,
 	}
 
-	s.actor = a
+	s.actors[hex.EncodeToString(electionID)] = a
+	
+	// TODO: Add to dkgMap
 
 	return a, nil
 }
 
-// GetLastActor ...
+// TODO GetLastActor not really relevant anymore?
 func (s *Pedersen) GetLastActor() (dkg.Actor, error) {
 	if s.actor != nil {
 		return s.actor, nil
@@ -124,6 +171,9 @@ type Actor struct {
 	service   ordering.Service
 	rosterFac authority.Factory
 	context   serde.Context
+
+	privkey kyber.Scalar
+	pubkey  kyber.Point
 }
 
 // Setup implement dkg.Actor. It initializes the DKG.
@@ -349,4 +399,20 @@ func (a *Actor) Decrypt(K, C kyber.Point, electionID []byte) ([]byte, error) {
 // TODO: to do
 func (a *Actor) Reshare() error {
 	return nil
+}
+
+type KeyPair struct {
+	pubKey  kyber.Point
+	privKey kyber.Scalar
+}
+
+// TODO Maybe could find a better name to highlight the randomness
+func NewKeyPair() KeyPair {
+	privKey := suite.Scalar().Pick(suite.RandomStream())
+	pubKey := suite.Point().Mul(privKey, nil)
+
+	return KeyPair{
+		privKey: privKey,
+		pubKey:  pubKey,
+	}
 }
