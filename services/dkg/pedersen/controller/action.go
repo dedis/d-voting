@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/dedis/d-voting/services/dkg"
+	"github.com/dedis/d-voting/services/dkg/pedersen"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
@@ -273,9 +274,8 @@ func (a *getPublicKeyAction) Execute(ctx node.Context) error {
 type registerHandlersAction struct {
 }
 
-// Execute implements node.ActionTemplate. It retrieves the collective
-// public key from the DKG service and prints it.
-// TODO I guess the handler does that, but not this method?
+// Execute implements node.ActionTemplate. It registers the proxy
+// handlers to set up elections
 func (a *registerHandlersAction) Execute(ctx node.Context) error {
 	var proxy proxy.Proxy
 	err := ctx.Injector.Resolve(&proxy)
@@ -283,36 +283,33 @@ func (a *registerHandlersAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve proxy: %v", err)
 	}
 
-	var dkgActor dkg.Actor
-	err = ctx.Injector.Resolve(&dkgActor)
+	var pedersen pedersen.Pedersen
+	err = ctx.Injector.Resolve(pedersen)
 	if err != nil {
-		return xerrors.Errorf("failed to resolve dkg.Actor: %v", err)
+		return xerrors.Errorf("failed to resolve dkg.DKG: %v", err)
 	}
 
-	proxy.RegisterHandler("/evoting/dkg", getHandler(dkgActor))
+	proxy.RegisterHandler("/evoting/dkg", getHandler(pedersen))
 
 	dela.Logger.Info().Msg("DKG handler registered")
 
 	return nil
 }
 
-// Body: electionID in HEX form
-// Response: pubKey in marshalled binary
-func getHandler(dkgActor dkg.Actor) func(http.ResponseWriter, *http.Request) {
+func getHandler(pedersen pedersen.Pedersen) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		electionIDHex, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "failed to read body: "+err.Error(), http.StatusInternalServerError)
+
+		electionID := r.FormValue("electionID")
+
+		if electionID == "" {
+			http.Error(w, "electionID was not found in request", http.StatusBadRequest)
 			return
 		}
 
-		electionIDBuf, err := hex.DecodeString(string(electionIDHex))
-		if err != nil {
-			http.Error(w, "failed to decode electionID: "+string(electionIDHex), http.StatusBadRequest)
-			return
-		}
+		a := pedersen.actors[electionID]
+		// TODO What if the actor doesn't exist?
 
-		pubKey, err := dkgActor.Setup(electionIDBuf)
+		pubKey, err := a.Setup(electionID)
 		if err != nil {
 			http.Error(w, "failed to setup: "+err.Error(), http.StatusInternalServerError)
 			return

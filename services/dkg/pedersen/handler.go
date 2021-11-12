@@ -75,18 +75,17 @@ type Handler struct {
 	privShare *share.PriShare
 	startRes  *state
 	service   ordering.Service
-	evoting   bool
 	pubkey    kyber.Point
 }
 
 // NewHandler creates a new handler
-func NewHandler(privKey kyber.Scalar, me mino.Address, service ordering.Service, evoting bool, pubkey kyber.Point) *Handler {
+func NewHandler(privKey kyber.Scalar, me mino.Address, service ordering.Service,
+	pubkey kyber.Point) *Handler {
 	return &Handler{
 		privKey:  privKey,
 		me:       me,
 		startRes: &state{},
 		service:  service,
-		evoting:  evoting,
 		pubkey:   pubkey,
 	}
 }
@@ -151,15 +150,13 @@ mainSwitch:
 				"call setup() first?")
 		}
 
-		if h.evoting {
-			isShuffled, err := h.checkIsShuffled(msg.K, msg.C, msg.GetElectionId())
-			if err != nil {
-				return xerrors.Errorf("failed to check if the ciphertext has been shuffled: %v", err)
-			}
+		isShuffled, err := h.checkIsShuffled(msg.K, msg.C, msg.GetElectionId())
+		if err != nil {
+			return xerrors.Errorf("failed to check if the ciphertext has been shuffled: %v", err)
+		}
 
-			if !isShuffled {
-				return xerrors.Errorf("the ciphertext has not been shuffled")
-			}
+		if !isShuffled {
+			return xerrors.Errorf("the ciphertext has not been shuffled")
 		}
 
 		// TODO: check if started before
