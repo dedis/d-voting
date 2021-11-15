@@ -3,7 +3,7 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 module.exports = function (app) {
     app.use(
         createProxyMiddleware('/evoting', {
-            target: 'http://localhost:1000', // API endpoint 1
+            target: 'http://localhost:5000', // API endpoint 1
             changeOrigin: true,
             headers: {
                 Connection: "keep-alive"
