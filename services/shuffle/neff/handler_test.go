@@ -51,14 +51,13 @@ func TestHandler_Stream(t *testing.T) {
 	dummyId := hex.EncodeToString([]byte("dummyId"))
 	election := initFakeElection(dummyId)
 
-	fakePool := FakePool{}
 	service := FakeService{
 		err:        nil,
 		election:   election,
 		electionId: electionTypes.ID(dummyId),
-		pool:       &fakePool,
 		status:     true,
 	}
+	fakePool := FakePool{service: &service}
 
 	handler.service = &service
 	handler.p = &fakePool
@@ -300,28 +299,27 @@ func TestHandler_StartShuffle(t *testing.T) {
 	require.EqualError(t, err, fake.Err("failed to make tx: failed to use manager: failed to sign: signer"))
 
 	handler.signer = fake.NewSigner()
-	badPool := FakePool{err: fakeErr}
-	handler.p = &badPool
 
 	service = FakeService{
 		err:        nil,
 		election:   election,
 		electionId: electionTypes.ID(dummyId),
-		pool:       &badPool,
 	}
+	badPool := FakePool{err: fakeErr,
+		service: &service}
+	handler.p = &badPool
 	handler.service = &service
 
 	err = handler.handleStartShuffle(dummyId)
 	require.EqualError(t, err, "failed to add transaction to the pool: fake error")
 
-	fakePool := FakePool{}
 	service = FakeService{
 		err:        nil,
 		election:   election,
 		electionId: electionTypes.ID(dummyId),
-		pool:       &fakePool,
 		status:     true,
 	}
+	fakePool := FakePool{service: &service}
 
 	handler.service = &service
 	handler.p = &fakePool
@@ -335,9 +333,9 @@ func TestHandler_StartShuffle(t *testing.T) {
 		err:        nil,
 		election:   election,
 		electionId: electionTypes.ID(dummyId),
-		pool:       &fakePool,
 		status:     true,
 	}
+	fakePool = FakePool{service: &service}
 	handler.service = &service
 
 	err = handler.handleStartShuffle(dummyId)
@@ -349,9 +347,9 @@ func TestHandler_StartShuffle(t *testing.T) {
 		err:        nil,
 		election:   election,
 		electionId: electionTypes.ID(dummyId),
-		pool:       &fakePool,
 		status:     true,
 	}
+	fakePool = FakePool{service: &service}
 	service.status = false
 	handler.service = &service
 	err = handler.handleStartShuffle(dummyId)
@@ -366,14 +364,14 @@ func TestHandler_StartShuffle(t *testing.T) {
 	election.ShuffleInstances = append(election.ShuffleInstances, electionTypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
 
 	election.ShuffleThreshold = 2
-	fakePool = FakePool{}
+
 	service = FakeService{
 		err:        nil,
 		election:   election,
 		electionId: electionTypes.ID(dummyId),
-		pool:       &fakePool,
 		status:     false,
 	}
+	fakePool = FakePool{service: &service}
 	handler = *NewHandler(handler.me, &service, &fakePool, handler.signer, handler.client, handler.shuffleSigner)
 
 	err = handler.handleStartShuffle(dummyId)
@@ -456,8 +454,8 @@ type FakeService struct {
 	err        error
 	election   interface{}
 	electionId electionTypes.ID
-	pool       *FakePool
 	status     bool
+	channel    chan ordering.Event
 }
 
 func (f FakeService) GetProof(key []byte) (ordering.Proof, error) {
@@ -479,8 +477,7 @@ func (f FakeService) GetStore() store.Readable {
 	return nil
 }
 
-func (f *FakeService) Watch(ctx context.Context) <-chan ordering.Event {
-
+func (f *FakeService) AddTx(tx FakeTransaction) {
 	results := make([]validation.TransactionResult, 3)
 
 	results[0] = FakeTransactionResult{
@@ -498,21 +495,23 @@ func (f *FakeService) Watch(ctx context.Context) <-chan ordering.Event {
 	results[2] = FakeTransactionResult{
 		status:      f.status,
 		message:     "",
-		transaction: f.pool.transaction,
+		transaction: tx,
 	}
 
 	f.status = true
 
-	channel := make(chan ordering.Event, 1)
 	fmt.Println("watch", results[0])
-	channel <- ordering.Event{
+	f.channel <- ordering.Event{
 		Index:        0,
 		Transactions: results,
 	}
-	close(channel)
+	close(f.channel)
 
-	return channel
+}
 
+func (f *FakeService) Watch(ctx context.Context) <-chan ordering.Event {
+	f.channel = make(chan ordering.Event, 100)
+	return f.channel
 }
 
 func (f FakeService) Close() error {
@@ -526,6 +525,7 @@ func (f FakeService) Close() error {
 type FakePool struct {
 	err         error
 	transaction FakeTransaction
+	service     *FakeService
 }
 
 func (f FakePool) SetPlayers(players mino.Players) error {
@@ -546,6 +546,8 @@ func (f *FakePool) Add(transaction txn.Transaction) error {
 	}
 
 	f.transaction = newTx
+	f.service.AddTx(newTx)
+
 	return f.err
 }
 
