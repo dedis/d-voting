@@ -290,8 +290,8 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	expectedRound := len(election.ShuffleInstances)
 
 	if shuffleBallotsTransaction.Round != expectedRound {
-		return xerrors.Errorf("wrong shuffle round: expected round %d, "+
-			"transaction is for round %d", expectedRound, shuffleBallotsTransaction.Round)
+		return xerrors.Errorf("wrong shuffle round: expected round '%d', "+
+			"transaction is for round '%d'", expectedRound, shuffleBallotsTransaction.Round)
 	}
 
 	shufflerPublicKey := shuffleBallotsTransaction.PublicKey
@@ -327,23 +327,23 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	// Check the shuffler indeed signed the transaction:
 	signerPubKey, err := bls.NewPublicKey(shuffleBallotsTransaction.PublicKey)
 	if err != nil {
-		return xerrors.Errorf("could decode public key of signer : %v ", err)
+		return xerrors.Errorf("could not decode public key of signer : %v ", err)
 	}
 
 	signature, err := bls.NewSignatureFactory().SignatureOf(e.context, shuffleBallotsTransaction.Signature)
 	if err != nil {
-		return xerrors.Errorf("Could node deserialize shuffle signature : %v", err)
+		return xerrors.Errorf("could node deserialize shuffle signature : %v", err)
 	}
 
 	shuffleHash, err := shuffleBallotsTransaction.HashShuffle(election.ElectionID)
 	if err != nil {
-		return xerrors.Errorf("Could not hash shuffle : %v")
+		return xerrors.Errorf("could not hash shuffle : %v", err)
 	}
 
 	// Check the signature matches the shuffle using the shuffler's public key:
 	err = signerPubKey.Verify(shuffleHash, signature)
 	if err != nil {
-		return xerrors.Errorf("Signature does not match the Shuffle : %v ", err)
+		return xerrors.Errorf("signature does not match the Shuffle : %v ", err)
 	}
 
 	ksShuffled, csShuffled, err := shuffleBallotsTransaction.ShuffledBallots.GetKsCs()
@@ -393,7 +393,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("failed to marshall Election : %v", err)
 	}
 
-	electionIDBuff, err := hex.DecodeString(string(election.ElectionID))
+	electionIDBuff, err := hex.DecodeString(election.ElectionID)
 	if err != nil {
 		return xerrors.Errorf(errDecodeElectionID, err)
 	}
