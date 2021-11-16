@@ -2,13 +2,6 @@
 
 First be sure to have Go installed.
 
-Install memcoin:
-
-```
-cd cli/memcoin
-go install
-```
-
 Be sure to have the `crypto` utility from Dela:
 
 ```
@@ -20,11 +13,25 @@ go install
 Go will install the binaries in `$GOPATH/bin`, so be sure this it is correctly
 added to you path (like with `export PATH=$PATH:/Users/david/go/bin`).
 
-Create a private key (from the root folder):
+Create a private key (in the d-voting root folder):
 
 ```
 crypto bls signer new --save private.key
 ```
+
+Copy the private key from the d-voting root folder to the cli/memcoin folder:
+
+```
+cp private.key cli/memcoin/
+```
+
+Install memcoin (this requires the private key in cli/memcoin):
+
+```
+cd cli/memcoin
+go install
+```
+
 
 # Run the nodes
 In three different terminal sessions, from the root folder:
