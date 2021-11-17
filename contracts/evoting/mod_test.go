@@ -373,10 +373,10 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 	_ = snap.Set(dummyElectionIdBuff, jsElection)
 	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
 	require.NoError(t, err)
-
+	//TODO: Check election has been closed?
 }
 
-func TestCommand_ShuffleBallotsFormatFormatErrors(t *testing.T) {
+func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	k := 3
 
 	dummyElection, dummyShuffleBallotsTransaction, contract := initBadShuffleBallot(k)
