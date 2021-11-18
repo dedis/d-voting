@@ -32,6 +32,15 @@ const App = () => {
   const [lanContext, setLanContext] =  useState(getBrowserLanguage());
   const {token, saveToken} = useToken();
 
+  const [isLogged, setIsLogged] = useState();
+
+
+  fetch('/api/getpersonnalinfo')
+      .then(res => res.json())
+      .then((result) => {
+        setIsLogged(result.islogged);
+      });
+
   return (
     <div className="App">
       
@@ -42,7 +51,7 @@ const App = () => {
             <Route exact path='/' component={NavBar}/>
           </div>
           <div data-testid="content" className='app-page'>
-          {!token? (<div className='login-container'><Login id='login-id' setToken={saveToken}/></div>): (<div>
+          {!isLogged? (<div className='login-container'><Login id='login-id' setToken={saveToken}/></div>): (<div>
             <Switch>
               <Route path="/" exact component={Home}/>
               <Route path="/create-election" component={CreateElection}/>

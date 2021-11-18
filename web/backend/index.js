@@ -31,7 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 // An api endpoint that returns a short list of items
 app.get('/api/getTkKey', (req,res) => {
 
-    body = 'urlaccess=http://128.179.189.204:3000/api/control_key\nservice=Evoting\nrequest=name,firstname,email,uniqueid,allunits';
+    body = 'urlaccess=https://dvoting-dev.dedis.ch/api/control_key\nservice=Evoting\nrequest=name,firstname,email,uniqueid,allunits';
     axios
         .post('http://tequila.epfl.ch/cgi-bin/tequila/createrequest', body)
         .then(resa => {
@@ -54,8 +54,12 @@ app.get('/api/control_key', (req, res) => {
             if(resa.data.includes('status=ok')){
                 //res.json(resa.data);
                 sciper = resa.data.split('uniqueid=')[1].split('\n')[0];
+                name = resa.data.split('name=')[1].split('\n')[0];
+                firstname = resa.data.split('firstname=')[1].split('\n')[0];
 
-                req.session.userid = sciper;
+                req.session.userid = parseInt(sciper);
+                req.session.name = name;
+                req.session.firstname = firstname;
 
                 //res.cookie('sign', sciper, { maxAge: 900000, httpOnly: true }); //TODO change sciper by signed message and maxAge
                 res.redirect('/');
@@ -73,6 +77,27 @@ app.get('/api/control_key', (req, res) => {
 app.get('/api/logout', (req, res) => {
     req.session.destroy();
     res.json('ok');
+});
+
+app.get('/api/getpersonnalinfo', (req, res) => {
+
+    if(req.session.userid){
+        res.json({
+            'sciper' : req.session.userid,
+            'name' : req.session.name,
+            'firstname' : req.session.firstname,
+            'role' : 'voter',
+            'islogged' : true
+        });
+    } else {
+        res.json({
+            'sciper' : 0,
+            'name' : '',
+            'firstname' : '',
+            'role' : '',
+            'islogged' : false
+        });
+    }
 });
 
 app.get('/evoting/*', (req, res) => {

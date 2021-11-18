@@ -1,4 +1,4 @@
-import {React, useContext} from 'react';
+import {React, useContext, useState} from 'react';
 import '../../App.css';
 import './NavBar.css';
 import logo from '../../assets/logoWithoutText.png';
@@ -13,6 +13,21 @@ const NavBar = () => {
         
         textShadow:'0 0.015em #177368,0 -0.015em #177368,0.01em 0 #177368,-0.01em 0 #177368',
     };
+
+    const [name, setName] = useState('');
+    const [firstname, setFirstname] = useState('');
+    const [sciper, setSciper] = useState(0);
+
+    fetch('/api/getpersonnalinfo')
+        .then(res => res.json())
+        .then((result) => {
+           if(result.islogged){
+               console.log(result);
+               setName(result.name);
+               setFirstname(result.firstname);
+               setSciper(result.sciper);
+           }
+        });
 
   return ( 
     <div className='nav-links'>
@@ -48,7 +63,14 @@ const NavBar = () => {
                         <option value='fr'>fr</option>
                     </select>
                 </li> 
-            </a>         
+            </a>
+            {sciper !=0 ?
+                <a className='nodeco'>
+                    Bonjour {firstname} {name}
+            </a> : <a></a>}
+
+
+
         </ul>
     </div>
   );
