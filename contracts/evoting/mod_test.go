@@ -371,9 +371,17 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 
 	jsElection, _ = json.Marshal(dummyElection)
 	_ = snap.Set(dummyElectionIdBuff, jsElection)
+
 	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
 	require.NoError(t, err)
-	//TODO: Check election has been closed?
+
+	// Check the shuffle is over:
+	electionTxIDBuff, _ := hex.DecodeString(dummyElection.ElectionID)
+	electionMarshaled, _ := snap.Get(electionTxIDBuff)
+	election := &types.Election{}
+	_ = json.Unmarshal(electionMarshaled, election)
+
+	require.Equal(t, election.Status, types.ShuffledBallots)
 }
 
 func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
