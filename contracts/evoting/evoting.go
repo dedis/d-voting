@@ -282,7 +282,6 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	}
 
 	if election.Status != types.Closed {
-		// todo : send status ?
 		return xerrors.Errorf("the election is not closed")
 	}
 
