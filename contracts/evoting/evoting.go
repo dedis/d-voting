@@ -9,7 +9,6 @@ import (
 	"math/rand"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/services/dkg"
 	"go.dedis.ch/dela/core/execution"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
@@ -125,19 +124,14 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 
 // openElection set the public key on the election. The public key is fetched
 // from the DKG actor. It works only if DKG is set up.
-func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step, dkgActor dkg.Actor) error {
-	pubkey, err := dkgActor.GetPublicKey()
-	if err != nil {
-		return xerrors.Errorf("failed to get pubkey: %v", err)
-	}
-
+func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) error {
 	openElecBuf := step.Current.GetArg(OpenElectionArg)
 	if len(openElecBuf) == 0 {
 		return xerrors.Errorf(errArgNotFound, OpenElectionArg)
 	}
 
 	openElectTransaction := &types.OpenElectionTransaction{}
-	err = json.Unmarshal(openElecBuf, openElectTransaction)
+	err := json.Unmarshal(openElecBuf, openElectTransaction)
 	if err != nil {
 		return xerrors.Errorf("failed to unmarshal OpenElectionTransaction: %v", err)
 	}
@@ -158,14 +152,29 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step, d
 		return xerrors.Errorf("failed to unmarshal Election: %v", err)
 	}
 
-	if election.Pubkey != nil {
-		return xerrors.Errorf("pubkey is already set: %s", election.Pubkey)
-	}
-
 	if election.Status != types.Initial {
 		return xerrors.Errorf("the election was opened before, current status: %d", election.Status)
 	} else {
 		election.Status = types.Open
+	}
+
+	if election.Pubkey != nil {
+		return xerrors.Errorf("pubkey is already set: %s", election.Pubkey)
+	}
+
+	electionIDBuf, err := hex.DecodeString(election.ElectionID)
+	if err != nil {
+		return xerrors.Errorf("failed to decode electionID: %v", err)
+	}
+
+	dkgActor, err := e.pedersen.GetActor(electionIDBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to get actor for election %d: %v", election.ElectionID, err)
+	}
+
+	pubkey, err := dkgActor.GetPublicKey()
+	if err != nil {
+		return xerrors.Errorf("failed to get pubkey: %v", err)
 	}
 
 	pubkeyBuf, err := pubkey.MarshalBinary()

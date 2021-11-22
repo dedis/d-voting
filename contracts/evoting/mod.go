@@ -56,7 +56,7 @@ const (
 // commands defines the commands of the evoting contract.
 type commands interface {
 	createElection(snap store.Snapshot, step execution.Step) error
-	openElection(snap store.Snapshot, step execution.Step, dkgActor dkg.Actor) error
+	openElection(snap store.Snapshot, step execution.Step) error
 	castVote(snap store.Snapshot, step execution.Step) error
 	closeElection(snap store.Snapshot, step execution.Step) error
 	shuffleBallots(snap store.Snapshot, step execution.Step) error
@@ -161,11 +161,7 @@ func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 			return xerrors.Errorf("failed to create election: %v", err)
 		}
 	case CmdOpenElection:
-		dkgActor, err := c.pedersen.GetLastActor()
-		if err != nil {
-			return xerrors.Errorf("failed to get dkgActor: %v", err)
-		}
-		err = c.cmd.openElection(snap, step, dkgActor)
+		err := c.cmd.openElection(snap, step)
 		if err != nil {
 			return xerrors.Errorf("failed to open election: %v", err)
 		}
