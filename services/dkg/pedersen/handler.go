@@ -70,23 +70,34 @@ type Handler struct {
 	mino.UnsupportedHandler
 	sync.RWMutex
 	dkg       *pedersen.DistKeyGenerator
-	privKey   kyber.Scalar
 	me        mino.Address
-	privShare *share.PriShare
-	startRes  *state
 	service   ordering.Service
-	pubkey    kyber.Point
+
+	// These are persistent, see HandlerData
+	startRes  *state
+	privShare *share.PriShare
+	privKey   kyber.Scalar
+	pubKey    kyber.Point
 }
 
 // NewHandler creates a new handler
-func NewHandler(privKey kyber.Scalar, me mino.Address, service ordering.Service,
-	pubkey kyber.Point) *Handler {
+func NewHandler(me mino.Address, service ordering.Service, handlerData HandlerData) *Handler {
+
+	// TODO: Deal with absence of data
+	// if there is no privKey or pubKey, reset everything
+	privKey := handlerData.privKey
+	pubKey := handlerData.pubKey
+	startRes := handlerData.startRes
+	privShare := handlerData.privShare
+
 	return &Handler{
-		privKey:  privKey,
-		me:       me,
-		startRes: &state{},
-		service:  service,
-		pubkey:   pubkey,
+		me:         me,
+		service:    service,
+
+		startRes:   startRes,
+		privShare:  privShare,
+		privKey:    privKey,
+		pubKey:     pubKey,
 	}
 }
 
@@ -183,7 +194,7 @@ mainSwitch:
 		}
 
 	case types.GetPeerPubKey:
-		response := types.NewGetPeerPubKeyResp(h.pubkey)
+		response := types.NewGetPeerPubKeyResp(h.pubKey)
 		errs := out.Send(response, from)
 		err = <-errs
 		if err != nil {
@@ -341,7 +352,7 @@ func (h *Handler) certify(resps []*pedersen.Response, out mino.Sender,
 		switch msg := msg.(type) {
 
 		case types.Response:
-			// 5. Processing responses
+			// Processing responses
 			dela.Logger.Trace().Msgf("%s received response from %s", h.me, from)
 			response := &pedersen.Response{
 				Index: msg.GetIndex(),
@@ -366,13 +377,13 @@ func (h *Handler) certify(resps []*pedersen.Response, out mino.Sender,
 
 	dela.Logger.Trace().Msgf("%s is certified", h.me)
 
-	// 6. Send back the public DKG key
+	// Send back the public DKG key
 	distrKey, err := h.dkg.DistKeyShare()
 	if err != nil {
 		return xerrors.Errorf("failed to get distr key: %v", err)
 	}
 
-	// 7. Update the state before sending to acknowledgement to the
+	// Update the state before sending to acknowledgement to the
 	// orchestrator, so that it can process decrypt requests right away.
 	h.startRes.SetDistKey(distrKey.Public())
 
@@ -476,4 +487,24 @@ func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionId strin
 
 	return false, nil
 
+}
+
+// HandlerData is used to synchronise actors between the DKG and the filesystem.
+type HandlerData struct {
+	startRes  *state
+	privShare *share.PriShare
+	privKey   kyber.Scalar
+	pubKey    kyber.Point
+}
+
+// NewHandlerData generates new actor data.
+// TODO Maybe could find a better name to highlight the randomness
+func NewHandlerData() HandlerData {
+	privKey := suite.Scalar().Pick(suite.RandomStream())
+	pubKey := suite.Point().Mul(privKey, nil)
+
+	return HandlerData{
+		privKey: privKey,
+		pubKey:  pubKey,
+	}
 }

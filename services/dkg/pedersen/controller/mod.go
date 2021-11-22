@@ -116,7 +116,6 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to resolve kv.DB")
 	}
 
-	// dkg, pubkey := pedersen.NewPedersen(no, srvc, rosterFac)
 	dkg := pedersen.NewPedersen(no, srvc, rosterFac)
 
 	// Use dkgMap to fill the actors map
@@ -126,15 +125,15 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 			return nil
 		}
 
-		return bucket.ForEach(func(electionIDBuf, actorBuf []byte) error {
+		return bucket.ForEach(func(electionIDBuf, handlerDataBuf []byte) error {
 
-			actorData := pedersen.ActorData{}
-			err = json.Unmarshal(actorBuf, &actorData)
+			handlerData := pedersen.HandlerData{}
+			err = json.Unmarshal(handlerDataBuf, &handlerData)
 			if err != nil {
 				return err
 			}
 
-			_, err = dkg.NewActor(hex.EncodeToString(electionIDBuf), actorData)
+			_, err = dkg.NewActor(hex.EncodeToString(electionIDBuf), handlerData)
 			if err != nil {
 				return err
 			}
@@ -150,7 +149,8 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 
 	rosterKey := [32]byte{}
 	// TODO This shouldn't take dkg as input, but rather the map?
-	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:], access, dkg, rosterFac))
+	c := evoting.NewContract(evotingAccessKey[:], rosterKey[:], access, dkg, rosterFac)
+	evoting.RegisterContract(exec, c)
 
 	return nil
 }

@@ -82,18 +82,14 @@ func (s *Pedersen) Listen(electionIDBuf []byte) (dkg.Actor, error) {
 		return actor, nil
 	}
 
-	return s.NewActor(hex.EncodeToString(electionIDBuf), NewActorData())
+	return s.NewActor(hex.EncodeToString(electionIDBuf), NewHandlerData())
 }
 
 // NewActor initializes a dkg.Actor with an RPC specific to the election with the given keypair
-func (s *Pedersen) NewActor(electionID string, actorData ActorData) (dkg.Actor, error) {
-
-	privKey := actorData.privKey
-	pubKey := actorData.pubKey
-
-	h := NewHandler(privKey, s.mino.GetAddress(), s.service, pubKey)
+func (s *Pedersen) NewActor(electionID string, handlerData HandlerData) (dkg.Actor, error) {
 
 	// Link the actor to an RPC by the election ID
+	h := NewHandler(s.mino.GetAddress(), s.service, handlerData)
 	no := s.mino.WithSegment(electionID)
 	rpc := mino.MustCreateRPC(no, "dkgevoting", h, s.factory)
 
@@ -104,9 +100,6 @@ func (s *Pedersen) NewActor(electionID string, actorData ActorData) (dkg.Actor, 
 		service:   s.service,
 		rosterFac: s.rosterFac,
 		context:   jsonserde.NewContext(),
-
-		privkey:   privKey,
-		pubkey:    pubKey,
 	}
 
 	s.actors[electionID] = a
@@ -136,9 +129,6 @@ type Actor struct {
 	service   ordering.Service
 	rosterFac authority.Factory
 	context   serde.Context
-
-	privkey   kyber.Scalar
-	pubkey    kyber.Point
 }
 
 // Setup implements dkg.Actor. It initializes the DKG.
@@ -364,22 +354,4 @@ func (a *Actor) Decrypt(K, C kyber.Point, electionID []byte) ([]byte, error) {
 // TODO: to do
 func (a *Actor) Reshare() error {
 	return nil
-}
-
-// ActorData is used to synchronise actors between the DKG and the filesystem.
-type ActorData struct {
-	pubKey  kyber.Point
-	privKey kyber.Scalar
-}
-
-// NewActorData generates new actor data.
-// TODO Maybe could find a better name to highlight the randomness
-func NewActorData() ActorData {
-	privKey := suite.Scalar().Pick(suite.RandomStream())
-	pubKey := suite.Point().Mul(privKey, nil)
-
-	return ActorData{
-		privKey: privKey,
-		pubKey:  pubKey,
-	}
 }
