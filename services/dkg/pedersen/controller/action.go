@@ -203,19 +203,8 @@ func (a *exportInfoAction) Execute(ctx node.Context) error {
 	if err != nil {
 		return xerrors.Errorf("failed to marshal address: %v", err)
 	}
-	var pubkey kyber.Point
 
-	err = ctx.Injector.Resolve(&pubkey)
-	if err != nil {
-		return xerrors.Errorf("injector: %v", err)
-	}
-
-	pubkeyMarshalled, err := pubkey.MarshalBinary()
-	if err != nil {
-		return xerrors.Errorf("failed to marshal public key: %v", err)
-	}
-
-	desc := base64.StdEncoding.EncodeToString(addr) + separator + base64.StdEncoding.EncodeToString(pubkeyMarshalled)
+	desc := base64.StdEncoding.EncodeToString(addr)
 
 	fmt.Fprint(ctx.Out, desc)
 
