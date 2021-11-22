@@ -237,10 +237,20 @@ type getPublicKeyAction struct {
 // Execute implements node.ActionTemplate. It retrieves the collective
 // public key from the DKG service and prints it.
 func (a *getPublicKeyAction) Execute(ctx node.Context) error {
-	var actor dkg.Actor
-	err := ctx.Injector.Resolve(&actor)
+	electionIDBuf, err := hex.DecodeString(ctx.Flags.String("electionID"))
 	if err != nil {
-		return xerrors.Errorf("failed to resolve actor: %v", err)
+		return xerrors.Errorf("failed to decode electionID: %v", err)
+	}
+
+	var dkgPedersen dkg.DKG
+	err = ctx.Injector.Resolve(&dkgPedersen)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve dkg: %v", err)
+	}
+
+	actor, err := dkgPedersen.GetActor(electionIDBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to get actor: %v", err)
 	}
 
 	pubkey, err := actor.GetPublicKey()
