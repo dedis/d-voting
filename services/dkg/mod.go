@@ -10,8 +10,8 @@ type DKG interface {
 	// wishes to participate in a DKG.
 	Listen(electionID []byte) (Actor, error)
 
-	// GetLastActor allows to retrieve the last generated Actor
-	GetLastActor() (Actor, error)
+	// GetActor allows to retrieve the Actor corresponding a given electionID
+	GetActor(electionID []byte) (Actor, error)
 }
 
 // Actor defines the primitives to use a DKG protocol

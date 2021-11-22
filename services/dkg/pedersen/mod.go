@@ -146,19 +146,21 @@ func (s *Pedersen) NewActor(electionID []byte, keyPair KeyPair) (dkg.Actor, erro
 	}
 
 	s.actors[hex.EncodeToString(electionID)] = a
-	
-	// TODO: Add to dkgMap
+	s.actors[electionID] = a
 
 	return a, nil
 }
 
-// TODO GetLastActor not really relevant anymore?
-func (s *Pedersen) GetLastActor() (dkg.Actor, error) {
-	if s.actor != nil {
-		return s.actor, nil
-	} else {
-		return nil, xerrors.Errorf("listen has not been called")
+func (s *Pedersen) GetActor(electionIDBuf []byte) (dkg.Actor, error) {
+
+	electionID := hex.EncodeToString(electionIDBuf)
+
+	actor, exists := s.actors[electionID]
+	if exists {
+		return actor, nil
 	}
+
+	return nil, xerrors.Errorf("Listen was not called for electionID %s", electionID)
 }
 
 // Actor allows one to perform DKG operations like encrypt/decrypt a message
