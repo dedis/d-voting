@@ -2,9 +2,9 @@ package controller
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -18,7 +18,6 @@ import (
 	"go.dedis.ch/dela/crypto/ed25519"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/proxy"
-	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 )
@@ -56,45 +55,37 @@ func (a *initAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to start the RPC: %v", err)
 	}
 
-	ctx.Injector.Inject(actor)
 	dela.Logger.Info().Msg("DKG has been initialized successfully")
 
+	// Place it in the map to keep it in sync
 	var dkgMap kv.DB
 	err = ctx.Injector.Resolve(&dkgMap)
 	if err != nil {
 		return xerrors.Errorf("failed to resolve dkgMap: %v", err)
 	}
 
-	// TODO: Will need actor to implement serde
-	// actorData, err := actor.Serialize(json.NewContext())
-	// Dummy for now
-	actorData, err := hex.DecodeString(ctx.Flags.String("actor"))
-	if err != nil {
-		xerrors.Errorf("actor serialization failed: %v", err)
-	}
-	// actorBuf := serde.Serialize(actor.context)
 	err = dkgMap.Update(func(tx kv.WritableTx) error {
-		// TODO: What name should this have
-		// It should be put in one place
 		bucket, err := tx.GetBucketOrCreate([]byte("dkgmap"))
 		if err != nil {
 			return err
 		}
 
-		err = bucket.Set(electionIDBuf, actorData)
+		// TODO will this take only what can be marshalled?
+		actorBuf, err := json.Marshal(actor)
 		if err != nil {
 			return err
 		}
 
-		return nil
+		return bucket.Set(electionIDBuf, actorBuf)
 	})
 	if err != nil {
-		xerrors.Errorf("database write failed: %v", err)
+		return xerrors.Errorf("database write failed: %v", err)
 	}
 
-	// TODO Needed?
 	ctx.Injector.Inject(dkgMap)
+
 	dela.Logger.Info().Msgf("DKG was successfully linked to election %v", electionIDBuf)
+
 	return nil
 }
 

@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"encoding/hex"
+	"encoding/json"
+
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/services/dkg/pedersen"
-	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/access/darc"
@@ -114,19 +116,37 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to resolve kv.DB")
 	}
 
-	dkg, pubkey := pedersen.NewPedersen(no, true, srvc, rosterFac)
+	// dkg, pubkey := pedersen.NewPedersen(no, srvc, rosterFac)
+	dkg := pedersen.NewPedersen(no, srvc, rosterFac)
 
-	pubkeyBuf, err := pubkey.MarshalBinary()
+	// Use dkgMap to fill the actors map
+	err = dkgMap.View(func(tx kv.ReadableTx) error {
+		bucket := tx.GetBucket([]byte("dkgmap"))
+		if bucket == nil {
+			return nil
+		}
+
+		return bucket.ForEach(func(electionIDBuf, actorBuf []byte) error {
+
+			actorData := pedersen.ActorData{}
+			err = json.Unmarshal(actorBuf, &actorData)
+			if err != nil {
+				return err
+			}
+
+			_, err = dkg.NewActor(hex.EncodeToString(electionIDBuf), actorData)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
+	})
 	if err != nil {
-		return xerrors.Errorf("failed to encode pubkey: %v", err)
+		return xerrors.Errorf("database read failed: %v", err)
 	}
 
 	inj.Inject(dkg)
-	inj.Inject(pubkey)
-
-	dela.Logger.Info().
-		Hex("public key", pubkeyBuf).
-		Msg("pedersen public key")
 
 	rosterKey := [32]byte{}
 	// TODO This shouldn't take dkg as input, but rather the map?
