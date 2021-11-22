@@ -471,14 +471,14 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	electionIDBuff, err := hex.DecodeString(decryptBallotsRequest.ElectionID)
+	electionIDBuf, err := hex.DecodeString(decryptBallotsRequest.ElectionID)
 	if err != nil {
 		http.Error(w, "failed to decode electionID: "+err.Error(),
 			http.StatusInternalServerError)
 		return
 	}
 
-	proof, err := h.orderingSvc.GetProof(electionIDBuff)
+	proof, err := h.orderingSvc.GetProof(electionIDBuf)
 	if err != nil {
 		http.Error(w, "failed to read on the blockchain: "+err.Error(),
 			http.StatusInternalServerError)
@@ -512,13 +512,19 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
 	wrongBallots := 0
 
+	actor, err := h.dkg.GetActor(electionIDBuf)
+	if err != nil {
+		http.Error(w, "failed to get actor:"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	for i := 0; i < len(X[0]); i++ {
 		// decryption of one ballot:
 		marshalledBallot := strings.Builder{}
 		for j := 0; j < len(X); j++ {
-			chunk, err := h.dkgActor.Decrypt(X[j][i], Y[j][i], electionIDBuff)
+			chunk, err := actor.Decrypt(X[j][i], Y[j][i], electionIDBuf)
 			if err != nil {
-				http.Error(w, "failed to decrypt (K,C): "+err.Error(), http.StatusInternalServerError)
+				http.Error(w, "failed to decrypt (K, C): "+err.Error(), http.StatusInternalServerError)
 				return
 			}
 			marshalledBallot.Write(chunk)
@@ -583,13 +589,13 @@ func (h *votingProxy) ElectionResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	electionIDBuff, err := hex.DecodeString(getElectionResultRequest.ElectionID)
+	electionIDBuf, err := hex.DecodeString(getElectionResultRequest.ElectionID)
 	if err != nil {
 		http.Error(w, "failed to decode electionID: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	proof, err := h.orderingSvc.GetProof(electionIDBuff)
+	proof, err := h.orderingSvc.GetProof(electionIDBuf)
 	if err != nil {
 		http.Error(w, "failed to read on the blockchain: "+err.Error(),
 			http.StatusInternalServerError)

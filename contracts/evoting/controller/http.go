@@ -41,21 +41,21 @@ const srvShutdownTimeout = 10 * time.Second
 type votingProxy struct {
 	sync.Mutex
 
-	signer      crypto.Signer
-	orderingSvc ordering.Service
-	mino        mino.Mino
+	signer       crypto.Signer
+	orderingSvc  ordering.Service
+	mino         mino.Mino
 
 	shuffleActor shuffle.Actor
-	dkgActor     dkg.Actor
+	dkg          dkg.DKG
 
-	pool   pool.Pool
-	client *Client
+	pool         pool.Pool
+	client       *Client
 
-	logger zerolog.Logger
+	logger       zerolog.Logger
 }
 
 func registerVotingProxy(proxy proxy.Proxy, signer crypto.Signer, client *Client,
-	dkgActor dkg.Actor, shuffleActor shuffle.Actor, oSvc ordering.Service,
+	dkg dkg.DKG, shuffleActor shuffle.Actor, oSvc ordering.Service,
 	p pool.Pool, m mino.Mino) {
 
 	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
@@ -64,7 +64,7 @@ func registerVotingProxy(proxy proxy.Proxy, signer crypto.Signer, client *Client
 		logger:       logger,
 		signer:       signer,
 		client:       client,
-		dkgActor:     dkgActor,
+		dkg:          dkg,
 		shuffleActor: shuffleActor,
 		orderingSvc:  oSvc,
 		pool:         p,

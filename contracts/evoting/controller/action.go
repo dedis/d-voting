@@ -84,11 +84,10 @@ func (a *registerAction) Execute(ctx node.Context) error {
 
 	client := &Client{Blocks: blocks}
 
-	// TODO
-	var dkgActor dkg.Actor
-	err = ctx.Injector.Resolve(&dkgActor)
+	var dkg dkg.DKG
+	err = ctx.Injector.Resolve(&dkg)
 	if err != nil {
-		return xerrors.Errorf("failed to resolve dkg.Actor: %v", err)
+		return xerrors.Errorf("failed to resolve dkg.DKG: %v", err)
 	}
 
 	var m mino.Mino
@@ -109,7 +108,7 @@ func (a *registerAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve proxy: %v", err)
 	}
 
-	registerVotingProxy(proxy, signer, client, dkgActor, shuffleActor,
+	registerVotingProxy(proxy, signer, client, dkg, shuffleActor,
 		orderingSvc, p, m)
 
 	return nil
