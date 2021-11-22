@@ -6,11 +6,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/dedis/d-voting/services/shuffle/neff/types"
-	"go.dedis.ch/kyber/v3"
 	"io"
 	"strconv"
 	"testing"
+
+	"github.com/dedis/d-voting/services/shuffle/neff/types"
+	"go.dedis.ch/kyber/v3"
 
 	evotingController "github.com/dedis/d-voting/contracts/evoting/controller"
 	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
@@ -18,9 +19,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/ordering"
+	orderingTypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
-	orderingTypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
@@ -503,27 +504,27 @@ type FakeTransaction struct {
 }
 
 func (f FakeTransaction) Serialize(ctx serde.Context) ([]byte, error) {
-	return nil, nil
+        return nil, nil
 }
 
 func (f FakeTransaction) Fingerprint(writer io.Writer) error {
-	return nil
+        return nil
 }
 
 func (f FakeTransaction) GetID() []byte {
-	return f.id
+        return f.id
 }
 
 func (f FakeTransaction) GetNonce() uint64 {
-	return f.nonce
+        return f.nonce
 }
 
 func (f FakeTransaction) GetIdentity() access.Identity {
-	return nil
+        return nil
 }
 
 func (f FakeTransaction) GetArg(key string) []byte {
-	return nil
+        return nil
 }
 
 //
@@ -531,21 +532,21 @@ func (f FakeTransaction) GetArg(key string) []byte {
 //
 
 type FakeTransactionResult struct {
-	status      bool
-	message     string
-	transaction FakeTransaction
+        status      bool
+        message     string
+        transaction FakeTransaction
 }
 
 func (f FakeTransactionResult) Serialize(ctx serde.Context) ([]byte, error) {
-	return nil, nil
+        return nil, nil
 }
 
 func (f FakeTransactionResult) GetTransaction() txn.Transaction {
-	return f.transaction
+        return f.transaction
 }
 
 func (f FakeTransactionResult) GetStatus() (bool, string) {
-	return f.status, f.message
+        return f.status, f.message
 }
 
 //
@@ -556,23 +557,23 @@ type FakeResult struct {
 }
 
 func (f FakeResult) Serialize(ctx serde.Context) ([]byte, error) {
-	return nil, nil
+        return nil, nil
 }
 
 func (f FakeResult) Fingerprint(writer io.Writer) error {
-	return nil
+        return nil
 }
 
 func (f FakeResult) GetTransactionResults() []validation.TransactionResult {
-	results := make([]validation.TransactionResult, 1)
+        results := make([]validation.TransactionResult, 1)
 
-	results[0] = FakeTransactionResult{
-		status:      true,
-		message:     "",
-		transaction: FakeTransaction{nonce: 10},
-	}
+        results[0] = FakeTransactionResult{
+                status:      true,
+                message:     "",
+                transaction: FakeTransaction{nonce: 10},
+        }
 
-	return results
+        return results
 }
 
 //
@@ -583,47 +584,47 @@ type FakeBlockLink struct {
 }
 
 func (f FakeBlockLink) Serialize(ctx serde.Context) ([]byte, error) {
-	return nil, nil
+        return nil, nil
 }
 
 func (f FakeBlockLink) Fingerprint(writer io.Writer) error {
-	return nil
+        return nil
 }
 
 func (f FakeBlockLink) GetHash() orderingTypes.Digest {
-	return orderingTypes.Digest{}
+        return orderingTypes.Digest{}
 }
 
 func (f FakeBlockLink) GetFrom() orderingTypes.Digest {
-	return orderingTypes.Digest{}
+        return orderingTypes.Digest{}
 }
 
 func (f FakeBlockLink) GetTo() orderingTypes.Digest {
-	return orderingTypes.Digest{}
+        return orderingTypes.Digest{}
 }
 
 func (f FakeBlockLink) GetPrepareSignature() crypto.Signature {
-	return nil
+        return nil
 }
 
 func (f FakeBlockLink) GetCommitSignature() crypto.Signature {
-	return nil
+        return nil
 }
 
 func (f FakeBlockLink) GetChangeSet() authority.ChangeSet {
-	return nil
+        return nil
 }
 
 func (f FakeBlockLink) GetBlock() orderingTypes.Block {
 
-	result := FakeResult{}
+        result := FakeResult{}
 
-	block, _ := orderingTypes.NewBlock(result)
-	return block
+        block, _ := orderingTypes.NewBlock(result)
+        return block
 }
 
 func (f FakeBlockLink) Reduce() orderingTypes.Link {
-	return nil
+        return nil
 }
 
 //
@@ -631,38 +632,38 @@ func (f FakeBlockLink) Reduce() orderingTypes.Link {
 //
 
 type FakeBlockStore struct {
-	getErr  error
-	lastErr error
+        getErr  error
+        lastErr error
 }
 
 func (f FakeBlockStore) Len() uint64 {
-	return 0
+        return 0
 }
 
 func (f FakeBlockStore) Store(link orderingTypes.BlockLink) error {
-	return nil
+        return nil
 }
 
 func (f FakeBlockStore) Get(id orderingTypes.Digest) (orderingTypes.BlockLink, error) {
-	return FakeBlockLink{}, f.getErr
+        return FakeBlockLink{}, f.getErr
 }
 
 func (f FakeBlockStore) GetByIndex(index uint64) (orderingTypes.BlockLink, error) {
-	return nil, nil
+        return nil, nil
 }
 
 func (f FakeBlockStore) GetChain() (orderingTypes.Chain, error) {
-	return nil, nil
+        return nil, nil
 }
 
 func (f FakeBlockStore) Last() (orderingTypes.BlockLink, error) {
-	return FakeBlockLink{}, f.lastErr
+        return FakeBlockLink{}, f.lastErr
 }
 
 func (f FakeBlockStore) Watch(ctx context.Context) <-chan orderingTypes.BlockLink {
-	return nil
+        return nil
 }
 
 func (f FakeBlockStore) WithTx(transaction store.Transaction) blockstore.BlockStore {
-	return nil
+        return nil
 }

@@ -648,7 +648,7 @@ func TestCommand_CancelElection(t *testing.T) {
 	require.NoError(t, err)
 
 	cmd := evotingCommand{
-		Contract: &contract,
+			Contract: &contract,
 	}
 
 	err = cmd.cancelElection(fake.NewSnapshot(), makeStep(t))
@@ -656,7 +656,7 @@ func TestCommand_CancelElection(t *testing.T) {
 
 	err = cmd.cancelElection(fake.NewSnapshot(), makeStep(t, CancelElectionArg, "dummy"))
 	require.EqualError(t, err, "failed to unmarshal CancelElectionTransaction: "+
-		"invalid character 'd' looking for beginning of value")
+			"invalid character 'd' looking for beginning of value")
 
 	err = cmd.cancelElection(fake.NewBadSnapshot(), makeStep(t, CancelElectionArg, string(jsCancelElectionTransaction)))
 	require.Contains(t, err.Error(), "failed to get key")
@@ -829,7 +829,7 @@ func makeStep(t *testing.T, args ...string) execution.Step {
 func makeTx(t *testing.T, args ...string) txn.Transaction {
 	options := []signed.TransactionOption{}
 	for i := 0; i < len(args)-1; i += 2 {
-		options = append(options, signed.WithArg(args[i], []byte(args[i+1])))
+			options = append(options, signed.WithArg(args[i], []byte(args[i+1])))
 	}
 
 	tx, err := signed.NewTransaction(0, fake.PublicKey{}, options...)
@@ -839,24 +839,24 @@ func makeTx(t *testing.T, args ...string) txn.Transaction {
 }
 
 type fakeDKG struct {
-	actor fakeDkgActor
-	err   error
+        actor fakeDkgActor
+        err   error
 }
 
 func (f fakeDKG) Listen(electionID []byte) (dkg.Actor, error) {
-	return f.actor, f.err
+        return f.actor, f.err
 }
 
 func (f fakeDKG) GetActor(electionID []byte) (dkg.Actor, error) {
-	return f.actor, f.err
+        return f.actor, f.err
 }
 
 func (f fakeDKG) SetService(service ordering.Service) {
 }
 
 type fakeDkgActor struct {
-	publicKey kyber.Point
-	err       error
+        publicKey kyber.Point
+        err       error
 }
 
 func (f fakeDkgActor) Setup(electionID []byte) (pubKey kyber.Point, err error) {
@@ -864,11 +864,11 @@ func (f fakeDkgActor) Setup(electionID []byte) (pubKey kyber.Point, err error) {
 }
 
 func (f fakeDkgActor) GetPublicKey() (kyber.Point, error) {
-	return f.publicKey, f.err
+        return f.publicKey, f.err
 }
 
 func (f fakeDkgActor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte, err error) {
-	return nil, nil, nil, f.err
+        return nil, nil, nil, f.err
 }
 
 func (f fakeDkgActor) Decrypt(K, C kyber.Point, electionId []byte) ([]byte, error) {
@@ -876,37 +876,37 @@ func (f fakeDkgActor) Decrypt(K, C kyber.Point, electionId []byte) ([]byte, erro
 }
 
 func (f fakeDkgActor) Reshare() error {
-	return f.err
+        return f.err
 }
 
 type fakeAccess struct {
-	access.Service
+        access.Service
 
-	err error
+        err error
 }
 
 func (srvc fakeAccess) Match(store.Readable, access.Credential, ...access.Identity) error {
-	return srvc.err
+        return srvc.err
 }
 
 func (srvc fakeAccess) Grant(store.Snapshot, access.Credential, ...access.Identity) error {
-	return srvc.err
+        return srvc.err
 }
 
 type fakeStore struct {
-	store.Snapshot
+        store.Snapshot
 }
 
 func (s fakeStore) Get(key []byte) ([]byte, error) {
-	return nil, nil
+        return nil, nil
 }
 
 func (s fakeStore) Set(key, value []byte) error {
-	return nil
+        return nil
 }
 
 type fakeCmd struct {
-	err error
+        err error
 }
 
 func (c fakeCmd) createElection(snap store.Snapshot, step execution.Step) error {
@@ -918,19 +918,19 @@ func (c fakeCmd) openElection(snap store.Snapshot, step execution.Step, dkgActor
 }
 
 func (c fakeCmd) castVote(snap store.Snapshot, step execution.Step) error {
-	return c.err
+        return c.err
 }
 
 func (c fakeCmd) closeElection(snap store.Snapshot, step execution.Step) error {
-	return c.err
+        return c.err
 }
 
 func (c fakeCmd) shuffleBallots(snap store.Snapshot, step execution.Step) error {
-	return c.err
+        return c.err
 }
 
 func (c fakeCmd) decryptBallots(snap store.Snapshot, step execution.Step) error {
-	return c.err
+        return c.err
 }
 
 func (c fakeCmd) cancelElection(snap store.Snapshot, step execution.Step) error {
