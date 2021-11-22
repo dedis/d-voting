@@ -843,11 +843,11 @@ type fakeDKG struct {
 	err   error
 }
 
-func (f fakeDKG) Listen() (dkg.Actor, error) {
+func (f fakeDKG) Listen(electionID []byte) (dkg.Actor, error) {
 	return f.actor, f.err
 }
 
-func (f fakeDKG) GetLastActor() (dkg.Actor, error) {
+func (f fakeDKG) GetActor(electionID []byte) (dkg.Actor, error) {
 	return f.actor, f.err
 }
 

@@ -51,7 +51,6 @@ func TestHandler_Start(t *testing.T) {
 		privKey:  privKey,
 	}
 	start := types.NewStart(
-		0,
 		[]mino.Address{fake.NewAddress(0)},
 		[]kyber.Point{},
 	)
@@ -59,7 +58,6 @@ func TestHandler_Start(t *testing.T) {
 	require.EqualError(t, err, "there should be as many players as pubKey: 1 := 0")
 
 	start = types.NewStart(
-		2,
 		[]mino.Address{fake.NewAddress(0), fake.NewAddress(1)},
 		[]kyber.Point{pubKey, suite.Point()},
 	)

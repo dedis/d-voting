@@ -15,6 +15,27 @@ import (
 	"go.dedis.ch/kyber/v3"
 )
 
+// When initializing a Pedersen when dkgMap was not initialized, there should be an error
+func TestPedersen_InitNoMap(t *testing.T) {
+	p, _ := NewPedersen(fake.Mino{}, )
+
+	actor, err := p.Listen(electionID)
+	require.NoError(t, err)
+
+	require.NotNil(t, actor)
+}
+
+// After initializing a Pedersen when dkgMap is empty, the actors map should be empty
+func TestPedersen_InitEmptyMap(t *testing.T) {
+
+}
+
+// After initializing a Pedersen when dkgMap is not empty, the actors map should contain the same information
+// as dkgMap
+func TestPedersen_InitNonEmptyMap(t *testing.T) {
+
+}
+
 func TestPedersen_Listen(t *testing.T) {
 	pedersen, _ := NewPedersen(fake.Mino{}, false)
 
