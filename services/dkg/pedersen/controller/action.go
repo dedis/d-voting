@@ -308,10 +308,19 @@ func getHandler(pedersen pedersen.Pedersen) func(http.ResponseWriter, *http.Requ
 			return
 		}
 
-		a := pedersen.actors[electionID]
-		// TODO What if the actor doesn't exist?
+		electionIDBuf, err := hex.DecodeString(electionID)
+		if err != nil {
+			http.Error(w, "failed to decode electionID: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-		pubKey, err := a.Setup(electionID)
+		a, err := pedersen.GetActor(electionIDBuf)
+		if err != nil {
+			http.Error(w, "failed to get actor: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		pubKey, err := a.Setup(electionIDBuf)
 		if err != nil {
 			http.Error(w, "failed to setup: "+err.Error(), http.StatusInternalServerError)
 			return
