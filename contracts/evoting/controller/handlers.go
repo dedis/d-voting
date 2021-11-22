@@ -89,16 +89,17 @@ func (h *votingProxy) OpenElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	electionID := string(electionIDHex)
+
 	// sanity check that this is a well hex-encoded string
-	_, err = hex.DecodeString(string(electionIDHex))
+	_, err = hex.DecodeString(electionID)
 	if err != nil {
-		http.Error(w, "failed to decode electionID: "+string(electionIDHex),
-			http.StatusBadRequest)
+		http.Error(w, "failed to decode electionID: "+electionID, http.StatusBadRequest)
 		return
 	}
 
 	openElecTransaction := types.OpenElectionTransaction{
-		ElectionID: string(electionIDHex),
+		ElectionID: electionID,
 	}
 
 	payload, err := json.Marshal(openElecTransaction)

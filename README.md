@@ -62,7 +62,7 @@ To end the session, in a different terminal run:
 ```
 tmux kill-session -t d-voting-test
 ```
-or kill each pane then the session with `Ctrl+D`.
+or kill each pane then the `tmux` session with `Ctrl+D`.
 
 You'll have to delete the state files manually (see "Run the nodes").
 

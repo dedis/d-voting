@@ -44,6 +44,7 @@ func (a *initAction) Execute(ctx node.Context) error {
 	// ElectionMetadataKey has a list of election ids (types transaction.go)
 	// electionMetadata.ElectionIDs.contains(electionId)
 
+	// Initialize the actor
 	var dkgPedersen dkg.DKG
 	err = ctx.Injector.Resolve(&dkgPedersen)
 	if err != nil {
@@ -299,6 +300,7 @@ func (a *registerHandlersAction) Execute(ctx node.Context) error {
 func getHandler(pedersen pedersen.Pedersen) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		// hex-encoded string obtained from the URL
 		electionID := r.FormValue("electionID")
 
 		if electionID == "" {

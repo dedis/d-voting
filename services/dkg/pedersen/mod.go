@@ -172,11 +172,11 @@ type Actor struct {
 	rosterFac authority.Factory
 	context   serde.Context
 
-	privkey kyber.Scalar
-	pubkey  kyber.Point
+	privkey   kyber.Scalar
+	pubkey    kyber.Point
 }
 
-// Setup implement dkg.Actor. It initializes the DKG.
+// Setup implements dkg.Actor. It initializes the DKG.
 func (a *Actor) Setup(electionID []byte) (kyber.Point, error) {
 	if a.startRes.Done() {
 		return nil, xerrors.Errorf("startRes is already done, only one setup call is allowed")

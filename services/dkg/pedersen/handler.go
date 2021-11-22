@@ -221,7 +221,7 @@ func (h *Handler) start(start types.Start, receivedDeals []types.Deal,
 	h.dkg = d
 
 	// send my Deals to the other nodes
-	deals, err := d.Deals()
+	deals, err := h.dkg.Deals()
 	if err != nil {
 		return xerrors.Errorf("failed to compute the deals: %v", err)
 	}
@@ -280,7 +280,7 @@ func (h *Handler) start(start types.Start, receivedDeals []types.Deal,
 		switch msg := msg.(type) {
 
 		case types.Deal:
-			// 4. Process the Deal and Send the response to all the other nodes
+			// Process the Deal and Send the response to all the other nodes
 			err = h.handleDeal(msg, from, start.GetAddresses(), out)
 			if err != nil {
 				dela.Logger.Warn().Msgf("%s failed to handle received deal "+
@@ -290,7 +290,7 @@ func (h *Handler) start(start types.Start, receivedDeals []types.Deal,
 			numReceivedDeals++
 
 		case types.Response:
-			// 5. Processing responses
+			// Process responses
 			dela.Logger.Trace().Msgf("%s received response from %s", h.me, from)
 			response := &pedersen.Response{
 				Index: msg.GetIndex(),
@@ -377,6 +377,7 @@ func (h *Handler) certify(resps []*pedersen.Response, out mino.Sender,
 	h.startRes.SetDistKey(distrKey.Public())
 
 	h.Lock()
+	// TODO This will have to be saved
 	h.privShare = distrKey.PriShare()
 	h.Unlock()
 
@@ -444,12 +445,12 @@ func (h *Handler) handleDeal(msg types.Deal, from mino.Address, addrs []mino.Add
 // previously shuffled
 func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionId string) (bool, error) {
 
-	electionIDBuff, err := hex.DecodeString(electionId)
+	electionIDBuf, err := hex.DecodeString(electionId)
 	if err != nil {
 		return false, xerrors.Errorf("failed to decode electionID: %v", err)
 	}
 
-	proof, err := h.service.GetProof(electionIDBuff)
+	proof, err := h.service.GetProof(electionIDBuf)
 	if err != nil {
 		return false, xerrors.Errorf("failed to read on the blockchain: %v", err)
 	}

@@ -107,7 +107,7 @@ type Contract struct {
 
 	cmd commands
 
-	// TODO: Replace
+	// TODO: Replace?
 	// dkgMap *kv.Bucket 
 	pedersen dkg.DKG
 
@@ -118,14 +118,14 @@ type Contract struct {
 }
 
 // NewContract creates a new Value contract
-// TODO: Replace
+// TODO: Replace?
 // func NewContract(aKey, rKey []byte, srvc access.Service, dkgMap dkgMap, rFac authority.Factory) Contract {
 func NewContract(aKey, rKey []byte, srvc access.Service, pedersen dkg.DKG, rFac authority.Factory) Contract {
 	contract := Contract{
 		// indexElection:     map[string]struct{}{},
 		access:    srvc,
 		accessKey: aKey,
-		// TODO: Replace
+		// TODO: Replace?
 		// dkgMap: dkgMap, 
 		pedersen:  pedersen,
 
