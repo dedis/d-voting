@@ -7,6 +7,60 @@ import (
 	"go.dedis.ch/dela/serde"
 )
 
+// PublicKey is a fake implementation of crypto.PublicKey.
+//
+// - implements crypto.PublicKey
+type PublicKey struct {
+	crypto.PublicKey
+	err       error
+	verifyErr error
+}
+
+// NewBadPublicKey returns a new fake public key that returns error when
+// appropriate.
+func NewBadPublicKey() PublicKey {
+	return PublicKey{
+		err:       fakeErr,
+		verifyErr: fakeErr,
+	}
+}
+
+// NewInvalidPublicKey returns a fake public key that never verifies.
+func NewInvalidPublicKey() PublicKey {
+	return PublicKey{verifyErr: fakeErr}
+}
+
+// Verify implements crypto.PublicKey.
+func (pk PublicKey) Verify([]byte, crypto.Signature) error {
+	return pk.verifyErr
+}
+
+// MarshalBinary implements encoding.BinaryMarshaler.
+func (pk PublicKey) MarshalBinary() ([]byte, error) {
+	return []byte("PK"), pk.err
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (pk PublicKey) MarshalText() ([]byte, error) {
+	return pk.MarshalBinary()
+}
+
+// Equal implements crypto.PublicKey.
+func (pk PublicKey) Equal(other interface{}) bool {
+	_, ok := other.(PublicKey)
+	return ok
+}
+
+// Serialize implements serde.Message.
+func (pk PublicKey) Serialize(serde.Context) ([]byte, error) {
+	return []byte(`{}`), pk.err
+}
+
+// String implements fmt.Stringer.
+func (pk PublicKey) String() string {
+	return "fake.PublicKey"
+}
+
 // PublicKeyFactory is a fake implementation of a public key factory.
 //
 // - implements crypto.PublicKeyFactory.
@@ -124,58 +178,78 @@ func (f SignatureFactory) SignatureOf(serde.Context, []byte) (crypto.Signature, 
 	return f.signature, f.err
 }
 
-// PublicKey is a fake implementation of crypto.PublicKey.
+// Verifier is a fake implementation of crypto.Verifier.
 //
-// - implements crypto.PublicKey
-type PublicKey struct {
-	crypto.PublicKey
-	err       error
-	verifyErr error
+// - implements crypto.Verifier
+type Verifier struct {
+	crypto.Verifier
+	err   error
+	count *Counter
 }
 
-// NewBadPublicKey returns a new fake public key that returns error when
-// appropriate.
-func NewBadPublicKey() PublicKey {
-	return PublicKey{
-		err:       fakeErr,
-		verifyErr: fakeErr,
+// NewBadVerifier returns a verifier that will return an error when appropriate.
+func NewBadVerifier() Verifier {
+	return Verifier{err: fakeErr}
+}
+
+// NewBadVerifierWithDelay returns a verifier that will return an error after a
+// given delay.
+func NewBadVerifierWithDelay(value int) Verifier {
+	return Verifier{
+		err:   fakeErr,
+		count: NewCounter(value),
 	}
 }
 
-// NewInvalidPublicKey returns a fake public key that never verifies.
-func NewInvalidPublicKey() PublicKey {
-	return PublicKey{verifyErr: fakeErr}
+// Verify implements crypto.Verifier.
+func (v Verifier) Verify(msg []byte, s crypto.Signature) error {
+	if !v.count.Done() {
+		v.count.Decrease()
+		return nil
+	}
+
+	return v.err
 }
 
-// Verify implements crypto.PublicKey.
-func (pk PublicKey) Verify([]byte, crypto.Signature) error {
-	return pk.verifyErr
+// VerifierFactory is a fake implementation of crypto.VerifierFactory.
+//
+// - implements crypto.VerifierFactory
+type VerifierFactory struct {
+	crypto.VerifierFactory
+	verifier Verifier
+	err      error
+	call     *Call
 }
 
-// MarshalBinary implements encoding.BinaryMarshaler.
-func (pk PublicKey) MarshalBinary() ([]byte, error) {
-	return []byte("PK"), pk.err
+// NewVerifierFactory returns a new fake verifier factory.
+func NewVerifierFactory(v Verifier) VerifierFactory {
+	return VerifierFactory{verifier: v}
 }
 
-// MarshalText implements encoding.TextMarshaler.
-func (pk PublicKey) MarshalText() ([]byte, error) {
-	return pk.MarshalBinary()
+// NewVerifierFactoryWithCalls returns a new verifier factory that will register
+// the calls.
+func NewVerifierFactoryWithCalls(c *Call) VerifierFactory {
+	return VerifierFactory{call: c}
 }
 
-// Equal implements crypto.PublicKey.
-func (pk PublicKey) Equal(other interface{}) bool {
-	_, ok := other.(PublicKey)
-	return ok
+// NewBadVerifierFactory returns a fake verifier factory that returns an error
+// when appropriate.
+func NewBadVerifierFactory() VerifierFactory {
+	return VerifierFactory{err: fakeErr}
 }
 
-// Serialize implements serde.Message.
-func (pk PublicKey) Serialize(serde.Context) ([]byte, error) {
-	return []byte(`{}`), pk.err
+// FromAuthority implements crypto.VerifierFactory.
+func (f VerifierFactory) FromAuthority(ca crypto.CollectiveAuthority) (crypto.Verifier, error) {
+	f.call.Add(ca)
+
+	return f.verifier, f.err
 }
 
-// String implements fmt.Stringer.
-func (pk PublicKey) String() string {
-	return "fake.PublicKey"
+// FromArray implements crypto.VerifierFactory.
+func (f VerifierFactory) FromArray(pubkeys []crypto.PublicKey) (crypto.Verifier, error) {
+	f.call.Add(pubkeys)
+
+	return f.verifier, f.err
 }
 
 // Signer is a fake implementation of the crypto.AggregateSigner interface.
@@ -251,80 +325,6 @@ func (s Signer) Sign([]byte) (crypto.Signature, error) {
 // Aggregate implements crypto.AggregateSigner.
 func (s Signer) Aggregate(...crypto.Signature) (crypto.Signature, error) {
 	return Signature{}, s.err
-}
-
-// Verifier is a fake implementation of crypto.Verifier.
-//
-// - implements crypto.Verifier
-type Verifier struct {
-	crypto.Verifier
-	err   error
-	count *Counter
-}
-
-// NewBadVerifier returns a verifier that will return an error when appropriate.
-func NewBadVerifier() Verifier {
-	return Verifier{err: fakeErr}
-}
-
-// NewBadVerifierWithDelay returns a verifier that will return an error after a
-// given delay.
-func NewBadVerifierWithDelay(value int) Verifier {
-	return Verifier{
-		err:   fakeErr,
-		count: NewCounter(value),
-	}
-}
-
-// Verify implements crypto.Verifier.
-func (v Verifier) Verify(msg []byte, s crypto.Signature) error {
-	if !v.count.Done() {
-		v.count.Decrease()
-		return nil
-	}
-
-	return v.err
-}
-
-// VerifierFactory is a fake implementation of crypto.VerifierFactory.
-//
-// - implements crypto.VerifierFactory
-type VerifierFactory struct {
-	crypto.VerifierFactory
-	verifier Verifier
-	err      error
-	call     *Call
-}
-
-// NewVerifierFactory returns a new fake verifier factory.
-func NewVerifierFactory(v Verifier) VerifierFactory {
-	return VerifierFactory{verifier: v}
-}
-
-// NewVerifierFactoryWithCalls returns a new verifier factory that will register
-// the calls.
-func NewVerifierFactoryWithCalls(c *Call) VerifierFactory {
-	return VerifierFactory{call: c}
-}
-
-// NewBadVerifierFactory returns a fake verifier factory that returns an error
-// when appropriate.
-func NewBadVerifierFactory() VerifierFactory {
-	return VerifierFactory{err: fakeErr}
-}
-
-// FromAuthority implements crypto.VerifierFactory.
-func (f VerifierFactory) FromAuthority(ca crypto.CollectiveAuthority) (crypto.Verifier, error) {
-	f.call.Add(ca)
-
-	return f.verifier, f.err
-}
-
-// FromArray implements crypto.VerifierFactory.
-func (f VerifierFactory) FromArray(pubkeys []crypto.PublicKey) (crypto.Verifier, error) {
-	f.call.Add(pubkeys)
-
-	return f.verifier, f.err
 }
 
 // Hash is a fake implementation of hash.Hash.

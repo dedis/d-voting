@@ -180,6 +180,139 @@ func getSigner(filePath string) (crypto.Signer, error) {
 	return signer, nil
 }
 
+type scenarioTest1Action struct {
+}
+
+// Execute implements node.ActionTemplate. It creates
+func (a *scenarioTest1Action) Execute(ctx node.Context) error {
+	proxyAddr := ctx.Flags.String("proxy-addr")
+
+	var service ordering.Service
+	err := ctx.Injector.Resolve(&service)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve service: %v", err)
+	}
+
+	var dkg dkg.DKG
+	err = ctx.Injector.Resolve(&dkg)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve actor: %v", err)
+	}
+
+	// ###################################### CREATE SIMPLE ELECTION ######
+	dela.Logger.Info().Msg("### CREATE ELECTION ###")
+
+	createSimpleElectionRequest := types.CreateElectionRequest{
+		Title:   "TitleTest",
+		AdminID: "adminId",
+		Token:   "token",
+	}
+
+	js, err := json.Marshal(createSimpleElectionRequest)
+	if err != nil {
+		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
+	}
+
+	fmt.Println("create election js:", string(js))
+
+	resp, err := http.Post(proxyAddr+createElectionEndpoint, "application/json", bytes.NewBuffer(js))
+	if err != nil {
+		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return xerrors.Errorf("failed to read the body of the response: %v", err)
+	}
+
+	dela.Logger.Info().Msg("Response body: " + string(body))
+	resp.Body.Close()
+
+	var electionResponse types.CreateElectionResponse
+
+	err = json.Unmarshal(body, &electionResponse)
+	if err != nil {
+		return xerrors.Errorf("failed to unmarshal create election response: %v", err)
+	}
+
+	electionID := electionResponse.ElectionID
+
+	electionIDBuf, err := hex.DecodeString(electionID)
+	if err != nil {
+		return xerrors.Errorf("failed to decode electionID: %v", err)
+	}
+
+	proof, err := service.GetProof(electionIDBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to read on the blockchain: %v", err)
+	}
+
+	dela.Logger.Info().Msg("Proof: " + string(proof.GetValue()))
+
+	election := new(types.Election)
+	err = json.NewDecoder(bytes.NewBuffer(proof.GetValue())).Decode(election)
+	if err != nil {
+		return xerrors.Errorf("failed to unmarshal SimpleElection: %v", err)
+	}
+
+	// Sanity check
+	if election.ElectionID != electionID {
+		return xerrors.Errorf("electionID mismatch: %s != %s", election.ElectionID, electionID)
+	}
+
+	dela.Logger.Info().Msg("Title of the election : " + election.Title)
+	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
+	dela.Logger.Info().Msg("Admin Id of the election : " + election.AdminID)
+	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
+
+	// #### START CORRESPONDING DKG ####
+	dela.Logger.Info().Msg("### START CORRESPONDING DKG ###")
+
+	// TODO Perhaps the electionID has to be encoded a certain way
+	// What's the address?
+	resp, err = http.Post(proxyAddr + "/evoting/dkg", "application/json", bytes.NewBuffer(electionIDBuf))
+	if err != nil {
+		return xerrors.Errorf("failed to retrieve the decryption from the server: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
+
+	pubkeyBuf, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return xerrors.Errorf("failed to read body: %v", err)
+	}
+
+	pubKey := suite.Point()
+	err = pubKey.UnmarshalBinary(pubkeyBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to unmarshal pubkey: %v", err)
+	}
+
+	fmt.Printf("Pubkey: %v\n", pubKey)
+
+	// ##################################### OPEN ELECTION #####################
+
+	resp, err = http.Post(proxyAddr+"/evoting/open", "application/json", bytes.NewBuffer([]byte(electionID)))
+	if err != nil {
+		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
+
+	return nil
+}
+
 // scenarioTestAction is an action to
 //
 // - implements node.ActionTemplate
