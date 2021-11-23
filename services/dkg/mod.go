@@ -10,7 +10,7 @@ type DKG interface {
 	// wishes to participate in a DKG.
 	Listen() (Actor, error)
 
-	// GetActor allows to retrieve the last generated Actor
+	// GetLastActor allows to retrieve the last generated Actor
 	GetLastActor() (Actor, error)
 }
 

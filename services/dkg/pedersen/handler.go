@@ -463,7 +463,7 @@ func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionId strin
 		return false, xerrors.Errorf("failed to unmarshal Election: %v", err)
 	}
 
-	for _, ct := range election.ShuffledBallots[election.ShuffleThreshold-1] {
+	for _, ct := range election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots {
 		kPrime, cPrime, err := ct.GetPoints()
 		if err != nil {
 			return false, xerrors.Errorf("failed to get points: %v", err)

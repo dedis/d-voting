@@ -52,11 +52,12 @@ type NeffShuffle struct {
 	blocks        *blockstore.InDisk
 	rosterFactory authority.Factory
 	context       serde.Context
+	nodeSigner    crypto.Signer
 }
 
 // NewNeffShuffle returns a new NeffShuffle factory.
 func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool,
-	blocks *blockstore.InDisk, rosterFac authority.Factory) *NeffShuffle {
+	blocks *blockstore.InDisk, rosterFac authority.Factory, signer crypto.Signer) *NeffShuffle {
 
 	factory := types.NewMessageFactory(m.GetAddressFactory())
 
@@ -68,6 +69,7 @@ func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool,
 		blocks:        blocks,
 		rosterFactory: rosterFac,
 		context:       jsonserde.NewContext(),
+		nodeSigner:    signer,
 	}
 }
 
@@ -78,7 +80,7 @@ func (n NeffShuffle) Listen(signer crypto.Signer) (shuffle.Actor, error) {
 		Nonce:  0,
 		Blocks: n.blocks,
 	}
-	h := NewHandler(n.mino.GetAddress(), n.service, n.p, signer, client)
+	h := NewHandler(n.mino.GetAddress(), n.service, n.p, signer, client, n.nodeSigner)
 
 	a := &Actor{
 		rpc:       mino.MustCreateRPC(n.mino, "shuffle", h, n.factory),
@@ -179,7 +181,7 @@ func (a *Actor) waitAndCheckShuffling(electionID string) error {
 			return xerrors.Errorf("failed to get election: %v", err)
 		}
 
-		round := len(election.ShuffledBallots)
+		round := len(election.ShuffleInstances)
 		dela.Logger.Info().Msgf("SHUFFLE / ROUND : %d", round)
 
 		// if the threshold is reached that means we have enough
@@ -194,10 +196,11 @@ func (a *Actor) waitAndCheckShuffling(electionID string) error {
 	}
 
 	return xerrors.Errorf("threshold of shuffling not reached: %d < %d",
-		len(election.ShuffledBallots), election.ShuffleThreshold)
+		len(election.ShuffleInstances), election.ShuffleThreshold)
 }
 
 // Todo : this is useless in the new implementation, maybe remove ?
+
 // Verify allows to verify a Shuffle
 func (a *Actor) Verify(suiteName string, Ks []kyber.Point, Cs []kyber.Point,
 	pubKey kyber.Point, KsShuffled []kyber.Point, CsShuffled []kyber.Point, prf []byte) (err error) {

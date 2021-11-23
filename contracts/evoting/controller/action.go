@@ -639,7 +639,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("Title of the election : " + election.Title)
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
-	dela.Logger.Info().Msg("Number of shuffled ballots : " + strconv.Itoa(len(election.ShuffledBallots)))
+	dela.Logger.Info().Msg("Number of shuffled ballots : " + strconv.Itoa(len(election.ShuffleInstances)))
 	dela.Logger.Info().Msg("Number of encrypted ballots : " + strconv.Itoa(len(election.EncryptedBallots.Ballots)))
 
 	// ###################################### SHUFFLE BALLOTS ##################
@@ -765,17 +765,11 @@ func marshallBallot(vote string, actor dkg.Actor) (types.Ciphertext, error) {
 		return types.Ciphertext{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
 	}
 
-	Kmarshalled, err := K.MarshalBinary()
+	var ballot types.Ciphertext
+	err = ballot.FromPoints(K, C)
 	if err != nil {
-		return types.Ciphertext{}, xerrors.Errorf("failed to marshall the K element of the ciphertext pair: %v", err)
+		return types.Ciphertext{}, err
 	}
-
-	Cmarshalled, err := C.MarshalBinary()
-	if err != nil {
-		return types.Ciphertext{}, xerrors.Errorf("failed to marshall the C element of the ciphertext pair: %v", err)
-	}
-
-	ballot := types.Ciphertext{K: Kmarshalled, C: Cmarshalled}
 
 	return ballot, nil
 

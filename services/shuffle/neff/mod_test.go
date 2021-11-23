@@ -1,6 +1,12 @@
 package neff
 
 import (
+	"encoding/hex"
+	"github.com/dedis/d-voting/contracts/evoting/types"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/serde"
 	"strconv"
 	"testing"
 
@@ -15,7 +21,7 @@ import (
 
 func TestNeffShuffle_Listen(t *testing.T) {
 
-	NeffShuffle := NewNeffShuffle(fake.Mino{}, &FakeService{}, &FakePool{}, nil)
+	NeffShuffle := NewNeffShuffle(fake.Mino{}, &FakeService{}, &FakePool{}, nil, fakeAuthorityFactory{}, fake.NewSigner())
 
 	actor, err := NeffShuffle.Listen(fake.NewSigner())
 	require.NoError(t, err)
@@ -25,44 +31,39 @@ func TestNeffShuffle_Listen(t *testing.T) {
 
 func TestNeffShuffle_Shuffle(t *testing.T) {
 
-	electionId := "dummyId"
+	electionId := []byte("dummyId")
 
 	actor := Actor{
-		rpc:  fake.NewBadRPC(),
-		mino: fake.Mino{},
+		rpc:       fake.NewBadRPC(),
+		mino:      fake.Mino{},
+		service:   &FakeService{electionId: types.ID(hex.EncodeToString(electionId))},
+		rosterFac: fakeAuthorityFactory{},
 	}
 
-	fakeAuthority := fake.NewAuthority(1, fake.NewSigner)
-
-	err := actor.Shuffle(fakeAuthority, electionId)
+	err := actor.Shuffle(electionId)
 	require.EqualError(t, err, fake.Err("failed to stream"))
 
 	rpc := fake.NewStreamRPC(fake.NewReceiver(), fake.NewBadSender())
 	actor.rpc = rpc
 
-	err = actor.Shuffle(fakeAuthority, electionId)
-	require.EqualError(t, err, fake.Err("failed to send first message"))
+	err = actor.Shuffle(electionId)
+	require.EqualError(t, err, fake.Err("failed to start shuffle"))
 
 	rpc = fake.NewStreamRPC(fake.NewBadReceiver(), fake.Sender{})
 	actor.rpc = rpc
 
-	err = actor.Shuffle(fakeAuthority, electionId)
-	require.EqualError(t, err, fake.Err("got an error from '<nil>' while receiving"))
+	// we no longer use the receiver:
+	err = actor.Shuffle(electionId)
+	require.NoError(t, err)
 
 	recv := fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), nil))
-
-	rpc = fake.NewStreamRPC(recv, fake.Sender{})
-	actor.rpc = rpc
-
-	err = actor.Shuffle(fakeAuthority, electionId)
-	require.EqualError(t, err, "expected to receive an EndShuffle message, but go the following: <nil>")
 
 	recv = fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), neffShuffleTypes.NewEndShuffle()))
 
 	rpc = fake.NewStreamRPC(recv, fake.Sender{})
 	actor.rpc = rpc
 
-	err = actor.Shuffle(fakeAuthority, electionId)
+	err = actor.Shuffle(electionId)
 	require.NoError(t, err)
 }
 
@@ -100,4 +101,52 @@ func TestNeffShuffle_Verify(t *testing.T) {
 
 	err = actor.Verify(suite.String(), X, Y, H, Kbar, Cbar, shuffleProof)
 	require.NoError(t, err)
+}
+
+// -----------------------------------------------------------------------------
+// Utility functions
+
+type fakeAuthorityFactory struct {
+	serde.Factory
+
+	//AuthorityOf(serde.Context, []byte) (authority.Authority, error)
+}
+
+func (f fakeAuthorityFactory) AuthorityOf(ctx serde.Context, rosterBuf []byte) (authority.Authority, error) {
+	fakeAuthority := &fakeAuthority{}
+	return fakeAuthority, nil
+}
+
+type fakeAuthority struct {
+	serde.Message
+	serde.Fingerprinter
+	crypto.CollectiveAuthority
+}
+
+func (f fakeAuthority) Apply(c authority.ChangeSet) authority.Authority {
+	return nil
+}
+
+// Diff should return the change set to apply to get the given authority.
+func (f fakeAuthority) Diff(a authority.Authority) authority.ChangeSet {
+	return nil
+}
+
+func (f fakeAuthority) PublicKeyIterator() crypto.PublicKeyIterator {
+	signers := make([]crypto.Signer, 2)
+	signers[0] = fake.NewSigner()
+
+	return fake.NewPublicKeyIterator(signers)
+}
+
+func (f fakeAuthority) AddressIterator() mino.AddressIterator {
+	addrs := make([]mino.Address, f.Len())
+	for i := 0; i < f.Len(); i++ {
+		addrs[i] = fake.NewAddress(i)
+	}
+	return fake.NewAddressIterator(addrs)
+}
+
+func (f fakeAuthority) Len() int {
+	return 2
 }

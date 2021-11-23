@@ -36,13 +36,8 @@ type Election struct {
 	// EncryptedBallots map[string][]byte
 	EncryptedBallots EncryptedBallots
 
-	// ShuffledBallots contains the list of shuffled ciphertext for each
-	// shuffling round.
-	ShuffledBallots []Ciphertexts
-
-	// ShufleProofs is a map from shuffle round to shuffle proofs
-	// ShuffleProofs map[int][]byte
-	ShuffledProofs [][]byte
+	//ShuffleInstances is all the shuffles, along with their proof and identity of shuffler.
+	ShuffleInstances []ShuffleInstance
 
 	// ShuffleThreshold is set based on the roster. We save it so we don't have
 	// to compute it based on the roster each time we need it.
@@ -56,6 +51,19 @@ type Election struct {
 	// during an election and will be used for DKG and Neff. Its type is
 	// authority.Authority.
 	RosterBuf []byte
+}
+
+// ShuffleInstance is an instance of a shuffle, it contains the shuffled ballots, the proofs and the
+// identity of the shuffler.
+type ShuffleInstance struct {
+	// ShuffledBallots contains the list of shuffled ciphertext for this round
+	ShuffledBallots Ciphertexts
+
+	// ShuffleProofs is the proof of the shuffle for this round
+	ShuffleProofs []byte
+
+	//Shuffler is the identity of the node who made the given shuffle.
+	ShufflerPublicKey []byte
 }
 
 // Ballot contains all information about a simple ballot

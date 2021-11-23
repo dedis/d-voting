@@ -20,6 +20,7 @@ import (
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
+	jsondela "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3/proof"
 	shuffleKyber "go.dedis.ch/kyber/v3/shuffle"
 	"go.dedis.ch/kyber/v3/suites"
@@ -37,22 +38,24 @@ var suite = suites.MustFind("Ed25519")
 // - implements mino.Handler
 type Handler struct {
 	mino.UnsupportedHandler
-	me      mino.Address
-	service ordering.Service
-	p       pool.Pool
-	signer  crypto.Signer
-	client  *evotingController.Client
+	me            mino.Address
+	service       ordering.Service
+	p             pool.Pool
+	signer        crypto.Signer
+	client        *evotingController.Client
+	shuffleSigner crypto.Signer
 }
 
 // NewHandler creates a new handler
 func NewHandler(me mino.Address, service ordering.Service, p pool.Pool,
-	signer crypto.Signer, client *evotingController.Client) *Handler {
+	signer crypto.Signer, client *evotingController.Client, shuffleSigner crypto.Signer) *Handler {
 	return &Handler{
-		me:      me,
-		service: service,
-		p:       p,
-		signer:  signer,
-		client:  client,
+		me:            me,
+		service:       service,
+		p:             p,
+		signer:        signer,
+		client:        client,
+		shuffleSigner: shuffleSigner,
 	}
 }
 
@@ -91,7 +94,7 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 			return xerrors.Errorf("failed to get election: %v", err)
 		}
 
-		round := len(election.ShuffledBallots)
+		round := len(election.ShuffleInstances)
 
 		// check if the threshold is reached
 		if round >= election.ShuffleThreshold {
@@ -100,10 +103,10 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 		}
 
 		if election.Status != electionTypes.Closed {
-			return xerrors.Errorf("the election must be closed: %s", election.Status)
+			return xerrors.Errorf("the election must be closed: but status is %v", election.Status)
 		}
 
-		tx, err := makeTx(election, manager)
+		tx, err := makeTx(election, manager, h.shuffleSigner)
 		if err != nil {
 			return xerrors.Errorf("failed to make tx: %v", err)
 		}
@@ -113,12 +116,11 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 
 		events := h.service.Watch(watchCtx)
 
-		dela.Logger.Info().Msgf("sending shuffling tx with nonce %d", tx.GetNonce())
-
 		err = h.p.Add(tx)
 		if err != nil {
 			return xerrors.Errorf("failed to add transaction to the pool: %v", err.Error())
 		}
+		dela.Logger.Info().Msgf("sending shuffling tx with nonce %d", tx.GetNonce())
 
 		accepted, msg := watchTx(events, tx.GetID())
 		if accepted {
@@ -131,7 +133,7 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 	}
 }
 
-func makeTx(election *electionTypes.Election, manager txn.Manager) (txn.Transaction, error) {
+func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner crypto.Signer) (txn.Transaction, error) {
 	shuffledBallots, shuffleProof, err := getShuffledBallots(election)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get shuffled ballots: %v", err)
@@ -139,10 +141,35 @@ func makeTx(election *electionTypes.Election, manager txn.Manager) (txn.Transact
 
 	shuffleBallotsTransaction := electionTypes.ShuffleBallotsTransaction{
 		ElectionID:      string(election.ElectionID),
-		Round:           len(election.ShuffledBallots),
+		Round:           len(election.ShuffleInstances),
 		ShuffledBallots: shuffledBallots,
 		Proof:           shuffleProof,
 	}
+
+	//Sign the shuffle:
+	shuffleHash, err := shuffleBallotsTransaction.HashShuffle(election.ElectionID)
+	if err != nil {
+		return nil, xerrors.Errorf("Could not hash the shuffle while creating transaction: %v", err)
+	}
+
+	signature, err := shuffleSigner.Sign(shuffleHash)
+	if err != nil {
+		return nil, xerrors.Errorf("Could not sign the shuffle : %v", err)
+	}
+
+	encodedSignature, err := signature.Serialize(jsondela.NewContext())
+	if err != nil {
+		return nil, xerrors.Errorf("Could not encode signature as []byte : %v ", err)
+	}
+
+	publicKey, err := shuffleSigner.GetPublicKey().MarshalBinary()
+	if err != nil {
+		return nil, xerrors.Errorf("Could not unmarshal public key from nodeSigner: %v", err)
+	}
+
+	//Complete transaction:
+	shuffleBallotsTransaction.PublicKey = publicKey
+	shuffleBallotsTransaction.Signature = encodedSignature
 
 	js, err := json.Marshal(shuffleBallotsTransaction)
 	if err != nil {
@@ -171,7 +198,7 @@ func makeTx(election *electionTypes.Election, manager txn.Manager) (txn.Transact
 
 	tx, err := manager.Make(args...)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to make transaction: %v", err.Error())
+		return nil, xerrors.Errorf("failed to use manager: %v", err.Error())
 	}
 
 	return tx, nil
@@ -179,7 +206,7 @@ func makeTx(election *electionTypes.Election, manager txn.Manager) (txn.Transact
 
 // getShuffledBallots returns the shuffled ballots with the shuffling proof.
 func getShuffledBallots(election *electionTypes.Election) (electionTypes.Ciphertexts, []byte, error) {
-	round := len(election.ShuffledBallots)
+	round := len(election.ShuffleInstances)
 
 	var encryptedBallots electionTypes.Ciphertexts
 
@@ -187,7 +214,7 @@ func getShuffledBallots(election *electionTypes.Election) (electionTypes.Ciphert
 		encryptedBallots = election.EncryptedBallots.Ballots
 		fmt.Println("encrypted ballots:", election.EncryptedBallots)
 	} else {
-		encryptedBallots = election.ShuffledBallots[round-1]
+		encryptedBallots = election.ShuffleInstances[round-1].ShuffledBallots
 	}
 
 	ks, cs, err := encryptedBallots.GetKsCs()

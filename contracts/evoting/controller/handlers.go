@@ -474,13 +474,13 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ks, cs, err := election.ShuffledBallots[election.ShuffleThreshold-1].GetKsCs()
+	ks, cs, err := election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots.GetKsCs()
 	if err != nil {
 		http.Error(w, "failed to get ks, cs:"+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffledBallots))
+	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
 
 	for i := 0; i < len(ks); i++ {
 		message, err := h.dkgActor.Decrypt(ks[i], cs[i], electionIDBuff)
