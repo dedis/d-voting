@@ -19,8 +19,8 @@ jobs:
         go-version: ^1.17
 
 
-    #- name: Test cli
-    #  run: go test -cover ./cli/...
+    - name: Test cli
+      run: go test -cover ./cli/cosipbftcontroller/... #does not include memcoin
       
     - name: Test Contract
       run: go test -cover ./contracts/...
