@@ -9,7 +9,6 @@ import (
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
 	"go.dedis.ch/dela/core/txn/pool"
-	"go.dedis.ch/dela/cosi"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/bls"
 	"go.dedis.ch/dela/crypto/loader"
@@ -53,12 +52,6 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 	err := inj.Resolve(&no)
 	if err != nil {
 		return xerrors.Errorf("failed to resolve mino.Mino: %v", err)
-	}
-
-	var cosi cosi.CollectiveSigning
-	err = inj.Resolve(&cosi)
-	if err != nil {
-		return xerrors.Errorf("failed to resolve cosi.CollectiveSigning: %v", err)
 	}
 
 	var p pool.Pool
