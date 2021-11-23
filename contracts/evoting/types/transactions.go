@@ -96,7 +96,8 @@ func RandomID() (string, error) {
 	return hex.EncodeToString(buf), nil
 }
 
-// HashShuffle hashes a given shuffle so that it can be signed or a signature can be verified, using a common template.
+// HashShuffle hashes a given shuffle so that it can be signed or a signature
+// can be verified, using a common template.
 func (s ShuffleBallotsTransaction) HashShuffle(electionID string) ([]byte, error) {
 	hash := sha256.New()
 
