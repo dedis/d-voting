@@ -28,5 +28,8 @@ jobs:
     - name: Test Shuffle
       run: go test -cover ./services/shuffle/...
       
+    - name: Test Contract with coverage
+      run: go test -json -covermode=count -coverprofile=profile.cov ./contracts/... > report.json
+      
     #- name: Test DKG
       #run: go test -cover ./services/dkg/...
