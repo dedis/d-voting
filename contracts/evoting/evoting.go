@@ -308,10 +308,12 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		if err != nil {
 			return xerrors.Errorf("failed to serialize a public from the roster : %v ", err)
 		}
+
 		if bytes.Equal(shufflerPublicKey, key) {
 			shufflerIsAMember = true
 		}
 	}
+
 	if !shufflerIsAMember {
 		return xerrors.Errorf("public key of the shuffler not found in roster: %x", shufflerPublicKey)
 	}
@@ -380,7 +382,13 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	}
 
 	// append the new shuffled ballots and the proof to the lists
-	election.ShuffleInstances = append(election.ShuffleInstances, types.ShuffleInstance{ShuffledBallots: shuffleBallotsTransaction.ShuffledBallots, ShuffleProofs: shuffleBallotsTransaction.Proof, ShufflerPublicKey: shufflerPublicKey})
+	currentShuffleInstance := types.ShuffleInstance{
+		ShuffledBallots:   shuffleBallotsTransaction.ShuffledBallots,
+		ShuffleProofs:     shuffleBallotsTransaction.Proof,
+		ShufflerPublicKey: shufflerPublicKey,
+	}
+
+	election.ShuffleInstances = append(election.ShuffleInstances, currentShuffleInstance)
 
 	// in case we have enough shuffled ballots, we update the status
 	if len(election.ShuffleInstances) >= election.ShuffleThreshold {

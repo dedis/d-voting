@@ -103,7 +103,9 @@ func TestNeffShuffle_Verify(t *testing.T) {
 	require.NoError(t, err)
 }
 
-//-----Utility Function -------
+// -----------------------------------------------------------------------------
+// Utility functions
+
 type fakeAuthorityFactory struct {
 	serde.Factory
 
