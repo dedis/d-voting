@@ -57,11 +57,11 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 	// Get the electionID, which is the SHA256 of the transaction ID
 	h := sha256.New()
 	h.Write(step.Current.GetID())
-	electionIDBuf := h.Sum(nil)
+	electionIDBuff := h.Sum(nil)
 
 	election := types.Election{
 		Title:      createElectionTxn.Title,
-		ElectionID: hex.EncodeToString(electionIDBuf),
+		ElectionID: hex.EncodeToString(electionIDBuff),
 		AdminID:    createElectionTxn.AdminID,
 		Status:     types.Open,
 		// Pubkey is set by the opening command
@@ -76,11 +76,6 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 	electionJSON, err := json.Marshal(election)
 	if err != nil {
 		return xerrors.Errorf("failed to marshal Election : %v", err)
-	}
-
-	electionIDBuff, err := hex.DecodeString(string(election.ElectionID))
-	if err != nil {
-		return xerrors.Errorf(errDecodeElectionID, err)
 	}
 
 	err = snap.Set(electionIDBuff, electionJSON)
@@ -176,7 +171,7 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step, d
 		return xerrors.Errorf("failed to marshal Election : %v", err)
 	}
 
-	electionIDBuff, err := hex.DecodeString(string(election.ElectionID))
+	electionIDBuff, err := hex.DecodeString(election.ElectionID)
 	if err != nil {
 		return xerrors.Errorf(errDecodeElectionID, err)
 	}
@@ -223,17 +218,14 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 	}
 
 	// TODO: check that castVoteTransaction.Ballot is a well formatted
-	// types.Ciphertext{}
 	election.EncryptedBallots.CastVote(castVoteTransaction.UserID, castVoteTransaction.Ballot)
-
-	// election.EncryptedBallots[castVoteTransaction.UserId] = castVoteTransaction.Ballot
 
 	electionMarshaled, err = json.Marshal(election)
 	if err != nil {
 		return xerrors.Errorf("failed to marshal Election : %v", err)
 	}
 
-	electionIDBuff, err := hex.DecodeString(string(election.ElectionID))
+	electionIDBuff, err := hex.DecodeString(election.ElectionID)
 	if err != nil {
 		return xerrors.Errorf(errDecodeElectionID, err)
 	}
@@ -373,7 +365,6 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("failed to get ks, cs: %v", err)
 	}
 
-	// todo: add trusted nodes in election struct
 	verifier := shuffle.Verifier(suite, nil, pubKey, ks, cs, ksShuffled, csShuffled)
 
 	err = e.prover(suite, protocolName, verifier, shuffleBallotsTransaction.Proof)
@@ -598,7 +589,7 @@ func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("failed to marshal Election : %v", err)
 	}
 
-	electionIDBuff, err := hex.DecodeString(string(election.ElectionID))
+	electionIDBuff, err := hex.DecodeString(election.ElectionID)
 	if err != nil {
 		return xerrors.Errorf(errDecodeElectionID, err)
 	}
