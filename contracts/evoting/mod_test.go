@@ -215,6 +215,14 @@ func TestCommand_CastVote(t *testing.T) {
 		election.EncryptedBallots.Ballots[0])
 	require.Equal(t, dummyCastVoteTransaction.UserID,
 		election.EncryptedBallots.UserIDs[0])
+
+	// Issue # 17 : Empty ballot does not return an error and will generate issues during shuffle
+	dummyCastVoteTransaction.Ballot = types.Ciphertext{}
+	jsCastVoteTransaction, _ = json.Marshal(dummyCastVoteTransaction)
+	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
+	require.NoError(t, err)
+
 }
 
 func TestCommand_CloseElection(t *testing.T) {
