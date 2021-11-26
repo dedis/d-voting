@@ -6,7 +6,6 @@ import (
 )
 
 type ID string
-
 type status uint16
 
 const (

@@ -189,12 +189,7 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) e
 		return xerrors.Errorf("failed to marshal Election : %v", err)
 	}
 
-	electionIDBuff, err := hex.DecodeString(election.ElectionID)
-	if err != nil {
-		return xerrors.Errorf(errDecodeElectionID, err)
-	}
-
-	err = snap.Set(electionIDBuff, electionMarshaled)
+	err = snap.Set(electionIDBuf, electionMarshaled)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
