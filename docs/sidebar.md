@@ -2,3 +2,4 @@
 - [Introduction](introduction.md)
 - **REST API**
 - [API documentation](api.md)
+- [Message signature](msg_sig.md)
