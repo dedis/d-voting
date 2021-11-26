@@ -29,4 +29,8 @@ type Actor interface {
 	Decrypt(K, C kyber.Point, electionID []byte) ([]byte, error)
 
 	Reshare() error
+
+	// MarshalJSON returns a JSON-encoded bytestring containing all the
+	// actor data that is meant to be persistent.
+	MarshalJSON() ([]byte, error)
 }

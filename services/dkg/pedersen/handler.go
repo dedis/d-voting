@@ -69,9 +69,9 @@ func (s *state) SetParticipants(addrs []mino.Address) {
 type Handler struct {
 	mino.UnsupportedHandler
 	sync.RWMutex
-	dkg       *pedersen.DistKeyGenerator
-	me        mino.Address
-	service   ordering.Service
+	dkg     *pedersen.DistKeyGenerator
+	me      mino.Address
+	service ordering.Service
 
 	// These are persistent, see HandlerData
 	startRes  *state
@@ -91,13 +91,13 @@ func NewHandler(me mino.Address, service ordering.Service, handlerData HandlerDa
 	privShare := handlerData.privShare
 
 	return &Handler{
-		me:         me,
-		service:    service,
+		me:      me,
+		service: service,
 
-		startRes:   startRes,
-		privShare:  privShare,
-		privKey:    privKey,
-		pubKey:     pubKey,
+		startRes:  startRes,
+		privShare: privShare,
+		privKey:   privKey,
+		pubKey:    pubKey,
 	}
 }
 
@@ -454,9 +454,9 @@ func (h *Handler) handleDeal(msg types.Deal, from mino.Address, addrs []mino.Add
 
 // checkIsShuffled allows to check if the ciphertext to decrypt has been
 // previously shuffled
-func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionId string) (bool, error) {
+func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionID string) (bool, error) {
 
-	electionIDBuf, err := hex.DecodeString(electionId)
+	electionIDBuf, err := hex.DecodeString(electionID)
 	if err != nil {
 		return false, xerrors.Errorf("failed to decode electionID: %v", err)
 	}
@@ -487,6 +487,19 @@ func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionId strin
 
 	return false, nil
 
+}
+
+// MarshalJSON returns a JSON-encoded bytestring containing all the data in the Handler
+// that is meant to be persistent. It allows for saving the data to disk.
+func (h *Handler) MarshalJSON() ([]byte, error) {
+	handlerData := HandlerData{
+		startRes:  h.startRes,
+		privShare: h.privShare,
+		privKey:   h.privKey,
+		pubKey:    h.pubKey,
+	}
+
+	return json.Marshal(handlerData)
 }
 
 // HandlerData is used to synchronise actors between the DKG and the filesystem.

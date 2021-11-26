@@ -2,7 +2,6 @@ package controller
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"encoding/hex"
 	"fmt"
 	"net/http"
@@ -65,13 +64,12 @@ func (a *initAction) Execute(ctx node.Context) error {
 	}
 
 	err = dkgMap.Update(func(tx kv.WritableTx) error {
-		bucket, err := tx.GetBucketOrCreate([]byte("dkgmap"))
+		bucket, err := tx.GetBucketOrCreate([]byte(DKGMAP))
 		if err != nil {
 			return err
 		}
 
-		// TODO will this take only what can be marshalled?
-		actorBuf, err := json.Marshal(actor)
+		actorBuf, err := actor.MarshalJSON()
 		if err != nil {
 			return err
 		}

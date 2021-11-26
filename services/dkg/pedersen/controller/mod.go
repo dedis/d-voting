@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/hex"
 	"encoding/json"
 
 	"github.com/dedis/d-voting/contracts/evoting"
@@ -17,6 +16,9 @@ import (
 	"go.dedis.ch/dela/mino"
 	"golang.org/x/xerrors"
 )
+
+// DKGMAP is the name of the 
+const DKGMAP = "dkgmap"
 
 // evotingAccessKey is the access key used for the evoting contract.
 var evotingAccessKey = [32]byte{3}
@@ -120,7 +122,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 
 	// Use dkgMap to fill the actors map
 	err = dkgMap.View(func(tx kv.ReadableTx) error {
-		bucket := tx.GetBucket([]byte("dkgmap"))
+		bucket := tx.GetBucket([]byte(DKGMAP))
 		if bucket == nil {
 			return nil
 		}
@@ -133,7 +135,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 				return err
 			}
 
-			_, err = dkg.NewActor(hex.EncodeToString(electionIDBuf), handlerData)
+			_, err = dkg.NewActor(electionIDBuf, handlerData)
 			if err != nil {
 				return err
 			}

@@ -82,11 +82,13 @@ func (s *Pedersen) Listen(electionIDBuf []byte) (dkg.Actor, error) {
 		return actor, nil
 	}
 
-	return s.NewActor(hex.EncodeToString(electionIDBuf), NewHandlerData())
+	return s.NewActor(electionIDBuf, NewHandlerData())
 }
 
 // NewActor initializes a dkg.Actor with an RPC specific to the election with the given keypair
-func (s *Pedersen) NewActor(electionID string, handlerData HandlerData) (dkg.Actor, error) {
+func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.Actor, error) {
+
+	electionID := hex.EncodeToString(electionIDBuf)
 
 	// Link the actor to an RPC by the election ID
 	h := NewHandler(s.mino.GetAddress(), s.service, handlerData)
@@ -96,7 +98,7 @@ func (s *Pedersen) NewActor(electionID string, handlerData HandlerData) (dkg.Act
 	a := &Actor{
 		rpc:       rpc,
 		factory:   s.factory,
-		startRes:  h.startRes,
+		handler:   h,
 		service:   s.service,
 		rosterFac: s.rosterFac,
 		context:   jsonserde.NewContext(),
@@ -125,19 +127,19 @@ func (s *Pedersen) GetActor(electionIDBuf []byte) (dkg.Actor, error) {
 type Actor struct {
 	rpc       mino.RPC
 	factory   serde.Factory
-	startRes  *state
+	handler   *Handler
 	service   ordering.Service
 	rosterFac authority.Factory
 	context   serde.Context
 }
 
 // Setup implements dkg.Actor. It initializes the DKG.
-func (a *Actor) Setup(electionID []byte) (kyber.Point, error) {
-	if a.startRes.Done() {
+func (a *Actor) Setup(electionIDBuf []byte) (kyber.Point, error) {
+	if a.handler.startRes.Done() {
 		return nil, xerrors.Errorf("startRes is already done, only one setup call is allowed")
 	}
 
-	proof, err := a.service.GetProof(electionID)
+	proof, err := a.service.GetProof(electionIDBuf)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to read on the blockchain: %v", err)
 	}
@@ -246,11 +248,11 @@ func (a *Actor) Setup(electionID []byte) (kyber.Point, error) {
 
 // GetPublicKey implements dkg.Actor
 func (a *Actor) GetPublicKey() (kyber.Point, error) {
-	if !a.startRes.Done() {
+	if !a.handler.startRes.Done() {
 		return nil, xerrors.Errorf("DKG has not been initialized")
 	}
 
-	return a.startRes.GetDistKey(), nil
+	return a.handler.startRes.GetDistKey(), nil
 }
 
 // Encrypt implements dkg.Actor. It uses the DKG public key to encrypt a
@@ -258,7 +260,7 @@ func (a *Actor) GetPublicKey() (kyber.Point, error) {
 func (a *Actor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte,
 	err error) {
 
-	if !a.startRes.Done() {
+	if !a.handler.startRes.Done() {
 		return nil, nil, nil, xerrors.Errorf("you must first initialize DKG. " +
 			"Did you call setup() first?")
 	}
@@ -273,24 +275,24 @@ func (a *Actor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte,
 	// ElGamal-encrypt the point to produce ciphertext (K,C).
 	k := suite.Scalar().Pick(random.New())             // ephemeral private key
 	K = suite.Point().Mul(k, nil)                      // ephemeral DH public key
-	S := suite.Point().Mul(k, a.startRes.GetDistKey()) // ephemeral DH shared secret
+	S := suite.Point().Mul(k, a.handler.startRes.GetDistKey()) // ephemeral DH shared secret
 	C = S.Add(S, M)                                    // message blinded with secret
 
 	return K, C, remainder, nil
 }
 
 // Decrypt implements dkg.Actor. It gets the private shares of the nodes and
-// decrypt the  message.
+// decrypts the message.
 // TODO: perform a re-encryption instead of gathering the private shares, which
 // should never happen.
 func (a *Actor) Decrypt(K, C kyber.Point, electionID []byte) ([]byte, error) {
 
-	if !a.startRes.Done() {
+	if !a.handler.startRes.Done() {
 		return nil, xerrors.Errorf("you must first initialize DKG. " +
 			"Did you call setup() first?")
 	}
 
-	players := mino.NewAddresses(a.startRes.GetParticipants()...)
+	players := mino.NewAddresses(a.handler.startRes.GetParticipants()...)
 
 	ctx, cancel := context.WithTimeout(context.Background(), decryptTimeout)
 	defer cancel()
@@ -301,7 +303,7 @@ func (a *Actor) Decrypt(K, C kyber.Point, electionID []byte) ([]byte, error) {
 		return nil, xerrors.Errorf("failed to create stream: %v", err)
 	}
 
-	players = mino.NewAddresses(a.startRes.GetParticipants()...)
+	players = mino.NewAddresses(a.handler.startRes.GetParticipants()...)
 	iterator := players.AddressIterator()
 
 	addrs := make([]mino.Address, 0, players.Len())
@@ -354,4 +356,10 @@ func (a *Actor) Decrypt(K, C kyber.Point, electionID []byte) ([]byte, error) {
 // TODO: to do
 func (a *Actor) Reshare() error {
 	return nil
+}
+
+// MarshalJSON implements dkg.Actor. It exports the data relevant to an Actor
+// that is meant to be persistent.
+func (a *Actor) MarshalJSON() ([]byte, error) {
+	return a.handler.MarshalJSON()
 }
