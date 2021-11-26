@@ -2,25 +2,120 @@ package pedersen
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"testing"
 
 	"github.com/dedis/d-voting/internal/testing/fake"
-//         "github.com/dedis/d-voting/services/dkg"
-//         "github.com/dedis/d-voting/services/dkg/pedersen/types"
+	// "github.com/dedis/d-voting/services/dkg"
+	// "github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"github.com/stretchr/testify/require"
-//         "go.dedis.ch/dela/crypto"
-//         "go.dedis.ch/dela/crypto/ed25519"
-//         "go.dedis.ch/dela/mino"
-//         "go.dedis.ch/dela/mino/minogrpc"
-//         "go.dedis.ch/dela/mino/router/tree"
-//         "go.dedis.ch/kyber/v3"
+	// "go.dedis.ch/dela/crypto"
+	// "go.dedis.ch/dela/crypto/ed25519"
+	"go.dedis.ch/dela/core/store/kv"
+	"go.dedis.ch/dela/mino"
+	// "go.dedis.ch/dela/mino/minogrpc"
+	// "go.dedis.ch/dela/mino/router/tree"
+	// "go.dedis.ch/kyber/v3"
 )
 
-// When initializing a Pedersen when dkgMap was not initialized, there should be an error
-func TestPedersen_InitNoMap(t *testing.T) {
+// // After initializing a Pedersen when dkgMap is empty, the actors map should be empty
+// func TestPedersen_InitEmptyMap(t *testing.T) {
+
+// }
+
+// // After initializing a Pedersen when dkgMap is not empty, the actors map should contain the same information
+// // as dkgMap
+func TestPedersen_InitNonEmptyMap(t *testing.T) {
+	// Create a new DKG map and fill it with data
+	dkgMap := fake.NewInMemoryDB()
+
+	electionActorMap := map[string]HandlerData{
+		"deadbeef51": NewHandlerData(),
+		"deadbeef52": NewHandlerData(),
+		"deadbeef53": NewHandlerData(),
+	}
+
+	err := dkgMap.Update(func(tx kv.WritableTx) error {
+		bucket, err := tx.GetBucketOrCreate([]byte("dkgmap"))
+		if err != nil {
+			return err
+		}
+
+		for electionID, handlerData := range electionActorMap {
+
+			electionIDBuf, err := hex.DecodeString(electionID)
+
+			handlerDataBuf, err := json.Marshal(handlerData)
+			if err != nil {
+				return err
+			}
+
+			err = bucket.Set(electionIDBuf, handlerDataBuf)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+	require.NoError(t, err)
+
+	// Initialize a Pedersen
 	p := NewPedersen(fake.Mino{}, fake.Service{}, fake.Factory{})
 
-	electionID := "dummyID"
+	err = dkgMap.View(func(tx kv.ReadableTx) error {
+		bucket := tx.GetBucket([]byte("dkgmap"))
+		require.NotNil(t, bucket)
+
+		return bucket.ForEach(func(electionIDBuf, handlerDataBuf []byte) error {
+
+			print(handlerDataBuf)
+
+			handlerData := HandlerData{}
+			err = json.Unmarshal(handlerDataBuf, &handlerData)
+			if err != nil {
+				return err
+			}
+
+			_, err = p.NewActor(electionIDBuf, handlerData)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
+	})
+	require.NoError(t, err)
+
+	// Check that the data was used properly
+
+	// Check the number of elements is the same
+	require.Equal(t, len(electionActorMap), len(p.actors))
+
+	// Check equality pair by pair
+	for electionID, handlerData := range electionActorMap {
+
+		electionIDBuf, err := hex.DecodeString(electionID)
+		require.NoError(t, err)
+
+		actor, err := p.GetActor(electionIDBuf)
+		require.NoError(t, err)
+
+		actorDataBuf, err := actor.MarshalJSON()
+		require.NoError(t, err)
+
+		handlerDataBuf, err := json.Marshal(handlerData)
+		require.NoError(t, err)
+
+		// Check that each field is the same
+		require.Equal(t, handlerDataBuf, actorDataBuf)
+	}
+}
+
+func TestPedersen_Listen(t *testing.T) {
+	p := NewPedersen(fake.Mino{}, fake.Service{}, fake.Factory{})
+
+	electionID := "d3adbeef"
 	electionIDBuf, err := hex.DecodeString(electionID)
 	require.NoError(t, err)
 
@@ -30,25 +125,61 @@ func TestPedersen_InitNoMap(t *testing.T) {
 	require.NotNil(t, actor)
 }
 
-// // After initializing a Pedersen when dkgMap is empty, the actors map should be empty
-// func TestPedersen_InitEmptyMap(t *testing.T) {
+// If Listen is called twice for the same election, the actor data is unchanged
+func TestPedersen_TwoListens(t *testing.T) {
+	p := NewPedersen(fake.Mino{}, fake.Service{}, fake.Factory{})
 
-// }
+	electionID := "deadbeef"
+	electionIDBuf, err := hex.DecodeString(electionID)
+	require.NoError(t, err)
 
-// // After initializing a Pedersen when dkgMap is not empty, the actors map should contain the same information
-// // as dkgMap
-// func TestPedersen_InitNonEmptyMap(t *testing.T) {
+	actor1, err := p.Listen(electionIDBuf)
+	require.NoError(t, err)
 
-// }
+	actor2, err := p.Listen(electionIDBuf)
+	require.NoError(t, err)
 
-// func TestPedersen_Listen(t *testing.T) {
-//         pedersen, _ := NewPedersen(fake.Mino{}, false)
+	require.Equal(t, actor1, actor2)
+}
 
-//         actor, err := pedersen.Listen()
-//         require.NoError(t, err)
+// If you get the persistent data from an actor and then recreate an actor from that data,
+// the persistent data should be the same in both actors.
+func TestActor_MarshalJSON(t *testing.T) {
+	p := NewPedersen(fake.Mino{}, fake.Service{}, fake.Factory{})
 
-//         require.NotNil(t, actor)
-// }
+	// Create new actor
+	electionID := "deadbeef"
+	electionIDBuf, err := hex.DecodeString(electionID)
+	require.NoError(t, err)
+
+	actor, err := p.Listen(electionIDBuf)
+	require.NoError(t, err)
+
+	// Serialize its persistent data
+	actorBuf, err := actor.MarshalJSON()
+	require.NoError(t, err)
+
+	// Create a new actor with that data
+	electionID = "beefdead"
+	electionIDBuf, err = hex.DecodeString(electionID)
+	require.NoError(t, err)
+
+	actorData := HandlerData{}
+	err = json.Unmarshal(actorBuf, &actorData)
+	require.NoError(t, err)
+
+	newActor, err := p.NewActor(electionIDBuf, actorData)
+	require.NoError(t, err)
+
+	// Check that the persistent data is the same for
+	// both actors
+	newActorBuf, err := newActor.MarshalJSON()
+	require.NoError(t, err)
+
+	print(newActorBuf)
+
+	require.Equal(t, actorBuf, newActorBuf)
+}
 
 // func TestPedersen_Setup(t *testing.T) {
 //         actor := Actor{
@@ -94,18 +225,36 @@ func TestPedersen_InitNoMap(t *testing.T) {
 //         require.Regexp(t, "^the public keys does not match:", err)
 // }
 
-// func TestPedersen_GetPublicKey(t *testing.T) {
-//         actor := Actor{
-//                 startRes: &state{},
-//         }
+func TestPedersen_GetPublicKey(t *testing.T) {
 
-//         _, err := actor.GetPublicKey()
-//         require.EqualError(t, err, "DKG has not been initialized")
+	electionID := "deadbeef"
+	electionIDBuf, err := hex.DecodeString(electionID)
+	require.NoError(t, err)
 
-//         actor.startRes = &state{participants: []mino.Address{fake.NewAddress(0)}, distrKey: suite.Point()}
-//         _, err = actor.GetPublicKey()
-//         require.NoError(t, err)
-// }
+	actor := Actor{
+		handler: NewHandler(
+			fake.Mino{}.GetAddress(),
+			fake.Service{},
+			NewHandlerData(),
+		),
+		service: fake.Service{ElectionID: electionID},
+		rosterFac: fake.Factory{},
+		rpc: fake.NewRPC(),
+	}
+
+	actor.handler.startRes = &state{
+		participants: []mino.Address{fake.NewAddress(0)},
+		distrKey:     nil,
+	}
+
+	_, err = actor.GetPublicKey()
+	require.EqualError(t, err, "DKG has not been initialized")
+
+	actor.Setup(electionIDBuf)
+
+	_, err = actor.GetPublicKey()
+	require.NoError(t, err)
+}
 
 // func TestPedersen_Decrypt(t *testing.T) {
 //         actor := Actor{
