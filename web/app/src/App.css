@@ -3,14 +3,9 @@
 .App {
   font-family: sans-serif;
   color: rgb(71, 71, 71);
-  min-height: 90vh;
   background-color: white;
   position:relative;
   scroll-behavior: smooth;
-  overflow: scroll;
-  padding-bottom:50px;
-  
-
 }
 
 /*
@@ -37,67 +32,4 @@
   justify-content: center;
   background-color: whitesmoke;
   padding-bottom: 200px;
-  
 }
-
-.app-nav{
-  display: flex;
-  height: 100%;
-  background-color:whitesmoke;
-  margin-bottom: 2%;
-}
- 
-.app-page{
-  min-width: 58ch;
-  display: flex;
-  text-align:left;
-  flex-direction: column;
-  padding-top: 2%;
-  padding-left: 20%;
-  padding-right:20%;
-  justify-content: center;
-  background-color: white;
- 
-}
-
-.footer-container{
-
-  background: linear-gradient(   
-    rgb(27, 35, 43) 0%,
-    rgb(19, 25, 31) 100%
-  );
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right:0;
-
-}
-
-/*
-.form {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 90%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
