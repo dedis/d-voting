@@ -38,9 +38,8 @@ func (e *ElectionIDs) Add(id string) error {
 }
 
 type CreateElectionTransaction struct {
-	Title   string
-	AdminID string
-	Format  string
+	Configuration Configuration
+	AdminID       string
 }
 
 type OpenElectionTransaction struct {
@@ -52,7 +51,7 @@ type CastVoteTransaction struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 	UserID     string
-	Ballot     Ciphertext
+	Ballot     Ciphertexts
 }
 
 type CloseElectionTransaction struct {
@@ -64,7 +63,7 @@ type CloseElectionTransaction struct {
 type ShuffleBallotsTransaction struct {
 	ElectionID      string
 	Round           int
-	ShuffledBallots Ciphertexts
+	ShuffledBallots []Ciphertexts
 	Proof           []byte
 	//Signature should be obtained using SignShuffle()
 	Signature []byte
