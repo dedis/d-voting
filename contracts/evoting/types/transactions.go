@@ -51,7 +51,7 @@ type CastVoteTransaction struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 	UserID     string
-	Ballot     Ciphertexts
+	Ballot     EncryptedBallot
 }
 
 type CloseElectionTransaction struct {
@@ -63,7 +63,7 @@ type CloseElectionTransaction struct {
 type ShuffleBallotsTransaction struct {
 	ElectionID      string
 	Round           int
-	ShuffledBallots []Ciphertexts
+	ShuffledBallots []EncryptedBallot
 	Proof           []byte
 	//Signature should be obtained using SignShuffle()
 	Signature []byte

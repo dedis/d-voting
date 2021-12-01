@@ -39,7 +39,7 @@ type CastVoteRequest struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 	UserID     string
-	Ballot     Ciphertexts
+	Ballot     EncryptedBallot
 	Token      string
 }
 
