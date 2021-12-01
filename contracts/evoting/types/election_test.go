@@ -13,12 +13,13 @@ var ballot1 = "select:aaa:true,false,true\n" +
 var ballot2 = "select:aaa:false,false,false\n" +
 	"rank:bbb:-128,-128,-128,-128\n" +
 	"select:ddd:false,false,false,false,false\n" +
-	"text:ccc:blablablaf,cestmoiEmi"
+	"text:ccc:blablablaf,cestmoiEmi\n" +
+	"text:eee:aaaaaaaaaa,,"
 
 func TestBallot_Unmarshal(t *testing.T) {
 	b := Ballot{}
 
-	err := b.Unmarshal(ballot1, Election{})
+	err := b.Unmarshal(ballot1, Election{BallotSize: len(ballot1)})
 
 	require.NoError(t, err)
 
@@ -78,6 +79,14 @@ func TestSubject_MaxEncodedSize(t *testing.T) {
 			MaxLength: 10,
 			Regex:     "",
 			Choices:   make([]string, 2),
+		}, {
+			ID:        "eee",
+			Title:     "",
+			MaxN:      1,
+			MinN:      0,
+			MaxLength: 10,
+			Regex:     "",
+			Choices:   make([]string, 3),
 		}},
 	}
 
