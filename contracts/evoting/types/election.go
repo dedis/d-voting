@@ -101,6 +101,11 @@ type Ballot struct {
 // Unmarshal decodes the given string according to the format described in
 // "state of smart contract.md"
 func (b *Ballot) Unmarshal(marshalledBallot string, e Election) error {
+	if len(marshalledBallot) > e.BallotSize {
+		return fmt.Errorf("ballot has an unexpected size %d, expected <= %d",
+			len(marshalledBallot), e.BallotSize)
+	}
+
 	lines := strings.Split(marshalledBallot, "\n")
 
 	b.SelectResultIDs = make([]ID, 0)
@@ -115,7 +120,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, e Election) error {
 	for _, line := range lines {
 		question := strings.Split(line, ":")
 		if len(question) != 3 {
-			return fmt.Errorf("a line has a length != 3")
+			return fmt.Errorf("a line in the ballot has length != 3")
 		}
 
 		//TODO: check ID is valid (in each case)
