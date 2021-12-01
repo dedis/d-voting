@@ -101,6 +101,7 @@ type Ballot struct {
 // "state of smart contract.md"
 func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 	if len(marshalledBallot) > election.BallotSize {
+		b.invalidate()
 		return fmt.Errorf("ballot has an unexpected size %d, expected <= %d",
 			len(marshalledBallot), election.BallotSize)
 	}
@@ -118,64 +119,138 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 
 	for _, line := range lines {
 		question := strings.Split(line, ":")
+
 		if len(question) != 3 {
+			b.invalidate()
 			return fmt.Errorf("a line in the ballot has length != 3")
 		}
 
-		//TODO: check ID is valid (in each case)
-		//TODO: check length of selections, ranks, texts is = to # of choices of the Q.
+		q := election.Configuration.GetQuestion(ID(question[1]))
+
+		if q == nil {
+			b.invalidate()
+			return fmt.Errorf("wrong question ID: the question doesn't exist")
+		}
 
 		switch question[0] {
+
 		case "select":
+			selections := strings.Split(question[2], ",")
+
+			if len(selections) != q.GetChoicesLength() {
+				b.invalidate()
+				return fmt.Errorf("question %s has a wrong number of answers: expected %d got %d"+
+					"", question[1], q.GetChoicesLength(), len(selections))
+			}
+
 			b.SelectResultIDs = append(b.SelectResultIDs, ID(question[1]))
 			b.SelectResult = append(b.SelectResult, make([]bool, 0))
-			index := len(b.SelectResult) - 1
 
-			selections := strings.Split(question[2], ",")
+			index := len(b.SelectResult) - 1
+			var selected uint = 0
+
 			for _, selection := range selections {
 				s, err := strconv.ParseBool(selection)
+
 				if err != nil {
+					b.invalidate()
 					return fmt.Errorf("could not parse selection value for Q.%s: %v",
 						question[1], err)
+				}
+
+				if s {
+					selected += 1
 				}
 
 				b.SelectResult[index] = append(b.SelectResult[index], s)
 			}
 
+			if selected > q.GetMaxN() {
+				b.invalidate()
+				return fmt.Errorf("question %s has too many selected answers", question[1])
+			}
+
 		case "rank":
+			ranks := strings.Split(question[2], ",")
+
+			if len(ranks) != q.GetChoicesLength() {
+				b.invalidate()
+				return fmt.Errorf("question %s has a wrong number of answers: expected %d got %d"+
+					"", question[1], q.GetChoicesLength(), len(ranks))
+			}
+
 			b.RankResultIDs = append(b.RankResultIDs, ID(question[1]))
 			b.RankResult = append(b.RankResult, make([]int8, 0))
+
 			index := len(b.RankResult) - 1
-
-			ranks := strings.Split(question[2], ",")
+			var selected uint = 0
 			for _, rank := range ranks {
-				r, err := strconv.ParseInt(rank, 10, 8)
-				if err != nil {
-					return fmt.Errorf("could not parse rank value for Q.%s : %v",
-						question[1], err)
-				}
+				if len(rank) > 0 {
+					selected += 1
 
-				b.RankResult[index] = append(b.RankResult[index], int8(r))
+					r, err := strconv.ParseInt(rank, 10, 8)
+					if err != nil {
+						b.invalidate()
+						return fmt.Errorf("could not parse rank value for Q.%s : %v",
+							question[1], err)
+					}
+
+					b.RankResult[index] = append(b.RankResult[index], int8(r))
+				} else {
+					b.RankResult[index] = append(b.RankResult[index], int8(-1))
+				}
+			}
+
+			if selected > q.GetMaxN() {
+				b.invalidate()
+				return fmt.Errorf("question %s has too many selected answers", question[1])
 			}
 
 		case "text":
+			texts := strings.Split(question[2], ",")
+
+			if len(texts) != q.GetChoicesLength() {
+				b.invalidate()
+				return fmt.Errorf("question %s has a wrong number of answers: expected %d got %d"+
+					"", question[1], q.GetChoicesLength(), len(texts))
+			}
+
 			b.TextResultIDs = append(b.TextResultIDs, ID(question[1]))
 			b.TextResult = append(b.TextResult, make([]string, 0))
-			index := len(b.TextResult) - 1
 
-			//TODO: there can be a ',' in our string, should be within " " :(
-			texts := strings.Split(question[2], ",")
+			index := len(b.TextResult) - 1
+			var selected uint = 0
+
 			for _, text := range texts {
+				//TODO: text is base64 encoded, should decode here
+				if len(text) > 0 {
+					selected += 1
+				}
 				b.TextResult[index] = append(b.TextResult[index], text)
 			}
 
+			if selected > q.GetMaxN() {
+				b.invalidate()
+				return fmt.Errorf("question %s has too many selected answers", question[1])
+			}
+
 		default:
+			b.invalidate()
 			return fmt.Errorf("question type is unknown")
 		}
 
 	}
 
 	return nil
+}
+
+func (b *Ballot) invalidate() {
+	b.RankResultIDs = nil
+	b.RankResult = nil
+	b.TextResultIDs = nil
+	b.TextResult = nil
+	b.SelectResultIDs = nil
+	b.SelectResult = nil
 }
 
 // Configuration contains the configuration of a new poll.
@@ -193,6 +268,18 @@ func (c *Configuration) MaxBallotSize() int {
 	return size
 }
 
+func (c *Configuration) GetQuestion(ID ID) Question {
+	for _, subject := range c.Scaffold {
+		question := subject.GetQuestion(ID)
+
+		if question != nil {
+			return question
+		}
+	}
+
+	return nil
+}
+
 // Subject is a wrapper around multiple questions that can be of type "select",
 // "rank", or "text".
 type Subject struct {
@@ -208,6 +295,35 @@ type Subject struct {
 	Selects  []Select
 	Ranks    []Rank
 	Texts    []Text
+}
+
+func (s *Subject) GetQuestion(ID ID) Question {
+	for _, subject := range s.Subjects {
+		question := subject.GetQuestion(ID)
+		if question != nil {
+			return question
+		}
+	}
+
+	for _, selects := range s.Selects {
+		if selects.ID == ID {
+			return selects
+		}
+	}
+
+	for _, rank := range s.Ranks {
+		if rank.ID == ID {
+			return rank
+		}
+	}
+
+	for _, text := range s.Texts {
+		if text.ID == ID {
+			return text
+		}
+	}
+
+	return nil
 }
 
 // MaxEncodedSize returns the maximum amount of bytes taken to store the
@@ -247,8 +363,16 @@ func (s *Subject) MaxEncodedSize() int {
 	return size
 }
 
+// Question is an interface offering the primitives all questions should have to
+// verify the validity of an answer on a decrypted ballot.
+type Question interface {
+	GetMaxN() uint
+	GetChoicesLength() int
+	//TODO: IsValid() bool useful?
+}
+
 // Select describes a "select" question, which requires the user to select one
-// or multiple choices.
+// or multiple choices. implements Question
 type Select struct {
 	ID ID
 
@@ -256,6 +380,14 @@ type Select struct {
 	MaxN    uint
 	MinN    uint
 	Choices []string
+}
+
+func (s Select) GetMaxN() uint {
+	return s.MaxN
+}
+
+func (s Select) GetChoicesLength() int {
+	return len(s.Choices)
 }
 
 // Rank describes a "rank" question, which requires the user to rank choices.
@@ -268,6 +400,14 @@ type Rank struct {
 	Choices []string
 }
 
+func (r Rank) GetMaxN() uint {
+	return r.MaxN
+}
+
+func (r Rank) GetChoicesLength() int {
+	return len(r.Choices)
+}
+
 // Text describes a "text" question, which allows the user to enter free text.
 type Text struct {
 	ID ID
@@ -278,6 +418,14 @@ type Text struct {
 	MaxLength uint
 	Regex     string
 	Choices   []string
+}
+
+func (t Text) GetMaxN() uint {
+	return t.MaxN
+}
+
+func (t Text) GetChoicesLength() int {
+	return len(t.Choices)
 }
 
 // PublicBulletinBoard maintains a list of encrypted ballots with the associated
@@ -335,6 +483,7 @@ type EncryptedBallots []EncryptedBallot
 func (b EncryptedBallots) GetElGPairs() ([][]kyber.Point, [][]kyber.Point, error) {
 	ks := make([][]kyber.Point, len(b))
 	cs := make([][]kyber.Point, len(b))
+
 	var err error
 
 	for i, ballot := range b {
