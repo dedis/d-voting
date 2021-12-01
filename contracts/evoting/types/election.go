@@ -40,9 +40,8 @@ type Election struct {
 	// smaller ballots such that all  ballots cast have the same size
 	BallotSize int
 
-	// EncryptedBallots is a map from User ID to their ballot ciphertext
-	// EncryptedBallots map[string][]byte
-	EncryptedBallots EncryptedBallots
+	// PublicBulletinBoard is a map from User ID to their ballot EncryptedBallot
+	PublicBulletinBoard PublicBulletinBoard
 
 	// ShuffleInstances is all the shuffles, along with their proof and identity
 	// of shuffler.
@@ -65,7 +64,7 @@ type Election struct {
 // the proofs and the identity of the shuffler.
 type ShuffleInstance struct {
 	// ShuffledBallots contains the list of shuffled ciphertext for this round
-	ShuffledBallots []Ciphertexts
+	ShuffledBallots []EncryptedBallot
 
 	// ShuffleProofs is the proof of the shuffle for this round
 	ShuffleProofs []byte
@@ -100,10 +99,10 @@ type Ballot struct {
 
 // Unmarshal decodes the given string according to the format described in
 // "state of smart contract.md"
-func (b *Ballot) Unmarshal(marshalledBallot string, e Election) error {
-	if len(marshalledBallot) > e.BallotSize {
+func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
+	if len(marshalledBallot) > election.BallotSize {
 		return fmt.Errorf("ballot has an unexpected size %d, expected <= %d",
-			len(marshalledBallot), e.BallotSize)
+			len(marshalledBallot), election.BallotSize)
 	}
 
 	lines := strings.Split(marshalledBallot, "\n")
@@ -164,7 +163,8 @@ func (b *Ballot) Unmarshal(marshalledBallot string, e Election) error {
 			b.TextResult = append(b.TextResult, make([]string, 0))
 			index := len(b.TextResult) - 1
 
-			texts := strings.Split(question[2], ",") //TODO: there can be a ',' in our string :(
+			//TODO: there can be a ',' in our string, should be within " " :(
+			texts := strings.Split(question[2], ",")
 			for _, text := range texts {
 				b.TextResult[index] = append(b.TextResult[index], text)
 			}
@@ -223,7 +223,7 @@ func (s *Subject) MaxEncodedSize() int {
 	for _, rank := range s.Ranks {
 		size += len("rank::")
 		size += len(rank.ID)
-		// at most 4 bytes (-128) + ',' per rank
+		// at most 4 bytes (-128) + ',' per choice
 		size += len(rank.Choices) * 5
 	}
 
@@ -253,8 +253,8 @@ type Select struct {
 	ID ID
 
 	Title   string
-	MaxN    int16
-	MinN    int16
+	MaxN    uint
+	MinN    uint
 	Choices []string
 }
 
@@ -263,8 +263,8 @@ type Rank struct {
 	ID ID
 
 	Title   string
-	MaxN    int16
-	MinN    int16
+	MaxN    uint
+	MinN    uint
 	Choices []string
 }
 
@@ -273,51 +273,51 @@ type Text struct {
 	ID ID
 
 	Title     string
-	MaxN      int16
-	MinN      int16
-	MaxLength int16
+	MaxN      uint
+	MinN      uint
+	MaxLength uint
 	Regex     string
 	Choices   []string
 }
 
-// EncryptedBallots maintains a list of encrypted ballots with the associated
+// PublicBulletinBoard maintains a list of encrypted ballots with the associated
 // user ID.
-type EncryptedBallots struct {
+type PublicBulletinBoard struct {
 	UserIDs []string
-	Ballots []Ciphertexts
+	Ballots []EncryptedBallot
 }
 
 // CastVote updates a user's vote or add a new vote and its associated user.
-func (e *EncryptedBallots) CastVote(userID string, encryptedVote Ciphertexts) {
-	for i, u := range e.UserIDs {
+func (p *PublicBulletinBoard) CastVote(userID string, encryptedVote EncryptedBallot) {
+	for i, u := range p.UserIDs {
 		if u == userID {
-			e.Ballots[i] = encryptedVote
+			p.Ballots[i] = encryptedVote
 			return
 		}
 	}
 
-	e.UserIDs = append(e.UserIDs, userID)
-	e.Ballots = append(e.Ballots, encryptedVote.Copy())
+	p.UserIDs = append(p.UserIDs, userID)
+	p.Ballots = append(p.Ballots, encryptedVote.Copy())
 }
 
 // GetBallotFromUser returns the ballot associated to a user. Returns nil if
 // user is not found.
-func (e *EncryptedBallots) GetBallotFromUser(userID string) (Ciphertexts, bool) {
-	for i, u := range e.UserIDs {
+func (p *PublicBulletinBoard) GetBallotFromUser(userID string) (EncryptedBallot, bool) {
+	for i, u := range p.UserIDs {
 		if u == userID {
-			return e.Ballots[i].Copy(), true
+			return p.Ballots[i].Copy(), true
 		}
 	}
 
-	return Ciphertexts{}, false
+	return EncryptedBallot{}, false
 }
 
 // DeleteUser removes a user and its associated votes if found.
-func (e *EncryptedBallots) DeleteUser(userID string) bool {
-	for i, u := range e.UserIDs {
+func (p *PublicBulletinBoard) DeleteUser(userID string) bool {
+	for i, u := range p.UserIDs {
 		if u == userID {
-			e.UserIDs = append(e.UserIDs[:i], e.UserIDs[i+1:]...)
-			e.Ballots = append(e.Ballots[:i], e.Ballots[i+1:]...)
+			p.UserIDs = append(p.UserIDs[:i], p.UserIDs[i+1:]...)
+			p.Ballots = append(p.Ballots[:i], p.Ballots[i+1:]...)
 			return true
 		}
 	}
@@ -325,15 +325,34 @@ func (e *EncryptedBallots) DeleteUser(userID string) bool {
 	return false
 }
 
-// Ciphertexts represents a list of Ciphertext
-type Ciphertexts []Ciphertext
+// EncryptedBallot represents a list of Ciphertext
+type EncryptedBallot []Ciphertext
 
-// GetKsCs returns corresponding kyber.Points from the ciphertexts
-func (c Ciphertexts) GetKsCs() (ks []kyber.Point, cs []kyber.Point, err error) {
-	ks = make([]kyber.Point, len(c))
-	cs = make([]kyber.Point, len(c))
+// EncryptedBallots represents a list of EncryptedBallot
+type EncryptedBallots []EncryptedBallot
 
-	for i, ct := range c {
+// GetElGPairs returns 2 dimensional arrays with the Elgamal pairs of each encrypted ballot
+func (b EncryptedBallots) GetElGPairs() ([][]kyber.Point, [][]kyber.Point, error) {
+	ks := make([][]kyber.Point, len(b))
+	cs := make([][]kyber.Point, len(b))
+	var err error
+
+	for i, ballot := range b {
+		ks[i], cs[i], err = ballot.GetElGPairs()
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return ks, cs, nil
+}
+
+// GetElGPairs returns corresponding kyber.Points from the ciphertexts
+func (b EncryptedBallot) GetElGPairs() (ks []kyber.Point, cs []kyber.Point, err error) {
+	ks = make([]kyber.Point, len(b))
+	cs = make([]kyber.Point, len(b))
+
+	for i, ct := range b {
 		k, c, err := ct.GetPoints()
 		if err != nil {
 			return nil, nil, xerrors.Errorf("failed to get points: %v", err)
@@ -346,11 +365,11 @@ func (c Ciphertexts) GetKsCs() (ks []kyber.Point, cs []kyber.Point, err error) {
 	return ks, cs, nil
 }
 
-// Copy returns a deep copy of Ciphertexts
-func (c Ciphertexts) Copy() Ciphertexts {
-	ciphertexts := make([]Ciphertext, len(c))
+// Copy returns a deep copy of EncryptedBallot
+func (b EncryptedBallot) Copy() EncryptedBallot {
+	ciphertexts := make([]Ciphertext, len(b))
 
-	for i, ciphertext := range c {
+	for i, ciphertext := range b {
 		ciphertexts[i] = ciphertext.Copy()
 	}
 
@@ -358,13 +377,13 @@ func (c Ciphertexts) Copy() Ciphertexts {
 }
 
 // InitFromKsCs sets the ciphertext based on ks, cs
-func (c *Ciphertexts) InitFromKsCs(ks []kyber.Point, cs []kyber.Point) error {
+func (b *EncryptedBallot) InitFromKsCs(ks []kyber.Point, cs []kyber.Point) error {
 	if len(ks) != len(cs) {
 		return xerrors.Errorf("ks and cs must have same length: %d != %d",
 			len(ks), len(cs))
 	}
 
-	*c = make([]Ciphertext, len(ks))
+	*b = make([]Ciphertext, len(ks))
 
 	for i := range ks {
 		var ct Ciphertext
@@ -374,7 +393,7 @@ func (c *Ciphertexts) InitFromKsCs(ks []kyber.Point, cs []kyber.Point) error {
 			return xerrors.Errorf("failed to init ciphertext: %v", err)
 		}
 
-		(*c)[i] = ct
+		(*b)[i] = ct
 	}
 
 	return nil
