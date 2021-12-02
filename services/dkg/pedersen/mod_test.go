@@ -12,7 +12,7 @@ import (
 	// "go.dedis.ch/dela/crypto"
 	// "go.dedis.ch/dela/crypto/ed25519"
 	"go.dedis.ch/dela/core/store/kv"
-	"go.dedis.ch/dela/mino"
+	// "go.dedis.ch/dela/mino"
 	// "go.dedis.ch/dela/mino/minogrpc"
 	// "go.dedis.ch/dela/mino/router/tree"
 	// "go.dedis.ch/kyber/v3"
@@ -227,11 +227,15 @@ func TestActor_MarshalJSON(t *testing.T) {
 
 func TestPedersen_GetPublicKey(t *testing.T) {
 
+	p := NewPedersen(fake.Mino{}, fake.Service{}, fake.Factory{})
+
 	electionID := "deadbeef"
 	electionIDBuf, err := hex.DecodeString(electionID)
 	require.NoError(t, err)
 
-	actor := Actor{
+	actor, err := p.Listen(electionIDBuf)
+	require.NoError(t, err)
+	/* actor := Actor{
 		handler: NewHandler(
 			fake.Mino{}.GetAddress(),
 			fake.Service{},
@@ -245,7 +249,7 @@ func TestPedersen_GetPublicKey(t *testing.T) {
 	actor.handler.startRes = &state{
 		participants: []mino.Address{fake.NewAddress(0)},
 		distrKey:     nil,
-	}
+	} */
 
 	_, err = actor.GetPublicKey()
 	require.EqualError(t, err, "DKG has not been initialized")
