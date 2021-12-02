@@ -77,9 +77,11 @@ func NewPedersen(m mino.Mino, service ordering.Service,
 // in the DKG.
 func (s *Pedersen) Listen(electionIDBuf []byte) (dkg.Actor, error) {
 
-	actor, err := s.GetActor(electionIDBuf)
-	if err == nil {
-		return actor, nil
+	electionID := hex.EncodeToString(electionIDBuf)
+
+	actor, exists := s.actors[electionID]
+	if exists {
+		return actor, xerrors.Errorf("actor already exists for electionID %s", electionID)
 	}
 
 	return s.NewActor(electionIDBuf, NewHandlerData())
