@@ -51,26 +51,22 @@ rm -rf /tmp/node{1,2,3}
 ```
 
 # Testing
-## Automate the memcoin setup using tmux
-If you have `tmux` installed, you can start a `tmux` session that will execute the above setup by running:
-```
-./test.sh
-```
-You can move around the panes by pressing `Ctrl+B` followed by an arrow key.
+## Automate the previous setup using `tmux`
+If you have `tmux` installed, you can start a `tmux` session that will
+execute the above setup by running `./start_test.sh` in the project root.
+Once the session is started, you can move around the panes with
+`Ctrl+B` followed by arrow keys.
 
-To end the session, in a different terminal run:
-```
-tmux kill-session -t d-voting-test
-```
-or kill each pane then the `tmux` session with `Ctrl+D`.
+The top-left pane is for running commands, while the rest are for examining the node states.
 
-You'll have to delete the state files manually (see "Run the nodes").
+To end the session, run `./kill_test.sh`,
+which will kill each pane then the `tmux` session (which you can do manually with `Ctrl+D`),
+then delete the node data (i.e. the files `/tmp/node{1,2,3}`).
 
 ## Run the scenario test
 
 If nodes are running and `setup.sh` has been called, you can run a test
 scenario:
-
 ```
 LLVL=info memcoin --config /tmp/node1 e-voting scenarioTest
 ```
