@@ -5,12 +5,16 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/dedis/d-voting/contracts/evoting"
+	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/services/dkg"
 	"github.com/stretchr/testify/require"
 	accessContract "go.dedis.ch/dela/contracts/access"
 	"go.dedis.ch/dela/core/txn"
@@ -73,19 +77,23 @@ func TestIntegration_Scenario(t *testing.T) {
 	addAndWait(t, manager, nodes[0].(dVotingNode), args...)
 
 	// create election
+	election, err := json.Marshal(types.CreateElectionTransaction{
+		Title:   "Some Election",
+		AdminID: "anAdminID",
+		Format:  "majority",
+	})
+	require.NoError(t, err)
 	args = []txn.Arg{
-		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte("go.dedis.ch/dela.Evoting")},
-		{Key: "value:Title", Value: []byte("Jeans election")},
-		{Key: "value:AdminID", Value: []byte("adminID")},
-		{Key: "value:token", Value: []byte("token")},
-		{Key: "value:format", Value: []byte("format")},
-		{Key: "value:command", Value: []byte("Create")},
+		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
+		{Key: evoting.CreateElectionArg, Value: election},
+		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCreateElection)},
 	}
 	addAndWait(t, manager, nodes[0].(dVotingNode), args...)
 
 	// DKG init
+	var dkg dkg.DKG
 	for _, node := range nodes {
-		dkg := node.(dVotingNode).GetDkg()
+		dkg = node.(dVotingNode).GetDkg()
 		_, err := dkg.Listen()
 		require.NoError(t, err)
 	}
@@ -93,7 +101,6 @@ func TestIntegration_Scenario(t *testing.T) {
 	// Shuffle init
 
 	// DKG setup
-	// dkg := nodes[0].(dVotingNode).dkg
 
 	// pubKey, err := dkg.Setup(
 	// require.NoError(t, err)

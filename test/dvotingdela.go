@@ -206,7 +206,7 @@ func newDVotingNode(t *testing.T, path string, port int) dela {
 	rosterKey := [32]byte{}
 	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:], accessService, dkg, rosterFac))
 
-	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, rosterFac)
+	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, rosterFac, signer)
 
 	// < jean - for d-voting
 
