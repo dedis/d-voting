@@ -97,19 +97,24 @@ type setupAction struct {
 // Execute implements node.ActionTemplate. It reads the list of members and
 // request the setup.
 func (a *setupAction) Execute(ctx node.Context) error {
-	// TODO: This should now be obtained from dkgMap
-	var actor dkg.Actor
-	err := ctx.Injector.Resolve(&actor)
-	if err != nil {
-		return xerrors.Errorf("failed to resolve actor: %v", err)
-	}
 
 	electionIDBuf, err := hex.DecodeString(ctx.Flags.String("electionID"))
 	if err != nil {
 		return xerrors.Errorf("failed to decode electionID: %v", err)
 	}
 
-	pubkey, err := actor.Setup(electionIDBuf)
+	var dkg dkg.DKG
+	err = ctx.Injector.Resolve(&dkg)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve DKG: %v", err)
+	}
+
+	actor, err := dkg.GetActor(electionIDBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to get actor: %v", err)
+	}
+
+	pubkey, err := actor.Setup()
 	if err != nil {
 		return xerrors.Errorf("failed to setup DKG: %v", err)
 	}
@@ -122,6 +127,32 @@ func (a *setupAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().
 		Hex("DKG public key", pubkeyBuf).
 		Msg("DKG public key")
+
+	// Save actor data to disk
+	var dkgMap kv.DB
+	err = ctx.Injector.Resolve(&dkgMap)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve dkgMap: %v", err)
+	}
+
+	err = dkgMap.Update(func(tx kv.WritableTx) error {
+		bucket, err := tx.GetBucketOrCreate([]byte(DKGMAP))
+		if err != nil {
+			return err
+		}
+
+		actorBuf, err := actor.MarshalJSON()
+		if err != nil {
+			return err
+		}
+
+		return bucket.Set(electionIDBuf, actorBuf)
+	})
+	if err != nil {
+		return xerrors.Errorf("database write failed: %v", err)
+	}
+
+	ctx.Injector.Inject(dkgMap)
 
 	return nil
 }

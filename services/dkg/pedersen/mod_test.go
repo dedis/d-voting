@@ -250,7 +250,7 @@ func TestPedersen_GetPublicKey(t *testing.T) {
 	_, err = actor.GetPublicKey()
 	require.EqualError(t, err, "DKG has not been initialized")
 
-	actor.Setup(electionIDBuf)
+	actor.Setup()
 
 	_, err = actor.GetPublicKey()
 	require.NoError(t, err)

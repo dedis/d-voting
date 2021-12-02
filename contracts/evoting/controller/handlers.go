@@ -523,7 +523,7 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		// decryption of one ballot:
 		marshalledBallot := strings.Builder{}
 		for j := 0; j < len(X); j++ {
-			chunk, err := actor.Decrypt(X[j][i], Y[j][i], electionIDBuf)
+			chunk, err := actor.Decrypt(X[j][i], Y[j][i])
 			if err != nil {
 				http.Error(w, "failed to decrypt (K, C): "+err.Error(), http.StatusInternalServerError)
 				return

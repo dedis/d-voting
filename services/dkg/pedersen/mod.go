@@ -96,12 +96,13 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.
 	rpc := mino.MustCreateRPC(no, "dkgevoting", h, s.factory)
 
 	a := &Actor{
-		rpc:       rpc,
-		factory:   s.factory,
-		handler:   h,
-		service:   s.service,
-		rosterFac: s.rosterFac,
-		context:   jsonserde.NewContext(),
+		rpc:        rpc,
+		factory:    s.factory,
+		service:    s.service,
+		rosterFac:  s.rosterFac,
+		context:    jsonserde.NewContext(),
+		handler:    h,
+		electionID: electionID,
 	}
 
 	s.actors[electionID] = a
@@ -125,18 +126,23 @@ func (s *Pedersen) GetActor(electionIDBuf []byte) (dkg.Actor, error) {
 //
 // - implements dkg.Actor
 type Actor struct {
-	rpc       mino.RPC
-	factory   serde.Factory
-	handler   *Handler
-	service   ordering.Service
-	rosterFac authority.Factory
-	context   serde.Context
+	rpc        mino.RPC
+	factory    serde.Factory
+	service    ordering.Service
+	rosterFac  authority.Factory
+	context    serde.Context
+	handler    *Handler
+	electionID string
 }
 
 // Setup implements dkg.Actor. It initializes the DKG.
-func (a *Actor) Setup(electionIDBuf []byte) (kyber.Point, error) {
+func (a *Actor) Setup() (kyber.Point, error) {
+
 	if a.handler.startRes.Done() {
 		return nil, xerrors.Errorf("startRes is already done, only one setup call is allowed")
+	electionIDBuf, err := hex.DecodeString(a.electionID)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to decode electionID: %v", err)
 	}
 
 	proof, err := a.service.GetProof(electionIDBuf)
@@ -285,7 +291,7 @@ func (a *Actor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte,
 // decrypts the message.
 // TODO: perform a re-encryption instead of gathering the private shares, which
 // should never happen.
-func (a *Actor) Decrypt(K, C kyber.Point, electionID []byte) ([]byte, error) {
+func (a *Actor) Decrypt(K, C kyber.Point) ([]byte, error) {
 
 	if !a.handler.startRes.Done() {
 		return nil, xerrors.Errorf("you must first initialize DKG. " +
@@ -311,7 +317,7 @@ func (a *Actor) Decrypt(K, C kyber.Point, electionID []byte) ([]byte, error) {
 		addrs = append(addrs, iterator.GetNext())
 	}
 
-	message := types.NewDecryptRequest(K, C, hex.EncodeToString(electionID))
+	message := types.NewDecryptRequest(K, C, a.electionID)
 
 	err = <-sender.Send(message, addrs...)
 	if err != nil {

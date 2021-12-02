@@ -19,14 +19,15 @@ type Actor interface {
 	// Setup must be first called by ONE of the actors to use the subsequent
 	// functions. It creates the public distributed key and the private share on
 	// each node. Each node represented by a player must first execute Listen().
-	Setup(electionID []byte) (pubKey kyber.Point, err error)
+	// Returns an error if Setup was already done.
+	Setup() (pubKey kyber.Point, err error)
 
 	// GetPublicKey returns the collective public key. Returns an error it the
 	// setup has not been done.
 	GetPublicKey() (kyber.Point, error)
 
 	Encrypt(message []byte) (K, C kyber.Point, remainder []byte, err error)
-	Decrypt(K, C kyber.Point, electionID []byte) ([]byte, error)
+	Decrypt(K, C kyber.Point) ([]byte, error)
 
 	Reshare() error
 
