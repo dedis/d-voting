@@ -36,11 +36,11 @@ SC8:GetResult
 
 # SC1: Election create
 
-| | |
-|-|-|
-|URL|`/evoting/create`|
-|Method|`POST`|
-|Input|`application/json`|
+|        |                    |
+| -      | -                  |
+| URL    | `/evoting/create`  |
+| Method | `POST`             |
+| Input  | `application/json` |
 
 ```json
 {
@@ -63,11 +63,11 @@ Return:
 
 # SC2: Election get info
 
-| | |
-|-|-|
-|URL|`/evoting/info`|
-|Method|`POST`|
-|Input|`application/json`|
+|        |                    |
+| -      | -                  |
+| URL    | `/evoting/info`    |
+| Method | `POST`             |
+| Input  | `application/json` |
 
 ```json
 {
@@ -78,11 +78,11 @@ Return:
 
 # SC3: Election open
 
-| | |
-|-|-|
-|URL|`/evoting/open`|
-|Method|`POST`|
-|Input|`application/json`|
+|        |                    |
+| -      | -                  |
+| URL    | `/evoting/open`    |
+| Method | `POST`             |
+| Input  | `application/json` |
 
 ```json
  "<hex encoded electionID>"
@@ -98,11 +98,11 @@ Return:
 
 # SC4: Election cast vote
 
-| | |
-|-|-|
-|URL|`/evoting/cast`|
-|Method|`POST`|
-|Input|`application/json`|
+|        |                    |
+| -      | -                  |
+| URL    | `/evoting/cast`    |
+| Method | `POST`             |
+| Input  | `application/json` |
 
 ```json
 {
@@ -126,11 +126,11 @@ Return:
 
 # SC5: Election close
 
-| | |
-|-|-|
-|URL|`/evoting/close`|
-|Method|`POST`|
-|Input|`application/json`|
+|        |                    |
+| -      | -                  |
+| URL    | `/evoting/close`   |
+| Method | `POST`             |
+| Input  | `application/json` |
 
 ```json
 {
@@ -150,11 +150,11 @@ Return:
 
 # SC5: Election close
 
-| | |
-|-|-|
-|URL|`/evoting/close`|
-|Method|`POST`|
-|Input|`application/json`|
+|        |                    |
+| -      | -                  |
+| URL    | `/evoting/close`   |
+| Method | `POST`             |
+| Input  | `application/json` |
 
 ```json
 {
@@ -174,11 +174,11 @@ Return:
 
 # SC6: Election shuffle
 
-| | |
-|-|-|
-|URL|`/evoting/shuffle`|
-|Method|`POST`|
-|Input|`application/json`|
+|        |                    |
+| -      | -                  |
+| URL    | `/evoting/shuffle` |
+| Method | `POST`             |
+| Input  | `application/json` |
 
 ```json
 {
@@ -200,11 +200,11 @@ Return:
 
 # SC7: Election decrypt
 
-| | |
-|-|-|
-|URL|`/evoting/decrypt`|
-|Method|`POST`|
-|Input|`application/json`|
+|        |                    |
+| -      | -                  |
+| URL    | `/evoting/decrypt` |
+| Method | `POST`             |
+| Input  | `application/json` |
 
 ```json
 {
@@ -224,11 +224,11 @@ Return:
 
 # SC8: Election get result
 
-| | |
-|-|-|
-|URL|`/evoting/result`|
-|Method|`POST`|
-|Input|`application/json`|
+|        |                    |
+| -      | -                  |
+| URL    | `/evoting/result`  |
+| Method | `POST`             |
+| Input  | `application/json` |
 
 ```json
 {
@@ -253,11 +253,11 @@ Return:
 
 # SC?: Election cancel
 
-| | |
-|-|-|
-|URL|`/evoting/cancel`|
-|Method|`POST`|
-|Input|`application/json`|
+|        |                    |
+| -      | -                  |
+| URL    | `/evoting/cancel`  |
+| Method | `POST`             |
+| Input  | `application/json` |
 
 ```json
 {
@@ -279,11 +279,11 @@ Return:
 
 # SC?: Election get all infos
 
-| | |
-|-|-|
-|URL|`/evoting/all`|
-|Method|`POST`|
-|Input|`application/json`|
+|        |                    |
+| -      | -                  |
+| URL    | `/evoting/all`     |
+| Method | `POST`             |
+| Input  | `application/json` |
 
 ```json
 {
@@ -314,15 +314,31 @@ Return:
 
 # DK1: DKG init
 
-Now it is via the CLI. An API should be added.
+|        |                     |
+| -      | -                   |
+| URL    | `/evoting/dkg/init` |
+| Method | `POST`              |
+| Input  | `application/json`  |
+
+```json
+"<hex encoded electionID>"
+```
+
+Return:
+
+`200 OK` `application/json`
+
+```json
+<empty>
+```
 
 # DK2: DKG setup
 
-| | |
-|-|-|
-|URL|`/evoting/dkg`|
-|Method|`POST`|
-|Input|`application/json`|
+|        |                      |
+| -      | -                    |
+| URL    | `/evoting/dkg/setup` |
+| Method | `POST`               |
+| Input  | `application/json`   |
 
 ```json
 "<hex encoded electionID>"

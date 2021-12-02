@@ -367,8 +367,6 @@ func ListenHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 			)
 			return
 		}
-
-		return
 	}
 }
 
