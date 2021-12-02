@@ -333,7 +333,7 @@ func (c dVotingNode) GetDkg() dkg.DKG {
 
 // GetShuffle implements dVotingNode
 func (c dVotingNode) GetShuffle() shuffle.Shuffle {
-	return d.shuffle
+	return c.shuffle
 }
 
 // generator can generate a private key compatible with the x509 certificate.

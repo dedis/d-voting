@@ -61,6 +61,7 @@ func TestIntegration_Scenario(t *testing.T) {
 	pubKeyBuf, err := signer.GetPublicKey().MarshalBinary()
 	require.NoError(t, err)
 
+	// grant access
 	args := []txn.Arg{
 		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte("go.dedis.ch/dela.Access")},
 		{Key: "access:grant_id", Value: []byte(hex.EncodeToString(evotingAccessKey[:]))},
@@ -71,10 +72,37 @@ func TestIntegration_Scenario(t *testing.T) {
 	}
 	addAndWait(t, manager, nodes[0].(dVotingNode), args...)
 
+	// create election
+	args = []txn.Arg{
+		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte("go.dedis.ch/dela.Evoting")},
+		{Key: "value:Title", Value: []byte("Jeans election")},
+		{Key: "value:AdminID", Value: []byte("adminID")},
+		{Key: "value:token", Value: []byte("token")},
+		{Key: "value:format", Value: []byte("format")},
+		{Key: "value:command", Value: []byte("Create")},
+	}
+	addAndWait(t, manager, nodes[0].(dVotingNode), args...)
+
+	// DKG init
 	for _, node := range nodes {
 		dkg := node.(dVotingNode).GetDkg()
-		s := node.(dVotingNode).GetShuffle()
+		_, err := dkg.Listen()
+		require.NoError(t, err)
 	}
+
+	// Shuffle init
+
+	// DKG setup
+	// dkg := nodes[0].(dVotingNode).dkg
+
+	// pubKey, err := dkg.Setup(
+	// require.NoError(t, err)
+
+	// for _, node := range nodes {
+	// 	s := node.(dVotingNode).GetShuffle()
+	// 	shuffleActor, err := s.Listen()
+	// 	require.NoError(t, err)
+	// }
 
 	// key1 := make([]byte, 32)
 
