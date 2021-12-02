@@ -23,6 +23,11 @@ import (
 
 const separator = ":"
 
+const (
+	initEndpoint  = "/evoting/dkg/init"
+	setupEndpoint = "/evoting/dkg/setup"
+)
+
 var suite = suites.MustFind("Ed25519")
 
 // initAction is an action to initialize the DKG protocol
@@ -34,22 +39,30 @@ type initAction struct {
 // Execute implements node.ActionTemplate. It creates an actor from
 // the dkgPedersen instance and links it to an election.
 func (a *initAction) Execute(ctx node.Context) error {
-	electionIDBuf, err := hex.DecodeString(ctx.Flags.String("electionID"))
+
+	electionID := ctx.Flags.String("electionID")
+
+	electionIDBuf, err := hex.DecodeString(electionID)
 	if err != nil {
 		return xerrors.Errorf("failed to decode electionID: %v", err)
 	}
-	// TODO: Check that election ID corresponds to a real election
-	// ElectionMetadataKey has a list of election ids (types transaction.go)
-	// electionMetadata.ElectionIDs.contains(electionId)
 
 	// Initialize the actor
-	var dkgPedersen dkg.DKG
-	err = ctx.Injector.Resolve(&dkgPedersen)
+	var dkg dkg.DKG
+	err = ctx.Injector.Resolve(&dkg)
 	if err != nil {
-		return xerrors.Errorf("failed to resolve dkg: %v", err)
+		return xerrors.Errorf("failed to resolve DKG: %v", err)
 	}
 
-	actor, err := dkgPedersen.Listen(electionIDBuf)
+	_, err = dkg.GetActor(electionIDBuf)
+	if err == nil {
+		return xerrors.Errorf(
+			"DKG was already initialized for electionID %s",
+			electionID,
+		)
+	}
+
+	actor, err := dkg.Listen(electionIDBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to start the RPC: %v", err)
 	}
@@ -303,51 +316,118 @@ func (a *registerHandlersAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve proxy: %v", err)
 	}
 
-	var pedersen pedersen.Pedersen
-	err = ctx.Injector.Resolve(pedersen)
+	var dkg dkg.DKG
+	err = ctx.Injector.Resolve(&dkg)
 	if err != nil {
 		return xerrors.Errorf("failed to resolve dkg.DKG: %v", err)
 	}
 
-	proxy.RegisterHandler("/evoting/dkg", getHandler(pedersen))
+	proxy.RegisterHandler(initEndpoint, ListenHandler(dkg))
+	proxy.RegisterHandler(setupEndpoint, SetupHandler(dkg))
 
 	dela.Logger.Info().Msg("DKG handler registered")
 
 	return nil
 }
 
-func getHandler(pedersen pedersen.Pedersen) func(http.ResponseWriter, *http.Request) {
+// ListenHandler runs Listen to initialize an Actor corresponding to the given electionID
+func ListenHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		electionIDBuf, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(
+				w,
+				"failed to read body: "+err.Error(),
+				http.StatusInternalServerError,
+			)
+			return
+		}
+
 		// hex-encoded string obtained from the URL
-		electionID := r.FormValue("electionID")
+		electionID := hex.EncodeToString(electionIDBuf)
 
-		if electionID == "" {
-			http.Error(w, "electionID was not found in request", http.StatusBadRequest)
+		// sanity check
+		_, err = hex.DecodeString(electionID)
+		if err != nil {
+			http.Error(
+				w,
+				"failed to decode electionID: "+electionID,
+				http.StatusBadRequest,
+			)
 			return
 		}
 
-		electionIDBuf, err := hex.DecodeString(electionID)
+		_, err = dkg.Listen(electionIDBuf)
 		if err != nil {
-			http.Error(w, "failed to decode electionID: "+err.Error(), http.StatusInternalServerError)
+			http.Error(
+				w,
+				"failed to start actor: "+err.Error(),
+				http.StatusInternalServerError,
+			)
 			return
 		}
 
-		a, err := pedersen.GetActor(electionIDBuf)
+		return
+	}
+}
+
+// SetupHandler runs Setup on the Actor corresponding to the given electionID
+// and responds with the distributed public key.
+func SetupHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		electionIDBuf, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			http.Error(w, "failed to get actor: "+err.Error(), http.StatusInternalServerError)
+			http.Error(
+				w,
+				"failed to read body: "+err.Error(),
+				http.StatusInternalServerError,
+			)
 			return
 		}
 
-		pubKey, err := a.Setup(electionIDBuf)
+		// hex-encoded string obtained from the URL
+		electionID := hex.EncodeToString(electionIDBuf)
+
+		// sanity check
+		_, err = hex.DecodeString(electionID)
 		if err != nil {
-			http.Error(w, "failed to setup: "+err.Error(), http.StatusInternalServerError)
+			http.Error(
+				w,
+				"failed to decode electionID: "+electionID,
+				http.StatusBadRequest,
+			)
+			return
+		}
+
+		a, err := dkg.GetActor(electionIDBuf)
+		if err != nil {
+			http.Error(
+				w,
+				"failed to get actor: "+err.Error(),
+				http.StatusInternalServerError,
+			)
+			return
+		}
+
+		pubKey, err := a.Setup()
+		if err != nil {
+			http.Error(
+				w,
+				"failed to setup: "+err.Error(),
+				http.StatusInternalServerError,
+			)
 			return
 		}
 
 		pubKeyBuf, err := pubKey.MarshalBinary()
 		if err != nil {
-			http.Error(w, "failed to marshal the pubKey: "+err.Error(), http.StatusInternalServerError)
+			http.Error(
+				w,
+				"failed to marshal the pubKey: "+err.Error(),
+				http.StatusInternalServerError,
+			)
 			return
 		}
 

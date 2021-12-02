@@ -39,16 +39,55 @@ func (m controller) SetCommands(builder node.Builder) {
 			Required: true,
 		},
 	)
-
 	sub.SetAction(builder.MakeAction(&registerAction{}))
 
-	sub = cmd.SetSubCommand("scenarioTest")
-	sub.SetDescription("evoting scenario test")
+	// memcoin --config /tmp/node1 e-voting scenarioTestPart1 --proxy-addr http://localhost:8081
+	sub = cmd.SetSubCommand("scenarioTestPart1")
+	sub.SetDescription("evoting scenario test, before dkg init on each node")
 	sub.SetFlags(
 		cli.StringFlag{
 			Name:  "proxy-addr",
 			Usage: "base address of the proxy",
 			Value: "http://localhost:8081",
+		},
+	)
+	sub.SetAction(builder.MakeAction(&scenarioTestPart1Action{}))
+
+	// memcoin --config /tmp/node1 e-voting scenarioTestPart2 --proxy-addr http://localhost:8081
+	sub = cmd.SetSubCommand("scenarioTestPart2")
+	sub.SetDescription("evoting scenario test, after dkg init on each node")
+	sub.SetFlags(
+		cli.StringFlag{
+			Name:     "electionID",
+			Usage:    "the election ID, formatted in hexadecimal",
+			Required: true,
+		},
+		cli.StringFlag{
+			Name:  "proxy-addr",
+			Usage: "base address of the proxy",
+			Value: "http://localhost:8081",
+		},
+	)
+	sub.SetAction(builder.MakeAction(&scenarioTestPart2Action{}))
+
+	// memcoin --config /tmp/node1 e-voting scenarioTest
+	sub = cmd.SetSubCommand("scenarioTest")
+	sub.SetDescription("evoting scenario test")
+	sub.SetFlags(
+		cli.StringFlag{
+			Name:  "proxy-addr1",
+			Usage: "base address of the proxy for node 1",
+			Value: "http://localhost:8081",
+		},
+		cli.StringFlag{
+			Name:  "proxy-addr2",
+			Usage: "base address of the proxy for node 2",
+			Value: "http://localhost:8082",
+		},
+		cli.StringFlag{
+			Name:  "proxy-addr3",
+			Usage: "base address of the proxy for node 3",
+			Value: "http://localhost:8083",
 		},
 	)
 	sub.SetAction(builder.MakeAction(&scenarioTestAction{}))
