@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/base64"
 	"fmt"
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
@@ -11,7 +12,6 @@ import (
 
 type ID string
 
-// todo : status should be string ?
 type status uint16
 
 const (
@@ -117,6 +117,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 	b.TextResultIDs = make([]ID, 0)
 	b.TextResult = make([][]string, 0)
 
+	//TODO: Loads of code duplication, can be re-thought
 	for _, line := range lines {
 		question := strings.Split(line, ":")
 
@@ -222,11 +223,16 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 			var selected uint = 0
 
 			for _, text := range texts {
-				//TODO: text is base64 encoded, should decode here
 				if len(text) > 0 {
 					selected += 1
 				}
-				b.TextResult[index] = append(b.TextResult[index], text)
+
+				t, err := base64.StdEncoding.DecodeString(text)
+				if err != nil {
+					return fmt.Errorf("could not decode text for Q. %s", question[1])
+				}
+
+				b.TextResult[index] = append(b.TextResult[index], string(t))
 			}
 
 			if selected > q.GetMaxN() {
@@ -268,6 +274,7 @@ func (c *Configuration) MaxBallotSize() int {
 	return size
 }
 
+// GetQuestion finds the question associated to a given ID and returns it
 func (c *Configuration) GetQuestion(ID ID) Question {
 	for _, subject := range c.Scaffold {
 		question := subject.GetQuestion(ID)
@@ -278,6 +285,21 @@ func (c *Configuration) GetQuestion(ID ID) Question {
 	}
 
 	return nil
+}
+
+// IsValid returns true if and only if the whole configuration is coherent and
+// valid
+func (c *Configuration) IsValid() bool {
+	// serves as a set to check each ID is unique
+	uniqueIDs := make(map[ID]bool)
+
+	for _, subject := range c.Scaffold {
+		if !subject.IsValid(uniqueIDs) {
+			return false
+		}
+	}
+
+	return true
 }
 
 // Subject is a wrapper around multiple questions that can be of type "select",
@@ -329,7 +351,6 @@ func (s *Subject) GetQuestion(ID ID) Question {
 // MaxEncodedSize returns the maximum amount of bytes taken to store the
 // questions in this subject once encoded in a ballot
 func (s *Subject) MaxEncodedSize() int {
-	//TODO: Review & test
 	size := 0
 
 	for _, subject := range s.Subjects {
@@ -346,8 +367,8 @@ func (s *Subject) MaxEncodedSize() int {
 	for _, selection := range s.Selects {
 		size += len("select::")
 		size += len(selection.ID)
-		// 5 bytes ("false") + ',' per choice
-		size += len(selection.Choices) * 6
+		// 1 bytes (0/1) + ',' per choice
+		size += len(selection.Choices) * 2
 	}
 
 	for _, text := range s.Texts {
@@ -363,12 +384,69 @@ func (s *Subject) MaxEncodedSize() int {
 	return size
 }
 
+// IsValid verifies that all IDs are unique and the questions have coherent
+// characteristics
+func (s *Subject) IsValid(uniqueIDs map[ID]bool) bool {
+	prevMapSize := len(uniqueIDs)
+
+	uniqueIDs[s.ID] = true
+
+	for _, rank := range s.Ranks {
+		uniqueIDs[rank.ID] = true
+
+		if !IsValid(rank) {
+			return false
+		}
+	}
+
+	for _, selection := range s.Selects {
+		uniqueIDs[selection.ID] = true
+
+		if !IsValid(selection) {
+			return false
+		}
+	}
+
+	for _, text := range s.Texts {
+		uniqueIDs[text.ID] = true
+
+		if !IsValid(text) {
+			return false
+		}
+	}
+
+	// If some ID was not unique
+	currentMapSize := len(uniqueIDs)
+	if prevMapSize+len(s.Ranks)+len(s.Texts)+len(s.Selects)+1 < currentMapSize {
+		return false
+	}
+
+	for _, subject := range s.Subjects {
+		if !subject.IsValid(uniqueIDs) {
+			return false
+		}
+	}
+
+	for _, id := range s.Order {
+		exists := uniqueIDs[id]
+		if !exists {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Question is an interface offering the primitives all questions should have to
 // verify the validity of an answer on a decrypted ballot.
 type Question interface {
 	GetMaxN() uint
+	GetMinN() uint
 	GetChoicesLength() int
-	//TODO: IsValid() bool useful?
+}
+
+func IsValid(q Question) bool {
+	return (q.GetMinN() <= q.GetMaxN()) && (q.GetMaxN() <= uint(q.GetChoicesLength()))
 }
 
 // Select describes a "select" question, which requires the user to select one
@@ -386,11 +464,16 @@ func (s Select) GetMaxN() uint {
 	return s.MaxN
 }
 
+func (s Select) GetMinN() uint {
+	return s.MinN
+}
+
 func (s Select) GetChoicesLength() int {
 	return len(s.Choices)
 }
 
 // Rank describes a "rank" question, which requires the user to rank choices.
+// implements Question
 type Rank struct {
 	ID ID
 
@@ -404,11 +487,16 @@ func (r Rank) GetMaxN() uint {
 	return r.MaxN
 }
 
+func (r Rank) GetMinN() uint {
+	return r.MinN
+}
+
 func (r Rank) GetChoicesLength() int {
 	return len(r.Choices)
 }
 
 // Text describes a "text" question, which allows the user to enter free text.
+// implements Question
 type Text struct {
 	ID ID
 
@@ -422,6 +510,10 @@ type Text struct {
 
 func (t Text) GetMaxN() uint {
 	return t.MaxN
+}
+
+func (t Text) GetMinN() uint {
+	return t.MinN
 }
 
 func (t Text) GetChoicesLength() int {
