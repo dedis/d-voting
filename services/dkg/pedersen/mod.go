@@ -90,7 +90,28 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.
 
 	electionID := hex.EncodeToString(electionIDBuf)
 
-	// Link the actor to an RPC by the election ID
+	// sanity check that electionID is well-formed hex string
+	electionIDBuf, err := hex.DecodeString(electionID)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to decode electionID: %v", err)
+	}
+
+	// check that electionID corresponds to a real election
+	proof, err := s.service.GetProof(electionIDBuf)
+	if err != nil {
+		return nil, xerrors.Errorf(
+			"failed to read on the blockchain: %v",
+			err,
+		)
+	}
+	if string(proof.GetValue()) == "" {
+		return nil, xerrors.Errorf(
+			"election %s does not exist",
+			electionID,
+		)
+	}
+
+	// link the actor to an RPC by the election ID
 	h := NewHandler(s.mino.GetAddress(), s.service, handlerData)
 	no := s.mino.WithSegment(electionID)
 	rpc := mino.MustCreateRPC(no, "dkgevoting", h, s.factory)
@@ -145,9 +166,19 @@ func (a *Actor) Setup() (kyber.Point, error) {
 		return nil, xerrors.Errorf("failed to decode electionID: %v", err)
 	}
 
+	// check that electionID corresponds to a real election
 	proof, err := a.service.GetProof(electionIDBuf)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to read on the blockchain: %v", err)
+		return nil, xerrors.Errorf(
+			"failed to read on the blockchain: %v",
+			err,
+		)
+	}
+	if proof == nil {
+		return nil, xerrors.Errorf(
+			"election %s does not exist",
+			a.electionID,
+		)
 	}
 
 	election := new(electionTypes.Election)
