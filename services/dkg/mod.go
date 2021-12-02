@@ -10,11 +10,15 @@ type DKG interface {
 	// wishes to participate in a DKG.
 	Listen(electionID []byte) (Actor, error)
 
-	// GetActor allows to retrieve the Actor corresponding a given electionID
+	// GetActor allows to retrieve the Actor corresponding to a given electionID
 	GetActor(electionID []byte) (Actor, error)
 }
 
 // Actor defines the primitives to use a DKG protocol
+//
+// An actor is directly linked to an election; one should not
+// be able to create an Actor for an election that does not
+// exist
 type Actor interface {
 	// Setup must be first called by ONE of the actors to use the subsequent
 	// functions. It creates the public distributed key and the private share on
@@ -22,7 +26,7 @@ type Actor interface {
 	// Returns an error if Setup was already done.
 	Setup() (pubKey kyber.Point, err error)
 
-	// GetPublicKey returns the collective public key. Returns an error it the
+	// GetPublicKey returns the collective public key. Returns an error if the
 	// setup has not been done.
 	GetPublicKey() (kyber.Point, error)
 

@@ -27,7 +27,7 @@ type Election struct {
 	ElectionID string
 
 	AdminID string
-	Status  status // Initial | Open | Closed | Shuffling | Decrypting
+	Status  status
 	Pubkey  []byte
 
 	// BallotSize represents the total size in bytes of one ballot. It is used

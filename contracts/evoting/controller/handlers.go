@@ -83,13 +83,13 @@ func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
 // the DKG actor.
 // Body: hex-encoded electionID
 func (h *votingProxy) OpenElection(w http.ResponseWriter, r *http.Request) {
-	electionIDHex, err := ioutil.ReadAll(r.Body)
+	electionIDBuf, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "failed to read body: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	electionID := string(electionIDHex)
+	electionID := hex.EncodeToString(electionIDBuf)
 
 	// sanity check that this is a well hex-encoded string
 	_, err = hex.DecodeString(electionID)

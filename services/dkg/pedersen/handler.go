@@ -47,8 +47,8 @@ func (s *state) GetDistKey() kyber.Point {
 
 func (s *state) SetDistKey(key kyber.Point) {
 	s.Lock()
+	defer s.Unlock()
 	s.distrKey = key
-	s.Unlock()
 }
 
 func (s *state) GetParticipants() []mino.Address {
@@ -59,8 +59,28 @@ func (s *state) GetParticipants() []mino.Address {
 
 func (s *state) SetParticipants(addrs []mino.Address) {
 	s.Lock()
+	defer s.Unlock()
 	s.participants = addrs
-	s.Unlock()
+}
+
+// HandlerData is used to synchronise actors between the DKG and the filesystem.
+type HandlerData struct {
+	startRes  *state
+	privShare *share.PriShare
+	pubKey    kyber.Point
+	privKey   kyber.Scalar
+}
+
+// NewHandlerData generates new actor data.
+func NewHandlerData() HandlerData {
+	privKey := suite.Scalar().Pick(suite.RandomStream())
+	pubKey := suite.Point().Mul(privKey, nil)
+
+	return HandlerData{
+		startRes: &state{},
+		privKey:  privKey,
+		pubKey:   pubKey,
+	}
 }
 
 // Handler represents the RPC executed on each node
@@ -69,9 +89,10 @@ func (s *state) SetParticipants(addrs []mino.Address) {
 type Handler struct {
 	mino.UnsupportedHandler
 	sync.RWMutex
-	dkg     *pedersen.DistKeyGenerator
+
 	me      mino.Address
 	service ordering.Service
+	dkg     *pedersen.DistKeyGenerator
 
 	// These are persistent, see HandlerData
 	startRes  *state
@@ -84,7 +105,7 @@ type Handler struct {
 func NewHandler(me mino.Address, service ordering.Service, handlerData HandlerData) *Handler {
 
 	// TODO: Deal with absence of data
-	// if there is no privKey or pubKey, reset everything
+	// if there is no privKey or pubKey, reset everything?
 	privKey := handlerData.privKey
 	pubKey := handlerData.pubKey
 	startRes := handlerData.startRes
@@ -500,24 +521,4 @@ func (h *Handler) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(handlerData)
-}
-
-// HandlerData is used to synchronise actors between the DKG and the filesystem.
-type HandlerData struct {
-	startRes  *state
-	privShare *share.PriShare
-	privKey   kyber.Scalar
-	pubKey    kyber.Point
-}
-
-// NewHandlerData generates new actor data.
-// TODO Maybe could find a better name to highlight the randomness
-func NewHandlerData() HandlerData {
-	privKey := suite.Scalar().Pick(suite.RandomStream())
-	pubKey := suite.Point().Mul(privKey, nil)
-
-	return HandlerData{
-		privKey: privKey,
-		pubKey:  pubKey,
-	}
 }

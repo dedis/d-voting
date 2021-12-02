@@ -17,7 +17,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// DKGMAP is the name of the 
+// DKGMAP is the name of the bucket in the database.
 const DKGMAP = "dkgmap"
 
 // evotingAccessKey is the access key used for the evoting contract.
@@ -36,29 +36,26 @@ type controller struct{}
 // Build implements node.Initializer.
 func (m controller) SetCommands(builder node.Builder) {
 
+	electionIDFlag := cli.StringFlag{
+		Name:     "electionID",
+		Usage:    "the election ID, formatted in hexadecimal",
+		Required: true,
+	}
+
 	cmd := builder.SetCommand("dkg")
 	cmd.SetDescription("interact with the DKG service")
 
 	// memcoin --config /tmp/node1 dkg init --electionID electionID
 	sub := cmd.SetSubCommand("init")
 	sub.SetDescription("initialize the DKG protocol for a given election")
+	sub.SetFlags(electionIDFlag)
 	sub.SetAction(builder.MakeAction(&initAction{}))
-	sub.SetFlags(cli.StringFlag{
-		Name:     "electionID",
-		Usage:    "the election ID, formatted in hexadecimal",
-		Required: true,
-	})
 
-	sub.SetAction(builder.MakeAction(&setupAction{}))
 	// memcoin --config /tmp/node1 dkg setup --member $(memcoin --config
 	// /tmp/node1 dkg export) --member $(memcoin --config /tmp/node2 dkg export)
 	sub = cmd.SetSubCommand("setup")
 	sub.SetDescription("create the public distributed key and the private share on each node")
-	sub.SetFlags(cli.StringFlag{
-		Name:     "electionID",
-		Usage:    "the election ID, formatted in hexadecimal",
-		Required: true,
-	})
+	sub.SetFlags(electionIDFlag)
 	sub.SetAction(builder.MakeAction(&setupAction{}))
 
 	sub = cmd.SetSubCommand("export")
@@ -67,6 +64,7 @@ func (m controller) SetCommands(builder node.Builder) {
 
 	sub = cmd.SetSubCommand("getPublicKey")
 	sub.SetDescription("print the distributed public key")
+	sub.SetFlags(electionIDFlag)
 	sub.SetAction(builder.MakeAction(&getPublicKeyAction{}))
 
 	sub = cmd.SetSubCommand("registerHandlers")

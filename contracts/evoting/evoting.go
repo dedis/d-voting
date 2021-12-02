@@ -91,17 +91,17 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 
 	// Update the election metadata store
 
-	electionsMetadataBuff, err := snap.Get([]byte(ElectionsMetadataKey))
+	electionsMetadataBuf, err := snap.Get([]byte(ElectionsMetadataKey))
 	if err != nil {
-		return xerrors.Errorf("failed to get key '%s': %v", electionsMetadataBuff, err)
+		return xerrors.Errorf("failed to get key '%s': %v", electionsMetadataBuf, err)
 	}
 
 	electionsMetadata := &types.ElectionsMetadata{}
 
-	if len(electionsMetadataBuff) == 0 {
+	if len(electionsMetadataBuf) == 0 {
 		electionsMetadata.ElectionsIDs = types.ElectionIDs{}
 	} else {
-		err := json.Unmarshal(electionsMetadataBuff, electionsMetadata)
+		err := json.Unmarshal(electionsMetadataBuf, electionsMetadata)
 		if err != nil {
 			return xerrors.Errorf("failed to unmarshal ElectionsMetadata: %v", err)
 		}
@@ -282,7 +282,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	election := &types.Election{}
 	err = json.Unmarshal(electionMarshaled, election)
 	if err != nil {
-		return xerrors.Errorf("failed to unmarshal Election : %v", err)
+		return xerrors.Errorf("failed to unmarshal Election: %v", err)
 	}
 
 	if election.Status != types.Closed {

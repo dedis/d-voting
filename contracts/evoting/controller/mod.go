@@ -28,10 +28,9 @@ func (m controller) SetCommands(builder node.Builder) {
 	cmd := builder.SetCommand("e-voting")
 	cmd.SetDescription("interact with the evoting service")
 
-	// memcoin --config /tmp/node1 e-voting initHttpServer --portNumber 8080
+	// memcoin --config /tmp/node1 e-voting registerHandlers --signer private.key
 	sub := cmd.SetSubCommand("registerHandlers")
 	sub.SetDescription("register the e-voting handlers on the default proxy")
-
 	sub.SetFlags(
 		cli.StringFlag{
 			Name:     "signer",

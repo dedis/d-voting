@@ -90,6 +90,7 @@ func (s *Pedersen) Listen(electionIDBuf []byte) (dkg.Actor, error) {
 // NewActor initializes a dkg.Actor with an RPC specific to the election with the given keypair
 func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.Actor, error) {
 
+	// hex-encoded string
 	electionID := hex.EncodeToString(electionIDBuf)
 
 	// sanity check that electionID is well-formed hex string
@@ -204,9 +205,7 @@ func (a *Actor) Setup() (kyber.Point, error) {
 	}
 
 	addrs := make([]mino.Address, 0, roster.Len())
-
 	addrIter := roster.AddressIterator()
-
 	for addrIter.HasNext() {
 		addrs = append(addrs, addrIter.GetNext())
 	}
