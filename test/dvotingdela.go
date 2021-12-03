@@ -105,6 +105,8 @@ func newDVotingNode(t *testing.T, path string, port int) dela {
 	err := os.MkdirAll(path, 0700)
 	require.NoError(t, err)
 
+	os.Setenv("LLVL", "info")
+
 	// store
 	db, err := kv.New(filepath.Join(path, "dela.db"))
 	require.NoError(t, err)
@@ -204,7 +206,8 @@ func newDVotingNode(t *testing.T, path string, port int) dela {
 	dkg, _ := pedersen.NewPedersen(onet, true, srvc, rosterFac)
 
 	rosterKey := [32]byte{}
-	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:], accessService, dkg, rosterFac))
+	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:],
+		accessService, dkg, rosterFac))
 
 	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, rosterFac, signer)
 

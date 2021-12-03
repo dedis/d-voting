@@ -16,7 +16,12 @@ import (
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/dkg"
+	_ "github.com/dedis/d-voting/services/dkg/pedersen/json"
+	"github.com/dedis/d-voting/services/shuffle"
+	_ "github.com/dedis/d-voting/services/shuffle/neff/json"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
+	delaPkg "go.dedis.ch/dela"
 	accessContract "go.dedis.ch/dela/contracts/access"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/signed"
@@ -37,6 +42,7 @@ func TestIntegration_Scenario(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	t.Logf("using temp dir %s", dir)
+	delaPkg.Logger = zerolog.New(os.Stdout)
 
 	// create nodes
 	nodes := []dela{
@@ -92,6 +98,7 @@ func TestIntegration_Scenario(t *testing.T) {
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCreateElection)},
 	}
 	txID := addAndWait(t, manager, nodes[0].(dVotingNode), args...)
+	time.Sleep(time.Second * 1)
 
 	// Calculate electionID from
 	hash := sha256.New()
@@ -99,32 +106,29 @@ func TestIntegration_Scenario(t *testing.T) {
 	electionID := hash.Sum(nil)
 
 	// DK1: DKG init
-	var dkg []dkg.DKG
-	for _, node := range nodes {
-		new_dkg := node.(dVotingNode).GetDkg()
-		_, err := new_dkg.Listen()
-		require.NoError(t, err)
-		dkg = append(dkg, new_dkg)
-	}
+	var actor dkg.Actor
 
-	// NS1: Neff shuffle init
 	for _, node := range nodes {
-		s := node.(dVotingNode).GetShuffle()
-		_, err := s.Listen(signer)
+		d := node.(dVotingNode).GetDkg()
+		actor, err = d.Listen()
 		require.NoError(t, err)
 	}
 
 	// SC2: get election info, but not used for now
 
 	// DK2: DKG setup
-	actor, err := dkg[0].GetLastActor()
+	_, err = actor.Setup(electionID)
 	require.NoError(t, err)
-	actor.Setup(electionID)
 
 	// SC3: open election
+	openElectTransaction := &types.OpenElectionTransaction{
+		ElectionID: hex.EncodeToString(electionID),
+	}
+	openElection, err := json.Marshal(openElectTransaction)
+	require.NoError(t, err)
 	args = []txn.Arg{
 		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.CreateElectionArg, Value: electionID},
+		{Key: evoting.OpenElectionArg, Value: openElection},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdOpenElection)},
 	}
 	addAndWait(t, manager, nodes[0].(dVotingNode), args...)
@@ -143,7 +147,7 @@ func TestIntegration_Scenario(t *testing.T) {
 
 	args = []txn.Arg{
 		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.CreateElectionArg, Value: vote},
+		{Key: evoting.CastVoteArg, Value: vote},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCastVote)},
 	}
 	addAndWait(t, manager, nodes[0].(dVotingNode), args...)
@@ -160,11 +164,7 @@ func TestIntegration_Scenario(t *testing.T) {
 	vote, err = json.Marshal(castVoteTransaction)
 	require.NoError(t, err)
 
-	args = []txn.Arg{
-		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.CreateElectionArg, Value: vote},
-		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCastVote)},
-	}
+	args[1].Value = vote
 	addAndWait(t, manager, nodes[0].(dVotingNode), args...)
 
 	// SC4: cast vote3
@@ -179,16 +179,36 @@ func TestIntegration_Scenario(t *testing.T) {
 	vote, err = json.Marshal(castVoteTransaction)
 	require.NoError(t, err)
 
-	args = []txn.Arg{
-		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.CreateElectionArg, Value: vote},
-		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCastVote)},
-	}
+	args[1].Value = vote
 	addAndWait(t, manager, nodes[0].(dVotingNode), args...)
 
 	// SC5: close election
+	closeElectTransaction := &types.CloseElectionTransaction{
+		ElectionID: hex.EncodeToString(electionID),
+		UserID:     "anAdminID",
+	}
+	closeElection, err := json.Marshal(closeElectTransaction)
+	require.NoError(t, err)
+
+	args = []txn.Arg{
+		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
+		{Key: evoting.CloseElectionArg, Value: closeElection},
+		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCloseElection)},
+	}
+	addAndWait(t, manager, nodes[0].(dVotingNode), args...)
+
+	// NS1: Neff shuffle init
+	var sActor shuffle.Actor
+	for _, node := range nodes {
+		s := node.(dVotingNode).GetShuffle()
+		sActor, err = s.Listen(signer)
+		require.NoError(t, err)
+	}
+	time.Sleep(time.Second * 1)
 
 	// SC6: shuffle
+	err = sActor.Shuffle(electionID)
+	require.NoError(t, err)
 
 	// SC7: decrypt
 
