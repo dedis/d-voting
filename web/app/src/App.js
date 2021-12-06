@@ -32,8 +32,7 @@ const App = () => {
   const [lanContext, setLanContext] =  useState(getBrowserLanguage());
   const {token, saveToken} = useToken();
 
-  const [isLogged, setIsLogged] = useState();
-
+  const [isLogged, setIsLogged] = useState(undefined);
 
   fetch('/api/getpersonnalinfo')
       .then(res => res.json())

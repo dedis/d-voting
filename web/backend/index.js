@@ -3,6 +3,14 @@ const path = require('path');
 const axios = require('axios');
 const cookieParser = require("cookie-parser");
 const session = require('express-session');
+//import kyber from "@dedis/kyber";
+const kyber = require('@dedis/kyber')
+const crypto = require('crypto');
+const fetch = require('node-fetch');
+const request = require('request');
+
+
+const test = kyber.curve.newCurve('edwards25519');
 
 const app = express();
 
@@ -102,6 +110,8 @@ app.get('/api/getpersonnalinfo', (req, res) => {
 
 app.get('/evoting/*', (req, res) => {
 
+
+
     //check session
     if(req.session.userid){
         url = req.originalUrl;
@@ -119,7 +129,39 @@ app.get('/evoting/*', (req, res) => {
 app.post('/evoting/*', (req, res) => {
 
     //check session
-    if(req.session.userid){
+    if(req.session.userid || true){ //TODO change this condition
+        const data_str = JSON.stringify(req.body);
+        const data_str_b64 = Buffer.from(data_str).toString('base64');
+
+        const hash = crypto.createHash('sha256').update(data_str_b64).digest('base64');
+
+        const edCurve = kyber.curve.newCurve("edwards25519");
+
+        const priv = Buffer.from('0435895685b8265285d411e37572567b6d7e6aef2a06e809d5ccd26ee050cc07', 'hex'); //TODO put that in separate file
+        const pub = Buffer.from('ee4eb5309f46c02c57d78cd60fa4b7c6875626b0b17078c70f24930fcc8c5e62', 'hex'); //TODO put that in separate file
+
+        const scalar = edCurve.scalar();
+        scalar.unmarshalBinary(priv);
+
+        const point = edCurve.point();
+        point.unmarshalBinary(pub);
+
+        const sign = kyber.sign.schnorr.sign(edCurve, scalar, hash);
+
+        payload = {
+            'payload' : data_str_b64,
+            'sign' : sign
+        }
+
+
+        fetch('http://localhost:1000' + req.url) //TODO ajouter un truc pour sanitize l url
+            .then(a => a.json())
+            .then((result) => {
+
+                console.log(result);
+            });
+
+        res.json(payload);
 
     } else {
         //not logged in
