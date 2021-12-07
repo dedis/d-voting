@@ -59,18 +59,22 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 	h.Write(step.Current.GetID())
 	electionIDBuff := h.Sum(nil)
 
+	if !createElectionTxn.Configuration.IsValid() {
+		return xerrors.Errorf("configuration of election is incoherent or has duplicated IDs")
+	}
+
 	election := types.Election{
-		Title:      createElectionTxn.Title,
-		ElectionID: hex.EncodeToString(electionIDBuff),
-		AdminID:    createElectionTxn.AdminID,
-		Status:     types.Open,
+		Configuration: createElectionTxn.Configuration,
+		ElectionID:    hex.EncodeToString(electionIDBuff),
+		AdminID:       createElectionTxn.AdminID,
+		Status:        types.Open,
 		// Pubkey is set by the opening command
-		EncryptedBallots: types.EncryptedBallots{},
-		ShuffleInstances: []types.ShuffleInstance{},
-		DecryptedBallots: []types.Ballot{},
-		Format:           createElectionTxn.Format,
-		RosterBuf:        append([]byte{}, rosterBuf...),
-		ShuffleThreshold: threshold.ByzantineThreshold(roster.Len()),
+		BallotSize:          createElectionTxn.Configuration.MaxBallotSize(),
+		PublicBulletinBoard: types.PublicBulletinBoard{},
+		ShuffleInstances:    []types.ShuffleInstance{},
+		DecryptedBallots:    []types.Ballot{},
+		RosterBuf:           append([]byte{}, rosterBuf...),
+		ShuffleThreshold:    threshold.ByzantineThreshold(roster.Len()),
 	}
 
 	electionJSON, err := json.Marshal(election)
@@ -218,7 +222,7 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 	}
 
 	// TODO: check that castVoteTransaction.Ballot is a well formatted
-	election.EncryptedBallots.CastVote(castVoteTransaction.UserID, castVoteTransaction.Ballot)
+	election.PublicBulletinBoard.CastVote(castVoteTransaction.UserID, castVoteTransaction.Ballot)
 
 	electionMarshaled, err = json.Marshal(election)
 	if err != nil {
@@ -339,9 +343,9 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("signature does not match the Shuffle : %v ", err)
 	}
 
-	ksShuffled, csShuffled, err := shuffleBallotsTransaction.ShuffledBallots.GetKsCs()
+	XX, YY, err := shuffleBallotsTransaction.ShuffledBallots.GetElGPairs()
 	if err != nil {
-		return xerrors.Errorf("failed to get ks, cs: %v", err)
+		return xerrors.Errorf("failed to get X, Y: %v", err)
 	}
 
 	// get the election public key
@@ -351,21 +355,24 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("failed to unmarshal public key: %v", err)
 	}
 
-	var encryptedBallots types.Ciphertexts
+	var encryptedBallots types.EncryptedBallots
 
 	if shuffleBallotsTransaction.Round == 0 {
-		encryptedBallots = election.EncryptedBallots.Ballots
+		encryptedBallots = election.PublicBulletinBoard.Ballots
 	} else {
 		// get the election's last shuffled ballots
 		encryptedBallots = election.ShuffleInstances[len(election.ShuffleInstances)-1].ShuffledBallots
 	}
 
-	ks, cs, err := encryptedBallots.GetKsCs()
+	X, Y, err := encryptedBallots.GetElGPairs()
 	if err != nil {
-		return xerrors.Errorf("failed to get ks, cs: %v", err)
+		return xerrors.Errorf("failed to get X, Y: %v", err)
 	}
 
-	verifier := shuffle.Verifier(suite, nil, pubKey, ks, cs, ksShuffled, csShuffled)
+	XXUp, YYUp, XXDown, YYDown := shuffle.GetSequenceVerifiable(suite, X, Y, XX,
+		YY, nil) //TODO: Need the getProver
+
+	verifier := shuffle.Verifier(suite, nil, pubKey, XXUp, YYUp, XXDown, YYDown)
 
 	err = e.prover(suite, protocolName, verifier, shuffleBallotsTransaction.Proof)
 	if err != nil {
@@ -467,7 +474,7 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 		return xerrors.Errorf("the election is not open, current status: %d", election.Status)
 	}
 
-	if len(election.EncryptedBallots.Ballots) <= 1 {
+	if len(election.PublicBulletinBoard.Ballots) <= 1 {
 		return xerrors.Errorf("at least two ballots are required")
 	}
 

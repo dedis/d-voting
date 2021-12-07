@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"go.dedis.ch/kyber/v3"
 	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting"
@@ -205,21 +206,22 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 }
 
 // getShuffledBallots returns the shuffled ballots with the shuffling proof.
-func getShuffledBallots(election *electionTypes.Election) (electionTypes.Ciphertexts, []byte, error) {
+func getShuffledBallots(election *electionTypes.Election) ([]electionTypes.EncryptedBallot, []byte,
+	error) {
 	round := len(election.ShuffleInstances)
 
-	var encryptedBallots electionTypes.Ciphertexts
+	var encryptedBallots electionTypes.EncryptedBallots
 
 	if round == 0 {
-		encryptedBallots = election.EncryptedBallots.Ballots
-		fmt.Println("encrypted ballots:", election.EncryptedBallots)
+		encryptedBallots = election.PublicBulletinBoard.Ballots
+		fmt.Println("encrypted ballots:", election.PublicBulletinBoard)
 	} else {
 		encryptedBallots = election.ShuffleInstances[round-1].ShuffledBallots
 	}
 
-	ks, cs, err := encryptedBallots.GetKsCs()
+	X, Y, err := encryptedBallots.GetElGPairs()
 	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to get ks, cs: %v", err)
+		return nil, nil, xerrors.Errorf("failed to get X, Y: %v", err)
 	}
 
 	pubKey := suite.Point()
@@ -229,17 +231,30 @@ func getShuffledBallots(election *electionTypes.Election) (electionTypes.Ciphert
 		return nil, nil, xerrors.Errorf("couldn't unmarshal public key: %v", err)
 	}
 
-	rand := suite.RandomStream()
-	Kbar, Cbar, prover := shuffleKyber.Shuffle(suite, nil, pubKey, ks, cs, rand)
+	// shuffle sequences
+	XX, YY, getProver := shuffleKyber.SequencesShuffle(suite, nil, pubKey, X, Y, suite.RandomStream())
+
+	// compute the proof
+	// TODO : 'e' should be given by "the verifier"
+	NQ := len(X)
+	e := make([]kyber.Scalar, NQ)
+	for j := 0; j < NQ; j++ {
+		e[j] = suite.Scalar().Pick(suite.RandomStream())
+	}
+
+	prover, err := getProver(e)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("could not get proved for shuffle : %v", err)
+	}
 
 	shuffleProof, err := proof.HashProve(suite, protocolName, prover)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("Shuffle proof failed: %v", err.Error())
+		return nil, nil, xerrors.Errorf("shuffle proof failed: %v", err)
 	}
 
-	var shuffledBallots electionTypes.Ciphertexts
+	var shuffledBallots electionTypes.EncryptedBallots
 
-	err = shuffledBallots.InitFromKsCs(Kbar, Cbar)
+	err = shuffledBallots.InitFromElGPairs(XX, YY)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("failed to init ciphertexts: %v", err)
 	}

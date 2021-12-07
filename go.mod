@@ -1,7 +1,7 @@
 module github.com/dedis/d-voting
 
 go 1.16
-
+replace go.dedis.ch/kyber/v3 => C:\Users\emili\go\src\kyber
 require (
 	github.com/golang/protobuf v1.3.5
 	github.com/opentracing/opentracing-go v1.2.0
@@ -15,3 +15,4 @@ require (
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 )
+

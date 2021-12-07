@@ -101,7 +101,6 @@ func TestCommand_CreateElection(t *testing.T) {
 	}
 
 	dummyCreateElectionTransaction := types.CreateElectionTransaction{
-		Title:   "dummyTitle",
 		AdminID: "dummyAdminID",
 	}
 
@@ -145,7 +144,6 @@ func TestCommand_CreateElection(t *testing.T) {
 	election := new(types.Election)
 	_ = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
 
-	require.Equal(t, dummyCreateElectionTransaction.Title, election.Title)
 	require.Equal(t, dummyCreateElectionTransaction.AdminID, election.AdminID)
 	require.Equal(t, types.Open, election.Status)
 }
@@ -154,10 +152,10 @@ func TestCommand_CastVote(t *testing.T) {
 	dummyCastVoteTransaction := types.CastVoteTransaction{
 		ElectionID: fakeElectionID,
 		UserID:     "dummyUserId",
-		Ballot: types.Ciphertext{
+		Ballot: types.EncryptedBallot{types.Ciphertext{
 			K: []byte{},
 			C: []byte{},
-		},
+		}},
 	}
 
 	jsCastVoteTransaction, _ := json.Marshal(dummyCastVoteTransaction)
@@ -212,12 +210,12 @@ func TestCommand_CastVote(t *testing.T) {
 	_ = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
 
 	require.Equal(t, dummyCastVoteTransaction.Ballot,
-		election.EncryptedBallots.Ballots[0])
+		election.PublicBulletinBoard.Ballots[0])
 	require.Equal(t, dummyCastVoteTransaction.UserID,
-		election.EncryptedBallots.UserIDs[0])
+		election.PublicBulletinBoard.UserIDs[0])
 
 	// Issue # 17 : Empty ballot does not return an error and will generate issues during shuffle
-	dummyCastVoteTransaction.Ballot = types.Ciphertext{}
+	dummyCastVoteTransaction.Ballot = types.EncryptedBallot{}
 	jsCastVoteTransaction, _ = json.Marshal(dummyCastVoteTransaction)
 	_ = snap.Set(dummyElectionIdBuff, jsElection)
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
@@ -277,8 +275,8 @@ func TestCommand_CloseElection(t *testing.T) {
 	err = cmd.closeElection(snap, makeStep(t, CloseElectionArg, string(jsCloseElectionTransaction)))
 	require.EqualError(t, err, "at least two ballots are required")
 
-	dummyElection.EncryptedBallots.CastVote("dummyUser1", types.Ciphertext{})
-	dummyElection.EncryptedBallots.CastVote("dummyUser2", types.Ciphertext{})
+	dummyElection.PublicBulletinBoard.CastVote("dummyUser1", types.EncryptedBallot{})
+	dummyElection.PublicBulletinBoard.CastVote("dummyUser2", types.EncryptedBallot{})
 
 	jsElection, _ = json.Marshal(dummyElection)
 	_ = snap.Set(dummyElectionIdBuff, jsElection)
@@ -311,14 +309,14 @@ func TestCommand_ShuffleBallotsCannotShuffleTwice(t *testing.T) {
 	dummyShuffleBallotsTransaction.Round = 1
 
 	dummyElection.ShuffleInstances = make([]types.ShuffleInstance, 1)
-	dummyElection.ShuffleInstances[0].ShuffledBallots = make(types.Ciphertexts, 3)
+	dummyElection.ShuffleInstances[0].ShuffledBallots = make([]types.EncryptedBallot, 3)
 
 	KsMarshalled, CsMarshalled, _ := fakeKCPointsMarshalled(k)
 	for i := 0; i < k; i++ {
-		ballot := types.Ciphertext{
+		ballot := types.EncryptedBallot{types.Ciphertext{
 			K: KsMarshalled[i],
 			C: CsMarshalled[i],
-		}
+		}}
 		dummyElection.ShuffleInstances[0].ShuffledBallots[i] = ballot
 	}
 
@@ -357,15 +355,15 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
 
 	for i := 1; i <= k-1; i++ {
-		dummyElection.ShuffleInstances[i].ShuffledBallots = make(types.Ciphertexts, 3)
+		dummyElection.ShuffleInstances[i].ShuffledBallots = make([]types.EncryptedBallot, 3)
 	}
 
 	KsMarshalled, CsMarshalled, _ := fakeKCPointsMarshalled(k)
 	for i := 0; i < k; i++ {
-		ballot := types.Ciphertext{
+		ballot := types.EncryptedBallot{types.Ciphertext{
 			K: KsMarshalled[i],
 			C: CsMarshalled[i],
-		}
+		}}
 		dummyElection.ShuffleInstances[k-1].ShuffledBallots[i] = ballot
 	}
 
@@ -478,10 +476,10 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	KsMarshalled, CsMarshalled, pubKey := fakeKCPointsMarshalled(k)
 
 	for i := 0; i < k; i++ {
-		ballot := types.Ciphertext{
+		ballot := types.EncryptedBallot{types.Ciphertext{
 			K: KsMarshalled[i],
 			C: CsMarshalled[i],
-		}
+		}}
 		dummyShuffleBallotsTransaction.ShuffledBallots[i] = ballot
 	}
 
@@ -508,11 +506,11 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	dummyElection.ShuffleInstances = make([]types.ShuffleInstance, 0)
 
 	for i := 0; i < k; i++ {
-		ballot := types.Ciphertext{
+		ballot := types.EncryptedBallot{types.Ciphertext{
 			K: []byte("fakeVoteK"),
 			C: []byte("fakeVoteC"),
-		}
-		dummyElection.EncryptedBallots.CastVote(fmt.Sprintf("user%d", i), ballot)
+		}}
+		dummyElection.PublicBulletinBoard.CastVote(fmt.Sprintf("user%d", i), ballot)
 	}
 
 	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
@@ -524,11 +522,11 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 
 	// C of encrypted ballots is wrong
 	for i := 0; i < k; i++ {
-		ballot := types.Ciphertext{
+		ballot := types.EncryptedBallot{types.Ciphertext{
 			K: KsMarshalled[i],
 			C: []byte("fakeVoteC"),
-		}
-		dummyElection.EncryptedBallots.CastVote(fmt.Sprintf("user%d", i), ballot)
+		}}
+		dummyElection.PublicBulletinBoard.CastVote(fmt.Sprintf("user%d", i), ballot)
 	}
 
 	jsElection, _ = json.Marshal(dummyElection)
@@ -540,8 +538,8 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 }
 
 func TestCommand_DecryptBallots(t *testing.T) {
-	ballot1 := types.Ballot{Vote: "vote1"}
-	ballot2 := types.Ballot{Vote: "vote2"}
+	ballot1 := types.Ballot{}
+	ballot2 := types.Ballot{}
 
 	dummyDecryptBallotsTransaction := types.DecryptBallotsTransaction{
 		ElectionID:       fakeElectionID,
@@ -670,15 +668,14 @@ func initElectionAndContract() (types.Election, Contract) {
 	}
 
 	dummyElection := types.Election{
-		Title:            "dummyTitle",
-		ElectionID:       "dummyID",
-		AdminID:          "dummyAdminID",
-		Status:           0,
-		Pubkey:           nil,
-		EncryptedBallots: types.EncryptedBallots{},
-		ShuffleInstances: make([]types.ShuffleInstance, 0),
-		DecryptedBallots: nil,
-		ShuffleThreshold: 0,
+		ElectionID:          "dummyID",
+		AdminID:             "dummyAdminID",
+		Status:              0,
+		Pubkey:              nil,
+		PublicBulletinBoard: types.PublicBulletinBoard{},
+		ShuffleInstances:    make([]types.ShuffleInstance, 0),
+		DecryptedBallots:    nil,
+		ShuffleThreshold:    0,
 	}
 
 	var evotingAccessKey = [32]byte{3}
@@ -701,10 +698,10 @@ func initGoodShuffleBallot(k int) (types.Election, types.ShuffleBallotsTransacti
 
 	// ShuffledBallots:
 	for i := 0; i < k; i++ {
-		ballot := types.Ciphertext{
+		ballot := types.EncryptedBallot{types.Ciphertext{
 			K: KsMarshalled[i],
 			C: CsMarshalled[i],
-		}
+		}}
 		dummyShuffleBallotsTransaction.ShuffledBallots[i] = ballot
 	}
 
@@ -715,11 +712,11 @@ func initGoodShuffleBallot(k int) (types.Election, types.ShuffleBallotsTransacti
 	dummyElection.ShuffleInstances = make([]types.ShuffleInstance, 0)
 
 	for i := 0; i < k; i++ {
-		ballot := types.Ciphertext{
+		ballot := types.EncryptedBallot{types.Ciphertext{
 			K: KsMarshalled[i],
 			C: CsMarshalled[i],
-		}
-		dummyElection.EncryptedBallots.CastVote(fmt.Sprintf("user%d", i), ballot)
+		}}
+		dummyElection.PublicBulletinBoard.CastVote(fmt.Sprintf("user%d", i), ballot)
 	}
 
 	// Valid Signature of shuffle
@@ -736,7 +733,7 @@ func initGoodShuffleBallot(k int) (types.Election, types.ShuffleBallotsTransacti
 func initBadShuffleBallot(sizeOfElection int) (types.Election, types.ShuffleBallotsTransaction, Contract) {
 	FakePubKey := fake.NewBadPublicKey()
 	FakePubKeyMarshalled, _ := FakePubKey.MarshalBinary()
-	shuffledBallots := make(types.Ciphertexts, sizeOfElection)
+	shuffledBallots := make([]types.EncryptedBallot, sizeOfElection)
 
 	dummyShuffleBallotsTransaction := types.ShuffleBallotsTransaction{
 		ElectionID:      fakeElectionID,
