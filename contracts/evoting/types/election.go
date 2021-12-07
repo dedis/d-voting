@@ -59,7 +59,7 @@ type Election struct {
 // the proofs and the identity of the shuffler.
 type ShuffleInstance struct {
 	// ShuffledBallots contains the list of shuffled ciphertext for this round
-	ShuffledBallots []EncryptedBallot
+	ShuffledBallots EncryptedBallots
 
 	// ShuffleProofs is the proof of the shuffle for this round
 	ShuffleProofs []byte
@@ -179,6 +179,28 @@ func (b EncryptedBallots) GetElGPairs() ([][]kyber.Point, [][]kyber.Point, error
 	return ks, cs, nil
 }
 
+func (b *EncryptedBallots) InitFromElGPairs(X, Y [][]kyber.Point) error {
+	if len(X) != len(Y) {
+		return xerrors.Errorf("X and Y must have same length: %d != %d",
+			len(X), len(Y))
+	}
+
+	NQ := len(X)
+	*b = make([]EncryptedBallot, NQ)
+
+	for i := range X {
+		var eb EncryptedBallot
+
+		err := eb.InitFromElGPairs(X[i], Y[i])
+		if err != nil {
+			return xerrors.Errorf("failed to init from encrypted ballot : %v", err)
+		}
+		(*b)[i] = eb
+	}
+
+	return nil
+}
+
 // GetElGPairs returns corresponding kyber.Points from the ciphertexts
 func (b EncryptedBallot) GetElGPairs() (ks []kyber.Point, cs []kyber.Point, err error) {
 	ks = make([]kyber.Point, len(b))
@@ -208,8 +230,8 @@ func (b EncryptedBallot) Copy() EncryptedBallot {
 	return ciphertexts
 }
 
-// InitFromKsCs sets the ciphertext based on ks, cs
-func (b *EncryptedBallot) InitFromKsCs(ks []kyber.Point, cs []kyber.Point) error {
+// InitFromElGPairs sets the ciphertext based on ks, cs
+func (b *EncryptedBallot) InitFromElGPairs(ks []kyber.Point, cs []kyber.Point) error {
 	if len(ks) != len(cs) {
 		return xerrors.Errorf("ks and cs must have same length: %d != %d",
 			len(ks), len(cs))
