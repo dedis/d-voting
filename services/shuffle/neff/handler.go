@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"go.dedis.ch/kyber/v3"
 	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting"
@@ -140,11 +139,24 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 		return nil, xerrors.Errorf("failed to get shuffled ballots: %v", err)
 	}
 
+	// Generate random vector
+	lenRandomVector := len(election.PublicBulletinBoard.Ballots)
+
+	marshalledRV := make([][]byte, lenRandomVector)
+	for i := 0; i < lenRandomVector; i++ {
+		v, err := suite.Scalar().Pick(suite.RandomStream()).MarshalBinary()
+		if err != nil {
+			return nil, xerrors.Errorf("failed to marshal random vector: %v", err)
+		}
+		marshalledRV[i] = v
+	}
+
 	shuffleBallotsTransaction := electionTypes.ShuffleBallotsTransaction{
-		ElectionID:      string(election.ElectionID),
+		ElectionID:      election.ElectionID,
 		Round:           len(election.ShuffleInstances),
 		ShuffledBallots: shuffledBallots,
 		Proof:           shuffleProof,
+		RandomVector:    marshalledRV,
 	}
 
 	//Sign the shuffle:
@@ -235,11 +247,9 @@ func getShuffledBallots(election *electionTypes.Election) ([]electionTypes.Encry
 	XX, YY, getProver := shuffleKyber.SequencesShuffle(suite, nil, pubKey, X, Y, suite.RandomStream())
 
 	// compute the proof
-	// TODO : 'e' should be given by "the verifier"
-	NQ := len(X)
-	e := make([]kyber.Scalar, NQ)
-	for j := 0; j < NQ; j++ {
-		e[j] = suite.Scalar().Pick(suite.RandomStream())
+	e, err := election.RandomVector.UnMarshal()
+	if err != nil {
+		return nil, nil, err
 	}
 
 	prover, err := getProver(e)

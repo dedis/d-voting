@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"go.dedis.ch/dela/crypto"
+	jsondela "go.dedis.ch/dela/serde/json"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -201,7 +203,7 @@ func (h *votingProxy) ElectionIDs(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ElectionInfo returns the information for a gien election.
+// ElectionInfo returns the information for a given election.
 func (h *votingProxy) ElectionInfo(w http.ResponseWriter, r *http.Request) {
 	getElectionInfoRequest := &types.GetElectionInfoRequest{}
 	err := json.NewDecoder(r.Body).Decode(getElectionInfoRequest)
@@ -345,10 +347,87 @@ func (h *votingProxy) CloseElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	closeElectionTransaction := types.CloseElectionTransaction{
-		ElectionID: closeElectionRequest.ElectionID,
-		UserID:     closeElectionRequest.UserID,
+	// retrieve election to find length of random vector :
+	electionIDBuff, err := hex.DecodeString(closeElectionRequest.ElectionID)
+	if err != nil {
+		http.Error(w, "failed to decode electionID: "+err.Error(),
+			http.StatusInternalServerError)
+		return
 	}
+
+	proof, err := h.orderingSvc.GetProof(electionIDBuff)
+	if err != nil {
+		http.Error(w, "failed to read on the blockchain: "+err.Error(),
+			http.StatusInternalServerError)
+		return
+	}
+
+	election := &types.Election{}
+	err = json.Unmarshal(proof.GetValue(), election)
+	if err != nil {
+		http.Error(w, "failed to unmarshal Election: "+err.Error(),
+			http.StatusInternalServerError)
+		return
+	}
+
+	// Generate random vector
+	lenRandomVector := len(election.PublicBulletinBoard.Ballots)
+
+	marshalledRV := make([][]byte, lenRandomVector)
+	for i := 0; i < lenRandomVector; i++ {
+		v, err := suite.Scalar().Pick(suite.RandomStream()).MarshalBinary()
+		if err != nil {
+			http.Error(w, "failed to marshal Random vector: "+err.Error(),
+				http.StatusInternalServerError)
+			return
+		}
+		marshalledRV[i] = v
+	}
+
+	closeElectionTransaction := types.CloseElectionTransaction{
+		ElectionID:   closeElectionRequest.ElectionID,
+		UserID:       closeElectionRequest.UserID,
+		RandomVector: marshalledRV,
+	}
+
+	// Sign transaction
+	var signer crypto.Signer //TODO find a way to retrieve private key here
+
+	closeTxHash, err := closeElectionTransaction.HashCloseTx()
+	if err != nil {
+		if err != nil {
+			http.Error(w, "failed to hash tx: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	signature, err := signer.Sign(closeTxHash)
+	if err != nil {
+		if err != nil {
+			http.Error(w, "failed to sign tx: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	encodedSignature, err := signature.Serialize(jsondela.NewContext())
+	if err != nil {
+		if err != nil {
+			http.Error(w, "could not marshal signature: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	publicKey, err := signer.GetPublicKey().MarshalBinary()
+	if err != nil {
+		if err != nil {
+			http.Error(w, "failed to marshal public key of signer: "+err.Error(),
+				http.StatusInternalServerError)
+			return
+		}
+	}
+
+	closeElectionTransaction.Signature = encodedSignature
+	closeElectionTransaction.PublicKey = publicKey
 
 	payload, err := json.Marshal(closeElectionTransaction)
 	if err != nil {

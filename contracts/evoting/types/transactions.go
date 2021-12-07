@@ -58,14 +58,27 @@ type CloseElectionTransaction struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 	UserID     string
+	// RandomVector is the vector to be used to generate the proof of the next
+	// shuffle
+	RandomVector RandomVector
+	// Signature is the signature of the results of HashCloseTx() with the
+	// private key corresponding to PublicKey
+	Signature []byte
+	// PublicKey is the public key of the signer
+	PublicKey []byte
 }
 
 type ShuffleBallotsTransaction struct {
 	ElectionID      string
 	Round           int
 	ShuffledBallots EncryptedBallots
-	Proof           []byte
-	//Signature should be obtained using SignShuffle()
+	// RandomVector is the vector to be used to generate the proof of the next
+	// shuffle
+	RandomVector RandomVector
+	// Proof is the proof corresponding to the shuffle of this transaction
+	Proof []byte
+	// Signature is the signature of the result of HashShuffle() with the private
+	// key corresponding to PublicKey
 	Signature []byte
 	//PublicKey is the public key of the signer.
 	PublicKey []byte
@@ -102,18 +115,48 @@ func (s ShuffleBallotsTransaction) HashShuffle(electionID string) ([]byte, error
 
 	id, err := hex.DecodeString(electionID)
 	if err != nil {
-		return nil, xerrors.Errorf("Could not decode electionId : %v", err)
+		return nil, xerrors.Errorf("could not decode electionId : %v", err)
 	}
 
 	hash.Write(id)
 
 	shuffledBallots, err := json.Marshal(s.ShuffledBallots)
 	if err != nil {
-		return nil, xerrors.Errorf("Could not marshal shuffled ballots : %v", err)
+		return nil, xerrors.Errorf("could not marshal shuffled ballots : %v", err)
 	}
 
 	hash.Write(shuffledBallots)
 	hash.Write(s.Proof)
+
+	for _, bytes := range s.RandomVector {
+		hash.Write(bytes)
+	}
+
+	return hash.Sum(nil), nil
+}
+
+// HashCloseTx hashes the components of a CloseElectionTransaction so that
+// the identity of the node who submitted it can be verified later on.
+func (c CloseElectionTransaction) HashCloseTx() ([]byte, error) {
+	hash := sha256.New()
+
+	election, err := hex.DecodeString(c.ElectionID)
+	if err != nil {
+		return nil, xerrors.Errorf("could not decode ElectionId : %v", err)
+	}
+
+	hash.Write(election)
+
+	user, err := hex.DecodeString(c.UserID)
+	if err != nil {
+		return nil, xerrors.Errorf("could not decode UserId : %v", err)
+	}
+
+	hash.Write(user)
+
+	for _, bytes := range c.RandomVector {
+		hash.Write(bytes)
+	}
 
 	return hash.Sum(nil), nil
 }

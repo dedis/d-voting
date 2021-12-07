@@ -5,16 +5,16 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	_ "go.dedis.ch/dela/crypto"
-	"go.dedis.ch/dela/crypto/bls"
-	_ "go.dedis.ch/dela/crypto/bls/json"
-
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/dkg"
 	"go.dedis.ch/dela/core/execution"
 	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/cosi/threshold"
+	_ "go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/crypto/bls"
+	_ "go.dedis.ch/dela/crypto/bls/json"
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/shuffle"
 	"golang.org/x/xerrors"
@@ -297,28 +297,68 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("failed to deserialize roster: %v", err)
 	}
 
-	pubKeyIterator := roster.PublicKeyIterator()
-	shufflerIsAMember := false
-	for pubKeyIterator.HasNext() {
-		key, err := pubKeyIterator.GetNext().MarshalBinary()
-		if err != nil {
-			return xerrors.Errorf("failed to serialize a public from the roster : %v ", err)
-		}
-
-		if bytes.Equal(shufflerPublicKey, key) {
-			shufflerIsAMember = true
-		}
+	err = verifyIdentity(roster, shufflerPublicKey)
+	if err != nil {
+		return xerrors.Errorf("could not verify identity of shuffler : %v", err)
 	}
 
-	if !shufflerIsAMember {
-		return xerrors.Errorf("public key of the shuffler not found in roster: %x", shufflerPublicKey)
+	// Check the node did not submit the CloseElection transaction (and generated
+	// the random vector) and retrieve random vector
+	tx := step.Previous[len(step.Previous)-1]
+	var marshalledRandomVector types.RandomVector
+	if shuffleBallotsTransaction.Round == 0 {
+		closeElectionBuf := tx.GetArg(CloseElectionArg)
+		closeElectionTransaction := &types.CloseElectionTransaction{}
+
+		err := json.Unmarshal(closeElectionBuf, closeElectionTransaction)
+		if err != nil {
+			return xerrors.Errorf("failed to unmarshall CloseElectionTransaction : %v", err)
+		}
+
+		if bytes.Equal(closeElectionTransaction.PublicKey, shuffleBallotsTransaction.PublicKey) {
+			return xerrors.Errorf("the node submitting the shuffle also submitted" +
+				" the random vector")
+		}
+
+		marshalledRandomVector = closeElectionTransaction.RandomVector
+
+	} else {
+		prevShuffleBallotsBuf := tx.GetArg(ShuffleBallotsArg)
+		prevShuffleBallotsTransaction := &types.ShuffleBallotsTransaction{}
+
+		err := json.Unmarshal(prevShuffleBallotsBuf, prevShuffleBallotsTransaction)
+		if err != nil {
+			return xerrors.Errorf("failed to unmarshall ShuffleBallotsTransaction : %v", err)
+		}
+
+		marshalledRandomVector = prevShuffleBallotsTransaction.RandomVector
+	}
+
+	// Compare retrieved random vector and random vector from electioon
+	if len(marshalledRandomVector) != len(election.RandomVector) {
+		return xerrors.Errorf("random vector from previous transaction is" +
+			"not the election random vector")
+	}
+
+	for i := 0; i < len(marshalledRandomVector); i++ {
+		if !bytes.Equal(marshalledRandomVector[i], election.RandomVector[i]) {
+			return xerrors.Errorf("random vector from previous transaction is" +
+				"not the election random vector")
+		}
 	}
 
 	// Chek the node who submitted the shuffle did not already submit an accepted shuffle
 	for i, shuffleInstance := range election.ShuffleInstances {
 		if bytes.Equal(shufflerPublicKey, shuffleInstance.ShufflerPublicKey) {
-			return xerrors.Errorf("a node already submitted a shuffle that has been accepted in round %v", i)
+			return xerrors.Errorf("a node already submitted a shuffle that"+
+				" has been accepted in round %v", i)
 		}
+	}
+
+	// Check the random vector can be unmarshalled (ie. is a Scalar vector)
+	_, err = shuffleBallotsTransaction.RandomVector.UnMarshal()
+	if err != nil {
+		return err
 	}
 
 	// Check the shuffler indeed signed the transaction:
@@ -327,7 +367,8 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("could not decode public key of signer : %v ", err)
 	}
 
-	signature, err := bls.NewSignatureFactory().SignatureOf(e.context, shuffleBallotsTransaction.Signature)
+	txSignature := shuffleBallotsTransaction.Signature
+	signature, err := bls.NewSignatureFactory().SignatureOf(e.context, txSignature)
 	if err != nil {
 		return xerrors.Errorf("could node deserialize shuffle signature : %v", err)
 	}
@@ -369,8 +410,14 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("failed to get X, Y: %v", err)
 	}
 
+	// Retrieve the random vector from the previous round
+	randomVector, err := marshalledRandomVector.UnMarshal()
+	if err != nil {
+		return err
+	}
+
 	XXUp, YYUp, XXDown, YYDown := shuffle.GetSequenceVerifiable(suite, X, Y, XX,
-		YY, nil) //TODO: Need the getProver
+		YY, randomVector)
 
 	verifier := shuffle.Verifier(suite, nil, pubKey, XXUp, YYUp, XXDown, YYDown)
 
@@ -387,6 +434,8 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	}
 
 	election.ShuffleInstances = append(election.ShuffleInstances, currentShuffleInstance)
+	// update random vector
+	election.RandomVector = shuffleBallotsTransaction.RandomVector
 
 	// in case we have enough shuffled ballots, we update the status
 	if len(election.ShuffleInstances) >= election.ShuffleThreshold {
@@ -479,6 +528,51 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 	}
 
 	election.Status = types.Closed
+
+	// Check the random vector can be unmarshalled (ie. is a Scalar vector)
+	if len(closeElectionTransaction.RandomVector) != len(election.PublicBulletinBoard.Ballots) {
+		return xerrors.Errorf("length of random vector is != than number of ballots")
+	}
+	_, err = closeElectionTransaction.RandomVector.UnMarshal()
+	if err != nil {
+		return nil
+	}
+
+	election.RandomVector = closeElectionTransaction.RandomVector
+
+	// Check the signer is part of the roster
+	roster, err := e.rosterFac.AuthorityOf(e.Contract.context, election.RosterBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to deserialize roster: %v", err)
+	}
+
+	err = verifyIdentity(roster, closeElectionTransaction.PublicKey)
+	if err != nil {
+		return xerrors.Errorf("could not verify identity of the node : %v", err)
+	}
+
+	// Check the signature is valid
+	signerPubKey, err := bls.NewPublicKey(closeElectionTransaction.PublicKey)
+	if err != nil {
+		return xerrors.Errorf("could not decode public key of signer : %v ", err)
+	}
+
+	txSignature := closeElectionTransaction.Signature
+	signature, err := bls.NewSignatureFactory().SignatureOf(e.context, txSignature)
+	if err != nil {
+		return xerrors.Errorf("could not deserialize shuffle signature : %v", err)
+	}
+
+	closeTxHash, err := closeElectionTransaction.HashCloseTx()
+	if err != nil {
+		return xerrors.Errorf("could not hash shuffle : %v", err)
+	}
+
+	// Check the signature matches the provided one
+	err = signerPubKey.Verify(closeTxHash, signature)
+	if err != nil {
+		return xerrors.Errorf("signature of the transaction do not match the content: %v ", err)
+	}
 
 	electionMarshaled, err = json.Marshal(election)
 	if err != nil {
@@ -604,6 +698,30 @@ func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step)
 	err = snap.Set(electionIDBuff, js)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
+	}
+
+	return nil
+}
+
+// verifyIdentity is a utility function to verify if a public key is associated
+// to a member of the roster or not. Returns no error if it's the case.
+func verifyIdentity(roster authority.Authority, publicKey []byte) error {
+	pubKeyIterator := roster.PublicKeyIterator()
+	isAMember := false
+
+	for pubKeyIterator.HasNext() {
+		key, err := pubKeyIterator.GetNext().MarshalBinary()
+		if err != nil {
+			return xerrors.Errorf("failed to serialize a public key from the roster : %v ", err)
+		}
+
+		if bytes.Equal(publicKey, key) {
+			isAMember = true
+		}
+	}
+
+	if !isAMember {
+		return xerrors.Errorf("public key not associated to a member of the roster: %x", publicKey)
 	}
 
 	return nil

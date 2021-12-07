@@ -42,6 +42,10 @@ type Election struct {
 	// of shuffler.
 	ShuffleInstances []ShuffleInstance
 
+	// RandomVector is a slice of kyber.Scalar (encoded) which is used to prove
+	// and verify the proof of a shuffle
+	RandomVector RandomVector
+
 	// ShuffleThreshold is set based on the roster. We save it so we don't have
 	// to compute it based on the roster each time we need it.
 	ShuffleThreshold int
@@ -53,6 +57,25 @@ type Election struct {
 	// during an election and will be used for DKG and Neff. Its type is
 	// authority.Authority.
 	RosterBuf []byte
+}
+
+// RandomVector is a slice of kyber.Scalar (encoded) which is used to prove
+// and verify the proof of a shuffle
+type RandomVector [][]byte
+
+func (r RandomVector) UnMarshal() ([]kyber.Scalar, error) {
+	e := make([]kyber.Scalar, len(r))
+
+	for i, v := range r {
+		scalar := suite.Scalar()
+		err := scalar.UnmarshalBinary(v)
+		if err != nil {
+			return nil, xerrors.Errorf("cannot unmarshall election random vector: %v", err)
+		}
+		e[i] = scalar
+	}
+
+	return e, nil
 }
 
 // ShuffleInstance is an instance of a shuffle, it contains the shuffled ballots,
@@ -115,7 +138,7 @@ func (c *Configuration) IsValid() bool {
 // user ID.
 type PublicBulletinBoard struct {
 	UserIDs []string
-	Ballots []EncryptedBallot
+	Ballots EncryptedBallots
 }
 
 // CastVote updates a user's vote or add a new vote and its associated user.
