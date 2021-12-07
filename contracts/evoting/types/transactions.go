@@ -63,7 +63,7 @@ type CloseElectionTransaction struct {
 type ShuffleBallotsTransaction struct {
 	ElectionID      string
 	Round           int
-	ShuffledBallots []EncryptedBallot
+	ShuffledBallots EncryptedBallots
 	Proof           []byte
 	//Signature should be obtained using SignShuffle()
 	Signature []byte
