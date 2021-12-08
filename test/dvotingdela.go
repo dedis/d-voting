@@ -188,7 +188,7 @@ func newDVotingNode(t *testing.T, path string, port int) dela {
 	err = blocks.Load()
 	require.NoError(t, err)
 
-	srvc, err := cosipbft.NewService(param)
+	srvc, err := cosipbft.NewService(param, cosipbft.WithGenesisStore(genstore), cosipbft.WithBlockStore(blocks))
 	require.NoError(t, err)
 
 	// tx
