@@ -67,7 +67,7 @@ func (r RandomVector) UnMarshal() ([]kyber.Scalar, error) {
 	e := make([]kyber.Scalar, len(r))
 
 	for i, v := range r {
-		scalar := suite.Scalar()
+		scalar := suite.Scalar().Pick(suite.RandomStream())
 		err := scalar.UnmarshalBinary(v)
 		if err != nil {
 			return nil, xerrors.Errorf("cannot unmarshall election random vector: %v", err)
@@ -76,6 +76,20 @@ func (r RandomVector) UnMarshal() ([]kyber.Scalar, error) {
 	}
 
 	return e, nil
+}
+
+func (r *RandomVector) Marshal(e []kyber.Scalar) (RandomVector, error) {
+	marshalledVector := make([][]byte, len(e))
+
+	for i, scalar := range e {
+		v, err := scalar.MarshalBinary()
+		if err != nil {
+			return nil, xerrors.Errorf("could not marshal random vector: %v", err)
+		}
+		marshalledVector[i] = v
+	}
+
+	return marshalledVector, nil
 }
 
 // ShuffleInstance is an instance of a shuffle, it contains the shuffled ballots,
@@ -187,19 +201,28 @@ type EncryptedBallots []EncryptedBallot
 
 // GetElGPairs returns 2 dimensional arrays with the Elgamal pairs of each encrypted ballot
 func (b EncryptedBallots) GetElGPairs() ([][]kyber.Point, [][]kyber.Point, error) {
-	ks := make([][]kyber.Point, len(b))
-	cs := make([][]kyber.Point, len(b))
+	if len(b) == 0 {
+		return nil, nil, xerrors.Errorf("there are no ballots")
+	}
 
-	var err error
+	ballotSize := len(b[0])
 
-	for i, ballot := range b {
-		ks[i], cs[i], err = ballot.GetElGPairs()
+	X := make([][]kyber.Point, ballotSize)
+	Y := make([][]kyber.Point, ballotSize)
+
+	for _, ballot := range b {
+		x, y, err := ballot.GetElGPairs()
 		if err != nil {
 			return nil, nil, err
 		}
+
+		for i := 0; i < len(x); i++ {
+			X[i] = append(X[i], x[i])
+			Y[i] = append(Y[i], y[i])
+		}
 	}
 
-	return ks, cs, nil
+	return X, Y, nil
 }
 
 func (b *EncryptedBallots) InitFromElGPairs(X, Y [][]kyber.Point) error {
@@ -208,17 +231,30 @@ func (b *EncryptedBallots) InitFromElGPairs(X, Y [][]kyber.Point) error {
 			len(X), len(Y))
 	}
 
+	if len(X) == 0 {
+		return xerrors.Errorf("El Gamal pairs are empty")
+	}
+
 	NQ := len(X)
-	*b = make([]EncryptedBallot, NQ)
+	k := len(X[0])
+	*b = make([]EncryptedBallot, k)
 
-	for i := range X {
-		var eb EncryptedBallot
+	for i := 0; i < k; i++ {
+		x := make([]kyber.Point, NQ)
+		y := make([]kyber.Point, NQ)
 
-		err := eb.InitFromElGPairs(X[i], Y[i])
-		if err != nil {
-			return xerrors.Errorf("failed to init from encrypted ballot : %v", err)
+		for j := 0; j < NQ; j++ {
+			x[j] = X[j][i]
+			y[j] = Y[j][i]
 		}
-		(*b)[i] = eb
+
+		encryptedBallot := EncryptedBallot{}
+		err := encryptedBallot.InitFromElGPairs(x, y)
+		if err != nil {
+			return err
+		}
+
+		(*b)[i] = encryptedBallot
 	}
 
 	return nil
