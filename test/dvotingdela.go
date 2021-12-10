@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/x509"
+	"fmt"
 	"io"
 	"math/rand"
 	"net"
@@ -81,6 +82,14 @@ type dVotingCosiDela interface {
 	GetTree() hashtree.Tree
 	GetDkg() dkg.DKG
 	GetShuffle() shuffle.Shuffle
+
+	// jean ->
+	// adminID   string
+	// manager   *signed.TransactionManager
+	// firstNode dVotingNode
+	// actor     dkg.Actor
+	// signer    crypto.AggregateSigner
+	// <- jean
 }
 
 // dVotingNode represents a Dela node using cosi pbft aimed to execute d-voting
@@ -101,7 +110,27 @@ type dVotingNode struct {
 	shuffle       *neff.NeffShuffle
 }
 
-func newDVotingNode(t *testing.T, path string, port int) dela {
+// Creates n dela nodes using tempDir as root to file path and returns an array
+// of nodes or error
+func setupDVotingNodes(t *testing.T, numberOfNodes int, tempDir string) []dVotingCosiDela {
+	var dVotingNodes []dVotingCosiDela = make([]dVotingCosiDela, numberOfNodes)
+	var delaNodes []dela = make([]dela, numberOfNodes)
+
+	nodePort := 0
+	for i := 0; i < numberOfNodes; i++ {
+		filePath := filepath.Join(tempDir, "node", fmt.Sprint(i))
+		dVotingNodes[i] = newDVotingNode(t, filePath, nodePort)
+
+		// used to cast each element for the Setup
+		delaNodes[i] = dVotingNodes[i]
+	}
+
+	delaNodes[0].Setup(delaNodes[1:]...)
+
+	return dVotingNodes
+}
+
+func newDVotingNode(t *testing.T, path string, port int) dVotingCosiDela {
 	err := os.MkdirAll(path, 0700)
 	require.NoError(t, err)
 
@@ -202,7 +231,6 @@ func newDVotingNode(t *testing.T, path string, port int) dela {
 	contract := accessContract.NewContract(aKey[:], accessService, accessStore)
 	accessContract.RegisterContract(exec, contract)
 
-	// jean - for d-voting >
 	dkg, _ := pedersen.NewPedersen(onet, true, srvc, rosterFac)
 
 	rosterKey := [32]byte{}
@@ -210,8 +238,6 @@ func newDVotingNode(t *testing.T, path string, port int) dela {
 		accessService, dkg, rosterFac))
 
 	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, rosterFac, signer)
-
-	// < jean - for d-voting
 
 	return dVotingNode{
 		t:             t,
@@ -229,9 +255,29 @@ func newDVotingNode(t *testing.T, path string, port int) dela {
 	}
 }
 
+func createDVotingAccess(t *testing.T, nodes []dVotingCosiDela, dir string) crypto.AggregateSigner {
+	l := loader.NewFileLoader(filepath.Join(dir, "private.key"))
+
+	signerdata, err := l.LoadOrCreate(newKeyGenerator())
+	require.NoError(t, err)
+
+	signer, err := bls.NewSignerFromBytes(signerdata)
+	require.NoError(t, err)
+
+	pubKey := signer.GetPublicKey()
+	cred := accessContract.NewCreds(aKey[:])
+
+	for _, node := range nodes {
+		n := node.(dVotingNode)
+		n.GetAccessService().Grant(n.GetAccessStore(), cred, pubKey)
+	}
+
+	return signer
+}
+
 // Setup implements dela. It creates the roster, shares the certificate, and
 // create an new chain.
-func (c dVotingNode) Setup(delas ...dela) {
+func (c dVotingNode) Setup(nodes ...dela) {
 	// share the certificates
 	joinable, ok := c.onet.(minogrpc.Joinable)
 	require.True(c.t, ok)
@@ -242,8 +288,8 @@ func (c dVotingNode) Setup(delas ...dela) {
 	certHash, err := joinable.GetCertificateStore().Hash(joinable.GetCertificate())
 	require.NoError(c.t, err)
 
-	for _, dela := range delas {
-		otherJoinable, ok := dela.GetMino().(minogrpc.Joinable)
+	for _, n := range nodes {
+		otherJoinable, ok := n.GetMino().(minogrpc.Joinable)
 		require.True(c.t, ok)
 
 		err = otherJoinable.Join(addrStr, token, certHash)
@@ -259,13 +305,13 @@ func (c dVotingNode) Setup(delas ...dela) {
 	extended, ok := c.GetOrdering().(extendedService)
 	require.True(c.t, ok)
 
-	minoAddrs := make([]mino.Address, len(delas)+1)
-	pubKeys := make([]crypto.PublicKey, len(delas)+1)
+	minoAddrs := make([]mino.Address, len(nodes)+1)
+	pubKeys := make([]crypto.PublicKey, len(nodes)+1)
 
-	for i, dela := range delas {
-		minoAddr := dela.GetMino().GetAddress()
+	for i, n := range nodes {
+		minoAddr := n.GetMino().GetAddress()
 
-		d, ok := dela.(dVotingCosiDela)
+		d, ok := n.(dVotingCosiDela)
 		require.True(c.t, ok)
 
 		pubkey := d.GetPublicKey()

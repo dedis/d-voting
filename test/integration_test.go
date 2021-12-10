@@ -8,9 +8,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"io/ioutil"
+	"math/rand"
 	"os"
-	"path/filepath"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 
@@ -23,194 +24,60 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 	delaPkg "go.dedis.ch/dela"
-	accessContract "go.dedis.ch/dela/contracts/access"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/signed"
-	"go.dedis.ch/dela/crypto/bls"
-	"go.dedis.ch/dela/crypto/loader"
+	"go.dedis.ch/dela/crypto"
 	"golang.org/x/xerrors"
 )
 
 // Start 3 nodes
 // Cast 3 votes
 // Check the shuffled votes versus the casted votes
-func TestIntegration_Scenario(t *testing.T) {
-
-	dir, err := ioutil.TempDir(os.TempDir(), "d-voting-integration-test")
-	require.NoError(t, err)
-
-	defer os.RemoveAll(dir)
-
-	t.Logf("Using temp dir %s", dir)
+func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	delaPkg.Logger = zerolog.New(os.Stdout)
 
-	// create nodes
-	nodes := []dela{
-		newDVotingNode(t, filepath.Join(dir, "node1"), 2001),
-		newDVotingNode(t, filepath.Join(dir, "node2"), 2002),
-		newDVotingNode(t, filepath.Join(dir, "node3"), 2003),
-	}
-
-	nodes[0].Setup(nodes[1:]...)
-
-	l := loader.NewFileLoader(filepath.Join(dir, "private.key"))
-
-	signerdata, err := l.LoadOrCreate(newKeyGenerator())
+	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-3-votes")
 	require.NoError(t, err)
 
-	signer, err := bls.NewSignerFromBytes(signerdata)
+	defer os.RemoveAll(dirPath)
+
+	t.Logf("using temp dir %s", dirPath)
+
+	nodes := setupDVotingNodes(t, 3, dirPath)
+
+	signer := createDVotingAccess(t, nodes, dirPath)
+
+	m := newTxManager(signer, nodes[0].(dVotingNode), time.Second*3)
+
+	err = grantAccess(m, signer)
 	require.NoError(t, err)
 
-	pubKey := signer.GetPublicKey()
-	cred := accessContract.NewCreds(aKey[:])
-
-	for _, node := range nodes {
-		node.GetAccessService().Grant(node.(dVotingNode).GetAccessStore(), cred, pubKey)
-	}
-
-	manager := signed.NewManager(signer, &txClient{})
-
-	pubKeyBuf, err := signer.GetPublicKey().MarshalBinary()
+	adminID := "anAdminID"
+	electionID, err := createElection(m, "Three votes election", adminID, "majority")
 	require.NoError(t, err)
 
-	// grant access
-	args := []txn.Arg{
-		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte("go.dedis.ch/dela.Access")},
-		{Key: "access:grant_id", Value: []byte(hex.EncodeToString(evotingAccessKey[:]))},
-		{Key: "access:grant_contract", Value: []byte("go.dedis.ch/dela.Evoting")},
-		{Key: "access:grant_command", Value: []byte("all")},
-		{Key: "access:identity", Value: []byte(base64.StdEncoding.EncodeToString(pubKeyBuf))},
-		{Key: "access:command", Value: []byte("GRANT")},
-	}
-	addAndWait(t, manager, nodes[0].(dVotingNode), args...)
-
-	// SC1: create election
-	createElectionTransaction := types.CreateElectionTransaction{
-		Title:   "Some Election",
-		AdminID: "anAdminID",
-		Format:  "majority",
-	}
-	createElectionBuf, err := json.Marshal(createElectionTransaction)
-	require.NoError(t, err)
-	args = []txn.Arg{
-		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.CreateElectionArg, Value: createElectionBuf},
-		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCreateElection)},
-	}
-	txID := addAndWait(t, manager, nodes[0].(dVotingNode), args...)
 	time.Sleep(time.Millisecond * 100)
 
-	// Calculate electionID from
-	hash := sha256.New()
-	hash.Write(txID)
-	electionID := hash.Sum(nil)
-
-	// DK1: DKG init
-	var dkgActor dkg.Actor
-
-	for _, node := range nodes {
-		d := node.(dVotingNode).GetDkg()
-		dkgActor, err = d.Listen()
-		require.NoError(t, err)
-	}
-
-	// SC2: get election info, but not used for now
-
-	// DK2: DKG setup
-	_, err = dkgActor.Setup(electionID)
+	actor, err := initDkg(nodes, electionID)
 	require.NoError(t, err)
 
-	// SC3: open election
-	openElectTransaction := &types.OpenElectionTransaction{
-		ElectionID: hex.EncodeToString(electionID),
-	}
-	openElection, err := json.Marshal(openElectTransaction)
-	require.NoError(t, err)
-	args = []txn.Arg{
-		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.OpenElectionArg, Value: openElection},
-		{Key: evoting.CmdArg, Value: []byte(evoting.CmdOpenElection)},
-	}
-	addAndWait(t, manager, nodes[0].(dVotingNode), args...)
-
-	// SC4 CAST VOTES
-	var ballot types.Ciphertext
-	castedVote := []string{
-		"vote1",
-		"vote1",
-		"vote2",
-	}
-
-	// SC4: cast vote1
-	ballot, err = marshallBallot(castedVote[0], dkgActor)
+	err = openElection(m, electionID)
 	require.NoError(t, err)
 
-	castVoteTransaction := types.CastVoteTransaction{
-		ElectionID: hex.EncodeToString(electionID),
-		UserID:     "user 1",
-		Ballot:     ballot,
-	}
-	vote, err := json.Marshal(castVoteTransaction)
+	possibleVotes := []string{"vote1", "vote2"}
+	castedVotes, err := castVotesRandomly(m, actor, electionID, possibleVotes, 3)
 	require.NoError(t, err)
 
-	args = []txn.Arg{
-		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.CastVoteArg, Value: vote},
-		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCastVote)},
-	}
-	addAndWait(t, manager, nodes[0].(dVotingNode), args...)
-
-	// SC4: cast vote2
-	ballot, err = marshallBallot(castedVote[1], dkgActor)
+	err = closeElection(m, electionID, adminID)
 	require.NoError(t, err)
-
-	castVoteTransaction = types.CastVoteTransaction{
-		ElectionID: hex.EncodeToString(electionID),
-		UserID:     "user 2",
-		Ballot:     ballot,
-	}
-	vote, err = json.Marshal(castVoteTransaction)
-	require.NoError(t, err)
-
-	args[1].Value = vote
-	addAndWait(t, manager, nodes[0].(dVotingNode), args...)
-
-	// SC4: cast vote3
-	ballot, err = marshallBallot(castedVote[2], dkgActor)
-	require.NoError(t, err)
-
-	castVoteTransaction = types.CastVoteTransaction{
-		ElectionID: hex.EncodeToString(electionID),
-		UserID:     "user 3",
-		Ballot:     ballot,
-	}
-	vote, err = json.Marshal(castVoteTransaction)
-	require.NoError(t, err)
-
-	args[1].Value = vote
-	addAndWait(t, manager, nodes[0].(dVotingNode), args...)
-
-	// SC5: close election
-	closeElectTransaction := &types.CloseElectionTransaction{
-		ElectionID: hex.EncodeToString(electionID),
-		UserID:     "anAdminID",
-	}
-	closeElection, err := json.Marshal(closeElectTransaction)
-	require.NoError(t, err)
-
-	args = []txn.Arg{
-		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.CloseElectionArg, Value: closeElection},
-		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCloseElection)},
-	}
-	addAndWait(t, manager, nodes[0].(dVotingNode), args...)
 
 	time.Sleep(time.Millisecond * 1)
 
 	// NS1: Neff shuffle init
 	var sActor shuffle.Actor
 	for _, node := range nodes {
-		s := node.(dVotingNode).GetShuffle()
+		var err error
+		s := node.GetShuffle()
 		sActor, err = s.Listen(signer)
 		require.NoError(t, err)
 	}
@@ -221,7 +88,7 @@ func TestIntegration_Scenario(t *testing.T) {
 	require.NoError(t, err)
 
 	// SC7: decrypt
-	proof, err := nodes[0].GetOrdering().GetProof(electionID)
+	proof, err := nodes[0].(dVotingNode).GetOrdering().GetProof(electionID)
 	require.NoError(t, err)
 
 	electionMarshaled := proof.GetValue()
@@ -242,7 +109,7 @@ func TestIntegration_Scenario(t *testing.T) {
 	ks, cs, err := shuffleLast.ShuffledBallots.GetKsCs()
 	require.NoError(t, err)
 
-	shuffledVote := make([]string, 0, nShuffleInstances)
+	shuffledVotes := make([]string, 0, nShuffleInstances)
 
 	for i, k := range ks {
 		c := cs[i]
@@ -250,42 +117,169 @@ func TestIntegration_Scenario(t *testing.T) {
 		err = ballot.FromPoints(k, c)
 		require.NoError(t, err)
 
-		message, err := dkgActor.Decrypt(k, c, electionID)
+		message, err := actor.Decrypt(k, c, electionID)
 		require.NoError(t, err)
 
-		shuffledVote = append(shuffledVote, string(message))
+		shuffledVotes = append(shuffledVotes, string(message))
 	}
 
-	sort.Strings(shuffledVote)
-	t.Logf("Shuffled votes: %v", shuffledVote)
-	sort.Strings(castedVote)
-	t.Logf("Casted votes: %v", castedVote)
+	// TODO: create transaction to add decrypted ballots on the blockchain
 
-	for i, c := range castedVote {
-		s := shuffledVote[i]
-		require.True(t, c == s)
+	sort.Strings(shuffledVotes)
+	t.Logf("Shuffled votes: %v", shuffledVotes)
+	sort.Strings(castedVotes)
+	t.Logf("Casted votes: %v", castedVotes)
+
+	require.Equal(t, castedVotes, shuffledVotes)
+
+	t.Logf("Shuffled votes are equivalent to casted votes!")
+}
+
+func TestIntegration_ManyVotesScenario(t *testing.T) {
+	delaPkg.Logger = zerolog.New(os.Stdout)
+
+	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-many-votes")
+	require.NoError(t, err)
+
+	defer os.RemoveAll(dirPath)
+
+	t.Logf("using temp dir %s", dirPath)
+
+	nodes := setupDVotingNodes(t, 3, dirPath)
+
+	signer := createDVotingAccess(t, nodes, dirPath)
+
+	m := newTxManager(signer, nodes[0].(dVotingNode), time.Second*3)
+
+	err = grantAccess(m, signer)
+	require.NoError(t, err)
+
+	adminID := "anotherAdminID"
+	electionID, err := createElection(m, "Many votes election", adminID, "majority")
+	require.NoError(t, err)
+
+	time.Sleep(time.Millisecond * 100)
+
+	actor, err := initDkg(nodes, electionID)
+	require.NoError(t, err)
+
+	err = openElection(m, electionID)
+	require.NoError(t, err)
+
+	possibleVotes := []string{
+		"vote1",
+		"vote2",
+		"vote3",
+		"vote4",
+		"vote5",
 	}
+	castedVotes, err := castVotesRandomly(m, actor, electionID, possibleVotes, 100)
+	require.NoError(t, err)
+
+	err = closeElection(m, electionID, adminID)
+	require.NoError(t, err)
+
+	time.Sleep(time.Millisecond * 1)
+
+	// NS1: Neff shuffle init
+	var sActor shuffle.Actor
+	for _, node := range nodes {
+		var err error
+		s := node.GetShuffle()
+		sActor, err = s.Listen(signer)
+		require.NoError(t, err)
+	}
+	time.Sleep(time.Second * 1)
+
+	// SC6: shuffle
+	err = sActor.Shuffle(electionID)
+	require.NoError(t, err)
+
+	// SC7: decrypt
+	proof, err := nodes[0].(dVotingNode).GetOrdering().GetProof(electionID)
+	require.NoError(t, err)
+
+	electionMarshaled := proof.GetValue()
+	election := &types.Election{}
+
+	err = json.Unmarshal(electionMarshaled, election)
+	require.NoError(t, err)
+
+	shuffleInstances := election.ShuffleInstances
+	nShuffleInstances := len(shuffleInstances)
+	if nShuffleInstances == 0 {
+		t.Errorf("Shuffle instances cannot be zero: %v", shuffleInstances)
+	}
+
+	shuffleLast := shuffleInstances[nShuffleInstances-1]
+
+	// decrypt ballots
+	ks, cs, err := shuffleLast.ShuffledBallots.GetKsCs()
+	require.NoError(t, err)
+
+	shuffledVotes := make([]string, 0, nShuffleInstances)
+
+	for i, k := range ks {
+		c := cs[i]
+		var ballot types.Ciphertext
+		err = ballot.FromPoints(k, c)
+		require.NoError(t, err)
+
+		message, err := actor.Decrypt(k, c, electionID)
+		require.NoError(t, err)
+
+		shuffledVotes = append(shuffledVotes, string(message))
+	}
+
+	// TODO: create transaction to add decrypted ballots on the blockchain
+
+	sort.Strings(shuffledVotes)
+	t.Logf("Shuffled votes: %v", shuffledVotes)
+	sort.Strings(castedVotes)
+	t.Logf("Casted votes: %v", castedVotes)
+
+	require.Equal(t, castedVotes, shuffledVotes)
 
 	t.Logf("Shuffled votes are equivalent to casted votes!")
 }
 
 // -----------------------------------------------------------------------------
 // Utility functions
+func newTxManager(signer crypto.Signer, firstNode dVotingNode, timeout time.Duration) txManager {
+	return txManager{
+		m: signed.NewManager(signer, &txClient{}),
+		n: firstNode,
+		t: timeout,
+	}
+}
 
-func addAndWait(t *testing.T, manager txn.Manager, node dVotingNode, args ...txn.Arg) []byte {
-	manager.Sync()
+type txManager struct {
+	m txn.Manager
+	n dVotingNode
+	t time.Duration
+}
 
-	sentTxn, err := manager.Make(args...)
-	require.NoError(t, err)
+func (m txManager) addAndWait(args ...txn.Arg) ([]byte, error) {
+	err := m.m.Sync()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to Sync: %v", err)
+	}
+
+	sentTxn, err := m.m.Make(args...)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to Make: %v", err)
+	}
 	sentTxnID := sentTxn.GetID()
 
-	err = node.GetPool().Add(sentTxn)
-	require.NoError(t, err)
+	err = m.n.GetPool().Add(sentTxn)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to Add: %v", err)
+	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	ctx, cancel := context.WithTimeout(context.Background(), m.t)
 	defer cancel()
 
-	events := node.GetOrdering().Watch(ctx)
+	events := m.n.GetOrdering().Watch(ctx)
 
 	for event := range events {
 		for _, result := range event.Transactions {
@@ -293,18 +287,133 @@ func addAndWait(t *testing.T, manager txn.Manager, node dVotingNode, args ...txn
 
 			if bytes.Equal(sentTxnID, fetchedTxnID) {
 				accepted, status := event.Transactions[0].GetStatus()
-				require.Empty(t, status)
 
-				require.True(t, accepted)
-				return sentTxnID
+				if !accepted {
+					return nil, xerrors.Errorf("transaction has not been accepted: %s", status)
+				}
+
+				return sentTxnID, nil
 			}
 		}
 	}
 
-	// force failed test if transaction failed
-	t.Error("transaction not found")
+	return nil, xerrors.Errorf("transaction not included after timeout: %v", args)
+}
 
-	return sentTxnID
+func grantAccess(m txManager, signer crypto.Signer) error {
+	pubKeyBuf, err := signer.GetPublicKey().MarshalBinary()
+	if err != nil {
+		return xerrors.Errorf("failed to GetPublicKey: %v", err)
+	}
+
+	args := []txn.Arg{
+		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte("go.dedis.ch/dela.Access")},
+		{Key: "access:grant_id", Value: []byte(hex.EncodeToString(evotingAccessKey[:]))},
+		{Key: "access:grant_contract", Value: []byte("go.dedis.ch/dela.Evoting")},
+		{Key: "access:grant_command", Value: []byte("all")},
+		{Key: "access:identity", Value: []byte(base64.StdEncoding.EncodeToString(pubKeyBuf))},
+		{Key: "access:command", Value: []byte("GRANT")},
+	}
+	_, err = m.addAndWait(args...)
+	if err != nil {
+		return xerrors.Errorf("failed to grantAccess: %v", err)
+	}
+
+	return nil
+}
+
+func createElection(m txManager, title, admin, format string) ([]byte, error) {
+	electionData := types.CreateElectionTransaction{
+		Title:   title,
+		AdminID: admin,
+		Format:  format,
+	}
+
+	createElectionBuf, err := json.Marshal(electionData)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to create createElectionBuf: %v", err)
+	}
+
+	args := []txn.Arg{
+		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
+		{Key: evoting.CreateElectionArg, Value: createElectionBuf},
+		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCreateElection)},
+	}
+	txID, err := m.addAndWait(args...)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to addAndWait: %v", err)
+	}
+
+	// Calculate electionID from
+	hash := sha256.New()
+	hash.Write(txID)
+	electionID := hash.Sum(nil)
+
+	return electionID, nil
+}
+
+func openElection(m txManager, electionID []byte) error {
+	openElectTransaction := &types.OpenElectionTransaction{
+		ElectionID: hex.EncodeToString(electionID),
+	}
+	openElection, err := json.Marshal(openElectTransaction)
+	if err != nil {
+		return xerrors.Errorf("failed to Marshall: %v", err)
+	}
+
+	args := []txn.Arg{
+		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
+		{Key: evoting.OpenElectionArg, Value: openElection},
+		{Key: evoting.CmdArg, Value: []byte(evoting.CmdOpenElection)},
+	}
+	_, err = m.addAndWait(args...)
+	if err != nil {
+		return xerrors.Errorf("failed to addAndWait: %v", err)
+	}
+
+	return nil
+}
+
+func castVotesRandomly(m txManager, actor dkg.Actor, electionID []byte, possibleVotes []string,
+	numberOfVotes int) ([]string, error) {
+
+	var votes []string = make([]string, numberOfVotes)
+	possibilities := len(possibleVotes)
+
+	for i := 0; i < numberOfVotes; i++ {
+		randomIndex := rand.Intn(possibilities)
+		vote := possibleVotes[randomIndex]
+
+		ballot, err := marshallBallot(vote, actor)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to marshallBallot: %v", err)
+		}
+
+		userID := "user " + strconv.Itoa(i)
+		castVoteTransaction := types.CastVoteTransaction{
+			ElectionID: hex.EncodeToString(electionID),
+			UserID:     userID,
+			Ballot:     ballot,
+		}
+		castedVoteBuf, err := json.Marshal(castVoteTransaction)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to Marshall vote transaction: %v", err)
+		}
+
+		args := []txn.Arg{
+			{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
+			{Key: evoting.CastVoteArg, Value: castedVoteBuf},
+			{Key: evoting.CmdArg, Value: []byte(evoting.CmdCastVote)},
+		}
+		_, err = m.addAndWait(args...)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to addAndWait: %v", err)
+		}
+
+		votes = append(votes, vote)
+	}
+
+	return votes, nil
 }
 
 func marshallBallot(vote string, actor dkg.Actor) (types.Ciphertext, error) {
@@ -320,4 +429,49 @@ func marshallBallot(vote string, actor dkg.Actor) (types.Ciphertext, error) {
 	}
 
 	return ballot, nil
+}
+
+func closeElection(m txManager, electionID []byte, admin string) error {
+	closeElectTransaction := &types.CloseElectionTransaction{
+		ElectionID: hex.EncodeToString(electionID),
+		UserID:     admin,
+	}
+	closeElection, err := json.Marshal(closeElectTransaction)
+	if err != nil {
+		return xerrors.Errorf("failed to Marshall closeElection: %v", err)
+	}
+
+	args := []txn.Arg{
+		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
+		{Key: evoting.CloseElectionArg, Value: closeElection},
+		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCloseElection)},
+	}
+	_, err = m.addAndWait(args...)
+	if err != nil {
+		return xerrors.Errorf("failed to Marshall closeElection: %v", err)
+	}
+
+	return nil
+}
+
+func initDkg(nodes []dVotingCosiDela, electionID []byte) (dkg.Actor, error) {
+	var actor dkg.Actor
+	var err error
+
+	for _, node := range nodes {
+		d := node.(dVotingNode).GetDkg()
+
+		// put Listen in a goroutine to optimize for speed
+		actor, err = d.Listen()
+		if err != nil {
+			return nil, xerrors.Errorf("failed to GetDkg: %v", err)
+		}
+	}
+
+	_, err = actor.Setup(electionID)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to Setup: %v", err)
+	}
+
+	return actor, nil
 }
