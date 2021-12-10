@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -33,24 +32,23 @@ import (
 )
 
 // Start 3 nodes
-// Use the value contract
-// Check the state
+// Cast 3 votes
+// Check the shuffled votes versus the casted votes
 func TestIntegration_Scenario(t *testing.T) {
 
 	dir, err := ioutil.TempDir(os.TempDir(), "d-voting-integration-test")
-
 	require.NoError(t, err)
 
 	defer os.RemoveAll(dir)
 
-	t.Logf("using temp dir %s", dir)
+	t.Logf("Using temp dir %s", dir)
 	delaPkg.Logger = zerolog.New(os.Stdout)
 
 	// create nodes
 	nodes := []dela{
-		newDVotingNode(t, filepath.Join(dir, "test_node1"), 2001),
-		newDVotingNode(t, filepath.Join(dir, "test_node2"), 2002),
-		newDVotingNode(t, filepath.Join(dir, "test_node3"), 2003),
+		newDVotingNode(t, filepath.Join(dir, "node1"), 2001),
+		newDVotingNode(t, filepath.Join(dir, "node2"), 2002),
+		newDVotingNode(t, filepath.Join(dir, "node3"), 2003),
 	}
 
 	nodes[0].Setup(nodes[1:]...)
@@ -100,7 +98,7 @@ func TestIntegration_Scenario(t *testing.T) {
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCreateElection)},
 	}
 	txID := addAndWait(t, manager, nodes[0].(dVotingNode), args...)
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Millisecond * 100)
 
 	// Calculate electionID from
 	hash := sha256.New()
@@ -207,7 +205,7 @@ func TestIntegration_Scenario(t *testing.T) {
 	}
 	addAndWait(t, manager, nodes[0].(dVotingNode), args...)
 
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Millisecond * 1)
 
 	// NS1: Neff shuffle init
 	var sActor shuffle.Actor
@@ -259,20 +257,16 @@ func TestIntegration_Scenario(t *testing.T) {
 	}
 
 	sort.Strings(shuffledVote)
-	fmt.Println("Shuffled votes:", shuffledVote)
+	t.Logf("Shuffled votes: %v", shuffledVote)
 	sort.Strings(castedVote)
-	fmt.Println("Casted votes:", castedVote)
+	t.Logf("Casted votes: %v", castedVote)
 
 	for i, c := range castedVote {
 		s := shuffledVote[i]
 		require.True(t, c == s)
 	}
 
-	// SC8: get result
-
-	// proof, err := nodes[0].GetOrdering().GetProof(key1)
-	// require.NoError(t, err)
-	// require.Equal(t, []byte("value1"), proof.GetValue())
+	t.Logf("Shuffled votes are equivalent to casted votes!")
 }
 
 // -----------------------------------------------------------------------------
@@ -281,27 +275,28 @@ func TestIntegration_Scenario(t *testing.T) {
 func addAndWait(t *testing.T, manager txn.Manager, node dVotingNode, args ...txn.Arg) []byte {
 	manager.Sync()
 
-	tx, err := manager.Make(args...)
+	sentTxn, err := manager.Make(args...)
 	require.NoError(t, err)
-	txID := tx.GetID()
+	sentTxnID := sentTxn.GetID()
 
-	err = node.GetPool().Add(tx)
+	err = node.GetPool().Add(sentTxn)
 	require.NoError(t, err)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
 
 	events := node.GetOrdering().Watch(ctx)
 
 	for event := range events {
 		for _, result := range event.Transactions {
-			tx2 := result.GetTransaction()
-			if bytes.Equal(txID, tx2.GetID()) {
+			fetchedTxnID := result.GetTransaction().GetID()
+
+			if bytes.Equal(sentTxnID, fetchedTxnID) {
 				accepted, status := event.Transactions[0].GetStatus()
 				require.Empty(t, status)
 
 				require.True(t, accepted)
-				return txID
+				return sentTxnID
 			}
 		}
 	}
@@ -309,7 +304,7 @@ func addAndWait(t *testing.T, manager txn.Manager, node dVotingNode, args ...txn
 	// force failed test if transaction failed
 	t.Error("transaction not found")
 
-	return txID
+	return sentTxnID
 }
 
 func marshallBallot(vote string, actor dkg.Actor) (types.Ciphertext, error) {
