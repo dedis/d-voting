@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# This script creates a new tmux session and starts nodes according to the
+# instructions is README.md. The test session can be kill with kill_test.sh.
+
 set -o errexit
 
 command -v tmux >/dev/null 2>&1 || { echo >&2 "tmux is not on your PATH!"; exit 1; }

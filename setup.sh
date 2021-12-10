@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This srcript is creating a new chain and setting up the services needed to run
+# This script is creating a new chain and setting up the services needed to run
 # an evoting system. It ends by starting the http server needed by the frontend
 # to communicate with the blockchain. This operation is blocking.
 
