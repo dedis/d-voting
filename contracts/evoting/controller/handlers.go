@@ -551,9 +551,6 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		err = ballot.Unmarshal(marshalledBallot.String(), *election)
 		if err != nil {
 			wrongBallots += 1 // TODO do we ever send back through http if it's not an error?
-			http.Error(w, "failed to unmarshall a ballot: "+err.Error(),
-				http.StatusInternalServerError)
-			return
 		}
 
 		decryptedBallots = append(decryptedBallots, ballot)
