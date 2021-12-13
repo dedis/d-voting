@@ -152,7 +152,7 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 	}
 
 	// Generate random vector and proof
-	semiRandomStream, err := electionTypes.NewSemiRandomStream(shuffleHash)
+	semiRandomStream, err := evoting.NewSemiRandomStream(shuffleHash)
 	if err != nil {
 		return nil, xerrors.Errorf("could not create semi-random stream")
 	}

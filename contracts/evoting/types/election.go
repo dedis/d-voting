@@ -1,10 +1,8 @@
 package types
 
 import (
-	"encoding/binary"
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
-	"math/rand"
 )
 
 type ID string
@@ -88,43 +86,6 @@ func (r *RandomVector) LoadFromScalars(e []kyber.Scalar) error {
 	}
 
 	return nil
-}
-
-// SemiRandomStream implements cipher.Stream
-type SemiRandomStream struct {
-	// Seed is the seed on which should be based our random number generation
-	seed []byte
-
-	stream *rand.Rand
-}
-
-func NewSemiRandomStream(seed []byte) (SemiRandomStream, error) {
-	if len(seed) > 8 {
-		seed = seed[0:8]
-	}
-
-	s, n := binary.Varint(seed)
-	if n <= 0 {
-		return SemiRandomStream{}, xerrors.Errorf("the seed has a wrong size (too small)")
-	}
-
-	source := rand.NewSource(s)
-
-	stream := rand.New(source)
-
-	return SemiRandomStream{stream: stream, seed: seed}, nil
-}
-
-func (s SemiRandomStream) XORKeyStream(dst, src []byte) {
-	key := make([]byte, len(src))
-
-	_, err := s.stream.Read(key)
-	if err != nil {
-		panic("error reading into semi random stream :" + err.Error())
-	}
-
-	xof := suite.XOF(key)
-	xof.XORKeyStream(dst, src)
 }
 
 // ShuffleInstance is an instance of a shuffle, it contains the shuffled ballots,

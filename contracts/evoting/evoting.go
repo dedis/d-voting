@@ -3,6 +3,7 @@ package evoting
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"github.com/dedis/d-voting/contracts/evoting/types"
@@ -18,6 +19,7 @@ import (
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/shuffle"
 	"golang.org/x/xerrors"
+	"math/rand"
 )
 
 // evotingCommand implements the commands of the Evoting contract.
@@ -340,7 +342,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	}
 
 	// Check the random vector is correct :
-	semiRandomStream, err := types.NewSemiRandomStream(shuffleHash)
+	semiRandomStream, err := NewSemiRandomStream(shuffleHash)
 	if err != nil {
 		return xerrors.Errorf("could not create semi-random stream")
 	}
@@ -633,4 +635,41 @@ func verifyIdentity(roster authority.Authority, publicKey []byte) error {
 	}
 
 	return nil
+}
+
+// SemiRandomStream implements cipher.Stream
+type SemiRandomStream struct {
+	// Seed is the seed on which should be based our random number generation
+	seed []byte
+
+	stream *rand.Rand
+}
+
+func NewSemiRandomStream(seed []byte) (SemiRandomStream, error) {
+	if len(seed) > 8 {
+		seed = seed[0:8]
+	}
+
+	s, n := binary.Varint(seed)
+	if n <= 0 {
+		return SemiRandomStream{}, xerrors.Errorf("the seed has a wrong size (too small)")
+	}
+
+	source := rand.NewSource(s)
+
+	stream := rand.New(source)
+
+	return SemiRandomStream{stream: stream, seed: seed}, nil
+}
+
+func (s SemiRandomStream) XORKeyStream(dst, src []byte) {
+	key := make([]byte, len(src))
+
+	_, err := s.stream.Read(key)
+	if err != nil {
+		panic("error reading into semi random stream :" + err.Error())
+	}
+
+	xof := suite.XOF(key)
+	xof.XORKeyStream(dst, src)
 }
