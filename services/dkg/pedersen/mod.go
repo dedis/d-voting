@@ -32,8 +32,8 @@ import (
 var suite = suites.MustFind("Ed25519")
 
 var (
-	// protocolNameSetup denotes the value of the protocol span tag associated
-	// with the `dkg-setup` protocol.
+	// protocolNameSetup denotes the value of the protocol span tag
+	// associated with the `dkg-setup` protocol.
 	protocolNameSetup = "dkg-setup"
 	// protocolNameDecrypt denotes the value of the protocol span tag
 	// associated with the `dkg-decrypt` protocol.
@@ -43,25 +43,25 @@ var (
 const (
 	setupTimeout   = time.Second * 300
 	decryptTimeout = time.Second * 100
+	RPC_NAME       = "dkgevoting"
 )
 
 // Pedersen allows one to initialize a new DKG protocol.
 //
 // - implements dkg.DKG
 type Pedersen struct {
+	sync.RWMutex
+
 	mino    mino.Mino
 	factory serde.Factory
-	actors  map[string]dkg.Actor
-
-	// set be the SetMissingStuff()
 	service   ordering.Service
 	rosterFac authority.Factory
+	actors  map[string]dkg.Actor
 }
 
 // NewPedersen returns a new DKG Pedersen factory
 func NewPedersen(m mino.Mino, service ordering.Service,
 	rosterFac authority.Factory) *Pedersen {
-	// TODO Check that there isn't one running already?
 
 	factory := types.NewMessageFactory(m.GetAddressFactory())
 	actors := make(map[string]dkg.Actor)
@@ -104,7 +104,7 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.
 	// link the actor to an RPC by the election ID
 	h := NewHandler(s.mino.GetAddress(), s.service, handlerData)
 	no := s.mino.WithSegment(electionID)
-	rpc := mino.MustCreateRPC(no, "dkgevoting", h, s.factory)
+	rpc := mino.MustCreateRPC(no, RPC_NAME, h, s.factory)
 
 	a := &Actor{
 		rpc:        rpc,
@@ -263,7 +263,7 @@ func (a *Actor) Setup() (kyber.Point, error) {
 // GetPublicKey implements dkg.Actor
 func (a *Actor) GetPublicKey() (kyber.Point, error) {
 	if !a.handler.startRes.Done() {
-		return nil, xerrors.Errorf("DKG has not been initialized")
+		return nil, xerrors.Errorf("dkg has not been initialized")
 	}
 
 	return a.handler.startRes.GetDistKey(), nil
@@ -275,8 +275,7 @@ func (a *Actor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte,
 	err error) {
 
 	if !a.handler.startRes.Done() {
-		return nil, nil, nil, xerrors.Errorf("you must first initialize DKG. " +
-			"Did you call setup() first?")
+		return nil, nil, nil, xerrors.Errorf("setup() was not called")
 	}
 
 	// Embed the message (or as much of it as will fit) into a curve point.
@@ -302,8 +301,7 @@ func (a *Actor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte,
 func (a *Actor) Decrypt(K, C kyber.Point) ([]byte, error) {
 
 	if !a.handler.startRes.Done() {
-		return nil, xerrors.Errorf("you must first initialize DKG. " +
-			"Did you call setup() first?")
+		return nil, xerrors.Errorf("setup() was not called")
 	}
 
 	players := mino.NewAddresses(a.handler.startRes.GetParticipants()...)

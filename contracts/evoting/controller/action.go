@@ -38,7 +38,7 @@ import (
 
 const token = "token"
 const inclusionTimeout = 2 * time.Second
-const DKGMAP = "dkgmap"
+const BucketName = "dkgmap"
 
 var suite = suites.MustFind("Ed25519")
 

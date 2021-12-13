@@ -154,9 +154,8 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) e
 
 	if election.Status != types.Initial {
 		return xerrors.Errorf("the election was opened before, current status: %d", election.Status)
-	} else {
-		election.Status = types.Open
 	}
+	election.Status = types.Open
 
 	if election.Pubkey != nil {
 		return xerrors.Errorf("pubkey is already set: %s", election.Pubkey)
@@ -300,7 +299,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	shufflerPublicKey := shuffleBallotsTransaction.PublicKey
 
 	// Check the shuffler is a valid member of the roster:
-	roster, err := e.rosterFac.AuthorityOf(e.Contract.context, election.RosterBuf)
+	roster, err := e.rosterFac.AuthorityOf(e.context, election.RosterBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to deserialize roster: %v", err)
 	}

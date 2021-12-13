@@ -79,7 +79,7 @@ func (a *initAction) Execute(ctx node.Context) error {
 	}
 
 	err = dkgMap.Update(func(tx kv.WritableTx) error {
-		bucket, err := tx.GetBucketOrCreate([]byte(DKGMAP))
+		bucket, err := tx.GetBucketOrCreate([]byte(BucketName))
 		if err != nil {
 			return err
 		}

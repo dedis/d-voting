@@ -104,12 +104,10 @@ type Handler struct {
 // NewHandler creates a new handler
 func NewHandler(me mino.Address, service ordering.Service, handlerData HandlerData) *Handler {
 
-	// TODO: Deal with absence of data
-	// if there is no privKey or pubKey, reset everything?
-	privKey := handlerData.privKey
-	pubKey := handlerData.pubKey
-	startRes := handlerData.startRes
-	privShare := handlerData.privShare
+	privKey := handlerData.PrivKey
+	pubKey := handlerData.PubKey
+	startRes := handlerData.StartRes
+	privShare := handlerData.PrivShare
 
 	return &Handler{
 		me:      me,
@@ -409,7 +407,6 @@ func (h *Handler) certify(resps []*pedersen.Response, out mino.Sender,
 	h.startRes.SetDistKey(distrKey.Public())
 
 	h.Lock()
-	// TODO This will have to be saved
 	h.privShare = distrKey.PriShare()
 	h.Unlock()
 

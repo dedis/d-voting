@@ -6,25 +6,22 @@ import (
 	"testing"
 
 	"github.com/dedis/d-voting/internal/testing/fake"
-	// "github.com/dedis/d-voting/services/dkg"
-	// "github.com/dedis/d-voting/services/dkg/pedersen/types"
+	"github.com/dedis/d-voting/services/dkg"
+	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"github.com/stretchr/testify/require"
-	// "go.dedis.ch/dela/crypto"
-	// "go.dedis.ch/dela/crypto/ed25519"
 	"go.dedis.ch/dela/core/store/kv"
-	// "go.dedis.ch/dela/mino"
-	// "go.dedis.ch/dela/mino/minogrpc"
-	// "go.dedis.ch/dela/mino/router/tree"
-	// "go.dedis.ch/kyber/v3"
+	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/mino/minogrpc"
+	"go.dedis.ch/dela/mino/router/tree"
 )
 
-// // After initializing a Pedersen when dkgMap is empty, the actors map should be empty
-// func TestPedersen_InitEmptyMap(t *testing.T) {
+// If you get the persistent data from an actor and then recreate an actor
+// from that data, the persistent data should be the same in both actors.
 
 // }
 
-// // After initializing a Pedersen when dkgMap is not empty, the actors map should contain the same information
-// // as dkgMap
+// After initializing a Pedersen when dkgMap is not empty, the actors map should
+// contain the same information as dkgMap
 func TestPedersen_InitNonEmptyMap(t *testing.T) {
 	// Create a new DKG map and fill it with data
 	dkgMap := fake.NewInMemoryDB()
@@ -44,6 +41,9 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 		for electionID, handlerData := range electionActorMap {
 
 			electionIDBuf, err := hex.DecodeString(electionID)
+			if err != nil {
+				return err
+			}
 
 			handlerDataBuf, err := json.Marshal(handlerData)
 			if err != nil {
@@ -235,21 +235,6 @@ func TestPedersen_GetPublicKey(t *testing.T) {
 
 	actor, err := p.Listen(electionIDBuf)
 	require.NoError(t, err)
-	/* actor := Actor{
-		handler: NewHandler(
-			fake.Mino{}.GetAddress(),
-			fake.Service{},
-			NewHandlerData(),
-		),
-		service: fake.Service{ElectionID: electionID},
-		rosterFac: fake.Factory{},
-		rpc: fake.NewRPC(),
-	}
-
-	actor.handler.startRes = &state{
-		participants: []mino.Address{fake.NewAddress(0)},
-		distrKey:     nil,
-	} */
 
 	_, err = actor.GetPublicKey()
 	require.EqualError(t, err, "DKG has not been initialized")
