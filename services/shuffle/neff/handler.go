@@ -157,9 +157,8 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 		return nil, xerrors.Errorf("could not create semi-random stream")
 	}
 
-	lenRandomVector := len(election.PublicBulletinBoard.Ballots)
-	e := make([]kyber.Scalar, lenRandomVector)
-	for i := 0; i < lenRandomVector; i++ {
+	e := make([]kyber.Scalar, election.ChunksPerBallot())
+	for i := 0; i < election.ChunksPerBallot(); i++ {
 		v := suite.Scalar().Pick(semiRandomStream)
 		e[i] = v
 	}

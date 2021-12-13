@@ -107,6 +107,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 		ShuffleInstances:    []electionTypes.ShuffleInstance{},
 		DecryptedBallots:    nil,
 		ShuffleThreshold:    1,
+		BallotSize:          1,
 	}
 
 	service = updateService(election, dummyId)
@@ -133,7 +134,9 @@ func TestHandler_StartShuffle(t *testing.T) {
 
 	handler.service = &service
 	err = handler.handleStartShuffle(dummyId)
-	require.EqualError(t, err, "failed to make tx: failed to get shuffled ballots: failed to get ks, cs: failed to get points: failed to unmarshal K: invalid Ed25519 curve point")
+	require.EqualError(t, err,
+		"failed to make tx: failed to get shuffled ballots: failed to get X, Y:"+
+			" failed to get points: failed to unmarshal K: invalid Ed25519 curve point")
 
 	// Wrong formatted Ks
 	for i := 0; i < k; i++ {
@@ -150,7 +153,8 @@ func TestHandler_StartShuffle(t *testing.T) {
 	handler.service = &service
 
 	err = handler.handleStartShuffle(dummyId)
-	require.EqualError(t, err, "failed to make tx: failed to get shuffled ballots: failed to get ks, cs: failed to get points: failed to unmarshal C: invalid Ed25519 curve point")
+	require.EqualError(t, err, "failed to make tx: failed to get shuffled ballots:"+
+		" failed to get X, Y: failed to get points: failed to unmarshal C: invalid Ed25519 curve point")
 
 	// Valid Ballots, bad election.PubKey
 	for i := 0; i < k; i++ {
@@ -312,6 +316,7 @@ func initFakeElection(electionId string) electionTypes.Election {
 		ShuffleInstances:    []electionTypes.ShuffleInstance{},
 		DecryptedBallots:    nil,
 		ShuffleThreshold:    1,
+		BallotSize:          1,
 	}
 
 	for i := 0; i < k; i++ {

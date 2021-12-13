@@ -55,6 +55,16 @@ type Election struct {
 	RosterBuf []byte
 }
 
+// ChunksPerBallot returns the number of chunks of El Gamal pairs needed to
+// represent an encrypted ballot, knowing that one chunk is 29 bytes at most.
+func (e *Election) ChunksPerBallot() int {
+	if e.BallotSize%29 == 0 {
+		return e.BallotSize / 29
+	} else {
+		return e.BallotSize/29 + 1
+	}
+}
+
 // RandomVector is a slice of kyber.Scalar (encoded) which is used to prove
 // and verify the proof of a shuffle
 type RandomVector [][]byte

@@ -347,11 +347,15 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("could not create semi-random stream")
 	}
 
-	lenRandomVector := len(election.PublicBulletinBoard.Ballots)
-	for i := 0; i < lenRandomVector; i++ {
+	if election.ChunksPerBallot() != len(randomVector) {
+		return xerrors.Errorf("randomVector has unexpected length : %v != %v",
+			len(randomVector), election.ChunksPerBallot())
+	}
+
+	for i := 0; i < election.ChunksPerBallot(); i++ {
 		v := suite.Scalar().Pick(semiRandomStream)
 		if !randomVector[i].Equal(v) {
-			return xerrors.Errorf("random vector from shuffle transaction is" +
+			return xerrors.Errorf("random vector from shuffle transaction is " +
 				"different than expected random vector")
 		}
 	}
