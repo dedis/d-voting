@@ -3,12 +3,14 @@ package controller
 import (
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
 	"github.com/dedis/d-voting/services/dkg"
+	"github.com/dedis/d-voting/services/dkg/pedersen"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
@@ -70,7 +72,7 @@ func (a *initAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("DKG has been initialized successfully")
 
 	// Place it in the map to keep it in sync
-	var dkgMap kv.DB
+	var dkgMap pedersen.Store
 	err = ctx.Injector.Resolve(&dkgMap)
 	if err != nil {
 		return xerrors.Errorf("failed to resolve dkgMap: %v", err)
@@ -92,8 +94,6 @@ func (a *initAction) Execute(ctx node.Context) error {
 	if err != nil {
 		return xerrors.Errorf("database write failed: %v", err)
 	}
-
-	ctx.Injector.Inject(dkgMap)
 
 	dela.Logger.Info().Msgf("DKG was successfully linked to election %v", electionIDBuf)
 
@@ -141,15 +141,15 @@ func (a *setupAction) Execute(ctx node.Context) error {
 		Hex("DKG public key", pubkeyBuf).
 		Msg("DKG public key")
 
-	// Save actor data to disk
-	var dkgMap kv.DB
+	// Save actor data to disk after Setup
+	var dkgMap pedersen.Store
 	err = ctx.Injector.Resolve(&dkgMap)
 	if err != nil {
 		return xerrors.Errorf("failed to resolve dkgMap: %v", err)
 	}
 
 	err = dkgMap.Update(func(tx kv.WritableTx) error {
-		bucket, err := tx.GetBucketOrCreate([]byte(DKGMAP))
+		bucket, err := tx.GetBucketOrCreate([]byte(BucketName))
 		if err != nil {
 			return err
 		}
@@ -164,8 +164,6 @@ func (a *setupAction) Execute(ctx node.Context) error {
 	if err != nil {
 		return xerrors.Errorf("database write failed: %v", err)
 	}
-
-	ctx.Injector.Inject(dkgMap)
 
 	return nil
 }
@@ -248,7 +246,39 @@ func (a *exportInfoAction) Execute(ctx node.Context) error {
 
 	desc := base64.StdEncoding.EncodeToString(addr)
 
+	// Print address
 	fmt.Fprint(ctx.Out, desc)
+
+	var dkgMap pedersen.Store
+	err = ctx.Injector.Resolve(&dkgMap)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve dkg: %v", err)
+	}
+
+	err = dkgMap.View(func(tx kv.ReadableTx) error {
+		bucket := tx.GetBucket([]byte(BucketName))
+		if bucket == nil {
+			return nil
+		}
+
+		return bucket.ForEach(func(electionIDBuf, handlerDataBuf []byte) error {
+
+			handlerData := pedersen.HandlerData{}
+			err = json.Unmarshal(handlerDataBuf, &handlerData)
+			if err != nil {
+				return err
+			}
+
+			// Print electionID and actor data
+			fmt.Fprint(ctx.Out, hex.EncodeToString(electionIDBuf))
+			fmt.Fprint(ctx.Out, handlerData)
+
+			return nil
+		})
+	})
+	if err != nil {
+		return xerrors.Errorf("database read failed: %v", err)
+	}
 
 	return nil
 }

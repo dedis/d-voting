@@ -184,11 +184,6 @@ func (m miniController) OnStart(flags cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("service: %v", err)
 	}
 
-	dkgMap, err := kv.New(filepath.Join(flags.String("config"), "dkgmap.db"))
-	if err != nil {
-		return xerrors.Errorf("dkgMap: %v", err)
-	}
-
 	inj.Inject(srvc)
 	inj.Inject(cosi)
 	inj.Inject(pool)
@@ -197,7 +192,6 @@ func (m miniController) OnStart(flags cli.Flags, inj node.Injector) error {
 	inj.Inject(access)
 	inj.Inject(blocks)
 	inj.Inject(rosterFac)
-	inj.Inject(dkgMap)
 
 	return nil
 }

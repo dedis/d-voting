@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"path/filepath"
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/services/dkg/pedersen"
@@ -17,8 +18,11 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// DKGMAP is the name of the bucket in the database.
-const DKGMAP = "dkgmap"
+const (
+	dkgMapFile = "dkgmap.db"
+	// BucketName is the name of the bucket in the database.
+	BucketName = "dkgmap"
+)
 
 // evotingAccessKey is the access key used for the evoting contract.
 var evotingAccessKey = [32]byte{3}
@@ -110,17 +114,19 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to resolve *cosipbft.Service")
 	}
 
-	var dkgMap kv.DB
-	err = inj.Resolve(&dkgMap)
+	dkgMapDB, err := kv.New(filepath.Join(ctx.String("config"), dkgMapFile))
 	if err != nil {
-		return xerrors.Errorf("failed to resolve kv.DB")
+		return xerrors.Errorf("dkgMap: %v", err)
+	}
+	dkgMap := pedersen.SimpleStore{
+		DB: dkgMapDB,
 	}
 
 	dkg := pedersen.NewPedersen(no, srvc, rosterFac)
 
 	// Use dkgMap to fill the actors map
 	err = dkgMap.View(func(tx kv.ReadableTx) error {
-		bucket := tx.GetBucket([]byte(DKGMAP))
+		bucket := tx.GetBucket([]byte(BucketName))
 		if bucket == nil {
 			return nil
 		}
@@ -145,6 +151,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("database read failed: %v", err)
 	}
 
+	inj.Inject(dkgMap)
 	inj.Inject(dkg)
 
 	rosterKey := [32]byte{}

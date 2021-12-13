@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"sync"
 	"time"
 
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/core/store/kv"
 
 	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 
@@ -92,27 +94,6 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.
 
 	// hex-encoded string
 	electionID := hex.EncodeToString(electionIDBuf)
-
-	// sanity check that electionID is well-formed hex string
-	electionIDBuf, err := hex.DecodeString(electionID)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to decode electionID: %v", err)
-	}
-
-	// check that electionID corresponds to a real election
-	proof, err := s.service.GetProof(electionIDBuf)
-	if err != nil {
-		return nil, xerrors.Errorf(
-			"failed to read on the blockchain: %v",
-			err,
-		)
-	}
-	if string(proof.GetValue()) == "" {
-		return nil, xerrors.Errorf(
-			"election %s does not exist",
-			electionID,
-		)
-	}
 
 	// link the actor to an RPC by the election ID
 	h := NewHandler(s.mino.GetAddress(), s.service, handlerData)
@@ -400,4 +381,30 @@ func (a *Actor) Reshare() error {
 // that is meant to be persistent.
 func (a *Actor) MarshalJSON() ([]byte, error) {
 	return a.handler.MarshalJSON()
+}
+
+// Store tags a store for Pedersen
+type Store interface {
+	kv.DB
+}
+
+// SimpleStore wraps a store for Pedersen
+//
+// - implements pedersen.Store
+type SimpleStore struct {
+	kv.DB
+}
+
+func electionExists(service ordering.Service, electionIDBuf []byte) (ordering.Proof, bool) {
+	proof, err := service.GetProof(electionIDBuf)
+	if err != nil {
+		return proof, false
+	}
+
+	// this is proof of absence
+	if string(proof.GetValue()) == "" {
+		return proof, false
+	}
+
+	return proof, true
 }
