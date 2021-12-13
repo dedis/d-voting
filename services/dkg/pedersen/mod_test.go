@@ -17,8 +17,28 @@ import (
 
 // If you get the persistent data from an actor and then recreate an actor
 // from that data, the persistent data should be the same in both actors.
+func TestActor_MarshalJSON(t *testing.T) {
+	p := NewPedersen(fake.Mino{}, fake.Service{}, fake.Factory{})
 
-// }
+	// Create new actor
+	actor1, err := p.NewActor([]byte("deadbeef"), HandlerDataTest())
+	require.NoError(t, err)
+
+	// Serialize its persistent data
+	actor1Buf, err := actor1.MarshalJSON()
+	require.NoError(t, err)
+
+	// Create a new actor with that data
+        handlerData := HandlerData{}
+        err = handlerData.UnmarshalJSON(actor1Buf)
+        require.NoError(t, err)
+
+	actor2, err := p.NewActor([]byte("beefdead"), handlerData)
+	require.NoError(t, err)
+
+	// Check that the persistent data is the same for both actors
+        requireActorsEqual(t, actor1, actor2)
+}
 
 // After initializing a Pedersen when dkgMap is not empty, the actors map should
 // contain the same information as dkgMap
@@ -112,6 +132,97 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 	}
 }
 
+// When a new actor is created, its information is safely stored in the dkgMap.
+func TestPedersen_SyncDB(t *testing.T) {
+	electionID1 := "deadbeef51"
+	electionID2 := "deadbeef52"
+
+	// Start some elections
+	fake.NewElection(electionID1)
+	fake.NewElection(electionID2)
+
+	// Initialize a Pedersen
+	p := NewPedersen(fake.Mino{}, fake.Service{}, fake.Factory{})
+
+	// Create actors
+	a1, err := p.NewActor([]byte(electionID1), NewHandlerData())
+	require.NoError(t, err)
+	_, err = p.NewActor([]byte(electionID2), NewHandlerData())
+	require.NoError(t, err)
+
+	// Only Setup the first actor
+	a1.Setup()
+
+	// Create a new DKG map and fill it with data
+	dkgMap := fake.NewInMemoryDB()
+
+	// Store them in the map
+	err = dkgMap.Update(func(tx kv.WritableTx) error {
+		bucket, err := tx.GetBucketOrCreate([]byte("dkgmap"))
+		if err != nil {
+			return err
+		}
+
+		for electionID, actor := range p.actors {
+
+			electionIDBuf, err := hex.DecodeString(electionID)
+			if err != nil {
+				return err
+			}
+
+			handlerDataBuf, err := actor.MarshalJSON()
+			if err != nil {
+				return err
+			}
+
+			err = bucket.Set(electionIDBuf, handlerDataBuf)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+	require.NoError(t, err)
+
+	// Recover them from the map
+	q := NewPedersen(fake.Mino{}, fake.Service{}, fake.Factory{})
+
+	err = dkgMap.View(func(tx kv.ReadableTx) error {
+		bucket := tx.GetBucket([]byte("dkgmap"))
+		require.NotNil(t, bucket)
+
+		return bucket.ForEach(func(electionIDBuf, handlerDataBuf []byte) error {
+
+			handlerData := HandlerData{}
+			err = json.Unmarshal(handlerDataBuf, &handlerData)
+			require.NoError(t, err)
+
+			_, err = q.NewActor(electionIDBuf, handlerData)
+			require.NoError(t, err)
+
+			return nil
+		})
+	})
+	require.NoError(t, err)
+
+	// Check the information is conserved
+
+	require.Equal(t, len(q.actors), len(p.actors))
+
+	// Check equality of actor data
+	for electionID, actor_q := range q.actors {
+
+		electionIDBuf, err := hex.DecodeString(electionID)
+		require.NoError(t, err)
+
+		actor_p, exists := p.GetActor(electionIDBuf)
+		require.True(t, exists)
+
+		requireActorsEqual(t, actor_p, actor_q)
+	}
+}
+
 func TestPedersen_Listen(t *testing.T) {
 	p := NewPedersen(fake.Mino{}, fake.Service{}, fake.Factory{})
 
@@ -142,88 +253,47 @@ func TestPedersen_TwoListens(t *testing.T) {
 	require.Equal(t, actor1, actor2)
 }
 
-// If you get the persistent data from an actor and then recreate an actor from that data,
-// the persistent data should be the same in both actors.
-func TestActor_MarshalJSON(t *testing.T) {
-	p := NewPedersen(fake.Mino{}, fake.Service{}, fake.Factory{})
+func TestPedersen_Setup(t *testing.T) {
+	actor := Actor{
+		rpc: fake.NewBadRPC(),
+		handler: &Handler{
+			startRes: &state{},
+		},
+	}
 
-	// Create new actor
-	electionID := "deadbeef"
-	electionIDBuf, err := hex.DecodeString(electionID)
-	require.NoError(t, err)
+	_, err := actor.Setup()
+	require.EqualError(t, err, fake.Err("failed to stream"))
 
-	actor, err := p.Listen(electionIDBuf)
-	require.NoError(t, err)
+	rpc := fake.NewStreamRPC(fake.NewReceiver(), fake.NewBadSender())
+	actor.rpc = rpc
 
-	// Serialize its persistent data
-	actorBuf, err := actor.MarshalJSON()
-	require.NoError(t, err)
+	_, err = actor.Setup()
+	require.EqualError(t, err, "expected ed25519.PublicKey, got 'fake.PublicKey'")
 
-	// Create a new actor with that data
-	electionID = "beefdead"
-	electionIDBuf, err = hex.DecodeString(electionID)
-	require.NoError(t, err)
+	rpc = fake.NewStreamRPC(fake.NewBadReceiver(), fake.Sender{})
+	actor.rpc = rpc
 
-	actorData := HandlerData{}
-	err = json.Unmarshal(actorBuf, &actorData)
-	require.NoError(t, err)
+	_, err = actor.Setup()
+	require.EqualError(t, err, fake.Err("got an error from '%!s(<nil>)' while receiving"))
 
-	newActor, err := p.NewActor(electionIDBuf, actorData)
-	require.NoError(t, err)
+	recv := fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), nil))
 
-	// Check that the persistent data is the same for
-	// both actors
-	newActorBuf, err := newActor.MarshalJSON()
-	require.NoError(t, err)
+	rpc = fake.NewStreamRPC(recv, fake.Sender{})
+	actor.rpc = rpc
 
-	print(newActorBuf)
+	_, err = actor.Setup()
+	require.EqualError(t, err, "expected to receive a Done message, but go the following: <nil>")
 
-	require.Equal(t, actorBuf, newActorBuf)
+	rpc = fake.NewStreamRPC(fake.NewReceiver(
+		fake.NewRecvMsg(fake.NewAddress(0), types.NewStartDone(suite.Point())),
+		fake.NewRecvMsg(fake.NewAddress(0), types.NewStartDone(suite.Point().Pick(suite.RandomStream()))),
+	), fake.Sender{})
+	actor.rpc = rpc
+
+	_, err = actor.Setup()
+	require.Error(t, err)
+	require.Regexp(t, "^the public keys does not match:", err)
 }
-
-// func TestPedersen_Setup(t *testing.T) {
-//         actor := Actor{
-//                 rpc:      fake.NewBadRPC(),
-//                 startRes: &state{},
-//         }
-
-//         fakeAuthority := fake.NewAuthority(1, fake.NewSigner)
-
-//         _, err := actor.Setup(fakeAuthority, 0)
-//         require.EqualError(t, err, fake.Err("failed to stream"))
-
-//         rpc := fake.NewStreamRPC(fake.NewReceiver(), fake.NewBadSender())
-//         actor.rpc = rpc
-
-//         _, err = actor.Setup(fakeAuthority, 0)
-//         require.EqualError(t, err, "expected ed25519.PublicKey, got 'fake.PublicKey'")
-
-//         rpc = fake.NewStreamRPC(fake.NewBadReceiver(), fake.Sender{})
-//         actor.rpc = rpc
-
-//         fakeAuthority = fake.NewAuthority(2, ed25519.NewSigner)
-
-//         _, err = actor.Setup(fakeAuthority, 1)
-//         require.EqualError(t, err, fake.Err("got an error from '%!s(<nil>)' while receiving"))
-
-//         recv := fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), nil))
-
-//         rpc = fake.NewStreamRPC(recv, fake.Sender{})
-//         actor.rpc = rpc
-
-//         _, err = actor.Setup(fakeAuthority, 1)
-//         require.EqualError(t, err, "expected to receive a Done message, but go the following: <nil>")
-
-//         rpc = fake.NewStreamRPC(fake.NewReceiver(
-//                 fake.NewRecvMsg(fake.NewAddress(0), types.NewStartDone(suite.Point())),
-//                 fake.NewRecvMsg(fake.NewAddress(0), types.NewStartDone(suite.Point().Pick(suite.RandomStream()))),
-//         ), fake.Sender{})
-//         actor.rpc = rpc
-
-//         _, err = actor.Setup(fakeAuthority, 1)
-//         require.Error(t, err)
-//         require.Regexp(t, "^the public keys does not match:", err)
-// }
 
 func TestPedersen_GetPublicKey(t *testing.T) {
 
@@ -245,201 +315,81 @@ func TestPedersen_GetPublicKey(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// func TestPedersen_Decrypt(t *testing.T) {
-//         actor := Actor{
-//                 rpc:      fake.NewBadRPC(),
-//                 startRes: &state{participants: []mino.Address{fake.NewAddress(0)}, distrKey: suite.Point()},
-//         }
+func TestPedersen_Reshare(t *testing.T) {
+	actor := Actor{}
+	actor.Reshare()
+}
 
-//         _, err := actor.Decrypt(suite.Point(), suite.Point(), "electionId")
-//         require.EqualError(t, err, fake.Err("failed to create stream"))
+func TestPedersen_Scenario(t *testing.T) {
+	n := 5
 
-//         rpc := fake.NewStreamRPC(fake.NewBadReceiver(), fake.NewBadSender())
-//         actor.rpc = rpc
+	minos := make([]mino.Mino, n)
+	dkgs := make([]dkg.DKG, n)
+	addrs := make([]mino.Address, n)
 
-//         _, err = actor.Decrypt(suite.Point(), suite.Point(), "electionId")
-//         require.EqualError(t, err, fake.Err("failed to send decrypt request"))
+	for i := 0; i < n; i++ {
+		addr := minogrpc.ParseAddress("127.0.0.1", 0)
 
-//         recv := fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), nil))
+		minogrpc, err := minogrpc.NewMinogrpc(addr, tree.NewRouter(minogrpc.NewAddressFactory()))
+		require.NoError(t, err)
 
-//         rpc = fake.NewStreamRPC(recv, fake.Sender{})
-//         actor.rpc = rpc
+		defer minogrpc.GracefulStop()
 
-//         _, err = actor.Decrypt(suite.Point(), suite.Point(), "electionId")
-//         require.EqualError(t, err, "got unexpected reply, expected types.DecryptReply but got: <nil>")
+		minos[i] = minogrpc
+		addrs[i] = minogrpc.GetAddress()
+	}
 
-//         recv = fake.NewReceiver(
-//                 fake.NewRecvMsg(fake.NewAddress(0), types.DecryptReply{I: -1, V: suite.Point()}),
-//         )
+	for i, mino := range minos {
+		for _, m := range minos {
+			mino.(*minogrpc.Minogrpc).GetCertificateStore().Store(m.GetAddress(), m.(*minogrpc.Minogrpc).GetCertificate())
+		}
 
-//         rpc = fake.NewStreamRPC(recv, fake.Sender{})
-//         actor.rpc = rpc
+		dkg := NewPedersen(mino.(*minogrpc.Minogrpc), fake.Service{}, fake.Factory{})
 
-//         _, err = actor.Decrypt(suite.Point(), suite.Point(), "electionId")
-//         require.EqualError(t, err, "failed to recover commit: share: not enough "+
-//                 "good public shares to reconstruct secret commitment")
+		dkgs[i] = dkg
+	}
 
-//         recv = fake.NewReceiver(
-//                 fake.NewRecvMsg(fake.NewAddress(0), types.DecryptReply{I: 1, V: suite.Point()}),
-//         )
+	electionIDBuf, err := hex.DecodeString("deadbeef")
+	require.NoError(t, err)
 
-//         rpc = fake.NewStreamRPC(recv, fake.Sender{})
-//         actor.rpc = rpc
+	message := []byte("Hello world")
+	actors := make([]dkg.Actor, n)
+	for i := 0; i < n; i++ {
+		actor, err := dkgs[i].Listen(electionIDBuf)
+		require.NoError(t, err)
 
-//         _, err = actor.Decrypt(suite.Point(), suite.Point(), "electionId")
-//         require.NoError(t, err)
-// }
+		actors[i] = actor
+	}
 
-// func TestPedersen_Reshare(t *testing.T) {
-//         actor := Actor{}
-//         actor.Reshare()
-// }
+	// trying to call a decrypt/encrypt before a setup
+	_, _, _, err = actors[0].Encrypt(message)
+	require.EqualError(t, err, "you must first initialize DKG. Did you call setup() first?")
+	_, err = actors[0].Decrypt(nil, nil)
+	require.EqualError(t, err, "you must first initialize DKG. Did you call setup() first?")
 
-// func TestPedersen_Scenario(t *testing.T) {
-//         // Use with MINO_TRAFFIC=log
-//         // traffic.LogItems = false
-//         // traffic.LogEvent = false
-//         // defer func() {
-//         // 	traffic.SaveItems("graph.dot", true, false)
-//         // 	traffic.SaveEvents("events.dot")
-//         // }()
+	_, err = actors[0].Setup()
+	require.NoError(t, err)
 
-//         n := 5
+	_, err = actors[0].Setup()
+	require.EqualError(t, err, "startRes is already done, only one setup call is allowed")
 
-//         minos := make([]mino.Mino, n)
-//         dkgs := make([]dkg.DKG, n)
-//         addrs := make([]mino.Address, n)
+	// every node should be able to encrypt/decrypt
+	for i := 0; i < n; i++ {
+		K, C, remainder, err := actors[i].Encrypt(message)
+		require.NoError(t, err)
+		require.Len(t, remainder, 0)
+		decrypted, err := actors[i].Decrypt(K, C)
+		require.NoError(t, err)
+		require.Equal(t, message, decrypted)
+	}
+}
 
-//         for i := 0; i < n; i++ {
-//                 addr := minogrpc.ParseAddress("127.0.0.1", 0)
+// actorsEqual checks that two actors hold the same data
+func requireActorsEqual(t require.TestingT, actor1, actor2 dkg.Actor) {
+	actor1Data, err := actor1.MarshalJSON()
+	require.NoError(t, err)
+	actor2Data, err := actor2.MarshalJSON()
+	require.NoError(t, err)
 
-//                 minogrpc, err := minogrpc.NewMinogrpc(addr, tree.NewRouter(minogrpc.NewAddressFactory()))
-//                 require.NoError(t, err)
-
-//                 defer minogrpc.GracefulStop()
-
-//                 minos[i] = minogrpc
-//                 addrs[i] = minogrpc.GetAddress()
-//         }
-
-//         pubkeys := make([]kyber.Point, len(minos))
-
-//         for i, mino := range minos {
-//                 for _, m := range minos {
-//                         mino.(*minogrpc.Minogrpc).GetCertificateStore().Store(m.GetAddress(), m.(*minogrpc.Minogrpc).GetCertificate())
-//                 }
-
-//                 dkg, pubkey := NewPedersen(mino.(*minogrpc.Minogrpc), false)
-
-//                 dkgs[i] = dkg
-//                 pubkeys[i] = pubkey
-//         }
-
-//         fakeAuthority := NewAuthority(addrs, pubkeys)
-
-//         message := []byte("Hello world")
-//         actors := make([]dkg.Actor, n)
-//         for i := 0; i < n; i++ {
-//                 actor, err := dkgs[i].Listen()
-//                 require.NoError(t, err)
-
-//                 actors[i] = actor
-//         }
-
-//         // trying to call a decrypt/encrypt before a setup
-//         _, _, _, err := actors[0].Encrypt(message)
-//         require.EqualError(t, err, "you must first initialize DKG. Did you call setup() first?")
-//         _, err = actors[0].Decrypt(nil, nil, "electionId")
-//         require.EqualError(t, err, "you must first initialize DKG. Did you call setup() first?")
-
-//         _, err = actors[0].Setup(fakeAuthority, n)
-//         require.NoError(t, err)
-
-//         _, err = actors[0].Setup(fakeAuthority, n)
-//         require.EqualError(t, err, "startRes is already done, only one setup call is allowed")
-
-//         // every node should be able to encrypt/decrypt
-//         for i := 0; i < n; i++ {
-//                 K, C, remainder, err := actors[i].Encrypt(message)
-//                 require.NoError(t, err)
-//                 require.Len(t, remainder, 0)
-//                 decrypted, err := actors[i].Decrypt(K, C, "electionId")
-//                 require.NoError(t, err)
-//                 require.Equal(t, message, decrypted)
-//         }
-// }
-
-// // -----------------------------------------------------------------------------
-// // Utility functions
-
-// //
-// // Collective authority
-// //
-
-// // CollectiveAuthority is a fake implementation of the cosi.CollectiveAuthority
-// // interface.
-// type CollectiveAuthority struct {
-//         crypto.CollectiveAuthority
-//         addrs   []mino.Address
-//         pubkeys []kyber.Point
-//         signers []crypto.Signer
-// }
-
-// // NewAuthority returns a new collective authority of n members with new signers
-// // generated by g.
-// func NewAuthority(addrs []mino.Address, pubkeys []kyber.Point) CollectiveAuthority {
-//         signers := make([]crypto.Signer, len(pubkeys))
-//         for i, pubkey := range pubkeys {
-//                 signers[i] = newFakeSigner(pubkey)
-//         }
-
-//         return CollectiveAuthority{
-//                 pubkeys: pubkeys,
-//                 addrs:   addrs,
-//                 signers: signers,
-//         }
-// }
-
-// // GetPublicKey implements cosi.CollectiveAuthority.
-// func (ca CollectiveAuthority) GetPublicKey(addr mino.Address) (crypto.PublicKey, int) {
-
-//         for i, address := range ca.addrs {
-//                 if address.Equal(addr) {
-//                         return ed25519.NewPublicKeyFromPoint(ca.pubkeys[i]), i
-//                 }
-//         }
-//         return nil, -1
-// }
-
-// // Len implements mino.Players.
-// func (ca CollectiveAuthority) Len() int {
-//         return len(ca.pubkeys)
-// }
-
-// // AddressIterator implements mino.Players.
-// func (ca CollectiveAuthority) AddressIterator() mino.AddressIterator {
-//         return fake.NewAddressIterator(ca.addrs)
-// }
-
-// func (ca CollectiveAuthority) PublicKeyIterator() crypto.PublicKeyIterator {
-//         return fake.NewPublicKeyIterator(ca.signers)
-// }
-
-// func newFakeSigner(pubkey kyber.Point) fakeSigner {
-//         return fakeSigner{
-//                 pubkey: pubkey,
-//         }
-// }
-
-// // fakeSigner is a fake signer
-// //
-// // - implements crypto.Signer
-// type fakeSigner struct {
-//         crypto.Signer
-//         pubkey kyber.Point
-// }
-
-// // GetPublicKey implements crypto.Signer
-// func (s fakeSigner) GetPublicKey() crypto.PublicKey {
-//         return ed25519.NewPublicKeyFromPoint(s.pubkey)
-// }
+	require.Equal(t, actor1Data, actor2Data)
+}
