@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"go.dedis.ch/kyber/v3"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -205,8 +206,52 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	dela.Logger.Info().Msg("----------------------- CREATE SIMPLE ELECTION : ")
 
+	// Define the configuration :
+	configuration := types.Configuration{
+		MainTitle: "electionTitle",
+		Scaffold: []types.Subject{
+			{
+				ID:       "0xaaa",
+				Title:    "subject1",
+				Order:    nil,
+				Subjects: nil,
+				Selects: []types.Select{
+					{
+						ID:      "0xbbb",
+						Title:   "Select your favorite snacks",
+						MaxN:    3,
+						MinN:    0,
+						Choices: []string{"snickers", "mars", "vodka", "babibel"},
+					},
+				},
+				Ranks: []types.Rank{},
+				Texts: nil,
+			},
+			{
+				ID:       "0xddd",
+				Title:    "subject2",
+				Order:    nil,
+				Subjects: nil,
+				Selects:  nil,
+				Ranks:    nil,
+				Texts: []types.Text{
+					{
+						ID:        "0xeee",
+						Title:     "dissertation",
+						MaxN:      1,
+						MinN:      1,
+						MaxLength: 3,
+						Regex:     "",
+						Choices:   []string{"write yes in your language"},
+					},
+				},
+			},
+		},
+	}
+
 	createSimpleElectionRequest := types.CreateElectionRequest{
-		AdminID: "adminId",
+		Configuration: configuration,
+		AdminID:       "adminId",
 	}
 
 	js, err := json.Marshal(createSimpleElectionRequest)
@@ -271,6 +316,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Admin Id of the election : " + election.AdminID)
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
+	dela.Logger.Info().Msg("Max Ballot size : " + strconv.Itoa(election.BallotSize) +
+		"=> " + strconv.Itoa(election.ChunksPerBallot()) + "chunks per ballot")
 
 	// ##################################### SETUP DKG #########################
 
@@ -415,17 +462,27 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	dela.Logger.Info().Msg("----------------------- CAST BALLOTS : ")
 
-	ballot1, err := marshallBallot("ballot1", dkgActor)
+	//Create the ballots :
+	b1 := "select:0xbbb:0,0,1,0\n" +
+		"text:0xeee:eWVz\n\n" //encoding of "yes"
+
+	b2 := "select:0xbbb:1,1,0,0\n" +
+		"text:0xeee:amE=\n\n" //encoding of "ja
+
+	b3 := "select:0xbbb:0,0,0,1\n" +
+		"text:0xeee:b3Vp\n\n" //encoding of "oui"
+
+	ballot1, err := marshallBallot(b1, dkgActor, election.ChunksPerBallot())
 	if err != nil {
 		return xerrors.Errorf("failed to marshall ballot : %v", err)
 	}
 
-	ballot2, err := marshallBallot("ballot2", dkgActor)
+	ballot2, err := marshallBallot(b2, dkgActor, election.ChunksPerBallot())
 	if err != nil {
 		return xerrors.Errorf("failed to marshall ballot : %v", err)
 	}
 
-	ballot3, err := marshallBallot("ballot3", dkgActor)
+	ballot3, err := marshallBallot(b3, dkgActor, election.ChunksPerBallot())
 	if err != nil {
 		return xerrors.Errorf("failed to marshall ballot : %v", err)
 	}
@@ -433,7 +490,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	castVoteRequest := types.CastVoteRequest{
 		ElectionID: electionID,
 		UserID:     "user1",
-		Ballot:     types.EncryptedBallot{ballot1},
+		Ballot:     ballot1,
 		Token:      token,
 	}
 
@@ -462,7 +519,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	castVoteRequest = types.CastVoteRequest{
 		ElectionID: electionID,
 		UserID:     "user2",
-		Ballot:     types.EncryptedBallot{ballot2},
+		Ballot:     ballot2,
 		Token:      token,
 	}
 
@@ -491,7 +548,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	castVoteRequest = types.CastVoteRequest{
 		ElectionID: electionID,
 		UserID:     "user3",
-		Ballot:     types.EncryptedBallot{ballot3},
+		Ballot:     ballot3,
 		Token:      token,
 	}
 
@@ -756,21 +813,37 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	return nil
 }
 
-func marshallBallot(vote string, actor dkg.Actor) (types.Ciphertext, error) {
+func marshallBallot(vote string, actor dkg.Actor, chunks int) (types.EncryptedBallot, error) {
 
-	K, C, _, err := actor.Encrypt([]byte(vote))
-	if err != nil {
-		return types.Ciphertext{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
-	}
+	var ballot = make([]types.Ciphertext, chunks)
 
-	var ballot types.Ciphertext
-	err = ballot.FromPoints(K, C)
-	if err != nil {
-		return types.Ciphertext{}, err
+	byteArray := []byte(vote)
+
+	for i := 0; i < chunks; i++ {
+		var K, C kyber.Point
+		var err error
+
+		if i == chunks-1 {
+			K, C, _, err = actor.Encrypt(byteArray[i*29:])
+		} else {
+			K, C, _, err = actor.Encrypt(byteArray[i*29 : (i+1)*29])
+		}
+
+		if err != nil {
+			return types.EncryptedBallot{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
+		}
+
+		var chunk types.Ciphertext
+
+		err = chunk.FromPoints(K, C)
+		if err != nil {
+			return types.EncryptedBallot{}, err
+		}
+
+		ballot[i] = chunk
 	}
 
 	return ballot, nil
-
 }
 
 func (a scenarioTestAction) readMembers(ctx node.Context) ([]types.CollectiveAuthorityMember, error) {

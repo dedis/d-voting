@@ -56,6 +56,11 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 	for _, line := range lines {
 		question := strings.Split(line, ":")
 
+		if len(question) == 1 && question[0] == "" {
+			// empty line, the valid part of the ballot is over
+			break
+		}
+
 		if len(question) != 3 {
 			b.invalidate()
 			return fmt.Errorf("a line in the ballot has length != 3")
@@ -249,11 +254,12 @@ func (s *Subject) MaxEncodedSize() int {
 		size += subject.MaxEncodedSize()
 	}
 
+	//TODO : optimise by computeing max size according to number of choices and maxN
 	for _, rank := range s.Ranks {
 		size += len("rank::")
 		size += len(rank.ID)
-		// at most 4 bytes (-128) + ',' per choice
-		size += len(rank.Choices) * 5
+		// at most 3 bytes (128) + ',' per choice
+		size += len(rank.Choices) * 4
 	}
 
 	for _, selection := range s.Selects {
@@ -266,12 +272,13 @@ func (s *Subject) MaxEncodedSize() int {
 	for _, text := range s.Texts {
 		size += len("text::")
 		size += len(text.ID)
-		size += (int(text.MaxLength)+1)*int(text.MaxN) +
+		// we compute the max length of the base64 encoding as 4 * ceil(length/3)
+		size += (4*int(math.Ceil(float64(text.MaxLength/3.0)))+1)*int(text.MaxN) +
 			int(math.Max(float64(len(text.Choices)-int(text.MaxN)), 0))
 	}
 
-	// Last line doesn't have a '\n'
-	size -= 1
+	// Last line has 2 '\n'
+	size += 1
 
 	return size
 }

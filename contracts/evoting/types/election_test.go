@@ -8,13 +8,13 @@ import (
 var ballot1 = "select:aaa:1,0,1\n" +
 	"rank:bbb:1,2,0,-128\n" +
 	"select:ddd:true,false,true,true,true\n" +
-	"text:ccc:YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ=="
+	"text:ccc:YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ==\n\n"
 
 var ballot2 = "select:aaa:0,0,0\n" +
 	"rank:bbb:-128,-128,-128,-128\n" +
 	"select:ddd:0,0,0,0,0\n" +
 	"text:ccc:blablablaf,cestmoiEmi\n" +
-	"text:eee:aaaaaaaaaa,,"
+	"text:eee:aaaaaaaaaa,,\n\n"
 
 func TestBallot_Unmarshal(t *testing.T) {
 	b := Ballot{}

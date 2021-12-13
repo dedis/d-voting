@@ -535,10 +535,10 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
 	wrongBallots := 0
 
-	for i := 0; i < len(X); i++ {
+	for i := 0; i < len(X[0]); i++ {
 		// decryption of one ballot:
 		marshalledBallot := strings.Builder{}
-		for j := 0; j < len(X[i]); j++ {
+		for j := 0; j < len(X); j++ {
 			chunk, err := h.dkgActor.Decrypt(X[j][i], Y[j][i], electionIDBuff)
 			if err != nil {
 				http.Error(w, "failed to decrypt (K,C): "+err.Error(), http.StatusInternalServerError)
@@ -551,7 +551,9 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		err = ballot.Unmarshal(marshalledBallot.String(), *election)
 		if err != nil {
 			wrongBallots += 1 // TODO do we ever send back through http if it's not an error?
-			// ==> Should communicate this number there
+			http.Error(w, "failed to unmarshall a ballot: "+err.Error(),
+				http.StatusInternalServerError)
+			return
 		}
 
 		decryptedBallots = append(decryptedBallots, ballot)
