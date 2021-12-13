@@ -76,18 +76,18 @@ func (r RandomVector) UnMarshal() ([]kyber.Scalar, error) {
 	return e, nil
 }
 
-func (r *RandomVector) Marshal(e []kyber.Scalar) (RandomVector, error) {
-	marshalledVector := make([][]byte, len(e))
+func (r *RandomVector) LoadFromScalars(e []kyber.Scalar) error {
+	*r = make([][]byte, len(e))
 
 	for i, scalar := range e {
 		v, err := scalar.MarshalBinary()
 		if err != nil {
-			return nil, xerrors.Errorf("could not marshal random vector: %v", err)
+			return xerrors.Errorf("could not marshal random vector: %v", err)
 		}
-		marshalledVector[i] = v
+		(*r)[i] = v
 	}
 
-	return marshalledVector, nil
+	return nil
 }
 
 // SemiRandomStream implements cipher.Stream
@@ -105,7 +105,7 @@ func NewSemiRandomStream(seed []byte) (SemiRandomStream, error) {
 
 	s, n := binary.Varint(seed)
 	if n <= 0 {
-		return SemiRandomStream{}, xerrors.Errorf("the seed has a wrong size")
+		return SemiRandomStream{}, xerrors.Errorf("the seed has a wrong size (too small)")
 	}
 
 	source := rand.NewSource(s)
