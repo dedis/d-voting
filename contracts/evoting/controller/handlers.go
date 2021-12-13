@@ -83,15 +83,17 @@ func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
 // the DKG actor.
 // Body: hex-encoded electionID
 func (h *votingProxy) OpenElection(w http.ResponseWriter, r *http.Request) {
+	// hex-encoded string as byte array
 	electionIDBuf, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "failed to read body: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	// hex-encoded string
 	electionID := hex.EncodeToString(electionIDBuf)
 
-	// sanity check that this is a well hex-encoded string
+	// sanity check that it is a hex-encoded string
 	_, err = hex.DecodeString(electionID)
 	if err != nil {
 		http.Error(w, "failed to decode electionID: "+electionID, http.StatusBadRequest)
@@ -513,8 +515,8 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
 	wrongBallots := 0
 
-	actor, err := h.dkg.GetActor(electionIDBuf)
-	if err != nil {
+	actor, exists := h.dkg.GetActor(electionIDBuf)
+	if !exists {
 		http.Error(w, "failed to get actor:"+err.Error(), http.StatusInternalServerError)
 		return
 	}

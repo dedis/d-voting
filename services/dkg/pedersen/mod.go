@@ -81,7 +81,13 @@ func (s *Pedersen) Listen(electionIDBuf []byte) (dkg.Actor, error) {
 
 	electionID := hex.EncodeToString(electionIDBuf)
 
-	actor, exists := s.actors[electionID]
+	// check that electionID corresponds to a real election
+	_, exists := electionExists(s.service, electionIDBuf)
+	if !exists {
+		return nil, xerrors.Errorf("election %s was not found", electionID)
+	}
+
+	actor, exists := s.GetActor(electionIDBuf)
 	if exists {
 		return actor, xerrors.Errorf("actor already exists for electionID %s", electionID)
 	}
@@ -110,21 +116,19 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.
 		electionID: electionID,
 	}
 
+	s.Lock()
+	defer s.Unlock()
 	s.actors[electionID] = a
 
 	return a, nil
 }
 
-func (s *Pedersen) GetActor(electionIDBuf []byte) (dkg.Actor, error) {
+func (s *Pedersen) GetActor(electionIDBuf []byte) (dkg.Actor, bool) {
 
-	electionID := hex.EncodeToString(electionIDBuf)
-
-	actor, exists := s.actors[electionID]
-	if exists {
-		return actor, nil
-	}
-
-	return nil, xerrors.Errorf("Listen was not called for electionID %s", electionID)
+	s.RLock()
+	defer s.RUnlock()
+	actor, exists := s.actors[hex.EncodeToString(electionIDBuf)]
+	return actor, exists
 }
 
 // Actor allows one to perform DKG operations like encrypt/decrypt a message
@@ -151,18 +155,9 @@ func (a *Actor) Setup() (kyber.Point, error) {
 	}
 
 	// check that electionID corresponds to a real election
-	proof, err := a.service.GetProof(electionIDBuf)
-	if err != nil {
-		return nil, xerrors.Errorf(
-			"failed to read on the blockchain: %v",
-			err,
-		)
-	}
-	if proof == nil {
-		return nil, xerrors.Errorf(
-			"election %s does not exist",
-			a.electionID,
-		)
+	proof, exists := electionExists(a.service, electionIDBuf)
+	if !exists {
+		return nil, xerrors.Errorf("election %s was not found", a.electionID)
 	}
 
 	election := new(electionTypes.Election)

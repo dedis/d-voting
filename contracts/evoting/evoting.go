@@ -167,8 +167,8 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) e
 		return xerrors.Errorf("failed to decode electionID: %v", err)
 	}
 
-	dkgActor, err := e.pedersen.GetActor(electionIDBuf)
-	if err != nil {
+	dkgActor, exists := e.pedersen.GetActor(electionIDBuf)
+	if !exists {
 		return xerrors.Errorf("failed to get actor for election %d: %v", election.ElectionID, err)
 	}
 

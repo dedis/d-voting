@@ -56,8 +56,8 @@ func (a *initAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve DKG: %v", err)
 	}
 
-	_, err = dkg.GetActor(electionIDBuf)
-	if err == nil {
+	_, exists := dkg.GetActor(electionIDBuf)
+	if exists {
 		return xerrors.Errorf(
 			"DKG was already initialized for electionID %s",
 			electionID,
@@ -122,8 +122,8 @@ func (a *setupAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve DKG: %v", err)
 	}
 
-	actor, err := dkg.GetActor(electionIDBuf)
-	if err != nil {
+	actor, exists := dkg.GetActor(electionIDBuf)
+	if !exists {
 		return xerrors.Errorf("failed to get actor: %v", err)
 	}
 
@@ -309,8 +309,8 @@ func (a *getPublicKeyAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve dkg: %v", err)
 	}
 
-	actor, err := dkgPedersen.GetActor(electionIDBuf)
-	if err != nil {
+	actor, exists := dkgPedersen.GetActor(electionIDBuf)
+	if !exists {
 		return xerrors.Errorf("failed to get actor: %v", err)
 	}
 
@@ -429,8 +429,8 @@ func SetupHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		a, err := dkg.GetActor(electionIDBuf)
-		if err != nil {
+		a, exists := dkg.GetActor(electionIDBuf)
+		if !exists {
 			http.Error(
 				w,
 				"failed to get actor: "+err.Error(),

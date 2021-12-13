@@ -98,8 +98,8 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 		electionIDBuf, err := hex.DecodeString(electionID)
 		require.NoError(t, err)
 
-		actor, err := p.GetActor(electionIDBuf)
-		require.NoError(t, err)
+		actor, exists := p.GetActor(electionIDBuf)
+		require.Equal(t, exists, true)
 
 		actorDataBuf, err := actor.MarshalJSON()
 		require.NoError(t, err)

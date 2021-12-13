@@ -508,8 +508,8 @@ func (a *scenarioTestPart2Action) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve DKG: %v", err)
 	}
 
-	dkgActor, err := dkg.GetActor(electionIDBuf)
-	if err != nil {
+	dkgActor, exists := dkg.GetActor(electionIDBuf)
+	if !exists {
 		return xerrors.Errorf("failed to get actor: %v", err)
 	}
 
@@ -1130,8 +1130,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve DKG: %v", err)
 	}
 
-	dkgActor, err := dkg.GetActor(electionIDBuf)
-	if err != nil {
+	dkgActor, exists := dkg.GetActor(electionIDBuf)
+	if !exists {
 		return xerrors.Errorf("failed to get actor: %v", err)
 	}
 
