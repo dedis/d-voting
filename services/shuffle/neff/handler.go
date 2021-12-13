@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"go.dedis.ch/kyber/v3"
 	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting"
@@ -134,36 +135,55 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 }
 
 func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner crypto.Signer) (txn.Transaction, error) {
-	shuffledBallots, shuffleProof, err := getShuffledBallots(election)
+	shuffledBallots, getProver, err := getShuffledBallots(election)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get shuffled ballots: %v", err)
-	}
-
-	// Generate random vector
-	lenRandomVector := len(election.PublicBulletinBoard.Ballots)
-
-	marshalledRV := make([][]byte, lenRandomVector)
-	for i := 0; i < lenRandomVector; i++ {
-		v, err := suite.Scalar().Pick(suite.RandomStream()).MarshalBinary()
-		if err != nil {
-			return nil, xerrors.Errorf("failed to marshal random vector: %v", err)
-		}
-		marshalledRV[i] = v
 	}
 
 	shuffleBallotsTransaction := electionTypes.ShuffleBallotsTransaction{
 		ElectionID:      election.ElectionID,
 		Round:           len(election.ShuffleInstances),
 		ShuffledBallots: shuffledBallots,
-		Proof:           shuffleProof,
-		RandomVector:    marshalledRV,
 	}
 
-	//Sign the shuffle:
 	shuffleHash, err := shuffleBallotsTransaction.HashShuffle(election.ElectionID)
 	if err != nil {
 		return nil, xerrors.Errorf("Could not hash the shuffle while creating transaction: %v", err)
 	}
+
+	// Generate random vector and proof
+	semiRandomStream, err := electionTypes.NewSemiRandomStream(shuffleHash)
+	if err != nil {
+		return nil, xerrors.Errorf("could not create semi-random stream")
+	}
+
+	lenRandomVector := len(election.PublicBulletinBoard.Ballots)
+	e := make([]kyber.Scalar, lenRandomVector)
+	for i := 0; i < lenRandomVector; i++ {
+		v := suite.Scalar().Pick(semiRandomStream)
+		e[i] = v
+	}
+
+	prover, err := getProver(e)
+	if err != nil {
+		return nil, xerrors.Errorf("could not get prover for shuffle : %v", err)
+	}
+
+	shuffleProof, err := proof.HashProve(suite, protocolName, prover)
+	if err != nil {
+		return nil, xerrors.Errorf("shuffle proof failed: %v", err)
+	}
+
+	shuffleBallotsTransaction.Proof = shuffleProof
+
+	shuffleBallotsTransaction.RandomVector = electionTypes.RandomVector{}
+
+	err = shuffleBallotsTransaction.RandomVector.LoadFromScalars(e)
+	if err != nil {
+		return nil, xerrors.Errorf("could not marshal shuffle random vector")
+	}
+
+	// Sign the shuffle:
 
 	signature, err := shuffleSigner.Sign(shuffleHash)
 	if err != nil {
@@ -180,7 +200,7 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 		return nil, xerrors.Errorf("Could not unmarshal public key from nodeSigner: %v", err)
 	}
 
-	//Complete transaction:
+	// Complete transaction:
 	shuffleBallotsTransaction.PublicKey = publicKey
 	shuffleBallotsTransaction.Signature = encodedSignature
 
@@ -218,8 +238,8 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 }
 
 // getShuffledBallots returns the shuffled ballots with the shuffling proof.
-func getShuffledBallots(election *electionTypes.Election) ([]electionTypes.EncryptedBallot, []byte,
-	error) {
+func getShuffledBallots(election *electionTypes.Election) ([]electionTypes.EncryptedBallot,
+	func(e []kyber.Scalar) (proof.Prover, error), error) {
 	round := len(election.ShuffleInstances)
 
 	var encryptedBallots electionTypes.EncryptedBallots
@@ -246,22 +266,6 @@ func getShuffledBallots(election *electionTypes.Election) ([]electionTypes.Encry
 	// shuffle sequences
 	XX, YY, getProver := shuffleKyber.SequencesShuffle(suite, nil, pubKey, X, Y, suite.RandomStream())
 
-	// compute the proof
-	e, err := election.RandomVector.UnMarshal()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	prover, err := getProver(e)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("could not get proved for shuffle : %v", err)
-	}
-
-	shuffleProof, err := proof.HashProve(suite, protocolName, prover)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("shuffle proof failed: %v", err)
-	}
-
 	var shuffledBallots electionTypes.EncryptedBallots
 
 	err = shuffledBallots.InitFromElGPairs(XX, YY)
@@ -269,7 +273,7 @@ func getShuffledBallots(election *electionTypes.Election) ([]electionTypes.Encry
 		return nil, nil, xerrors.Errorf("failed to init ciphertexts: %v", err)
 	}
 
-	return shuffledBallots, shuffleProof, nil
+	return shuffledBallots, getProver, nil
 }
 
 // watchTx checks the transaction to find one that match txID. Return if the
