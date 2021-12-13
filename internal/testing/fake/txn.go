@@ -15,8 +15,8 @@ import (
 //
 // - implements txn.Transaction
 type Transaction struct {
-	nonce uint64
-	id    []byte
+	Nonce uint64
+	Id    []byte
 }
 
 func (f Transaction) Serialize(ctx serde.Context) ([]byte, error) {
@@ -28,11 +28,11 @@ func (f Transaction) Fingerprint(writer io.Writer) error {
 }
 
 func (f Transaction) GetID() []byte {
-	return f.id
+	return f.Id
 }
 
 func (f Transaction) GetNonce() uint64 {
-	return f.nonce
+	return f.Nonce
 }
 
 func (f Transaction) GetIdentity() access.Identity {
@@ -47,8 +47,9 @@ func (f Transaction) GetArg(key string) []byte {
 //
 // - implements txn.pool.Pool
 type Pool struct {
-	err         error
-	transaction Transaction
+	Err         error
+	Transaction Transaction
+	Service     *Service
 }
 
 func (f Pool) SetPlayers(players mino.Players) error {
@@ -64,12 +65,14 @@ func (f Pool) Len() int {
 
 func (f *Pool) Add(transaction txn.Transaction) error {
 	newTx := Transaction{
-		nonce: transaction.GetNonce(),
-		id:    transaction.GetID(),
+		Nonce: transaction.GetNonce(),
+		Id:    transaction.GetID(),
 	}
 
-	f.transaction = newTx
-	return f.err
+	f.Transaction = newTx
+	f.Service.AddTx(newTx)
+
+	return f.Err
 }
 
 func (f Pool) Remove(transaction txn.Transaction) error {

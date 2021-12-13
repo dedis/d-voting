@@ -1,14 +1,13 @@
 package neff
 
 import (
-	"encoding/hex"
-	"github.com/dedis/d-voting/contracts/evoting/types"
+	"strconv"
+	"testing"
+
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/serde"
-	"strconv"
-	"testing"
 
 	"github.com/dedis/d-voting/internal/testing/fake"
 	neffShuffleTypes "github.com/dedis/d-voting/services/shuffle/neff/types"
@@ -21,7 +20,7 @@ import (
 
 func TestNeffShuffle_Listen(t *testing.T) {
 
-	NeffShuffle := NewNeffShuffle(fake.Mino{}, &FakeService{}, &FakePool{}, nil, fakeAuthorityFactory{}, fake.NewSigner())
+	NeffShuffle := NewNeffShuffle(fake.Mino{}, &fake.Service{}, &fake.Pool{}, nil, fakeAuthorityFactory{}, fake.NewSigner())
 
 	actor, err := NeffShuffle.Listen(fake.NewSigner())
 	require.NoError(t, err)
@@ -36,7 +35,7 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	actor := Actor{
 		rpc:       fake.NewBadRPC(),
 		mino:      fake.Mino{},
-		service:   &FakeService{electionId: types.ID(hex.EncodeToString(electionId))},
+		service:   &fake.Service{},
 		rosterFac: fakeAuthorityFactory{},
 	}
 
@@ -56,9 +55,7 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	err = actor.Shuffle(electionId)
 	require.NoError(t, err)
 
-	recv := fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), nil))
-
-	recv = fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), neffShuffleTypes.NewEndShuffle()))
+	recv := fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), neffShuffleTypes.NewEndShuffle()))
 
 	rpc = fake.NewStreamRPC(recv, fake.Sender{})
 	actor.rpc = rpc

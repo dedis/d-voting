@@ -1,12 +1,12 @@
 package fake
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 
+	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/core/validation"
@@ -35,27 +35,35 @@ func (f Proof) GetValue() []byte {
 //
 // - implements ordering.Service
 type Service struct {
-	err        error
-	election   interface{}
-	ElectionID string
-	pool       *Pool
-	status     bool
+	Err       error
+	Elections map[string]interface{}
+	Pool      *Pool
+	Status    bool
+	Channel   chan ordering.Event
 }
 
 // GetProof implements ordering.Service. It returns the proof associated to the election.
 func (f Service) GetProof(key []byte) (ordering.Proof, error) {
-	electionIDBuf, _ := hex.DecodeString(string(f.ElectionID))
+	// electionIDBuf, _ := hex.DecodeString(string(f.ElectionID))
 
-	if bytes.Equal(key, electionIDBuf) {
-		js, _ := json.Marshal(f.election)
+	keyString := hex.EncodeToString(key)
+
+	election, exists := f.Elections[keyString]
+	if !exists {
 		proof := Proof{
 			key:   key,
-			value: js,
+			value: []byte(""),
 		}
-		return proof, f.err
+		return proof, f.Err
 	}
 
-	return nil, f.err
+	js, _ := json.Marshal(election)
+	proof := Proof{
+		key:   key,
+		value: js,
+	}
+
+	return proof, f.Err
 }
 
 // GetStore implements ordering.Service. It returns the store associated to the service.
@@ -71,22 +79,22 @@ func (f Service) Watch(ctx context.Context) <-chan ordering.Event {
 	results[0] = TransactionResult{
 		status:  true,
 		message: "",
-		tx:      Transaction{nonce: 10, id: []byte("dummyId1")},
+		tx:      Transaction{Nonce: 10, Id: []byte("dummyId1")},
 	}
 
 	results[1] = TransactionResult{
 		status:  true,
 		message: "",
-		tx:      Transaction{nonce: 11, id: []byte("dummyId2")},
+		tx:      Transaction{Nonce: 11, Id: []byte("dummyId2")},
 	}
 
 	results[2] = TransactionResult{
-		status:  f.status,
+		status:  f.Status,
 		message: "",
-		tx:      f.pool.transaction,
+		tx:      f.Pool.Transaction,
 	}
 
-	f.status = true
+	f.Status = true
 
 	channel := make(chan ordering.Event, 1)
 	fmt.Println("watch", results[0])
@@ -101,5 +109,47 @@ func (f Service) Watch(ctx context.Context) <-chan ordering.Event {
 }
 
 func (f Service) Close() error {
-	return f.err
+	return f.Err
+}
+
+func (f *Service) AddTx(tx Transaction) {
+	results := make([]validation.TransactionResult, 3)
+
+	results[0] = TransactionResult{
+		status:  true,
+		message: "",
+		tx:      Transaction{Nonce: 10, Id: []byte("dummyId1")},
+	}
+
+	results[1] = TransactionResult{
+		status:  true,
+		message: "",
+		tx:      Transaction{Nonce: 11, Id: []byte("dummyId2")},
+	}
+
+	results[2] = TransactionResult{
+		status:  f.Status,
+		message: "",
+		tx:      f.Pool.Transaction,
+	}
+
+	f.Status = true
+
+	fmt.Println("watch", results[0])
+	f.Channel <- ordering.Event{
+		Index:        0,
+		Transactions: results,
+	}
+	close(f.Channel)
+
+}
+
+func NewService(election electionTypes.Election, electionID string) Service {
+	elections := make(map[string]interface{})
+	elections[electionID] = election
+
+	return Service{
+		Err:       nil,
+		Elections: elections,
+	}
 }

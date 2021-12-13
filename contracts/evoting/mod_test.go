@@ -8,6 +8,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"testing"
+
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg"
@@ -26,8 +29,6 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/util/random"
-	"strconv"
-	"testing"
 )
 
 var dummyElectionIdBuff = []byte("dummyID")
@@ -847,8 +848,8 @@ func (f fakeDKG) Listen(electionID []byte) (dkg.Actor, error) {
         return f.actor, f.err
 }
 
-func (f fakeDKG) GetActor(electionID []byte) (dkg.Actor, error) {
-        return f.actor, f.err
+func (f fakeDKG) GetActor(electionID []byte) (dkg.Actor, bool) {
+        return f.actor, false
 }
 
 func (f fakeDKG) SetService(service ordering.Service) {
@@ -859,7 +860,7 @@ type fakeDkgActor struct {
         err       error
 }
 
-func (f fakeDkgActor) Setup(electionID []byte) (pubKey kyber.Point, err error) {
+func (f fakeDkgActor) Setup() (pubKey kyber.Point, err error) {
 	return nil, f.err
 }
 
@@ -871,12 +872,16 @@ func (f fakeDkgActor) Encrypt(message []byte) (K, C kyber.Point, remainder []byt
         return nil, nil, nil, f.err
 }
 
-func (f fakeDkgActor) Decrypt(K, C kyber.Point, electionId []byte) ([]byte, error) {
+func (f fakeDkgActor) Decrypt(K, C kyber.Point) ([]byte, error) {
 	return nil, f.err
 }
 
 func (f fakeDkgActor) Reshare() error {
         return f.err
+}
+
+func (f fakeDkgActor) MarshalJSON() ([]byte, error) {
+	return nil, f.err
 }
 
 type fakeAccess struct {
@@ -913,7 +918,7 @@ func (c fakeCmd) createElection(snap store.Snapshot, step execution.Step) error 
 	return c.err
 }
 
-func (c fakeCmd) openElection(snap store.Snapshot, step execution.Step, dkgActor dkg.Actor) error {
+func (c fakeCmd) openElection(snap store.Snapshot, step execution.Step) error {
 	return c.err
 }
 

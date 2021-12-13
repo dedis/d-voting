@@ -1,241 +1,235 @@
 package types
 
-// import (
-//         "bytes"
-//         "testing"
-//         "testing/quick"
+import (
+        "bytes"
+        "testing"
+        "testing/quick"
 
-//         "github.com/dedis/d-voting/internal/testing/fake"
-//         "github.com/stretchr/testify/require"
-//         "go.dedis.ch/dela/mino"
-//         "go.dedis.ch/dela/serde"
-//         "go.dedis.ch/kyber/v3"
-// )
+        "github.com/dedis/d-voting/internal/testing/fake"
+        "github.com/stretchr/testify/require"
+        "go.dedis.ch/dela/mino"
+        "go.dedis.ch/dela/serde"
+        "go.dedis.ch/kyber/v3"
+)
 
-// var testCalls = &fake.Call{}
+var testCalls = &fake.Call{}
 
-// func init() {
-//         RegisterMessageFormat(fake.GoodFormat, fake.Format{Msg: Start{}, Call: testCalls})
-//         RegisterMessageFormat(fake.BadFormat, fake.NewBadFormat())
-// }
+func init() {
+        RegisterMessageFormat(fake.GoodFormat, fake.Format{Msg: Start{}, Call: testCalls})
+        RegisterMessageFormat(fake.BadFormat, fake.NewBadFormat())
+}
 
-// func TestStart_GetThreshold(t *testing.T) {
-//         start := NewStart(5, nil, nil)
+func TestStart_GetAddresses(t *testing.T) {
+        start := NewStart([]mino.Address{fake.NewAddress(0)}, nil)
 
-//         require.Equal(t, 5, start.GetThreshold())
-// }
+        require.Len(t, start.GetAddresses(), 1)
+}
 
-// func TestStart_GetAddresses(t *testing.T) {
-//         start := NewStart(0, []mino.Address{fake.NewAddress(0)}, nil)
+func TestStart_GetPublicKeys(t *testing.T) {
+        start := NewStart(nil, []kyber.Point{nil, nil})
 
-//         require.Len(t, start.GetAddresses(), 1)
-// }
+        require.Len(t, start.GetPublicKeys(), 2)
+}
 
-// func TestStart_GetPublicKeys(t *testing.T) {
-//         start := NewStart(0, nil, []kyber.Point{nil, nil})
+func TestStart_Serialize(t *testing.T) {
+        start := Start{}
 
-//         require.Len(t, start.GetPublicKeys(), 2)
-// }
+        data, err := start.Serialize(fake.NewContext())
+        require.NoError(t, err)
+        require.Equal(t, fake.GetFakeFormatValue(), data)
 
-// func TestStart_Serialize(t *testing.T) {
-//         start := Start{}
+        _, err = start.Serialize(fake.NewBadContext())
+        require.EqualError(t, err, fake.Err("couldn't encode message"))
+}
 
-//         data, err := start.Serialize(fake.NewContext())
-//         require.NoError(t, err)
-//         require.Equal(t, fake.GetFakeFormatValue(), data)
+func TestEncryptedDeal_Getters(t *testing.T) {
+        f := func(key, sig, nonce, cipher []byte) bool {
+                e := NewEncryptedDeal(key, sig, nonce, cipher)
 
-//         _, err = start.Serialize(fake.NewBadContext())
-//         require.EqualError(t, err, fake.Err("couldn't encode message"))
-// }
+                require.Equal(t, key, e.GetDHKey())
+                require.Equal(t, sig, e.GetSignature())
+                require.Equal(t, nonce, e.GetNonce())
+                require.Equal(t, cipher, e.GetCipher())
 
-// func TestEncryptedDeal_Getters(t *testing.T) {
-//         f := func(key, sig, nonce, cipher []byte) bool {
-//                 e := NewEncryptedDeal(key, sig, nonce, cipher)
+                return true
+        }
 
-//                 require.Equal(t, key, e.GetDHKey())
-//                 require.Equal(t, sig, e.GetSignature())
-//                 require.Equal(t, nonce, e.GetNonce())
-//                 require.Equal(t, cipher, e.GetCipher())
+        err := quick.Check(f, nil)
+        require.NoError(t, err)
+}
 
-//                 return true
-//         }
+func TestDeal_GetIndex(t *testing.T) {
+        f := func(index uint32) bool {
+                deal := NewDeal(index, nil, EncryptedDeal{})
 
-//         err := quick.Check(f, nil)
-//         require.NoError(t, err)
-// }
+                return deal.GetIndex() == index
+        }
 
-// func TestDeal_GetIndex(t *testing.T) {
-//         f := func(index uint32) bool {
-//                 deal := NewDeal(index, nil, EncryptedDeal{})
+        err := quick.Check(f, nil)
+        require.NoError(t, err)
+}
 
-//                 return deal.GetIndex() == index
-//         }
+func TestDeal_GetSignature(t *testing.T) {
+        f := func(sig []byte) bool {
+                deal := NewDeal(0, sig, EncryptedDeal{})
 
-//         err := quick.Check(f, nil)
-//         require.NoError(t, err)
-// }
+                return bytes.Equal(deal.GetSignature(), sig)
+        }
 
-// func TestDeal_GetSignature(t *testing.T) {
-//         f := func(sig []byte) bool {
-//                 deal := NewDeal(0, sig, EncryptedDeal{})
+        err := quick.Check(f, nil)
+        require.NoError(t, err)
+}
 
-//                 return bytes.Equal(deal.GetSignature(), sig)
-//         }
+func TestDeal_GetEncryptedDeal(t *testing.T) {
+        deal := NewDeal(0, nil, EncryptedDeal{nonce: []byte{1}})
 
-//         err := quick.Check(f, nil)
-//         require.NoError(t, err)
-// }
+        require.Equal(t, []byte{1}, deal.GetEncryptedDeal().GetNonce())
+}
 
-// func TestDeal_GetEncryptedDeal(t *testing.T) {
-//         deal := NewDeal(0, nil, EncryptedDeal{nonce: []byte{1}})
+func TestDeal_Serialize(t *testing.T) {
+        deal := Deal{}
 
-//         require.Equal(t, []byte{1}, deal.GetEncryptedDeal().GetNonce())
-// }
+        data, err := deal.Serialize(fake.NewContext())
+        require.NoError(t, err)
+        require.Equal(t, fake.GetFakeFormatValue(), data)
 
-// func TestDeal_Serialize(t *testing.T) {
-//         deal := Deal{}
+        _, err = deal.Serialize(fake.NewBadContext())
+        require.EqualError(t, err, fake.Err("couldn't encode deal"))
+}
 
-//         data, err := deal.Serialize(fake.NewContext())
-//         require.NoError(t, err)
-//         require.Equal(t, fake.GetFakeFormatValue(), data)
+func TestDealerResponse_Getters(t *testing.T) {
+        f := func(index uint32, status bool, sessionID, sig []byte) bool {
+                resp := NewDealerResponse(index, status, sessionID, sig)
 
-//         _, err = deal.Serialize(fake.NewBadContext())
-//         require.EqualError(t, err, fake.Err("couldn't encode deal"))
-// }
+                require.Equal(t, index, resp.GetIndex())
+                require.Equal(t, status, resp.GetStatus())
+                require.Equal(t, sessionID, resp.GetSessionID())
+                require.Equal(t, sig, resp.GetSignature())
 
-// func TestDealerResponse_Getters(t *testing.T) {
-//         f := func(index uint32, status bool, sessionID, sig []byte) bool {
-//                 resp := NewDealerResponse(index, status, sessionID, sig)
+                return true
+        }
 
-//                 require.Equal(t, index, resp.GetIndex())
-//                 require.Equal(t, status, resp.GetStatus())
-//                 require.Equal(t, sessionID, resp.GetSessionID())
-//                 require.Equal(t, sig, resp.GetSignature())
+        err := quick.Check(f, nil)
+        require.NoError(t, err)
+}
 
-//                 return true
-//         }
+func TestResponse_GetIndex(t *testing.T) {
+        f := func(index uint32) bool {
+                resp := NewResponse(index, DealerResponse{})
 
-//         err := quick.Check(f, nil)
-//         require.NoError(t, err)
-// }
+                return index == resp.GetIndex()
+        }
 
-// func TestResponse_GetIndex(t *testing.T) {
-//         f := func(index uint32) bool {
-//                 resp := NewResponse(index, DealerResponse{})
+        err := quick.Check(f, nil)
+        require.NoError(t, err)
+}
 
-//                 return index == resp.GetIndex()
-//         }
+func TestResponse_GetResponse(t *testing.T) {
+        resp := NewResponse(0, DealerResponse{index: 1})
 
-//         err := quick.Check(f, nil)
-//         require.NoError(t, err)
-// }
+        require.Equal(t, uint32(1), resp.GetResponse().GetIndex())
+}
 
-// func TestResponse_GetResponse(t *testing.T) {
-//         resp := NewResponse(0, DealerResponse{index: 1})
+func TestResponse_Serialize(t *testing.T) {
+        resp := Response{}
 
-//         require.Equal(t, uint32(1), resp.GetResponse().GetIndex())
-// }
+        data, err := resp.Serialize(fake.NewContext())
+        require.NoError(t, err)
+        require.Equal(t, fake.GetFakeFormatValue(), data)
 
-// func TestResponse_Serialize(t *testing.T) {
-//         resp := Response{}
+        _, err = resp.Serialize(fake.NewBadContext())
+        require.EqualError(t, err, fake.Err("couldn't encode response"))
+}
 
-//         data, err := resp.Serialize(fake.NewContext())
-//         require.NoError(t, err)
-//         require.Equal(t, fake.GetFakeFormatValue(), data)
+func TestStartDone_GetPublicKey(t *testing.T) {
+        ack := NewStartDone(fakePoint{})
 
-//         _, err = resp.Serialize(fake.NewBadContext())
-//         require.EqualError(t, err, fake.Err("couldn't encode response"))
-// }
+        require.Equal(t, fakePoint{}, ack.GetPublicKey())
+}
 
-// func TestStartDone_GetPublicKey(t *testing.T) {
-//         ack := NewStartDone(fakePoint{})
+func TestStartDone_Serialize(t *testing.T) {
+        ack := StartDone{}
 
-//         require.Equal(t, fakePoint{}, ack.GetPublicKey())
-// }
+        data, err := ack.Serialize(fake.NewContext())
+        require.NoError(t, err)
+        require.Equal(t, fake.GetFakeFormatValue(), data)
 
-// func TestStartDone_Serialize(t *testing.T) {
-//         ack := StartDone{}
+        _, err = ack.Serialize(fake.NewBadContext())
+        require.EqualError(t, err, fake.Err("couldn't encode ack"))
+}
 
-//         data, err := ack.Serialize(fake.NewContext())
-//         require.NoError(t, err)
-//         require.Equal(t, fake.GetFakeFormatValue(), data)
+func TestDecryptRequest_GetK(t *testing.T) {
+        req := NewDecryptRequest(fakePoint{}, nil, "")
 
-//         _, err = ack.Serialize(fake.NewBadContext())
-//         require.EqualError(t, err, fake.Err("couldn't encode ack"))
-// }
+        require.Equal(t, fakePoint{}, req.GetK())
+}
 
-// func TestDecryptRequest_GetK(t *testing.T) {
-//         req := NewDecryptRequest(fakePoint{}, nil, "")
+func TestDecryptRequest_GetC(t *testing.T) {
+        req := NewDecryptRequest(nil, fakePoint{}, "")
 
-//         require.Equal(t, fakePoint{}, req.GetK())
-// }
+        require.Equal(t, fakePoint{}, req.GetC())
+}
 
-// func TestDecryptRequest_GetC(t *testing.T) {
-//         req := NewDecryptRequest(nil, fakePoint{}, "")
+func TestDecryptRequest_GetElectionId(t *testing.T) {
+        req := NewDecryptRequest(nil, nil, "electionId")
 
-//         require.Equal(t, fakePoint{}, req.GetC())
-// }
+        require.Equal(t, "electionId", req.GetElectionId())
+}
 
-// func TestDecryptRequest_GetElectionId(t *testing.T) {
-//         req := NewDecryptRequest(nil, nil, "electionId")
+func TestDecryptRequest_Serialize(t *testing.T) {
+        req := DecryptRequest{}
 
-//         require.Equal(t, "electionId", req.GetElectionId())
-// }
+        data, err := req.Serialize(fake.NewContext())
+        require.NoError(t, err)
+        require.Equal(t, fake.GetFakeFormatValue(), data)
 
-// func TestDecryptRequest_Serialize(t *testing.T) {
-//         req := DecryptRequest{}
+        _, err = req.Serialize(fake.NewBadContext())
+        require.EqualError(t, err, fake.Err("couldn't encode decrypt request"))
+}
 
-//         data, err := req.Serialize(fake.NewContext())
-//         require.NoError(t, err)
-//         require.Equal(t, fake.GetFakeFormatValue(), data)
+func TestDecryptReply_GetV(t *testing.T) {
+        resp := NewDecryptReply(0, fakePoint{})
 
-//         _, err = req.Serialize(fake.NewBadContext())
-//         require.EqualError(t, err, fake.Err("couldn't encode decrypt request"))
-// }
+        require.Equal(t, fakePoint{}, resp.GetV())
+}
 
-// func TestDecryptReply_GetV(t *testing.T) {
-//         resp := NewDecryptReply(0, fakePoint{})
+func TestDecryptReply_GetI(t *testing.T) {
+        resp := NewDecryptReply(1, nil)
 
-//         require.Equal(t, fakePoint{}, resp.GetV())
-// }
+        require.Equal(t, int64(1), resp.GetI())
+}
 
-// func TestDecryptReply_GetI(t *testing.T) {
-//         resp := NewDecryptReply(1, nil)
+func TestDecryptReply_Serialize(t *testing.T) {
+        resp := DecryptReply{}
 
-//         require.Equal(t, int64(1), resp.GetI())
-// }
+        data, err := resp.Serialize(fake.NewContext())
+        require.NoError(t, err)
+        require.Equal(t, fake.GetFakeFormatValue(), data)
 
-// func TestDecryptReply_Serialize(t *testing.T) {
-//         resp := DecryptReply{}
+        _, err = resp.Serialize(fake.NewBadContext())
+        require.EqualError(t, err, fake.Err("couldn't encode decrypt reply"))
+}
 
-//         data, err := resp.Serialize(fake.NewContext())
-//         require.NoError(t, err)
-//         require.Equal(t, fake.GetFakeFormatValue(), data)
+func TestMessageFactory(t *testing.T) {
+        factory := NewMessageFactory(fake.AddressFactory{})
 
-//         _, err = resp.Serialize(fake.NewBadContext())
-//         require.EqualError(t, err, fake.Err("couldn't encode decrypt reply"))
-// }
+        testCalls.Clear()
 
-// func TestMessageFactory(t *testing.T) {
-//         factory := NewMessageFactory(fake.AddressFactory{})
+        msg, err := factory.Deserialize(fake.NewContext(), nil)
+        require.NoError(t, err)
+        require.Equal(t, Start{}, msg)
 
-//         testCalls.Clear()
+        require.Equal(t, 1, testCalls.Len())
+        ctx := testCalls.Get(0, 0).(serde.Context)
+        require.Equal(t, fake.AddressFactory{}, ctx.GetFactory(AddrKey{}))
 
-//         msg, err := factory.Deserialize(fake.NewContext(), nil)
-//         require.NoError(t, err)
-//         require.Equal(t, Start{}, msg)
+        _, err = factory.Deserialize(fake.NewBadContext(), nil)
+        require.EqualError(t, err, fake.Err("couldn't decode message"))
+}
 
-//         require.Equal(t, 1, testCalls.Len())
-//         ctx := testCalls.Get(0, 0).(serde.Context)
-//         require.Equal(t, fake.AddressFactory{}, ctx.GetFactory(AddrKey{}))
+// -----------------------------------------------------------------------------
+// Utility functions
 
-//         _, err = factory.Deserialize(fake.NewBadContext(), nil)
-//         require.EqualError(t, err, fake.Err("couldn't decode message"))
-// }
-
-// // -----------------------------------------------------------------------------
-// // Utility functions
-
-// type fakePoint struct {
-//         kyber.Point
-// }
+type fakePoint struct {
+        kyber.Point
+}
