@@ -58,14 +58,6 @@ type CloseElectionTransaction struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 	UserID     string
-	// RandomVector is the vector to be used to generate the proof of the next
-	// shuffle
-	RandomVector RandomVector
-	// Signature is the signature of the results of HashCloseTx() with the
-	// private key corresponding to PublicKey
-	Signature []byte
-	// PublicKey is the public key of the signer
-	PublicKey []byte
 }
 
 type ShuffleBallotsTransaction struct {
@@ -126,37 +118,6 @@ func (s ShuffleBallotsTransaction) HashShuffle(electionID string) ([]byte, error
 	}
 
 	hash.Write(shuffledBallots)
-	hash.Write(s.Proof)
-
-	for _, bytes := range s.RandomVector {
-		hash.Write(bytes)
-	}
-
-	return hash.Sum(nil), nil
-}
-
-// HashCloseTx hashes the components of a CloseElectionTransaction so that
-// the identity of the node who submitted it can be verified later on.
-func (c CloseElectionTransaction) HashCloseTx() ([]byte, error) {
-	hash := sha256.New()
-
-	election, err := hex.DecodeString(c.ElectionID)
-	if err != nil {
-		return nil, xerrors.Errorf("could not decode ElectionId : %v", err)
-	}
-
-	hash.Write(election)
-
-	user, err := hex.DecodeString(c.UserID)
-	if err != nil {
-		return nil, xerrors.Errorf("could not decode UserId : %v", err)
-	}
-
-	hash.Write(user)
-
-	for _, bytes := range c.RandomVector {
-		hash.Write(bytes)
-	}
 
 	return hash.Sum(nil), nil
 }
