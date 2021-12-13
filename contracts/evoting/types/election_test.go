@@ -6,15 +6,15 @@ import (
 )
 
 var ballot1 = "select:aaa:1,0,1\n" +
-	"rank:bbb:1,2,0,-128\n" +
+	"rank:bbb:1,2,0,\n" +
 	"select:ddd:true,false,true,true,true\n" +
 	"text:ccc:YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ==\n\n"
 
 var ballot2 = "select:aaa:0,0,0\n" +
-	"rank:bbb:-128,-128,-128,-128\n" +
+	"rank:bbb:128,128,128,128\n" +
 	"select:ddd:0,0,0,0,0\n" +
-	"text:ccc:blablablaf,cestmoiEmi\n" +
-	"text:eee:aaaaaaaaaa,,\n\n"
+	"text:ccc:xxxxxxxxxxxxxxxx,xxxxxxxxxxxxxxxx\n" +
+	"text:eee:xxxxxxxxxxxxxxxx,,\n\n"
 
 func TestBallot_Unmarshal(t *testing.T) {
 	b := Ballot{}
@@ -69,7 +69,7 @@ func TestBallot_Unmarshal(t *testing.T) {
 		SelectResult:    [][]bool{{true, false, true}, {true, false, true, true, true}},
 
 		RankResultIDs: []ID{"bbb"},
-		RankResult:    [][]int8{{1, 2, 0, -128}},
+		RankResult:    [][]int8{{1, 2, 0, -1}},
 
 		TextResultIDs: []ID{"ccc"},
 		TextResult:    [][]string{{"blablablaf", "cestmoiEmi"}},

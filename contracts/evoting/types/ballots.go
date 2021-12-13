@@ -273,7 +273,8 @@ func (s *Subject) MaxEncodedSize() int {
 		size += len("text::")
 		size += len(text.ID)
 		// we compute the max length of the base64 encoding as 4 * ceil(length/3)
-		size += (4*int(math.Ceil(float64(text.MaxLength/3.0)))+1)*int(text.MaxN) +
+		maxTextPerAnswer := (4 * int(math.Ceil(float64(text.MaxLength)/3.0))) + 1
+		size += maxTextPerAnswer*int(text.MaxN) +
 			int(math.Max(float64(len(text.Choices)-int(text.MaxN)), 0))
 	}
 
