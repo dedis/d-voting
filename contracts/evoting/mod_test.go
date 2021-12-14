@@ -146,7 +146,7 @@ func TestCommand_CreateElection(t *testing.T) {
 	_ = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
 
 	require.Equal(t, dummyCreateElectionTransaction.AdminID, election.AdminID)
-	require.Equal(t, types.Open, election.Status)
+	require.Equal(t, types.Initial, election.Status)
 }
 
 func TestCommand_CastVote(t *testing.T) {
@@ -649,7 +649,7 @@ func TestCommand_CancelElection(t *testing.T) {
 	require.NoError(t, err)
 
 	cmd := evotingCommand{
-			Contract: &contract,
+		Contract: &contract,
 	}
 
 	err = cmd.cancelElection(fake.NewSnapshot(), makeStep(t))
@@ -657,7 +657,7 @@ func TestCommand_CancelElection(t *testing.T) {
 
 	err = cmd.cancelElection(fake.NewSnapshot(), makeStep(t, CancelElectionArg, "dummy"))
 	require.EqualError(t, err, "failed to unmarshal CancelElectionTransaction: "+
-			"invalid character 'd' looking for beginning of value")
+		"invalid character 'd' looking for beginning of value")
 
 	err = cmd.cancelElection(fake.NewBadSnapshot(), makeStep(t, CancelElectionArg, string(jsCancelElectionTransaction)))
 	require.Contains(t, err.Error(), "failed to get key")

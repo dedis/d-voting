@@ -118,9 +118,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 	if err != nil {
 		return xerrors.Errorf("dkgMap: %v", err)
 	}
-	dkgMap := pedersen.SimpleStore{
-		DB: dkgMapDB,
-	}
+	dkgMap := pedersen.SimpleStore{DB: dkgMapDB}
 
 	dkg := pedersen.NewPedersen(no, srvc, rosterFac)
 

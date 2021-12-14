@@ -3,16 +3,21 @@ package pedersen
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"testing"
 
+	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/store/kv"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/minogrpc"
 	"go.dedis.ch/dela/mino/router/tree"
+	"go.dedis.ch/dela/serde"
+	"go.dedis.ch/kyber/v3/share"
 )
 
 // If you get the persistent data from an actor and then recreate an actor
@@ -21,7 +26,7 @@ func TestActor_MarshalJSON(t *testing.T) {
 	p := NewPedersen(fake.Mino{}, fake.Service{}, fake.Factory{})
 
 	// Create new actor
-	actor1, err := p.NewActor([]byte("deadbeef"), HandlerDataTest())
+	actor1, err := p.NewActor([]byte("deadbeef"), NewHandlerData())
 	require.NoError(t, err)
 
 	// Serialize its persistent data
@@ -46,10 +51,25 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 	// Create a new DKG map and fill it with data
 	dkgMap := fake.NewInMemoryDB()
 
+	distKey := suite.Point().Mul(fake.NewScalar(), nil)
+	privKey := fake.NewScalar()
+	pubKey := suite.Point().Mul(privKey, nil)
+
+	hd := HandlerData{
+		StartRes: &state{
+			distKey:      distKey,
+			participants: []mino.Address{fake.NewAddress(0), fake.NewAddress(1)},
+		},
+		PrivShare: &share.PriShare{
+			I: 1,
+			V: fake.NewScalar(),
+		},
+		PubKey:  pubKey,
+		PrivKey: privKey,
+	}
 	electionActorMap := map[string]HandlerData{
-		"deadbeef51": NewHandlerData(),
+		"deadbeef51": hd,
 		"deadbeef52": NewHandlerData(),
-		"deadbeef53": NewHandlerData(),
 	}
 
 	err := dkgMap.Update(func(tx kv.WritableTx) error {
@@ -65,7 +85,7 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 				return err
 			}
 
-			handlerDataBuf, err := json.Marshal(handlerData)
+			handlerDataBuf, err := handlerData.MarshalJSON()
 			if err != nil {
 				return err
 			}
@@ -89,10 +109,8 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 
 		return bucket.ForEach(func(electionIDBuf, handlerDataBuf []byte) error {
 
-			print(handlerDataBuf)
-
 			handlerData := HandlerData{}
-			err = json.Unmarshal(handlerDataBuf, &handlerData)
+			err = handlerData.UnmarshalJSON(handlerDataBuf)
 			if err != nil {
 				return err
 			}
@@ -119,16 +137,13 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 		require.NoError(t, err)
 
 		actor, exists := p.GetActor(electionIDBuf)
-		require.Equal(t, exists, true)
+		require.True(t, exists)
 
-		actorDataBuf, err := actor.MarshalJSON()
-		require.NoError(t, err)
+		otherActor := Actor{
+			handler: NewHandler(fake.NewAddress(0), fake.Service{}, handlerData),
+		}
 
-		handlerDataBuf, err := json.Marshal(handlerData)
-		require.NoError(t, err)
-
-		// Check that each field is the same
-		require.Equal(t, handlerDataBuf, actorDataBuf)
+		requireActorsEqual(t, actor, &otherActor)
 	}
 }
 
@@ -224,11 +239,11 @@ func TestPedersen_SyncDB(t *testing.T) {
 }
 
 func TestPedersen_Listen(t *testing.T) {
-	p := NewPedersen(fake.Mino{}, fake.Service{}, fake.Factory{})
-
 	electionID := "d3adbeef"
 	electionIDBuf, err := hex.DecodeString(electionID)
 	require.NoError(t, err)
+
+	p := NewPedersen(fake.Mino{}, fake.NewService(electionID, electionTypes.Election{}), fake.Factory{})
 
 	actor, err := p.Listen(electionIDBuf)
 	require.NoError(t, err)
@@ -238,78 +253,121 @@ func TestPedersen_Listen(t *testing.T) {
 
 // If Listen is called twice for the same election, the actor data is unchanged
 func TestPedersen_TwoListens(t *testing.T) {
-	p := NewPedersen(fake.Mino{}, fake.Service{}, fake.Factory{})
-
 	electionID := "deadbeef"
 	electionIDBuf, err := hex.DecodeString(electionID)
 	require.NoError(t, err)
+
+	p := NewPedersen(fake.Mino{}, fake.NewService(electionID, electionTypes.Election{}), fake.Factory{})
 
 	actor1, err := p.Listen(electionIDBuf)
 	require.NoError(t, err)
 
 	actor2, err := p.Listen(electionIDBuf)
-	require.NoError(t, err)
+	require.Error(t, err, "actor already exists for electionID deadbeef")
 
 	require.Equal(t, actor1, actor2)
 }
 
 func TestPedersen_Setup(t *testing.T) {
+	electionID := "d3adbeef"
+
 	actor := Actor{
-		rpc: fake.NewBadRPC(),
+		rpc:       nil,
+		factory:   nil,
+		service:   fake.NewService(electionID, electionTypes.Election{}),
+		rosterFac: fake.Factory{},
 		handler: &Handler{
 			startRes: &state{},
 		},
 	}
 
+	// Wrong electionID
+	wrongElectionID := "beefdead"
+	actor.electionID = wrongElectionID
+
 	_, err := actor.Setup()
+	require.EqualError(t, err, fmt.Sprintf("election %s was not found", wrongElectionID))
+
+	actor.electionID = electionID
+
+	// RPC is bogus 1
+	actor.rpc = fake.NewBadRPC()
+
+	_, err = actor.Setup()
 	require.EqualError(t, err, fake.Err("failed to stream"))
 
-	rpc := fake.NewStreamRPC(fake.NewReceiver(), fake.NewBadSender())
-	actor.rpc = rpc
+	// RPC is bogus 2
+	actor.rpc = fake.NewRPC()
 
 	_, err = actor.Setup()
-	require.EqualError(t, err, "expected ed25519.PublicKey, got 'fake.PublicKey'")
+	require.EqualError(t, err, "the list of addresses is empty")
 
-	rpc = fake.NewStreamRPC(fake.NewBadReceiver(), fake.Sender{})
-	actor.rpc = rpc
-
-	_, err = actor.Setup()
-	require.EqualError(t, err, fake.Err("got an error from '%!s(<nil>)' while receiving"))
-
-	recv := fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), nil))
-
-	rpc = fake.NewStreamRPC(recv, fake.Sender{})
-	actor.rpc = rpc
+	// RPC is bogus 3
+	actor.rpc = fake.NewStreamRPC(fake.NewReceiver(), fake.NewBadSender())
 
 	_, err = actor.Setup()
-	require.EqualError(t, err, "expected to receive a Done message, but go the following: <nil>")
+	require.EqualError(t, err, fake.Err("failed to send getPeerKey message"))
 
-	rpc = fake.NewStreamRPC(fake.NewReceiver(
-		fake.NewRecvMsg(fake.NewAddress(0), types.NewStartDone(suite.Point())),
-		fake.NewRecvMsg(fake.NewAddress(0), types.NewStartDone(suite.Point().Pick(suite.RandomStream()))),
+	// The public keys do not match
+	// Create the roster
+	rosterLen := 2
+	roster := authority.FromAuthority(fake.NewAuthority(rosterLen, fake.NewSigner))
+
+	addrs := make([]mino.Address, 0, rosterLen)
+	addrsIter := roster.AddressIterator()
+	for addrsIter.HasNext() {
+		addrs = append(addrs, addrsIter.GetNext())
+	}
+
+	// This fake RosterFac always returns roster upon Deserialize
+	actor.rosterFac = fake.NewRosterFac(roster)
+
+	rosterBuf, err := roster.Serialize(fake.NewContextWithFormat(serde.Format("JSON")))
+	require.NoError(t, err)
+
+	actor.service = fake.NewService(
+		electionID,
+		electionTypes.Election{
+			RosterBuf: rosterBuf,
+		},
+	)
+	pubKey1 := suite.Point().Pick(suite.RandomStream())
+	pubKey2 := suite.Point().Pick(suite.RandomStream())
+
+	actor.rpc = fake.NewStreamRPC(fake.NewReceiver(
+		fake.NewRecvMsg(addrs[0], types.NewGetPeerPubKeyResp(pubKey1)),
+		fake.NewRecvMsg(addrs[1], types.NewGetPeerPubKeyResp(pubKey2)),
+		fake.NewRecvMsg(addrs[0], types.NewStartDone(pubKey1)),
+		fake.NewRecvMsg(addrs[1], types.NewStartDone(pubKey2)),
 	), fake.Sender{})
-	actor.rpc = rpc
 
 	_, err = actor.Setup()
-	require.Error(t, err)
-	require.Regexp(t, "^the public keys does not match:", err)
+	require.Regexp(t, "^the public keys do not match:", err)
+
+	// Everything works now
+	actor.rpc = fake.NewStreamRPC(fake.NewReceiver(
+		fake.NewRecvMsg(addrs[0], types.NewGetPeerPubKeyResp(pubKey2)),
+		fake.NewRecvMsg(addrs[1], types.NewGetPeerPubKeyResp(pubKey2)),
+		fake.NewRecvMsg(addrs[0], types.NewStartDone(pubKey2)),
+		fake.NewRecvMsg(addrs[1], types.NewStartDone(pubKey2)),
+	), fake.Sender{})
+
+	// This will not change startRes since the responses are all
+	// simulated, so running setup() several times will work.
+	// We test that particular behaviour later.
+	_, err = actor.Setup()
+	require.NoError(t, err)
 }
 
 func TestPedersen_GetPublicKey(t *testing.T) {
 
-	p := NewPedersen(fake.Mino{}, fake.Service{}, fake.Factory{})
+	actor := Actor{handler: &Handler{startRes: &state{}}}
 
-	electionID := "deadbeef"
-	electionIDBuf, err := hex.DecodeString(electionID)
-	require.NoError(t, err)
+	// GetPublicKey requires Setup to have been run
+	_, err := actor.GetPublicKey()
+	require.EqualError(t, err, "dkg has not been initialized")
 
-	actor, err := p.Listen(electionIDBuf)
-	require.NoError(t, err)
-
-	_, err = actor.GetPublicKey()
-	require.EqualError(t, err, "DKG has not been initialized")
-
-	actor.Setup()
+	actor.handler.startRes = &state{participants: []mino.Address{fake.NewAddress(0)}, distKey: suite.Point()}
 
 	_, err = actor.GetPublicKey()
 	require.NoError(t, err)
@@ -324,8 +382,14 @@ func TestPedersen_Scenario(t *testing.T) {
 	n := 5
 
 	minos := make([]mino.Mino, n)
-	dkgs := make([]dkg.DKG, n)
 	addrs := make([]mino.Address, n)
+	dkgs := make([]dkg.DKG, n)
+	actors := make([]dkg.Actor, n)
+
+	electionID := "deadbeef"
+	electionIDBuf, err := hex.DecodeString(electionID)
+	require.NoError(t, err)
+	electionService := fake.NewService(electionID, electionTypes.Election{})
 
 	for i := 0; i < n; i++ {
 		addr := minogrpc.ParseAddress("127.0.0.1", 0)
@@ -344,28 +408,22 @@ func TestPedersen_Scenario(t *testing.T) {
 			mino.(*minogrpc.Minogrpc).GetCertificateStore().Store(m.GetAddress(), m.(*minogrpc.Minogrpc).GetCertificate())
 		}
 
-		dkg := NewPedersen(mino.(*minogrpc.Minogrpc), fake.Service{}, fake.Factory{})
-
-		dkgs[i] = dkg
+		dkgs[i] = NewPedersen(mino, electionService, fake.Factory{})
 	}
 
-	electionIDBuf, err := hex.DecodeString("deadbeef")
-	require.NoError(t, err)
-
-	message := []byte("Hello world")
-	actors := make([]dkg.Actor, n)
-	for i := 0; i < n; i++ {
-		actor, err := dkgs[i].Listen(electionIDBuf)
+	for i, dkg := range dkgs {
+		actor, err := dkg.Listen(electionIDBuf)
 		require.NoError(t, err)
 
 		actors[i] = actor
 	}
 
 	// trying to call a decrypt/encrypt before a setup
-	_, _, _, err = actors[0].Encrypt(message)
-	require.EqualError(t, err, "you must first initialize DKG. Did you call setup() first?")
+	_, _, _, err = actors[0].Encrypt(nil)
+	require.EqualError(t, err, "setup() was not called")
+
 	_, err = actors[0].Decrypt(nil, nil)
-	require.EqualError(t, err, "you must first initialize DKG. Did you call setup() first?")
+	require.EqualError(t, err, "setup() was not called")
 
 	_, err = actors[0].Setup()
 	require.NoError(t, err)
@@ -374,6 +432,7 @@ func TestPedersen_Scenario(t *testing.T) {
 	require.EqualError(t, err, "startRes is already done, only one setup call is allowed")
 
 	// every node should be able to encrypt/decrypt
+	message := []byte("Hello world")
 	for i := 0; i < n; i++ {
 		K, C, remainder, err := actors[i].Encrypt(message)
 		require.NoError(t, err)

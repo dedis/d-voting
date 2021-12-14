@@ -77,17 +77,17 @@ func TestNeffShuffle_Verify(t *testing.T) {
 	Y := make([]kyber.Point, k)
 
 	for i := 0; i < k; i++ {
-			// Embed the message into a curve point
-			message := "Test" + strconv.Itoa(i)
-			M := suite.Point().Embed([]byte(message), random.New())
+		// Embed the message into a curve point
+		message := "Test" + strconv.Itoa(i)
+		M := suite.Point().Embed([]byte(message), random.New())
 
-			// ElGamal-encrypt the point to produce ciphertext (K,C).
-			k := suite.Scalar().Pick(random.New()) // ephemeral private key
-			K := suite.Point().Mul(k, nil)         // ephemeral DH public key
-			S := suite.Point().Mul(k, H)           // ephemeral DH shared secret
-			C := S.Add(S, M)                       // message blinded with secret
-			X[i] = K
-			Y[i] = C
+		// ElGamal-encrypt the point to produce ciphertext (K,C).
+		k := suite.Scalar().Pick(random.New()) // ephemeral private key
+		K := suite.Point().Mul(k, nil)         // ephemeral DH public key
+		S := suite.Point().Mul(k, H)           // ephemeral DH shared secret
+		C := S.Add(S, M)                       // message blinded with secret
+		X[i] = K
+		Y[i] = C
 	}
 
 	Kbar, Cbar, prover := shuffleKyber.Shuffle(suite, nil, H, X, Y, rand)

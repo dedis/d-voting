@@ -494,19 +494,22 @@ func (hd *HandlerData) MarshalJSON() ([]byte, error) {
 	}
 
 	// Marshal PrivShare
-	privShareVBuf, err := hd.PrivShare.V.MarshalBinary()
-	if err != nil {
-		return nil, err
-	}
-	privShareBuf, err := json.Marshal(&struct {
-		I int
-		V []byte
-	}{
-		I: hd.PrivShare.I,
-		V: privShareVBuf,
-	})
-	if err != nil {
-		return nil, err
+	var privShareBuf []byte
+	if hd.PrivShare != nil {
+		privShareVBuf, err := hd.PrivShare.V.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+		privShareBuf, err = json.Marshal(&struct {
+			I int    `json:",omitempty"`
+			V []byte `json:",omitempty"`
+		}{
+			I: hd.PrivShare.I,
+			V: privShareVBuf,
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Marshal PubKey
@@ -522,8 +525,8 @@ func (hd *HandlerData) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(&struct {
-		StartRes  []byte
-		PrivShare []byte
+		StartRes  []byte `json:",omitempty"`
+		PrivShare []byte `json:",omitempty"`
 		PubKey    []byte
 		PrivKey   []byte
 	}{
@@ -537,8 +540,8 @@ func (hd *HandlerData) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON fills a HandlerData with previously marshalled data.
 func (hd *HandlerData) UnmarshalJSON(data []byte) error {
 	aux := &struct {
-		StartRes  []byte
-		PrivShare []byte
+		StartRes  []byte `json:",omitempty"`
+		PrivShare []byte `json:",omitempty"`
 		PubKey    []byte
 		PrivKey   []byte
 	}{}
@@ -552,21 +555,25 @@ func (hd *HandlerData) UnmarshalJSON(data []byte) error {
 	hd.StartRes.UnmarshalJSON(aux.StartRes)
 
 	// Unmarshal PrivShare
-	privShareBuf := &struct {
-		I int
-		V []byte
-	}{}
-	err = json.Unmarshal(aux.PrivShare, privShareBuf)
-	if err != nil {
-		return err
+	if aux.PrivShare == nil {
+		hd.PrivShare = nil
+	} else {
+		privShareBuf := &struct {
+			I int
+			V []byte
+		}{}
+		err = json.Unmarshal(aux.PrivShare, privShareBuf)
+		if err != nil {
+			return err
+		}
+		privShareV := suite.Scalar()
+		privShareV.UnmarshalBinary(privShareBuf.V)
+		privShare := &share.PriShare{
+			I: privShareBuf.I,
+			V: privShareV,
+		}
+		hd.PrivShare = privShare
 	}
-	privShareV := suite.Scalar()
-	privShareV.UnmarshalBinary(privShareBuf.V)
-	privShare := &share.PriShare{
-		I: privShareBuf.I,
-		V: privShareV,
-	}
-	hd.PrivShare = privShare
 
 	// Unmarshal PubKey
 	pubKey := suite.Point()
@@ -624,23 +631,29 @@ func (s *state) MarshalJSON() ([]byte, error) {
 	s.Lock()
 	defer s.Unlock()
 
-	distKeyBuf, err := s.distKey.MarshalBinary()
-	if err != nil {
-		return nil, err
-	}
+	var distKeyBuf []byte
+	var participantsBuf [][]byte
+	var err error
 
-	var participantsBuf = make([][]byte, len(s.participants))
-	for i, p := range s.participants {
-		pBuf, err := p.MarshalText()
+	if s.distKey != nil {
+		distKeyBuf, err = s.distKey.MarshalBinary()
 		if err != nil {
 			return nil, err
 		}
-		participantsBuf[i] = pBuf
+
+		participantsBuf = make([][]byte, len(s.participants))
+		for i, p := range s.participants {
+			pBuf, err := p.MarshalText()
+			if err != nil {
+				return nil, err
+			}
+			participantsBuf[i] = pBuf
+		}
 	}
 
 	return json.Marshal(&struct {
-		DistKey      []byte
-		Participants [][]byte
+		DistKey      []byte   `json:",omitempty"`
+		Participants [][]byte `json:",omitempty"`
 	}{
 		DistKey:      distKeyBuf,
 		Participants: participantsBuf,
@@ -657,20 +670,28 @@ func (s *state) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	distKey := suite.Point()
-	err = distKey.UnmarshalBinary(aux.DistKey)
-	if err != nil {
-		return err
+	if aux.DistKey != nil {
+		distKey := suite.Point()
+		err = distKey.UnmarshalBinary(aux.DistKey)
+		if err != nil {
+			return err
+		}
+		s.SetDistKey(distKey)
+	} else {
+		s.SetDistKey(nil)
 	}
-	s.SetDistKey(distKey)
 
-	// TODO: Is using a fake implementation a problem?
-	f := fake.NewBadMino().GetAddressFactory()
-	var participants = make([]mino.Address, len(aux.Participants))
-	for i := 0; i < len(aux.Participants); i++ {
-		participants[i] = f.FromText(aux.Participants[i])
+	if aux.Participants != nil {
+		// TODO: Is using a fake implementation a problem?
+		f := fake.NewBadMino().GetAddressFactory()
+		var participants = make([]mino.Address, len(aux.Participants))
+		for i := 0; i < len(aux.Participants); i++ {
+			participants[i] = f.FromText(aux.Participants[i])
+		}
+		s.SetParticipants(participants)
+	} else {
+		s.SetParticipants(nil)
 	}
-	s.SetParticipants(participants)
 
 	return nil
 }

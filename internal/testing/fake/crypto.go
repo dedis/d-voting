@@ -5,7 +5,12 @@ import (
 
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/serde"
+	"go.dedis.ch/kyber/v3"
 )
+
+func NewScalar() kyber.Scalar {
+	return suite.Scalar().Pick(suite.RandomStream())
+}
 
 // PublicKey is a fake implementation of crypto.PublicKey.
 //

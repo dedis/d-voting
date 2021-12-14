@@ -248,9 +248,8 @@ func TestHandler_StartShuffle(t *testing.T) {
 	// all transactions got denied
 	require.NoError(t, err)
 
-	// Shuffle already started :
-	shuffledBallots := electionTypes.EncryptedBallots{}
-	shuffledBallots = append(shuffledBallots, election.PublicBulletinBoard.Ballots...)
+	// Shuffle already started:
+	shuffledBallots := append(electionTypes.EncryptedBallots{}, election.PublicBulletinBoard.Ballots...)
 	election.ShuffleInstances = append(election.ShuffleInstances, electionTypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
 
 	election.ShuffleThreshold = 2

@@ -116,15 +116,15 @@ type Contract struct {
 }
 
 // NewContract creates a new Value contract
-func NewContract(aKey, rKey []byte, srvc access.Service, pedersen dkg.DKG, rFac authority.Factory) Contract {
+func NewContract(accessKey, rosterKey []byte, srvc access.Service,
+	pedersen dkg.DKG, rosterFac authority.Factory) Contract {
 	contract := Contract{
-		// indexElection:     map[string]struct{}{},
 		access:    srvc,
-		accessKey: aKey,
+		accessKey: accessKey,
 		pedersen:  pedersen,
 
-		rosterKey: rKey,
-		rosterFac: rFac,
+		rosterKey: rosterKey,
+		rosterFac: rosterFac,
 
 		context: json.NewContext(),
 	}

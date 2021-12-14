@@ -94,3 +94,18 @@ func (f Factory) Deserialize(ctx serde.Context, data []byte) (serde.Message, err
 func (f Factory) AuthorityOf(serde.Context, []byte) (authority.Authority, error) {
 	return Authority{}, nil
 }
+
+// This fake RosterFac always returns roster upon Deserialize
+type RosterFac struct {
+	authority.Factory
+
+	roster authority.Roster
+}
+
+func NewRosterFac(roster authority.Roster) (RosterFac) {
+	return RosterFac{roster: roster}
+}
+
+func (f RosterFac) AuthorityOf(serde.Context, []byte) (authority.Authority, error) {
+	return f.roster, nil
+}

@@ -24,7 +24,7 @@ func TestMessageFormat_Start_Encode(t *testing.T) {
 
 	data, err := format.Encode(ctx, start)
 	require.NoError(t, err)
-	regexp := `{"Start":{"Threshold":1,"Addresses":\["AAAAAA=="\],"PublicKeys":\["[^"]+"\]}}`
+	regexp := `{"Start":{"Threshold":0,"Addresses":\["AAAAAA=="\],"PublicKeys":\["[^"]+"\]}}`
 	require.Regexp(t, regexp, string(data))
 
 	start = types.NewStart([]mino.Address{fake.NewBadAddress()}, nil)

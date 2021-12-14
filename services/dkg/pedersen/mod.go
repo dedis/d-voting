@@ -147,12 +147,13 @@ func (a *Actor) Setup() (kyber.Point, error) {
 
 	if a.handler.startRes.Done() {
 		return nil, xerrors.Errorf("startRes is already done, only one setup call is allowed")
+	}
+
 	electionIDBuf, err := hex.DecodeString(a.electionID)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to decode electionID: %v", err)
 	}
 
-	// check that electionID corresponds to a real election
 	proof, exists := electionExists(a.service, electionIDBuf)
 	if !exists {
 		return nil, xerrors.Errorf("election %s was not found", a.electionID)
@@ -195,6 +196,10 @@ func (a *Actor) Setup() (kyber.Point, error) {
 	lenAddrs := len(addrs)
 	dkgPeerPubkeys := make([]kyber.Point, 0, lenAddrs)
 	associatedAddrs := make([]mino.Address, 0, lenAddrs)
+
+	if lenAddrs == 0 {
+		return nil, xerrors.Errorf("the list of addresses is empty")
+	}
 
 	for i := 0; i < lenAddrs; i++ {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
@@ -251,7 +256,7 @@ func (a *Actor) Setup() (kyber.Point, error) {
 		// key.
 		// TODO: handle the situation where a pub key is not the same
 		if i != 0 && !dkgPubKeys[i-1].Equal(doneMsg.GetPublicKey()) {
-			return nil, xerrors.Errorf("the public keys does not match: %v", dkgPubKeys)
+			return nil, xerrors.Errorf("the public keys do not match: %v", dkgPubKeys)
 		}
 	}
 
@@ -284,10 +289,10 @@ func (a *Actor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte,
 	}
 	remainder = message[max:]
 	// ElGamal-encrypt the point to produce ciphertext (K,C).
-	k := suite.Scalar().Pick(random.New())             // ephemeral private key
-	K = suite.Point().Mul(k, nil)                      // ephemeral DH public key
+	k := suite.Scalar().Pick(random.New())                     // ephemeral private key
+	K = suite.Point().Mul(k, nil)                              // ephemeral DH public key
 	S := suite.Point().Mul(k, a.handler.startRes.GetDistKey()) // ephemeral DH shared secret
-	C = S.Add(S, M)                                    // message blinded with secret
+	C = S.Add(S, M)                                            // message blinded with secret
 
 	return K, C, remainder, nil
 }

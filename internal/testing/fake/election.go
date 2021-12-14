@@ -17,12 +17,16 @@ func NewElection(electionID string) types.Election {
 	pubKeyMarshalled, _ := pubKey.MarshalBinary()
 
 	election := types.Election{
-		Title:            "dummyTitle",
-		ElectionID:       electionID,
-		AdminID:          "dummyAdminID",
-		Status:           types.Closed,
-		Pubkey:           pubKeyMarshalled,
-		EncryptedBallots: types.EncryptedBallots{},
+		Configuration: types.Configuration{
+			MainTitle: "dummyTitle",
+		},
+		ElectionID: electionID,
+		AdminID:    "dummyAdminID",
+		Status:     types.Closed,
+		Pubkey:     pubKeyMarshalled,
+		PublicBulletinBoard: types.PublicBulletinBoard{
+			Ballots: types.EncryptedBallots{},
+		},
 		ShuffleInstances: []types.ShuffleInstance{},
 		DecryptedBallots: nil,
 		ShuffleThreshold: 1,
@@ -33,8 +37,9 @@ func NewElection(electionID string) types.Election {
 			K: KsMarshalled[i],
 			C: CsMarshalled[i],
 		}
-		election.EncryptedBallots.CastVote("dummyUser"+strconv.Itoa(i), ballot)
+		election.PublicBulletinBoard.CastVote("dummyUser"+strconv.Itoa(i), []types.Ciphertext{ballot})
 	}
+
 	return election
 }
 

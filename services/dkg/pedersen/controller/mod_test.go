@@ -12,38 +12,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func TestController_SetCommands(t *testing.T) {
-	c := NewController()
-
-	call := &fake.Call{}
-	c.SetCommands(fakeBuilder{call: call})
-
-	require.Equal(t, 19, call.Len())
-	require.Equal(t, "dkg", call.Get(0, 0))
-	require.Equal(t, "interact with the DKG service", call.Get(1, 0))
-
-	require.Equal(t, "init", call.Get(2, 0))
-	require.Equal(t, "initialize the DKG protocol", call.Get(3, 0))
-	require.IsType(t, &initAction{}, call.Get(4, 0))
-	require.Nil(t, call.Get(5, 0))
-
-	require.Equal(t, "setup", call.Get(6, 0))
-	require.Equal(t, "creates the public distributed key and the private share on each node", call.Get(7, 0))
-	require.Len(t, call.Get(8, 0), 1)
-	require.IsType(t, &setupAction{}, call.Get(9, 0))
-	require.Nil(t, call.Get(10, 0))
-
-	require.Equal(t, "export", call.Get(11, 0))
-	require.Equal(t, "export the node address and public key", call.Get(12, 0))
-	require.IsType(t, &exportInfoAction{}, call.Get(13, 0))
-	require.Nil(t, call.Get(14, 0))
-
-	require.Equal(t, "getPublicKey", call.Get(15, 0))
-	require.Equal(t, "prints the distributed public Key", call.Get(16, 0))
-	require.IsType(t, &getPublicKeyAction{}, call.Get(17, 0))
-	require.Nil(t, call.Get(18, 0))
-}
-
 func TestMinimal_OnStart(t *testing.T) {
 	c := NewController()
 	inj := newInjector(nil)
@@ -54,8 +22,21 @@ func TestMinimal_OnStart(t *testing.T) {
 	inj = newInjector(fake.Mino{})
 	err = c.OnStart(nil, inj)
 	require.NoError(t, err)
+
+	// var exec *native.Service
+
+	// var access darc.Service
+
+	// var cosi *threshold.Threshold
+
+	// var rosterFac authority.Factory
+
+	// var srvc *cosipbft.Service
+
 	require.Len(t, inj.(*fakeInjector).history, 2)
 	require.IsType(t, &pedersen.Pedersen{}, inj.(*fakeInjector).history[0])
+
+	// Weird, one line is enough?
 	pubkey := suite.Point()
 	require.IsType(t, pubkey, inj.(*fakeInjector).history[1])
 }
@@ -67,7 +48,6 @@ func TestMinimal_OnStop(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// -----------------------------------------------------------------------------
 // Utility functions
 
 type fakeCommandBuilder struct {
@@ -109,12 +89,6 @@ func (b fakeBuilder) MakeAction(tmpl node.ActionTemplate) cli.Action {
 	return nil
 }
 
-func newInjector(mino mino.Mino) node.Injector {
-	return &fakeInjector{
-		mino: mino,
-	}
-}
-
 // fakeInjector is a fake injector
 //
 // - implements node.Injector
@@ -137,7 +111,7 @@ func (i fakeInjector) Resolve(el interface{}) error {
 		}
 		*msg = i.mino
 	default:
-		return xerrors.Errorf("unkown message '%T", msg)
+		return xerrors.Errorf("unkown message: %T", msg)
 	}
 
 	return nil
@@ -149,4 +123,12 @@ func (i *fakeInjector) Inject(v interface{}) {
 		i.history = make([]interface{}, 0)
 	}
 	i.history = append(i.history, v)
+}
+
+func newInjector(args ...interface{}) node.Injector {
+	f := &fakeInjector{}
+	for i := range args {
+		f.Inject(i)
+	}
+	return f
 }

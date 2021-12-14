@@ -36,7 +36,7 @@ func (f Proof) GetValue() []byte {
 // - implements ordering.Service
 type Service struct {
 	Err       error
-	Elections map[string]interface{}
+	Elections map[string]electionTypes.Election
 	Pool      *Pool
 	Status    bool
 	Channel   chan ordering.Event
@@ -142,8 +142,8 @@ func (f *Service) AddTx(tx Transaction) {
 
 }
 
-func NewService(election electionTypes.Election, electionID string) Service {
-	elections := make(map[string]interface{})
+func NewService(electionID string, election electionTypes.Election) Service {
+	elections := make(map[string]electionTypes.Election)
 	elections[electionID] = election
 
 	return Service{

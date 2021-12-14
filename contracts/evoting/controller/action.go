@@ -585,7 +585,7 @@ func (a *scenarioTestPart2Action) Execute(ctx node.Context) error {
 
 	dela.Logger.Info().Msg("Response body: " + respBody)
 
-        // Check election data
+	// Check election data
 	proof, err = service.GetProof(electionIDBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to read on the blockchain: %v", err)
@@ -1179,7 +1179,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	dela.Logger.Info().Msg("Response body: " + respBody)
 
-        // Ballot 3
+	// Ballot 3
 	ballot3, err := marshallBallot("ballot3", dkgActor, election.ChunksPerBallot())
 	if err != nil {
 		return xerrors.Errorf("failed to marshall ballot: %v", err)
@@ -1199,7 +1199,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	dela.Logger.Info().Msg("Response body: " + respBody)
 
-        // Check election data
+	// Check election data
 	proof, err = service.GetProof(electionIDBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to read on the blockchain: %v", err)

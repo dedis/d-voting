@@ -10,9 +10,9 @@ import (
 
 func TestInitAction_Execute(t *testing.T) {
 	ctx := node.Context{
-			Injector: node.NewInjector(),
-			Flags:    make(node.FlagSet),
-			Out:      ioutil.Discard,
+		Injector: node.NewInjector(),
+		Flags:    make(node.FlagSet),
+		Out:      ioutil.Discard,
 	}
 
 	action := initAction{}

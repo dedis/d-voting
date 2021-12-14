@@ -41,16 +41,17 @@ type Election struct {
 	// of shuffler.
 	ShuffleInstances []ShuffleInstance
 
-	// ShuffleThreshold is set based on the roster. We save it so we don't have
+	// ShuffleThreshold is set based on the roster. We save it so we do not have
 	// to compute it based on the roster each time we need it.
 	ShuffleThreshold int
 
 	DecryptedBallots []Ballot
 
-	// roster is once set when the election is created based on the current
-	// roster of the node stored in the global state. The roster won't change
+	// roster is set when the election is created based on the current
+	// roster of the node stored in the global state. The roster will not change
 	// during an election and will be used for DKG and Neff. Its type is
 	// authority.Authority.
+
 	RosterBuf []byte
 }
 

@@ -14,7 +14,7 @@ import (
 )
 
 func TestHandler_Stream(t *testing.T) {
-	h := Handler{startRes: &state{}}
+	h := Handler{startRes: &state{}, service: fake.Service{}}
 	receiver := fake.NewBadReceiver()
 	err := h.Stream(fake.Sender{}, receiver)
 	require.EqualError(t, err, fake.Err("failed to receive"))
@@ -33,8 +33,7 @@ func TestHandler_Stream(t *testing.T) {
 		fake.NewRecvMsg(fake.NewAddress(0), types.DecryptRequest{C: suite.Point()}),
 	)
 	err = h.Stream(fake.NewBadSender(), receiver)
-	require.EqualError(t, err, fake.Err("got an error while sending the decrypt reply"))
-
+	require.EqualError(t, err, "failed to check if the ciphertext has been shuffled: election does not exist: <nil>")
 	receiver = fake.NewReceiver(
 		fake.NewRecvMsg(fake.NewAddress(0), fake.Message{}),
 	)
@@ -143,7 +142,7 @@ func TestHandler_HandleDeal(t *testing.T) {
 }
 
 func TestHandlerData_MarshalJSON(t *testing.T) {
-	hd := HandlerDataTest()
+	hd := NewHandlerData()
 
 	data, err := hd.MarshalJSON()
 	require.NoError(t, err)
@@ -159,17 +158,29 @@ func TestHandlerData_MarshalJSON(t *testing.T) {
 }
 
 func TestState_MarshalJSON(t *testing.T) {
-	distKey := suite.Point().Pick(suite.RandomStream())
-	participants := []mino.Address{fake.NewAddress(0), fake.NewAddress(1)}
-
 	s1 := &state{}
-	s1.SetDistKey(distKey)
-	s1.SetParticipants(participants)
 
+	// Try with no data
 	data, err := s1.MarshalJSON()
 	require.NoError(t, err)
 
 	s2 := &state{}
+	err = s2.UnmarshalJSON(data)
+	require.NoError(t, err)
+
+	requireStatesEqual(t, s1, s2)
+
+	// Try with some data
+	distKey := suite.Point().Pick(suite.RandomStream())
+	participants := []mino.Address{fake.NewAddress(0), fake.NewAddress(1)}
+
+	s1.SetDistKey(distKey)
+	s1.SetParticipants(participants)
+
+	data, err = s1.MarshalJSON()
+	require.NoError(t, err)
+
+	s2 = &state{}
 	err = s2.UnmarshalJSON(data)
 	require.NoError(t, err)
 
@@ -220,7 +231,9 @@ func getCertified(t *testing.T) *pedersen.DistKeyGenerator {
 	return dkg1
 }
 
-func HandlerDataTest() HandlerData {
+// NewHandlerDataFull extends NewHandlerData which does not
+// initialize all fields
+func NewHandlerDataFull() HandlerData {
 	hd := NewHandlerData()
 
 	// Set StartRes
@@ -240,6 +253,12 @@ func HandlerDataTest() HandlerData {
 }
 
 func requireStatesEqual(t *testing.T, s1, s2 *state) {
-	require.True(t, s2.GetDistKey().Equal(s1.GetDistKey()))
+	DistKey1 := s1.GetDistKey()
+	DistKey2 := s2.GetDistKey()
+	if DistKey1 == nil {
+		require.Nil(t, DistKey2)
+	} else {
+		require.True(t, DistKey2.Equal(DistKey1))
+	}
 	require.Equal(t, s2.GetParticipants(), s1.GetParticipants())
 }

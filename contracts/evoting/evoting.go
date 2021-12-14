@@ -66,10 +66,10 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 	}
 
 	election := types.Election{
-		ElectionID: hex.EncodeToString(electionIDBuf),
+		ElectionID:    hex.EncodeToString(electionIDBuf),
 		Configuration: createElectionTxn.Configuration,
-		AdminID:    createElectionTxn.AdminID,
-		Status:     types.Initial,
+		AdminID:       createElectionTxn.AdminID,
+		Status:        types.Initial,
 		// Pubkey is set by the opening command
 		BallotSize:          createElectionTxn.Configuration.MaxBallotSize(),
 		PublicBulletinBoard: types.PublicBulletinBoard{},

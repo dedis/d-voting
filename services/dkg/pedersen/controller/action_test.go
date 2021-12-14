@@ -6,13 +6,9 @@ import (
 	"testing"
 
 	"github.com/dedis/d-voting/internal/testing/fake"
-	"github.com/dedis/d-voting/services/dkg"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
-	"go.dedis.ch/dela/core/ordering"
-	"go.dedis.ch/dela/crypto"
-	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
 )
 
@@ -26,17 +22,26 @@ func TestInitAction_Execute(t *testing.T) {
 
 	action := initAction{}
 
+	// Try without a DKG in the system
 	err := action.Execute(ctx)
-	require.EqualError(t, err, "failed to resolve dkg: couldn't find dependency for 'dkg.DKG'")
+	require.EqualError(t, err, "failed to resolve DKG: couldn't find dependency for 'dkg.DKG'")
 
-	fakeErr := xerrors.Errorf("fake error")
-	dkgPedersen := fakePedersen{err: fakeErr}
-	ctx.Injector.Inject(dkgPedersen)
+	// Try with a bogus DKG in the system
+	p := fake.Pedersen{Err: xerrors.Errorf("fake error")}
+	ctx.Injector.Inject(p)
 	err = action.Execute(ctx)
 	require.EqualError(t, err, "failed to start the RPC: fake error")
 
-	dkgPedersen.err = nil
-	ctx.Injector.Inject(dkgPedersen)
+	// Try with a DKG but no DKGMap in the system
+	p.Err = nil
+	ctx.Injector.Inject(p)
+	err = action.Execute(ctx)
+	require.EqualError(t, err, "failed to resolve dkgMap: couldn't find dependency for 'pedersen.Store'")
+
+	// Try with a DKG and a DKGMap in the system
+	var dkgMap fake.PedersenStore
+	ctx.Injector.Inject(dkgMap)
+
 	err = action.Execute(ctx)
 	require.NoError(t, err)
 }
@@ -53,6 +58,7 @@ func TestSetupAction_Execute(t *testing.T) {
 	}
 
 	flags.strings["member"] = []string{"badAddress"}
+	flags.strings["electionID"] = []string{"deadbeef"}
 	ctx.Flags = flags
 
 	err := action.Execute(ctx)
@@ -93,18 +99,17 @@ func TestSetupAction_Execute(t *testing.T) {
 	require.EqualError(t, err, "failed to resolve actor: couldn't find dependency for 'dkg.Actor'")
 
 	fakeErr := xerrors.Errorf("fake error")
-	actor := fakeActor{err: fakeErr}
+	actor := fake.DKGActor{Err: fakeErr}
 	ctx.Injector.Inject(actor)
 
 	err = action.Execute(ctx)
 	require.EqualError(t, err, "failed to setup DKG: fake error")
 
-	actor = fakeActor{pubKey: fakePubkey}
+	actor = fake.DKGActor{PubKey: fakePubkey}
 	ctx.Injector.Inject(actor)
 
 	err = action.Execute(ctx)
 	require.NoError(t, err)
-
 }
 
 func TestExportInfoAction_Execute(t *testing.T) {
@@ -142,46 +147,6 @@ func TestExportInfoAction_Execute(t *testing.T) {
 
 // -----------------------------------------------------------------------------
 // Utility functions
-
-type fakePedersen struct {
-	err error
-}
-
-func (f fakePedersen) Listen() (dkg.Actor, error) {
-	return nil, f.err
-}
-
-func (f fakePedersen) GetLastActor() (dkg.Actor, error) {
-	return nil, f.err
-}
-
-func (f fakePedersen) SetService(service ordering.Service) {
-}
-
-type fakeActor struct {
-	err    error
-	pubKey kyber.Point
-}
-
-func (f fakeActor) Setup(co crypto.CollectiveAuthority, threshold int) (pubKey kyber.Point, err error) {
-	return f.pubKey, f.err
-}
-
-func (f fakeActor) GetPublicKey() (kyber.Point, error) {
-	return f.pubKey, f.err
-}
-
-func (f fakeActor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte, err error) {
-	return nil, nil, nil, f.err
-}
-
-func (f fakeActor) Decrypt(K, C kyber.Point, electionId string) ([]byte, error) {
-	return nil, f.err
-}
-
-func (f fakeActor) Reshare() error {
-	return f.err
-}
 
 type fakeFlags struct {
 	cli.Flags
