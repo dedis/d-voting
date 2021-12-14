@@ -43,7 +43,7 @@ A possible encoding of an answer would be (by string concatenation):
 
 "rank:0x19c7:0,1,2\n" + 
 
-"text:0xcd13:base64("Noémien"),base64("Pierluca")"
+"text:0xcd13:base64("Noémien"),base64("Pierluca")\n"
 ```
 
 ## Size of the ballot
