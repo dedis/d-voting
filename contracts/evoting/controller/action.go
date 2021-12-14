@@ -181,13 +181,13 @@ func getSigner(filePath string) (crypto.Signer, error) {
 	return signer, nil
 }
 
-// scenarioTestPart1Action is an action to
+// scenarioTestPart1Action is an action to run the first part of a test scenario
 //
 // - implements node.ActionTemplate
 type scenarioTestPart1Action struct {
 }
 
-// Execute implements node.ActionTemplate. It creates
+// Execute implements node.ActionTemplate. It creates an election.
 func (a *scenarioTestPart1Action) Execute(ctx node.Context) error {
 	proxyAddr := ctx.Flags.String("proxy-addr")
 
@@ -323,13 +323,16 @@ func (a *scenarioTestPart1Action) Execute(ctx node.Context) error {
 	return nil
 }
 
-// scenarioTestPart2Action is an action to
+// scenarioTestPart2Action is an action to run the second part of a test scenario
 //
 // - implements node.ActionTemplate
 type scenarioTestPart2Action struct {
 }
 
-// Execute implements node.ActionTemplate. It creates
+// Execute implements node.ActionTemplate. It 
+// simulates the full election process after the creation (which
+// is done in scenarioTestPart1Action), and after initialising
+// the DKG service on each node.
 func (a *scenarioTestPart2Action) Execute(ctx node.Context) error {
 
 	proxyAddr := ctx.Flags.String("proxy-addr")
@@ -814,13 +817,14 @@ func (a *scenarioTestPart2Action) Execute(ctx node.Context) error {
 	return nil
 }
 
-// scenarioTestAction is an action to
+// scenarioTestAction is an action to run a test scenario
 //
 // - implements node.ActionTemplate
 type scenarioTestAction struct {
 }
 
-// Execute implements node.ActionTemplate. It creates
+// Execute implements node.ActionTemplate. It creates an election and
+// simulates the full election process
 func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	proxyAddr1 := ctx.Flags.String("proxy-addr1")
 	proxyAddr2 := ctx.Flags.String("proxy-addr2")
