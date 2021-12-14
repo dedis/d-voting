@@ -377,6 +377,9 @@ func (a *Actor) MarshalJSON() ([]byte, error) {
 // Store tags a store for Pedersen
 type Store interface {
 	kv.DB
+
+	// DKGStore is a marker to distinguish Store from kv.DB.
+	DKGStore()
 }
 
 // SimpleStore wraps a store for Pedersen
@@ -385,6 +388,8 @@ type Store interface {
 type SimpleStore struct {
 	kv.DB
 }
+
+func (s SimpleStore) DKGStore() {}
 
 func electionExists(service ordering.Service, electionIDBuf []byte) (ordering.Proof, bool) {
 	proof, err := service.GetProof(electionIDBuf)
