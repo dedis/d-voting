@@ -22,12 +22,12 @@ func (f ChangeSet) Serialize(ctx serde.Context) ([]byte, error) {
 // NumChanges returns the number of changes that will be applied with this
 // change set.
 func (f ChangeSet) NumChanges() int {
-    return 0
+	return 0
 }
 
 // GetNewAddresses returns the list of addresses for the new members.
 func (f ChangeSet) GetNewAddresses() []mino.Address {
-    return make([]mino.Address, 10)
+	return make([]mino.Address, 10)
 }
 
 // ChangeSet is a fake implementation of ordering.cosipbft.authority.ChangeSetFactory.
@@ -42,14 +42,14 @@ func (f ChangeSetFactory) Deserialize(ctx serde.Context, data []byte) (serde.Mes
 }
 
 func (f ChangeSetFactory) ChangeSetOf(serde.Context, []byte) (authority.ChangeSet, error) {
-    return ChangeSet{}, nil
+	return ChangeSet{}, nil
 }
 
 // Authority is a fake implementation of ordering.cosipbft.authority.Authority.
 //
 // - implements ordering.cosipbft.Authority
 type Authority struct {
-    CollectiveAuthority
+	CollectiveAuthority
 }
 
 // Serialize implements serde.Message
@@ -59,24 +59,24 @@ func (f Authority) Serialize(ctx serde.Context) ([]byte, error) {
 
 // Fingerprint implements serde.Fingerprinter
 func (f Authority) Fingerprint(writer io.Writer) error {
-    return nil
+	return nil
 }
 
 // Apply implements ordering.cosipbft.Authority
 // Apply must apply the change set to the collective authority. It should
 // first remove, then add the new players.
 func (f Authority) Apply(authority.ChangeSet) authority.Authority {
-    return Authority{}
+	return Authority{}
 }
 
 // Diff implements ordering.cosipbft.Authority
 // Diff should return the change set to apply to get the given authority.
 func (f Authority) Diff(authority.Authority) authority.ChangeSet {
-    return ChangeSet{}
+	return ChangeSet{}
 }
 
 func (f Authority) Len() int {
-    return 1
+	return 1
 }
 
 // Factory is a fake implementation of ordering.cosipbft.authority.Factory.
@@ -92,5 +92,5 @@ func (f Factory) Deserialize(ctx serde.Context, data []byte) (serde.Message, err
 
 // AuthorityOf implements ordering.cosipbft.Factory
 func (f Factory) AuthorityOf(serde.Context, []byte) (authority.Authority, error) {
-    return Authority{}, nil
+	return Authority{}, nil
 }

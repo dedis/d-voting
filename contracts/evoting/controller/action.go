@@ -329,7 +329,7 @@ func (a *scenarioTestPart1Action) Execute(ctx node.Context) error {
 type scenarioTestPart2Action struct {
 }
 
-// Execute implements node.ActionTemplate. It 
+// Execute implements node.ActionTemplate. It
 // simulates the full election process after the creation (which
 // is done in scenarioTestPart1Action), and after initialising
 // the DKG service on each node.

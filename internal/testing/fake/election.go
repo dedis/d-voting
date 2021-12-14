@@ -65,4 +65,3 @@ func NewKCPointsMarshalled(k int) ([][]byte, [][]byte, kyber.Point) {
 	}
 	return KsMarshalled, CsMarshalled, pubKey
 }
-

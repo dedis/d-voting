@@ -29,15 +29,15 @@ func TestActor_MarshalJSON(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create a new actor with that data
-        handlerData := HandlerData{}
-        err = handlerData.UnmarshalJSON(actor1Buf)
-        require.NoError(t, err)
+	handlerData := HandlerData{}
+	err = handlerData.UnmarshalJSON(actor1Buf)
+	require.NoError(t, err)
 
 	actor2, err := p.NewActor([]byte("beefdead"), handlerData)
 	require.NoError(t, err)
 
 	// Check that the persistent data is the same for both actors
-        requireActorsEqual(t, actor1, actor2)
+	requireActorsEqual(t, actor1, actor2)
 }
 
 // After initializing a Pedersen when dkgMap is not empty, the actors map should

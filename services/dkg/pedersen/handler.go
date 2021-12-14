@@ -552,7 +552,7 @@ func (hd *HandlerData) UnmarshalJSON(data []byte) error {
 	hd.StartRes.UnmarshalJSON(aux.StartRes)
 
 	// Unmarshal PrivShare
-	privShareBuf := &struct{
+	privShareBuf := &struct {
 		I int
 		V []byte
 	}{}

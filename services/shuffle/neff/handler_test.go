@@ -6,11 +6,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/dedis/d-voting/services/shuffle/neff/types"
-	"go.dedis.ch/kyber/v3"
 	"io"
 	"strconv"
 	"testing"
+
+	"github.com/dedis/d-voting/services/shuffle/neff/types"
+	"go.dedis.ch/kyber/v3"
 
 	evotingController "github.com/dedis/d-voting/contracts/evoting/controller"
 	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
@@ -249,9 +250,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 
 	// Shuffle already started :
 	shuffledBallots := electionTypes.EncryptedBallots{}
-	for _, value := range election.PublicBulletinBoard.Ballots {
-		shuffledBallots = append(shuffledBallots, value)
-	}
+	shuffledBallots = append(shuffledBallots, election.PublicBulletinBoard.Ballots...)
 	election.ShuffleInstances = append(election.ShuffleInstances, electionTypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
 
 	election.ShuffleThreshold = 2

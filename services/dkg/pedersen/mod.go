@@ -52,11 +52,11 @@ const (
 type Pedersen struct {
 	sync.RWMutex
 
-	mino    mino.Mino
-	factory serde.Factory
+	mino      mino.Mino
+	factory   serde.Factory
 	service   ordering.Service
 	rosterFac authority.Factory
-	actors  map[string]dkg.Actor
+	actors    map[string]dkg.Actor
 }
 
 // NewPedersen returns a new DKG Pedersen factory
