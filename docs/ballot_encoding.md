@@ -61,7 +61,7 @@ would then become:
 
 "rank:0x19c7:0,1,2\n" + 
 
-"text:0xcd13:"Noémien","Pierluca"\n\n" +
+"text:0xcd13:base64("Noémien"),base64("Pierluca")\n\n" +
 
 "olspoa1029ruxeqX129i0"
 ```
