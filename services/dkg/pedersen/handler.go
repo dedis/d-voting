@@ -422,9 +422,9 @@ func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionID strin
 		return false, xerrors.Errorf("failed to decode electionID: %v", err)
 	}
 
-	proof, err := h.service.GetProof(electionIDBuf)
-	if err != nil {
-		return false, xerrors.Errorf("failed to read on the blockchain: %v", err)
+	proof, exists := electionExists(h.service, electionIDBuf)
+	if !exists {
+		return false, xerrors.Errorf("election does not exist: %v", err)
 	}
 
 	election := new(evotingTypes.Election)

@@ -156,7 +156,6 @@ func TestHandlerData_MarshalJSON(t *testing.T) {
 	require.True(t, newHd.PubKey.Equal(hd.PubKey))
 	requireStatesEqual(t, newHd.StartRes, hd.StartRes)
 	require.Equal(t, newHd.PrivShare, hd.PrivShare)
-	// requirePriShareEqual(t, newHd.PrivShare, hd.PrivShare)
 }
 
 func TestState_MarshalJSON(t *testing.T) {
@@ -177,7 +176,6 @@ func TestState_MarshalJSON(t *testing.T) {
 	requireStatesEqual(t, s1, s2)
 }
 
-// -----------------------------------------------------------------------------
 // Utility functions
 
 func getCertified(t *testing.T) *pedersen.DistKeyGenerator {

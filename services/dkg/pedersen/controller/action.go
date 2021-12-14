@@ -375,7 +375,7 @@ func ListenHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 		}
 
 		// hex-encoded string obtained from the URL
-		electionID := hex.EncodeToString(electionIDBuf)
+		electionID := string(electionIDBuf)
 
 		// sanity check
 		_, err = hex.DecodeString(electionID)
@@ -416,7 +416,7 @@ func SetupHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 		}
 
 		// hex-encoded string obtained from the URL
-		electionID := hex.EncodeToString(electionIDBuf)
+		electionID := string(electionIDBuf)
 
 		// sanity check
 		_, err = hex.DecodeString(electionID)

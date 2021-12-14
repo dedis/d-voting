@@ -57,8 +57,9 @@ memcoin --config /tmp/node3 proxy start --clientaddr 127.0.0.1:8083
 memcoin --config /tmp/node3 e-voting registerHandlers --signer private.key
 memcoin --config /tmp/node3 dkg registerHandlers
 
-# echo "${GREEN}[7/7]${NC} init DKG"
-# memcoin --config /tmp/node1 dkg init
-# memcoin --config /tmp/node2 dkg init
-# memcoin --config /tmp/node3 dkg init
-# memcoin --config /tmp/node1 dkg setup --electionID ???
+# If an election is created with ID "deadbeef" then one must set up DKG
+# on each node before the election can proceed:
+# memcoin --config /tmp/node1 dkg init --electionID deadbeef
+# memcoin --config /tmp/node2 dkg init --electionID deadbeef
+# memcoin --config /tmp/node3 dkg init --electionID deadbeef
+# memcoin --config /tmp/node1 dkg setup --electionID deadbeef

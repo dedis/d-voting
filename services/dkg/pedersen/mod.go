@@ -81,7 +81,6 @@ func (s *Pedersen) Listen(electionIDBuf []byte) (dkg.Actor, error) {
 
 	electionID := hex.EncodeToString(electionIDBuf)
 
-	// check that electionID corresponds to a real election
 	_, exists := electionExists(s.service, electionIDBuf)
 	if !exists {
 		return nil, xerrors.Errorf("election %s was not found", electionID)
@@ -124,7 +123,6 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.
 }
 
 func (s *Pedersen) GetActor(electionIDBuf []byte) (dkg.Actor, bool) {
-
 	s.RLock()
 	defer s.RUnlock()
 	actor, exists := s.actors[hex.EncodeToString(electionIDBuf)]

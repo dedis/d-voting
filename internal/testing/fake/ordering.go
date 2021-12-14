@@ -44,8 +44,6 @@ type Service struct {
 
 // GetProof implements ordering.Service. It returns the proof associated to the election.
 func (f Service) GetProof(key []byte) (ordering.Proof, error) {
-	// electionIDBuf, _ := hex.DecodeString(string(f.ElectionID))
-
 	keyString := hex.EncodeToString(key)
 
 	election, exists := f.Elections[keyString]

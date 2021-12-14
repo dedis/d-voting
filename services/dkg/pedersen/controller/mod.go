@@ -155,7 +155,6 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 	inj.Inject(dkg)
 
 	rosterKey := [32]byte{}
-	// TODO This shouldn't take dkg as input, but rather the map?
 	c := evoting.NewContract(evotingAccessKey[:], rosterKey[:], access, dkg, rosterFac)
 	evoting.RegisterContract(exec, c)
 
