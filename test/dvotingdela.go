@@ -116,21 +116,28 @@ func setupDVotingNodes(t *testing.T, numberOfNodes int, tempDir string) []dVotin
 	var dVotingNodes []dVotingCosiDela = make([]dVotingCosiDela, numberOfNodes)
 	var delaNodes []dela = make([]dela, numberOfNodes)
 
-	nodePort := 0
+	canal := make(chan dVotingCosiDela, numberOfNodes)
+
 	for i := 0; i < numberOfNodes; i++ {
 		filePath := filepath.Join(tempDir, "node", fmt.Sprint(i))
-		dVotingNodes[i] = newDVotingNode(t, filePath, nodePort)
+		nodePort := 2000 + i
+
+		go newDVotingNode(canal, t, filePath, nodePort)
+		dVotingNodes[i] = <-canal
 
 		// used to cast each element for the Setup
 		delaNodes[i] = dVotingNodes[i]
 	}
+
+	close(canal)
 
 	delaNodes[0].Setup(delaNodes[1:]...)
 
 	return dVotingNodes
 }
 
-func newDVotingNode(t *testing.T, path string, port int) dVotingCosiDela {
+// Creates a single dVotingCosiDela node
+func newDVotingNode(canal chan<- dVotingCosiDela, t *testing.T, path string, port int) {
 	err := os.MkdirAll(path, 0700)
 	require.NoError(t, err)
 
@@ -239,7 +246,7 @@ func newDVotingNode(t *testing.T, path string, port int) dVotingCosiDela {
 
 	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, rosterFac, signer)
 
-	return dVotingNode{
+	canal <- dVotingNode{
 		t:             t,
 		onet:          onet,
 		ordering:      srvc,
@@ -255,6 +262,7 @@ func newDVotingNode(t *testing.T, path string, port int) dVotingCosiDela {
 	}
 }
 
+// Creates an access on all dVotingCosiDela node given
 func createDVotingAccess(t *testing.T, nodes []dVotingCosiDela, dir string) crypto.AggregateSigner {
 	l := loader.NewFileLoader(filepath.Join(dir, "private.key"))
 

@@ -30,10 +30,11 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// Start 3 nodes
-// Cast 3 votes
-// Check the shuffled votes versus the casted votes
+// Check the shuffled votes versus the casted votes an a few nodes
 func TestIntegration_ThreeVotesScenario(t *testing.T) {
+	const N_NODES int = 3
+	const N_VOTES int = 3
+
 	delaPkg.Logger = zerolog.New(os.Stdout)
 
 	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-3-votes")
@@ -43,7 +44,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 
 	t.Logf("using temp dir %s", dirPath)
 
-	nodes := setupDVotingNodes(t, 3, dirPath)
+	nodes := setupDVotingNodes(t, N_NODES, dirPath)
 
 	signer := createDVotingAccess(t, nodes, dirPath)
 
@@ -65,23 +66,16 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	require.NoError(t, err)
 
 	possibleVotes := []string{"vote1", "vote2"}
-	castedVotes, err := castVotesRandomly(m, actor, electionID, possibleVotes, 3)
+	castedVotes, err := castVotesRandomly(m, actor, electionID, possibleVotes, N_VOTES)
 	require.NoError(t, err)
 
 	err = closeElection(m, electionID, adminID)
 	require.NoError(t, err)
 
-	time.Sleep(time.Millisecond * 1)
+	time.Sleep(time.Millisecond * 100)
 
-	// NS1: Neff shuffle init
-	var sActor shuffle.Actor
-	for _, node := range nodes {
-		var err error
-		s := node.GetShuffle()
-		sActor, err = s.Listen(signer)
-		require.NoError(t, err)
-	}
-	time.Sleep(time.Second * 1)
+	sActor, err := initShuffle(nodes, signer)
+	require.NoError(t, err)
 
 	// SC6: shuffle
 	err = sActor.Shuffle(electionID)
@@ -109,7 +103,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	ks, cs, err := shuffleLast.ShuffledBallots.GetKsCs()
 	require.NoError(t, err)
 
-	shuffledVotes := make([]string, 0, nShuffleInstances)
+	shuffledVotes := make([]string, len(ks))
 
 	for i, k := range ks {
 		c := cs[i]
@@ -120,7 +114,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 		message, err := actor.Decrypt(k, c, electionID)
 		require.NoError(t, err)
 
-		shuffledVotes = append(shuffledVotes, string(message))
+		shuffledVotes[i] = string(message)
 	}
 
 	// TODO: create transaction to add decrypted ballots on the blockchain
@@ -135,7 +129,12 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	t.Logf("Shuffled votes are equivalent to casted votes!")
 }
 
+// Check more shuffled votes versus the casted votes on more nodes.
 func TestIntegration_ManyVotesScenario(t *testing.T) {
+	// The following constants are limited by VSC built in debug function that times out after 30s.
+	const N_NODES int = 10
+	const N_VOTES int = 10
+
 	delaPkg.Logger = zerolog.New(os.Stdout)
 
 	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-many-votes")
@@ -145,7 +144,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 
 	t.Logf("using temp dir %s", dirPath)
 
-	nodes := setupDVotingNodes(t, 3, dirPath)
+	nodes := setupDVotingNodes(t, N_NODES, dirPath)
 
 	signer := createDVotingAccess(t, nodes, dirPath)
 
@@ -173,25 +172,17 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 		"vote4",
 		"vote5",
 	}
-	castedVotes, err := castVotesRandomly(m, actor, electionID, possibleVotes, 100)
+	castedVotes, err := castVotesRandomly(m, actor, electionID, possibleVotes, N_VOTES)
 	require.NoError(t, err)
 
 	err = closeElection(m, electionID, adminID)
 	require.NoError(t, err)
 
-	time.Sleep(time.Millisecond * 1)
+	time.Sleep(time.Millisecond * 100)
 
-	// NS1: Neff shuffle init
-	var sActor shuffle.Actor
-	for _, node := range nodes {
-		var err error
-		s := node.GetShuffle()
-		sActor, err = s.Listen(signer)
-		require.NoError(t, err)
-	}
-	time.Sleep(time.Second * 1)
+	sActor, err := initShuffle(nodes, signer)
+	require.NoError(t, err)
 
-	// SC6: shuffle
 	err = sActor.Shuffle(electionID)
 	require.NoError(t, err)
 
@@ -217,7 +208,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	ks, cs, err := shuffleLast.ShuffledBallots.GetKsCs()
 	require.NoError(t, err)
 
-	shuffledVotes := make([]string, 0, nShuffleInstances)
+	shuffledVotes := make([]string, len(ks))
 
 	for i, k := range ks {
 		c := cs[i]
@@ -228,7 +219,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 		message, err := actor.Decrypt(k, c, electionID)
 		require.NoError(t, err)
 
-		shuffledVotes = append(shuffledVotes, string(message))
+		shuffledVotes[i] = string(message)
 	}
 
 	// TODO: create transaction to add decrypted ballots on the blockchain
@@ -410,7 +401,7 @@ func castVotesRandomly(m txManager, actor dkg.Actor, electionID []byte, possible
 			return nil, xerrors.Errorf("failed to addAndWait: %v", err)
 		}
 
-		votes = append(votes, vote)
+		votes[i] = vote
 	}
 
 	return votes, nil
@@ -474,4 +465,19 @@ func initDkg(nodes []dVotingCosiDela, electionID []byte) (dkg.Actor, error) {
 	}
 
 	return actor, nil
+}
+
+func initShuffle(nodes []dVotingCosiDela, signer crypto.AggregateSigner) (shuffle.Actor, error) {
+	var sActor shuffle.Actor
+	for _, node := range nodes {
+		var err error
+		s := node.GetShuffle()
+		sActor, err = s.Listen(signer)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to init Shuffle: %v", err)
+		}
+	}
+	time.Sleep(time.Second * 1)
+
+	return sActor, nil
 }
