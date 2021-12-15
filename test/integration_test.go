@@ -347,14 +347,14 @@ func openElection(m txManager, electionID []byte) error {
 	openElectTransaction := &types.OpenElectionTransaction{
 		ElectionID: hex.EncodeToString(electionID),
 	}
-	openElection, err := json.Marshal(openElectTransaction)
+	openElectionBuf, err := json.Marshal(openElectTransaction)
 	if err != nil {
 		return xerrors.Errorf("failed to Marshall: %v", err)
 	}
 
 	args := []txn.Arg{
 		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.OpenElectionArg, Value: openElection},
+		{Key: evoting.OpenElectionArg, Value: openElectionBuf},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdOpenElection)},
 	}
 	_, err = m.addAndWait(args...)
@@ -427,14 +427,14 @@ func closeElection(m txManager, electionID []byte, admin string) error {
 		ElectionID: hex.EncodeToString(electionID),
 		UserID:     admin,
 	}
-	closeElection, err := json.Marshal(closeElectTransaction)
+	closeElectionBuf, err := json.Marshal(closeElectTransaction)
 	if err != nil {
 		return xerrors.Errorf("failed to Marshall closeElection: %v", err)
 	}
 
 	args := []txn.Arg{
 		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.CloseElectionArg, Value: closeElection},
+		{Key: evoting.CloseElectionArg, Value: closeElectionBuf},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCloseElection)},
 	}
 	_, err = m.addAndWait(args...)
