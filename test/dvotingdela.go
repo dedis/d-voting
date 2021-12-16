@@ -393,7 +393,7 @@ func (c dVotingNode) GetShuffle() shuffle.Shuffle {
 	return c.shuffle
 }
 
-// generator can generate a private key compatible with the x509 certificate.
+// certGenerator can generate a private key compatible with the x509 certificate.
 //
 // - implements loader.Generator
 type certGenerator struct {
