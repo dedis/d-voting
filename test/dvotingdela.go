@@ -5,12 +5,12 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/x509"
-	"fmt"
 	"io"
 	"math/rand"
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
 
@@ -82,14 +82,6 @@ type dVotingCosiDela interface {
 	GetTree() hashtree.Tree
 	GetDkg() dkg.DKG
 	GetShuffle() shuffle.Shuffle
-
-	// jean ->
-	// adminID   string
-	// manager   *signed.TransactionManager
-	// firstNode dVotingNode
-	// actor     dkg.Actor
-	// signer    crypto.AggregateSigner
-	// <- jean
 }
 
 // dVotingNode represents a Dela node using cosi pbft aimed to execute d-voting
@@ -113,8 +105,8 @@ type dVotingNode struct {
 // Creates n dela nodes using tempDir as root to file path and returns an array
 // of nodes or error
 func setupDVotingNodes(t *testing.T, numberOfNodes int, tempDir string, basePort int) []dVotingCosiDela {
-	var dVotingNodes []dVotingCosiDela = make([]dVotingCosiDela, numberOfNodes)
-	var delaNodes []dela = make([]dela, numberOfNodes)
+	dVotingNodes := make([]dVotingCosiDela, numberOfNodes)
+	delaNodes := make([]dela, numberOfNodes)
 
 	canal := make(chan dVotingCosiDela, numberOfNodes)
 
