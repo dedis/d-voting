@@ -112,7 +112,7 @@ type dVotingNode struct {
 
 // Creates n dela nodes using tempDir as root to file path and returns an array
 // of nodes or error
-func setupDVotingNodes(t *testing.T, numberOfNodes int, tempDir string) []dVotingCosiDela {
+func setupDVotingNodes(t *testing.T, numberOfNodes int, tempDir string, basePort int) []dVotingCosiDela {
 	var dVotingNodes []dVotingCosiDela = make([]dVotingCosiDela, numberOfNodes)
 	var delaNodes []dela = make([]dela, numberOfNodes)
 
@@ -120,7 +120,7 @@ func setupDVotingNodes(t *testing.T, numberOfNodes int, tempDir string) []dVotin
 
 	for i := 0; i < numberOfNodes; i++ {
 		filePath := filepath.Join(tempDir, "node", fmt.Sprint(i))
-		nodePort := 2000 + i
+		nodePort := basePort + i
 
 		go newDVotingNode(canal, t, filePath, nodePort)
 		dVotingNodes[i] = <-canal

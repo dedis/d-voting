@@ -33,3 +33,6 @@ jobs:
       
     #- name: Test DKG
       #run: go test -cover ./services/dkg/...
+
+    - name: Test Integration with coverage
+      run: go test -cover ./test/...

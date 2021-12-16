@@ -44,7 +44,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 
 	t.Logf("using temp dir %s", dirPath)
 
-	nodes := setupDVotingNodes(t, N_NODES, dirPath)
+	nodes := setupDVotingNodes(t, N_NODES, dirPath, 2000)
 
 	signer := createDVotingAccess(t, nodes, dirPath)
 
@@ -144,7 +144,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 
 	t.Logf("using temp dir %s", dirPath)
 
-	nodes := setupDVotingNodes(t, N_NODES, dirPath)
+	nodes := setupDVotingNodes(t, N_NODES, dirPath, 2100)
 
 	signer := createDVotingAccess(t, nodes, dirPath)
 
