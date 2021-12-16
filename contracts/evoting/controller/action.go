@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"go.dedis.ch/kyber/v3"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -205,10 +206,52 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	dela.Logger.Info().Msg("----------------------- CREATE SIMPLE ELECTION : ")
 
+	// Define the configuration :
+	configuration := types.Configuration{
+		MainTitle: "electionTitle",
+		Scaffold: []types.Subject{
+			{
+				ID:       "0xaaa",
+				Title:    "subject1",
+				Order:    nil,
+				Subjects: nil,
+				Selects: []types.Select{
+					{
+						ID:      "0xbbb",
+						Title:   "Select your favorite snacks",
+						MaxN:    3,
+						MinN:    0,
+						Choices: []string{"snickers", "mars", "vodka", "babibel"},
+					},
+				},
+				Ranks: []types.Rank{},
+				Texts: nil,
+			},
+			{
+				ID:       "0xddd",
+				Title:    "subject2",
+				Order:    nil,
+				Subjects: nil,
+				Selects:  nil,
+				Ranks:    nil,
+				Texts: []types.Text{
+					{
+						ID:        "0xeee",
+						Title:     "dissertation",
+						MaxN:      1,
+						MinN:      1,
+						MaxLength: 3,
+						Regex:     "",
+						Choices:   []string{"write yes in your language"},
+					},
+				},
+			},
+		},
+	}
+
 	createSimpleElectionRequest := types.CreateElectionRequest{
-		Title:   "TitleTest",
-		AdminID: "adminId",
-		Token:   "token",
+		Configuration: configuration,
+		AdminID:       "adminId",
 	}
 
 	js, err := json.Marshal(createSimpleElectionRequest)
@@ -269,10 +312,12 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("electionID mismatch: %s != %s", election.ElectionID, electionID)
 	}
 
-	dela.Logger.Info().Msg("Title of the election : " + election.Title)
+	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Admin Id of the election : " + election.AdminID)
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
+	dela.Logger.Info().Msgf("Max Ballot size : %d => %d chunks per ballot",
+		election.BallotSize, election.ChunksPerBallot())
 
 	// ##################################### SETUP DKG #########################
 
@@ -354,7 +399,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to unmarshal SimpleElection : %v", err)
 	}
 
-	dela.Logger.Info().Msg("Title of the election : " + election.Title)
+	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 	dela.Logger.Info().Msgf("Pubkey of the election : %x", election.Pubkey)
@@ -408,7 +453,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to unmarshall SimpleElection : %v", err)
 	}
 
-	dela.Logger.Info().Msg("Title of the election : " + election.Title)
+	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Admin Id of the election : " + election.AdminID)
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
@@ -417,17 +462,27 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	dela.Logger.Info().Msg("----------------------- CAST BALLOTS : ")
 
-	ballot1, err := marshallBallot("ballot1", dkgActor)
+	//Create the ballots :
+	b1 := "select:0xbbb:0,0,1,0\n" +
+		"text:0xeee:eWVz\n\n" //encoding of "yes"
+
+	b2 := "select:0xbbb:1,1,0,0\n" +
+		"text:0xeee:amE=\n\n" //encoding of "ja
+
+	b3 := "select:0xbbb:0,0,0,1\n" +
+		"text:0xeee:b3Vp\n\n" //encoding of "oui"
+
+	ballot1, err := marshallBallot(strings.NewReader(b1), dkgActor, election.ChunksPerBallot())
 	if err != nil {
 		return xerrors.Errorf("failed to marshall ballot : %v", err)
 	}
 
-	ballot2, err := marshallBallot("ballot2", dkgActor)
+	ballot2, err := marshallBallot(strings.NewReader(b2), dkgActor, election.ChunksPerBallot())
 	if err != nil {
 		return xerrors.Errorf("failed to marshall ballot : %v", err)
 	}
 
-	ballot3, err := marshallBallot("ballot3", dkgActor)
+	ballot3, err := marshallBallot(strings.NewReader(b3), dkgActor, election.ChunksPerBallot())
 	if err != nil {
 		return xerrors.Errorf("failed to marshall ballot : %v", err)
 	}
@@ -530,10 +585,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set unmarshal SimpleElection : %v", err)
 	}
 
-	dela.Logger.Info().Msg("Length encrypted ballots : " + strconv.Itoa(len(election.EncryptedBallots.Ballots)))
-	dela.Logger.Info().Msgf("Ballot of user1 : %s", election.EncryptedBallots.Ballots[0])
-	dela.Logger.Info().Msgf("Ballot of user2 : %s", election.EncryptedBallots.Ballots[1])
-	dela.Logger.Info().Msgf("Ballot of user3 : %s", election.EncryptedBallots.Ballots[2])
+	dela.Logger.Info().Msg("Length encrypted ballots : " + strconv.Itoa(len(election.PublicBulletinBoard.Ballots)))
+	dela.Logger.Info().Msgf("Ballot of user1 : %s", election.PublicBulletinBoard.Ballots[0])
+	dela.Logger.Info().Msgf("Ballot of user2 : %s", election.PublicBulletinBoard.Ballots[1])
+	dela.Logger.Info().Msgf("Ballot of user3 : %s", election.PublicBulletinBoard.Ballots[2])
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 
@@ -583,7 +638,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to unmarshall SimpleElection : %v", err)
 	}
 
-	dela.Logger.Info().Msg("Title of the election : " + election.Title)
+	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Admin Id of the election : " + election.AdminID)
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
@@ -636,11 +691,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to unmarshall SimpleElection : %v", err)
 	}
 
-	dela.Logger.Info().Msg("Title of the election : " + election.Title)
+	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 	dela.Logger.Info().Msg("Number of shuffled ballots : " + strconv.Itoa(len(election.ShuffleInstances)))
-	dela.Logger.Info().Msg("Number of encrypted ballots : " + strconv.Itoa(len(election.EncryptedBallots.Ballots)))
+	dela.Logger.Info().Msg("Number of encrypted ballots : " + strconv.Itoa(len(election.PublicBulletinBoard.Ballots)))
 
 	// ###################################### SHUFFLE BALLOTS ##################
 
@@ -690,7 +745,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	// dela.Logger.Info().Msg("----------------------- Election : " +
 	// string(proof.GetValue()))
-	dela.Logger.Info().Msg("Title of the election : " + election.Title)
+	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 	dela.Logger.Info().Msg("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
@@ -740,7 +795,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to unmarshall SimpleElection : %v", err)
 	}
 
-	dela.Logger.Info().Msg("Title of the election : " + election.Title)
+	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 	dela.Logger.Info().Msg("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
@@ -749,30 +804,47 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("unexpected number of decrypted ballot: %d != 3", len(election.DecryptedBallots))
 	}
 
-	dela.Logger.Info().Msg(election.DecryptedBallots[0].Vote)
-	dela.Logger.Info().Msg(election.DecryptedBallots[1].Vote)
-	dela.Logger.Info().Msg(election.DecryptedBallots[2].Vote)
+	//dela.Logger.Info().Msg(election.DecryptedBallots[0].Vote)
+	//dela.Logger.Info().Msg(election.DecryptedBallots[1].Vote)
+	//dela.Logger.Info().Msg(election.DecryptedBallots[2].Vote)
 
 	// ###################################### GET ELECTION RESULT ##############
 
 	return nil
 }
 
-func marshallBallot(vote string, actor dkg.Actor) (types.Ciphertext, error) {
+func marshallBallot(vote io.Reader, actor dkg.Actor, chunks int) (types.EncryptedBallot, error) {
 
-	K, C, _, err := actor.Encrypt([]byte(vote))
-	if err != nil {
-		return types.Ciphertext{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
-	}
+	var ballot = make([]types.Ciphertext, chunks)
 
-	var ballot types.Ciphertext
-	err = ballot.FromPoints(K, C)
-	if err != nil {
-		return types.Ciphertext{}, err
+	buf := make([]byte, 29)
+
+	for i := 0; i < chunks; i++ {
+		var K, C kyber.Point
+		var err error
+
+		n, err := vote.Read(buf)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to read: %v", err)
+		}
+
+		K, C, _, err = actor.Encrypt(buf[:n])
+
+		if err != nil {
+			return types.EncryptedBallot{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
+		}
+
+		var chunk types.Ciphertext
+
+		err = chunk.FromPoints(K, C)
+		if err != nil {
+			return types.EncryptedBallot{}, err
+		}
+
+		ballot[i] = chunk
 	}
 
 	return ballot, nil
-
 }
 
 func (a scenarioTestAction) readMembers(ctx node.Context) ([]types.CollectiveAuthorityMember, error) {

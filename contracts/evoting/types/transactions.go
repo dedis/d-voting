@@ -38,9 +38,8 @@ func (e *ElectionIDs) Add(id string) error {
 }
 
 type CreateElectionTransaction struct {
-	Title   string
-	AdminID string
-	Format  string
+	Configuration Configuration
+	AdminID       string
 }
 
 type OpenElectionTransaction struct {
@@ -52,7 +51,7 @@ type CastVoteTransaction struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 	UserID     string
-	Ballot     Ciphertext
+	Ballot     EncryptedBallot
 }
 
 type CloseElectionTransaction struct {
@@ -64,9 +63,14 @@ type CloseElectionTransaction struct {
 type ShuffleBallotsTransaction struct {
 	ElectionID      string
 	Round           int
-	ShuffledBallots Ciphertexts
-	Proof           []byte
-	//Signature should be obtained using SignShuffle()
+	ShuffledBallots EncryptedBallots
+	// RandomVector is the vector to be used to generate the proof of the next
+	// shuffle
+	RandomVector RandomVector
+	// Proof is the proof corresponding to the shuffle of this transaction
+	Proof []byte
+	// Signature is the signature of the result of HashShuffle() with the private
+	// key corresponding to PublicKey
 	Signature []byte
 	//PublicKey is the public key of the signer.
 	PublicKey []byte
@@ -103,18 +107,17 @@ func (s ShuffleBallotsTransaction) HashShuffle(electionID string) ([]byte, error
 
 	id, err := hex.DecodeString(electionID)
 	if err != nil {
-		return nil, xerrors.Errorf("Could not decode electionId : %v", err)
+		return nil, xerrors.Errorf("could not decode electionId : %v", err)
 	}
 
 	hash.Write(id)
 
 	shuffledBallots, err := json.Marshal(s.ShuffledBallots)
 	if err != nil {
-		return nil, xerrors.Errorf("Could not marshal shuffled ballots : %v", err)
+		return nil, xerrors.Errorf("could not marshal shuffled ballots : %v", err)
 	}
 
 	hash.Write(shuffledBallots)
-	hash.Write(s.Proof)
 
 	return hash.Sum(nil), nil
 }

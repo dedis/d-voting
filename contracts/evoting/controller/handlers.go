@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
@@ -38,19 +39,20 @@ func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
 	createElectionRequest := &types.CreateElectionRequest{}
 	err := json.NewDecoder(r.Body).Decode(createElectionRequest)
 	if err != nil {
-		http.Error(w, "failed to decode CreateElectionRequest: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "failed to decode CreateElectionRequest: "+err.Error(),
+			http.StatusBadRequest)
 		return
 	}
 
 	createElectionTransaction := types.CreateElectionTransaction{
-		Title:   createElectionRequest.Title,
-		AdminID: createElectionRequest.AdminID,
-		Format:  createElectionRequest.Format,
+		Configuration: createElectionRequest.Configuration,
+		AdminID:       createElectionRequest.AdminID,
 	}
 
 	payload, err := json.Marshal(createElectionTransaction)
 	if err != nil {
-		http.Error(w, "failed to marshal CreateElectionTransaction: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to marshal CreateElectionTransaction: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
@@ -71,7 +73,8 @@ func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		http.Error(w, "failed to write in ResponseWriter: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 }
@@ -89,7 +92,8 @@ func (h *votingProxy) OpenElection(w http.ResponseWriter, r *http.Request) {
 	// sanity check that this is a well hex-encoded string
 	_, err = hex.DecodeString(string(electionIDHex))
 	if err != nil {
-		http.Error(w, "failed to decode electionID: "+string(electionIDHex), http.StatusBadRequest)
+		http.Error(w, "failed to decode electionID: "+string(electionIDHex),
+			http.StatusBadRequest)
 		return
 	}
 
@@ -99,7 +103,8 @@ func (h *votingProxy) OpenElection(w http.ResponseWriter, r *http.Request) {
 
 	payload, err := json.Marshal(openElecTransaction)
 	if err != nil {
-		http.Error(w, "failed to marshal OpenElectionTransaction: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to marshal OpenElectionTransaction: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
@@ -147,7 +152,8 @@ func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
 
 	payload, err := json.Marshal(castVoteTransaction)
 	if err != nil {
-		http.Error(w, "failed to marshal CastVoteTransaction: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to marshal CastVoteTransaction: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
@@ -162,7 +168,8 @@ func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		http.Error(w, "failed to write in ResponseWriter: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 }
@@ -172,7 +179,8 @@ func (h *votingProxy) ElectionIDs(w http.ResponseWriter, r *http.Request) {
 	getAllElectionsIDsRequest := &types.GetAllElectionsIDsRequest{}
 	err := json.NewDecoder(r.Body).Decode(getAllElectionsIDsRequest)
 	if err != nil {
-		http.Error(w, "failed to decode GetElectionInfoRequest: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "failed to decode GetElectionInfoRequest: "+err.Error(),
+			http.StatusBadRequest)
 		return
 	}
 
@@ -187,17 +195,19 @@ func (h *votingProxy) ElectionIDs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		http.Error(w, "failed to write in ResponseWriter: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 }
 
-// ElectionInfo returns the information for a gien election.
+// ElectionInfo returns the information for a given election.
 func (h *votingProxy) ElectionInfo(w http.ResponseWriter, r *http.Request) {
 	getElectionInfoRequest := &types.GetElectionInfoRequest{}
 	err := json.NewDecoder(r.Body).Decode(getElectionInfoRequest)
 	if err != nil {
-		http.Error(w, "failed to decode GetElectionInfoRequest: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "failed to decode GetElectionInfoRequest: "+err.Error(),
+			http.StatusBadRequest)
 		return
 	}
 
@@ -214,36 +224,39 @@ func (h *votingProxy) ElectionInfo(w http.ResponseWriter, r *http.Request) {
 
 	electionIDBuff, err := hex.DecodeString(getElectionInfoRequest.ElectionID)
 	if err != nil {
-		http.Error(w, "failed to decode electionID: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to decode electionID: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
 	proof, err := h.orderingSvc.GetProof(electionIDBuff)
 	if err != nil {
-		http.Error(w, "failed to read on the blockchain: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to read on the blockchain: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
 	election := &types.Election{}
 	err = json.Unmarshal(proof.GetValue(), election)
 	if err != nil {
-		http.Error(w, "failed to unmarshal Election: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to unmarshal Election: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
 	response := types.GetElectionInfoResponse{
-		ElectionID: string(election.ElectionID),
-		Title:      election.Title,
-		Status:     uint16(election.Status),
-		Pubkey:     hex.EncodeToString(election.Pubkey),
-		Result:     election.DecryptedBallots,
-		Format:     election.Format,
+		ElectionID:    string(election.ElectionID),
+		Configuration: election.Configuration,
+		Status:        uint16(election.Status),
+		Pubkey:        hex.EncodeToString(election.Pubkey),
+		Result:        election.DecryptedBallots,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		http.Error(w, "failed to write in ResponseWriter: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 }
@@ -253,7 +266,8 @@ func (h *votingProxy) AllElectionInfo(w http.ResponseWriter, r *http.Request) {
 	getAllElectionsInfoRequest := &types.GetAllElectionsInfoRequest{}
 	err := json.NewDecoder(r.Body).Decode(getAllElectionsInfoRequest)
 	if err != nil {
-		http.Error(w, "failed to decode GetAllElectionsInfoRequest: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "failed to decode GetAllElectionsInfoRequest: "+err.Error(),
+			http.StatusBadRequest)
 		return
 	}
 
@@ -268,30 +282,32 @@ func (h *votingProxy) AllElectionInfo(w http.ResponseWriter, r *http.Request) {
 	for _, id := range electionsMetadata.ElectionsIDs {
 		electionIDBuff, err := hex.DecodeString(id)
 		if err != nil {
-			http.Error(w, "failed to decode electionID: "+err.Error(), http.StatusInternalServerError)
+			http.Error(w, "failed to decode electionID: "+err.Error(),
+				http.StatusInternalServerError)
 			return
 		}
 
 		proof, err := h.orderingSvc.GetProof(electionIDBuff)
 		if err != nil {
-			http.Error(w, "failed to read on the blockchain: "+err.Error(), http.StatusInternalServerError)
+			http.Error(w, "failed to read on the blockchain: "+err.Error(),
+				http.StatusInternalServerError)
 			return
 		}
 
 		election := &types.Election{}
 		err = json.Unmarshal(proof.GetValue(), election)
 		if err != nil {
-			http.Error(w, "failed to unmarshal Election: "+err.Error(), http.StatusInternalServerError)
+			http.Error(w, "failed to unmarshal Election: "+err.Error(),
+				http.StatusInternalServerError)
 			return
 		}
 
 		info := types.GetElectionInfoResponse{
-			ElectionID: string(election.ElectionID),
-			Title:      election.Title,
-			Status:     uint16(election.Status),
-			Pubkey:     hex.EncodeToString(election.Pubkey),
-			Result:     election.DecryptedBallots,
-			Format:     election.Format,
+			ElectionID:    string(election.ElectionID),
+			Configuration: election.Configuration,
+			Status:        uint16(election.Status),
+			Pubkey:        hex.EncodeToString(election.Pubkey),
+			Result:        election.DecryptedBallots,
 		}
 
 		allElectionsInfo = append(allElectionsInfo, info)
@@ -302,7 +318,8 @@ func (h *votingProxy) AllElectionInfo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		http.Error(w, "failed to write in ResponseWriter: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 }
@@ -312,7 +329,8 @@ func (h *votingProxy) CloseElection(w http.ResponseWriter, r *http.Request) {
 	closeElectionRequest := &types.CloseElectionRequest{}
 	err := json.NewDecoder(r.Body).Decode(closeElectionRequest)
 	if err != nil {
-		http.Error(w, "failed to decode CloseElectionRequest: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "failed to decode CloseElectionRequest: "+err.Error(),
+			http.StatusBadRequest)
 		return
 	}
 
@@ -334,7 +352,8 @@ func (h *votingProxy) CloseElection(w http.ResponseWriter, r *http.Request) {
 
 	payload, err := json.Marshal(closeElectionTransaction)
 	if err != nil {
-		http.Error(w, "failed to marshal CloseElectionTransaction: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to marshal CloseElectionTransaction: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
@@ -348,7 +367,8 @@ func (h *votingProxy) CloseElection(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		http.Error(w, "failed to write in ResponseWriter: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 }
@@ -358,7 +378,8 @@ func (h *votingProxy) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
 	shuffleBallotsRequest := &types.ShuffleBallotsRequest{}
 	err := json.NewDecoder(r.Body).Decode(shuffleBallotsRequest)
 	if err != nil {
-		http.Error(w, "failed to decode ShuffleBallotsRequest: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "failed to decode ShuffleBallotsRequest: "+err.Error(),
+			http.StatusBadRequest)
 		return
 	}
 
@@ -375,20 +396,23 @@ func (h *votingProxy) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
 
 	electionIDBuff, err := hex.DecodeString(shuffleBallotsRequest.ElectionID)
 	if err != nil {
-		http.Error(w, "failed to decode electionID: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to decode electionID: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
 	proof, err := h.orderingSvc.GetProof(electionIDBuff)
 	if err != nil {
-		http.Error(w, "failed to read on the blockchain: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to read on the blockchain: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
 	election := &types.Election{}
 	err = json.Unmarshal(proof.GetValue(), election)
 	if err != nil {
-		http.Error(w, "failed to unmarshal Election: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to unmarshal Election: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
@@ -397,7 +421,7 @@ func (h *votingProxy) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !(len(election.EncryptedBallots.Ballots) > 1) {
+	if !(len(election.PublicBulletinBoard.Ballots) > 1) {
 		http.Error(w, "only one vote has been casted !", http.StatusNotAcceptable)
 		return
 	}
@@ -420,7 +444,8 @@ func (h *votingProxy) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		http.Error(w, "failed to write in ResponseWriter: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 }
@@ -430,7 +455,8 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 	decryptBallotsRequest := &types.DecryptBallotsRequest{}
 	err := json.NewDecoder(r.Body).Decode(decryptBallotsRequest)
 	if err != nil {
-		http.Error(w, "failed to decode DecryptBallotsRequest: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "failed to decode DecryptBallotsRequest: "+err.Error(),
+			http.StatusBadRequest)
 		return
 	}
 
@@ -447,20 +473,23 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 
 	electionIDBuff, err := hex.DecodeString(decryptBallotsRequest.ElectionID)
 	if err != nil {
-		http.Error(w, "failed to decode electionID: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to decode electionID: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
 	proof, err := h.orderingSvc.GetProof(electionIDBuff)
 	if err != nil {
-		http.Error(w, "failed to read on the blockchain: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to read on the blockchain: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
 	election := &types.Election{}
 	err = json.Unmarshal(proof.GetValue(), election)
 	if err != nil {
-		http.Error(w, "failed to unmarshal Election: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to unmarshal Election: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
@@ -474,22 +503,34 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ks, cs, err := election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots.GetKsCs()
+	X, Y, err := election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots.GetElGPairs()
 	if err != nil {
-		http.Error(w, "failed to get ks, cs:"+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to get X, Y:"+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
+	wrongBallots := 0
 
-	for i := 0; i < len(ks); i++ {
-		message, err := h.dkgActor.Decrypt(ks[i], cs[i], electionIDBuff)
-		if err != nil {
-			http.Error(w, "failed to decrypt (K,C): "+err.Error(), http.StatusInternalServerError)
-			return
+	for i := 0; i < len(X[0]); i++ {
+		// decryption of one ballot:
+		marshalledBallot := strings.Builder{}
+		for j := 0; j < len(X); j++ {
+			chunk, err := h.dkgActor.Decrypt(X[j][i], Y[j][i], electionIDBuff)
+			if err != nil {
+				http.Error(w, "failed to decrypt (K,C): "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			marshalledBallot.Write(chunk)
 		}
 
-		decryptedBallots = append(decryptedBallots, types.Ballot{Vote: string(message)})
+		var ballot types.Ballot
+		err = ballot.Unmarshal(marshalledBallot.String(), *election)
+		if err != nil {
+			wrongBallots += 1 // TODO do we ever send back through http if it's not an error?
+		}
+
+		decryptedBallots = append(decryptedBallots, ballot)
 	}
 
 	decryptBallotsTransaction := types.DecryptBallotsTransaction{
@@ -500,7 +541,8 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 
 	payload, err := json.Marshal(decryptBallotsTransaction)
 	if err != nil {
-		http.Error(w, "failed to marshal DecryptBallotsTransaction: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to marshal DecryptBallotsTransaction: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
@@ -514,7 +556,8 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		http.Error(w, "failed to write in ResponseWriter: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 }
@@ -524,7 +567,8 @@ func (h *votingProxy) ElectionResult(w http.ResponseWriter, r *http.Request) {
 	getElectionResultRequest := &types.GetElectionResultRequest{}
 	err := json.NewDecoder(r.Body).Decode(getElectionResultRequest)
 	if err != nil {
-		http.Error(w, "failed to decode GetElectionResultRequest: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "failed to decode GetElectionResultRequest: "+err.Error(),
+			http.StatusBadRequest)
 		return
 	}
 
@@ -547,7 +591,8 @@ func (h *votingProxy) ElectionResult(w http.ResponseWriter, r *http.Request) {
 
 	proof, err := h.orderingSvc.GetProof(electionIDBuff)
 	if err != nil {
-		http.Error(w, "failed to read on the blockchain: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to read on the blockchain: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
@@ -567,7 +612,8 @@ func (h *votingProxy) ElectionResult(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		http.Error(w, "failed to write in ResponseWriter: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 }
@@ -577,7 +623,8 @@ func (h *votingProxy) CancelElection(w http.ResponseWriter, r *http.Request) {
 	cancelElectionRequest := new(types.CancelElectionRequest)
 	err := json.NewDecoder(r.Body).Decode(cancelElectionRequest)
 	if err != nil {
-		http.Error(w, "failed to decode CancelElectionRequest: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "failed to decode CancelElectionRequest: "+err.Error(),
+			http.StatusBadRequest)
 		return
 	}
 
@@ -599,7 +646,8 @@ func (h *votingProxy) CancelElection(w http.ResponseWriter, r *http.Request) {
 
 	payload, err := json.Marshal(cancelElectionTransaction)
 	if err != nil {
-		http.Error(w, "failed to marshal CancelElectionTransaction: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to marshal CancelElectionTransaction: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 
@@ -613,7 +661,8 @@ func (h *votingProxy) CancelElection(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		http.Error(w, "failed to write in ResponseWriter: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 }

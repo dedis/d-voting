@@ -21,10 +21,8 @@ type CollectiveAuthorityMember struct {
 }
 
 type CreateElectionRequest struct {
-	Title   string
-	AdminID string
-	Token   string
-	Format  string
+	Configuration Configuration
+	AdminID       string
 }
 
 type OpenElectionRequest struct {
@@ -41,7 +39,7 @@ type CastVoteRequest struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 	UserID     string
-	Ballot     Ciphertext
+	Ballot     EncryptedBallot
 	Token      string
 }
 
@@ -155,12 +153,12 @@ type GetElectionInfoRequest struct {
 
 type GetElectionInfoResponse struct {
 	// ElectionID is hex-encoded
-	ElectionID string
-	Title      string
-	Status     uint16
-	Pubkey     string
-	Result     []Ballot
-	Format     string
+	ElectionID    string
+	Configuration Configuration
+	Status        uint16
+	Pubkey        string
+	Result        []Ballot
+	Format        string
 }
 
 type GetAllElectionsInfoRequest struct {
