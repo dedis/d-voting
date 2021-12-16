@@ -94,7 +94,7 @@ type dVotingCosiDela interface {
 
 // dVotingNode represents a Dela node using cosi pbft aimed to execute d-voting
 //
-// - implements dela
+// - implements dVotingCosiDela
 type dVotingNode struct {
 	t             *testing.T
 	onet          mino.Mino
