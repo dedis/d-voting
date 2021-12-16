@@ -6,21 +6,21 @@ to make sure that all ballots can be encoded in a unique way (up to the
 ordering of questions).
 
 ## Answers
-The answers to questions are encoded in the following way:
+The answers to questions are encoded in the following way, with one question per line:
 
 ```
-type:ID:<answers>
+<type><sep><id<sep><answers>
+
+TYPE = "select"|"text"|"rank"
+SEP = ":"
+ID = 2 bytes, encoded using base64
+ANSWERS = <answer>[","<answer>]*
+ANSWER = <select_answer>|<text_answer>|<rank_answer>
+SELECT_ANSWER = "0"|"1"
+RANK_ANSWER = empty if not selected, or int in [0,MaxN]
+TEXT_ANSWER = UTF-8 string encoded using base64
 ```
-Where we have that:
-* the type can either be "select", "rank" or "text"  
-* ID is the ID of the question 
-* The 'answers' are seperated by commas
-* There should be as many answers as there are "choices" in the question (even if empty). 
-* There should be one question per line. 
-* Answers to "select" questions should be '0' (false) or '1' (true)
-* Answers to "text" questions should be encoded in base64.
-* Answers to "rank" questions should be empty if not selected and the rank should only vary from 
-  0 to the maximum amount of choices selected.
+
 
 Here is an example:
 
@@ -39,11 +39,11 @@ For the following questions :
 A possible encoding of an answer would be (by string concatenation):
 
 ```
-"select:0x3fb2:0,0,0,1,0\n" +
+"select:3fb2:0,0,0,1,0\n" +
 
-"rank:0x19c7:0,1,2\n" + 
+"rank:19c7:0,1,2\n" + 
 
-"text:0xcd13:base64("Noémien"),base64("Pierluca")\n"
+"text:cd13:base64("Noémien"),base64("Pierluca")\n"
 ```
 
 ## Size of the ballot
@@ -57,11 +57,11 @@ we use an empty line (\n\n). For a ballot size of 116, our ballot from the previ
 would then become:
 
 ```
-"select:0x3fb2:false,false,false,true,false\n" +
+"select:3fb2:false,false,false,true,false\n" +
 
-"rank:0x19c7:0,1,2\n" + 
+"rank:19c7:0,1,2\n" + 
 
-"text:0xcd13:base64("Noémien"),base64("Pierluca")\n\n" +
+"text:cd13:base64("Noémien"),base64("Pierluca")\n\n" +
 
 "olspoa1029ruxeqX129i0"
 ```
