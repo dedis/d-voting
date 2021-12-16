@@ -345,29 +345,6 @@ func (h *votingProxy) CloseElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// retrieve election to find length of random vector :
-	electionIDBuff, err := hex.DecodeString(closeElectionRequest.ElectionID)
-	if err != nil {
-		http.Error(w, "failed to decode electionID: "+err.Error(),
-			http.StatusInternalServerError)
-		return
-	}
-
-	proof, err := h.orderingSvc.GetProof(electionIDBuff)
-	if err != nil {
-		http.Error(w, "failed to read on the blockchain: "+err.Error(),
-			http.StatusInternalServerError)
-		return
-	}
-
-	election := &types.Election{}
-	err = json.Unmarshal(proof.GetValue(), election)
-	if err != nil {
-		http.Error(w, "failed to unmarshal Election: "+err.Error(),
-			http.StatusInternalServerError)
-		return
-	}
-
 	closeElectionTransaction := types.CloseElectionTransaction{
 		ElectionID: closeElectionRequest.ElectionID,
 		UserID:     closeElectionRequest.UserID,

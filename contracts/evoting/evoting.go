@@ -299,7 +299,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("failed to deserialize roster: %v", err)
 	}
 
-	err = verifyIdentity(roster, shufflerPublicKey)
+	err = isMemberOf(roster, shufflerPublicKey)
 	if err != nil {
 		return xerrors.Errorf("could not verify identity of shuffler : %v", err)
 	}
@@ -336,7 +336,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	}
 
 	// Retrieve the random vector (ie the Scalar vector)
-	randomVector, err := shuffleBallotsTransaction.RandomVector.UnMarshal()
+	randomVector, err := shuffleBallotsTransaction.RandomVector.Unmarshal()
 	if err != nil {
 		return err
 	}
@@ -457,30 +457,39 @@ func checkPreviousTransactions(step execution.Step, round int) error {
 // closeElection implements commands. It performs the CLOSE_ELECTION command
 func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) error {
 	closeElectionBuf := step.Current.GetArg(CloseElectionArg)
+
 	if len(closeElectionBuf) == 0 {
 		return xerrors.Errorf(errArgNotFound, CloseElectionArg)
 	}
+
 	closeElectionTransaction := &types.CloseElectionTransaction{}
+
 	err := json.Unmarshal(closeElectionBuf, closeElectionTransaction)
 	if err != nil {
 		return xerrors.Errorf("failed to unmarshal CloseElectionTransaction: %v", err)
 	}
+
 	electionTxIDBuff, err := hex.DecodeString(closeElectionTransaction.ElectionID)
 	if err != nil {
 		return xerrors.Errorf(errDecodeElectionID, err)
 	}
+
 	electionMarshaled, err := snap.Get(electionTxIDBuff)
 	if err != nil {
 		return xerrors.Errorf("failed to get key '%s': %v", electionTxIDBuff, err)
 	}
+
 	election := &types.Election{}
+
 	err = json.Unmarshal(electionMarshaled, election)
 	if err != nil {
 		return xerrors.Errorf("failed to unmarshal Election: %v", err)
 	}
+
 	if election.AdminID != closeElectionTransaction.UserID {
 		return xerrors.Errorf("only the admin can close the election")
 	}
+
 	if election.Status != types.Open {
 		return xerrors.Errorf("the election is not open, current status: %d", election.Status)
 	}
@@ -490,14 +499,17 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 	}
 
 	election.Status = types.Closed
+
 	electionMarshaled, err = json.Marshal(election)
 	if err != nil {
 		return xerrors.Errorf("failed to marshal Election: %v", err)
 	}
+
 	electionIDBuff, err := hex.DecodeString(string(election.ElectionID))
 	if err != nil {
 		return xerrors.Errorf("failed to marshal Election ID: %v", err)
 	}
+
 	err = snap.Set(electionIDBuff, electionMarshaled)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
@@ -617,9 +629,9 @@ func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step)
 	return nil
 }
 
-// verifyIdentity is a utility function to verify if a public key is associated
-// to a member of the roster or not. Returns no error if it's the case.
-func verifyIdentity(roster authority.Authority, publicKey []byte) error {
+// isMemberOf is a utility function to verify if a public key is associated
+// to a member of the roster or not. Returns nil if it's the case.
+func isMemberOf(roster authority.Authority, publicKey []byte) error {
 	pubKeyIterator := roster.PublicKeyIterator()
 	isAMember := false
 

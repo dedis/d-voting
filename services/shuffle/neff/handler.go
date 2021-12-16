@@ -239,6 +239,7 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 // getShuffledBallots returns the shuffled ballots with the shuffling proof.
 func getShuffledBallots(election *electionTypes.Election) ([]electionTypes.EncryptedBallot,
 	func(e []kyber.Scalar) (proof.Prover, error), error) {
+
 	round := len(election.ShuffleInstances)
 
 	var encryptedBallots electionTypes.EncryptedBallots

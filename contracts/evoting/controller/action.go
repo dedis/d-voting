@@ -316,8 +316,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Admin Id of the election : " + election.AdminID)
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
-	dela.Logger.Info().Msg("Max Ballot size : " + strconv.Itoa(election.BallotSize) +
-		"=> " + strconv.Itoa(election.ChunksPerBallot()) + "chunks per ballot")
+	dela.Logger.Info().Msgf("Max Ballot size : %d => %d chunks per ballot",
+		election.BallotSize, election.ChunksPerBallot())
 
 	// ##################################### SETUP DKG #########################
 
@@ -472,17 +472,17 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	b3 := "select:0xbbb:0,0,0,1\n" +
 		"text:0xeee:b3Vp\n\n" //encoding of "oui"
 
-	ballot1, err := marshallBallot(b1, dkgActor, election.ChunksPerBallot())
+	ballot1, err := marshallBallot(strings.NewReader(b1), dkgActor, election.ChunksPerBallot())
 	if err != nil {
 		return xerrors.Errorf("failed to marshall ballot : %v", err)
 	}
 
-	ballot2, err := marshallBallot(b2, dkgActor, election.ChunksPerBallot())
+	ballot2, err := marshallBallot(strings.NewReader(b2), dkgActor, election.ChunksPerBallot())
 	if err != nil {
 		return xerrors.Errorf("failed to marshall ballot : %v", err)
 	}
 
-	ballot3, err := marshallBallot(b3, dkgActor, election.ChunksPerBallot())
+	ballot3, err := marshallBallot(strings.NewReader(b3), dkgActor, election.ChunksPerBallot())
 	if err != nil {
 		return xerrors.Errorf("failed to marshall ballot : %v", err)
 	}
@@ -813,21 +813,22 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	return nil
 }
 
-func marshallBallot(vote string, actor dkg.Actor, chunks int) (types.EncryptedBallot, error) {
+func marshallBallot(vote io.Reader, actor dkg.Actor, chunks int) (types.EncryptedBallot, error) {
 
 	var ballot = make([]types.Ciphertext, chunks)
 
-	byteArray := []byte(vote)
+	buf := make([]byte, 29)
 
 	for i := 0; i < chunks; i++ {
 		var K, C kyber.Point
 		var err error
 
-		if i == chunks-1 {
-			K, C, _, err = actor.Encrypt(byteArray[i*29:])
-		} else {
-			K, C, _, err = actor.Encrypt(byteArray[i*29 : (i+1)*29])
+		n, err := vote.Read(buf)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to read: %v", err)
 		}
+
+		K, C, _, err = actor.Encrypt(buf[:n])
 
 		if err != nil {
 			return types.EncryptedBallot{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)

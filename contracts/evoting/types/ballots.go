@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/base64"
 	"fmt"
+	"golang.org/x/xerrors"
 	"math"
 	"strconv"
 	"strings"
@@ -54,16 +55,16 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 
 	//TODO: Loads of code duplication, can be re-thought
 	for _, line := range lines {
-		question := strings.Split(line, ":")
-
-		if len(question) == 1 && question[0] == "" {
+		if line == "" {
 			// empty line, the valid part of the ballot is over
 			break
 		}
 
+		question := strings.Split(line, ":")
+
 		if len(question) != 3 {
 			b.invalidate()
-			return fmt.Errorf("a line in the ballot has length != 3")
+			return xerrors.Errorf("a line in the ballot has length != 3")
 		}
 
 		q := election.Configuration.GetQuestion(ID(question[1]))
@@ -216,6 +217,8 @@ type Subject struct {
 	Texts    []Text
 }
 
+// GetQuestion finds the question associated to a given ID and returns it
+// Returns nil if no question found.
 func (s *Subject) GetQuestion(ID ID) Question {
 	for _, subject := range s.Subjects {
 		question := subject.GetQuestion(ID)
@@ -254,7 +257,7 @@ func (s *Subject) MaxEncodedSize() int {
 		size += subject.MaxEncodedSize()
 	}
 
-	//TODO : optimise by computeing max size according to number of choices and maxN
+	//TODO : optimise by computing max size according to number of choices and maxN
 	for _, rank := range s.Ranks {
 		size += len("rank::")
 		size += len(rank.ID)
@@ -360,14 +363,17 @@ type Select struct {
 	Choices []string
 }
 
+// GetMaxN implements Question
 func (s Select) GetMaxN() uint {
 	return s.MaxN
 }
 
+// GetMinN implements Question
 func (s Select) GetMinN() uint {
 	return s.MinN
 }
 
+// GetChoicesLength implements Question
 func (s Select) GetChoicesLength() int {
 	return len(s.Choices)
 }
@@ -383,14 +389,17 @@ type Rank struct {
 	Choices []string
 }
 
+// GetMaxN implements Question
 func (r Rank) GetMaxN() uint {
 	return r.MaxN
 }
 
+// GetMinN implements Question
 func (r Rank) GetMinN() uint {
 	return r.MinN
 }
 
+// GetChoicesLength implements Question
 func (r Rank) GetChoicesLength() int {
 	return len(r.Choices)
 }
@@ -408,14 +417,17 @@ type Text struct {
 	Choices   []string
 }
 
+// GetMaxN implements Question
 func (t Text) GetMaxN() uint {
 	return t.MaxN
 }
 
+// GetMinN implements Question
 func (t Text) GetMinN() uint {
 	return t.MinN
 }
 
+// GetChoicesLength implements Question
 func (t Text) GetChoicesLength() int {
 	return len(t.Choices)
 }

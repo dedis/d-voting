@@ -31,8 +31,8 @@ type Election struct {
 	Status  status // Initial | Open | Closed | Shuffling | Decrypting
 	Pubkey  []byte
 
-	// BallotSize represents the total size of one ballot. It is used to pad
-	// smaller ballots such that all  ballots cast have the same size
+	// BallotSize represents the total size in bytes of one ballot. It is used
+	// to pad smaller ballots such that all  ballots cast have the same size
 	BallotSize int
 
 	// PublicBulletinBoard is a map from User ID to their ballot EncryptedBallot
@@ -69,11 +69,11 @@ func (e *Election) ChunksPerBallot() int {
 // and verify the proof of a shuffle
 type RandomVector [][]byte
 
-func (r RandomVector) UnMarshal() ([]kyber.Scalar, error) {
+func (r RandomVector) Unmarshal() ([]kyber.Scalar, error) {
 	e := make([]kyber.Scalar, len(r))
 
 	for i, v := range r {
-		scalar := suite.Scalar().Pick(suite.RandomStream())
+		scalar := suite.Scalar()
 		err := scalar.UnmarshalBinary(v)
 		if err != nil {
 			return nil, xerrors.Errorf("cannot unmarshall election random vector: %v", err)
@@ -84,6 +84,8 @@ func (r RandomVector) UnMarshal() ([]kyber.Scalar, error) {
 	return e, nil
 }
 
+// LoadFromScalars marshals a given vector of scalars into the current
+// RandomVector
 func (r *RandomVector) LoadFromScalars(e []kyber.Scalar) error {
 	*r = make([][]byte, len(e))
 
@@ -126,7 +128,8 @@ func (c *Configuration) MaxBallotSize() int {
 	return size
 }
 
-// GetQuestion finds the question associated to a given ID and returns it
+// GetQuestion finds the question associated to a given ID and returns it.
+// Returns nil if no question found.
 func (c *Configuration) GetQuestion(ID ID) Question {
 	for _, subject := range c.Scaffold {
 		question := subject.GetQuestion(ID)
@@ -205,7 +208,8 @@ type EncryptedBallot []Ciphertext
 // EncryptedBallots represents a list of EncryptedBallot
 type EncryptedBallots []EncryptedBallot
 
-// GetElGPairs returns 2 dimensional arrays with the Elgamal pairs of each encrypted ballot
+// GetElGPairs returns 2 2-dimensional arrays with the Elgamal pairs of each
+// encrypted ballot
 func (b EncryptedBallots) GetElGPairs() ([][]kyber.Point, [][]kyber.Point, error) {
 	if len(b) == 0 {
 		return nil, nil, xerrors.Errorf("there are no ballots")
