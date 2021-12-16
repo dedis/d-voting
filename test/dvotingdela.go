@@ -408,7 +408,7 @@ func newCertGenerator(r io.Reader, c elliptic.Curve) loader.Generator {
 	}
 }
 
-// certGenerator implements loader.Generator. It returns the serialized data of
+// Generate implements loader.Generator. It returns the serialized data of
 // a private key generated from the an elliptic curve. The data is formatted as
 // a PEM block "EC PRIVATE KEY".
 func (g certGenerator) Generate() ([]byte, error) {
