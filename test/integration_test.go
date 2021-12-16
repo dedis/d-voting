@@ -127,6 +127,11 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	require.Equal(t, castedVotes, shuffledVotes)
 
 	t.Logf("Shuffled votes are equivalent to casted votes!")
+
+	//TODO: close nodes in goroutines using a timeout in a select
+	for _, node := range nodes {
+		node.GetOrdering().Close()
+	}
 }
 
 // Check more shuffled votes versus the casted votes on more nodes.
@@ -236,6 +241,11 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	require.Equal(t, castedVotes, shuffledVotes)
 
 	t.Logf("Shuffled votes are equivalent to casted votes!")
+
+	//TODO: close nodes in goroutines using a timeout in a select
+	for _, node := range nodes {
+		node.GetOrdering().Close()
+	}
 }
 
 // -----------------------------------------------------------------------------
