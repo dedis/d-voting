@@ -7,10 +7,10 @@ import (
 	"crypto/x509"
 	"io"
 	"math/rand"
-	"net"
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -75,7 +75,6 @@ type dela interface {
 type dVotingCosiDela interface {
 	dela
 
-	GetAddr() net.Addr
 	GetPublicKey() crypto.PublicKey
 	GetPool() pool.Pool
 	GetAccessStore() accessstore
@@ -93,7 +92,6 @@ type dVotingNode struct {
 	ordering      ordering.Service
 	cosi          *threshold.Threshold
 	txManager     txn.Manager
-	addr          net.Addr
 	pool          pool.Pool
 	accessService access.Service
 	accessStore   accessstore
@@ -104,32 +102,39 @@ type dVotingNode struct {
 
 // Creates n dela nodes using tempDir as root to file path and returns an array
 // of nodes or error
-func setupDVotingNodes(t *testing.T, numberOfNodes int, tempDir string, basePort int) []dVotingCosiDela {
-	dVotingNodes := make([]dVotingCosiDela, numberOfNodes)
-	delaNodes := make([]dela, numberOfNodes)
+func setupDVotingNodes(t *testing.T, numberOfNodes int, tempDir string) []dVotingCosiDela {
 
-	canal := make(chan dVotingCosiDela, numberOfNodes)
+	wait := sync.WaitGroup{}
 
-	for i := 0; i < numberOfNodes; i++ {
-		filePath := filepath.Join(tempDir, "node", strconv.Itoa(i))
-		nodePort := basePort + i
+	wait.Add(numberOfNodes)
 
-		go newDVotingNode(canal, t, filePath, nodePort)
-		dVotingNodes[i] = <-canal
+	nodes := make(chan dVotingCosiDela, numberOfNodes)
 
-		// used to cast each element for the Setup
-		delaNodes[i] = dVotingNodes[i]
+	for n := 0; n < numberOfNodes; n++ {
+		go func(i int) {
+			defer wait.Done()
+			filePath := filepath.Join(tempDir, "node", strconv.Itoa(i))
+			nodes <- newDVotingNode(t, filePath, 0)
+		}(n)
 	}
 
-	close(canal)
+	wait.Wait()
+	close(nodes)
 
+	delaNodes := make([]dela, 0, numberOfNodes)
+	dVotingNodes := make([]dVotingCosiDela, 0, numberOfNodes)
+
+	for node := range nodes {
+		delaNodes = append(delaNodes, node)
+		dVotingNodes = append(dVotingNodes, node)
+	}
 	delaNodes[0].Setup(delaNodes[1:]...)
 
 	return dVotingNodes
 }
 
 // Creates a single dVotingCosiDela node
-func newDVotingNode(canal chan<- dVotingCosiDela, t *testing.T, path string, port int) {
+func newDVotingNode(t *testing.T, path string, port int) dVotingCosiDela {
 	err := os.MkdirAll(path, 0700)
 	require.NoError(t, err)
 
@@ -238,13 +243,12 @@ func newDVotingNode(canal chan<- dVotingCosiDela, t *testing.T, path string, por
 
 	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, rosterFac, signer)
 
-	canal <- dVotingNode{
+	return dVotingNode{
 		t:             t,
 		onet:          onet,
 		ordering:      srvc,
 		cosi:          cosi,
 		txManager:     mgr,
-		addr:          addr,
 		pool:          pool,
 		accessService: accessService,
 		accessStore:   accessStore,
@@ -282,7 +286,7 @@ func (c dVotingNode) Setup(nodes ...dela) {
 	joinable, ok := c.onet.(minogrpc.Joinable)
 	require.True(c.t, ok)
 
-	addrStr := c.addr.String()
+	addrStr := c.onet.GetAddress().String()
 	token := joinable.GenerateToken(time.Hour)
 
 	certHash, err := joinable.GetCertificateStore().Hash(joinable.GetCertificate())
@@ -348,11 +352,6 @@ func (c dVotingNode) GetTxManager() txn.Manager {
 // GetAccessService implements dVotingNode
 func (c dVotingNode) GetAccessService() access.Service {
 	return c.accessService
-}
-
-// GetAddr implements dVotingNode
-func (c dVotingNode) GetAddr() net.Addr {
-	return c.addr
 }
 
 // GetPublicKey  implements dVotingNode

@@ -35,7 +35,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	const N_NODES int = 3
 	const N_VOTES int = 3
 
-	delaPkg.Logger = zerolog.New(os.Stdout)
+	delaPkg.Logger = zerolog.New(os.Stdout).Level(zerolog.WarnLevel)
 
 	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-3-votes")
 	require.NoError(t, err)
@@ -44,7 +44,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 
 	t.Logf("using temp dir %s", dirPath)
 
-	nodes := setupDVotingNodes(t, N_NODES, dirPath, 2000)
+	nodes := setupDVotingNodes(t, N_NODES, dirPath)
 
 	signer := createDVotingAccess(t, nodes, dirPath)
 
@@ -135,7 +135,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	const N_NODES int = 10
 	const N_VOTES int = 10
 
-	delaPkg.Logger = zerolog.New(os.Stdout)
+	delaPkg.Logger = zerolog.New(os.Stdout).Level(zerolog.WarnLevel)
 
 	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-many-votes")
 	require.NoError(t, err)
@@ -144,7 +144,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 
 	t.Logf("using temp dir %s", dirPath)
 
-	nodes := setupDVotingNodes(t, N_NODES, dirPath, 2100)
+	nodes := setupDVotingNodes(t, N_NODES, dirPath)
 
 	signer := createDVotingAccess(t, nodes, dirPath)
 
@@ -165,6 +165,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	err = openElection(m, electionID)
 	require.NoError(t, err)
 
+	t.Logf("start casting votes")
 	possibleVotes := []string{
 		"vote1",
 		"vote2",
@@ -180,13 +181,16 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 
 	time.Sleep(time.Millisecond * 100)
 
+	t.Logf("initializing shuffle")
 	sActor, err := initShuffle(nodes, signer)
 	require.NoError(t, err)
 
+	t.Logf("shuffling")
 	err = sActor.Shuffle(electionID)
 	require.NoError(t, err)
 
 	// SC7: decrypt
+	t.Logf("get vote proof")
 	proof, err := nodes[0].(dVotingNode).GetOrdering().GetProof(electionID)
 	require.NoError(t, err)
 
