@@ -119,7 +119,7 @@ func setupDVotingNodes(t *testing.T, numberOfNodes int, tempDir string, basePort
 	canal := make(chan dVotingCosiDela, numberOfNodes)
 
 	for i := 0; i < numberOfNodes; i++ {
-		filePath := filepath.Join(tempDir, "node", fmt.Sprint(i))
+		filePath := filepath.Join(tempDir, "node", strconv.Itoa(i))
 		nodePort := basePort + i
 
 		go newDVotingNode(canal, t, filePath, nodePort)
