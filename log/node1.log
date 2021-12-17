@@ -1,0 +1,267 @@
+viaene@dedis-2109135 memcoin % LLVL=debug memcoin --config /tmp/node1 start --port 2001
+2021-12-07T14:14:55+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/mino/minogrpc/controller/mod.go:141 > mino[127.0.0.1:2001] is running
+2021-12-07T14:14:55+01:00 INF Users/viaene/git/d-voting/services/dkg/pedersen/controller/mod.go:115 > perdersen public key public key=924ad3a484550253487722baac3301416b3939de01235826740a41da26b9b4f5
+2021-12-07T14:15:10+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/cli/node/daemon.go:169 > received command on the daemon command=0100 daemon=/tmp/node1/daemon.sock flags="map[config:/tmp/node1 expiration:8.64e+13 help:false]"
+2021-12-07T14:15:10+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/mino/minogrpc/server.go:75 > valid token received from=F127.0.0.1:2002
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/cli/node/daemon.go:169 > received command on the daemon command=0100 daemon=/tmp/node1/daemon.sock flags="map[config:/tmp/node1 expiration:8.64e+13 help:false]"
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/mino/minogrpc/server.go:75 > valid token received from=F127.0.0.1:2003
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/cli/node/daemon.go:169 > received command on the daemon command=0400 daemon=/tmp/node1/daemon.sock flags="map[config:/tmp/node1 help:false]"
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/cli/node/daemon.go:169 > received command on the daemon command=0300 daemon=/tmp/node1/daemon.sock flags="map[config:/tmp/node1 help:false member:[RjEyNy4wLjAuMToyMDAx:OUKI5iK+iIKWQb5vWAowSQOSHW3qM+ITVm8Zlt03RucG5vxTP5/fsgMSA1zAQzHTFSXTVCHcE2c8Ic/8dpaAnYLPksbQPJPikj9Ieuy3kOB48g3WdNBbSJZHy5t7LdC/GB1tNUxZPvO2iNwyBpZA9GnT0A4CpBrVRv3S+MWrTQI= RjEyNy4wLjAuMToyMDAy:iiQnwPAb66x0SV1xV8+cgDoj4yrfhNnGOIIw1lqAA2NNNoYlCIcpH0Rg7Ec94gzbba6uG2tKd/QXFSFqfr8qHyuBjbkPgvNbJ8HqDWLqGVO1If7csYeldWCleOoZTm/OTjIpcDkMKd1VxQhy7lDOTWWyqJTIvQC9fBpidZJSBsA= RjEyNy4wLjAuMToyMDAz:DICakNKOH9MSErPvSl8+TpuFvRWhbHuoEVweZ2U+rmtCAcSJz3rxcUg8gfNjPK0Jm4T+NHwpX69ngLc1aL7WM1eBnkcxW06JLlSHtvpkrbKtDaWe+3JJs9RTPirPeQxaNQHncraJOnHI3Vtzv9f8GpGiCUsNP82Ow3WxlMS2LOU=] timeout:2e+10]"
+2021-12-07T14:15:11+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:412 > node has started following the chain addr=127.0.0.1:2001
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:424 > node has started addr=127.0.0.1:2001
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=0
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=0
+2021-12-07T14:15:11+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:279 > new chain has been created addr=127.0.0.1:2001 digest=c386008b roster=3
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/cli/node/daemon.go:169 > received command on the daemon command=0c00 daemon=/tmp/node1/daemon.sock flags="map[config:/tmp/node1 help:false identity:[IKIRWNnPCKOY13q4M/10rhbznpPlnDo82QykXHjWtWR7Q9XWmanyZ32mwV7xwjMe0i6h0UXnZj44ECbMDpWC2FaPEYStCCqot1Cb+rLOKH/igIcidXFR30BItHn3qxqQd/TTIeKRRuqakem8fjzwwDeTYvS2ZNmb9zuv5hx3nqI=]]"
+2021-12-07T14:15:11+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/contracts/access/controller/action.go:57 > access granted to [bls:20a21158d9cf08a3]
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/cli/node/daemon.go:169 > received command on the daemon command=0b00 daemon=/tmp/node1/daemon.sock flags="map[args:[go.dedis.ch/dela.ContractArg go.dedis.ch/dela.Access access:grant_id 0300000000000000000000000000000000000000000000000000000000000000 access:grant_contract go.dedis.ch/dela.Evoting access:grant_command all access:identity IKIRWNnPCKOY13q4M/10rhbznpPlnDo82QykXHjWtWR7Q9XWmanyZ32mwV7xwjMe0i6h0UXnZj44ECbMDpWC2FaPEYStCCqot1Cb+rLOKH/igIcidXFR30BItHn3qxqQd/TTIeKRRuqakem8fjzwwDeTYvS2ZNmb9zuv5hx3nqI= access:command GRANT] config:/tmp/node1 help:false key:private.key nonce:-1]"
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/txn/signed/mod.go:332 > manager synchronized nonce=0
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:592 > transactions have been found addr=127.0.0.1:2001 num=1
+2021-12-07T14:15:11+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/contracts/access/mod.go:175 > granted 0300000000000000000000000000000000000000000000000000000000000000-go.dedis.ch/dela.Evoting-all to [bls:20a21158d9cf08a3] contract=access
+2021-12-07T14:15:11+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/contracts/access/mod.go:175 > granted 0300000000000000000000000000000000000000000000000000000000000000-go.dedis.ch/dela.Evoting-all to [bls:20a21158d9cf08a3] contract=access
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/cli/node/daemon.go:169 > received command on the daemon command=0600 daemon=/tmp/node1/daemon.sock flags="map[config:/tmp/node1 help:false]"
+2021-12-07T14:15:11+01:00 INF Users/viaene/git/d-voting/services/dkg/pedersen/controller/action.go:49 > DKG has been initialized successfully
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:633 > prepare done addr=127.0.0.1:2001 signature=thres[111]:bls:2131da7a89a07934e306403923f00ff6e371689a0d4dbbdc1baf131606d884d5766b14b154d074e8a4a14b502916b07f5229953ef467aaf499593c1f2b75f630
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:643 > commit done addr=127.0.0.1:2001 signature=thres[111]:bls:8237b6e7425908c43c464760a84660ca141064868350bf3e217d37e73e9057b751221780fb5353bade2e9901048bd944454c2605a0e4809a81f72010c7a94580
+2021-12-07T14:15:11+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:387 > block event addr=127.0.0.1:2001 index=0 root=8154ad9c
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=0
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/cli/node/daemon.go:169 > received command on the daemon command=0e00 daemon=/tmp/node1/daemon.sock flags="map[config:/tmp/node1 help:false signer:private.key]"
+2021-12-07T14:15:11+01:00 INF Users/viaene/git/d-voting/services/shuffle/neff/controller/action.go:39 > The shuffle protocol has been initialized successfully
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:15:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/cli/node/daemon.go:169 > received command on the daemon command=0d00 daemon=/tmp/node1/daemon.sock flags="map[clientaddr:127.0.0.1:8081 config:/tmp/node1 help:false]"
+2021-12-07T14:15:12+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/cli/node/daemon.go:169 > received command on the daemon command=0f00 daemon=/tmp/node1/daemon.sock flags="map[config:/tmp/node1 help:false signer:private.key]"
+2021-12-07T14:15:12+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/cli/node/daemon.go:169 > received command on the daemon command=0a00 daemon=/tmp/node1/daemon.sock flags="map[config:/tmp/node1 help:false]"
+2021-12-07T14:15:12+01:00 INF Users/viaene/git/d-voting/services/dkg/pedersen/controller/action.go:246 > DKG handler registered
+2021-12-07T14:15:21+01:00 ERR Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/mino/minogrpc/rpc.go:228 > stream to root failed error=EOF
+2021-12-07T14:15:21+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:585 > no transaction in pool addr=127.0.0.1:2001
+2021-12-07T14:15:21+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:15:21+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=0
+2021-12-07T14:15:21+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:15:31+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:585 > no transaction in pool addr=127.0.0.1:2001
+2021-12-07T14:15:31+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:15:31+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=0
+2021-12-07T14:15:31+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:15:41+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:585 > no transaction in pool addr=127.0.0.1:2001
+2021-12-07T14:15:41+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:15:41+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=0
+2021-12-07T14:15:41+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:15:51+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:585 > no transaction in pool addr=127.0.0.1:2001
+2021-12-07T14:15:51+01:00 ERR Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/mino/minogrpc/rpc.go:228 > stream to root failed error=EOF
+2021-12-07T14:15:51+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:15:51+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=0
+2021-12-07T14:15:51+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:16:01+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:585 > no transaction in pool addr=127.0.0.1:2001
+2021-12-07T14:16:01+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:16:01+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=0
+2021-12-07T14:16:01+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:16:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:585 > no transaction in pool addr=127.0.0.1:2001
+2021-12-07T14:16:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:16:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=0
+2021-12-07T14:16:11+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:16:21+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:585 > no transaction in pool addr=127.0.0.1:2001
+2021-12-07T14:16:21+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:16:21+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=0
+2021-12-07T14:16:21+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:16:31+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:585 > no transaction in pool addr=127.0.0.1:2001
+2021-12-07T14:16:31+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:16:31+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=0
+2021-12-07T14:16:31+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=1
+2021-12-07T14:16:37+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/cli/node/daemon.go:169 > received command on the daemon command=1000 daemon=/tmp/node1/daemon.sock flags="map[config:/tmp/node1 help:false proxy-addr:http://localhost:8081]"
+2021-12-07T14:16:37+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:206 > ----------------------- CREATE SIMPLE ELECTION :
+create election js: {"Title":"TitleTest","AdminID":"adminId","Token":"token","Format":""}
+2021-12-07T14:16:37+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/mod.go:99 > FIRST BLOCK
+2021-12-07T14:16:37+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/txn/signed/mod.go:332 > manager synchronized nonce=1
+2021-12-07T14:16:37+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:592 > transactions have been found addr=127.0.0.1:2001 num=1
+2021-12-07T14:16:37+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:633 > prepare done addr=127.0.0.1:2001 signature=thres[111]:bls:63cc707579ea29e36049aefe9a62bfd7dc16b00c1dd3245368ea3788cbb471a01d70e1a2fd7ae33e5465efe9bc120781bf256e30ab79f14d6f54249197c6cdf6
+2021-12-07T14:16:37+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:643 > commit done addr=127.0.0.1:2001 signature=thres[111]:bls:506bdafa208805d7c56b80bd57a25bf3774d113344764f9008313fa564c333e26fd711128ef890237242d04f409d6973771f490727be37c9f115e5ebd16dc84f
+2021-12-07T14:16:37+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:387 > block event addr=127.0.0.1:2001 index=1 root=a4b7f0ae
+2021-12-07T14:16:37+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:236 > Response body : {"ElectionID":"988bc8ab79b184278051e8c87f101be15e9f421c8251f9d13be4e78406886cf0"}
+
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:258 > Proof : {"Title":"TitleTest","ElectionID":"988bc8ab79b184278051e8c87f101be15e9f421c8251f9d13be4e78406886cf0","AdminID":"adminId","Status":1,"Pubkey":null,"EncryptedBallots":{"UserIDs":null,"Ballots":null},"ShuffleInstances":[],"ShuffleThreshold":3,"DecryptedBallots":[],"Format":"","RosterBuf":"W3siQWRkcmVzcyI6IlJqRXlOeTR3TGpBdU1Ub3lNREF4IiwiUHVibGljS2V5Ijp7Ik5hbWUiOiJCTFMtQ1VSVkUtQk4yNTYiLCJEYXRhIjoiT1VLSTVpSytpSUtXUWI1dldBb3dTUU9TSFczcU0rSVRWbThabHQwM1J1Y0c1dnhUUDUvZnNnTVNBMXpBUXpIVEZTWFRWQ0hjRTJjOEljLzhkcGFBbllMUGtzYlFQSlBpa2o5SWV1eTNrT0I0OGczV2ROQmJTSlpIeTV0N0xkQy9HQjF0TlV4WlB2TzJpTnd5QnBaQTlHblQwQTRDcEJyVlJ2M1MrTVdyVFFJPSJ9fSx7IkFkZHJlc3MiOiJSakV5Tnk0d0xqQXVNVG95TURBeSIsIlB1YmxpY0tleSI6eyJOYW1lIjoiQkxTLUNVUlZFLUJOMjU2IiwiRGF0YSI6ImlpUW53UEFiNjZ4MFNWMXhWOCtjZ0RvajR5cmZoTm5HT0lJdzFscUFBMk5OTm9ZbENJY3BIMFJnN0VjOTRnemJiYTZ1RzJ0S2QvUVhGU0ZxZnI4cUh5dUJqYmtQZ3ZOYko4SHFEV0xxR1ZPMUlmN2NzWWVsZFdDbGVPb1pUbS9PVGpJcGNEa01LZDFWeFFoeTdsRE9UV1d5cUpUSXZRQzlmQnBpZFpKU0JzQT0ifX0seyJBZGRyZXNzIjoiUmpFeU55NHdMakF1TVRveU1EQXoiLCJQdWJsaWNLZXkiOnsiTmFtZSI6IkJMUy1DVVJWRS1CTjI1NiIsIkRhdGEiOiJESUNha05LT0g5TVNFclB2U2w4K1RwdUZ2UldoYkh1b0VWd2VaMlUrcm10Q0FjU0p6M3J4Y1VnOGdmTmpQSzBKbTRUK05Id3BYNjluZ0xjMWFMN1dNMWVCbmtjeFcwNkpMbFNIdHZwa3JiS3REYVdlKzNKSnM5UlRQaXJQZVF4YU5RSG5jcmFKT25ISTNWdHp2OWY4R3BHaUNVc05QODJPdzNXeGxNUzJMT1U9In19XQ=="}
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:272 > Title of the election : TitleTest
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:273 > ID of the election : 988bc8ab79b184278051e8c87f101be15e9f421c8251f9d13be4e78406886cf0
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:274 > Admin Id of the election : adminId
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:275 > Status of the election : 1
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=2
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=1
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/services/dkg/pedersen/mod.go:182 > received a response from 127.0.0.1:2001
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/services/dkg/pedersen/mod.go:192 > Pub key: 924ad3a484550253487722baac3301416b3939de01235826740a41da26b9b4f5
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/services/dkg/pedersen/mod.go:182 > received a response from 127.0.0.1:2003
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/services/dkg/pedersen/mod.go:192 > Pub key: 48f78628c1e3bd2949289b303699da6fa8b5656cf4982bb040a75a4747731c22
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/services/dkg/pedersen/mod.go:182 > received a response from 127.0.0.1:2002
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/services/dkg/pedersen/mod.go:192 > Pub key: caa5a44fd89ceb6bc80371c39652af55c3343194d28fc3b9021fb7db31830cd1
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=2
+Pubkey: ce927d77d0065bbe5b29a27c3fc41c3d55fdccb709886661f6669ff9499612c6
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/txn/signed/mod.go:332 > manager synchronized nonce=2
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:592 > transactions have been found addr=127.0.0.1:2001 num=1
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:633 > prepare done addr=127.0.0.1:2001 signature=thres[111]:bls:6c3068375dd3fd0122462ae439c418a296808427fa1ee5c589ffdb0f3f636c612ec38866c61d3943e5f7cb805d7342e9be955fe7766ae52e8768b3371b551f0c
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:643 > commit done addr=127.0.0.1:2001 signature=thres[111]:bls:6179cc84e02a09b2d359f3dce0e29aef9149aef09a30b8a7eea0e5a199856169642888eaeae2cd7de2b64cbf2990ae18d574455f2dc858c8a191642c56eac005
+2021-12-07T14:16:38+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:387 > block event addr=127.0.0.1:2001 index=2 root=5b3cd1f8
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:316 > ----------------------- GET ELECTION INFO :
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:343 > Response body : {"ElectionID":"988bc8ab79b184278051e8c87f101be15e9f421c8251f9d13be4e78406886cf0","Title":"TitleTest","Status":1,"Pubkey":"ce927d77d0065bbe5b29a27c3fc41c3d55fdccb709886661f6669ff9499612c6","Result":[],"Format":""}
+
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=3
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:357 > Title of the election : TitleTest
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:358 > ID of the election : 988bc8ab79b184278051e8c87f101be15e9f421c8251f9d13be4e78406886cf0
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:359 > Status of the election : 1
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:360 > Pubkey of the election : ce927d77d0065bbe5b29a27c3fc41c3d55fdccb709886661f6669ff9499612c6
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:363 > DKG public key DKG public key=ce927d77d0065bbe5b29a27c3fc41c3d55fdccb709886661f6669ff9499612c6
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:367 > ----------------------- CLOSE ELECTION :
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=2
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/txn/signed/mod.go:332 > manager synchronized nonce=3
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=3
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:592 > transactions have been found addr=127.0.0.1:2001 num=1
+2021-12-07T14:16:38+01:00 WRN Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/pbft/mod.go:586 > transaction not accepted addr=127.0.0.1:2001 reason="failed to close election: at least two ballots are required"
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:633 > prepare done addr=127.0.0.1:2001 signature=thres[111]:bls:7001f368c884122535c0a61293922f023db8d398f2d7bd7d783b0123f2391e92727c2e1d8e63336c7ccf0a96070dc6449c65dd88fe9f78ad70102a600be2039b
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:643 > commit done addr=127.0.0.1:2001 signature=thres[111]:bls:72a73ac78a3de46a790de3c38b726931370c72955e8db7071b0ea23e8013a6484b8f8cfa036ecc29723e9139d6b820852d14565117e99024286335f6d0e4568c
+2021-12-07T14:16:38+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:387 > block event addr=127.0.0.1:2001 index=3 root=7d982cc9
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/http.go:98 > transaction c39a4638d9832f42d94796d53ba1d163cd4432ad6b55a348015ec52580bb4721 denied : failed to close election: at least two ballots are required role=evoting-proxy
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:397 > Response body : failed to submit txn: transaction not processed within timeout
+
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:411 > Title of the election : TitleTest
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:412 > ID of the election : 988bc8ab79b184278051e8c87f101be15e9f421c8251f9d13be4e78406886cf0
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:413 > Admin Id of the election : adminId
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:414 > Status of the election : 1
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:418 > ----------------------- CAST BALLOTS :
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=4
+election metadata: &{[988bc8ab79b184278051e8c87f101be15e9f421c8251f9d13be4e78406886cf0]} 988bc8ab79b184278051e8c87f101be15e9f421c8251f9d13be4e78406886cf0
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=3
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/txn/signed/mod.go:332 > manager synchronized nonce=4
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=4
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:592 > transactions have been found addr=127.0.0.1:2001 num=1
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:633 > prepare done addr=127.0.0.1:2001 signature=thres[111]:bls:7eea1a3e806f769b1260b75f78acd740fec8d6f192fbc981251756e0ac8f8c2d4376d802ccab9105f4e6858046eaaec9be1720f8561760a3e828e5664b2b9886
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:643 > commit done addr=127.0.0.1:2001 signature=thres[111]:bls:16598c83d96a6740f5858075aef5907b24f5768fd6312d0f35a578b15f0302194c5571dce8655958a566e751f03ada8978457c4c029e0fe28384d7bbfbed08c0
+2021-12-07T14:16:38+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:387 > block event addr=127.0.0.1:2001 index=4 root=8cb1eeaf
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:461 > Response body : {}
+
+election metadata: &{[988bc8ab79b184278051e8c87f101be15e9f421c8251f9d13be4e78406886cf0]} 988bc8ab79b184278051e8c87f101be15e9f421c8251f9d13be4e78406886cf0
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=5
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/txn/signed/mod.go:332 > manager synchronized nonce=5
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=4
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=5
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:592 > transactions have been found addr=127.0.0.1:2001 num=1
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:633 > prepare done addr=127.0.0.1:2001 signature=thres[111]:bls:508bed459762b22cc2f280fa693df18536859d3ee00d72d8ee7fdfc6eb06f4dd15af362a40dcf9d743759849ca048b0e130ac729a7349a68158f57e3049974da
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:643 > commit done addr=127.0.0.1:2001 signature=thres[111]:bls:89f8c4ac788c445831c2ae2c2d722434db50b595da247e0a49cba07f05a095b10fd556d159af162dae866114cb21130032e823c1d6c6a66ec295e6cd57928b37
+2021-12-07T14:16:38+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:387 > block event addr=127.0.0.1:2001 index=5 root=94b569a9
+2021-12-07T14:16:38+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:490 > Response body : {}
+
+election metadata: &{[988bc8ab79b184278051e8c87f101be15e9f421c8251f9d13be4e78406886cf0]} 988bc8ab79b184278051e8c87f101be15e9f421c8251f9d13be4e78406886cf0
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=6
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/txn/signed/mod.go:332 > manager synchronized nonce=6
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=5
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=6
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:592 > transactions have been found addr=127.0.0.1:2001 num=1
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:633 > prepare done addr=127.0.0.1:2001 signature=thres[111]:bls:42a0d31572c5a6ba3f0bafb7bb2cda7b341f8410b833da962a5d05e82c3b86238808ca1a53e475274591f2497c01964ab9775ab069b304a990a0367c540bb870
+2021-12-07T14:16:38+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:643 > commit done addr=127.0.0.1:2001 signature=thres[111]:bls:38551400588353a1c1cd689eca40c63a5547f5372ab5b19024202c5dc98bd3687bf2528905a4f8771a7d153f1b783cf724f29e788063c4fb755cb80fbac26805
+2021-12-07T14:16:39+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:387 > block event addr=127.0.0.1:2001 index=6 root=50378ac0
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:519 > Response body : {}
+
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:533 > Length encrypted ballots : 3
+2021-12-07T14:16:39+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=7
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:534 > Ballot of user1 : {K: edd0541cc63fe1e6760455d4e9165319e04c4d7ba668368dc1ab42b8ae30f61a, C: d930a805968570dc45cf77ce08aea2f3edec4f010de04cbece700ab3de9905da}
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:535 > Ballot of user2 : {K: 26d420808a2d3aa3ebee7f60229af83bdaf5cb6b37239b7af3a7919fc34f5ad4, C: 6493432f929c7572c0c27e91843f8c42765ae137879de6b80a90362275adb1ff}
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:536 > Ballot of user3 : {K: 30af3784b48b02728788e4203a88a8f212ec78910263af994f7b6846dec5430f, C: 8a779f175aa9b6a5df6f084d04e11867ce08b82f972cff5c947c83614a4c3336}
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:537 > ID of the election : 988bc8ab79b184278051e8c87f101be15e9f421c8251f9d13be4e78406886cf0
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:538 > Status of the election : 1
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:544 > ----------------------- CLOSE ELECTION :
+2021-12-07T14:16:39+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/txn/signed/mod.go:332 > manager synchronized nonce=7
+2021-12-07T14:16:39+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=6
+2021-12-07T14:16:39+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=7
+2021-12-07T14:16:39+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:592 > transactions have been found addr=127.0.0.1:2001 num=1
+2021-12-07T14:16:39+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:633 > prepare done addr=127.0.0.1:2001 signature=thres[111]:bls:6f55f96f1871975e32ce5e9b0beec224acc0c524d4ef2cac844a66f3f309167b320a1b9afac459e52098e8fafc7477fc47f252c0f256303b7b22169a8d628030
+2021-12-07T14:16:39+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:643 > commit done addr=127.0.0.1:2001 signature=thres[111]:bls:51f2f72e15cb30006633aad27b5694e509049ceb5b48666bbab9192a0f5de4ab746ed06209dc5b2444b5202db368a8406ed03c487e8acd560787bc6be782ab7e
+2021-12-07T14:16:39+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:387 > block event addr=127.0.0.1:2001 index=7 root=1223022d
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:572 > Response body : {}
+
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:586 > Title of the election : TitleTest
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:587 > ID of the election : 988bc8ab79b184278051e8c87f101be15e9f421c8251f9d13be4e78406886cf0
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:588 > Admin Id of the election : adminId
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:589 > Status of the election : 2
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:595 > ----------------------- SHUFFLE BALLOTS :
+2021-12-07T14:16:39+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=8
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/services/shuffle/neff/handler.go:71 > message received from: Orchestrator:127.0.0.1:2001
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/services/shuffle/neff/handler.go:87 > Starting the neff shuffle protocol ...
+encrypted ballots: {[user1 user2 user3] [{K: edd0541cc63fe1e6760455d4e9165319e04c4d7ba668368dc1ab42b8ae30f61a, C: d930a805968570dc45cf77ce08aea2f3edec4f010de04cbece700ab3de9905da} {K: 26d420808a2d3aa3ebee7f60229af83bdaf5cb6b37239b7af3a7919fc34f5ad4, C: 6493432f929c7572c0c27e91843f8c42765ae137879de6b80a90362275adb1ff} {K: 30af3784b48b02728788e4203a88a8f212ec78910263af994f7b6846dec5430f, C: 8a779f175aa9b6a5df6f084d04e11867ce08b82f972cff5c947c83614a4c3336}]}
+2021-12-07T14:16:39+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=7
+2021-12-07T14:16:39+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/txn/signed/mod.go:332 > manager synchronized nonce=8
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/services/shuffle/neff/mod.go:185 > SHUFFLE / ROUND : 0
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/services/shuffle/neff/mod.go:194 > waiting a while before checking election: 0
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/services/shuffle/neff/handler.go:123 > sending shuffling tx with nonce 8
+2021-12-07T14:16:39+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=8
+2021-12-07T14:16:39+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:592 > transactions have been found addr=127.0.0.1:2001 num=1
+2021-12-07T14:16:39+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:633 > prepare done addr=127.0.0.1:2001 signature=thres[111]:bls:58867d6aac4dacbc19c33f4fc6393d4e85a71d264a4f49f14798ba7e77ba3e18331d4458e56aafbc879b9694bf0f8ebbea2a328e8130ae06da0b3c0e6f397ddd
+2021-12-07T14:16:39+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:643 > commit done addr=127.0.0.1:2001 signature=thres[111]:bls:7afe179b01057ac833e611fbbad51ff2ddd9fd4784d410f9de9c6990b734e74459f277f5ecce775a02043e4ed862380bba06c44ec1f1532d1f4b1fbfba3e1bd9
+2021-12-07T14:16:39+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:387 > block event addr=127.0.0.1:2001 index=8 root=5d4ae23d
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/services/shuffle/neff/handler.go:260 > transaction included in the block id=8ee6b223608c55dd7837d23af30e44f4562bdf9db361c63ce5dcda0ed0dcfef3
+2021-12-07T14:16:39+01:00 INF Users/viaene/git/d-voting/services/shuffle/neff/handler.go:127 > our shuffling contribution has been accepted, we are exitting the process
+2021-12-07T14:16:39+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=9
+2021-12-07T14:16:39+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=8
+2021-12-07T14:16:39+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=9
+2021-12-07T14:16:41+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:592 > transactions have been found addr=127.0.0.1:2001 num=1
+2021-12-07T14:16:41+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:633 > prepare done addr=127.0.0.1:2001 signature=thres[111]:bls:143f093165a1f4a3057aae000698e2ae705751c5e7546d5b19dd692bcef37a814e8f414f3e03453437207abe1362a12178dd652910f9487149cc00dfcc3ef84a
+2021-12-07T14:16:41+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:643 > commit done addr=127.0.0.1:2001 signature=thres[111]:bls:10d80d862e0450adf6aa685f51618055c885861434c4072913a2af12d5a8215e50d3bb0905030b949c2742efb5b0a525219bfe125cca4f195b2856e9e52851eb
+2021-12-07T14:16:41+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:387 > block event addr=127.0.0.1:2001 index=9 root=62ae7f22
+2021-12-07T14:16:41+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=10
+2021-12-07T14:16:41+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=9
+2021-12-07T14:16:41+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=10
+2021-12-07T14:16:42+01:00 INF Users/viaene/git/d-voting/services/shuffle/neff/mod.go:185 > SHUFFLE / ROUND : 2
+2021-12-07T14:16:42+01:00 INF Users/viaene/git/d-voting/services/shuffle/neff/mod.go:194 > waiting a while before checking election: 1
+2021-12-07T14:16:43+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:592 > transactions have been found addr=127.0.0.1:2001 num=1
+2021-12-07T14:16:43+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:633 > prepare done addr=127.0.0.1:2001 signature=thres[111]:bls:08cf9837b536c3578d6bdaa4f2652dae10328fdb64827c08b62ac4a72e5b3aaf4d1f87e2db21af5d673034909c8c918ed4a4008e6e91db8d3922154b84e8bcbd
+2021-12-07T14:16:43+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:643 > commit done addr=127.0.0.1:2001 signature=thres[111]:bls:1c309526010ea6d808930fc1d6affd865ae69fce11d507e0982a3a87705638f965be64e3fdcf692b1a79d9225eb42d00b28f6b4c233669e6b813987edc851ab3
+2021-12-07T14:16:43+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:387 > block event addr=127.0.0.1:2001 index=10 root=f060efbc
+2021-12-07T14:16:43+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=11
+2021-12-07T14:16:43+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=10
+2021-12-07T14:16:43+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=11
+2021-12-07T14:16:45+01:00 INF Users/viaene/git/d-voting/services/shuffle/neff/mod.go:185 > SHUFFLE / ROUND : 3
+2021-12-07T14:16:45+01:00 INF Users/viaene/git/d-voting/services/shuffle/neff/mod.go:190 > shuffle done with round n°3
+2021-12-07T14:16:45+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:623 > Response body : {"Message":"shuffle started"}
+
+2021-12-07T14:16:45+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:639 > Title of the election : TitleTest
+2021-12-07T14:16:45+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:640 > ID of the election : 988bc8ab79b184278051e8c87f101be15e9f421c8251f9d13be4e78406886cf0
+2021-12-07T14:16:45+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:641 > Status of the election : 3
+2021-12-07T14:16:45+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:642 > Number of shuffled ballots : 3
+2021-12-07T14:16:45+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:643 > Number of encrypted ballots : 3
+2021-12-07T14:16:45+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:649 > ----------------------- DECRYPT BALLOTS :
+2021-12-07T14:16:45+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/txn/signed/mod.go:332 > manager synchronized nonce=11
+2021-12-07T14:16:45+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:592 > transactions have been found addr=127.0.0.1:2001 num=1
+2021-12-07T14:16:45+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:633 > prepare done addr=127.0.0.1:2001 signature=thres[111]:bls:37a5c6d30fb1367546626171598951f08806d5397a6b6037e844d7bd5d836a8629b449ee548218acbe9fbcf13367ce92c276c9d60cfd354cd9b72eb7ca91bc20
+2021-12-07T14:16:45+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:643 > commit done addr=127.0.0.1:2001 signature=thres[111]:bls:57ad5564fc79bf5a7edb04ca63c0f22d67e04d2bb6bb808c954c9b0024ce697641ee7637f973c97b66f8c1e481351c9e255e2d1eb1d0bbd6300405e3bbfd1856
+2021-12-07T14:16:45+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:387 > block event addr=127.0.0.1:2001 index=11 root=149f1e42
+2021-12-07T14:16:45+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:677 > Response body : {}
+
+2021-12-07T14:16:45+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:693 > Title of the election : TitleTest
+2021-12-07T14:16:45+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:694 > ID of the election : 988bc8ab79b184278051e8c87f101be15e9f421c8251f9d13be4e78406886cf0
+2021-12-07T14:16:45+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:695 > Status of the election : 5
+2021-12-07T14:16:45+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:696 > Number of decrypted ballots : 3
+2021-12-07T14:16:45+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:702 > ----------------------- GET ELECTION RESULT :
+2021-12-07T14:16:45+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=12
+2021-12-07T14:16:45+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:729 > Response body : {"Result":[{"Vote":"ballot3"},{"Vote":"ballot2"},{"Vote":"ballot1"}]}
+
+2021-12-07T14:16:46+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:743 > Title of the election : TitleTest
+2021-12-07T14:16:46+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:744 > ID of the election : 988bc8ab79b184278051e8c87f101be15e9f421c8251f9d13be4e78406886cf0
+2021-12-07T14:16:46+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:745 > Status of the election : 5
+2021-12-07T14:16:46+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:746 > Number of decrypted ballots : 3
+2021-12-07T14:16:46+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:752 > ballot3
+2021-12-07T14:16:46+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:753 > ballot2
+2021-12-07T14:16:46+01:00 INF Users/viaene/git/d-voting/contracts/evoting/controller/action.go:754 > ballot1
+2021-12-07T14:16:46+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=11
+2021-12-07T14:16:46+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=12
+2021-12-07T14:16:55+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:585 > no transaction in pool addr=127.0.0.1:2001
+2021-12-07T14:16:55+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=12
+2021-12-07T14:16:56+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=11
+2021-12-07T14:16:56+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=12
+2021-12-07T14:17:05+01:00 WRN Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/proc.go:165 > view message refused error="invalid view: mismatch leader 2 != 1" addr=127.0.0.1:2001
+2021-12-07T14:17:05+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=11
+2021-12-07T14:17:05+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:585 > no transaction in pool addr=127.0.0.1:2001
+2021-12-07T14:17:05+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:551 > round has started addr=127.0.0.1:2001 index=12
+2021-12-07T14:17:06+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=11
+2021-12-07T14:17:06+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/proc.go:94 > process views addr=127.0.0.1:2001 num=1
+2021-12-07T14:17:06+01:00 WRN Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/pbft/mod.go:586 > transaction not accepted addr=127.0.0.1:2001 reason="nonce is invalid, expected 12, got 8"
+2021-12-07T14:17:06+01:00 INF Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:387 > block event addr=127.0.0.1:2001 index=12 root=149f1e42
+2021-12-07T14:17:06+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:560 > pbft has started addr=127.0.0.1:2001 index=13
+2021-12-07T14:17:06+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=12
+2021-12-07T14:17:16+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/mod.go:585 > no transaction in pool addr=127.0.0.1:2001
+2021-12-07T14:17:16+01:00 ERR Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/mino/minogrpc/rpc.go:228 > stream to root failed error=EOF
+2021-12-07T14:17:16+01:00 DBG Users/viaene/go/pkg/mod/go.dedis.ch/dela@v0.0.0-20211018150429-1fdbe35cd189/core/ordering/cosipbft/blocksync/default.go:230 > received synchronization message addr=127.0.0.1:2001 index=12

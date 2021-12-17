@@ -12,6 +12,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -128,10 +129,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 
 	t.Logf("Shuffled votes are equivalent to casted votes!")
 
-	//TODO: close nodes in goroutines using a timeout in a select
-	for _, node := range nodes {
-		node.GetOrdering().Close()
-	}
+	closeNodes(t, nodes)
 }
 
 // Check more shuffled votes versus the casted votes on more nodes.
@@ -243,9 +241,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	t.Logf("Shuffled votes are equivalent to casted votes!")
 
 	//TODO: close nodes in goroutines using a timeout in a select
-	for _, node := range nodes {
-		node.GetOrdering().Close()
-	}
+	closeNodes(t, nodes)
 }
 
 // -----------------------------------------------------------------------------
@@ -494,4 +490,31 @@ func initShuffle(nodes []dVotingCosiDela, signer crypto.AggregateSigner) (shuffl
 	time.Sleep(time.Second * 1)
 
 	return sActor, nil
+}
+
+func closeNodes(t *testing.T, nodes []dVotingCosiDela) {
+	wait := sync.WaitGroup{}
+	wait.Add(len(nodes))
+
+	for _, n := range nodes {
+		go func(node dVotingNode) {
+			defer wait.Done()
+			node.GetOrdering().Close()
+		}(n.(dVotingNode))
+	}
+
+	t.Log("stopping nodes...")
+
+	done := make(chan struct{})
+
+	go func() {
+		select {
+		case <-done:
+		case <-time.After(time.Second * 30):
+			t.Error("timeout while closing nodes")
+		}
+	}()
+
+	wait.Wait()
+	close(done)
 }
