@@ -233,6 +233,10 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 			len(ciphertext.K) == 0 || len(ciphertext.C) == 0 {
 			return xerrors.Errorf("part of the casted ballot has empty El Gamal pairs")
 		}
+		_, _, err = ciphertext.GetPoints()
+		if err != nil {
+			return xerrors.Errorf("casted ballot has invalid El Gamal pairs: %v", err)
+		}
 	}
 
 	election.PublicBulletinBoard.CastVote(castVoteTransaction.UserID, castVoteTransaction.Ballot)

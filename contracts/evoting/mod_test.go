@@ -214,6 +214,36 @@ func TestCommand_CastVote(t *testing.T) {
 
 	_ = snap.Set(dummyElectionIdBuff, jsElection)
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
+	require.EqualError(t, err, "casted ballot has invalid El Gamal pairs:"+
+		" failed to unmarshal K: invalid Ed25519 curve point")
+
+	// encrypt a real message :
+	RandomStream := suite.RandomStream()
+	h := suite.Scalar().Pick(RandomStream)
+	pubKey := suite.Point().Mul(h, nil)
+
+	M := suite.Point().Embed([]byte("fakeVote"), random.New())
+
+	// ElGamal-encrypt the point to produce ciphertext (K,C).
+	k := suite.Scalar().Pick(random.New()) // ephemeral private key
+	K := suite.Point().Mul(k, nil)         // ephemeral DH public key
+	S := suite.Point().Mul(k, pubKey)      // ephemeral DH shared secret
+	C := S.Add(S, M)                       // message blinded with secret
+
+	Kmarshalled, _ := K.MarshalBinary()
+	Cmarshalled, _ := C.MarshalBinary()
+
+	dummyCastVoteTransaction.Ballot = types.EncryptedBallot{
+		types.Ciphertext{
+			K: Kmarshalled,
+			C: Cmarshalled,
+		},
+	}
+
+	jsCastVoteTransaction, _ = json.Marshal(dummyCastVoteTransaction)
+
+	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
 	require.EqualError(t, err, "failed to decode Election ID: encoding/hex: invalid byte: U+0075 'u'")
 
 	dummyElection.ElectionID = fakeElectionID
