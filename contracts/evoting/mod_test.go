@@ -194,6 +194,26 @@ func TestCommand_CastVote(t *testing.T) {
 
 	_ = snap.Set(dummyElectionIdBuff, jsElection)
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
+	require.EqualError(t, err, "the ballot has unexpected length: 1 != 0")
+
+	dummyElection.BallotSize = 29
+	jsElection, _ = json.Marshal(dummyElection)
+
+	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
+	require.EqualError(t, err, "part of the casted ballot has empty El Gamal pairs")
+
+	dummyCastVoteTransaction.Ballot = types.EncryptedBallot{
+		types.Ciphertext{
+			K: []byte("dummyK"),
+			C: []byte("dummyC"),
+		},
+	}
+
+	jsCastVoteTransaction, _ = json.Marshal(dummyCastVoteTransaction)
+
+	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
 	require.EqualError(t, err, "failed to decode Election ID: encoding/hex: invalid byte: U+0075 'u'")
 
 	dummyElection.ElectionID = fakeElectionID
@@ -213,14 +233,6 @@ func TestCommand_CastVote(t *testing.T) {
 		election.PublicBulletinBoard.Ballots[0])
 	require.Equal(t, dummyCastVoteTransaction.UserID,
 		election.PublicBulletinBoard.UserIDs[0])
-
-	// Issue # 17 : Empty ballot does not return an error and will generate issues during shuffle
-	dummyCastVoteTransaction.Ballot = types.EncryptedBallot{}
-	jsCastVoteTransaction, _ = json.Marshal(dummyCastVoteTransaction)
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
-	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
-	require.NoError(t, err)
-
 }
 
 func TestCommand_CloseElection(t *testing.T) {

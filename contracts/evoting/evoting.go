@@ -223,7 +223,18 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 		return xerrors.Errorf("the election is not open, current status: %d", election.Status)
 	}
 
-	// TODO: check that castVoteTransaction.Ballot is a well formatted
+	if len(castVoteTransaction.Ballot) != election.ChunksPerBallot() {
+		return xerrors.Errorf("the ballot has unexpected length: %d != %d",
+			len(castVoteTransaction.Ballot), election.ChunksPerBallot())
+	}
+
+	for _, ciphertext := range castVoteTransaction.Ballot {
+		if ciphertext.K == nil || ciphertext.C == nil ||
+			len(ciphertext.K) == 0 || len(ciphertext.C) == 0 {
+			return xerrors.Errorf("part of the casted ballot has empty El Gamal pairs")
+		}
+	}
+
 	election.PublicBulletinBoard.CastVote(castVoteTransaction.UserID, castVoteTransaction.Ballot)
 
 	electionMarshaled, err = json.Marshal(election)
