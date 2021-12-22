@@ -181,25 +181,33 @@ func TestCommand_CastVote(t *testing.T) {
 
 	snap := fake.NewSnapshot()
 
-	_ = snap.Set(dummyElectionIdBuff, []byte("fake election"))
+	err = snap.Set(dummyElectionIdBuff, []byte("fake election"))
+	require.NoError(t, err)
+
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
 	require.Contains(t, err.Error(), "failed to unmarshal Election")
 
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
 	require.EqualError(t, err, fmt.Sprintf("the election is not open, current status: %d", types.Initial))
 
 	dummyElection.Status = types.Open
 	jsElection, _ = json.Marshal(dummyElection)
 
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
 	require.EqualError(t, err, "the ballot has unexpected length: 1 != 0")
 
 	dummyElection.BallotSize = 29
 	jsElection, _ = json.Marshal(dummyElection)
 
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
 	require.EqualError(t, err, "part of the casted ballot has empty El Gamal pairs")
 
@@ -212,7 +220,9 @@ func TestCommand_CastVote(t *testing.T) {
 
 	jsCastVoteTransaction, _ = json.Marshal(dummyCastVoteTransaction)
 
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
 	require.EqualError(t, err, "casted ballot has invalid El Gamal pairs:"+
 		" failed to unmarshal K: invalid Ed25519 curve point")
@@ -230,26 +240,32 @@ func TestCommand_CastVote(t *testing.T) {
 	S := suite.Point().Mul(k, pubKey)      // ephemeral DH shared secret
 	C := S.Add(S, M)                       // message blinded with secret
 
-	Kmarshalled, _ := K.MarshalBinary()
-	Cmarshalled, _ := C.MarshalBinary()
+	KMarshalled, _ := K.MarshalBinary()
+	CMarshalled, _ := C.MarshalBinary()
 
 	dummyCastVoteTransaction.Ballot = types.EncryptedBallot{
 		types.Ciphertext{
-			K: Kmarshalled,
-			C: Cmarshalled,
+			K: KMarshalled,
+			C: CMarshalled,
 		},
 	}
 
-	jsCastVoteTransaction, _ = json.Marshal(dummyCastVoteTransaction)
+	jsCastVoteTransaction, err = json.Marshal(dummyCastVoteTransaction)
+	require.NoError(t, err)
 
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
 	require.EqualError(t, err, "failed to decode Election ID: encoding/hex: invalid byte: U+0075 'u'")
 
 	dummyElection.ElectionID = fakeElectionID
-	jsElection, _ = json.Marshal(dummyElection)
+	jsElection, err = json.Marshal(dummyElection)
+	require.NoError(t, err)
 
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
 	require.NoError(t, err)
 
@@ -257,7 +273,8 @@ func TestCommand_CastVote(t *testing.T) {
 	require.NoError(t, err)
 
 	election := new(types.Election)
-	_ = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
+	err = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
+	require.NoError(t, err)
 
 	require.Equal(t, dummyCastVoteTransaction.Ballot,
 		election.PublicBulletinBoard.Ballots[0])
