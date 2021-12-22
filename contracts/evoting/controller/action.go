@@ -594,6 +594,69 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	// ##################################### CAST BALLOTS ######################
 
+	// ###################################### CAST WRONG BALLOT ################
+
+	// encrypt a ballot with a different public key:
+
+	// TODO with current implementation, the ballot prevents the decryption from ending
+
+	//RandomStream := suite.RandomStream()
+	//h := suite.Scalar().Pick(RandomStream)
+	//wrongPubKey := suite.Point().Mul(h, nil)
+	//
+	//ballot4 := make([]types.Ciphertext, election.ChunksPerBallot())
+	//
+	//for i := 0; i < election.ChunksPerBallot(); i++ {
+	//	// Embed the message into a curve point
+	//	message := "Chunk" + strconv.Itoa(i)
+	//	M := suite.Point().Embed([]byte(message), random.New())
+	//
+	//	// ElGamal-encrypt the point to produce ciphertext (X,Y).
+	//	k := suite.Scalar().Pick(random.New()) // ephemeral private key
+	//	X := suite.Point().Mul(k, nil)         // ephemeral DH public key
+	//	S := suite.Point().Mul(k, wrongPubKey) // ephemeral DH shared secret
+	//	Y := S.Add(S, M)                       // message blinded with secret
+	//
+	//	KMarshalled, _ := X.MarshalBinary()
+	//	CMarshalled, _ := Y.MarshalBinary()
+	//
+	//	ballot4[i] = types.Ciphertext{
+	//		K: KMarshalled,
+	//		C: CMarshalled,
+	//	}
+	//}
+	//
+	//castVoteRequest = types.CastVoteRequest{
+	//	ElectionID: electionID,
+	//	UserID:     "user4",
+	//	Ballot:     ballot4,
+	//	Token:      token,
+	//}
+	//
+	//js, err = json.Marshal(castVoteRequest)
+	//if err != nil {
+	//	return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
+	//}
+	//
+	//resp, err = http.Post(proxyAddr+castVoteEndpoint, "application/json", bytes.NewBuffer(js))
+	//if err != nil {
+	//	return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
+	//}
+	//
+	//if resp.StatusCode != http.StatusOK {
+	//	buf, _ := ioutil.ReadAll(resp.Body)
+	//	return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	//}
+	//
+	//body, err = io.ReadAll(resp.Body)
+	//if err != nil {
+	//	return xerrors.Errorf("failed to read the body of the response: %v", err)
+	//}
+	//dela.Logger.Info().Msg("Response body : " + string(body))
+	//resp.Body.Close()
+
+	// ###################################### CAST WRONG BALLOT ################
+
 	// ###################################### CLOSE ELECTION ###################
 
 	dela.Logger.Info().Msg("----------------------- CLOSE ELECTION : ")
