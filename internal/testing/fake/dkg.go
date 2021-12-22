@@ -5,18 +5,36 @@ import (
 	"go.dedis.ch/kyber/v3"
 )
 
-type Pedersen struct {
+// - implements dkg.DKG
+type BadPedersen struct {
 	Err error
 }
 
-func (f Pedersen) Listen(electionID []byte) (dkg.Actor, error) {
+func (f BadPedersen) Listen(electionID []byte) (dkg.Actor, error) {
 	return nil, f.Err
 }
 
-func (f Pedersen) GetActor(electionID []byte) (dkg.Actor, bool) {
+func (f BadPedersen) GetActor(electionID []byte) (dkg.Actor, bool) {
 	return nil, false
 }
 
+// - implements dkg.DKG
+type Pedersen struct {
+	Actors map[string]dkg.Actor
+}
+
+func (f Pedersen) Listen(electionID []byte) (dkg.Actor, error) {
+	actor := DKGActor{PubKey: suite.Point().Pick(suite.RandomStream())}
+	f.Actors[string(electionID)] = actor
+	return actor, nil
+}
+
+func (f Pedersen) GetActor(electionID []byte) (dkg.Actor, bool) {
+	a, exists := f.Actors[string(electionID)]
+	return a, exists
+}
+
+// - implements dkg.Actor
 type DKGActor struct {
 	Err    error
 	PubKey kyber.Point
@@ -43,12 +61,9 @@ func (f DKGActor) Reshare() error {
 }
 
 func (f DKGActor) MarshalJSON() ([]byte, error) {
-	return nil, f.Err
+	data, err := f.PubKey.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	return data, f.Err
 }
-
-type PedersenStore struct {
-	Err error
-	DB  InMemoryDB
-}
-
-func (f PedersenStore) DKGStore() {}

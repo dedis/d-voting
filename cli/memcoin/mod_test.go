@@ -115,7 +115,7 @@ func TestMemcoin_Scenario_SetupAndTransactions(t *testing.T) {
 // This test creates a chain with two nodes, then gracefully close them. It
 // finally restarts both of them to make sure the chain can proceed after the
 // restart. It basically tests if the components are correctly loaded from the
-// persisten storage.
+// persistent storage.
 func TestMemcoin_Scenario_RestartNode(t *testing.T) {
 	dir, err := ioutil.TempDir(os.TempDir(), "memcoin2")
 	require.NoError(t, err)

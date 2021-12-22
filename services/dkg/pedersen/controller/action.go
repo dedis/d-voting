@@ -252,7 +252,7 @@ func (a *exportInfoAction) Execute(ctx node.Context) error {
 	var dkgMap pedersen.Store
 	err = ctx.Injector.Resolve(&dkgMap)
 	if err != nil {
-		return xerrors.Errorf("failed to resolve dkg: %v", err)
+		return xerrors.Errorf("injector: %v", err)
 	}
 
 	err = dkgMap.View(func(tx kv.ReadableTx) error {

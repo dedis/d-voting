@@ -81,7 +81,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 	var no mino.Mino
 	err := inj.Resolve(&no)
 	if err != nil {
-		return xerrors.Errorf("failed to resolve mino: %v", err)
+		return xerrors.Errorf("failed to resolve mino.Mino")
 	}
 
 	var exec *native.Service
@@ -93,7 +93,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 	var access darc.Service
 	err = inj.Resolve(&access)
 	if err != nil {
-		return xerrors.Errorf("failed to resolve dac.Service")
+		return xerrors.Errorf("failed to resolve darc.Service")
 	}
 
 	var cosi *threshold.Threshold

@@ -1,44 +1,78 @@
 package controller
 
 import (
+	"context"
+	"io/ioutil"
 	"testing"
 
 	"github.com/dedis/d-voting/internal/testing/fake"
-	"github.com/dedis/d-voting/services/dkg/pedersen"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
+	"go.dedis.ch/dela/core/access/darc"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/cosi/threshold"
+	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
 	"golang.org/x/xerrors"
 )
 
 func TestMinimal_OnStart(t *testing.T) {
 	c := NewController()
-	inj := newInjector(nil)
 
-	err := c.OnStart(nil, inj)
-	require.EqualError(t, err, fake.Err("failed to resolve mino"))
+	ctx := node.Context{
+		Injector: node.NewInjector(),
+		Flags:    make(node.FlagSet),
+		Out:      ioutil.Discard,
+	}
 
-	inj = newInjector(fake.Mino{})
-	err = c.OnStart(nil, inj)
+	// Should miss mino.Mino
+	err := c.OnStart(nil, ctx.Injector)
+	require.EqualError(t, err, "failed to resolve mino.Mino")
+
+	ctx.Injector.Inject(fake.Mino{})
+
+	// Should miss *native.Service
+	err = c.OnStart(nil, ctx.Injector)
+	require.EqualError(t, err, "failed to resolve *native.Service")
+
+	ctx.Injector.Inject(native.NewExecution())
+
+	// Should miss darc.Service
+	err = c.OnStart(nil, ctx.Injector)
+	require.EqualError(t, err, "failed to resolve darc.Service")
+
+	ctx.Injector.Inject(darc.Service{})
+
+	// Should miss *threshold.Threshold
+	err = c.OnStart(nil, ctx.Injector)
+	require.EqualError(t, err, "failed to resolve *threshold.Threshold")
+
+	th := threshold.NewThreshold(fake.Mino{}, fake.NewAggregateSigner())
+	ctx.Injector.Inject(th)
+
+	// Should miss authority.Factory
+	err = c.OnStart(nil, ctx.Injector)
+	require.EqualError(t, err, "failed to resolve authority.Factory")
+
+	ctx.Injector.Inject(fake.RosterFac{})
+
+	// Should miss *cosipbft.Service
+	err = c.OnStart(nil, ctx.Injector)
+	require.EqualError(t, err, "failed to resolve *cosipbft.Service")
+
+	rosterLen := 2
+	roster := authority.FromAuthority(fake.NewAuthority(rosterLen, fake.NewSigner))
+	ctx.Injector.Inject(fakeService{roster: roster})
+
+	// Should work
+	err = c.OnStart(nil, ctx.Injector)
 	require.NoError(t, err)
 
-	// var exec *native.Service
-
-	// var access darc.Service
-
-	// var cosi *threshold.Threshold
-
-	// var rosterFac authority.Factory
-
-	// var srvc *cosipbft.Service
-
-	require.Len(t, inj.(*fakeInjector).history, 2)
-	require.IsType(t, &pedersen.Pedersen{}, inj.(*fakeInjector).history[0])
-
-	// Weird, one line is enough?
-	pubkey := suite.Point()
-	require.IsType(t, pubkey, inj.(*fakeInjector).history[1])
+	// pubkey := suite.Point()
+	// require.IsType(t, pubkey, inj.(*fakeInjector).history[1])
 }
 
 func TestMinimal_OnStop(t *testing.T) {
@@ -131,4 +165,25 @@ func newInjector(args ...interface{}) node.Injector {
 		f.Inject(i)
 	}
 	return f
+}
+
+func newInjectorFromMino(mino mino.Mino) node.Injector {
+	return &fakeInjector{mino: mino}
+}
+
+// fakeService is a fake service
+//
+// - implements cosipbft.Service
+type fakeService struct {
+	ordering.Service
+
+	roster authority.Roster
+}
+
+func (f fakeService) GetRoster() (authority.Authority, error) {
+	return f.roster, nil
+}
+
+func (f fakeService) Setup(ctx context.Context, ca crypto.CollectiveAuthority) error {
+	return nil
 }

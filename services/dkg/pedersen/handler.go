@@ -433,6 +433,10 @@ func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionID strin
 		return false, xerrors.Errorf("failed to unmarshal Election: %v", err)
 	}
 
+	if len(election.ShuffleInstances) == 0 {
+		return false, xerrors.Errorf("election has no shuffles: %v", err)
+	}
+
 	for _, ct := range election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots {
 		for _, ciphertext := range ct {
 			kPrime, cPrime, err := ciphertext.GetPoints()

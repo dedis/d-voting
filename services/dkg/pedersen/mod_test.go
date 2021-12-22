@@ -359,6 +359,53 @@ func TestPedersen_Setup(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestPedersen_Decrypt(t *testing.T) {
+
+	actor := Actor{
+		rpc:      fake.NewBadRPC(),
+		handler: &Handler{
+			startRes: &state{participants: []mino.Address{fake.NewAddress(0)}, distKey: suite.Point()},
+		},
+	}
+
+	_, err := actor.Decrypt(suite.Point(), suite.Point())
+	require.EqualError(t, err, fake.Err("failed to create stream"))
+	rpc := fake.NewStreamRPC(fake.NewBadReceiver(), fake.NewBadSender())
+	actor.rpc = rpc
+
+	_, err = actor.Decrypt(suite.Point(), suite.Point())
+	require.EqualError(t, err, fake.Err("failed to send decrypt request"))
+
+	recv := fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), nil))
+
+	rpc = fake.NewStreamRPC(recv, fake.Sender{})
+	actor.rpc = rpc
+
+	_, err = actor.Decrypt(suite.Point(), suite.Point())
+	require.EqualError(t, err, "got unexpected reply, expected types.DecryptReply but got: <nil>")
+
+	recv = fake.NewReceiver(
+		fake.NewRecvMsg(fake.NewAddress(0), types.DecryptReply{I: -1, V: suite.Point()}),
+	)
+
+	rpc = fake.NewStreamRPC(recv, fake.Sender{})
+	actor.rpc = rpc
+
+	_, err = actor.Decrypt(suite.Point(), suite.Point())
+	require.EqualError(t, err, "failed to recover commit: share: not enough "+
+		"good public shares to reconstruct secret commitment")
+
+	recv = fake.NewReceiver(
+		fake.NewRecvMsg(fake.NewAddress(0), types.DecryptReply{I: 1, V: suite.Point()}),
+	)
+
+	rpc = fake.NewStreamRPC(recv, fake.Sender{})
+	actor.rpc = rpc
+
+	_, err = actor.Decrypt(suite.Point(), suite.Point())
+	require.NoError(t, err)
+}
+
 func TestPedersen_GetPublicKey(t *testing.T) {
 
 	actor := Actor{handler: &Handler{startRes: &state{}}}
@@ -389,10 +436,9 @@ func TestPedersen_Scenario(t *testing.T) {
 	electionID := "deadbeef"
 	electionIDBuf, err := hex.DecodeString(electionID)
 	require.NoError(t, err)
-	electionService := fake.NewService(electionID, electionTypes.Election{})
 
+	addr := minogrpc.ParseAddress("127.0.0.1", 0)
 	for i := 0; i < n; i++ {
-		addr := minogrpc.ParseAddress("127.0.0.1", 0)
 
 		minogrpc, err := minogrpc.NewMinogrpc(addr, tree.NewRouter(minogrpc.NewAddressFactory()))
 		require.NoError(t, err)
@@ -403,12 +449,28 @@ func TestPedersen_Scenario(t *testing.T) {
 		addrs[i] = minogrpc.GetAddress()
 	}
 
-	for i, mino := range minos {
+	for _, mino := range minos {
 		for _, m := range minos {
 			mino.(*minogrpc.Minogrpc).GetCertificateStore().Store(m.GetAddress(), m.(*minogrpc.Minogrpc).GetCertificate())
 		}
+	}
 
-		dkgs[i] = NewPedersen(mino, electionService, fake.Factory{})
+	roster := authority.FromAuthority(fake.NewAuthorityFromMino(fake.NewSigner, minos...))
+
+	rosterBuf, err := roster.Serialize(fake.NewContextWithFormat(serde.Format("JSON")))
+	require.NoError(t, err)
+
+	service := fake.NewService(
+		electionID,
+		electionTypes.Election{
+			RosterBuf: rosterBuf,
+		},
+	)
+
+	rosterFac := fake.NewRosterFac(roster)
+
+	for i, mino := range minos {
+		dkgs[i] = NewPedersen(mino, service, rosterFac)
 	}
 
 	for i, dkg := range dkgs {
@@ -429,15 +491,24 @@ func TestPedersen_Scenario(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = actors[0].Setup()
-	require.EqualError(t, err, "startRes is already done, only one setup call is allowed")
+	require.EqualError(t, err, "setup() was already called, only one call is allowed")
 
 	// every node should be able to encrypt/decrypt
 	message := []byte("Hello world")
-	for i := 0; i < n; i++ {
-		K, C, remainder, err := actors[i].Encrypt(message)
+
+	K, C, _, err := actors[0].Encrypt(message)
+	require.NoError(t, err)
+	decrypted, err := actors[0].Decrypt(K, C)
+	require.NoError(t, err)
+	require.Equal(t, message, decrypted)
+
+	require.EqualError(t, err, "setup() was not called")
+	for _, actor := range actors {
+		K, C, remainder, err := actor.Encrypt(message)
 		require.NoError(t, err)
 		require.Len(t, remainder, 0)
-		decrypted, err := actors[i].Decrypt(K, C)
+
+		decrypted, err := actor.Decrypt(K, C)
 		require.NoError(t, err)
 		require.Equal(t, message, decrypted)
 	}

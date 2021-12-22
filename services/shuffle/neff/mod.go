@@ -113,17 +113,17 @@ type Actor struct {
 // Shuffle must be called by ONE of the actor to shuffle the list of ElGamal
 // pairs.
 // Each node represented by a player must first execute Listen().
-func (a *Actor) Shuffle(electionID []byte) (err error) {
+func (a *Actor) Shuffle(electionID []byte) error {
 	a.Lock()
 	defer a.Unlock()
 
-	proof, err := a.service.GetProof(electionID)
-	if err != nil {
-		return xerrors.Errorf("failed to read on the blockchain: %v", err)
+	proof, exists := electionExists(a.service, electionID)
+	if !exists {
+		return xerrors.Errorf("election %s was not found", electionID)
 	}
 
 	election := new(electionTypes.Election)
-	err = json.NewDecoder(bytes.NewBuffer(proof.GetValue())).Decode(election)
+	err := json.NewDecoder(bytes.NewBuffer(proof.GetValue())).Decode(election)
 	if err != nil {
 		return xerrors.Errorf("failed to unmarshal Election: %v", err)
 	}
@@ -131,6 +131,10 @@ func (a *Actor) Shuffle(electionID []byte) (err error) {
 	roster, err := a.rosterFac.AuthorityOf(a.context, election.RosterBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to deserialize roster: %v", err)
+	}
+
+	if roster.Len() == 0 {
+		return xerrors.Errorf("the roster is empty")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), shuffleTimeout)
@@ -145,7 +149,6 @@ func (a *Actor) Shuffle(electionID []byte) (err error) {
 	addrs = append(addrs, a.mino.GetAddress())
 
 	addrIter := roster.AddressIterator()
-
 	for addrIter.HasNext() {
 		addr := addrIter.GetNext()
 		if !addr.Equal(a.mino.GetAddress()) {
@@ -209,4 +212,18 @@ func (a *Actor) Verify(suiteName string, Ks []kyber.Point, Cs []kyber.Point,
 
 	verifier := shuffleKyber.Verifier(suite, nil, pubKey, Ks, Cs, KsShuffled, CsShuffled)
 	return proof.HashVerify(suite, protocolName, verifier, prf)
+}
+
+func electionExists(service ordering.Service, electionIDBuf []byte) (ordering.Proof, bool) {
+	proof, err := service.GetProof(electionIDBuf)
+	if err != nil {
+		return proof, false
+	}
+
+	// this is proof of absence
+	if string(proof.GetValue()) == "" {
+		return proof, false
+	}
+
+	return proof, true
 }

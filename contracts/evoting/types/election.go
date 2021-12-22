@@ -164,7 +164,7 @@ type PublicBulletinBoard struct {
 	Ballots EncryptedBallots
 }
 
-// CastVote updates a user's vote or add a new vote and its associated user.
+// CastVote adds a new vote and its associated user or updates a user's vote.
 func (p *PublicBulletinBoard) CastVote(userID string, encryptedVote EncryptedBallot) {
 	for i, u := range p.UserIDs {
 		if u == userID {

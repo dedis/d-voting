@@ -16,6 +16,7 @@ import (
 
 	"github.com/dedis/d-voting/internal/tracing"
 	"github.com/dedis/d-voting/services/dkg"
+	_ "github.com/dedis/d-voting/services/dkg/pedersen/json"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/serde"
@@ -142,11 +143,12 @@ type Actor struct {
 	electionID string
 }
 
-// Setup implements dkg.Actor. It initializes the DKG.
+// Setup implements dkg.Actor. It initializes the DKG protocol
+// across all participating nodes.
 func (a *Actor) Setup() (kyber.Point, error) {
 
 	if a.handler.startRes.Done() {
-		return nil, xerrors.Errorf("startRes is already done, only one setup call is allowed")
+		return nil, xerrors.Errorf("setup() was already called, only one call is allowed")
 	}
 
 	electionIDBuf, err := hex.DecodeString(a.electionID)
@@ -318,9 +320,7 @@ func (a *Actor) Decrypt(K, C kyber.Point) ([]byte, error) {
 		return nil, xerrors.Errorf("failed to create stream: %v", err)
 	}
 
-	players = mino.NewAddresses(a.handler.startRes.GetParticipants()...)
 	iterator := players.AddressIterator()
-
 	addrs := make([]mino.Address, 0, players.Len())
 	for iterator.HasNext() {
 		addrs = append(addrs, iterator.GetNext())
