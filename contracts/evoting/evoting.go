@@ -6,6 +6,9 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+
+	"math/rand"
+
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/dkg"
 	"go.dedis.ch/dela/core/execution"
@@ -19,7 +22,6 @@ import (
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/shuffle"
 	"golang.org/x/xerrors"
-	"math/rand"
 )
 
 // evotingCommand implements the commands of the Evoting contract.
