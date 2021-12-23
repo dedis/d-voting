@@ -42,6 +42,8 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	adminID := "first admin"
 
 	// ##### SETUP ENV #####
+	// make tests reproducible
+	rand.Seed(1)
 	delaPkg.Logger = zerolog.New(os.Stdout).Level(zerolog.WarnLevel)
 
 	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-three-votes")
@@ -130,6 +132,8 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	adminID := "I am an admin"
 
 	// ##### SETUP ENV #####
+	// make tests reproducible
+	rand.Seed(2)
 	delaPkg.Logger = zerolog.New(os.Stdout).Level(zerolog.WarnLevel)
 
 	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-many-votes")
