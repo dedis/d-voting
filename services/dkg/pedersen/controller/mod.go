@@ -114,6 +114,12 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to resolve *cosipbft.Service")
 	}
 
+	if ctx == nil {
+		return xerrors.Errorf("no flags")
+	}
+	if ctx.String("config") == "" {
+		return xerrors.Errorf("no config path")
+	}
 	dkgMapDB, err := kv.New(filepath.Join(ctx.String("config"), dkgMapFile))
 	if err != nil {
 		return xerrors.Errorf("dkgMap: %v", err)

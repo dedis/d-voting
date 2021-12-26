@@ -137,7 +137,7 @@ type fakeAuthority struct {
 	serde.Fingerprinter
 	crypto.CollectiveAuthority
 
-	len int 
+	len int
 }
 
 func (f fakeAuthority) Apply(c authority.ChangeSet) authority.Authority {

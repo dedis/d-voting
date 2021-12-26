@@ -362,7 +362,7 @@ func TestPedersen_Setup(t *testing.T) {
 func TestPedersen_Decrypt(t *testing.T) {
 
 	actor := Actor{
-		rpc:      fake.NewBadRPC(),
+		rpc: fake.NewBadRPC(),
 		handler: &Handler{
 			startRes: &state{participants: []mino.Address{fake.NewAddress(0)}, distKey: suite.Point()},
 		},
@@ -437,8 +437,8 @@ func TestPedersen_Scenario(t *testing.T) {
 	electionIDBuf, err := hex.DecodeString(electionID)
 	require.NoError(t, err)
 
-	addr := minogrpc.ParseAddress("127.0.0.1", 0)
 	for i := 0; i < n; i++ {
+		addr := minogrpc.ParseAddress("127.0.0.1", 0)
 
 		minogrpc, err := minogrpc.NewMinogrpc(addr, tree.NewRouter(minogrpc.NewAddressFactory()))
 		require.NoError(t, err)
@@ -471,13 +471,13 @@ func TestPedersen_Scenario(t *testing.T) {
 
 	for i, mino := range minos {
 		dkgs[i] = NewPedersen(mino, service, rosterFac)
-	}
 
-	for i, dkg := range dkgs {
-		actor, err := dkg.Listen(electionIDBuf)
+		actor, err := dkgs[i].Listen(electionIDBuf)
 		require.NoError(t, err)
 
 		actors[i] = actor
+
+		fmt.Printf("%#v\n", actor.(*Actor).rpc)
 	}
 
 	// trying to call a decrypt/encrypt before a setup
@@ -495,14 +495,6 @@ func TestPedersen_Scenario(t *testing.T) {
 
 	// every node should be able to encrypt/decrypt
 	message := []byte("Hello world")
-
-	K, C, _, err := actors[0].Encrypt(message)
-	require.NoError(t, err)
-	decrypted, err := actors[0].Decrypt(K, C)
-	require.NoError(t, err)
-	require.Equal(t, message, decrypted)
-
-	require.EqualError(t, err, "setup() was not called")
 	for _, actor := range actors {
 		K, C, remainder, err := actor.Encrypt(message)
 		require.NoError(t, err)

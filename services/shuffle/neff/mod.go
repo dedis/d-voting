@@ -147,7 +147,6 @@ func (a *Actor) Shuffle(electionID []byte) error {
 
 	addrs := make([]mino.Address, 0, roster.Len())
 	addrs = append(addrs, a.mino.GetAddress())
-
 	addrIter := roster.AddressIterator()
 	for addrIter.HasNext() {
 		addr := addrIter.GetNext()

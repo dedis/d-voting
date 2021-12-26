@@ -102,7 +102,7 @@ type RosterFac struct {
 	roster authority.Roster
 }
 
-func NewRosterFac(roster authority.Roster) (RosterFac) {
+func NewRosterFac(roster authority.Roster) RosterFac {
 	return RosterFac{roster: roster}
 }
 
