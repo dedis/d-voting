@@ -6,28 +6,13 @@ import {LanguageContext} from '../language/LanguageContext';
 import {Translations} from '../language/Translations';
 import {NavLink} from 'react-router-dom';
 
-const NavBar = () => {
+const NavBar = ({name, firstname, sciper}) => {
 
     const [lanContext, setLanContext] = useContext(LanguageContext);
     const activeStyle = {
         
         textShadow:'0 0.015em #177368,0 -0.015em #177368,0.01em 0 #177368,-0.01em 0 #177368',
     };
-
-    const [name, setName] = useState('');
-    const [firstname, setFirstname] = useState('');
-    const [sciper, setSciper] = useState(0);
-
-    fetch('/api/getpersonnalinfo')
-        .then(res => res.json())
-        .then((result) => {
-           if(result.islogged){
-               console.log(result);
-               setName(result.name);
-               setFirstname(result.firstname);
-               setSciper(result.sciper);
-           }
-        });
 
   return ( 
     <div className='nav-links'>
@@ -57,20 +42,14 @@ const NavBar = () => {
                 <li title={Translations[lanContext].navBarAbout}>{Translations[lanContext].navBarAbout}</li>
             </NavLink>   
             <a className='nodeco'>
-                <li className='last'>
+                <li className>
                 <select value={lanContext} onChange={(e)=>setLanContext(e.target.value)}>
                         <option value='en'>en</option>
                         <option value='fr'>fr</option>
                     </select>
-                </li> 
+                </li>
+                {sciper != 0 ? <li>Logged as {firstname}<br/><a href='/api/logout'>Logout</a></li> : ''}
             </a>
-            {sciper !=0 ?
-                <a className='nodeco'>
-                    Bonjour {firstname} {name}
-            </a> : <a></a>}
-
-
-
         </ul>
     </div>
   );

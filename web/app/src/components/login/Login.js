@@ -13,41 +13,18 @@ const Login = ({setToken}) => {
     const [context, ] = useContext(LanguageContext);
 
     const handleClick = async() => {
-        /*try{
-            const response = await fetch(SIGNIN_ENDPOINT,request);        
-            if(!response.ok){
-                throw Error(response.statusText);
-            } else {
-                let loginData = await response.json();
-                setToken(loginData.Token);
-                sessionStorage.setItem('id', loginData.UserID);
-                setLoginError();
-            }
-        } catch(error){
-            setLoginError(error);
-            console.log(error);
-        }*/
-
-
         try{
             fetch(GET_TEQ_EENDPOINT).then(resp => {
-                console.log(resp);
                 const json_data = resp.json();
                 json_data.then(result => {
                     window.location = result['url'];
                 });
-
-                //window.location = resp_json['url'];
-
             }).catch(error => {
                 console.log(error);
             });
-
         } catch (error){
             console.log(error);
         }
-
-
 
 
         return (<div>

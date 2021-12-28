@@ -33,21 +33,29 @@ const App = () => {
   const {token, saveToken} = useToken();
 
   const [isLogged, setIsLogged] = useState(undefined);
+  const [name, setName] = useState('');
+  const [firstname, setFirstname] = useState('');
+  const [sciper, setSciper] = useState(0);
+  const [role, setRole] = useState('')
 
   fetch('/api/getpersonnalinfo')
       .then(res => res.json())
       .then((result) => {
         setIsLogged(result.islogged);
+        setName(result.name);
+        setFirstname(result.firstname);
+        setSciper(result.sciper);
+        setRole(result.role);
       });
-
   return (
     <div className="App">
       
      <Router>
         <LanguageContext.Provider value={[lanContext, setLanContext]}>         
           <div className='app-nav'>
-            <Route path='/:page' component={NavBar} />        
-            <Route exact path='/' component={NavBar}/>
+            {/* <Route path='/:page' component={NavBar} />
+            <Route exact path='/' component={NavBar}/> */}
+            <NavBar firstname={firstname} name={name} sciper={sciper}/>
           </div>
           <div data-testid="content" className='app-page'>
           {!isLogged? (<div className='login-container'><Login id='login-id' setToken={saveToken}/></div>): (<div>
