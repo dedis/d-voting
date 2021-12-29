@@ -62,7 +62,6 @@ type Election struct {
 }
 
 type Ballot struct {
-
     // SelectResult contains the result of each Select question. The result of a
     // select is a list of boolean that says for each choice if it has been
     // selected or not.  The ID slice is used to map a question ID to its index
