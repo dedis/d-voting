@@ -67,7 +67,13 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 			return xerrors.Errorf("a line in the ballot has length != 3")
 		}
 
-		q := election.Configuration.GetQuestion(ID(question[1]))
+		_, err := base64.StdEncoding.DecodeString(question[1])
+		if err != nil {
+			return xerrors.Errorf("could not decode question ID: %v", err)
+		}
+		questionID := question[1]
+
+		q := election.Configuration.GetQuestion(ID(questionID))
 
 		if q == nil {
 			b.invalidate()
@@ -82,10 +88,10 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 			if len(selections) != q.GetChoicesLength() {
 				b.invalidate()
 				return fmt.Errorf("question %s has a wrong number of answers: expected %d got %d"+
-					"", question[1], q.GetChoicesLength(), len(selections))
+					"", questionID, q.GetChoicesLength(), len(selections))
 			}
 
-			b.SelectResultIDs = append(b.SelectResultIDs, ID(question[1]))
+			b.SelectResultIDs = append(b.SelectResultIDs, ID(questionID))
 			b.SelectResult = append(b.SelectResult, make([]bool, 0))
 
 			index := len(b.SelectResult) - 1
@@ -97,7 +103,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 				if err != nil {
 					b.invalidate()
 					return fmt.Errorf("could not parse selection value for Q.%s: %v",
-						question[1], err)
+						questionID, err)
 				}
 
 				if s {
@@ -109,7 +115,10 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 
 			if selected > q.GetMaxN() {
 				b.invalidate()
-				return fmt.Errorf("question %s has too many selected answers", question[1])
+				return fmt.Errorf("question %s has too many selected answers", questionID)
+			} else if selected < q.GetMinN() {
+				b.invalidate()
+				return fmt.Errorf("question %s has not enough selected answers", questionID)
 			}
 
 		case "rank":
@@ -118,10 +127,10 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 			if len(ranks) != q.GetChoicesLength() {
 				b.invalidate()
 				return fmt.Errorf("question %s has a wrong number of answers: expected %d got %d"+
-					"", question[1], q.GetChoicesLength(), len(ranks))
+					"", questionID, q.GetChoicesLength(), len(ranks))
 			}
 
-			b.RankResultIDs = append(b.RankResultIDs, ID(question[1]))
+			b.RankResultIDs = append(b.RankResultIDs, ID(questionID))
 			b.RankResult = append(b.RankResult, make([]int8, 0))
 
 			index := len(b.RankResult) - 1
@@ -134,7 +143,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 					if err != nil {
 						b.invalidate()
 						return fmt.Errorf("could not parse rank value for Q.%s : %v",
-							question[1], err)
+							questionID, err)
 					}
 
 					b.RankResult[index] = append(b.RankResult[index], int8(r))
@@ -145,7 +154,10 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 
 			if selected > q.GetMaxN() {
 				b.invalidate()
-				return fmt.Errorf("question %s has too many selected answers", question[1])
+				return fmt.Errorf("question %s has too many selected answers", questionID)
+			} else if selected < q.GetMinN() {
+				b.invalidate()
+				return fmt.Errorf("question %s has not enough selected answers", questionID)
 			}
 
 		case "text":
@@ -154,10 +166,10 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 			if len(texts) != q.GetChoicesLength() {
 				b.invalidate()
 				return fmt.Errorf("question %s has a wrong number of answers: expected %d got %d"+
-					"", question[1], q.GetChoicesLength(), len(texts))
+					"", questionID, q.GetChoicesLength(), len(texts))
 			}
 
-			b.TextResultIDs = append(b.TextResultIDs, ID(question[1]))
+			b.TextResultIDs = append(b.TextResultIDs, ID(questionID))
 			b.TextResult = append(b.TextResult, make([]string, 0))
 
 			index := len(b.TextResult) - 1
@@ -170,7 +182,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 
 				t, err := base64.StdEncoding.DecodeString(text)
 				if err != nil {
-					return fmt.Errorf("could not decode text for Q. %s", question[1])
+					return fmt.Errorf("could not decode text for Q. %s: %v", questionID, err)
 				}
 
 				b.TextResult[index] = append(b.TextResult[index], string(t))
@@ -178,7 +190,10 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 
 			if selected > q.GetMaxN() {
 				b.invalidate()
-				return fmt.Errorf("question %s has too many selected answers", question[1])
+				return fmt.Errorf("question %s has too many selected answers", questionID)
+			} else if selected < q.GetMinN() {
+				b.invalidate()
+				return fmt.Errorf("question %s has not enough selected answers", questionID)
 			}
 
 		default:
@@ -260,38 +275,38 @@ func (s *Subject) MaxEncodedSize() int {
 	//TODO : optimise by computing max size according to number of choices and maxN
 	for _, rank := range s.Ranks {
 		size += len("rank::")
-		size += len(rank.ID)
+		size += base64.StdEncoding.EncodedLen(len(rank.ID))
 		// at most 3 bytes (128) + ',' per choice
 		size += len(rank.Choices) * 4
 	}
 
 	for _, selection := range s.Selects {
 		size += len("select::")
-		size += len(selection.ID)
+		size += base64.StdEncoding.EncodedLen(len(selection.ID))
 		// 1 bytes (0/1) + ',' per choice
 		size += len(selection.Choices) * 2
 	}
 
 	for _, text := range s.Texts {
 		size += len("text::")
-		size += len(text.ID)
-		// Each character is used to represent 6 bits (2^64), 4 chars are used
-		// to represent 4 * 6 = 24 bits = 3 bytes => need 4(n/3) chars for n bytes
-		// => we compute the max length of base64 encoding as 4 * ceil(length/3):
-		maxTextPerAnswer := (4 * int(math.Ceil(float64(text.MaxLength)/3.0))) + 1
+		size += base64.StdEncoding.EncodedLen(len(text.ID))
+
+		maxTextPerAnswer := base64.StdEncoding.EncodedLen(int(text.MaxLength)) + 1
 		size += maxTextPerAnswer*int(text.MaxN) +
 			int(math.Max(float64(len(text.Choices)-int(text.MaxN)), 0))
 	}
 
 	// Last line has 2 '\n'
-	size += 1
+	if size != 0 {
+		size += 1
+	}
 
 	return size
 }
 
-// IsValid verifies that all IDs are unique and the questions have coherent
+// isValid verifies that all IDs are unique and the questions have coherent
 // characteristics
-func (s *Subject) IsValid(uniqueIDs map[ID]bool) bool {
+func (s *Subject) isValid(uniqueIDs map[ID]bool) bool {
 	prevMapSize := len(uniqueIDs)
 
 	uniqueIDs[s.ID] = true
@@ -299,7 +314,7 @@ func (s *Subject) IsValid(uniqueIDs map[ID]bool) bool {
 	for _, rank := range s.Ranks {
 		uniqueIDs[rank.ID] = true
 
-		if !IsValid(rank) {
+		if !isValid(rank) {
 			return false
 		}
 	}
@@ -307,7 +322,7 @@ func (s *Subject) IsValid(uniqueIDs map[ID]bool) bool {
 	for _, selection := range s.Selects {
 		uniqueIDs[selection.ID] = true
 
-		if !IsValid(selection) {
+		if !isValid(selection) {
 			return false
 		}
 	}
@@ -315,19 +330,19 @@ func (s *Subject) IsValid(uniqueIDs map[ID]bool) bool {
 	for _, text := range s.Texts {
 		uniqueIDs[text.ID] = true
 
-		if !IsValid(text) {
+		if !isValid(text) {
 			return false
 		}
 	}
 
 	// If some ID was not unique
 	currentMapSize := len(uniqueIDs)
-	if prevMapSize+len(s.Ranks)+len(s.Texts)+len(s.Selects)+1 < currentMapSize {
+	if prevMapSize+len(s.Ranks)+len(s.Texts)+len(s.Selects)+1 > currentMapSize {
 		return false
 	}
 
 	for _, subject := range s.Subjects {
-		if !subject.IsValid(uniqueIDs) {
+		if !subject.isValid(uniqueIDs) {
 			return false
 		}
 	}
@@ -350,7 +365,7 @@ type Question interface {
 	GetChoicesLength() int
 }
 
-func IsValid(q Question) bool {
+func isValid(q Question) bool {
 	return (q.GetMinN() <= q.GetMaxN()) && (q.GetMaxN() <= uint(q.GetChoicesLength()))
 }
 
