@@ -53,91 +53,91 @@ Elections map[ID]Election
 }
 
 type Election struct {
-Configuration       Configuration
-Status              status // Initial | Open | Closed | Shuffling | Decrypting | ..
-Pubkey              []byte
-PublicBulletinBoard PublicBulletinBoard
-ShuffleInstances    []ShuffleInstance
-DecryptedBallots    []Ballot
+    Configuration       Configuration
+    Status              status // Initial | Open | Closed | Shuffling | Decrypting | ..
+    Pubkey              []byte
+    PublicBulletinBoard PublicBulletinBoard
+    ShuffleInstances    []ShuffleInstance
+    DecryptedBallots    []Ballot
 }
 
 type Ballot struct {
 
-// SelectResult contains the result of each Select question. The result of a
-// select is a list of boolean that says for each choice if it has been
-// selected or not.  The ID slice is used to map a question ID to its index
-// in the SelectResult slice
-SelectResultIDs []ID
-SelectResult    [][]bool
+    // SelectResult contains the result of each Select question. The result of a
+    // select is a list of boolean that says for each choice if it has been
+    // selected or not.  The ID slice is used to map a question ID to its index
+    // in the SelectResult slice
+    SelectResultIDs []ID
+    SelectResult    [][]bool
 
-// RankResult contains the result of each Rank question. The result of a
-// rank question is the list of ranks for each choice. A choice that hasn't
-// been ranked will have a value < 0. The ID slice is used to map a question
-// ID to its index in the RankResult slice
-RankResultIDs []ID
-RankResult    [][]int8
-
-// TextResult contains the result of each Text question. The result of a
-// text question is the list of text answer for each choice. The ID slice is
-// used to map a question ID to its index in the TextResult slice
-TextResultIDs []ID
-TextResult    [][]string
+    // RankResult contains the result of each Rank question. The result of a
+    // rank question is the list of ranks for each choice. A choice that hasn't
+    // been ranked will have a value < 0. The ID slice is used to map a question
+    // ID to its index in the RankResult slice
+    RankResultIDs []ID
+    RankResult    [][]int8
+    
+    // TextResult contains the result of each Text question. The result of a
+    // text question is the list of text answer for each choice. The ID slice is
+    // used to map a question ID to its index in the TextResult slice
+    TextResultIDs []ID
+    TextResult    [][]string
 }
 
 // Configuration contains the configuration of a new poll.
 type Configuration struct {
-MainTitle string
-Scaffold  []Subject
+    MainTitle string
+    Scaffold  []Subject
 }
 
 // Subject is a wrapper around multiple questions that can be of type "select",
 // "rank", or "text".
 type Subject struct {
-ID ID
-
-Title string
-
-// Order defines the order of the different question, which all have a uniq
-// identifier. This is purely for display purpose.
-Order []ID
-
-Subjects []Subject
-Selects  []Select
-Ranks    []Rank
-Texts    []Text
+    ID ID
+    
+    Title string
+    
+    // Order defines the order of the different question, which all have a uniq
+    // identifier. This is purely for display purpose.
+    Order []ID
+    
+    Subjects []Subject
+    Selects  []Select
+    Ranks    []Rank
+    Texts    []Text
 }
 
 // Select describes a "select" question, which requires the user to select one
 // or multiple choices.
 type Select struct {
-ID ID
-
-Title   string
-MaxN    int
-MinN    int
-Choices []string
+    ID ID
+    
+    Title   string
+    MaxN    int
+    MinN    int
+    Choices []string
 }
 
 // Rank describes a "rank" question, which requires the user to rank choices.
 type Rank struct {
-ID ID
-
-Title   string
-MaxN    int
-MinN    int
-Choices []string
+    ID ID
+    
+    Title   string
+    MaxN    int
+    MinN    int
+    Choices []string
 }
 
 // Text describes a "text" question, which allows the user to enter free text.
 type Text struct {
-ID int
-
-Title      string
-MaxN       int
-MinN       int
-MaxLength  int
-Regex      string
-Choices    []string
+    ID int
+    
+    Title      string
+    MaxN       int
+    MinN       int
+    MaxLength  int
+    Regex      string
+    Choices    []string
 }
 ```
 
