@@ -299,13 +299,13 @@ func createElection(m txManager, title string, admin string) ([]byte, error) {
 		MainTitle: title,
 		Scaffold: []types.Subject{
 			{
-				ID:       "0xaaa",
+				ID:       encodeID("aa"),
 				Title:    "subject1",
 				Order:    nil,
 				Subjects: nil,
 				Selects: []types.Select{
 					{
-						ID:      "0xbbb",
+						ID:      encodeID("bb"),
 						Title:   "Select your favorite snacks",
 						MaxN:    3,
 						MinN:    0,
@@ -316,7 +316,7 @@ func createElection(m txManager, title string, admin string) ([]byte, error) {
 				Texts: nil,
 			},
 			{
-				ID:       "0xddd",
+				ID:       encodeID("dd"),
 				Title:    "subject2",
 				Order:    nil,
 				Subjects: nil,
@@ -324,7 +324,7 @@ func createElection(m txManager, title string, admin string) ([]byte, error) {
 				Ranks:    nil,
 				Texts: []types.Text{
 					{
-						ID:        "0xeee",
+						ID:        encodeID("ee"),
 						Title:     "dissertation",
 						MaxN:      1,
 						MinN:      1,
@@ -405,9 +405,12 @@ func getElection(electionID []byte, service ordering.Service) (types.Election, e
 
 func castVotesRandomly(m txManager, actor dkg.Actor, electionID []byte, numberOfVotes int, chunkPerBallot int) ([]string, error) {
 	possibleBallots := []string{
-		"select:0xbbb:0,0,1,0\n" + "text:0xeee:eWVz\n\n", //encoding of "yes"
-		"select:0xbbb:1,1,0,0\n" + "text:0xeee:amE=\n\n", //encoding of "ja
-		"select:0xbbb:0,0,0,1\n" + "text:0xeee:b3Vp\n\n", //encoding of "oui"
+		string("select:" + encodeID("bb") + ":0,0,1,0\n" +
+			"text:" + encodeID("ee") + ":eWVz\n\n"), //encoding of "yes"
+		string("select:" + encodeID("bb") + ":1,1,0,0\n" +
+			"text:" + encodeID("ee") + ":amE=\n\n"), //encoding of "ja
+		string("select:" + encodeID("bb") + ":0,0,0,1\n" +
+			"text:" + encodeID("ee") + "b3Vp\n\n"), //encoding of "oui"
 	}
 
 	votes := make([]string, numberOfVotes)
@@ -567,4 +570,8 @@ func closeNodes(t *testing.T, nodes []dVotingCosiDela) {
 
 	wait.Wait()
 	close(done)
+}
+
+func encodeID(ID string) types.ID {
+	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
 }
