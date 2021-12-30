@@ -1,0 +1,22 @@
+{
+  "everyone": [
+    "/api/getTkKey",
+    "/api/control_key",
+    "/api/getpersonnalinfo"
+  ],
+  "voter": [
+    "/api/logout",
+    "/api/getpersonnalinfo"
+  ],
+  "operator":[
+    "/api/logout",
+    "/api/getpersonnalinfo"
+  ],
+  "admin": [
+    "/api/logout",
+    "/api/getpersonnalinfo",
+    "/api/get_user_rights",
+    "/api/add_role",
+    "/api/remove_role"
+  ]
+}

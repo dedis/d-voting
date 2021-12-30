@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const request = require('request');
 const mysql = require('mysql2');
 const config = require('./config.json');
+const access_config = require('./access_config.json');
 
 /*global Buffer, __dirname, process */
 /*eslint no-undef: "error"*/
@@ -32,6 +33,23 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+var access_control = function (req, res, next){
+
+    const begin = req.url.split('?')[0];
+    var role = 'everyone';
+    if(req.session.userid){
+        role = req.session.role;
+    }
+
+    if(access_config[role].includes(begin)){
+        next();
+    } else {
+        res.status(400).send('Unauthorized');
+    }
+
+
+}
+app.use(access_control);
 
 /*
 * This is via this endpoint that the client request the tequila key, this key will then be used for redirection on the tequila server
@@ -68,11 +86,33 @@ app.get('/api/control_key', (req, res) => {
                 const name = resa.data.split('\nname=')[1].split('\n')[0];
                 const firstname = resa.data.split('\nfirstname=')[1].split('\n')[0];
 
-                req.session.userid = parseInt(sciper);
-                req.session.name = name;
-                req.session.firstname = firstname;
-                req.session.role = 'admin' //TODO change this line to give role from db
-                res.redirect('/');
+                const connection = mysql.createConnection({
+                    host     : 'localhost',
+                    user     : config.DB_USER,
+                    password : config.DB_PASS,
+                    database : config.DB_DB
+                });
+
+                connection.connect();
+
+                connection.query('SELECT * from user_rights WHERE sciper = ?',[sciper], function(err, rows, fields) {
+                    if (err) throw err;
+
+                    req.session.userid = parseInt(sciper);
+                    req.session.name = name;
+                    req.session.firstname = firstname;
+                    if(rows.length != 0){
+                        req.session.role = rows[0].role;
+                    } else {
+                        req.session.role = 'voter';
+                    }
+
+                    res.redirect('/');
+
+                });
+
+
+
             } else {
                 res.status(500).send('Login did not work')
             }
@@ -115,6 +155,7 @@ app.get('/api/getpersonnalinfo', (req, res) => {
         });
     }
 });
+
 
 /*
 * This call allow a user that is admin to get the list of the poeple that have a special role (not a voter)
@@ -184,6 +225,7 @@ app.post('/api/add_role', (req, res) => {
         res.status(400).send('Not logged in');
     }
 });
+
 
 /*
 * This call (only for admins) allow an admin to remove a role to a user
@@ -265,7 +307,7 @@ app.post('/evoting/*', (req, res) => {
             res.json(response.body);
         });
     } else {
-        res.status(400).send('Unauthorized')
+        res.status(400).send('Unauthorized');
     }
 
 });
