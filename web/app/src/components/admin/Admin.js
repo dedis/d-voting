@@ -7,12 +7,19 @@ import {GET_ADMIN_ROWS} from '../utils/ExpressEndoints';
 import {Translations} from '../language/Translations';
 import {LanguageContext} from '../language/LanguageContext';
 import BasicModal from '../modal/AddAdminUserModal'
+import RemoveAdminUserModal from '../modal/RemoveAdminUserModal';
 
 
 const Admin = () => {
     const [context, ] = useContext(LanguageContext)
     const [rows, setRows] = useState(undefined);
     const [newusrOpen, setNewusrOpen] = useState(false);
+
+    const [showModal, setShowModal] = useState(false);
+    const [userConfirmedAction, setUserConfirmedAction] = useState(false);
+
+    const [sciperToDelete, setSciperToDelete] = useState(0);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     const openModal = () => setNewusrOpen(true);
 
@@ -50,7 +57,8 @@ const Admin = () => {
             // eslint-disable-next-line react/display-name
             renderCell: function (params){
                 function handledClick(){
-                    console.log(params.id);
+                    setSciperToDelete(params.row.sciper);
+                    setShowDeleteModal(true);
                 }
                 return <Button onClick={handledClick} variant="outlined" color="error">Delete</Button>
             },
@@ -63,6 +71,7 @@ const Admin = () => {
                 <Button onClick={openModal} variant="contained">Add a user</Button>
                 <DataGrid rows={rows} columns={columns} />
                 <BasicModal open={newusrOpen} setOpen={setNewusrOpen}></BasicModal>
+                <RemoveAdminUserModal setOpen={setShowDeleteModal} open={showDeleteModal} sciper={sciperToDelete}/>
             </div>
         </div>
     );
