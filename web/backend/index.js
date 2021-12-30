@@ -6,6 +6,7 @@ const session = require('express-session');
 const kyber = require('@dedis/kyber')
 const crypto = require('crypto');
 const request = require('request');
+const mysql = require('mysql2');
 const config = require('./config.json');
 
 /*global Buffer, __dirname, process */
@@ -64,12 +65,13 @@ app.get('/api/control_key', (req, res) => {
         .then(resa => {
             if(resa.data.includes('status=ok')){
                 const sciper = resa.data.split('uniqueid=')[1].split('\n')[0];
-                const name = resa.data.split('name=')[1].split('\n')[0];
-                const firstname = resa.data.split('firstname=')[1].split('\n')[0];
+                const name = resa.data.split('\nname=')[1].split('\n')[0];
+                const firstname = resa.data.split('\nfirstname=')[1].split('\n')[0];
 
                 req.session.userid = parseInt(sciper);
                 req.session.name = name;
                 req.session.firstname = firstname;
+                req.session.role = 'admin' //TODO change this line to give role from db
                 res.redirect('/');
             } else {
                 res.status(500).send('Login did not work')
@@ -100,7 +102,7 @@ app.get('/api/getpersonnalinfo', (req, res) => {
             'sciper' : req.session.userid,
             'name' : req.session.name,
             'firstname' : req.session.firstname,
-            'role' : 'voter',
+            'role' : req.session.role,
             'islogged' : true
         });
     } else {
@@ -111,6 +113,106 @@ app.get('/api/getpersonnalinfo', (req, res) => {
             'role' : '',
             'islogged' : false
         });
+    }
+});
+
+/*
+* This call allow a user that is admin to get the list of the poeple that have a special role (not a voter)
+*/
+app.get('/api/get_user_rights', (req, res) => {
+
+    if(req.session.userid){
+        if(req.session.role == 'admin'){
+            const connection = mysql.createConnection({
+                host     : 'localhost',
+                user     : config.DB_USER,
+                password : config.DB_PASS,
+                database : config.DB_DB
+            });
+
+            connection.connect();
+
+            connection.query('SELECT * from user_rights', function(err, rows, fields) {
+                if (err) throw err;
+                res.json(rows);
+            });
+        }else {
+            res.status(400).send('You must be admin to request this');
+        }
+    } else {
+        res.status(400).send('Not logged in');
+    }
+});
+
+
+/*
+* This call (only for admins) allow an admin to add a role to a voter
+*/
+app.post('/api/add_role', (req, res) => {
+
+    if(req.session.userid) {
+        if (req.session.role == 'admin') {
+
+            const sciper = req.body.sciper;
+            const role = req.body.role;
+            const connection = mysql.createConnection({
+                host     : 'localhost',
+                user     : config.DB_USER,
+                password : config.DB_PASS,
+                database : config.DB_DB
+            });
+
+            connection.connect();
+            connection.query('SELECT * from user_rights WHERE sciper = ?', [sciper] ,function(err, rows, fields) {
+
+                if(rows.length == 0){
+                    const post  = {sciper: sciper, role: role};
+                    connection.query('INSERT INTO user_rights SET ?', post, function (error, results, fields) {
+                        if (error) throw error;
+                        res.status(200).send('Success');
+                    });
+
+                } else {
+                    res.status(300).send('Please remove first the current right on this user');
+                }
+            });
+
+        } else {
+            res.status(400).send('You must be admin to request this');
+        }
+    } else {
+        res.status(400).send('Not logged in');
+    }
+});
+
+/*
+* This call (only for admins) allow an admin to remove a role to a user
+*/
+app.post('/api/remove_role', (req, res) => {
+
+    if(req.session.userid){
+        if(req.session.role == 'admin'){
+
+            const sciper = req.body.sciper;
+
+            const connection = mysql.createConnection({
+                host     : 'localhost',
+                user     : config.DB_USER,
+                password : config.DB_PASS,
+                database : config.DB_DB
+            });
+
+            connection.connect();
+
+            connection.query('DELETE FROM user_rights WHERE sciper = ?', [sciper], function (error, results, fields) {
+                if (error) throw error;
+                res.status(200).send('Deleted');
+            });
+        } else {
+            res.status(400).send('You must be admin to request this')
+        }
+    } else {
+        res.status(400).send('Not logged in');
     }
 });
 
@@ -162,8 +264,6 @@ app.post('/evoting/*', (req, res) => {
 
             res.json(response.body);
         });
-
-
     } else {
         res.status(400).send('Unauthorized')
     }

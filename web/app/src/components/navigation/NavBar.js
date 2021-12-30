@@ -48,7 +48,7 @@ const NavBar = ({name, firstname, sciper}) => {
                         <option value='fr'>fr</option>
                     </select>
                 </li>
-                {sciper != 0 ? <li>Logged as {firstname}<br/><a href='/api/logout'>Logout</a></li> : ''}
+                {sciper != 0 ? <li>Logged as {firstname} {name}<br/><a href='/api/logout'>Logout</a></li> : ''}
             </a>
         </ul>
     </div>

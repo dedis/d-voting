@@ -10,12 +10,14 @@ import Ballot from './components/voting/Ballot';
 import ResultTable from './components/result-page/ResultTable';
 import ResultPage from './components/result-page/ResultPage';
 import About from './components/about/About';
+import Admin from './components/admin/Admin';
 import Footer from './components/footer/Footer';
 import {BrowserRouter as Router, Switch, Route} from 'react-router-dom';
 import ElectionDetails from './components/election-status/ElectionDetails';
 import {LanguageContext} from './components/language/LanguageContext';
 import Login from './components/login/Login';
 import useToken from './components/utils/useToken';
+import {GET_PERSONNAL_INFOS} from './components/utils/ExpressEndoints';
 
 
 const App = () => {
@@ -38,7 +40,7 @@ const App = () => {
   const [sciper, setSciper] = useState(0);
   const [role, setRole] = useState('')
 
-  fetch('/api/getpersonnalinfo')
+  fetch(GET_PERSONNAL_INFOS)
       .then(res => res.json())
       .then((result) => {
         setIsLogged(result.islogged);
@@ -69,6 +71,7 @@ const App = () => {
               <Route path="/results/:id" exact component={ResultPage}/>
               <Route path = "/vote/:id" component = {Ballot}/>
               <Route path="/about" component={About}/>
+              <Route path="/admin" component={Admin}/>
             </Switch>
             </div>)}
           </div>
