@@ -6,7 +6,7 @@ import {LanguageContext} from '../language/LanguageContext';
 import {Translations} from '../language/Translations';
 import {NavLink} from 'react-router-dom';
 
-const NavBar = ({name, firstname, sciper}) => {
+const NavBar = ({name, firstname, sciper, role}) => {
 
     const [lanContext, setLanContext] = useContext(LanguageContext);
     const activeStyle = {
@@ -22,16 +22,26 @@ const NavBar = ({name, firstname, sciper}) => {
                     <img src={logo} alt='small logo'></img>
                 </li>
             </NavLink>
-            
             <NavLink  className='nodeco' exact to='/'  activeStyle={activeStyle}>
                 <li title={Translations[lanContext].navBarHome}>{Translations[lanContext].navBarHome}</li>
             </NavLink>
+
+            {(role == 'admin' || role == 'operator') &&
             <NavLink title={Translations[lanContext].navBarCreate} className='nodeco' to='/create-election'   activeStyle={activeStyle}>
                 <li title={Translations[lanContext].navBarCreate}>{Translations[lanContext].navBarCreate}</li>
             </NavLink>
+            }
+            {(role == 'admin' || role == 'operator') &&
             <NavLink title={Translations[lanContext].navBarCreate} className='nodeco' to='/elections'  activeStyle={activeStyle}>
                 <li title={Translations[lanContext].navBarStatus}>{Translations[lanContext].navBarStatus}</li>
             </NavLink>
+            }
+            {(role == 'admin') &&
+            <NavLink className='nodeco' to='/admin'  activeStyle={activeStyle}>
+                <li title='Admin'>Admin</li>
+            </NavLink>
+            }
+
             <NavLink className='nodeco' to='/vote'  activeStyle={activeStyle}>
                 <li title={Translations[lanContext].navBarVote}>{Translations[lanContext].navBarVote}</li>
             </NavLink>

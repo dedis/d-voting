@@ -96,7 +96,9 @@ app.get('/api/control_key', (req, res) => {
                 connection.connect();
 
                 connection.query('SELECT * from user_rights WHERE sciper = ?',[sciper], function(err, rows, fields) {
-                    if (err) throw err;
+                    if (err) {
+                        res.status(500).send('Error while querying the DB');
+                    }
 
                     req.session.userid = parseInt(sciper);
                     req.session.name = name;
@@ -174,7 +176,10 @@ app.get('/api/get_user_rights', (req, res) => {
             connection.connect();
 
             connection.query('SELECT * from user_rights', function(err, rows, fields) {
-                if (err) throw err;
+                if (err) {
+                    res.status(500).send('Error while querying the DB');
+                }
+
                 res.json(rows);
             });
         }else {
@@ -209,7 +214,9 @@ app.post('/api/add_role', (req, res) => {
                 if(rows.length == 0){
                     const post  = {sciper: sciper, role: role};
                     connection.query('INSERT INTO user_rights SET ?', post, function (error, results, fields) {
-                        if (error) throw error;
+                        if (error) {
+                            res.status(500).send('Error while inserting in DB');
+                        }
                         res.status(200).send('Success');
                     });
 
@@ -247,7 +254,9 @@ app.post('/api/remove_role', (req, res) => {
             connection.connect();
 
             connection.query('DELETE FROM user_rights WHERE sciper = ?', [sciper], function (error, results, fields) {
-                if (error) throw error;
+                if (error){
+                    res.status(500).send('Error while deleting the user in DB');
+                }
                 res.status(200).send('Deleted');
             });
         } else {

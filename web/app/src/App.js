@@ -55,9 +55,7 @@ const App = () => {
      <Router>
         <LanguageContext.Provider value={[lanContext, setLanContext]}>         
           <div className='app-nav'>
-            {/* <Route path='/:page' component={NavBar} />
-            <Route exact path='/' component={NavBar}/> */}
-            <NavBar firstname={firstname} name={name} sciper={sciper}/>
+            <NavBar firstname={firstname} name={name} sciper={sciper} role={role}/>
           </div>
           <div data-testid="content" className='app-page'>
           {!isLogged? (<div className='login-container'><Login id='login-id' setToken={saveToken}/></div>): (<div>
