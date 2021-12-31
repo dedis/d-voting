@@ -16,7 +16,6 @@ import {BrowserRouter as Router, Switch, Route} from 'react-router-dom';
 import ElectionDetails from './components/election-status/ElectionDetails';
 import {LanguageContext} from './components/language/LanguageContext';
 import Login from './components/login/Login';
-import useToken from './components/utils/useToken';
 import {GET_PERSONNAL_INFOS} from './components/utils/ExpressEndoints';
 
 
@@ -32,7 +31,6 @@ const App = () => {
 
   //language state
   const [lanContext, setLanContext] =  useState(getBrowserLanguage());
-  const {token, saveToken} = useToken();
 
   const [isLogged, setIsLogged] = useState(undefined);
   const [name, setName] = useState('');
@@ -58,7 +56,7 @@ const App = () => {
             <NavBar firstname={firstname} name={name} sciper={sciper} role={role}/>
           </div>
           <div data-testid="content" className='app-page'>
-          {!isLogged? (<div className='login-container'><Login id='login-id' setToken={saveToken}/></div>): (<div>
+          {!isLogged? (<div className='login-container'><Login id='login-id'/></div>): (<div>
             <Switch>
               <Route path="/" exact component={Home}/>
               <Route path="/create-election" component={CreateElection}/>

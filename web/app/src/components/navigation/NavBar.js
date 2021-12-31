@@ -1,4 +1,4 @@
-import {React, useContext, useState} from 'react';
+import {React, useContext} from 'react';
 import '../../App.css';
 import './NavBar.css';
 import logo from '../../assets/logoWithoutText.png';
@@ -6,6 +6,7 @@ import {LanguageContext} from '../language/LanguageContext';
 import {Translations} from '../language/Translations';
 import {NavLink} from 'react-router-dom';
 
+// eslint-disable-next-line react/prop-types
 const NavBar = ({name, firstname, sciper, role}) => {
 
     const [lanContext, setLanContext] = useContext(LanguageContext);

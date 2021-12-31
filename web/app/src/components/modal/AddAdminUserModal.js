@@ -23,7 +23,8 @@ const style = {
     p: 4,
 };
 
-export default function BasicModal({open, setOpen}) {
+// eslint-disable-next-line react/prop-types
+export default function AddAdminUserModal({open, setOpen}) {
     const handleClose = () => setOpen(false);
     const ariaLabel = { 'aria-label': 'description' };
 

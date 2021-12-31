@@ -1,14 +1,12 @@
 import {React, useContext, useState} from 'react';
 import {Translations} from '../language/Translations';
 import {LanguageContext} from '../language/LanguageContext';
-import {SIGNIN_ENDPOINT} from '../utils/Endpoints';
 import {GET_TEQ_EENDPOINT} from '../utils/ExpressEndoints';
 import './Login.css';
 import PropTypes from 'prop-types';
 
 
-const Login = ({setToken}) => {
-    const request = null;
+const Login = () => {
     const [loginError, setLoginError] = useState();
     const [context, ] = useContext(LanguageContext);
 

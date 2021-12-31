@@ -18,9 +18,9 @@ const style = {
     p: 4,
 };
 
+// eslint-disable-next-line react/prop-types
 export default function RemoveAdminUserModal({open, setOpen, sciper}) {
     const handleClose = () => setOpen(false);
-    const ariaLabel = { 'aria-label': 'description' };
 
     const handleDelete = () => {
         const requestOptions = {
