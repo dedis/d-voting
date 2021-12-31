@@ -182,25 +182,91 @@ func TestCommand_CastVote(t *testing.T) {
 
 	snap := fake.NewSnapshot()
 
-	_ = snap.Set(dummyElectionIdBuff, []byte("fake election"))
+	err = snap.Set(dummyElectionIdBuff, []byte("fake election"))
+	require.NoError(t, err)
+
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
 	require.Contains(t, err.Error(), "failed to unmarshal Election")
 
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
 	require.EqualError(t, err, fmt.Sprintf("the election is not open, current status: %d", types.Initial))
 
 	dummyElection.Status = types.Open
 	jsElection, _ = json.Marshal(dummyElection)
 
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
+	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
+	require.EqualError(t, err, "the ballot has unexpected length: 1 != 0")
+
+	dummyElection.BallotSize = 29
+	jsElection, _ = json.Marshal(dummyElection)
+
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
+	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
+	require.EqualError(t, err, "part of the casted ballot has empty El Gamal pairs")
+
+	dummyCastVoteTransaction.Ballot = types.EncryptedBallot{
+		types.Ciphertext{
+			K: []byte("dummyK"),
+			C: []byte("dummyC"),
+		},
+	}
+
+	jsCastVoteTransaction, _ = json.Marshal(dummyCastVoteTransaction)
+
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
+	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
+	require.EqualError(t, err, "casted ballot has invalid El Gamal pairs:"+
+		" failed to unmarshal K: invalid Ed25519 curve point")
+
+	// encrypt a real message :
+	RandomStream := suite.RandomStream()
+	h := suite.Scalar().Pick(RandomStream)
+	pubKey := suite.Point().Mul(h, nil)
+
+	M := suite.Point().Embed([]byte("fakeVote"), random.New())
+
+	// ElGamal-encrypt the point to produce ciphertext (K,C).
+	k := suite.Scalar().Pick(random.New()) // ephemeral private key
+	K := suite.Point().Mul(k, nil)         // ephemeral DH public key
+	S := suite.Point().Mul(k, pubKey)      // ephemeral DH shared secret
+	C := S.Add(S, M)                       // message blinded with secret
+
+	KMarshalled, _ := K.MarshalBinary()
+	CMarshalled, _ := C.MarshalBinary()
+
+	dummyCastVoteTransaction.Ballot = types.EncryptedBallot{
+		types.Ciphertext{
+			K: KMarshalled,
+			C: CMarshalled,
+		},
+	}
+
+	jsCastVoteTransaction, err = json.Marshal(dummyCastVoteTransaction)
+	require.NoError(t, err)
+
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
 	require.EqualError(t, err, "failed to decode Election ID: encoding/hex: invalid byte: U+0075 'u'")
 
 	dummyElection.ElectionID = fakeElectionID
-	jsElection, _ = json.Marshal(dummyElection)
+	jsElection, err = json.Marshal(dummyElection)
+	require.NoError(t, err)
 
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
 	require.NoError(t, err)
 
@@ -208,20 +274,13 @@ func TestCommand_CastVote(t *testing.T) {
 	require.NoError(t, err)
 
 	election := new(types.Election)
-	_ = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
+	err = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
+	require.NoError(t, err)
 
 	require.Equal(t, dummyCastVoteTransaction.Ballot,
 		election.PublicBulletinBoard.Ballots[0])
 	require.Equal(t, dummyCastVoteTransaction.UserID,
 		election.PublicBulletinBoard.UserIDs[0])
-
-	// Issue # 17 : Empty ballot does not return an error and will generate issues during shuffle
-	dummyCastVoteTransaction.Ballot = types.EncryptedBallot{}
-	jsCastVoteTransaction, _ = json.Marshal(dummyCastVoteTransaction)
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
-	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
-	require.NoError(t, err)
-
 }
 
 func TestCommand_CloseElection(t *testing.T) {

@@ -135,32 +135,7 @@ Return:
 ```json
 {
     "ElectionID": "",
-    "UserID": "",
-    "Token": ""
-}
-```
-
-Return:
-
-`200 OK` `application/json`
-
-```json
-{}
-```
-
-# SC5: Election close
-
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/close`   |
-| Method | `POST`             |
-| Input  | `application/json` |
-
-```json
-{
-    "ElectionID": "",
-    "UserID": "",
-    "Token": ""
+    "UserID": ""
 }
 ```
 

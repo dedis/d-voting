@@ -604,8 +604,6 @@ func (a *scenarioTestPart2Action) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 
-	// ###################################### CLOSE ELECTION FOR REAL ###################
-
 	dela.Logger.Info().Msg("----------------------- CLOSE ELECTION : ")
 
 	closeElectionRequest = types.CloseElectionRequest{

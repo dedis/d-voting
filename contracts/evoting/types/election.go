@@ -60,9 +60,9 @@ type Election struct {
 func (e *Election) ChunksPerBallot() int {
 	if e.BallotSize%29 == 0 {
 		return e.BallotSize / 29
-	} else {
-		return e.BallotSize/29 + 1
 	}
+
+	return e.BallotSize/29 + 1
 }
 
 // RandomVector is a slice of kyber.Scalar (encoded) which is used to prove
