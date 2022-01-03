@@ -270,13 +270,13 @@ func TestSubject_MaxEncodedSize(t *testing.T) {
 		}},
 
 		Selects: []Select{{
-			ID:      "Q1",
+			ID:      questionID(1),
 			Title:   "",
 			MaxN:    3,
 			MinN:    0,
 			Choices: make([]string, 3),
 		}, {
-			ID:      "Q2",
+			ID:      questionID(2),
 			Title:   "",
 			MaxN:    5,
 			MinN:    0,
@@ -284,7 +284,7 @@ func TestSubject_MaxEncodedSize(t *testing.T) {
 		}},
 
 		Ranks: []Rank{{
-			ID:      "Q3",
+			ID:      questionID(3),
 			Title:   "",
 			MaxN:    4,
 			MinN:    0,
@@ -292,7 +292,7 @@ func TestSubject_MaxEncodedSize(t *testing.T) {
 		}},
 
 		Texts: []Text{{
-			ID:        "Q4",
+			ID:        questionID(4),
 			Title:     "",
 			MaxN:      2,
 			MinN:      0,
@@ -300,7 +300,7 @@ func TestSubject_MaxEncodedSize(t *testing.T) {
 			Regex:     "",
 			Choices:   make([]string, 2),
 		}, {
-			ID:        "Q5",
+			ID:        questionID(5),
 			Title:     "",
 			MaxN:      1,
 			MinN:      0,

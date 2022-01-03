@@ -275,21 +275,21 @@ func (s *Subject) MaxEncodedSize() int {
 	//TODO : optimise by computing max size according to number of choices and maxN
 	for _, rank := range s.Ranks {
 		size += len("rank::")
-		size += base64.StdEncoding.EncodedLen(len(rank.ID))
+		size += len(rank.ID)
 		// at most 3 bytes (128) + ',' per choice
 		size += len(rank.Choices) * 4
 	}
 
 	for _, selection := range s.Selects {
 		size += len("select::")
-		size += base64.StdEncoding.EncodedLen(len(selection.ID))
+		size += len(selection.ID)
 		// 1 bytes (0/1) + ',' per choice
 		size += len(selection.Choices) * 2
 	}
 
 	for _, text := range s.Texts {
 		size += len("text::")
-		size += base64.StdEncoding.EncodedLen(len(text.ID))
+		size += len(text.ID)
 
 		maxTextPerAnswer := base64.StdEncoding.EncodedLen(int(text.MaxLength)) + 1
 		size += maxTextPerAnswer*int(text.MaxN) +
