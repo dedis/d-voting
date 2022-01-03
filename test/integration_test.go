@@ -101,7 +101,13 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	require.NoError(t, err)
 
 	// ##### DECRYPT BALLOTS #####
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * 1)
+
+	election, err = getElection(electionID, nodes[0].GetOrdering())
+	err = decryptBallots(election, actor, m)
+	require.NoError(t, err)
+
+	time.Sleep(time.Second * 1)
 
 	t.Logf("get vote proof")
 	election, err = getElection(electionID, nodes[0].GetOrdering())
@@ -191,7 +197,13 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	require.NoError(t, err)
 
 	// ##### DECRYPT BALLOTS #####
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * 1)
+
+	election, err = getElection(electionID, nodes[0].GetOrdering())
+	err = decryptBallots(election, actor, m)
+	require.NoError(t, err)
+
+	time.Sleep(time.Second * 1)
 
 	t.Logf("get vote proof")
 	election, err = getElection(electionID, nodes[0].GetOrdering())
@@ -543,6 +555,63 @@ func initShuffle(nodes []dVotingCosiDela, signer crypto.AggregateSigner) (shuffl
 	time.Sleep(time.Second * 1)
 
 	return sActor, nil
+}
+
+func decryptBallots(election types.Election, actor dkg.Actor, m txManager) error {
+	if election.Status != types.ShuffledBallots {
+		return xerrors.Errorf("cannot decrypt: shuffle is not finished")
+	}
+
+	X, Y, err := election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots.GetElGPairs()
+	if err != nil {
+		return xerrors.Errorf("failed to get Elg pairs")
+	}
+
+	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
+	wrongBallots := 0
+
+	for i := 0; i < len(X[0]); i++ {
+		// decryption of one ballot:
+		marshalledBallot := strings.Builder{}
+		for j := 0; j < len(X); j++ {
+			chunk, err := actor.Decrypt(X[j][i], Y[j][i], []byte(election.ElectionID))
+			if err != nil {
+				return xerrors.Errorf("failed to decrypt (K,C): %v", err)
+			}
+			marshalledBallot.Write(chunk)
+		}
+
+		var ballot types.Ballot
+		err = ballot.Unmarshal(marshalledBallot.String(), election)
+		if err != nil {
+			wrongBallots++
+		}
+
+		decryptedBallots = append(decryptedBallots, ballot)
+	}
+
+	decryptBallotsTransaction := types.DecryptBallotsTransaction{
+		ElectionID:       election.ElectionID,
+		UserID:           election.AdminID,
+		DecryptedBallots: decryptedBallots,
+	}
+
+	decryptBallotsBuf, err := json.Marshal(decryptBallotsTransaction)
+	if err != nil {
+		return xerrors.Errorf("failed to marshal DecryptBallotsTransaction: %v", err)
+	}
+
+	args := []txn.Arg{
+		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
+		{Key: evoting.DecryptBallotsArg, Value: decryptBallotsBuf},
+		{Key: evoting.CmdArg, Value: []byte(evoting.CmdDecryptBallots)},
+	}
+	_, err = m.addAndWait(args...)
+	if err != nil {
+		return xerrors.Errorf("failed to Marshall closeElection: %v", err)
+	}
+
+	return nil
 }
 
 func closeNodes(t *testing.T, nodes []dVotingCosiDela) {
