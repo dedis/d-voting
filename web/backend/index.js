@@ -278,7 +278,11 @@ app.post('/evoting/*', (req, res) => {
 
     //check session
     if(req.session.userid){
-        const data_str = JSON.stringify(req.body);
+
+        const body_data = req.body;
+        body_data["AdminID"] = req.session.userid;
+        body_data["UserID"] = req.session.userid;
+        const data_str = JSON.stringify(body_data);
         const data_str_b64 = Buffer.from(data_str).toString('base64');
 
         const hash = crypto.createHash('sha256').update(data_str_b64).digest('base64');
