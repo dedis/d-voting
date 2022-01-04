@@ -570,11 +570,16 @@ func decryptBallots(election types.Election, actor dkg.Actor, m txManager) error
 	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
 	wrongBallots := 0
 
+	electionIDBuf, err := hex.DecodeString(election.ElectionID)
+	if err != nil {
+		return xerrors.Errorf("failed to decode ElectionID")
+	}
+
 	for i := 0; i < len(X[0]); i++ {
 		// decryption of one ballot:
 		marshalledBallot := strings.Builder{}
 		for j := 0; j < len(X); j++ {
-			chunk, err := actor.Decrypt(X[j][i], Y[j][i], []byte(election.ElectionID))
+			chunk, err := actor.Decrypt(X[j][i], Y[j][i], electionIDBuf)
 			if err != nil {
 				return xerrors.Errorf("failed to decrypt (K,C): %v", err)
 			}
@@ -608,7 +613,7 @@ func decryptBallots(election types.Election, actor dkg.Actor, m txManager) error
 	}
 	_, err = m.addAndWait(args...)
 	if err != nil {
-		return xerrors.Errorf("failed to Marshall closeElection: %v", err)
+		return xerrors.Errorf("failed to DecryptBallots: %v", err)
 	}
 
 	return nil
