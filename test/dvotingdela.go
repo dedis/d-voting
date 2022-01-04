@@ -110,11 +110,13 @@ func setupDVotingNodes(t *testing.T, numberOfNodes int, tempDir string) []dVotin
 
 	nodes := make(chan dVotingCosiDela, numberOfNodes)
 
+	randSource := rand.NewSource(int64(0))
+
 	for n := 0; n < numberOfNodes; n++ {
 		go func(i int) {
 			defer wait.Done()
 			filePath := filepath.Join(tempDir, "node", strconv.Itoa(i))
-			nodes <- newDVotingNode(t, filePath, 0)
+			nodes <- newDVotingNode(t, filePath, randSource)
 		}(n)
 	}
 
@@ -134,7 +136,7 @@ func setupDVotingNodes(t *testing.T, numberOfNodes int, tempDir string) []dVotin
 }
 
 // Creates a single dVotingCosiDela node
-func newDVotingNode(t *testing.T, path string, port int) dVotingCosiDela {
+func newDVotingNode(t *testing.T, path string, randSource rand.Source) dVotingCosiDela {
 	err := os.MkdirAll(path, 0700)
 	require.NoError(t, err)
 
@@ -146,13 +148,13 @@ func newDVotingNode(t *testing.T, path string, port int) dVotingCosiDela {
 
 	// mino
 	router := tree.NewRouter(minogrpc.NewAddressFactory())
-	addr := minogrpc.ParseAddress("127.0.0.1", uint16(port))
+	addr := minogrpc.ParseAddress("127.0.0.1", uint16(0))
 
 	certs := certs.NewDiskStore(db, session.AddressFactory{})
 
 	fload := loader.NewFileLoader(filepath.Join(path, certKeyName))
 
-	keydata, err := fload.LoadOrCreate(newCertGenerator(rand.New(rand.NewSource(0)), elliptic.P521()))
+	keydata, err := fload.LoadOrCreate(newCertGenerator(rand.New(randSource), elliptic.P521()))
 	require.NoError(t, err)
 
 	key, err := x509.ParseECPrivateKey(keydata)

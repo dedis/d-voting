@@ -44,7 +44,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	// ##### SETUP ENV #####
 	// make tests reproducible
 	rand.Seed(1)
-	delaPkg.Logger = zerolog.New(os.Stdout).Level(zerolog.WarnLevel)
+	delaPkg.Logger = zerolog.New(os.Stdout).Level(zerolog.InfoLevel)
 
 	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-three-votes")
 	require.NoError(t, err)
@@ -58,7 +58,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 
 	signer := createDVotingAccess(t, nodes, dirPath)
 
-	m := newTxManager(signer, nodes[0], time.Second*3)
+	m := newTxManager(signer, nodes[0], time.Second*1)
 
 	err = grantAccess(m, signer)
 	require.NoError(t, err)
@@ -96,6 +96,8 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	sActor, err := initShuffle(nodes, signer)
 	require.NoError(t, err)
 
+	time.Sleep(time.Second * 1)
+
 	t.Logf("shuffling")
 	err = sActor.Shuffle(electionID)
 	require.NoError(t, err)
@@ -104,7 +106,8 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	time.Sleep(time.Second * 1)
 
 	election, err = getElection(electionID, nodes[0].GetOrdering())
-	err = decryptBallots(election, actor, m)
+
+	err = decryptBallots(m, actor, election)
 	require.NoError(t, err)
 
 	time.Sleep(time.Second * 1)
@@ -192,6 +195,8 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	sActor, err := initShuffle(nodes, signer)
 	require.NoError(t, err)
 
+	time.Sleep(time.Second * 1)
+
 	t.Logf("shuffling")
 	err = sActor.Shuffle(electionID)
 	require.NoError(t, err)
@@ -200,7 +205,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	time.Sleep(time.Second * 1)
 
 	election, err = getElection(electionID, nodes[0].GetOrdering())
-	err = decryptBallots(election, actor, m)
+	err = decryptBallots(m, actor, election)
 	require.NoError(t, err)
 
 	time.Sleep(time.Second * 1)
@@ -546,18 +551,17 @@ func initShuffle(nodes []dVotingCosiDela, signer crypto.AggregateSigner) (shuffl
 	var sActor shuffle.Actor
 	for _, node := range nodes {
 		var err error
-		s := node.GetShuffle()
-		sActor, err = s.Listen(signer)
+		shuffler := node.GetShuffle()
+		sActor, err = shuffler.Listen(signer)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to init Shuffle: %v", err)
 		}
 	}
-	time.Sleep(time.Second * 1)
 
 	return sActor, nil
 }
 
-func decryptBallots(election types.Election, actor dkg.Actor, m txManager) error {
+func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error {
 	if election.Status != types.ShuffledBallots {
 		return xerrors.Errorf("cannot decrypt: shuffle is not finished")
 	}
@@ -613,7 +617,7 @@ func decryptBallots(election types.Election, actor dkg.Actor, m txManager) error
 	}
 	_, err = m.addAndWait(args...)
 	if err != nil {
-		return xerrors.Errorf("failed to DecryptBallots: %v", err)
+		return xerrors.Errorf("failed to addAndWait: %v", err)
 	}
 
 	return nil
