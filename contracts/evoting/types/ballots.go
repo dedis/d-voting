@@ -146,6 +146,11 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 							questionID, err)
 					}
 
+					if r < 0 || uint(r) >= q.GetMaxN() {
+						b.invalidate()
+						return fmt.Errorf("invalid rank not in range [0, MaxN[")
+					}
+
 					b.RankResult[index] = append(b.RankResult[index], int8(r))
 				} else {
 					b.RankResult[index] = append(b.RankResult[index], int8(-1))
