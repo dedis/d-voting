@@ -35,7 +35,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// Check the shuffled votes versus the casted votes an a few nodes
+// Check the shuffled votes versus the cast votes on a few nodes
 func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	numNodes := 3
 	numVotes := 3
@@ -58,7 +58,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 
 	signer := createDVotingAccess(t, nodes, dirPath)
 
-	m := newTxManager(signer, nodes[0], time.Second*1)
+	m := newTxManager(signer, nodes[0], time.Second*10)
 
 	err = grantAccess(m, signer)
 	require.NoError(t, err)
@@ -121,7 +121,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	fmt.Println("Status of the election : " + strconv.Itoa(int(election.Status)))
 	fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
 
-	// TODO: check that decrypted ballots are equals to casted ballots (maybe through hashing)
+	// TODO: check that decrypted ballots are equals to cast ballots (maybe through hashing)
 	for _, b := range election.DecryptedBallots {
 		fmt.Println("decrypted ballot:", b)
 	}
@@ -133,9 +133,9 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	closeNodes(t, nodes)
 }
 
-// Check more shuffled votes versus the casted votes on more nodes.
+// Check more shuffled votes versus the cast votes on more nodes.
 func TestIntegration_ManyVotesScenario(t *testing.T) {
-	// The following constants are limited by VSC built in debug function that times out after 30s.
+	// The following constants are limited by VSC build in debug function that times out after 30s.
 	numNodes := 10
 	numVotes := 10
 	adminID := "I am an admin"
@@ -157,7 +157,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 
 	signer := createDVotingAccess(t, nodes, dirPath)
 
-	m := newTxManager(signer, nodes[0], time.Second*3)
+	m := newTxManager(signer, nodes[0], time.Second*10)
 
 	err = grantAccess(m, signer)
 	require.NoError(t, err)
