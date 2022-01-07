@@ -143,6 +143,74 @@ Return:
 If islogged is set to false (which means that the user is not currently logged in) all the others return values are respectevily set to 0 or ""
 
 
+## Get the users role
+
+This endpoint is used to get the list of users that have specials roles (i.e. operators and admins) and their correspondig roles.
+
+| | |
+|-|-|
+|URL|`/api/get_user_rights`|
+|Method|`GET`|
+|Input|`nothing`|
+
+
+Return:
+
+`200 OK` `application/json`
+
+```json
+[{
+    "id" : <DB id>,
+    "sciper" : <user's sciper>,
+    "role" : "<user's role>"
+}, ...]
+```
+
+## Add a role to a user
+This allows to add new users to the list of the previous call.
+
+| | |
+|-|-|
+|URL|`/api/add_role`|
+|Method|`POST`|
+|Input|`json`|
+
+Input :
+´´´json
+{
+    "sciper" : <user's sciper>,
+    "role" : "<operator|admin>"
+}
+´´´
+
+
+Return:
+
+`200 OK` `application/json`
+
+
+## Remove a role to a user
+This allows to remove a user to the list of the previous call.
+
+| | |
+|-|-|
+|URL|`/api/add_role`|
+|Method|`POST`|
+|Input|`json`|
+
+Input :
+´´´json
+{
+    "sciper" : <user's sciper>
+}
+´´´
+
+Return:
+
+`200 OK` `application/json`
+
+
+
 # Production settings
 
 The 2 followings things that will be shown here is how to have https on the different webpages and how to make the app run on a on server.
