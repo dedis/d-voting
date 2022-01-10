@@ -189,6 +189,17 @@ func TestBallot_Unmarshal(t *testing.T) {
 	election.BallotSize = len(ballotWrongRank)
 
 	err = b.Unmarshal(ballotWrongRank, election)
+	require.EqualError(t, err, "invalid rank not in range [0, MaxN[")
+
+	// with valid ranks but one is selected twice
+	ballotWrongRank = string("select:" + questionID(1) + ":1,0,1\n" +
+		"rank:" + questionID(2) + ":1,2,0,2,2\n" +
+		"select:" + questionID(3) + ":1,0,1,1\n" +
+		"text:" + questionID(4) + ":YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ==\n\n")
+
+	election.BallotSize = len(ballotWrongRank)
+
+	err = b.Unmarshal(ballotWrongRank, election)
 	require.EqualError(t, err, "question UTI= has too many selected answers")
 
 	// with not enough selected answers in rank question
