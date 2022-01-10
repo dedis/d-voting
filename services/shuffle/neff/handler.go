@@ -6,8 +6,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"go.dedis.ch/kyber/v3"
 	"time"
+
+	"go.dedis.ch/kyber/v3"
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	evotingController "github.com/dedis/d-voting/contracts/evoting/controller"
@@ -124,7 +125,7 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 		accepted, msg := watchTx(events, tx.GetID())
 		if accepted {
 			dela.Logger.Info().Msg("our shuffling contribution has " +
-				"been accepted, we are exitting the process")
+				"been accepted, we are exiting the process")
 			return nil
 		}
 

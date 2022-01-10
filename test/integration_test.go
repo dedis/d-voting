@@ -35,7 +35,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// Check the shuffled votes versus the casted votes an a few nodes
+// Check the shuffled votes versus the cast votes on a few nodes
 func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	numNodes := 3
 	numVotes := 3
@@ -44,7 +44,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	// ##### SETUP ENV #####
 	// make tests reproducible
 	rand.Seed(1)
-	delaPkg.Logger = zerolog.New(os.Stdout).Level(zerolog.WarnLevel)
+	delaPkg.Logger = zerolog.New(os.Stdout).Level(zerolog.InfoLevel)
 
 	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-three-votes")
 	require.NoError(t, err)
@@ -58,7 +58,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 
 	signer := createDVotingAccess(t, nodes, dirPath)
 
-	m := newTxManager(signer, nodes[0], time.Second*3)
+	m := newTxManager(signer, nodes[0], time.Second*10)
 
 	err = grantAccess(m, signer)
 	require.NoError(t, err)
@@ -96,12 +96,22 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	sActor, err := initShuffle(nodes, signer)
 	require.NoError(t, err)
 
+	time.Sleep(time.Second * 1)
+
 	t.Logf("shuffling")
 	err = sActor.Shuffle(electionID)
 	require.NoError(t, err)
 
 	// ##### DECRYPT BALLOTS #####
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * 1)
+
+	election, err = getElection(electionID, nodes[0].GetOrdering())
+	require.NoError(t, err)
+
+	err = decryptBallots(m, actor, election)
+	require.NoError(t, err)
+
+	time.Sleep(time.Second * 1)
 
 	t.Logf("get vote proof")
 	election, err = getElection(electionID, nodes[0].GetOrdering())
@@ -112,7 +122,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	fmt.Println("Status of the election : " + strconv.Itoa(int(election.Status)))
 	fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
 
-	// TODO: check that decrypted ballots are equals to casted ballots (maybe through hashing)
+	// TODO: check that decrypted ballots are equals to cast ballots (maybe through hashing)
 	for _, b := range election.DecryptedBallots {
 		fmt.Println("decrypted ballot:", b)
 	}
@@ -124,9 +134,9 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	closeNodes(t, nodes)
 }
 
-// Check more shuffled votes versus the casted votes on more nodes.
+// Check more shuffled votes versus the cast votes on more nodes.
 func TestIntegration_ManyVotesScenario(t *testing.T) {
-	// The following constants are limited by VSC built in debug function that times out after 30s.
+	// The following constants are limited by VSC build in debug function that times out after 30s.
 	numNodes := 10
 	numVotes := 10
 	adminID := "I am an admin"
@@ -148,7 +158,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 
 	signer := createDVotingAccess(t, nodes, dirPath)
 
-	m := newTxManager(signer, nodes[0], time.Second*3)
+	m := newTxManager(signer, nodes[0], time.Second*10)
 
 	err = grantAccess(m, signer)
 	require.NoError(t, err)
@@ -186,12 +196,21 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	sActor, err := initShuffle(nodes, signer)
 	require.NoError(t, err)
 
+	time.Sleep(time.Second * 1)
+
 	t.Logf("shuffling")
 	err = sActor.Shuffle(electionID)
 	require.NoError(t, err)
 
 	// ##### DECRYPT BALLOTS #####
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * 1)
+
+	election, err = getElection(electionID, nodes[0].GetOrdering())
+	require.NoError(t, err)
+	err = decryptBallots(m, actor, election)
+	require.NoError(t, err)
+
+	time.Sleep(time.Second * 1)
 
 	t.Logf("get vote proof")
 	election, err = getElection(electionID, nodes[0].GetOrdering())
@@ -299,13 +318,13 @@ func createElection(m txManager, title string, admin string) ([]byte, error) {
 		MainTitle: title,
 		Scaffold: []types.Subject{
 			{
-				ID:       "0xaaa",
+				ID:       encodeID("aa"),
 				Title:    "subject1",
 				Order:    nil,
 				Subjects: nil,
 				Selects: []types.Select{
 					{
-						ID:      "0xbbb",
+						ID:      encodeID("bb"),
 						Title:   "Select your favorite snacks",
 						MaxN:    3,
 						MinN:    0,
@@ -316,7 +335,7 @@ func createElection(m txManager, title string, admin string) ([]byte, error) {
 				Texts: nil,
 			},
 			{
-				ID:       "0xddd",
+				ID:       encodeID("dd"),
 				Title:    "subject2",
 				Order:    nil,
 				Subjects: nil,
@@ -324,7 +343,7 @@ func createElection(m txManager, title string, admin string) ([]byte, error) {
 				Ranks:    nil,
 				Texts: []types.Text{
 					{
-						ID:        "0xeee",
+						ID:        encodeID("ee"),
 						Title:     "dissertation",
 						MaxN:      1,
 						MinN:      1,
@@ -405,9 +424,12 @@ func getElection(electionID []byte, service ordering.Service) (types.Election, e
 
 func castVotesRandomly(m txManager, actor dkg.Actor, electionID []byte, numberOfVotes int, chunkPerBallot int) ([]string, error) {
 	possibleBallots := []string{
-		"select:0xbbb:0,0,1,0\n" + "text:0xeee:eWVz\n\n", //encoding of "yes"
-		"select:0xbbb:1,1,0,0\n" + "text:0xeee:amE=\n\n", //encoding of "ja
-		"select:0xbbb:0,0,0,1\n" + "text:0xeee:b3Vp\n\n", //encoding of "oui"
+		string("select:" + encodeID("bb") + ":0,0,1,0\n" +
+			"text:" + encodeID("ee") + ":eWVz\n\n"), //encoding of "yes"
+		string("select:" + encodeID("bb") + ":1,1,0,0\n" +
+			"text:" + encodeID("ee") + ":amE=\n\n"), //encoding of "ja
+		string("select:" + encodeID("bb") + ":0,0,0,1\n" +
+			"text:" + encodeID("ee") + "b3Vp\n\n"), //encoding of "oui"
 	}
 
 	votes := make([]string, numberOfVotes)
@@ -513,13 +535,13 @@ func initDkg(nodes []dVotingCosiDela, electionID []byte) (dkg.Actor, error) {
 		d := node.(dVotingNode).GetDkg()
 
 		// put Listen in a goroutine to optimize for speed
-		actor, err = d.Listen()
+		actor, err = d.Listen(electionID)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to GetDkg: %v", err)
 		}
 	}
 
-	_, err = actor.Setup(electionID)
+	_, err = actor.Setup()
 	if err != nil {
 		return nil, xerrors.Errorf("failed to Setup: %v", err)
 	}
@@ -531,15 +553,71 @@ func initShuffle(nodes []dVotingCosiDela, signer crypto.AggregateSigner) (shuffl
 	var sActor shuffle.Actor
 	for _, node := range nodes {
 		var err error
-		s := node.GetShuffle()
-		sActor, err = s.Listen(signer)
+		shuffler := node.GetShuffle()
+		sActor, err = shuffler.Listen(signer)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to init Shuffle: %v", err)
 		}
 	}
-	time.Sleep(time.Second * 1)
 
 	return sActor, nil
+}
+
+func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error {
+	if election.Status != types.ShuffledBallots {
+		return xerrors.Errorf("cannot decrypt: shuffle is not finished")
+	}
+
+	X, Y, err := election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots.GetElGPairs()
+	if err != nil {
+		return xerrors.Errorf("failed to get Elg pairs")
+	}
+
+	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
+	wrongBallots := 0
+
+	for i := 0; i < len(X[0]); i++ {
+		// decryption of one ballot:
+		marshalledBallot := strings.Builder{}
+		for j := 0; j < len(X); j++ {
+			chunk, err := actor.Decrypt(X[j][i], Y[j][i])
+			if err != nil {
+				return xerrors.Errorf("failed to decrypt (K,C): %v", err)
+			}
+			marshalledBallot.Write(chunk)
+		}
+
+		var ballot types.Ballot
+		err = ballot.Unmarshal(marshalledBallot.String(), election)
+		if err != nil {
+			wrongBallots++
+		}
+
+		decryptedBallots = append(decryptedBallots, ballot)
+	}
+
+	decryptBallotsTransaction := types.DecryptBallotsTransaction{
+		ElectionID:       election.ElectionID,
+		UserID:           election.AdminID,
+		DecryptedBallots: decryptedBallots,
+	}
+
+	decryptBallotsBuf, err := json.Marshal(decryptBallotsTransaction)
+	if err != nil {
+		return xerrors.Errorf("failed to marshal DecryptBallotsTransaction: %v", err)
+	}
+
+	args := []txn.Arg{
+		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
+		{Key: evoting.DecryptBallotsArg, Value: decryptBallotsBuf},
+		{Key: evoting.CmdArg, Value: []byte(evoting.CmdDecryptBallots)},
+	}
+	_, err = m.addAndWait(args...)
+	if err != nil {
+		return xerrors.Errorf("failed to addAndWait: %v", err)
+	}
+
+	return nil
 }
 
 func closeNodes(t *testing.T, nodes []dVotingCosiDela) {
@@ -567,4 +645,8 @@ func closeNodes(t *testing.T, nodes []dVotingCosiDela) {
 
 	wait.Wait()
 	close(done)
+}
+
+func encodeID(ID string) types.ID {
+	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
 }

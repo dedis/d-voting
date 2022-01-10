@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/base64"
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
 )
@@ -142,14 +143,22 @@ func (c *Configuration) GetQuestion(ID ID) Question {
 	return nil
 }
 
-// IsValid returns true if and only if the whole configuration is coherent and
+// isValid returns true if and only if the whole configuration is coherent and
 // valid
 func (c *Configuration) IsValid() bool {
 	// serves as a set to check each ID is unique
 	uniqueIDs := make(map[ID]bool)
 
 	for _, subject := range c.Scaffold {
-		if !subject.IsValid(uniqueIDs) {
+		if !subject.isValid(uniqueIDs) {
+			return false
+		}
+	}
+
+	// if an id is not encoded in base64
+	for id := range uniqueIDs {
+		_, err := base64.StdEncoding.DecodeString(string(id))
+		if err != nil {
 			return false
 		}
 	}
