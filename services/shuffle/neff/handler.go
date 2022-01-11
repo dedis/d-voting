@@ -5,13 +5,11 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"go.dedis.ch/kyber/v3"
 
 	"github.com/dedis/d-voting/contracts/evoting"
-	evotingController "github.com/dedis/d-voting/contracts/evoting/controller"
 	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"go.dedis.ch/dela"
@@ -29,7 +27,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const watchTimeout = time.Second * 2
+const watchTimeout = time.Second * 6
 
 // const endShuffleTimeout = time.Second * 50
 
@@ -43,20 +41,18 @@ type Handler struct {
 	me            mino.Address
 	service       ordering.Service
 	p             pool.Pool
-	signer        crypto.Signer
-	client        *evotingController.Client
+	txmngr        txn.Manager
 	shuffleSigner crypto.Signer
 }
 
 // NewHandler creates a new handler
 func NewHandler(me mino.Address, service ordering.Service, p pool.Pool,
-	signer crypto.Signer, client *evotingController.Client, shuffleSigner crypto.Signer) *Handler {
+	txmngr txn.Manager, shuffleSigner crypto.Signer) *Handler {
 	return &Handler{
 		me:            me,
 		service:       service,
 		p:             p,
-		signer:        signer,
-		client:        client,
+		txmngr:        txmngr,
 		shuffleSigner: shuffleSigner,
 	}
 }
@@ -70,7 +66,7 @@ func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 		return xerrors.Errorf("failed to receive: %v", err)
 	}
 
-	dela.Logger.Info().Msgf("message received from: %v", from)
+	dela.Logger.Trace().Msgf("message received from: %v", from)
 
 	switch msg := msg.(type) {
 	case types.StartShuffle:
@@ -87,7 +83,6 @@ func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 
 func (h *Handler) handleStartShuffle(electionID string) error {
 	dela.Logger.Info().Msg("Starting the neff shuffle protocol ...")
-	manager := getManager(h.signer, h.client)
 
 	// loop until the threshold is reached or our transaction has been accepted
 	for {
@@ -108,7 +103,7 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 			return xerrors.Errorf("the election must be closed: but status is %v", election.Status)
 		}
 
-		tx, err := makeTx(election, manager, h.shuffleSigner)
+		tx, err := makeTx(election, h.txmngr, h.shuffleSigner)
 		if err != nil {
 			return xerrors.Errorf("failed to make tx: %v", err)
 		}
@@ -122,12 +117,20 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 		if err != nil {
 			return xerrors.Errorf("failed to add transaction to the pool: %v", err.Error())
 		}
-		dela.Logger.Info().Msgf("sending shuffling tx with nonce %d", tx.GetNonce())
 
 		accepted, msg := watchTx(events, tx.GetID())
+
+		if !accepted {
+			err = h.txmngr.Sync()
+			if err != nil {
+				return xerrors.Errorf("failed to sync manager: %v", err.Error())
+			}
+		}
+
 		if accepted {
 			dela.Logger.Info().Msg("our shuffling contribution has " +
 				"been accepted, we are exiting the process")
+
 			return nil
 		}
 
@@ -155,7 +158,7 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 	// Generate random vector and proof
 	semiRandomStream, err := evoting.NewSemiRandomStream(shuffleHash)
 	if err != nil {
-		return nil, xerrors.Errorf("could not create semi-random stream")
+		return nil, xerrors.Errorf("could not create semi-random stream: %v", err)
 	}
 
 	e := make([]kyber.Scalar, election.ChunksPerBallot())
@@ -224,11 +227,6 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 		Value: js,
 	}
 
-	err = manager.Sync()
-	if err != nil {
-		return nil, xerrors.Errorf("failed to sync manager: %v", err.Error())
-	}
-
 	tx, err := manager.Make(args...)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to use manager: %v", err.Error())
@@ -247,7 +245,6 @@ func getShuffledBallots(election *electionTypes.Election) ([]electionTypes.Encry
 
 	if round == 0 {
 		encryptedBallots = election.PublicBulletinBoard.Ballots
-		fmt.Println("encrypted ballots:", election.PublicBulletinBoard)
 	} else {
 		encryptedBallots = election.ShuffleInstances[round-1].ShuffledBallots
 	}

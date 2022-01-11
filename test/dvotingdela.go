@@ -81,6 +81,8 @@ type dVotingCosiDela interface {
 	GetTree() hashtree.Tree
 	GetDkg() dkg.DKG
 	GetShuffle() shuffle.Shuffle
+	GetShuffleSigner() crypto.AggregateSigner
+	GetValidationSrv() validation.Service
 }
 
 // dVotingNode represents a Dela node using cosi pbft aimed to execute d-voting
@@ -98,6 +100,8 @@ type dVotingNode struct {
 	tree          hashtree.Tree
 	dkg           *pedersen.Pedersen
 	shuffle       *neff.NeffShuffle
+	shuffleSigner crypto.AggregateSigner
+	vs            validation.Service
 }
 
 // Creates n dela nodes using tempDir as root to file path and returns an array
@@ -245,6 +249,15 @@ func newDVotingNode(t *testing.T, path string, randSource rand.Source) dVotingCo
 
 	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, rosterFac, signer)
 
+	// Neff shuffle signer
+	l := loader.NewFileLoader(filepath.Join(path, "private_neff.key"))
+
+	neffSignerdata, err := l.LoadOrCreate(newKeyGenerator())
+	require.NoError(t, err)
+
+	neffSigner, err := bls.NewSignerFromBytes(neffSignerdata)
+	require.NoError(t, err)
+
 	return dVotingNode{
 		t:             t,
 		onet:          onet,
@@ -257,6 +270,8 @@ func newDVotingNode(t *testing.T, path string, randSource rand.Source) dVotingCo
 		tree:          tree,
 		dkg:           dkg,
 		shuffle:       neffShuffle,
+		shuffleSigner: neffSigner,
+		vs:            vs,
 	}
 }
 
@@ -386,6 +401,16 @@ func (c dVotingNode) GetShuffle() shuffle.Shuffle {
 	return c.shuffle
 }
 
+// GetShuffleSigner implements dVotingNode
+func (c dVotingNode) GetShuffleSigner() crypto.AggregateSigner {
+	return c.shuffleSigner
+}
+
+// GetValidationSrv implements dVotingNode
+func (c dVotingNode) GetValidationSrv() validation.Service {
+	return c.vs
+}
+
 // certGenerator can generate a private key compatible with the x509 certificate.
 //
 // - implements loader.Generator
@@ -441,8 +466,7 @@ func (g keyGenerator) Generate() ([]byte, error) {
 	return data, nil
 }
 
-// Client is a local client for the manager to read the current identity's nonce
-// from the ordering service.
+// client fetches the last nonce used by the client
 //
 // - implements signed.Client
 type client struct {
@@ -450,8 +474,8 @@ type client struct {
 	mgr  validation.Service
 }
 
-// GetNonce implements signed.Client. It reads the store of the ordering service
-// to get the next nonce of the identity and returns it.
+// GetNonce implements signed.Client. It uses the validation service to get the
+// last nonce.
 func (c client) GetNonce(ident access.Identity) (uint64, error) {
 	store := c.srvc.GetStore()
 
@@ -495,18 +519,4 @@ func (a accessstore) Delete(key []byte) error {
 	delete(a.bucket, string(key))
 
 	return nil
-}
-
-// txClient return monotically increasing nonce
-//
-// - implements signed.Client
-type txClient struct {
-	nonce uint64
-}
-
-// GetNonce implements signed.Client
-func (c *txClient) GetNonce(access.Identity) (uint64, error) {
-	res := c.nonce
-	c.nonce++
-	return res, nil
 }
