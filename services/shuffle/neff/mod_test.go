@@ -2,13 +2,15 @@ package neff
 
 import (
 	"encoding/hex"
+	"strconv"
+	"testing"
+
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/serde"
-	"strconv"
-	"testing"
 
 	"github.com/dedis/d-voting/internal/testing/fake"
 	neffShuffleTypes "github.com/dedis/d-voting/services/shuffle/neff/types"
@@ -23,7 +25,7 @@ func TestNeffShuffle_Listen(t *testing.T) {
 
 	NeffShuffle := NewNeffShuffle(fake.Mino{}, &FakeService{}, &FakePool{}, nil, fakeAuthorityFactory{}, fake.NewSigner())
 
-	actor, err := NeffShuffle.Listen(fake.NewSigner())
+	actor, err := NeffShuffle.Listen(fakeManager{})
 	require.NoError(t, err)
 
 	require.NotNil(t, actor)
@@ -149,4 +151,19 @@ func (f fakeAuthority) AddressIterator() mino.AddressIterator {
 
 func (f fakeAuthority) Len() int {
 	return 2
+}
+
+// fakeManager is a fake manager
+//
+// - implements txn.Manager
+type fakeManager struct {
+	txn.Manager
+}
+
+func (fakeManager) Sync() error {
+	return nil
+}
+
+func (fakeManager) Make(args ...txn.Arg) (txn.Transaction, error) {
+	return nil, fake.GetError()
 }
