@@ -277,17 +277,17 @@ func (m txManager) addAndWait(args ...txn.Arg) ([]byte, error) {
 			return nil, xerrors.Errorf("failed to Make: %v", err)
 		}
 
-		sentTxnID := sentTxn.GetID()
+		ctx, cancel := context.WithTimeout(context.Background(), m.t)
+		defer cancel()
+
+		events := m.n.GetOrdering().Watch(ctx)
 
 		err = m.n.GetPool().Add(sentTxn)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to Add: %v", err)
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), m.t)
-		defer cancel()
-
-		events := m.n.GetOrdering().Watch(ctx)
+		sentTxnID := sentTxn.GetID()
 
 	events:
 		for event := range events {
