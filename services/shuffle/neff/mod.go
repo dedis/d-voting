@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	evotingController "github.com/dedis/d-voting/contracts/evoting/controller"
 	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/shuffle"
 	"github.com/dedis/d-voting/services/shuffle/neff/types"
@@ -15,6 +14,7 @@ import (
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
+	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
@@ -32,13 +32,6 @@ import (
 const (
 	shuffleTimeout = time.Second * 30
 	protocolName   = "PairShuffle"
-
-	// waitN is the number of time we check if the shuffling is done. Must be at
-	// least one.
-	waitN = 20
-	// waitT is the time we wait before retrying to check if the shuffling is
-	// done.
-	waitT = time.Second * 3
 )
 
 // NeffShuffle allows one to initialize a new SHUFFLE protocol.
@@ -75,12 +68,15 @@ func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool,
 
 // Listen implements shuffle.SHUFFLE. It must be called on each node that
 // participates in the SHUFFLE. Creates the RPC.
-func (n NeffShuffle) Listen(signer crypto.Signer) (shuffle.Actor, error) {
-	client := &evotingController.Client{
-		Nonce:  0,
-		Blocks: n.blocks,
+func (n NeffShuffle) Listen(txmngr txn.Manager) (shuffle.Actor, error) {
+	// We are expecting the manager to be exclusive for the service, with no
+	// other use than us.
+	err := txmngr.Sync()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to sync manager: %v", err)
 	}
-	h := NewHandler(n.mino.GetAddress(), n.service, n.p, signer, client, n.nodeSigner)
+
+	h := NewHandler(n.mino.GetAddress(), n.service, n.p, txmngr, n.nodeSigner)
 
 	a := &Actor{
 		rpc:       mino.MustCreateRPC(n.mino, "shuffle", h, n.factory),
@@ -163,7 +159,7 @@ func (a *Actor) Shuffle(electionID []byte) error {
 		return xerrors.Errorf("failed to start shuffle: %v", err)
 	}
 
-	err = a.waitAndCheckShuffling(message.GetElectionId())
+	err = a.waitAndCheckShuffling(message.GetElectionId(), roster.Len())
 	if err != nil {
 		return xerrors.Errorf("failed to wait and check shuffling: %v", err)
 	}
@@ -172,12 +168,13 @@ func (a *Actor) Shuffle(electionID []byte) error {
 }
 
 // waitAndCheckShuffling periodically checks the state of the election. It
-// returns an error if the shuffling is not done after a while.
-func (a *Actor) waitAndCheckShuffling(electionID string) error {
+// returns an error if the shuffling is not done after a while. The retry and
+// waiting time depends on the rosterLen.
+func (a *Actor) waitAndCheckShuffling(electionID string, rosterLen int) error {
 	var election *electionTypes.Election
 	var err error
 
-	for i := 0; i < waitN; i++ {
+	for i := 0; i < rosterLen*10; i++ {
 		election, err = getElection(a.service, electionID)
 		if err != nil {
 			return xerrors.Errorf("failed to get election: %v", err)
@@ -194,7 +191,7 @@ func (a *Actor) waitAndCheckShuffling(electionID string) error {
 		}
 
 		dela.Logger.Info().Msgf("waiting a while before checking election: %d", i)
-		time.Sleep(waitT)
+		time.Sleep(time.Second * time.Duration(rosterLen/2+1))
 	}
 
 	return xerrors.Errorf("threshold of shuffling not reached: %d < %d",

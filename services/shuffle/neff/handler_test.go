@@ -25,6 +25,7 @@ import (
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/core/validation"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
@@ -181,13 +182,6 @@ func TestHandler_StartShuffle(t *testing.T) {
 	service = updateService(election, dummyId)
 	handler.service = &service
 
-	handler.client = &evotingController.Client{
-		Nonce: 0,
-		Blocks: FakeBlockStore{
-			getErr:  nil,
-			lastErr: nil,
-		},
-	}
 	handler.shuffleSigner = fake.NewBadSigner()
 
 	err = handler.handleStartShuffle(dummyId)
@@ -198,13 +192,25 @@ func TestHandler_StartShuffle(t *testing.T) {
 
 	handler.service = &service
 	handler.shuffleSigner = fake.NewSigner()
-	handler.signer = fake.NewBadSigner()
+
+	// Bad manager
+
+	handler.txmngr = fakeManager{}
 
 	err = handler.handleStartShuffle(dummyId)
-	require.EqualError(t, err, fake.Err("failed to make tx: failed to use manager: failed to sign: signer"))
+	require.EqualError(t, err, fake.Err("failed to make tx: failed to use manager"))
+
+	manager := signed.NewManager(fake.NewSigner(), &evotingController.Client{
+		Nonce: 0,
+		Blocks: FakeBlockStore{
+			getErr:  nil,
+			lastErr: nil,
+		},
+	})
+
+	handler.txmngr = manager
 
 	// Bad pool :
-	handler.signer = fake.NewSigner()
 
 	service = updateService(election, dummyId)
 	badPool := FakePool{err: fakeErr,
@@ -256,11 +262,10 @@ func TestHandler_StartShuffle(t *testing.T) {
 
 	service = updateService(election, dummyId)
 	fakePool = FakePool{service: &service}
-	handler = *NewHandler(handler.me, &service, &fakePool, handler.signer, handler.client, handler.shuffleSigner)
+	handler = *NewHandler(handler.me, &service, &fakePool, manager, handler.shuffleSigner)
 
 	err = handler.handleStartShuffle(dummyId)
 	require.NoError(t, err)
-
 }
 
 // -----------------------------------------------------------------------------
@@ -290,14 +295,13 @@ func initValidHandler(dummyId string) Handler {
 	handler.p = &fakePool
 	handler.me = fake.NewAddress(0)
 	handler.shuffleSigner = fake.NewSigner()
-	handler.signer = fake.NewSigner()
-	handler.client = &evotingController.Client{
+	handler.txmngr = signed.NewManager(fake.NewSigner(), &evotingController.Client{
 		Nonce: 0,
 		Blocks: FakeBlockStore{
 			getErr:  nil,
 			lastErr: nil,
 		},
-	}
+	})
 	return handler
 }
 

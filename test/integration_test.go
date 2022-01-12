@@ -44,7 +44,8 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	// ##### SETUP ENV #####
 	// make tests reproducible
 	rand.Seed(1)
-	delaPkg.Logger = zerolog.New(os.Stdout).Level(zerolog.InfoLevel)
+
+	delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 
 	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-three-votes")
 	require.NoError(t, err)
@@ -58,10 +59,15 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 
 	signer := createDVotingAccess(t, nodes, dirPath)
 
-	m := newTxManager(signer, nodes[0], time.Second*10)
+	m := newTxManager(signer, nodes[0], time.Second*10, 10)
 
 	err = grantAccess(m, signer)
 	require.NoError(t, err)
+
+	for _, n := range nodes {
+		err = grantAccess(m, n.GetShuffleSigner())
+		require.NoError(t, err)
+	}
 
 	// ##### CREATE ELECTION #####
 	electionID, err := createElection(m, "Three votes election", adminID)
@@ -93,7 +99,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 
 	// ##### SHUFFLE BALLOTS #####
 	t.Logf("initializing shuffle")
-	sActor, err := initShuffle(nodes, signer)
+	sActor, err := initShuffle(nodes)
 	require.NoError(t, err)
 
 	time.Sleep(time.Second * 1)
@@ -104,6 +110,8 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 
 	// ##### DECRYPT BALLOTS #####
 	time.Sleep(time.Second * 1)
+
+	t.Logf("decrypting")
 
 	election, err = getElection(electionID, nodes[0].GetOrdering())
 	require.NoError(t, err)
@@ -144,7 +152,8 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	// ##### SETUP ENV #####
 	// make tests reproducible
 	rand.Seed(2)
-	delaPkg.Logger = zerolog.New(os.Stdout).Level(zerolog.WarnLevel)
+
+	delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 
 	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-many-votes")
 	require.NoError(t, err)
@@ -158,10 +167,15 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 
 	signer := createDVotingAccess(t, nodes, dirPath)
 
-	m := newTxManager(signer, nodes[0], time.Second*10)
+	m := newTxManager(signer, nodes[0], time.Second*time.Duration(numNodes/2+1), numNodes*2)
 
 	err = grantAccess(m, signer)
 	require.NoError(t, err)
+
+	for _, n := range nodes {
+		err = grantAccess(m, n.GetShuffleSigner())
+		require.NoError(t, err)
+	}
 
 	// ##### CREATE ELECTION #####
 	electionID, err := createElection(m, "Many votes election", adminID)
@@ -193,7 +207,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 
 	// ##### SHUFFLE BALLOTS #####
 	t.Logf("initializing shuffle")
-	sActor, err := initShuffle(nodes, signer)
+	sActor, err := initShuffle(nodes)
 	require.NoError(t, err)
 
 	time.Sleep(time.Second * 1)
@@ -203,7 +217,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	require.NoError(t, err)
 
 	// ##### DECRYPT BALLOTS #####
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Second * 10)
 
 	election, err = getElection(electionID, nodes[0].GetOrdering())
 	require.NoError(t, err)
@@ -235,56 +249,76 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 
 // -----------------------------------------------------------------------------
 // Utility functions
-func newTxManager(signer crypto.Signer, firstNode dVotingCosiDela, timeout time.Duration) txManager {
+func newTxManager(signer crypto.Signer, firstNode dVotingCosiDela,
+	timeout time.Duration, retry int) txManager {
+
+	client := client{
+		srvc: firstNode.GetOrdering(),
+		mgr:  firstNode.GetValidationSrv(),
+	}
+
 	return txManager{
-		m: signed.NewManager(signer, &txClient{}),
-		n: firstNode,
-		t: timeout,
+		m:     signed.NewManager(signer, client),
+		n:     firstNode,
+		t:     timeout,
+		retry: retry,
 	}
 }
 
 type txManager struct {
-	m txn.Manager
-	n dVotingCosiDela
-	t time.Duration
+	m     txn.Manager
+	n     dVotingCosiDela
+	t     time.Duration
+	retry int
 }
 
 func (m txManager) addAndWait(args ...txn.Arg) ([]byte, error) {
-	err := m.m.Sync()
-	if err != nil {
-		return nil, xerrors.Errorf("failed to Sync: %v", err)
-	}
+	for i := 0; i < m.retry; i++ {
+		sentTxn, err := m.m.Make(args...)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to Make: %v", err)
+		}
 
-	sentTxn, err := m.m.Make(args...)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to Make: %v", err)
-	}
-	sentTxnID := sentTxn.GetID()
+		ctx, cancel := context.WithTimeout(context.Background(), m.t)
+		defer cancel()
 
-	err = m.n.GetPool().Add(sentTxn)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to Add: %v", err)
-	}
+		events := m.n.GetOrdering().Watch(ctx)
 
-	ctx, cancel := context.WithTimeout(context.Background(), m.t)
-	defer cancel()
+		err = m.n.GetPool().Add(sentTxn)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to Add: %v", err)
+		}
 
-	events := m.n.GetOrdering().Watch(ctx)
+		sentTxnID := sentTxn.GetID()
 
-	for event := range events {
-		for _, result := range event.Transactions {
-			fetchedTxnID := result.GetTransaction().GetID()
+	events:
+		for event := range events {
+			for _, result := range event.Transactions {
+				fetchedTxnID := result.GetTransaction().GetID()
 
-			if bytes.Equal(sentTxnID, fetchedTxnID) {
-				accepted, status := event.Transactions[0].GetStatus()
+				if bytes.Equal(sentTxnID, fetchedTxnID) {
+					accepted, status := event.Transactions[0].GetStatus()
 
-				if !accepted {
-					return nil, xerrors.Errorf("transaction has not been accepted: %s", status)
+					if !accepted {
+						if i+1 == m.retry {
+							return nil, xerrors.Errorf("transaction not accepted: %s", status)
+						}
+
+						// let's retry and sync the nonce in case
+						err = m.m.Sync()
+						if err != nil {
+							return nil, xerrors.Errorf("failed to sync: %v", err)
+						}
+
+						break events
+					}
+
+					return sentTxnID, nil
 				}
-
-				return sentTxnID, nil
 			}
 		}
+
+		cancel()
 	}
 
 	return nil, xerrors.Errorf("transaction not included after timeout: %v", args)
@@ -549,12 +583,17 @@ func initDkg(nodes []dVotingCosiDela, electionID []byte) (dkg.Actor, error) {
 	return actor, nil
 }
 
-func initShuffle(nodes []dVotingCosiDela, signer crypto.AggregateSigner) (shuffle.Actor, error) {
+func initShuffle(nodes []dVotingCosiDela) (shuffle.Actor, error) {
 	var sActor shuffle.Actor
 	for _, node := range nodes {
+		client := client{
+			srvc: node.GetOrdering(),
+			mgr:  node.GetValidationSrv(),
+		}
+
 		var err error
 		shuffler := node.GetShuffle()
-		sActor, err = shuffler.Listen(signer)
+		sActor, err = shuffler.Listen(signed.NewManager(node.GetShuffleSigner(), client))
 		if err != nil {
 			return nil, xerrors.Errorf("failed to init Shuffle: %v", err)
 		}
