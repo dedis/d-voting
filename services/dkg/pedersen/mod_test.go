@@ -4,7 +4,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"testing"
+	"time"
 
 	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
@@ -17,7 +19,9 @@ import (
 	"go.dedis.ch/dela/mino/minogrpc"
 	"go.dedis.ch/dela/mino/router/tree"
 	"go.dedis.ch/dela/serde"
+	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
+	"go.dedis.ch/kyber/v3/util/random"
 )
 
 // If you get the persistent data from an actor and then recreate an actor
@@ -450,8 +454,22 @@ func TestPedersen_Scenario(t *testing.T) {
 	}
 
 	for _, mino := range minos {
-		for _, m := range minos {
-			mino.(*minogrpc.Minogrpc).GetCertificateStore().Store(m.GetAddress(), m.(*minogrpc.Minogrpc).GetCertificate())
+		// share the certificates
+		joinable, ok := mino.(minogrpc.Joinable)
+		require.True(t, ok)
+
+		addrStr := mino.GetAddress().String()
+		token := joinable.GenerateToken(time.Hour)
+
+		certHash, err := joinable.GetCertificateStore().Hash(joinable.GetCertificate())
+		require.NoError(t, err)
+
+		for _, n := range minos {
+			otherJoinable, ok := n.(minogrpc.Joinable)
+			require.True(t, ok)
+
+			err = otherJoinable.Join(addrStr, token, certHash)
+			require.NoError(t, err)
 		}
 	}
 
@@ -460,24 +478,21 @@ func TestPedersen_Scenario(t *testing.T) {
 	rosterBuf, err := roster.Serialize(fake.NewContextWithFormat(serde.Format("JSON")))
 	require.NoError(t, err)
 
-	service := fake.NewService(
-		electionID,
-		electionTypes.Election{
-			RosterBuf: rosterBuf,
-		},
-	)
+	election := fake.NewElection(electionID)
+	election.RosterBuf = rosterBuf
+
+	service := fake.NewService(electionID, election)
 
 	rosterFac := fake.NewRosterFac(roster)
 
 	for i, mino := range minos {
-		dkgs[i] = NewPedersen(mino, service, rosterFac)
+		dkg := NewPedersen(mino, service, rosterFac)
 
-		actor, err := dkgs[i].Listen(electionIDBuf)
+		actor, err := dkg.Listen(electionIDBuf)
 		require.NoError(t, err)
 
+		dkgs[i] = dkg
 		actors[i] = actor
-
-		fmt.Printf("%#v\n", actor.(*Actor).rpc)
 	}
 
 	// trying to call a decrypt/encrypt before a setup
@@ -487,22 +502,44 @@ func TestPedersen_Scenario(t *testing.T) {
 	_, err = actors[0].Decrypt(nil, nil)
 	require.EqualError(t, err, "setup() was not called")
 
-	_, err = actors[0].Setup()
+	pubKey, err := actors[0].Setup()
 	require.NoError(t, err)
+
+	// number of votes
+	k := 1
+
+	message := "Hello world"
+
+	KsMarshalled, CsMarshalled, _ := fakeKCPointsMarshalled(k, message, pubKey)
+
+	for i := 0; i < k; i++ {
+		ballot := electionTypes.EncryptedBallot{electionTypes.Ciphertext{
+			K: KsMarshalled[i],
+			C: CsMarshalled[i],
+		}}
+		election.PublicBulletinBoard.CastVote("dummyUser"+strconv.Itoa(i), ballot)
+	}
+
+	shuffledBallots := election.PublicBulletinBoard.Ballots
+	shuffleInstance := electionTypes.ShuffleInstance{ShuffledBallots: shuffledBallots}
+	election.ShuffleInstances = append(election.ShuffleInstances, shuffleInstance)
+
+	election.ShuffleThreshold = 1
+
+	service.Elections[electionID] = election
 
 	_, err = actors[0].Setup()
 	require.EqualError(t, err, "setup() was already called, only one call is allowed")
 
-	// every node should be able to encrypt/decrypt
-	message := []byte("Hello world")
-	for _, actor := range actors {
-		K, C, remainder, err := actor.Encrypt(message)
-		require.NoError(t, err)
-		require.Len(t, remainder, 0)
+	// every node should be able to decrypt
 
-		decrypted, err := actor.Decrypt(K, C)
+	ks, cs, err := shuffledBallots[0].GetElGPairs()
+	require.NoError(t, err)
+
+	for _, actor := range actors {
+		decrypted, err := actor.Decrypt(ks[0], cs[0])
 		require.NoError(t, err)
-		require.Equal(t, message, decrypted)
+		require.Equal(t, message, string(decrypted))
 	}
 }
 
@@ -514,4 +551,27 @@ func requireActorsEqual(t require.TestingT, actor1, actor2 dkg.Actor) {
 	require.NoError(t, err)
 
 	require.Equal(t, actor1Data, actor2Data)
+}
+
+func fakeKCPointsMarshalled(k int, msg string, pubKey kyber.Point) ([][]byte, [][]byte, kyber.Point) {
+	KsMarshalled := make([][]byte, 0, k)
+	CsMarshalled := make([][]byte, 0, k)
+
+	for i := 0; i < k; i++ {
+		// Embed the message into a curve point
+		M := suite.Point().Embed([]byte(msg), random.New())
+
+		// ElGamal-encrypt the point to produce ciphertext (K,C).
+		k := suite.Scalar().Pick(random.New()) // ephemeral private key
+		K := suite.Point().Mul(k, nil)         // ephemeral DH public key
+		S := suite.Point().Mul(k, pubKey)      // ephemeral DH shared secret
+		C := S.Add(S, M)                       // message blinded with secret
+
+		Kmarshalled, _ := K.MarshalBinary()
+		Cmarshalled, _ := C.MarshalBinary()
+
+		KsMarshalled = append(KsMarshalled, Kmarshalled)
+		CsMarshalled = append(CsMarshalled, Cmarshalled)
+	}
+	return KsMarshalled, CsMarshalled, pubKey
 }

@@ -416,7 +416,6 @@ func (h *Handler) handleDeal(msg types.Deal, from mino.Address, addrs []mino.Add
 // checkIsShuffled allows to check if the ciphertext to decrypt has been
 // previously shuffled
 func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionID string) (bool, error) {
-
 	electionIDBuf, err := hex.DecodeString(electionID)
 	if err != nil {
 		return false, xerrors.Errorf("failed to decode electionID: %v", err)
@@ -434,7 +433,7 @@ func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionID strin
 	}
 
 	if len(election.ShuffleInstances) == 0 {
-		return false, xerrors.Errorf("election has no shuffles: %v", err)
+		return false, xerrors.New("election has no shuffles")
 	}
 
 	for _, ct := range election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots {
