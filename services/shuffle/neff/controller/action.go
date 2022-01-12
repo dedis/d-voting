@@ -21,6 +21,7 @@ type initAction struct {
 // the neffShuffle instance
 func (a *initAction) Execute(ctx node.Context) error {
 	var neffShuffle shuffle.Shuffle
+
 	err := ctx.Injector.Resolve(&neffShuffle)
 	if err != nil {
 		return xerrors.Errorf("failed to resolve shuffle: %v", err)
@@ -33,21 +34,9 @@ func (a *initAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to get signer: %v", err)
 	}
 
-	var service ordering.Service
-	err = ctx.Injector.Resolve(&service)
+	client, err := makeClient(ctx)
 	if err != nil {
-		return xerrors.Errorf("failed to resolve ordering.Service: %v", err)
-	}
-
-	var vs validation.Service
-	err = ctx.Injector.Resolve(&vs)
-	if err != nil {
-		return xerrors.Errorf("failed to resolve validation.Service: %v", err)
-	}
-
-	client := client{
-		srvc: service,
-		mgr:  vs,
+		return xerrors.Errorf("failed to make client: %v", err)
 	}
 
 	actor, err := neffShuffle.Listen(signed.NewManager(signer, &client))
@@ -58,7 +47,29 @@ func (a *initAction) Execute(ctx node.Context) error {
 
 	ctx.Injector.Inject(actor)
 	dela.Logger.Info().Msg("The shuffle protocol has been initialized successfully")
+
 	return nil
+}
+
+func makeClient(ctx node.Context) (client, error) {
+	var service ordering.Service
+	err := ctx.Injector.Resolve(&service)
+	if err != nil {
+		return client{}, xerrors.Errorf("failed to resolve ordering.Service: %v", err)
+	}
+
+	var vs validation.Service
+	err = ctx.Injector.Resolve(&vs)
+	if err != nil {
+		return client{}, xerrors.Errorf("failed to resolve validation.Service: %v", err)
+	}
+
+	client := client{
+		srvc: service,
+		mgr:  vs,
+	}
+
+	return client, nil
 }
 
 // client fetches the last nonce used by the client
