@@ -14,7 +14,7 @@ import (
 )
 
 func TestHandler_Stream(t *testing.T) {
-	h := Handler{startRes: &state{}}
+	h := Handler{startRes: &state{}, service: fake.Service{}}
 	receiver := fake.NewBadReceiver()
 	err := h.Stream(fake.Sender{}, receiver)
 	require.EqualError(t, err, fake.Err("failed to receive"))
@@ -26,15 +26,14 @@ func TestHandler_Stream(t *testing.T) {
 	err = h.Stream(fake.Sender{}, receiver)
 	require.EqualError(t, err, "you must first initialize DKG. Did you call setup() first?")
 
-	h.startRes.distrKey = suite.Point()
+	h.startRes.distKey = suite.Point()
 	h.startRes.participants = []mino.Address{fake.NewAddress(0)}
 	h.privShare = &share.PriShare{I: 0, V: suite.Scalar()}
 	receiver = fake.NewReceiver(
 		fake.NewRecvMsg(fake.NewAddress(0), types.DecryptRequest{C: suite.Point()}),
 	)
 	err = h.Stream(fake.NewBadSender(), receiver)
-	require.EqualError(t, err, fake.Err("got an error while sending the decrypt reply"))
-
+	require.EqualError(t, err, "failed to check if the ciphertext has been shuffled: election does not exist: <nil>")
 	receiver = fake.NewReceiver(
 		fake.NewRecvMsg(fake.NewAddress(0), fake.Message{}),
 	)
@@ -51,7 +50,6 @@ func TestHandler_Start(t *testing.T) {
 		privKey:  privKey,
 	}
 	start := types.NewStart(
-		0,
 		[]mino.Address{fake.NewAddress(0)},
 		[]kyber.Point{},
 	)
@@ -59,7 +57,6 @@ func TestHandler_Start(t *testing.T) {
 	require.EqualError(t, err, "there should be as many players as pubKey: 1 := 0")
 
 	start = types.NewStart(
-		2,
 		[]mino.Address{fake.NewAddress(0), fake.NewAddress(1)},
 		[]kyber.Point{pubKey, suite.Point()},
 	)
@@ -144,13 +141,57 @@ func TestHandler_HandleDeal(t *testing.T) {
 	require.EqualError(t, err, fake.Err("failed to send response to 'fake.Address[0]'"))
 }
 
-// -----------------------------------------------------------------------------
+func TestHandlerData_MarshalJSON(t *testing.T) {
+	hd := NewHandlerData()
+
+	data, err := hd.MarshalJSON()
+	require.NoError(t, err)
+
+	newHd := &HandlerData{}
+	err = newHd.UnmarshalJSON(data)
+	require.NoError(t, err)
+
+	require.True(t, newHd.PrivKey.Equal(hd.PrivKey))
+	require.True(t, newHd.PubKey.Equal(hd.PubKey))
+	requireStatesEqual(t, newHd.StartRes, hd.StartRes)
+	require.Equal(t, newHd.PrivShare, hd.PrivShare)
+}
+
+func TestState_MarshalJSON(t *testing.T) {
+	s1 := &state{}
+
+	// Try with no data
+	data, err := s1.MarshalJSON()
+	require.NoError(t, err)
+
+	s2 := &state{}
+	err = s2.UnmarshalJSON(data)
+	require.NoError(t, err)
+
+	requireStatesEqual(t, s1, s2)
+
+	// Try with some data
+	distKey := suite.Point().Pick(suite.RandomStream())
+	participants := []mino.Address{fake.NewAddress(0), fake.NewAddress(1)}
+
+	s1.SetDistKey(distKey)
+	s1.SetParticipants(participants)
+
+	data, err = s1.MarshalJSON()
+	require.NoError(t, err)
+
+	s2 = &state{}
+	err = s2.UnmarshalJSON(data)
+	require.NoError(t, err)
+
+	requireStatesEqual(t, s1, s2)
+}
+
 // Utility functions
 
 func getCertified(t *testing.T) *pedersen.DistKeyGenerator {
 	privKey1 := suite.Scalar().Pick(suite.RandomStream())
 	pubKey1 := suite.Point().Mul(privKey1, nil)
-
 	privKey2 := suite.Scalar().Pick(suite.RandomStream())
 	pubKey2 := suite.Point().Mul(privKey2, nil)
 
@@ -162,9 +203,10 @@ func getCertified(t *testing.T) *pedersen.DistKeyGenerator {
 	deals1, err := dkg1.Deals()
 	require.NoError(t, err)
 	require.Len(t, deals1, 1)
+
 	deals2, err := dkg2.Deals()
-	require.Len(t, deals2, 1)
 	require.NoError(t, err)
+	require.Len(t, deals2, 1)
 
 	var resp1 *pedersen.Response
 	var resp2 *pedersen.Response
@@ -187,4 +229,36 @@ func getCertified(t *testing.T) *pedersen.DistKeyGenerator {
 	require.True(t, dkg2.Certified())
 
 	return dkg1
+}
+
+// NewHandlerDataFull extends NewHandlerData which does not
+// initialize all fields
+func NewHandlerDataFull() HandlerData {
+	hd := NewHandlerData()
+
+	// Set StartRes
+	distKey := suite.Point().Pick(suite.RandomStream())
+	participants := []mino.Address{fake.NewAddress(0), fake.NewAddress(1)}
+
+	hd.StartRes.SetDistKey(distKey)
+	hd.StartRes.SetParticipants(participants)
+
+	// Set PrivShare
+	hd.PrivShare = &share.PriShare{
+		I: 0,
+		V: suite.Scalar().Pick(suite.RandomStream()),
+	}
+
+	return hd
+}
+
+func requireStatesEqual(t *testing.T, s1, s2 *state) {
+	DistKey1 := s1.GetDistKey()
+	DistKey2 := s2.GetDistKey()
+	if DistKey1 == nil {
+		require.Nil(t, DistKey2)
+	} else {
+		require.True(t, DistKey2.Equal(DistKey1))
+	}
+	require.Equal(t, s2.GetParticipants(), s1.GetParticipants())
 }

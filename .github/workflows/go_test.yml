@@ -21,15 +21,15 @@ jobs:
 
     - name: Test cli
       run: go test -cover ./cli/cosipbftcontroller/... #does not include memcoin
-      
+
     - name: Test Contract
       run: go test -cover ./contracts/...
-    
+
     - name: Test Shuffle
       run: go test -cover ./services/shuffle/...
-      
+
     - name: Test Contract with coverage
       run: go test -json -covermode=count -coverprofile=profile.cov ./contracts/... > report.json
-      
-    #- name: Test DKG
-      #run: go test -cover ./services/dkg/...
+
+    - name: Test DKG
+      run: go test -cover ./services/dkg/...

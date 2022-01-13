@@ -63,8 +63,7 @@ type EndShuffle struct {
 
 // NewEndShuffle creates a new EndShuffle message.
 func NewEndShuffle() EndShuffle {
-	return EndShuffle{
-	}
+	return EndShuffle{}
 }
 
 // Serialize implements serde.Message. It looks up the format and returns the

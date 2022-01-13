@@ -60,7 +60,6 @@ func TestController_OnStart(t *testing.T) {
 		"failed to resolve authority.Factory")
 
 	//TODO: Inject fake roster factory (once it's in internal/testing)
-
 }
 
 func TestController_OnStop(t *testing.T) {

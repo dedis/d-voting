@@ -241,7 +241,7 @@ func newDVotingNode(t *testing.T, path string, randSource rand.Source) dVotingCo
 	contract := accessContract.NewContract(aKey[:], accessService, accessStore)
 	accessContract.RegisterContract(exec, contract)
 
-	dkg, _ := pedersen.NewPedersen(onet, true, srvc, rosterFac)
+	dkg := pedersen.NewPedersen(onet, srvc, rosterFac)
 
 	rosterKey := [32]byte{}
 	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:],

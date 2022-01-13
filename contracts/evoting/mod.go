@@ -56,7 +56,7 @@ const (
 // commands defines the commands of the evoting contract.
 type commands interface {
 	createElection(snap store.Snapshot, step execution.Step) error
-	openElection(snap store.Snapshot, step execution.Step, dkgActor dkg.Actor) error
+	openElection(snap store.Snapshot, step execution.Step) error
 	castVote(snap store.Snapshot, step execution.Step) error
 	closeElection(snap store.Snapshot, step execution.Step) error
 	shuffleBallots(snap store.Snapshot, step execution.Step) error
@@ -116,15 +116,15 @@ type Contract struct {
 }
 
 // NewContract creates a new Value contract
-func NewContract(aKey, rKey []byte, srvc access.Service, pedersen dkg.DKG, rFac authority.Factory) Contract {
+func NewContract(accessKey, rosterKey []byte, srvc access.Service,
+	pedersen dkg.DKG, rosterFac authority.Factory) Contract {
 	contract := Contract{
-		// indexElection:     map[string]struct{}{},
 		access:    srvc,
-		accessKey: aKey,
+		accessKey: accessKey,
 		pedersen:  pedersen,
 
-		rosterKey: rKey,
-		rosterFac: rFac,
+		rosterKey: rosterKey,
+		rosterFac: rosterFac,
 
 		context: json.NewContext(),
 	}
@@ -155,11 +155,7 @@ func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 			return xerrors.Errorf("failed to create election: %v", err)
 		}
 	case CmdOpenElection:
-		dkgActor, err := c.pedersen.GetLastActor()
-		if err != nil {
-			return xerrors.Errorf("failed to get dkgActor: %v", err)
-		}
-		err = c.cmd.openElection(snap, step, dkgActor)
+		err := c.cmd.openElection(snap, step)
 		if err != nil {
 			return xerrors.Errorf("failed to open election: %v", err)
 		}

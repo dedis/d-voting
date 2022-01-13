@@ -5,15 +5,15 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/serde"
 
+	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
-	neffShuffleTypes "github.com/dedis/d-voting/services/shuffle/neff/types"
+	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/proof"
@@ -23,7 +23,7 @@ import (
 
 func TestNeffShuffle_Listen(t *testing.T) {
 
-	NeffShuffle := NewNeffShuffle(fake.Mino{}, &FakeService{}, &FakePool{}, nil, fakeAuthorityFactory{}, fake.NewSigner())
+	NeffShuffle := NewNeffShuffle(fake.Mino{}, &fake.Service{}, &fake.Pool{}, nil, fakeAuthorityFactory{}, fake.NewSigner())
 
 	actor, err := NeffShuffle.Listen(fakeManager{})
 	require.NoError(t, err)
@@ -33,39 +33,55 @@ func TestNeffShuffle_Listen(t *testing.T) {
 
 func TestNeffShuffle_Shuffle(t *testing.T) {
 
-	electionId := []byte("dummyId")
+	electionID := "deadbeef"
+	electionIDBuf, err := hex.DecodeString(electionID)
+	require.NoError(t, err)
+
+	rosterLen := 2
+	roster := authority.FromAuthority(fake.NewAuthority(rosterLen, fake.NewSigner))
+
+	rosterBuf, err := roster.Serialize(fake.NewContextWithFormat(serde.Format("JSON")))
+	require.NoError(t, err)
+
+	election := fake.NewElection(electionID)
+	election.RosterBuf = rosterBuf
+
+	shuffledBallots := append(electionTypes.EncryptedBallots{}, election.PublicBulletinBoard.Ballots...)
+	election.ShuffleInstances = append(election.ShuffleInstances, electionTypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
+
+	election.ShuffleThreshold = 1
+
+	service := fake.NewService(electionID, election)
 
 	actor := Actor{
 		rpc:       fake.NewBadRPC(),
 		mino:      fake.Mino{},
-		service:   &FakeService{electionId: types.ID(hex.EncodeToString(electionId))},
-		rosterFac: fakeAuthorityFactory{},
+		service:   service,
+		rosterFac: fake.NewRosterFac(roster),
 	}
 
-	err := actor.Shuffle(electionId)
+	err = actor.Shuffle(electionIDBuf)
 	require.EqualError(t, err, fake.Err("failed to stream"))
 
 	rpc := fake.NewStreamRPC(fake.NewReceiver(), fake.NewBadSender())
 	actor.rpc = rpc
 
-	err = actor.Shuffle(electionId)
+	err = actor.Shuffle(electionIDBuf)
 	require.EqualError(t, err, fake.Err("failed to start shuffle"))
 
 	rpc = fake.NewStreamRPC(fake.NewBadReceiver(), fake.Sender{})
 	actor.rpc = rpc
 
 	// we no longer use the receiver:
-	err = actor.Shuffle(electionId)
+	err = actor.Shuffle(electionIDBuf)
 	require.NoError(t, err)
 
-	recv := fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), nil))
-
-	recv = fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), neffShuffleTypes.NewEndShuffle()))
+	recv := fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), types.NewEndShuffle()))
 
 	rpc = fake.NewStreamRPC(recv, fake.Sender{})
 	actor.rpc = rpc
 
-	err = actor.Shuffle(electionId)
+	err = actor.Shuffle(electionIDBuf)
 	require.NoError(t, err)
 }
 
@@ -110,8 +126,6 @@ func TestNeffShuffle_Verify(t *testing.T) {
 
 type fakeAuthorityFactory struct {
 	serde.Factory
-
-	//AuthorityOf(serde.Context, []byte) (authority.Authority, error)
 }
 
 func (f fakeAuthorityFactory) AuthorityOf(ctx serde.Context, rosterBuf []byte) (authority.Authority, error) {
@@ -123,6 +137,8 @@ type fakeAuthority struct {
 	serde.Message
 	serde.Fingerprinter
 	crypto.CollectiveAuthority
+
+	len int
 }
 
 func (f fakeAuthority) Apply(c authority.ChangeSet) authority.Authority {
@@ -135,7 +151,7 @@ func (f fakeAuthority) Diff(a authority.Authority) authority.ChangeSet {
 }
 
 func (f fakeAuthority) PublicKeyIterator() crypto.PublicKeyIterator {
-	signers := make([]crypto.Signer, 2)
+	signers := make([]crypto.Signer, f.len)
 	signers[0] = fake.NewSigner()
 
 	return fake.NewPublicKeyIterator(signers)
@@ -150,7 +166,7 @@ func (f fakeAuthority) AddressIterator() mino.AddressIterator {
 }
 
 func (f fakeAuthority) Len() int {
-	return 2
+	return f.len
 }
 
 // fakeManager is a fake manager

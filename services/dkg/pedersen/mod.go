@@ -4,16 +4,19 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"sync"
 	"time"
 
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/core/store/kv"
 
 	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 
 	"github.com/dedis/d-voting/internal/tracing"
 	"github.com/dedis/d-voting/services/dkg"
+	_ "github.com/dedis/d-voting/services/dkg/pedersen/json"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/serde"
@@ -30,8 +33,8 @@ import (
 var suite = suites.MustFind("Ed25519")
 
 var (
-	// protocolNameSetup denotes the value of the protocol span tag associated
-	// with the `dkg-setup` protocol.
+	// protocolNameSetup denotes the value of the protocol span tag
+	// associated with the `dkg-setup` protocol.
 	protocolNameSetup = "dkg-setup"
 	// protocolNameDecrypt denotes the value of the protocol span tag
 	// associated with the `dkg-decrypt` protocol.
@@ -41,94 +44,121 @@ var (
 const (
 	setupTimeout   = time.Second * 300
 	decryptTimeout = time.Second * 100
+	RPC_NAME       = "dkgevoting"
 )
 
 // Pedersen allows one to initialize a new DKG protocol.
 //
 // - implements dkg.DKG
 type Pedersen struct {
-	privKey kyber.Scalar
-	mino    mino.Mino
-	factory serde.Factory
-	actor   dkg.Actor
-	evoting bool
+	sync.RWMutex
 
-	// set be the SetMissingStuff()
+	mino      mino.Mino
+	factory   serde.Factory
 	service   ordering.Service
 	rosterFac authority.Factory
-
-	pubkey kyber.Point
+	actors    map[string]dkg.Actor
 }
 
 // NewPedersen returns a new DKG Pedersen factory
-func NewPedersen(m mino.Mino, evoting bool, service ordering.Service,
-	rosterFac authority.Factory) (*Pedersen, kyber.Point) {
+func NewPedersen(m mino.Mino, service ordering.Service,
+	rosterFac authority.Factory) *Pedersen {
 
 	factory := types.NewMessageFactory(m.GetAddressFactory())
-
-	privkey := suite.Scalar().Pick(suite.RandomStream())
-	pubkey := suite.Point().Mul(privkey, nil)
+	actors := make(map[string]dkg.Actor)
 
 	return &Pedersen{
-		privKey:   privkey,
 		mino:      m,
 		factory:   factory,
-		evoting:   evoting,
 		service:   service,
 		rosterFac: rosterFac,
-		pubkey:    pubkey,
-	}, pubkey
+		actors:    actors,
+	}
 }
 
 // Listen implements dkg.DKG. It must be called on each node that participates
-// in the DKG. Creates the RPC.
-func (s *Pedersen) Listen() (dkg.Actor, error) {
-	h := NewHandler(s.privKey, s.mino.GetAddress(), s.service, s.evoting, s.pubkey)
+// in the DKG.
+func (s *Pedersen) Listen(electionIDBuf []byte) (dkg.Actor, error) {
 
-	a := &Actor{
-		rpc:       mino.MustCreateRPC(s.mino, "dkgevoting", h, s.factory),
-		factory:   s.factory,
-		startRes:  h.startRes,
-		service:   s.service,
-		rosterFac: s.rosterFac,
-		context:   jsonserde.NewContext(),
+	electionID := hex.EncodeToString(electionIDBuf)
+
+	_, exists := electionExists(s.service, electionIDBuf)
+	if !exists {
+		return nil, xerrors.Errorf("election %s was not found", electionID)
 	}
 
-	s.actor = a
+	actor, exists := s.GetActor(electionIDBuf)
+	if exists {
+		return actor, xerrors.Errorf("actor already exists for electionID %s", electionID)
+	}
+
+	return s.NewActor(electionIDBuf, NewHandlerData())
+}
+
+// NewActor initializes a dkg.Actor with an RPC specific to the election with the given keypair
+func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.Actor, error) {
+
+	// hex-encoded string
+	electionID := hex.EncodeToString(electionIDBuf)
+
+	// link the actor to an RPC by the election ID
+	h := NewHandler(s.mino.GetAddress(), s.service, handlerData)
+	no := s.mino.WithSegment(electionID)
+	rpc := mino.MustCreateRPC(no, RPC_NAME, h, s.factory)
+
+	a := &Actor{
+		rpc:        rpc,
+		factory:    s.factory,
+		service:    s.service,
+		rosterFac:  s.rosterFac,
+		context:    jsonserde.NewContext(),
+		handler:    h,
+		electionID: electionID,
+	}
+
+	s.Lock()
+	defer s.Unlock()
+	s.actors[electionID] = a
 
 	return a, nil
 }
 
-// GetLastActor ...
-func (s *Pedersen) GetLastActor() (dkg.Actor, error) {
-	if s.actor != nil {
-		return s.actor, nil
-	} else {
-		return nil, xerrors.Errorf("listen has not been called")
-	}
+func (s *Pedersen) GetActor(electionIDBuf []byte) (dkg.Actor, bool) {
+	s.RLock()
+	defer s.RUnlock()
+	actor, exists := s.actors[hex.EncodeToString(electionIDBuf)]
+	return actor, exists
 }
 
 // Actor allows one to perform DKG operations like encrypt/decrypt a message
 //
 // - implements dkg.Actor
 type Actor struct {
-	rpc       mino.RPC
-	factory   serde.Factory
-	startRes  *state
-	service   ordering.Service
-	rosterFac authority.Factory
-	context   serde.Context
+	rpc        mino.RPC
+	factory    serde.Factory
+	service    ordering.Service
+	rosterFac  authority.Factory
+	context    serde.Context
+	handler    *Handler
+	electionID string
 }
 
-// Setup implement dkg.Actor. It initializes the DKG.
-func (a *Actor) Setup(electionID []byte) (kyber.Point, error) {
-	if a.startRes.Done() {
-		return nil, xerrors.Errorf("startRes is already done, only one setup call is allowed")
+// Setup implements dkg.Actor. It initializes the DKG protocol
+// across all participating nodes.
+func (a *Actor) Setup() (kyber.Point, error) {
+
+	if a.handler.startRes.Done() {
+		return nil, xerrors.Errorf("setup() was already called, only one call is allowed")
 	}
 
-	proof, err := a.service.GetProof(electionID)
+	electionIDBuf, err := hex.DecodeString(a.electionID)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to read on the blockchain: %v", err)
+		return nil, xerrors.Errorf("failed to decode electionID: %v", err)
+	}
+
+	proof, exists := electionExists(a.service, electionIDBuf)
+	if !exists {
+		return nil, xerrors.Errorf("election %s was not found", a.electionID)
 	}
 
 	election := new(electionTypes.Election)
@@ -152,9 +182,7 @@ func (a *Actor) Setup(electionID []byte) (kyber.Point, error) {
 	}
 
 	addrs := make([]mino.Address, 0, roster.Len())
-
 	addrIter := roster.AddressIterator()
-
 	for addrIter.HasNext() {
 		addrs = append(addrs, addrIter.GetNext())
 	}
@@ -167,10 +195,15 @@ func (a *Actor) Setup(electionID []byte) (kyber.Point, error) {
 		return nil, xerrors.Errorf("failed to send getPeerKey message: %v", err)
 	}
 
-	dkgPeerPubkeys := make([]kyber.Point, 0, len(addrs))
-	associatedAddrs := make([]mino.Address, 0, len(addrs))
+	lenAddrs := len(addrs)
+	dkgPeerPubkeys := make([]kyber.Point, 0, lenAddrs)
+	associatedAddrs := make([]mino.Address, 0, lenAddrs)
 
-	for i := 0; i < len(addrs); i++ {
+	if lenAddrs == 0 {
+		return nil, xerrors.Errorf("the list of addresses is empty")
+	}
+
+	for i := 0; i < lenAddrs; i++ {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 		defer cancel()
 
@@ -189,7 +222,7 @@ func (a *Actor) Setup(electionID []byte) (kyber.Point, error) {
 		dkgPeerPubkeys = append(dkgPeerPubkeys, resp.GetPublicKey())
 		associatedAddrs = append(associatedAddrs, from)
 
-		dela.Logger.Info().Msgf("Pub key: %s", resp.GetPublicKey().String())
+		dela.Logger.Info().Msgf("Public key: %s", resp.GetPublicKey().String())
 	}
 
 	message := types.NewStart(associatedAddrs, dkgPeerPubkeys)
@@ -200,9 +233,9 @@ func (a *Actor) Setup(electionID []byte) (kyber.Point, error) {
 		return nil, xerrors.Errorf("failed to send start: %v", err)
 	}
 
-	dkgPubKeys := make([]kyber.Point, len(addrs))
+	dkgPubKeys := make([]kyber.Point, lenAddrs)
 
-	for i := 0; i < len(addrs); i++ {
+	for i := 0; i < lenAddrs; i++ {
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 		defer cancel()
@@ -225,7 +258,7 @@ func (a *Actor) Setup(electionID []byte) (kyber.Point, error) {
 		// key.
 		// TODO: handle the situation where a pub key is not the same
 		if i != 0 && !dkgPubKeys[i-1].Equal(doneMsg.GetPublicKey()) {
-			return nil, xerrors.Errorf("the public keys does not match: %v", dkgPubKeys)
+			return nil, xerrors.Errorf("the public keys do not match: %v", dkgPubKeys)
 		}
 	}
 
@@ -234,11 +267,11 @@ func (a *Actor) Setup(electionID []byte) (kyber.Point, error) {
 
 // GetPublicKey implements dkg.Actor
 func (a *Actor) GetPublicKey() (kyber.Point, error) {
-	if !a.startRes.Done() {
-		return nil, xerrors.Errorf("DKG has not been initialized")
+	if !a.handler.startRes.Done() {
+		return nil, xerrors.Errorf("dkg has not been initialized")
 	}
 
-	return a.startRes.GetDistKey(), nil
+	return a.handler.startRes.GetDistKey(), nil
 }
 
 // Encrypt implements dkg.Actor. It uses the DKG public key to encrypt a
@@ -246,9 +279,8 @@ func (a *Actor) GetPublicKey() (kyber.Point, error) {
 func (a *Actor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte,
 	err error) {
 
-	if !a.startRes.Done() {
-		return nil, nil, nil, xerrors.Errorf("you must first initialize DKG. " +
-			"Did you call setup() first?")
+	if !a.handler.startRes.Done() {
+		return nil, nil, nil, xerrors.Errorf("setup() was not called")
 	}
 
 	// Embed the message (or as much of it as will fit) into a curve point.
@@ -259,26 +291,25 @@ func (a *Actor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte,
 	}
 	remainder = message[max:]
 	// ElGamal-encrypt the point to produce ciphertext (K,C).
-	k := suite.Scalar().Pick(random.New())             // ephemeral private key
-	K = suite.Point().Mul(k, nil)                      // ephemeral DH public key
-	S := suite.Point().Mul(k, a.startRes.GetDistKey()) // ephemeral DH shared secret
-	C = S.Add(S, M)                                    // message blinded with secret
+	k := suite.Scalar().Pick(random.New())                     // ephemeral private key
+	K = suite.Point().Mul(k, nil)                              // ephemeral DH public key
+	S := suite.Point().Mul(k, a.handler.startRes.GetDistKey()) // ephemeral DH shared secret
+	C = S.Add(S, M)                                            // message blinded with secret
 
 	return K, C, remainder, nil
 }
 
 // Decrypt implements dkg.Actor. It gets the private shares of the nodes and
-// decrypt the  message.
+// decrypts the message.
 // TODO: perform a re-encryption instead of gathering the private shares, which
 // should never happen.
-func (a *Actor) Decrypt(K, C kyber.Point, electionID []byte) ([]byte, error) {
+func (a *Actor) Decrypt(K, C kyber.Point) ([]byte, error) {
 
-	if !a.startRes.Done() {
-		return nil, xerrors.Errorf("you must first initialize DKG. " +
-			"Did you call setup() first?")
+	if !a.handler.startRes.Done() {
+		return nil, xerrors.Errorf("setup() was not called")
 	}
 
-	players := mino.NewAddresses(a.startRes.GetParticipants()...)
+	players := mino.NewAddresses(a.handler.startRes.GetParticipants()...)
 
 	ctx, cancel := context.WithTimeout(context.Background(), decryptTimeout)
 	defer cancel()
@@ -289,15 +320,13 @@ func (a *Actor) Decrypt(K, C kyber.Point, electionID []byte) ([]byte, error) {
 		return nil, xerrors.Errorf("failed to create stream: %v", err)
 	}
 
-	players = mino.NewAddresses(a.startRes.GetParticipants()...)
 	iterator := players.AddressIterator()
-
 	addrs := make([]mino.Address, 0, players.Len())
 	for iterator.HasNext() {
 		addrs = append(addrs, iterator.GetNext())
 	}
 
-	message := types.NewDecryptRequest(K, C, hex.EncodeToString(electionID))
+	message := types.NewDecryptRequest(K, C, a.electionID)
 
 	err = <-sender.Send(message, addrs...)
 	if err != nil {
@@ -331,7 +360,7 @@ func (a *Actor) Decrypt(K, C kyber.Point, electionID []byte) ([]byte, error) {
 
 	decryptedMessage, err := res.Data()
 	if err != nil {
-		return []byte{}, xerrors.Errorf("failed to get embeded data: %v", err)
+		return []byte{}, xerrors.Errorf("failed to get embedded data: %v", err)
 	}
 
 	return decryptedMessage, nil
@@ -342,4 +371,41 @@ func (a *Actor) Decrypt(K, C kyber.Point, electionID []byte) ([]byte, error) {
 // TODO: to do
 func (a *Actor) Reshare() error {
 	return nil
+}
+
+// MarshalJSON implements dkg.Actor. It exports the data relevant to an Actor
+// that is meant to be persistent.
+func (a *Actor) MarshalJSON() ([]byte, error) {
+	return a.handler.MarshalJSON()
+}
+
+// Store tags a store for Pedersen
+type Store interface {
+	kv.DB
+
+	// DKGStore is a marker to distinguish Store from kv.DB.
+	DKGStore()
+}
+
+// SimpleStore wraps a store for Pedersen
+//
+// - implements pedersen.Store
+type SimpleStore struct {
+	kv.DB
+}
+
+func (s SimpleStore) DKGStore() {}
+
+func electionExists(service ordering.Service, electionIDBuf []byte) (ordering.Proof, bool) {
+	proof, err := service.GetProof(electionIDBuf)
+	if err != nil {
+		return proof, false
+	}
+
+	// this is proof of absence
+	if string(proof.GetValue()) == "" {
+		return proof, false
+	}
+
+	return proof, true
 }

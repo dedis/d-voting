@@ -7,7 +7,6 @@ import (
 )
 
 type ID string
-
 type status uint16
 
 const (
@@ -29,7 +28,7 @@ type Election struct {
 	ElectionID string
 
 	AdminID string
-	Status  status // Initial | Open | Closed | Shuffling | Decrypting
+	Status  status
 	Pubkey  []byte
 
 	// BallotSize represents the total size in bytes of one ballot. It is used
@@ -43,16 +42,17 @@ type Election struct {
 	// of shuffler.
 	ShuffleInstances []ShuffleInstance
 
-	// ShuffleThreshold is set based on the roster. We save it so we don't have
+	// ShuffleThreshold is set based on the roster. We save it so we do not have
 	// to compute it based on the roster each time we need it.
 	ShuffleThreshold int
 
 	DecryptedBallots []Ballot
 
-	// roster is once set when the election is created based on the current
-	// roster of the node stored in the global state. The roster won't change
+	// roster is set when the election is created based on the current
+	// roster of the node stored in the global state. The roster will not change
 	// during an election and will be used for DKG and Neff. Its type is
 	// authority.Authority.
+
 	RosterBuf []byte
 }
 
@@ -173,7 +173,7 @@ type PublicBulletinBoard struct {
 	Ballots EncryptedBallots
 }
 
-// CastVote updates a user's vote or add a new vote and its associated user.
+// CastVote adds a new vote and its associated user or updates a user's vote.
 func (p *PublicBulletinBoard) CastVote(userID string, encryptedVote EncryptedBallot) {
 	for i, u := range p.UserIDs {
 		if u == userID {

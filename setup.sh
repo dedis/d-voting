@@ -1,4 +1,6 @@
-# This srcript is creating a new chain and setting up the services needed to run
+#!/usr/bin/env bash
+
+# This script is creating a new chain and setting up the services needed to run
 # an evoting system. It ends by starting the http server needed by the frontend
 # to communicate with the blockchain. This operation is blocking.
 
@@ -37,19 +39,27 @@ memcoin --config /tmp/node1 pool add\
     --args access:identity --args $(crypto bls signer read --path private.key --format BASE64_PUBKEY)\
     --args access:command --args GRANT
 
-echo "${GREEN}[5/7]${NC} init DKG"
-memcoin --config /tmp/node1 dkg init
-memcoin --config /tmp/node2 dkg init
-memcoin --config /tmp/node3 dkg init
-# memcoin --config /tmp/node1 dkg setup --electionID ???
-
-echo "${GREEN}[6/7]${NC} init shuffle"
+echo "${GREEN}[5/7]${NC} init shuffle"
 memcoin --config /tmp/node1 shuffle init --signer private.key
 memcoin --config /tmp/node2 shuffle init --signer private.key
 memcoin --config /tmp/node3 shuffle init --signer private.key
 
-echo "${GREEN}[7/7]${NC} starting http proxy"
+echo "${GREEN}[6/7]${NC} starting http proxy"
 memcoin --config /tmp/node1 proxy start --clientaddr 127.0.0.1:8081
 memcoin --config /tmp/node1 e-voting registerHandlers --signer private.key
-
 memcoin --config /tmp/node1 dkg registerHandlers
+
+memcoin --config /tmp/node2 proxy start --clientaddr 127.0.0.1:8082
+memcoin --config /tmp/node2 e-voting registerHandlers --signer private.key
+memcoin --config /tmp/node2 dkg registerHandlers
+
+memcoin --config /tmp/node3 proxy start --clientaddr 127.0.0.1:8083
+memcoin --config /tmp/node3 e-voting registerHandlers --signer private.key
+memcoin --config /tmp/node3 dkg registerHandlers
+
+# If an election is created with ID "deadbeef" then one must set up DKG
+# on each node before the election can proceed:
+# memcoin --config /tmp/node1 dkg init --electionID deadbeef
+# memcoin --config /tmp/node2 dkg init --electionID deadbeef
+# memcoin --config /tmp/node3 dkg init --electionID deadbeef
+# memcoin --config /tmp/node1 dkg setup --electionID deadbeef

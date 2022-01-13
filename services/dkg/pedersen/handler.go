@@ -9,11 +9,13 @@ import (
 	"time"
 
 	evotingTypes "github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/cosi/threshold"
 	"go.dedis.ch/dela/mino"
+
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	pedersen "go.dedis.ch/kyber/v3/share/dkg/pedersen"
@@ -24,70 +26,40 @@ import (
 // recvResponseTimeout is the maximum time a node will wait for a response
 const recvResponseTimeout = time.Second * 10
 
-// state is a struct contained in a handler that allows an actor to read the
-// state of that handler. The actor should only use the getter functions to read
-// the attributes.
-type state struct {
-	sync.Mutex
-	distrKey     kyber.Point
-	participants []mino.Address
-}
-
-func (s *state) Done() bool {
-	s.Lock()
-	defer s.Unlock()
-	return s.distrKey != nil && s.participants != nil
-}
-
-func (s *state) GetDistKey() kyber.Point {
-	s.Lock()
-	defer s.Unlock()
-	return s.distrKey
-}
-
-func (s *state) SetDistKey(key kyber.Point) {
-	s.Lock()
-	s.distrKey = key
-	s.Unlock()
-}
-
-func (s *state) GetParticipants() []mino.Address {
-	s.Lock()
-	defer s.Unlock()
-	return s.participants
-}
-
-func (s *state) SetParticipants(addrs []mino.Address) {
-	s.Lock()
-	s.participants = addrs
-	s.Unlock()
-}
-
 // Handler represents the RPC executed on each node
 //
 // - implements mino.Handler
 type Handler struct {
 	mino.UnsupportedHandler
 	sync.RWMutex
-	dkg       *pedersen.DistKeyGenerator
-	privKey   kyber.Scalar
-	me        mino.Address
-	privShare *share.PriShare
+
+	me      mino.Address
+	service ordering.Service
+	dkg     *pedersen.DistKeyGenerator
+
+	// These are persistent, see HandlerData
 	startRes  *state
-	service   ordering.Service
-	evoting   bool
-	pubkey    kyber.Point
+	privShare *share.PriShare
+	privKey   kyber.Scalar
+	pubKey    kyber.Point
 }
 
 // NewHandler creates a new handler
-func NewHandler(privKey kyber.Scalar, me mino.Address, service ordering.Service, evoting bool, pubkey kyber.Point) *Handler {
+func NewHandler(me mino.Address, service ordering.Service, handlerData HandlerData) *Handler {
+
+	privKey := handlerData.PrivKey
+	pubKey := handlerData.PubKey
+	startRes := handlerData.StartRes
+	privShare := handlerData.PrivShare
+
 	return &Handler{
-		privKey:  privKey,
-		me:       me,
-		startRes: &state{},
-		service:  service,
-		evoting:  evoting,
-		pubkey:   pubkey,
+		me:      me,
+		service: service,
+
+		startRes:  startRes,
+		privShare: privShare,
+		privKey:   privKey,
+		pubKey:    pubKey,
 	}
 }
 
@@ -151,15 +123,13 @@ mainSwitch:
 				"call setup() first?")
 		}
 
-		if h.evoting {
-			isShuffled, err := h.checkIsShuffled(msg.K, msg.C, msg.GetElectionId())
-			if err != nil {
-				return xerrors.Errorf("failed to check if the ciphertext has been shuffled: %v", err)
-			}
+		isShuffled, err := h.checkIsShuffled(msg.K, msg.C, msg.GetElectionId())
+		if err != nil {
+			return xerrors.Errorf("failed to check if the ciphertext has been shuffled: %v", err)
+		}
 
-			if !isShuffled {
-				return xerrors.Errorf("the ciphertext has not been shuffled")
-			}
+		if !isShuffled {
+			return xerrors.Errorf("the ciphertext has not been shuffled")
 		}
 
 		// TODO: check if started before
@@ -186,7 +156,7 @@ mainSwitch:
 		}
 
 	case types.GetPeerPubKey:
-		response := types.NewGetPeerPubKeyResp(h.pubkey)
+		response := types.NewGetPeerPubKeyResp(h.pubKey)
 		errs := out.Send(response, from)
 		err = <-errs
 		if err != nil {
@@ -215,7 +185,7 @@ func (h *Handler) start(start types.Start, receivedDeals []types.Deal,
 			"pubKey: %d := %d", len(start.GetAddresses()), len(start.GetPublicKeys()))
 	}
 
-	// 1. Create the DKG
+	// create the DKG
 	threshold := threshold.ByzantineThreshold(len(start.GetPublicKeys()))
 	d, err := pedersen.NewDistKeyGenerator(suite, h.privKey, start.GetPublicKeys(), threshold)
 	if err != nil {
@@ -223,8 +193,8 @@ func (h *Handler) start(start types.Start, receivedDeals []types.Deal,
 	}
 	h.dkg = d
 
-	// 2. Send my Deals to the other nodes
-	deals, err := d.Deals()
+	// send my Deals to the other nodes
+	deals, err := h.dkg.Deals()
 	if err != nil {
 		return xerrors.Errorf("failed to compute the deals: %v", err)
 	}
@@ -283,7 +253,7 @@ func (h *Handler) start(start types.Start, receivedDeals []types.Deal,
 		switch msg := msg.(type) {
 
 		case types.Deal:
-			// 4. Process the Deal and Send the response to all the other nodes
+			// Process the Deal and Send the response to all the other nodes
 			err = h.handleDeal(msg, from, start.GetAddresses(), out)
 			if err != nil {
 				dela.Logger.Warn().Msgf("%s failed to handle received deal "+
@@ -293,7 +263,7 @@ func (h *Handler) start(start types.Start, receivedDeals []types.Deal,
 			numReceivedDeals++
 
 		case types.Response:
-			// 5. Processing responses
+			// Process responses
 			dela.Logger.Trace().Msgf("%s received response from %s", h.me, from)
 			response := &pedersen.Response{
 				Index: msg.GetIndex(),
@@ -344,7 +314,7 @@ func (h *Handler) certify(resps []*pedersen.Response, out mino.Sender,
 		switch msg := msg.(type) {
 
 		case types.Response:
-			// 5. Processing responses
+			// Processing responses
 			dela.Logger.Trace().Msgf("%s received response from %s", h.me, from)
 			response := &pedersen.Response{
 				Index: msg.GetIndex(),
@@ -369,21 +339,21 @@ func (h *Handler) certify(resps []*pedersen.Response, out mino.Sender,
 
 	dela.Logger.Trace().Msgf("%s is certified", h.me)
 
-	// 6. Send back the public DKG key
-	distrKey, err := h.dkg.DistKeyShare()
+	// Send back the public DKG key
+	distKey, err := h.dkg.DistKeyShare()
 	if err != nil {
 		return xerrors.Errorf("failed to get distr key: %v", err)
 	}
 
-	// 7. Update the state before sending to acknowledgement to the
+	// Update the state before sending to acknowledgement to the
 	// orchestrator, so that it can process decrypt requests right away.
-	h.startRes.SetDistKey(distrKey.Public())
+	h.startRes.SetDistKey(distKey.Public())
 
 	h.Lock()
-	h.privShare = distrKey.PriShare()
+	h.privShare = distKey.PriShare()
 	h.Unlock()
 
-	done := types.NewStartDone(distrKey.Public())
+	done := types.NewStartDone(distKey.Public())
 	err = <-out.Send(done, from)
 	if err != nil {
 		return xerrors.Errorf("got an error while sending pub key: %v", err)
@@ -445,22 +415,25 @@ func (h *Handler) handleDeal(msg types.Deal, from mino.Address, addrs []mino.Add
 
 // checkIsShuffled allows to check if the ciphertext to decrypt has been
 // previously shuffled
-func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionId string) (bool, error) {
-
-	electionIDBuff, err := hex.DecodeString(electionId)
+func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionID string) (bool, error) {
+	electionIDBuf, err := hex.DecodeString(electionID)
 	if err != nil {
 		return false, xerrors.Errorf("failed to decode electionID: %v", err)
 	}
 
-	proof, err := h.service.GetProof(electionIDBuff)
-	if err != nil {
-		return false, xerrors.Errorf("failed to read on the blockchain: %v", err)
+	proof, exists := electionExists(h.service, electionIDBuf)
+	if !exists {
+		return false, xerrors.Errorf("election does not exist: %v", err)
 	}
 
 	election := new(evotingTypes.Election)
 	err = json.NewDecoder(bytes.NewBuffer(proof.GetValue())).Decode(election)
 	if err != nil {
 		return false, xerrors.Errorf("failed to unmarshal Election: %v", err)
+	}
+
+	if len(election.ShuffleInstances) == 0 {
+		return false, xerrors.New("election has no shuffles")
 	}
 
 	for _, ct := range election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots {
@@ -478,4 +451,250 @@ func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionId strin
 
 	return false, nil
 
+}
+
+// MarshalJSON returns a JSON-encoded bytestring containing all the data in the Handler
+// that is meant to be persistent. It allows for saving the data to disk.
+func (h *Handler) MarshalJSON() ([]byte, error) {
+	handlerData := HandlerData{
+		StartRes:  h.startRes,
+		PrivShare: h.privShare,
+		PrivKey:   h.privKey,
+		PubKey:    h.pubKey,
+	}
+
+	return handlerData.MarshalJSON()
+}
+
+// HandlerData is used to synchronise actors between the DKG and the filesystem.
+type HandlerData struct {
+	StartRes  *state
+	PrivShare *share.PriShare
+	PubKey    kyber.Point
+	PrivKey   kyber.Scalar
+}
+
+// NewHandlerData generates new actor data.
+func NewHandlerData() HandlerData {
+	privKey := suite.Scalar().Pick(suite.RandomStream())
+	pubKey := suite.Point().Mul(privKey, nil)
+
+	return HandlerData{
+		StartRes: &state{},
+		PubKey:   pubKey,
+		PrivKey:  privKey,
+	}
+}
+
+// MarshalJSON returns a JSON-encoded bytestring containing all the data in
+// the Handler that is meant to be persistent.
+// It allows for saving the data to disk.
+func (hd *HandlerData) MarshalJSON() ([]byte, error) {
+	// Marshal StartRes
+	startResBuf, err := hd.StartRes.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+
+	// Marshal PrivShare
+	var privShareBuf []byte
+	if hd.PrivShare != nil {
+		privShareVBuf, err := hd.PrivShare.V.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+		privShareBuf, err = json.Marshal(&struct {
+			I int    `json:",omitempty"`
+			V []byte `json:",omitempty"`
+		}{
+			I: hd.PrivShare.I,
+			V: privShareVBuf,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Marshal PubKey
+	pubKeyBuf, err := hd.PubKey.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+
+	// Marshal PrivKey
+	privKeyBuf, err := hd.PrivKey.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(&struct {
+		StartRes  []byte `json:",omitempty"`
+		PrivShare []byte `json:",omitempty"`
+		PubKey    []byte
+		PrivKey   []byte
+	}{
+		StartRes:  startResBuf,
+		PrivShare: privShareBuf,
+		PubKey:    pubKeyBuf,
+		PrivKey:   privKeyBuf,
+	})
+}
+
+// UnmarshalJSON fills a HandlerData with previously marshalled data.
+func (hd *HandlerData) UnmarshalJSON(data []byte) error {
+	aux := &struct {
+		StartRes  []byte `json:",omitempty"`
+		PrivShare []byte `json:",omitempty"`
+		PubKey    []byte
+		PrivKey   []byte
+	}{}
+	err := json.Unmarshal(data, &aux)
+	if err != nil {
+		return err
+	}
+
+	// Unmarshal StartRes
+	hd.StartRes = &state{}
+	hd.StartRes.UnmarshalJSON(aux.StartRes)
+
+	// Unmarshal PrivShare
+	if aux.PrivShare == nil {
+		hd.PrivShare = nil
+	} else {
+		privShareBuf := &struct {
+			I int
+			V []byte
+		}{}
+		err = json.Unmarshal(aux.PrivShare, privShareBuf)
+		if err != nil {
+			return err
+		}
+		privShareV := suite.Scalar()
+		privShareV.UnmarshalBinary(privShareBuf.V)
+		privShare := &share.PriShare{
+			I: privShareBuf.I,
+			V: privShareV,
+		}
+		hd.PrivShare = privShare
+	}
+
+	// Unmarshal PubKey
+	pubKey := suite.Point()
+	pubKey.UnmarshalBinary(aux.PubKey)
+	hd.PubKey = pubKey
+
+	// Unmarshal PrivKey
+	privKey := suite.Scalar()
+	privKey.UnmarshalBinary(aux.PrivKey)
+	hd.PrivKey = privKey
+
+	return nil
+}
+
+// state is a struct contained in a handler that allows an actor to read the
+// state of that handler. The actor should only use the getter functions to read
+// the attributes.
+type state struct {
+	sync.Mutex
+	distKey      kyber.Point
+	participants []mino.Address
+}
+
+func (s *state) Done() bool {
+	s.Lock()
+	defer s.Unlock()
+	return s.distKey != nil && s.participants != nil
+}
+
+func (s *state) GetDistKey() kyber.Point {
+	s.Lock()
+	defer s.Unlock()
+	return s.distKey
+}
+
+func (s *state) SetDistKey(key kyber.Point) {
+	s.Lock()
+	defer s.Unlock()
+	s.distKey = key
+}
+
+func (s *state) GetParticipants() []mino.Address {
+	s.Lock()
+	defer s.Unlock()
+	return s.participants
+}
+
+func (s *state) SetParticipants(addrs []mino.Address) {
+	s.Lock()
+	defer s.Unlock()
+	s.participants = addrs
+}
+
+func (s *state) MarshalJSON() ([]byte, error) {
+	s.Lock()
+	defer s.Unlock()
+
+	var distKeyBuf []byte
+	var participantsBuf [][]byte
+	var err error
+
+	if s.distKey != nil {
+		distKeyBuf, err = s.distKey.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+
+		participantsBuf = make([][]byte, len(s.participants))
+		for i, p := range s.participants {
+			pBuf, err := p.MarshalText()
+			if err != nil {
+				return nil, err
+			}
+			participantsBuf[i] = pBuf
+		}
+	}
+
+	return json.Marshal(&struct {
+		DistKey      []byte   `json:",omitempty"`
+		Participants [][]byte `json:",omitempty"`
+	}{
+		DistKey:      distKeyBuf,
+		Participants: participantsBuf,
+	})
+}
+
+func (s *state) UnmarshalJSON(data []byte) error {
+	aux := &struct {
+		DistKey      []byte
+		Participants [][]byte
+	}{}
+	err := json.Unmarshal(data, &aux)
+	if err != nil {
+		return err
+	}
+
+	if aux.DistKey != nil {
+		distKey := suite.Point()
+		err = distKey.UnmarshalBinary(aux.DistKey)
+		if err != nil {
+			return err
+		}
+		s.SetDistKey(distKey)
+	} else {
+		s.SetDistKey(nil)
+	}
+
+	if aux.Participants != nil {
+		// TODO: Is using a fake implementation a problem?
+		f := fake.NewBadMino().GetAddressFactory()
+		var participants = make([]mino.Address, len(aux.Participants))
+		for i := 0; i < len(aux.Participants); i++ {
+			participants[i] = f.FromText(aux.Participants[i])
+		}
+		s.SetParticipants(participants)
+	} else {
+		s.SetParticipants(nil)
+	}
+
+	return nil
 }

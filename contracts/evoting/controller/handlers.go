@@ -83,22 +83,25 @@ func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
 // the DKG actor.
 // Body: hex-encoded electionID
 func (h *votingProxy) OpenElection(w http.ResponseWriter, r *http.Request) {
-	electionIDHex, err := ioutil.ReadAll(r.Body)
+	// hex-encoded string as byte array
+	electionIDBuf, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "failed to read body: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// sanity check that this is a well hex-encoded string
-	_, err = hex.DecodeString(string(electionIDHex))
+	// hex-encoded string
+	electionID := hex.EncodeToString(electionIDBuf)
+
+	// sanity check that it is a hex-encoded string
+	_, err = hex.DecodeString(electionID)
 	if err != nil {
-		http.Error(w, "failed to decode electionID: "+string(electionIDHex),
-			http.StatusBadRequest)
+		http.Error(w, "failed to decode electionID: "+electionID, http.StatusBadRequest)
 		return
 	}
 
 	openElecTransaction := types.OpenElectionTransaction{
-		ElectionID: string(electionIDHex),
+		ElectionID: electionID,
 	}
 
 	payload, err := json.Marshal(openElecTransaction)
@@ -471,14 +474,14 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	electionIDBuff, err := hex.DecodeString(decryptBallotsRequest.ElectionID)
+	electionIDBuf, err := hex.DecodeString(decryptBallotsRequest.ElectionID)
 	if err != nil {
 		http.Error(w, "failed to decode electionID: "+err.Error(),
 			http.StatusInternalServerError)
 		return
 	}
 
-	proof, err := h.orderingSvc.GetProof(electionIDBuff)
+	proof, err := h.orderingSvc.GetProof(electionIDBuf)
 	if err != nil {
 		http.Error(w, "failed to read on the blockchain: "+err.Error(),
 			http.StatusInternalServerError)
@@ -512,13 +515,19 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
 	wrongBallots := 0
 
+	actor, exists := h.dkg.GetActor(electionIDBuf)
+	if !exists {
+		http.Error(w, "failed to get actor:"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	for i := 0; i < len(X[0]); i++ {
 		// decryption of one ballot:
 		marshalledBallot := strings.Builder{}
 		for j := 0; j < len(X); j++ {
-			chunk, err := h.dkgActor.Decrypt(X[j][i], Y[j][i], electionIDBuff)
+			chunk, err := actor.Decrypt(X[j][i], Y[j][i])
 			if err != nil {
-				http.Error(w, "failed to decrypt (K,C): "+err.Error(), http.StatusInternalServerError)
+				http.Error(w, "failed to decrypt (K, C): "+err.Error(), http.StatusInternalServerError)
 				return
 			}
 			marshalledBallot.Write(chunk)
@@ -583,13 +592,13 @@ func (h *votingProxy) ElectionResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	electionIDBuff, err := hex.DecodeString(getElectionResultRequest.ElectionID)
+	electionIDBuf, err := hex.DecodeString(getElectionResultRequest.ElectionID)
 	if err != nil {
 		http.Error(w, "failed to decode electionID: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	proof, err := h.orderingSvc.GetProof(electionIDBuff)
+	proof, err := h.orderingSvc.GetProof(electionIDBuf)
 	if err != nil {
 		http.Error(w, "failed to read on the blockchain: "+err.Error(),
 			http.StatusInternalServerError)

@@ -29,8 +29,6 @@ import (
 
 const watchTimeout = time.Second * 6
 
-// const endShuffleTimeout = time.Second * 50
-
 var suite = suites.MustFind("Ed25519")
 
 // Handler represents the RPC executed on each node

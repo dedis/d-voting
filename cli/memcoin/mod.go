@@ -45,7 +45,6 @@ import (
 	mino "go.dedis.ch/dela/mino/minogrpc/controller"
 	proxy "go.dedis.ch/dela/mino/proxy/http/controller"
 
-	_ "github.com/dedis/d-voting/services/dkg/pedersen/json"
 	_ "github.com/dedis/d-voting/services/shuffle/neff/json"
 
 	gapi "go.dedis.ch/dela-apps/gapi/controller"

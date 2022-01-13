@@ -114,6 +114,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	t.Logf("decrypting")
 
 	election, err = getElection(electionID, nodes[0].GetOrdering())
+	require.NoError(t, err)
 
 	err = decryptBallots(m, actor, election)
 	require.NoError(t, err)
@@ -180,7 +181,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	electionID, err := createElection(m, "Many votes election", adminID)
 	require.NoError(t, err)
 
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Millisecond * 1000)
 
 	// ##### SETUP DKG #####
 	actor, err := initDkg(nodes, electionID)
@@ -202,7 +203,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	err = closeElection(m, electionID, adminID)
 	require.NoError(t, err)
 
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Millisecond * 1000)
 
 	// ##### SHUFFLE BALLOTS #####
 	t.Logf("initializing shuffle")
@@ -219,6 +220,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	time.Sleep(time.Second * 10)
 
 	election, err = getElection(electionID, nodes[0].GetOrdering())
+	require.NoError(t, err)
 	err = decryptBallots(m, actor, election)
 	require.NoError(t, err)
 
@@ -567,13 +569,13 @@ func initDkg(nodes []dVotingCosiDela, electionID []byte) (dkg.Actor, error) {
 		d := node.(dVotingNode).GetDkg()
 
 		// put Listen in a goroutine to optimize for speed
-		actor, err = d.Listen()
+		actor, err = d.Listen(electionID)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to GetDkg: %v", err)
 		}
 	}
 
-	_, err = actor.Setup(electionID)
+	_, err = actor.Setup()
 	if err != nil {
 		return nil, xerrors.Errorf("failed to Setup: %v", err)
 	}
@@ -613,16 +615,11 @@ func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error
 	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
 	wrongBallots := 0
 
-	electionIDBuf, err := hex.DecodeString(election.ElectionID)
-	if err != nil {
-		return xerrors.Errorf("failed to decode ElectionID")
-	}
-
 	for i := 0; i < len(X[0]); i++ {
 		// decryption of one ballot:
 		marshalledBallot := strings.Builder{}
 		for j := 0; j < len(X); j++ {
-			chunk, err := actor.Decrypt(X[j][i], Y[j][i], electionIDBuf)
+			chunk, err := actor.Decrypt(X[j][i], Y[j][i])
 			if err != nil {
 				return xerrors.Errorf("failed to decrypt (K,C): %v", err)
 			}

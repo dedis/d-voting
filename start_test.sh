@@ -1,8 +1,13 @@
 #!/bin/sh
 
+# This script creates a new tmux session and starts nodes according to the
+# instructions is README.md. The test session can be kill with kill_test.sh.
+
 set -o errexit
 
 command -v tmux >/dev/null 2>&1 || { echo >&2 "tmux is not on your PATH!"; exit 1; }
+
+go install ./cli/memcoin
 
 # Launch session
 s="d-voting-test"
@@ -24,7 +29,5 @@ node3="tmux send-keys -t $s:0.%3"
 $node1 "LLVL=info memcoin --config /tmp/node1 start --port 2001" C-m
 $node2 "LLVL=info memcoin --config /tmp/node2 start --port 2002" C-m
 $node3 "LLVL=info memcoin --config /tmp/node3 start --port 2003" C-m
-
-$master "./setup.sh" C-m
 
 tmux a

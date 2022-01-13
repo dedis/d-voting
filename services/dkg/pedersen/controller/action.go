@@ -3,25 +3,32 @@ package controller
 import (
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
 	"github.com/dedis/d-voting/services/dkg"
+	"github.com/dedis/d-voting/services/dkg/pedersen"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/core/store/kv"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/ed25519"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/proxy"
-	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 )
 
 const separator = ":"
+
+const (
+	initEndpoint  = "/evoting/dkg/init"
+	setupEndpoint = "/evoting/dkg/setup"
+)
 
 var suite = suites.MustFind("Ed25519")
 
@@ -32,21 +39,64 @@ type initAction struct {
 }
 
 // Execute implements node.ActionTemplate. It creates an actor from
-// the dkgPedersen instance
+// the dkgPedersen instance and links it to an election.
 func (a *initAction) Execute(ctx node.Context) error {
-	var dkgPedersen dkg.DKG
-	err := ctx.Injector.Resolve(&dkgPedersen)
+
+	electionID := ctx.Flags.String("electionID")
+
+	electionIDBuf, err := hex.DecodeString(electionID)
 	if err != nil {
-		return xerrors.Errorf("failed to resolve dkg: %v", err)
+		return xerrors.Errorf("failed to decode electionID: %v", err)
 	}
 
-	actor, err := dkgPedersen.Listen()
+	// Initialize the actor
+	var dkg dkg.DKG
+	err = ctx.Injector.Resolve(&dkg)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve DKG: %v", err)
+	}
+
+	_, exists := dkg.GetActor(electionIDBuf)
+	if exists {
+		return xerrors.Errorf(
+			"DKG was already initialized for electionID %s",
+			electionID,
+		)
+	}
+
+	actor, err := dkg.Listen(electionIDBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to start the RPC: %v", err)
 	}
 
-	ctx.Injector.Inject(actor)
 	dela.Logger.Info().Msg("DKG has been initialized successfully")
+
+	// Place it in the map to keep it in sync
+	var dkgMap pedersen.Store
+	err = ctx.Injector.Resolve(&dkgMap)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve dkgMap: %v", err)
+	}
+
+	err = dkgMap.Update(func(tx kv.WritableTx) error {
+		bucket, err := tx.GetBucketOrCreate([]byte(BucketName))
+		if err != nil {
+			return err
+		}
+
+		actorBuf, err := actor.MarshalJSON()
+		if err != nil {
+			return err
+		}
+
+		return bucket.Set(electionIDBuf, actorBuf)
+	})
+	if err != nil {
+		return xerrors.Errorf("database write failed: %v", err)
+	}
+
+	dela.Logger.Info().Msgf("DKG was successfully linked to election %v", electionIDBuf)
+
 	return nil
 }
 
@@ -60,18 +110,24 @@ type setupAction struct {
 // Execute implements node.ActionTemplate. It reads the list of members and
 // request the setup.
 func (a *setupAction) Execute(ctx node.Context) error {
-	var actor dkg.Actor
-	err := ctx.Injector.Resolve(&actor)
-	if err != nil {
-		return xerrors.Errorf("failed to resolve actor: %v", err)
-	}
 
 	electionIDBuf, err := hex.DecodeString(ctx.Flags.String("electionID"))
 	if err != nil {
 		return xerrors.Errorf("failed to decode electionID: %v", err)
 	}
 
-	pubkey, err := actor.Setup(electionIDBuf)
+	var dkg dkg.DKG
+	err = ctx.Injector.Resolve(&dkg)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve DKG: %v", err)
+	}
+
+	actor, exists := dkg.GetActor(electionIDBuf)
+	if !exists {
+		return xerrors.Errorf("failed to get actor: %v", err)
+	}
+
+	pubkey, err := actor.Setup()
 	if err != nil {
 		return xerrors.Errorf("failed to setup DKG: %v", err)
 	}
@@ -84,6 +140,30 @@ func (a *setupAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().
 		Hex("DKG public key", pubkeyBuf).
 		Msg("DKG public key")
+
+	// Save actor data to disk after Setup
+	var dkgMap pedersen.Store
+	err = ctx.Injector.Resolve(&dkgMap)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve dkgMap: %v", err)
+	}
+
+	err = dkgMap.Update(func(tx kv.WritableTx) error {
+		bucket, err := tx.GetBucketOrCreate([]byte(BucketName))
+		if err != nil {
+			return err
+		}
+
+		actorBuf, err := actor.MarshalJSON()
+		if err != nil {
+			return err
+		}
+
+		return bucket.Set(electionIDBuf, actorBuf)
+	})
+	if err != nil {
+		return xerrors.Errorf("database write failed: %v", err)
+	}
 
 	return nil
 }
@@ -163,21 +243,42 @@ func (a *exportInfoAction) Execute(ctx node.Context) error {
 	if err != nil {
 		return xerrors.Errorf("failed to marshal address: %v", err)
 	}
-	var pubkey kyber.Point
 
-	err = ctx.Injector.Resolve(&pubkey)
+	desc := base64.StdEncoding.EncodeToString(addr)
+
+	// Print address
+	fmt.Fprint(ctx.Out, desc)
+
+	var dkgMap pedersen.Store
+	err = ctx.Injector.Resolve(&dkgMap)
 	if err != nil {
 		return xerrors.Errorf("injector: %v", err)
 	}
 
-	pubkeyMarshalled, err := pubkey.MarshalBinary()
+	err = dkgMap.View(func(tx kv.ReadableTx) error {
+		bucket := tx.GetBucket([]byte(BucketName))
+		if bucket == nil {
+			return nil
+		}
+
+		return bucket.ForEach(func(electionIDBuf, handlerDataBuf []byte) error {
+
+			handlerData := pedersen.HandlerData{}
+			err = json.Unmarshal(handlerDataBuf, &handlerData)
+			if err != nil {
+				return err
+			}
+
+			// Print electionID and actor data
+			fmt.Fprint(ctx.Out, hex.EncodeToString(electionIDBuf))
+			fmt.Fprint(ctx.Out, handlerData)
+
+			return nil
+		})
+	})
 	if err != nil {
-		return xerrors.Errorf("failed to marshal public key: %v", err)
+		return xerrors.Errorf("database read failed: %v", err)
 	}
-
-	desc := base64.StdEncoding.EncodeToString(addr) + separator + base64.StdEncoding.EncodeToString(pubkeyMarshalled)
-
-	fmt.Fprint(ctx.Out, desc)
 
 	return nil
 }
@@ -197,10 +298,20 @@ type getPublicKeyAction struct {
 // Execute implements node.ActionTemplate. It retrieves the collective
 // public key from the DKG service and prints it.
 func (a *getPublicKeyAction) Execute(ctx node.Context) error {
-	var actor dkg.Actor
-	err := ctx.Injector.Resolve(&actor)
+	electionIDBuf, err := hex.DecodeString(ctx.Flags.String("electionID"))
 	if err != nil {
-		return xerrors.Errorf("failed to resolve actor: %v", err)
+		return xerrors.Errorf("failed to decode electionID: %v", err)
+	}
+
+	var dkgPedersen dkg.DKG
+	err = ctx.Injector.Resolve(&dkgPedersen)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve dkg: %v", err)
+	}
+
+	actor, exists := dkgPedersen.GetActor(electionIDBuf)
+	if !exists {
+		return xerrors.Errorf("failed to get actor: %v", err)
 	}
 
 	pubkey, err := actor.GetPublicKey()
@@ -226,8 +337,8 @@ func (a *getPublicKeyAction) Execute(ctx node.Context) error {
 type registerHandlersAction struct {
 }
 
-// Execute implements node.ActionTemplate. It retrieves the collective
-// public key from the DKG service and prints it.
+// Execute implements node.ActionTemplate. It registers the proxy
+// handlers to set up elections
 func (a *registerHandlersAction) Execute(ctx node.Context) error {
 	var proxy proxy.Proxy
 	err := ctx.Injector.Resolve(&proxy)
@@ -235,44 +346,116 @@ func (a *registerHandlersAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve proxy: %v", err)
 	}
 
-	var dkgActor dkg.Actor
-	err = ctx.Injector.Resolve(&dkgActor)
+	var dkg dkg.DKG
+	err = ctx.Injector.Resolve(&dkg)
 	if err != nil {
-		return xerrors.Errorf("failed to resolve dkg.Actor: %v", err)
+		return xerrors.Errorf("failed to resolve dkg.DKG: %v", err)
 	}
 
-	proxy.RegisterHandler("/evoting/dkg", getHandler(dkgActor))
+	proxy.RegisterHandler(initEndpoint, ListenHandler(dkg))
+	proxy.RegisterHandler(setupEndpoint, SetupHandler(dkg))
 
 	dela.Logger.Info().Msg("DKG handler registered")
 
 	return nil
 }
 
-// Body: electionID in HEX form
-// Response: pubKey in marshalled binary
-func getHandler(dkgActor dkg.Actor) func(http.ResponseWriter, *http.Request) {
+// ListenHandler runs Listen to initialize an Actor corresponding to the given electionID
+func ListenHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		electionIDHex, err := ioutil.ReadAll(r.Body)
+
+		electionIDBuf, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			http.Error(w, "failed to read body: "+err.Error(), http.StatusInternalServerError)
+			http.Error(
+				w,
+				"failed to read body: "+err.Error(),
+				http.StatusInternalServerError,
+			)
 			return
 		}
 
-		electionIDBuf, err := hex.DecodeString(string(electionIDHex))
+		// hex-encoded string obtained from the URL
+		electionID := string(electionIDBuf)
+
+		// sanity check
+		_, err = hex.DecodeString(electionID)
 		if err != nil {
-			http.Error(w, "failed to decode electionID: "+string(electionIDHex), http.StatusBadRequest)
+			http.Error(
+				w,
+				"failed to decode electionID: "+electionID,
+				http.StatusBadRequest,
+			)
 			return
 		}
 
-		pubKey, err := dkgActor.Setup(electionIDBuf)
+		_, err = dkg.Listen(electionIDBuf)
 		if err != nil {
-			http.Error(w, "failed to setup: "+err.Error(), http.StatusInternalServerError)
+			http.Error(
+				w,
+				"failed to start actor: "+err.Error(),
+				http.StatusInternalServerError,
+			)
+			return
+		}
+	}
+}
+
+// SetupHandler runs Setup on the Actor corresponding to the given electionID
+// and responds with the distributed public key.
+func SetupHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		electionIDBuf, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(
+				w,
+				"failed to read body: "+err.Error(),
+				http.StatusInternalServerError,
+			)
+			return
+		}
+
+		// hex-encoded string obtained from the URL
+		electionID := string(electionIDBuf)
+
+		// sanity check
+		_, err = hex.DecodeString(electionID)
+		if err != nil {
+			http.Error(
+				w,
+				"failed to decode electionID: "+electionID,
+				http.StatusBadRequest,
+			)
+			return
+		}
+
+		a, exists := dkg.GetActor(electionIDBuf)
+		if !exists {
+			http.Error(
+				w,
+				"failed to get actor: "+err.Error(),
+				http.StatusInternalServerError,
+			)
+			return
+		}
+
+		pubKey, err := a.Setup()
+		if err != nil {
+			http.Error(
+				w,
+				"failed to setup: "+err.Error(),
+				http.StatusInternalServerError,
+			)
 			return
 		}
 
 		pubKeyBuf, err := pubKey.MarshalBinary()
 		if err != nil {
-			http.Error(w, "failed to marshal the pubKey: "+err.Error(), http.StatusInternalServerError)
+			http.Error(
+				w,
+				"failed to marshal the pubKey: "+err.Error(),
+				http.StatusInternalServerError,
+			)
 			return
 		}
 

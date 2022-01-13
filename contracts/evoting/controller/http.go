@@ -46,7 +46,7 @@ type votingProxy struct {
 	mino        mino.Mino
 
 	shuffleActor shuffle.Actor
-	dkgActor     dkg.Actor
+	dkg          dkg.DKG
 
 	pool   pool.Pool
 	client *Client
@@ -54,9 +54,9 @@ type votingProxy struct {
 	logger zerolog.Logger
 }
 
-func registerVotingProxy(proxy proxy.Proxy, signer crypto.Signer, client *Client,
-	dkgActor dkg.Actor, shuffleActor shuffle.Actor, oSvc ordering.Service,
-	p pool.Pool, m mino.Mino) {
+func registerVotingProxy(proxy proxy.Proxy, signer crypto.Signer,
+	client *Client, dkg dkg.DKG, shuffleActor shuffle.Actor,
+	oSvc ordering.Service, p pool.Pool, m mino.Mino) {
 
 	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
 
@@ -64,7 +64,7 @@ func registerVotingProxy(proxy proxy.Proxy, signer crypto.Signer, client *Client
 		logger:       logger,
 		signer:       signer,
 		client:       client,
-		dkgActor:     dkgActor,
+		dkg:          dkg,
 		shuffleActor: shuffleActor,
 		orderingSvc:  oSvc,
 		pool:         p,
