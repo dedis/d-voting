@@ -135,6 +135,8 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 		}
 
 		dela.Logger.Info().Msg("shuffling contribution denied : " + msg)
+
+		cancel()
 	}
 }
 

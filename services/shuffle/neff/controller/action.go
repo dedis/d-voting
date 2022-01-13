@@ -66,7 +66,7 @@ func makeClient(ctx node.Context) (client, error) {
 
 	client := client{
 		srvc: service,
-		mgr:  vs,
+		vs:   vs,
 	}
 
 	return client, nil
@@ -77,7 +77,7 @@ func makeClient(ctx node.Context) (client, error) {
 // - implements signed.Client
 type client struct {
 	srvc ordering.Service
-	mgr  validation.Service
+	vs   validation.Service
 }
 
 // GetNonce implements signed.Client. It uses the validation service to get the
@@ -85,7 +85,7 @@ type client struct {
 func (c *client) GetNonce(id access.Identity) (uint64, error) {
 	store := c.srvc.GetStore()
 
-	nonce, err := c.mgr.GetNonce(store, id)
+	nonce, err := c.vs.GetNonce(store, id)
 	if err != nil {
 		return 0, xerrors.Errorf("failed to get nonce from validation: %v", err)
 	}
