@@ -45,7 +45,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	// make tests reproducible
 	rand.Seed(1)
 
-	delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
+	delaPkg.Logger = delaPkg.Logger.Level(zerolog.InfoLevel)
 
 	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-three-votes")
 	require.NoError(t, err)
@@ -153,7 +153,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	// make tests reproducible
 	rand.Seed(2)
 
-	delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
+	delaPkg.Logger = delaPkg.Logger.Level(zerolog.InfoLevel)
 
 	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-many-votes")
 	require.NoError(t, err)
@@ -181,7 +181,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	electionID, err := createElection(m, "Many votes election", adminID)
 	require.NoError(t, err)
 
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Millisecond * 1000)
 
 	// ##### SETUP DKG #####
 	actor, err := initDkg(nodes, electionID)
@@ -203,7 +203,7 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	err = closeElection(m, electionID, adminID)
 	require.NoError(t, err)
 
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Millisecond * 1000)
 
 	// ##### SHUFFLE BALLOTS #####
 	t.Logf("initializing shuffle")
@@ -291,37 +291,37 @@ func (m txManager) addAndWait(args ...txn.Arg) ([]byte, error) {
 
 		sentTxnID := sentTxn.GetID()
 
-	events:
-		for event := range events {
-			for _, result := range event.Transactions {
-				fetchedTxnID := result.GetTransaction().GetID()
+		accepted := isAccepted(events, sentTxnID)
+		if accepted {
+			return sentTxnID, nil
+		}
 
-				if bytes.Equal(sentTxnID, fetchedTxnID) {
-					accepted, status := event.Transactions[0].GetStatus()
-
-					if !accepted {
-						if i+1 == m.retry {
-							return nil, xerrors.Errorf("transaction not accepted: %s", status)
-						}
-
-						// let's retry and sync the nonce in case
-						err = m.m.Sync()
-						if err != nil {
-							return nil, xerrors.Errorf("failed to sync: %v", err)
-						}
-
-						break events
-					}
-
-					return sentTxnID, nil
-				}
-			}
+		err = m.m.Sync()
+		if err != nil {
+			return nil, xerrors.Errorf("failed to sync: %v", err)
 		}
 
 		cancel()
 	}
 
 	return nil, xerrors.Errorf("transaction not included after timeout: %v", args)
+}
+
+// isAccepted returns true if the transaction was included then accepted
+func isAccepted(events <-chan ordering.Event, txID []byte) bool {
+	for event := range events {
+		for _, result := range event.Transactions {
+			fetchedTxnID := result.GetTransaction().GetID()
+
+			if bytes.Equal(txID, fetchedTxnID) {
+				accepted, _ := event.Transactions[0].GetStatus()
+
+				return accepted
+			}
+		}
+	}
+
+	return false
 }
 
 func grantAccess(m txManager, signer crypto.Signer) error {
