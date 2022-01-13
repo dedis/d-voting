@@ -1,7 +1,7 @@
 package shuffle
 
 import (
-	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/kyber/v3"
 )
 
@@ -9,7 +9,7 @@ import (
 type Shuffle interface {
 	// Listen starts the RPC. This function should be called on each node that
 	// wishes to participate in a shuffle.
-	Listen(signer crypto.Signer) (Actor, error)
+	Listen(txmngr txn.Manager) (Actor, error)
 }
 
 // Actor defines the primitives to use a shuffle protocol

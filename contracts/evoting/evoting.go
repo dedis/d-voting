@@ -361,7 +361,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	// Check the random vector is correct :
 	semiRandomStream, err := NewSemiRandomStream(shuffleHash)
 	if err != nil {
-		return xerrors.Errorf("could not create semi-random stream")
+		return xerrors.Errorf("could not create semi-random stream: %v", err)
 	}
 
 	if election.ChunksPerBallot() != len(randomVector) {
