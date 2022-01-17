@@ -28,15 +28,16 @@ import (
 func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 
 	numNodes := 3
-	numVotes := 10
+	numVotes := 3
 	numChunksPerBallot := 3
 
-	adminID := "first admin"
+	adminID := "I am an admin"
 
 	// ##### SETUP ENV #####
 	// make tests reproducible
 	rand.Seed(1)
-	delaPkg.Logger = zerolog.New(os.Stdout).Level(zerolog.WarnLevel)
+
+	delaPkg.Logger = delaPkg.Logger.Level(zerolog.InfoLevel)
 
 	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-three-votes")
 	require.NoError(b, err)
@@ -50,10 +51,15 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 
 	signer := createDVotingAccess(b, nodes, dirPath)
 
-	m := newTxManager(signer, nodes[0], time.Second*3)
+	m := newTxManager(signer, nodes[0], time.Second*10, 10)
 
 	err = grantAccess(m, signer)
 	require.NoError(b, err)
+
+	for _, n := range nodes {
+		err = grantAccess(m, n.GetShuffleSigner())
+		require.NoError(b, err)
+	}
 
 	// ##### CREATE ELECTION #####
 	electionID, err := createElectionNChunks(m, "Three votes election", adminID, numChunksPerBallot)
@@ -83,30 +89,36 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 
 	time.Sleep(time.Millisecond * 100)
 
-	// ##### SHUFFLE BALLOTS #####
-	b.ResetTimer()
+	// ##### SHUFFLE BALLOTS ####
+
+	//b.ResetTimer()
 
 	b.Logf("initializing shuffle")
-	sActor, err := initShuffle(nodes, signer)
+	sActor, err := initShuffle(nodes)
 	require.NoError(b, err)
 
 	b.Logf("shuffling")
 	err = sActor.Shuffle(electionID)
 	require.NoError(b, err)
 
-	b.StopTimer()
+	//b.StopTimer()
+
 	// ##### DECRYPT BALLOTS #####
 	time.Sleep(time.Second * 1)
 
 	b.Logf("decrypting")
 
+	//b.ResetTimer()
+
 	election, err = getElection(electionID, nodes[0].GetOrdering())
 	require.NoError(b, err)
 
-	//b.ResetTimer()
 	err = decryptBallots(m, actor, election)
 	require.NoError(b, err)
+
 	//b.StopTimer()
+
+	time.Sleep(time.Second * 1)
 
 	b.Logf("get vote proof")
 	election, err = getElection(electionID, nodes[0].GetOrdering())
@@ -265,61 +277,4 @@ func closeNodesBench(b *testing.B, nodes []dVotingCosiDela) {
 
 	wait.Wait()
 	close(done)
-}
-
-func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error {
-	if election.Status != types.ShuffledBallots {
-		return xerrors.Errorf("cannot decrypt: shuffle is not finished")
-	}
-
-	X, Y, err := election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots.GetElGPairs()
-	if err != nil {
-		return xerrors.Errorf("failed to get Elg pairs")
-	}
-
-	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
-	wrongBallots := 0
-
-	for i := 0; i < len(X[0]); i++ {
-		// decryption of one ballot:
-		marshalledBallot := strings.Builder{}
-		for j := 0; j < len(X); j++ {
-			chunk, err := actor.Decrypt(X[j][i], Y[j][i])
-			if err != nil {
-				return xerrors.Errorf("failed to decrypt (K,C): %v", err)
-			}
-			marshalledBallot.Write(chunk)
-		}
-
-		var ballot types.Ballot
-		err = ballot.Unmarshal(marshalledBallot.String(), election)
-		if err != nil {
-			wrongBallots++
-		}
-
-		decryptedBallots = append(decryptedBallots, ballot)
-	}
-
-	decryptBallotsTransaction := types.DecryptBallotsTransaction{
-		ElectionID:       election.ElectionID,
-		UserID:           election.AdminID,
-		DecryptedBallots: decryptedBallots,
-	}
-
-	decryptBallotsBuf, err := json.Marshal(decryptBallotsTransaction)
-	if err != nil {
-		return xerrors.Errorf("failed to marshal DecryptBallotsTransaction: %v", err)
-	}
-
-	args := []txn.Arg{
-		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.DecryptBallotsArg, Value: decryptBallotsBuf},
-		{Key: evoting.CmdArg, Value: []byte(evoting.CmdDecryptBallots)},
-	}
-	_, err = m.addAndWait(args...)
-	if err != nil {
-		return xerrors.Errorf("failed to addAndWait: %v", err)
-	}
-
-	return nil
 }
