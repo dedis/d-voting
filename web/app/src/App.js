@@ -1,5 +1,5 @@
 import React from 'react';
-import {useState} from 'react';
+import { useState } from 'react';
 import './App.css';
 import CreateElection from './components/election-creation/CreateElection';
 import Election from './components/election-status/Election';
@@ -12,18 +12,18 @@ import ResultPage from './components/result-page/ResultPage';
 import About from './components/about/About';
 import Admin from './components/admin/Admin';
 import Footer from './components/footer/Footer';
-import {BrowserRouter as Router, Switch, Route} from 'react-router-dom';
+import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 import ElectionDetails from './components/election-status/ElectionDetails';
-import {LanguageContext} from './components/language/LanguageContext';
+import { LanguageContext } from './components/language/LanguageContext';
 import Login from './components/login/Login';
 import {GET_PERSONNAL_INFOS} from './components/utils/ExpressEndoints';
 
 
 const App = () => {
-  
+
   const getBrowserLanguage = () => {
-    var userLang = navigator.userLanguage || navigator.language; 
-    if(userLang.substring(0,2) === 'fr'){
+    var userLang = navigator.userLanguage || navigator.language;
+    if (userLang.substring(0, 2) === 'fr') {
       return 'fr'
     }
     return 'en';
@@ -48,15 +48,15 @@ const App = () => {
         setRole(result.role);
       });
   return (
-    <div className="App">
-      
-     <Router>
-        <LanguageContext.Provider value={[lanContext, setLanContext]}>         
+    <div className="App flex flex-col h-screen justify-between">
+
+      <Router>
+        <LanguageContext.Provider value={[lanContext, setLanContext]}>
           <div className='app-nav'>
             <NavBar firstname={firstname} name={name} sciper={sciper} role={role}/>
           </div>
-          <div data-testid="content" className='app-page'>
-          {!isLogged? (<div className='login-container'><Login id='login-id'/></div>): (<div>
+          <div data-testid="content" className='app-page mb-auto flex flex-row justify-center items-center w-full'>
+          {!isLogged? (<div className='login-container'><Login id='login-id'/></div>): (<div className="p-10 w-full max-w-screen-xl">
             <Switch>
               <Route path="/" exact component={Home}/>
               <Route path="/create-election" component={CreateElection}/>
@@ -71,12 +71,10 @@ const App = () => {
             </Switch>
             </div>)}
           </div>
-          <div className='footer-container'>
-            <Footer/>
-          </div>
+          <Footer />
         </LanguageContext.Provider>
-    </Router>
-  </div>
+      </Router>
+    </div>
   );
 }
 

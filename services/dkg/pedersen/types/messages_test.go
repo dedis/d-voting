@@ -19,20 +19,14 @@ func init() {
 	RegisterMessageFormat(fake.BadFormat, fake.NewBadFormat())
 }
 
-func TestStart_GetThreshold(t *testing.T) {
-	start := NewStart(5, nil, nil)
-
-	require.Equal(t, 5, start.GetThreshold())
-}
-
 func TestStart_GetAddresses(t *testing.T) {
-	start := NewStart(0, []mino.Address{fake.NewAddress(0)}, nil)
+	start := NewStart([]mino.Address{fake.NewAddress(0)}, nil)
 
 	require.Len(t, start.GetAddresses(), 1)
 }
 
 func TestStart_GetPublicKeys(t *testing.T) {
-	start := NewStart(0, nil, []kyber.Point{nil, nil})
+	start := NewStart(nil, []kyber.Point{nil, nil})
 
 	require.Len(t, start.GetPublicKeys(), 2)
 }

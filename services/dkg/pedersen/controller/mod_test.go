@@ -1,63 +1,85 @@
 package controller
 
 import (
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/dedis/d-voting/internal/testing/fake"
-	"github.com/dedis/d-voting/services/dkg/pedersen"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
+	"go.dedis.ch/dela/core/access/darc"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering/cosipbft"
+	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/cosi/threshold"
 	"go.dedis.ch/dela/mino"
 	"golang.org/x/xerrors"
 )
 
-func TestController_SetCommands(t *testing.T) {
-	c := NewController()
-
-	call := &fake.Call{}
-	c.SetCommands(fakeBuilder{call: call})
-
-	require.Equal(t, 19, call.Len())
-	require.Equal(t, "dkg", call.Get(0, 0))
-	require.Equal(t, "interact with the DKG service", call.Get(1, 0))
-
-	require.Equal(t, "init", call.Get(2, 0))
-	require.Equal(t, "initialize the DKG protocol", call.Get(3, 0))
-	require.IsType(t, &initAction{}, call.Get(4, 0))
-	require.Nil(t, call.Get(5, 0))
-
-	require.Equal(t, "setup", call.Get(6, 0))
-	require.Equal(t, "creates the public distributed key and the private share on each node", call.Get(7, 0))
-	require.Len(t, call.Get(8, 0), 1)
-	require.IsType(t, &setupAction{}, call.Get(9, 0))
-	require.Nil(t, call.Get(10, 0))
-
-	require.Equal(t, "export", call.Get(11, 0))
-	require.Equal(t, "export the node address and public key", call.Get(12, 0))
-	require.IsType(t, &exportInfoAction{}, call.Get(13, 0))
-	require.Nil(t, call.Get(14, 0))
-
-	require.Equal(t, "getPublicKey", call.Get(15, 0))
-	require.Equal(t, "prints the distributed public Key", call.Get(16, 0))
-	require.IsType(t, &getPublicKeyAction{}, call.Get(17, 0))
-	require.Nil(t, call.Get(18, 0))
-}
-
 func TestMinimal_OnStart(t *testing.T) {
 	c := NewController()
-	inj := newInjector(nil)
 
-	err := c.OnStart(nil, inj)
-	require.EqualError(t, err, fake.Err("failed to resolve mino"))
+	flags := fakeFlags{strings: make(map[string]string)}
 
-	inj = newInjector(fake.Mino{})
-	err = c.OnStart(nil, inj)
+	ctx := node.Context{
+		Injector: node.NewInjector(),
+		Flags:    flags,
+		Out:      ioutil.Discard,
+	}
+
+	// Should miss mino.Mino
+	err := c.OnStart(nil, ctx.Injector)
+	require.EqualError(t, err, "failed to resolve mino.Mino")
+
+	m := fake.Mino{}
+	ctx.Injector.Inject(m)
+
+	// Should miss *native.Service
+	err = c.OnStart(nil, ctx.Injector)
+	require.EqualError(t, err, "failed to resolve *native.Service")
+
+	exec := native.NewExecution()
+	ctx.Injector.Inject(exec)
+
+	// Should miss darc.Service
+	err = c.OnStart(nil, ctx.Injector)
+	require.EqualError(t, err, "failed to resolve darc.Service")
+
+	// ds := darc.NewService(json.NewContext())
+	ctx.Injector.Inject(darc.Service{})
+
+	// Should miss *threshold.Threshold
+	err = c.OnStart(nil, ctx.Injector)
+	require.EqualError(t, err, "failed to resolve *threshold.Threshold")
+
+	//th := threshold.NewThreshold(fake.Mino{}, fake.NewAggregateSigner())
+	ctx.Injector.Inject(&threshold.Threshold{})
+
+	// Should miss authority.Factory
+	err = c.OnStart(nil, ctx.Injector)
+	require.EqualError(t, err, "failed to resolve authority.Factory")
+
+	ctx.Injector.Inject(fake.RosterFac{})
+
+	// Should miss *cosipbft.Service
+	err = c.OnStart(nil, ctx.Injector)
+	require.EqualError(t, err, "failed to resolve *cosipbft.Service")
+
+	ctx.Injector.Inject(&cosipbft.Service{})
+
+	// Should miss flags
+	err = c.OnStart(nil, ctx.Injector)
+	require.EqualError(t, err, "no flags")
+
+	dir, err := ioutil.TempDir(os.TempDir(), "memcoin1")
 	require.NoError(t, err)
-	require.Len(t, inj.(*fakeInjector).history, 2)
-	require.IsType(t, &pedersen.Pedersen{}, inj.(*fakeInjector).history[0])
-	pubkey := suite.Point()
-	require.IsType(t, pubkey, inj.(*fakeInjector).history[1])
+	flags.strings["config"] = dir
+
+	// Should work (have flags now)
+	err = c.OnStart(flags, ctx.Injector)
+	require.NoError(t, err)
 }
 
 func TestMinimal_OnStop(t *testing.T) {
@@ -67,7 +89,6 @@ func TestMinimal_OnStop(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// -----------------------------------------------------------------------------
 // Utility functions
 
 type fakeCommandBuilder struct {
@@ -109,12 +130,6 @@ func (b fakeBuilder) MakeAction(tmpl node.ActionTemplate) cli.Action {
 	return nil
 }
 
-func newInjector(mino mino.Mino) node.Injector {
-	return &fakeInjector{
-		mino: mino,
-	}
-}
-
 // fakeInjector is a fake injector
 //
 // - implements node.Injector
@@ -137,7 +152,7 @@ func (i fakeInjector) Resolve(el interface{}) error {
 		}
 		*msg = i.mino
 	default:
-		return xerrors.Errorf("unkown message '%T", msg)
+		return xerrors.Errorf("unkown message: %T", msg)
 	}
 
 	return nil
@@ -149,4 +164,20 @@ func (i *fakeInjector) Inject(v interface{}) {
 		i.history = make([]interface{}, 0)
 	}
 	i.history = append(i.history, v)
+}
+
+func newInjector(args ...interface{}) node.Injector {
+	f := &fakeInjector{}
+	for i := range args {
+		f.Inject(i)
+	}
+	return f
+}
+
+func newInjectorFromMino(mino mino.Mino) node.Injector {
+	return &fakeInjector{mino: mino}
+}
+
+type fakePool struct {
+	pool.Pool
 }

@@ -1,0 +1,8 @@
+- **General purpose**
+- [Introduction](introduction.md)
+- **REST API**
+- [API documentation](api.md)
+- [Message signature](msg_sig.md)
+- [Encoding of a Ballot](ballot_encoding.md)
+- **Smart contract**
+- [Smart contract](smart_contract.md)

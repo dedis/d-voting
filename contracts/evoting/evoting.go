@@ -1,16 +1,22 @@
 package evoting
 
 import (
+	"bytes"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"math/rand"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/services/dkg"
 	"go.dedis.ch/dela/core/execution"
 	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/cosi/threshold"
+	_ "go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/crypto/bls"
+	_ "go.dedis.ch/dela/crypto/bls/json"
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/shuffle"
 	"golang.org/x/xerrors"
@@ -55,19 +61,22 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 	h.Write(step.Current.GetID())
 	electionIDBuf := h.Sum(nil)
 
+	if !createElectionTxn.Configuration.IsValid() {
+		return xerrors.Errorf("configuration of election is incoherent or has duplicated IDs")
+	}
+
 	election := types.Election{
-		Title:      createElectionTxn.Title,
-		ElectionID: hex.EncodeToString(electionIDBuf),
-		AdminID:    createElectionTxn.AdminID,
-		Status:     types.Open,
+		ElectionID:    hex.EncodeToString(electionIDBuf),
+		Configuration: createElectionTxn.Configuration,
+		AdminID:       createElectionTxn.AdminID,
+		Status:        types.Initial,
 		// Pubkey is set by the opening command
-		EncryptedBallots: types.EncryptedBallots{},
-		ShuffledBallots:  []types.Ciphertexts{},
-		ShuffledProofs:   [][]byte{},
-		DecryptedBallots: []types.Ballot{},
-		Format:           createElectionTxn.Format,
-		RosterBuf:        append([]byte{}, rosterBuf...),
-		ShuffleThreshold: threshold.ByzantineThreshold(roster.Len()),
+		BallotSize:          createElectionTxn.Configuration.MaxBallotSize(),
+		PublicBulletinBoard: types.PublicBulletinBoard{},
+		ShuffleInstances:    []types.ShuffleInstance{},
+		DecryptedBallots:    []types.Ballot{},
+		RosterBuf:           append([]byte{}, rosterBuf...),
+		ShuffleThreshold:    threshold.ByzantineThreshold(roster.Len()),
 	}
 
 	electionJSON, err := json.Marshal(election)
@@ -75,29 +84,24 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("failed to marshal Election : %v", err)
 	}
 
-	electionIDBuff, err := hex.DecodeString(string(election.ElectionID))
-	if err != nil {
-		return xerrors.Errorf(errDecodeElectionID, err)
-	}
-
-	err = snap.Set(electionIDBuff, electionJSON)
+	err = snap.Set(electionIDBuf, electionJSON)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
 
 	// Update the election metadata store
 
-	electionsMetadataBuff, err := snap.Get([]byte(ElectionsMetadataKey))
+	electionsMetadataBuf, err := snap.Get([]byte(ElectionsMetadataKey))
 	if err != nil {
-		return xerrors.Errorf("failed to get key '%s': %v", electionsMetadataBuff, err)
+		return xerrors.Errorf("failed to get key '%s': %v", electionsMetadataBuf, err)
 	}
 
 	electionsMetadata := &types.ElectionsMetadata{}
 
-	if len(electionsMetadataBuff) == 0 {
+	if len(electionsMetadataBuf) == 0 {
 		electionsMetadata.ElectionsIDs = types.ElectionIDs{}
 	} else {
-		err := json.Unmarshal(electionsMetadataBuff, electionsMetadata)
+		err := json.Unmarshal(electionsMetadataBuf, electionsMetadata)
 		if err != nil {
 			return xerrors.Errorf("failed to unmarshal ElectionsMetadata: %v", err)
 		}
@@ -119,20 +123,15 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 }
 
 // openElection set the public key on the election. The public key is fetched
-// from the DKG actor. It works only if DKG is setup.
-func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step, dkgActor dkg.Actor) error {
-	pubkey, err := dkgActor.GetPublicKey()
-	if err != nil {
-		return xerrors.Errorf("failed to get pubkey: %v", err)
-	}
-
+// from the DKG actor. It works only if DKG is set up.
+func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) error {
 	openElecBuf := step.Current.GetArg(OpenElectionArg)
 	if len(openElecBuf) == 0 {
 		return xerrors.Errorf(errArgNotFound, OpenElectionArg)
 	}
 
 	openElectTransaction := &types.OpenElectionTransaction{}
-	err = json.Unmarshal(openElecBuf, openElectTransaction)
+	err := json.Unmarshal(openElecBuf, openElectTransaction)
 	if err != nil {
 		return xerrors.Errorf("failed to unmarshal OpenElectionTransaction: %v", err)
 	}
@@ -153,12 +152,28 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step, d
 		return xerrors.Errorf("failed to unmarshal Election: %v", err)
 	}
 
+	if election.Status != types.Initial {
+		return xerrors.Errorf("the election was opened before, current status: %d", election.Status)
+	}
+	election.Status = types.Open
+
 	if election.Pubkey != nil {
 		return xerrors.Errorf("pubkey is already set: %s", election.Pubkey)
 	}
 
-	if election.Status != types.Open {
-		return xerrors.Errorf("the election is not open, current status: %d", election.Status)
+	electionIDBuf, err := hex.DecodeString(election.ElectionID)
+	if err != nil {
+		return xerrors.Errorf("failed to decode electionID: %v", err)
+	}
+
+	dkgActor, exists := e.pedersen.GetActor(electionIDBuf)
+	if !exists {
+		return xerrors.Errorf("failed to get actor for election %d: %v", election.ElectionID, err)
+	}
+
+	pubkey, err := dkgActor.GetPublicKey()
+	if err != nil {
+		return xerrors.Errorf("failed to get pubkey: %v", err)
 	}
 
 	pubkeyBuf, err := pubkey.MarshalBinary()
@@ -173,12 +188,7 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step, d
 		return xerrors.Errorf("failed to marshal Election : %v", err)
 	}
 
-	electionIDBuff, err := hex.DecodeString(string(election.ElectionID))
-	if err != nil {
-		return xerrors.Errorf(errDecodeElectionID, err)
-	}
-
-	err = snap.Set(electionIDBuff, electionMarshaled)
+	err = snap.Set(electionIDBuf, electionMarshaled)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
@@ -219,18 +229,30 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 		return xerrors.Errorf("the election is not open, current status: %d", election.Status)
 	}
 
-	// TODO: check that castVoteTransaction.Ballot is a well formatted
-	// types.Ciphertext{}
-	election.EncryptedBallots.CastVote(castVoteTransaction.UserID, castVoteTransaction.Ballot)
+	if len(castVoteTransaction.Ballot) != election.ChunksPerBallot() {
+		return xerrors.Errorf("the ballot has unexpected length: %d != %d",
+			len(castVoteTransaction.Ballot), election.ChunksPerBallot())
+	}
 
-	// election.EncryptedBallots[castVoteTransaction.UserId] = castVoteTransaction.Ballot
+	for _, ciphertext := range castVoteTransaction.Ballot {
+		if ciphertext.K == nil || ciphertext.C == nil ||
+			len(ciphertext.K) == 0 || len(ciphertext.C) == 0 {
+			return xerrors.Errorf("part of the casted ballot has empty El Gamal pairs")
+		}
+		_, _, err = ciphertext.GetPoints()
+		if err != nil {
+			return xerrors.Errorf("casted ballot has invalid El Gamal pairs: %v", err)
+		}
+	}
+
+	election.PublicBulletinBoard.CastVote(castVoteTransaction.UserID, castVoteTransaction.Ballot)
 
 	electionMarshaled, err = json.Marshal(election)
 	if err != nil {
 		return xerrors.Errorf("failed to marshal Election : %v", err)
 	}
 
-	electionIDBuff, err := hex.DecodeString(string(election.ElectionID))
+	electionIDBuff, err := hex.DecodeString(election.ElectionID)
 	if err != nil {
 		return xerrors.Errorf(errDecodeElectionID, err)
 	}
@@ -241,7 +263,6 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 	}
 
 	return nil
-
 }
 
 // shuffleBallots implements commands. It performs the SHUFFLE_BALLOTS command
@@ -275,25 +296,93 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	election := &types.Election{}
 	err = json.Unmarshal(electionMarshaled, election)
 	if err != nil {
-		return xerrors.Errorf("failed to unmarshal Election : %v", err)
+		return xerrors.Errorf("failed to unmarshal Election: %v", err)
 	}
 
 	if election.Status != types.Closed {
-		// todo : send status ?
 		return xerrors.Errorf("the election is not closed")
 	}
 
 	// Round starts at 0
-	expectedRound := len(election.ShuffledBallots)
+	expectedRound := len(election.ShuffleInstances)
 
 	if shuffleBallotsTransaction.Round != expectedRound {
-		return xerrors.Errorf("wrong shuffle round: expected round %d, "+
-			"transaction is for round %d", expectedRound, shuffleBallotsTransaction.Round)
+		return xerrors.Errorf("wrong shuffle round: expected round '%d', "+
+			"transaction is for round '%d'", expectedRound, shuffleBallotsTransaction.Round)
 	}
 
-	ksShuffled, csShuffled, err := shuffleBallotsTransaction.ShuffledBallots.GetKsCs()
+	shufflerPublicKey := shuffleBallotsTransaction.PublicKey
+
+	// Check the shuffler is a valid member of the roster:
+	roster, err := e.rosterFac.AuthorityOf(e.context, election.RosterBuf)
 	if err != nil {
-		return xerrors.Errorf("failed to get ks, cs: %v", err)
+		return xerrors.Errorf("failed to deserialize roster: %v", err)
+	}
+
+	err = isMemberOf(roster, shufflerPublicKey)
+	if err != nil {
+		return xerrors.Errorf("could not verify identity of shuffler : %v", err)
+	}
+
+	// Chek the node who submitted the shuffle did not already submit an accepted shuffle
+	for i, shuffleInstance := range election.ShuffleInstances {
+		if bytes.Equal(shufflerPublicKey, shuffleInstance.ShufflerPublicKey) {
+			return xerrors.Errorf("a node already submitted a shuffle that"+
+				" has been accepted in round %v", i)
+		}
+	}
+
+	// Check the shuffler indeed signed the transaction:
+	signerPubKey, err := bls.NewPublicKey(shuffleBallotsTransaction.PublicKey)
+	if err != nil {
+		return xerrors.Errorf("could not decode public key of signer : %v ", err)
+	}
+
+	txSignature := shuffleBallotsTransaction.Signature
+	signature, err := bls.NewSignatureFactory().SignatureOf(e.context, txSignature)
+	if err != nil {
+		return xerrors.Errorf("could node deserialize shuffle signature : %v", err)
+	}
+
+	shuffleHash, err := shuffleBallotsTransaction.HashShuffle(election.ElectionID)
+	if err != nil {
+		return xerrors.Errorf("could not hash shuffle : %v", err)
+	}
+
+	// Check the signature matches the shuffle using the shuffler's public key:
+	err = signerPubKey.Verify(shuffleHash, signature)
+	if err != nil {
+		return xerrors.Errorf("signature does not match the Shuffle : %v ", err)
+	}
+
+	// Retrieve the random vector (ie the Scalar vector)
+	randomVector, err := shuffleBallotsTransaction.RandomVector.Unmarshal()
+	if err != nil {
+		return err
+	}
+
+	// Check the random vector is correct :
+	semiRandomStream, err := NewSemiRandomStream(shuffleHash)
+	if err != nil {
+		return xerrors.Errorf("could not create semi-random stream: %v", err)
+	}
+
+	if election.ChunksPerBallot() != len(randomVector) {
+		return xerrors.Errorf("randomVector has unexpected length : %v != %v",
+			len(randomVector), election.ChunksPerBallot())
+	}
+
+	for i := 0; i < election.ChunksPerBallot(); i++ {
+		v := suite.Scalar().Pick(semiRandomStream)
+		if !randomVector[i].Equal(v) {
+			return xerrors.Errorf("random vector from shuffle transaction is " +
+				"different than expected random vector")
+		}
+	}
+
+	XX, YY, err := shuffleBallotsTransaction.ShuffledBallots.GetElGPairs()
+	if err != nil {
+		return xerrors.Errorf("failed to get X, Y: %v", err)
 	}
 
 	// get the election public key
@@ -303,22 +392,24 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("failed to unmarshal public key: %v", err)
 	}
 
-	var encryptedBallots types.Ciphertexts
+	var encryptedBallots types.EncryptedBallots
 
 	if shuffleBallotsTransaction.Round == 0 {
-		encryptedBallots = election.EncryptedBallots.Ballots
+		encryptedBallots = election.PublicBulletinBoard.Ballots
 	} else {
 		// get the election's last shuffled ballots
-		encryptedBallots = election.ShuffledBallots[len(election.ShuffledBallots)-1]
+		encryptedBallots = election.ShuffleInstances[len(election.ShuffleInstances)-1].ShuffledBallots
 	}
 
-	ks, cs, err := encryptedBallots.GetKsCs()
+	X, Y, err := encryptedBallots.GetElGPairs()
 	if err != nil {
-		return xerrors.Errorf("failed to get ks, cs: %v", err)
+		return xerrors.Errorf("failed to get X, Y: %v", err)
 	}
 
-	// todo: add trusted nodes in election struct
-	verifier := shuffle.Verifier(suite, nil, pubKey, ks, cs, ksShuffled, csShuffled)
+	XXUp, YYUp, XXDown, YYDown := shuffle.GetSequenceVerifiable(suite, X, Y, XX,
+		YY, randomVector)
+
+	verifier := shuffle.Verifier(suite, nil, pubKey, XXUp, YYUp, XXDown, YYDown)
 
 	err = e.prover(suite, protocolName, verifier, shuffleBallotsTransaction.Proof)
 	if err != nil {
@@ -326,11 +417,16 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	}
 
 	// append the new shuffled ballots and the proof to the lists
-	election.ShuffledBallots = append(election.ShuffledBallots, shuffleBallotsTransaction.ShuffledBallots)
-	election.ShuffledProofs = append(election.ShuffledProofs, shuffleBallotsTransaction.Proof)
+	currentShuffleInstance := types.ShuffleInstance{
+		ShuffledBallots:   shuffleBallotsTransaction.ShuffledBallots,
+		ShuffleProofs:     shuffleBallotsTransaction.Proof,
+		ShufflerPublicKey: shufflerPublicKey,
+	}
+
+	election.ShuffleInstances = append(election.ShuffleInstances, currentShuffleInstance)
 
 	// in case we have enough shuffled ballots, we update the status
-	if len(election.ShuffledBallots) >= election.ShuffleThreshold {
+	if len(election.ShuffleInstances) >= election.ShuffleThreshold {
 		election.Status = types.ShuffledBallots
 	}
 
@@ -339,7 +435,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("failed to marshall Election : %v", err)
 	}
 
-	electionIDBuff, err := hex.DecodeString(string(election.ElectionID))
+	electionIDBuff, err := hex.DecodeString(election.ElectionID)
 	if err != nil {
 		return xerrors.Errorf(errDecodeElectionID, err)
 	}
@@ -381,11 +477,13 @@ func checkPreviousTransactions(step execution.Step, round int) error {
 // closeElection implements commands. It performs the CLOSE_ELECTION command
 func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) error {
 	closeElectionBuf := step.Current.GetArg(CloseElectionArg)
+
 	if len(closeElectionBuf) == 0 {
 		return xerrors.Errorf(errArgNotFound, CloseElectionArg)
 	}
 
 	closeElectionTransaction := &types.CloseElectionTransaction{}
+
 	err := json.Unmarshal(closeElectionBuf, closeElectionTransaction)
 	if err != nil {
 		return xerrors.Errorf("failed to unmarshal CloseElectionTransaction: %v", err)
@@ -402,6 +500,7 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 	}
 
 	election := &types.Election{}
+
 	err = json.Unmarshal(electionMarshaled, election)
 	if err != nil {
 		return xerrors.Errorf("failed to unmarshal Election: %v", err)
@@ -415,7 +514,7 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 		return xerrors.Errorf("the election is not open, current status: %d", election.Status)
 	}
 
-	if len(election.EncryptedBallots.Ballots) <= 1 {
+	if len(election.PublicBulletinBoard.Ballots) <= 1 {
 		return xerrors.Errorf("at least two ballots are required")
 	}
 
@@ -537,7 +636,7 @@ func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("failed to marshal Election : %v", err)
 	}
 
-	electionIDBuff, err := hex.DecodeString(string(election.ElectionID))
+	electionIDBuff, err := hex.DecodeString(election.ElectionID)
 	if err != nil {
 		return xerrors.Errorf(errDecodeElectionID, err)
 	}
@@ -548,4 +647,65 @@ func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step)
 	}
 
 	return nil
+}
+
+// isMemberOf is a utility function to verify if a public key is associated
+// to a member of the roster or not. Returns nil if it's the case.
+func isMemberOf(roster authority.Authority, publicKey []byte) error {
+	pubKeyIterator := roster.PublicKeyIterator()
+	isAMember := false
+
+	for pubKeyIterator.HasNext() {
+		key, err := pubKeyIterator.GetNext().MarshalBinary()
+		if err != nil {
+			return xerrors.Errorf("failed to serialize a public key from the roster : %v ", err)
+		}
+
+		if bytes.Equal(publicKey, key) {
+			isAMember = true
+		}
+	}
+
+	if !isAMember {
+		return xerrors.Errorf("public key not associated to a member of the roster: %x", publicKey)
+	}
+
+	return nil
+}
+
+// SemiRandomStream implements cipher.Stream
+type SemiRandomStream struct {
+	// Seed is the seed on which should be based our random number generation
+	seed []byte
+
+	stream *rand.Rand
+}
+
+func NewSemiRandomStream(seed []byte) (SemiRandomStream, error) {
+	if len(seed) > 8 {
+		seed = seed[0:8]
+	}
+
+	s, n := binary.Varint(seed)
+	if n <= 0 {
+		return SemiRandomStream{}, xerrors.Errorf("the seed has a wrong size (too small)")
+	}
+
+	source := rand.NewSource(s)
+
+	stream := rand.New(source)
+
+	return SemiRandomStream{stream: stream, seed: seed}, nil
+}
+
+func (s SemiRandomStream) XORKeyStream(dst, src []byte) {
+	key := make([]byte, len(src))
+
+	_, err := s.stream.Read(key)
+	if err != nil {
+		panic("error reading into semi random stream :" + err.Error())
+	}
+
+	xof := suite.XOF(key)
+	xof.XORKeyStream(dst, src)
 }

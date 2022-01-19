@@ -2,8 +2,9 @@ package types
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
-
+	"encoding/json"
 	"golang.org/x/xerrors"
 )
 
@@ -37,9 +38,8 @@ func (e *ElectionIDs) Add(id string) error {
 }
 
 type CreateElectionTransaction struct {
-	Title   string
-	AdminID string
-	Format  string
+	Configuration Configuration
+	AdminID       string
 }
 
 type OpenElectionTransaction struct {
@@ -51,7 +51,7 @@ type CastVoteTransaction struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 	UserID     string
-	Ballot     Ciphertext
+	Ballot     EncryptedBallot
 }
 
 type CloseElectionTransaction struct {
@@ -63,8 +63,17 @@ type CloseElectionTransaction struct {
 type ShuffleBallotsTransaction struct {
 	ElectionID      string
 	Round           int
-	ShuffledBallots Ciphertexts
-	Proof           []byte
+	ShuffledBallots EncryptedBallots
+	// RandomVector is the vector to be used to generate the proof of the next
+	// shuffle
+	RandomVector RandomVector
+	// Proof is the proof corresponding to the shuffle of this transaction
+	Proof []byte
+	// Signature is the signature of the result of HashShuffle() with the private
+	// key corresponding to PublicKey
+	Signature []byte
+	//PublicKey is the public key of the signer.
+	PublicKey []byte
 }
 
 type DecryptBallotsTransaction struct {
@@ -89,4 +98,26 @@ func RandomID() (string, error) {
 	}
 
 	return hex.EncodeToString(buf), nil
+}
+
+// HashShuffle hashes a given shuffle so that it can be signed or a signature
+// can be verified, using a common template.
+func (s ShuffleBallotsTransaction) HashShuffle(electionID string) ([]byte, error) {
+	hash := sha256.New()
+
+	id, err := hex.DecodeString(electionID)
+	if err != nil {
+		return nil, xerrors.Errorf("could not decode electionId : %v", err)
+	}
+
+	hash.Write(id)
+
+	shuffledBallots, err := json.Marshal(s.ShuffledBallots)
+	if err != nil {
+		return nil, xerrors.Errorf("could not marshal shuffled ballots : %v", err)
+	}
+
+	hash.Write(shuffledBallots)
+
+	return hash.Sum(nil), nil
 }

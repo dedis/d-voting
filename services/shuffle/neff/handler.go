@@ -5,11 +5,11 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"time"
 
+	"go.dedis.ch/kyber/v3"
+
 	"github.com/dedis/d-voting/contracts/evoting"
-	evotingController "github.com/dedis/d-voting/contracts/evoting/controller"
 	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"go.dedis.ch/dela"
@@ -20,15 +20,14 @@ import (
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
+	jsondela "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3/proof"
 	shuffleKyber "go.dedis.ch/kyber/v3/shuffle"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 )
 
-const watchTimeout = time.Second * 2
-
-// const endShuffleTimeout = time.Second * 50
+const watchTimeout = time.Second * 6
 
 var suite = suites.MustFind("Ed25519")
 
@@ -37,22 +36,22 @@ var suite = suites.MustFind("Ed25519")
 // - implements mino.Handler
 type Handler struct {
 	mino.UnsupportedHandler
-	me      mino.Address
-	service ordering.Service
-	p       pool.Pool
-	signer  crypto.Signer
-	client  *evotingController.Client
+	me            mino.Address
+	service       ordering.Service
+	p             pool.Pool
+	txmngr        txn.Manager
+	shuffleSigner crypto.Signer
 }
 
 // NewHandler creates a new handler
 func NewHandler(me mino.Address, service ordering.Service, p pool.Pool,
-	signer crypto.Signer, client *evotingController.Client) *Handler {
+	txmngr txn.Manager, shuffleSigner crypto.Signer) *Handler {
 	return &Handler{
-		me:      me,
-		service: service,
-		p:       p,
-		signer:  signer,
-		client:  client,
+		me:            me,
+		service:       service,
+		p:             p,
+		txmngr:        txmngr,
+		shuffleSigner: shuffleSigner,
 	}
 }
 
@@ -65,7 +64,7 @@ func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 		return xerrors.Errorf("failed to receive: %v", err)
 	}
 
-	dela.Logger.Info().Msgf("message received from: %v", from)
+	dela.Logger.Trace().Msgf("message received from: %v", from)
 
 	switch msg := msg.(type) {
 	case types.StartShuffle:
@@ -82,7 +81,6 @@ func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 
 func (h *Handler) handleStartShuffle(electionID string) error {
 	dela.Logger.Info().Msg("Starting the neff shuffle protocol ...")
-	manager := getManager(h.signer, h.client)
 
 	// loop until the threshold is reached or our transaction has been accepted
 	for {
@@ -91,7 +89,7 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 			return xerrors.Errorf("failed to get election: %v", err)
 		}
 
-		round := len(election.ShuffledBallots)
+		round := len(election.ShuffleInstances)
 
 		// check if the threshold is reached
 		if round >= election.ShuffleThreshold {
@@ -100,10 +98,10 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 		}
 
 		if election.Status != electionTypes.Closed {
-			return xerrors.Errorf("the election must be closed: %s", election.Status)
+			return xerrors.Errorf("the election must be closed: but status is %v", election.Status)
 		}
 
-		tx, err := makeTx(election, manager)
+		tx, err := makeTx(election, h.txmngr, h.shuffleSigner)
 		if err != nil {
 			return xerrors.Errorf("failed to make tx: %v", err)
 		}
@@ -113,36 +111,101 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 
 		events := h.service.Watch(watchCtx)
 
-		dela.Logger.Info().Msgf("sending shuffling tx with nonce %d", tx.GetNonce())
-
 		err = h.p.Add(tx)
 		if err != nil {
 			return xerrors.Errorf("failed to add transaction to the pool: %v", err.Error())
 		}
 
 		accepted, msg := watchTx(events, tx.GetID())
+
+		if !accepted {
+			err = h.txmngr.Sync()
+			if err != nil {
+				return xerrors.Errorf("failed to sync manager: %v", err.Error())
+			}
+		}
+
 		if accepted {
 			dela.Logger.Info().Msg("our shuffling contribution has " +
-				"been accepted, we are exitting the process")
+				"been accepted, we are exiting the process")
+
 			return nil
 		}
 
 		dela.Logger.Info().Msg("shuffling contribution denied : " + msg)
+
+		cancel()
 	}
 }
 
-func makeTx(election *electionTypes.Election, manager txn.Manager) (txn.Transaction, error) {
-	shuffledBallots, shuffleProof, err := getShuffledBallots(election)
+func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner crypto.Signer) (txn.Transaction, error) {
+	shuffledBallots, getProver, err := getShuffledBallots(election)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get shuffled ballots: %v", err)
 	}
 
 	shuffleBallotsTransaction := electionTypes.ShuffleBallotsTransaction{
-		ElectionID:      string(election.ElectionID),
-		Round:           len(election.ShuffledBallots),
+		ElectionID:      election.ElectionID,
+		Round:           len(election.ShuffleInstances),
 		ShuffledBallots: shuffledBallots,
-		Proof:           shuffleProof,
 	}
+
+	shuffleHash, err := shuffleBallotsTransaction.HashShuffle(election.ElectionID)
+	if err != nil {
+		return nil, xerrors.Errorf("Could not hash the shuffle while creating transaction: %v", err)
+	}
+
+	// Generate random vector and proof
+	semiRandomStream, err := evoting.NewSemiRandomStream(shuffleHash)
+	if err != nil {
+		return nil, xerrors.Errorf("could not create semi-random stream: %v", err)
+	}
+
+	e := make([]kyber.Scalar, election.ChunksPerBallot())
+	for i := 0; i < election.ChunksPerBallot(); i++ {
+		v := suite.Scalar().Pick(semiRandomStream)
+		e[i] = v
+	}
+
+	prover, err := getProver(e)
+	if err != nil {
+		return nil, xerrors.Errorf("could not get prover for shuffle : %v", err)
+	}
+
+	shuffleProof, err := proof.HashProve(suite, protocolName, prover)
+	if err != nil {
+		return nil, xerrors.Errorf("shuffle proof failed: %v", err)
+	}
+
+	shuffleBallotsTransaction.Proof = shuffleProof
+
+	shuffleBallotsTransaction.RandomVector = electionTypes.RandomVector{}
+
+	err = shuffleBallotsTransaction.RandomVector.LoadFromScalars(e)
+	if err != nil {
+		return nil, xerrors.Errorf("could not marshal shuffle random vector")
+	}
+
+	// Sign the shuffle:
+
+	signature, err := shuffleSigner.Sign(shuffleHash)
+	if err != nil {
+		return nil, xerrors.Errorf("Could not sign the shuffle : %v", err)
+	}
+
+	encodedSignature, err := signature.Serialize(jsondela.NewContext())
+	if err != nil {
+		return nil, xerrors.Errorf("Could not encode signature as []byte : %v ", err)
+	}
+
+	publicKey, err := shuffleSigner.GetPublicKey().MarshalBinary()
+	if err != nil {
+		return nil, xerrors.Errorf("Could not unmarshal public key from nodeSigner: %v", err)
+	}
+
+	// Complete transaction:
+	shuffleBallotsTransaction.PublicKey = publicKey
+	shuffleBallotsTransaction.Signature = encodedSignature
 
 	js, err := json.Marshal(shuffleBallotsTransaction)
 	if err != nil {
@@ -164,35 +227,31 @@ func makeTx(election *electionTypes.Election, manager txn.Manager) (txn.Transact
 		Value: js,
 	}
 
-	err = manager.Sync()
-	if err != nil {
-		return nil, xerrors.Errorf("failed to sync manager: %v", err.Error())
-	}
-
 	tx, err := manager.Make(args...)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to make transaction: %v", err.Error())
+		return nil, xerrors.Errorf("failed to use manager: %v", err.Error())
 	}
 
 	return tx, nil
 }
 
 // getShuffledBallots returns the shuffled ballots with the shuffling proof.
-func getShuffledBallots(election *electionTypes.Election) (electionTypes.Ciphertexts, []byte, error) {
-	round := len(election.ShuffledBallots)
+func getShuffledBallots(election *electionTypes.Election) ([]electionTypes.EncryptedBallot,
+	func(e []kyber.Scalar) (proof.Prover, error), error) {
 
-	var encryptedBallots electionTypes.Ciphertexts
+	round := len(election.ShuffleInstances)
+
+	var encryptedBallots electionTypes.EncryptedBallots
 
 	if round == 0 {
-		encryptedBallots = election.EncryptedBallots.Ballots
-		fmt.Println("encrypted ballots:", election.EncryptedBallots)
+		encryptedBallots = election.PublicBulletinBoard.Ballots
 	} else {
-		encryptedBallots = election.ShuffledBallots[round-1]
+		encryptedBallots = election.ShuffleInstances[round-1].ShuffledBallots
 	}
 
-	ks, cs, err := encryptedBallots.GetKsCs()
+	X, Y, err := encryptedBallots.GetElGPairs()
 	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to get ks, cs: %v", err)
+		return nil, nil, xerrors.Errorf("failed to get X, Y: %v", err)
 	}
 
 	pubKey := suite.Point()
@@ -202,22 +261,17 @@ func getShuffledBallots(election *electionTypes.Election) (electionTypes.Ciphert
 		return nil, nil, xerrors.Errorf("couldn't unmarshal public key: %v", err)
 	}
 
-	rand := suite.RandomStream()
-	Kbar, Cbar, prover := shuffleKyber.Shuffle(suite, nil, pubKey, ks, cs, rand)
+	// shuffle sequences
+	XX, YY, getProver := shuffleKyber.SequencesShuffle(suite, nil, pubKey, X, Y, suite.RandomStream())
 
-	shuffleProof, err := proof.HashProve(suite, protocolName, prover)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("Shuffle proof failed: %v", err.Error())
-	}
+	var shuffledBallots electionTypes.EncryptedBallots
 
-	var shuffledBallots electionTypes.Ciphertexts
-
-	err = shuffledBallots.InitFromKsCs(Kbar, Cbar)
+	err = shuffledBallots.InitFromElGPairs(XX, YY)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("failed to init ciphertexts: %v", err)
 	}
 
-	return shuffledBallots, shuffleProof, nil
+	return shuffledBallots, getProver, nil
 }
 
 // watchTx checks the transaction to find one that match txID. Return if the

@@ -18,13 +18,14 @@ func TestController_SetCommands(t *testing.T) {
 	call := &fake.Call{}
 	c.SetCommands(fakeBuilder{call: call})
 
-	require.Equal(t, 6, call.Len())
+	require.Equal(t, 7, call.Len())
 	require.Equal(t, "shuffle", call.Get(0, 0))
 	require.Equal(t, "interact with the SHUFFLE service", call.Get(1, 0))
 	require.Equal(t, "init", call.Get(2, 0))
-	require.Equal(t, "initialize the SHUFFLE protocol", call.Get(3, 0))
-	require.IsType(t, &initAction{}, call.Get(4, 0))
-	require.Nil(t, call.Get(5, 0))
+	require.Len(t, call.Get(3, 0), 1)
+	require.Equal(t, "initialize the SHUFFLE protocol", call.Get(4, 0))
+	require.IsType(t, &initAction{}, call.Get(5, 0))
+	require.Nil(t, call.Get(6, 0))
 
 }
 
@@ -39,6 +40,7 @@ func TestController_OnStart(t *testing.T) {
 
 	inj.Inject(fake.Mino{})
 	err = c.OnStart(make(node.FlagSet), inj)
+
 	require.EqualError(t, err,
 		"failed to resolve pool.Pool: couldn't find dependency for 'pool.Pool'")
 
@@ -54,7 +56,10 @@ func TestController_OnStart(t *testing.T) {
 
 	inj.Inject(&blockstore.InDisk{})
 	err = c.OnStart(make(node.FlagSet), inj)
-	require.NoError(t, err)
+	require.EqualError(t, err,
+		"failed to resolve authority.Factory")
+
+	//TODO: Inject fake roster factory (once it's in internal/testing)
 }
 
 func TestController_OnStop(t *testing.T) {

@@ -115,7 +115,7 @@ func TestMemcoin_Scenario_SetupAndTransactions(t *testing.T) {
 // This test creates a chain with two nodes, then gracefully close them. It
 // finally restarts both of them to make sure the chain can proceed after the
 // restart. It basically tests if the components are correctly loaded from the
-// persisten storage.
+// persistent storage.
 func TestMemcoin_Scenario_RestartNode(t *testing.T) {
 	dir, err := ioutil.TempDir(os.TempDir(), "memcoin2")
 	require.NoError(t, err)
@@ -193,9 +193,10 @@ func setupChain(t *testing.T, nodes []string, ports []uint16) {
 
 	shareCert(t, nodes[1], nodes[0], fmt.Sprintf("127.0.0.1:%d", ports[0]))
 
-	args := append(append(
-		[]string{os.Args[0], "--config", nodes[0], "ordering", "setup"},
-		getExport(t, nodes[0])...),
+	args := append(
+		append(
+			[]string{os.Args[0], "--config", nodes[0], "ordering", "setup"},
+			getExport(t, nodes[0])...),
 		getExport(t, nodes[1])...,
 	)
 
@@ -221,7 +222,7 @@ func waitDaemon(t *testing.T, daemons []string) bool {
 				}
 			}
 
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 
 			if i+1 >= num {
 				return false

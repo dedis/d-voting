@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	evotingController "github.com/dedis/d-voting/contracts/evoting/controller"
 	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/shuffle"
 	"github.com/dedis/d-voting/services/shuffle/neff/types"
@@ -15,6 +14,7 @@ import (
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
+	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
@@ -32,13 +32,6 @@ import (
 const (
 	shuffleTimeout = time.Second * 30
 	protocolName   = "PairShuffle"
-
-	// waitN is the number of time we check if the shuffling is done. Must be at
-	// least one.
-	waitN = 20
-	// waitT is the time we wait before retrying to check if the shuffling is
-	// done.
-	waitT = time.Second * 3
 )
 
 // NeffShuffle allows one to initialize a new SHUFFLE protocol.
@@ -52,11 +45,12 @@ type NeffShuffle struct {
 	blocks        *blockstore.InDisk
 	rosterFactory authority.Factory
 	context       serde.Context
+	nodeSigner    crypto.Signer
 }
 
 // NewNeffShuffle returns a new NeffShuffle factory.
 func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool,
-	blocks *blockstore.InDisk, rosterFac authority.Factory) *NeffShuffle {
+	blocks *blockstore.InDisk, rosterFac authority.Factory, signer crypto.Signer) *NeffShuffle {
 
 	factory := types.NewMessageFactory(m.GetAddressFactory())
 
@@ -68,17 +62,21 @@ func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool,
 		blocks:        blocks,
 		rosterFactory: rosterFac,
 		context:       jsonserde.NewContext(),
+		nodeSigner:    signer,
 	}
 }
 
 // Listen implements shuffle.SHUFFLE. It must be called on each node that
 // participates in the SHUFFLE. Creates the RPC.
-func (n NeffShuffle) Listen(signer crypto.Signer) (shuffle.Actor, error) {
-	client := &evotingController.Client{
-		Nonce:  0,
-		Blocks: n.blocks,
+func (n NeffShuffle) Listen(txmngr txn.Manager) (shuffle.Actor, error) {
+	// We are expecting the manager to be exclusive for the service, with no
+	// other use than us.
+	err := txmngr.Sync()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to sync manager: %v", err)
 	}
-	h := NewHandler(n.mino.GetAddress(), n.service, n.p, signer, client)
+
+	h := NewHandler(n.mino.GetAddress(), n.service, n.p, txmngr, n.nodeSigner)
 
 	a := &Actor{
 		rpc:       mino.MustCreateRPC(n.mino, "shuffle", h, n.factory),
@@ -111,17 +109,17 @@ type Actor struct {
 // Shuffle must be called by ONE of the actor to shuffle the list of ElGamal
 // pairs.
 // Each node represented by a player must first execute Listen().
-func (a *Actor) Shuffle(electionID []byte) (err error) {
+func (a *Actor) Shuffle(electionID []byte) error {
 	a.Lock()
 	defer a.Unlock()
 
-	proof, err := a.service.GetProof(electionID)
-	if err != nil {
-		return xerrors.Errorf("failed to read on the blockchain: %v", err)
+	proof, exists := electionExists(a.service, electionID)
+	if !exists {
+		return xerrors.Errorf("election %s was not found", electionID)
 	}
 
 	election := new(electionTypes.Election)
-	err = json.NewDecoder(bytes.NewBuffer(proof.GetValue())).Decode(election)
+	err := json.NewDecoder(bytes.NewBuffer(proof.GetValue())).Decode(election)
 	if err != nil {
 		return xerrors.Errorf("failed to unmarshal Election: %v", err)
 	}
@@ -129,6 +127,10 @@ func (a *Actor) Shuffle(electionID []byte) (err error) {
 	roster, err := a.rosterFac.AuthorityOf(a.context, election.RosterBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to deserialize roster: %v", err)
+	}
+
+	if roster.Len() == 0 {
+		return xerrors.Errorf("the roster is empty")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), shuffleTimeout)
@@ -141,9 +143,7 @@ func (a *Actor) Shuffle(electionID []byte) (err error) {
 
 	addrs := make([]mino.Address, 0, roster.Len())
 	addrs = append(addrs, a.mino.GetAddress())
-
 	addrIter := roster.AddressIterator()
-
 	for addrIter.HasNext() {
 		addr := addrIter.GetNext()
 		if !addr.Equal(a.mino.GetAddress()) {
@@ -159,7 +159,7 @@ func (a *Actor) Shuffle(electionID []byte) (err error) {
 		return xerrors.Errorf("failed to start shuffle: %v", err)
 	}
 
-	err = a.waitAndCheckShuffling(message.GetElectionId())
+	err = a.waitAndCheckShuffling(message.GetElectionId(), roster.Len())
 	if err != nil {
 		return xerrors.Errorf("failed to wait and check shuffling: %v", err)
 	}
@@ -168,18 +168,19 @@ func (a *Actor) Shuffle(electionID []byte) (err error) {
 }
 
 // waitAndCheckShuffling periodically checks the state of the election. It
-// returns an error if the shuffling is not done after a while.
-func (a *Actor) waitAndCheckShuffling(electionID string) error {
+// returns an error if the shuffling is not done after a while. The retry and
+// waiting time depends on the rosterLen.
+func (a *Actor) waitAndCheckShuffling(electionID string, rosterLen int) error {
 	var election *electionTypes.Election
 	var err error
 
-	for i := 0; i < waitN; i++ {
+	for i := 0; i < rosterLen*10; i++ {
 		election, err = getElection(a.service, electionID)
 		if err != nil {
 			return xerrors.Errorf("failed to get election: %v", err)
 		}
 
-		round := len(election.ShuffledBallots)
+		round := len(election.ShuffleInstances)
 		dela.Logger.Info().Msgf("SHUFFLE / ROUND : %d", round)
 
 		// if the threshold is reached that means we have enough
@@ -190,14 +191,15 @@ func (a *Actor) waitAndCheckShuffling(electionID string) error {
 		}
 
 		dela.Logger.Info().Msgf("waiting a while before checking election: %d", i)
-		time.Sleep(waitT)
+		time.Sleep(time.Second * time.Duration(rosterLen/2+1))
 	}
 
 	return xerrors.Errorf("threshold of shuffling not reached: %d < %d",
-		len(election.ShuffledBallots), election.ShuffleThreshold)
+		len(election.ShuffleInstances), election.ShuffleThreshold)
 }
 
 // Todo : this is useless in the new implementation, maybe remove ?
+
 // Verify allows to verify a Shuffle
 func (a *Actor) Verify(suiteName string, Ks []kyber.Point, Cs []kyber.Point,
 	pubKey kyber.Point, KsShuffled []kyber.Point, CsShuffled []kyber.Point, prf []byte) (err error) {
@@ -206,4 +208,18 @@ func (a *Actor) Verify(suiteName string, Ks []kyber.Point, Cs []kyber.Point,
 
 	verifier := shuffleKyber.Verifier(suite, nil, pubKey, Ks, Cs, KsShuffled, CsShuffled)
 	return proof.HashVerify(suite, protocolName, verifier, prf)
+}
+
+func electionExists(service ordering.Service, electionIDBuf []byte) (ordering.Proof, bool) {
+	proof, err := service.GetProof(electionIDBuf)
+	if err != nil {
+		return proof, false
+	}
+
+	// this is proof of absence
+	if string(proof.GetValue()) == "" {
+		return proof, false
+	}
+
+	return proof, true
 }

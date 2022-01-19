@@ -17,21 +17,21 @@ import (
 var suite = suites.MustFind("Ed25519")
 
 func TestMessageFormat_Start_Encode(t *testing.T) {
-	start := types.NewStart(1, []mino.Address{fake.NewAddress(0)}, []kyber.Point{suite.Point()})
+	start := types.NewStart([]mino.Address{fake.NewAddress(0)}, []kyber.Point{suite.Point()})
 
 	format := newMsgFormat()
 	ctx := serde.NewContext(fake.ContextEngine{})
 
 	data, err := format.Encode(ctx, start)
 	require.NoError(t, err)
-	regexp := `{"Start":{"Threshold":1,"Addresses":\["AAAAAA=="\],"PublicKeys":\["[^"]+"\]}}`
+	regexp := `{"Start":{"Threshold":0,"Addresses":\["AAAAAA=="\],"PublicKeys":\["[^"]+"\]}}`
 	require.Regexp(t, regexp, string(data))
 
-	start = types.NewStart(0, []mino.Address{fake.NewBadAddress()}, nil)
+	start = types.NewStart([]mino.Address{fake.NewBadAddress()}, nil)
 	_, err = format.Encode(ctx, start)
 	require.EqualError(t, err, fake.Err("couldn't marshal address"))
 
-	start = types.NewStart(0, nil, []kyber.Point{badPoint{}})
+	start = types.NewStart(nil, []kyber.Point{badPoint{}})
 	_, err = format.Encode(ctx, start)
 	require.EqualError(t, err, fake.Err("couldn't marshal public key"))
 
@@ -123,7 +123,6 @@ func TestMessageFormat_Decode(t *testing.T) {
 
 	// Decode start messages.
 	expected := types.NewStart(
-		5,
 		[]mino.Address{fake.NewAddress(0)},
 		[]kyber.Point{suite.Point()},
 	)
@@ -133,7 +132,6 @@ func TestMessageFormat_Decode(t *testing.T) {
 
 	start, err := format.Decode(ctx, data)
 	require.NoError(t, err)
-	require.Equal(t, expected.GetThreshold(), start.(types.Start).GetThreshold())
 	require.Len(t, start.(types.Start).GetAddresses(), len(expected.GetAddresses()))
 	require.Len(t, start.(types.Start).GetPublicKeys(), len(expected.GetPublicKeys()))
 

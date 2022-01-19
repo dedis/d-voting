@@ -4,6 +4,7 @@ package evoting
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -18,10 +19,13 @@ import (
 	"go.dedis.ch/dela/core/execution"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/crypto/bls"
+	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/util/random"
@@ -29,6 +33,7 @@ import (
 
 var dummyElectionIdBuff = []byte("dummyID")
 var fakeElectionID = hex.EncodeToString(dummyElectionIdBuff)
+var fakeCommonSigner = bls.NewSigner()
 
 func fakeProver(proof.Suite, string, proof.Verifier, []byte) error {
 	return nil
@@ -39,12 +44,20 @@ func TestExecute(t *testing.T) {
 		actor: fakeDkgActor{},
 		err:   nil,
 	}
-	contract := NewContract([]byte{}, fakeAccess{err: fake.GetError()}, fakeDkg)
+	var evotingAccessKey = [32]byte{3}
+	rosterKey := [32]byte{}
+
+	service := fakeAccess{err: fake.GetError()}
+	rosterFac := fakeAuthorityFactory{}
+
+	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
 
 	err := contract.Execute(fakeStore{}, makeStep(t))
 	require.EqualError(t, err, "identity not authorized: fake.PublicKey ("+fake.GetError().Error()+")")
 
-	contract = NewContract([]byte{}, fakeAccess{}, fakeDkg)
+	service = fakeAccess{}
+
+	contract = NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
 	err = contract.Execute(fakeStore{}, makeStep(t))
 	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, CmdArg))
 
@@ -83,89 +96,75 @@ func TestCommand_CreateElection(t *testing.T) {
 		err:       nil,
 	}
 
-	fakeDKG := fakeDKG{
+	fakeDkg := fakeDKG{
 		actor: fakeActor,
 		err:   nil,
 	}
 
 	dummyCreateElectionTransaction := types.CreateElectionTransaction{
-		ElectionID: "dummyID",
-		Title:      "dummyTitle",
-		AdminID:    "dummyAdminID",
+		AdminID: "dummyAdminID",
 	}
 
 	js, _ := json.Marshal(dummyCreateElectionTransaction)
 
-	contract := NewContract([]byte{}, fakeAccess{}, fakeDKG)
+	var evotingAccessKey = [32]byte{3}
+	rosterKey := [32]byte{}
+
+	service := fakeAccess{err: fake.GetError()}
+	rosterFac := fakeAuthorityFactory{}
+
+	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
 
 	cmd := evotingCommand{
 		Contract: &contract,
 	}
 
-	err := cmd.createElection(fake.NewSnapshot(), makeStep(t), fakeActor)
+	err := cmd.createElection(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, CreateElectionArg))
 
-	err = cmd.createElection(fake.NewSnapshot(), makeStep(t, CreateElectionArg, "dummy"), fakeActor)
+	err = cmd.createElection(fake.NewSnapshot(), makeStep(t, CreateElectionArg, "dummy"))
 	require.EqualError(t, err, "failed to unmarshal CreateElectionTransaction : "+
 		"invalid character 'd' looking for beginning of value")
 
-	err = cmd.createElection(fake.NewBadSnapshot(), makeStep(t, CreateElectionArg, string(js)), fakeActor)
-	require.EqualError(t, err, "failed to decode Election ID: encoding/hex: invalid byte: U+0075 'u'")
-
-	dummyCreateElectionTransaction.ElectionID = hex.EncodeToString([]byte("dummyID"))
-	js, _ = json.Marshal(dummyCreateElectionTransaction)
-	err = cmd.createElection(fake.NewBadSnapshot(), makeStep(t, CreateElectionArg, string(js)), fakeActor)
-	require.EqualError(t, err, fake.Err("failed to set value"))
+	err = cmd.createElection(fake.NewBadSnapshot(), makeStep(t, CreateElectionArg, string(js)))
+	require.EqualError(t, err, "failed to get roster")
 
 	snap := fake.NewSnapshot()
-	err = cmd.createElection(snap, makeStep(t, CreateElectionArg, string(js)), fakeActor)
+	step := makeStep(t, CreateElectionArg, string(js))
+	err = cmd.createElection(snap, step)
 	require.NoError(t, err)
 
-	dummyElectionIdBuff, _ := hex.DecodeString(dummyCreateElectionTransaction.ElectionID)
-	res, err := snap.Get(dummyElectionIdBuff)
+	// recover election ID:
+	h := sha256.New()
+	h.Write(step.Current.GetID())
+	electionIdBuff := h.Sum(nil)
+
+	res, err := snap.Get(electionIdBuff)
 	require.NoError(t, err)
 
 	election := new(types.Election)
 	_ = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
 
-	require.Equal(t, dummyCreateElectionTransaction.ElectionID, string(election.ElectionID))
-	require.Equal(t, dummyCreateElectionTransaction.Title, election.Title)
 	require.Equal(t, dummyCreateElectionTransaction.AdminID, election.AdminID)
-	require.Equal(t, types.Open, election.Status)
-
+	require.Equal(t, types.Initial, election.Status)
 }
 
 func TestCommand_CastVote(t *testing.T) {
-	fakeDkg := fakeDKG{
-		actor: fakeDkgActor{},
-		err:   nil,
-	}
-
-	dummyElectionIdBuff := []byte("dummyID")
-
 	dummyCastVoteTransaction := types.CastVoteTransaction{
 		ElectionID: fakeElectionID,
-		UserId:     "dummyUserId",
-		Ballot:     []byte{10},
+		UserID:     "dummyUserId",
+		Ballot: types.EncryptedBallot{types.Ciphertext{
+			K: []byte{},
+			C: []byte{},
+		}},
 	}
+
 	jsCastVoteTransaction, _ := json.Marshal(dummyCastVoteTransaction)
 
-	dummyElection := types.Election{
-		Title:            "dummyTitle",
-		ElectionID:       types.ID(fakeElectionID),
-		AdminID:          "dummyAdminID",
-		Status:           0,
-		Pubkey:           []byte{},
-		EncryptedBallots: &types.EncryptedBallots{},
-		ShuffledBallots:  nil,
-		ShuffledProofs:   nil,
-		DecryptedBallots: nil,
-		ShuffleThreshold: 0,
-	}
+	dummyElection, contract := initElectionAndContract()
+
 	jsElection, err := json.Marshal(dummyElection)
 	require.NoError(t, err)
-
-	contract := NewContract([]byte{}, fakeAccess{}, fakeDkg)
 
 	cmd := evotingCommand{
 		Contract: &contract,
@@ -183,19 +182,91 @@ func TestCommand_CastVote(t *testing.T) {
 
 	snap := fake.NewSnapshot()
 
-	_ = snap.Set(dummyElectionIdBuff, []byte("fake election"))
+	err = snap.Set(dummyElectionIdBuff, []byte("fake election"))
+	require.NoError(t, err)
+
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
 	require.Contains(t, err.Error(), "failed to unmarshal Election")
 
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
 	require.EqualError(t, err, fmt.Sprintf("the election is not open, current status: %d", types.Initial))
 
 	dummyElection.Status = types.Open
-
 	jsElection, _ = json.Marshal(dummyElection)
 
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
+	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
+	require.EqualError(t, err, "the ballot has unexpected length: 1 != 0")
+
+	dummyElection.BallotSize = 29
+	jsElection, _ = json.Marshal(dummyElection)
+
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
+	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
+	require.EqualError(t, err, "part of the casted ballot has empty El Gamal pairs")
+
+	dummyCastVoteTransaction.Ballot = types.EncryptedBallot{
+		types.Ciphertext{
+			K: []byte("dummyK"),
+			C: []byte("dummyC"),
+		},
+	}
+
+	jsCastVoteTransaction, _ = json.Marshal(dummyCastVoteTransaction)
+
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
+	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
+	require.EqualError(t, err, "casted ballot has invalid El Gamal pairs:"+
+		" failed to unmarshal K: invalid Ed25519 curve point")
+
+	// encrypt a real message :
+	RandomStream := suite.RandomStream()
+	h := suite.Scalar().Pick(RandomStream)
+	pubKey := suite.Point().Mul(h, nil)
+
+	M := suite.Point().Embed([]byte("fakeVote"), random.New())
+
+	// ElGamal-encrypt the point to produce ciphertext (K,C).
+	k := suite.Scalar().Pick(random.New()) // ephemeral private key
+	K := suite.Point().Mul(k, nil)         // ephemeral DH public key
+	S := suite.Point().Mul(k, pubKey)      // ephemeral DH shared secret
+	C := S.Add(S, M)                       // message blinded with secret
+
+	KMarshalled, _ := K.MarshalBinary()
+	CMarshalled, _ := C.MarshalBinary()
+
+	dummyCastVoteTransaction.Ballot = types.EncryptedBallot{
+		types.Ciphertext{
+			K: KMarshalled,
+			C: CMarshalled,
+		},
+	}
+
+	jsCastVoteTransaction, err = json.Marshal(dummyCastVoteTransaction)
+	require.NoError(t, err)
+
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
+	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
+	require.EqualError(t, err, "failed to decode Election ID: encoding/hex: invalid byte: U+0075 'u'")
+
+	dummyElection.ElectionID = fakeElectionID
+	jsElection, err = json.Marshal(dummyElection)
+	require.NoError(t, err)
+
+	err = snap.Set(dummyElectionIdBuff, jsElection)
+	require.NoError(t, err)
+
 	err = cmd.castVote(snap, makeStep(t, CastVoteArg, string(jsCastVoteTransaction)))
 	require.NoError(t, err)
 
@@ -203,40 +274,27 @@ func TestCommand_CastVote(t *testing.T) {
 	require.NoError(t, err)
 
 	election := new(types.Election)
-	_ = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
+	err = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
+	require.NoError(t, err)
 
-	require.Equal(t, dummyCastVoteTransaction.Ballot, election.EncryptedBallots.Ballots[0])
-	require.Equal(t, dummyCastVoteTransaction.UserId, election.EncryptedBallots.UserIDs[0])
+	require.Equal(t, dummyCastVoteTransaction.Ballot,
+		election.PublicBulletinBoard.Ballots[0])
+	require.Equal(t, dummyCastVoteTransaction.UserID,
+		election.PublicBulletinBoard.UserIDs[0])
 }
 
 func TestCommand_CloseElection(t *testing.T) {
-	fakeDkg := fakeDKG{
-		actor: fakeDkgActor{},
-		err:   nil,
-	}
-
 	dummyCloseElectionTransaction := types.CloseElectionTransaction{
 		ElectionID: fakeElectionID,
-		UserId:     "dummyUserId",
+		UserID:     "dummyUserId",
 	}
 	jsCloseElectionTransaction, _ := json.Marshal(dummyCloseElectionTransaction)
 
-	dummyElection := types.Election{
-		Title:            "dummyTitle",
-		ElectionID:       types.ID(fakeElectionID),
-		AdminID:          "dummyAdminID",
-		Status:           0,
-		Pubkey:           nil,
-		EncryptedBallots: &types.EncryptedBallots{},
-		ShuffledBallots:  nil,
-		ShuffledProofs:   nil,
-		DecryptedBallots: nil,
-		ShuffleThreshold: 0,
-	}
+	dummyElection, contract := initElectionAndContract()
+	dummyElection.ElectionID = fakeElectionID
+
 	jsElection, err := json.Marshal(dummyElection)
 	require.NoError(t, err)
-
-	contract := NewContract([]byte{}, fakeAccess{}, fakeDkg)
 
 	cmd := evotingCommand{
 		Contract: &contract,
@@ -255,29 +313,33 @@ func TestCommand_CloseElection(t *testing.T) {
 	snap := fake.NewSnapshot()
 
 	_ = snap.Set(dummyElectionIdBuff, []byte("fake election"))
+
 	err = cmd.closeElection(snap, makeStep(t, CloseElectionArg, string(jsCloseElectionTransaction)))
 	require.Contains(t, err.Error(), "failed to unmarshal Election")
 
 	_ = snap.Set(dummyElectionIdBuff, jsElection)
+
 	err = cmd.closeElection(snap, makeStep(t, CloseElectionArg, string(jsCloseElectionTransaction)))
 	require.EqualError(t, err, "only the admin can close the election")
 
-	dummyCloseElectionTransaction.UserId = "dummyAdminID"
+	dummyCloseElectionTransaction.UserID = hex.EncodeToString([]byte("dummyAdminID"))
+
 	jsCloseElectionTransaction, _ = json.Marshal(dummyCloseElectionTransaction)
+
 	err = cmd.closeElection(snap, makeStep(t, CloseElectionArg, string(jsCloseElectionTransaction)))
 	require.EqualError(t, err, fmt.Sprintf("the election is not open, current status: %d", types.Initial))
 
 	dummyElection.Status = types.Open
+
 	jsElection, _ = json.Marshal(dummyElection)
+
 	_ = snap.Set(dummyElectionIdBuff, jsElection)
 
 	err = cmd.closeElection(snap, makeStep(t, CloseElectionArg, string(jsCloseElectionTransaction)))
 	require.EqualError(t, err, "at least two ballots are required")
 
-	// dummyElection.EncryptedBallots["dummyUser1"] = []byte("dummyBallot1")
-	// dummyElection.EncryptedBallots["dummyUser2"] = []byte("dummyBallot2")
-	dummyElection.EncryptedBallots.CastVote("dummyUser1", []byte("dummyBallot1"))
-	dummyElection.EncryptedBallots.CastVote("dummyUser2", []byte("dummyBallot2"))
+	dummyElection.PublicBulletinBoard.CastVote("dummyUser1", types.EncryptedBallot{})
+	dummyElection.PublicBulletinBoard.CastVote("dummyUser2", types.EncryptedBallot{})
 
 	jsElection, _ = json.Marshal(dummyElection)
 	_ = snap.Set(dummyElectionIdBuff, jsElection)
@@ -294,37 +356,104 @@ func TestCommand_CloseElection(t *testing.T) {
 	require.Equal(t, types.Closed, election.Status)
 }
 
-func TestCommand_ShuffleBallots(t *testing.T) {
-	fakeDkg := fakeDKG{
-		actor: fakeDkgActor{},
-		err:   nil,
-	}
-
+func TestCommand_ShuffleBallotsCannotShuffleTwice(t *testing.T) {
 	k := 3
 
-	dummyShuffleBallotsTransaction := types.ShuffleBallotsTransaction{
-		ElectionID:      fakeElectionID,
-		Round:           2,
-		ShuffledBallots: make([][]byte, 3),
-		Proof:           nil,
+	dummyElection, dummyShuffleBallotsTransaction, contract := initGoodShuffleBallot(k)
+
+	cmd := evotingCommand{
+		Contract: &contract,
+		prover:   fakeProver,
 	}
+
+	snap := fake.NewSnapshot()
+
+	// Attempts to shuffle twice :
+	dummyShuffleBallotsTransaction.Round = 1
+
+	dummyElection.ShuffleInstances = make([]types.ShuffleInstance, 1)
+	dummyElection.ShuffleInstances[0].ShuffledBallots = make([]types.EncryptedBallot, 3)
+
+	KsMarshalled, CsMarshalled, _ := fakeKCPointsMarshalled(k)
+	for i := 0; i < k; i++ {
+		ballot := types.EncryptedBallot{types.Ciphertext{
+			K: KsMarshalled[i],
+			C: CsMarshalled[i],
+		}}
+		dummyElection.ShuffleInstances[0].ShuffledBallots[i] = ballot
+	}
+
+	dummyElection.ShuffleInstances[0].ShufflerPublicKey = dummyShuffleBallotsTransaction.PublicKey
+
+	jsElection, _ := json.Marshal(dummyElection)
+	_ = snap.Set(dummyElectionIdBuff, jsElection)
 	jsShuffleBallotsTransaction, _ := json.Marshal(dummyShuffleBallotsTransaction)
 
-	dummyElection := types.Election{
-		Title:            "dummyTitle",
-		ElectionID:       types.ID(fakeElectionID),
-		AdminID:          "dummyAdminID",
-		Status:           0,
-		Pubkey:           nil,
-		EncryptedBallots: &types.EncryptedBallots{},
-		ShuffledBallots:  [][][]byte{},
-		ShuffledProofs:   [][]byte{},
-		DecryptedBallots: nil,
-		ShuffleThreshold: 0,
-	}
-	jsElection, _ := json.Marshal(dummyElection)
+	err := cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
+	require.EqualError(t, err, "a node already submitted a shuffle that has been accepted in round 0")
+}
 
-	contract := NewContract([]byte{}, fakeAccess{}, fakeDkg)
+func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
+	k := 3
+
+	// Simple Shuffle from round 0 :
+	dummyElection, dummyShuffleBallotsTransaction, contract := initGoodShuffleBallot(k)
+
+	cmd := evotingCommand{
+		Contract: &contract,
+		prover:   fakeProver,
+	}
+
+	snap := fake.NewSnapshot()
+
+	jsElection, _ := json.Marshal(dummyElection)
+	_ = snap.Set(dummyElectionIdBuff, jsElection)
+
+	jsShuffleBallotsTransaction, _ := json.Marshal(dummyShuffleBallotsTransaction)
+	step := makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction))
+
+	err := cmd.shuffleBallots(snap, step)
+	require.NoError(t, err)
+
+	// Valid Shuffle is over :
+	dummyShuffleBallotsTransaction.Round = k
+	dummyElection.ShuffleInstances = make([]types.ShuffleInstance, k)
+	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
+
+	for i := 1; i <= k-1; i++ {
+		dummyElection.ShuffleInstances[i].ShuffledBallots = make([]types.EncryptedBallot, 3)
+	}
+
+	KsMarshalled, CsMarshalled, _ := fakeKCPointsMarshalled(k)
+	for i := 0; i < k; i++ {
+		ballot := types.EncryptedBallot{types.Ciphertext{
+			K: KsMarshalled[i],
+			C: CsMarshalled[i],
+		}}
+		dummyElection.ShuffleInstances[k-1].ShuffledBallots[i] = ballot
+	}
+
+	jsElection, _ = json.Marshal(dummyElection)
+	_ = snap.Set(dummyElectionIdBuff, jsElection)
+
+	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
+	require.NoError(t, err)
+
+	// Check the shuffle is over:
+	electionTxIDBuff, _ := hex.DecodeString(dummyElection.ElectionID)
+	electionMarshaled, _ := snap.Get(electionTxIDBuff)
+	election := &types.Election{}
+	_ = json.Unmarshal(electionMarshaled, election)
+
+	require.Equal(t, election.Status, types.ShuffledBallots)
+}
+
+func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
+	k := 3
+
+	dummyElection, dummyShuffleBallotsTransaction, contract := initBadShuffleBallot(k)
+	jsShuffleBallotsTransaction, _ := json.Marshal(dummyShuffleBallotsTransaction)
+	jsElection, _ := json.Marshal(dummyElection)
 
 	cmd := evotingCommand{
 		Contract: &contract,
@@ -341,207 +470,187 @@ func TestCommand_ShuffleBallots(t *testing.T) {
 	err = cmd.shuffleBallots(fake.NewBadSnapshot(), makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
 	require.Contains(t, err.Error(), "failed to get key")
 
+	// Wrong election id format
 	snap := fake.NewSnapshot()
-
 	_ = snap.Set(dummyElectionIdBuff, []byte("fake election"))
+
 	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
 	require.Contains(t, err.Error(), "failed to unmarshal Election")
 
+	// Election not closed
 	_ = snap.Set(dummyElectionIdBuff, jsElection)
 	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
 	require.EqualError(t, err, "the election is not closed")
 
+	// Wrong round :
 	dummyElection.Status = types.Closed
 	jsElection, _ = json.Marshal(dummyElection)
 	_ = snap.Set(dummyElectionIdBuff, jsElection)
-	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
-	require.EqualError(t, err, "wrong number of shuffled ballots: expected '1', got '0'")
 
+	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
+	require.EqualError(t, err, "wrong shuffle round: expected round '0', transaction is for round '2'")
+
+	// Missing public key of shuffler:
 	dummyShuffleBallotsTransaction.Round = 1
+	dummyElection.ShuffleInstances = make([]types.ShuffleInstance, 1)
+	dummyShuffleBallotsTransaction.PublicKey = []byte("wrong Key")
 
-	RandomStream := suite.RandomStream()
-	h := suite.Scalar().Pick(RandomStream)
-	pubKey := suite.Point().Mul(h, nil)
-
-	KsMarshalled := make([][]byte, 0, k)
-	CsMarshalled := make([][]byte, 0, k)
-
-	for i := 0; i < k; i++ {
-		// Embed the message into a curve point
-		message := "Ballot" + strconv.Itoa(i)
-		M := suite.Point().Embed([]byte(message), random.New())
-
-		// ElGamal-encrypt the point to produce ciphertext (K,C).
-		k := suite.Scalar().Pick(random.New()) // ephemeral private key
-		K := suite.Point().Mul(k, nil)         // ephemeral DH public key
-		S := suite.Point().Mul(k, pubKey)      // ephemeral DH shared secret
-		C := S.Add(S, M)                       // message blinded with secret
-
-		Kmarshalled, _ := K.MarshalBinary()
-		Cmarshalled, _ := C.MarshalBinary()
-
-		KsMarshalled = append(KsMarshalled, Kmarshalled)
-		CsMarshalled = append(CsMarshalled, Cmarshalled)
-	}
-
-	for i := 0; i < k; i++ {
-		dummyShuffleBallotsTransaction.ShuffledBallots[i] = []byte("badCiphertext")
-	}
 	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
-	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
-	require.EqualError(t, err, "failed to unmarshal Ciphertext: invalid character 'b' looking for beginning of value")
+	jsElection, _ = json.Marshal(dummyElection)
+	_ = snap.Set(dummyElectionIdBuff, jsElection)
 
-	for i := 0; i < k; i++ {
-		ballot := types.Ciphertext{
-			K: []byte("fakeVoteK"),
-			C: []byte("fakeVoteC"),
-		}
-		js, _ := json.Marshal(ballot)
-		dummyShuffleBallotsTransaction.ShuffledBallots[i] = js
-	}
+	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
+	require.EqualError(t, err, "could not verify identity of shuffler : public key not associated to a member of the roster: 77726f6e67204b6579")
+
+	// Right key, wrong signature:
+	dummyShuffleBallotsTransaction.PublicKey, _ = fakeCommonSigner.GetPublicKey().MarshalBinary()
 	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
-	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
-	require.EqualError(t, err, "failed to unmarshal K kyber.Point: invalid Ed25519 curve point")
 
-	for i := 0; i < k; i++ {
-		ballot := types.Ciphertext{
-			K: KsMarshalled[i],
-			C: []byte("fakeVoteC"),
-		}
-		js, _ := json.Marshal(ballot)
-		dummyShuffleBallotsTransaction.ShuffledBallots[i] = js
-	}
+	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
+	require.EqualError(t, err, "could node deserialize shuffle signature : couldn't decode signature: couldn't deserialize data: unexpected end of JSON input")
+
+	// Wrong election ID (Hash of shuffle fails)
+	signature, _ := fakeCommonSigner.Sign([]byte("fake shuffle"))
+	wrongSignature, _ := signature.Serialize(contract.context)
+	dummyShuffleBallotsTransaction.Signature = wrongSignature
 	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
+
 	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
-	require.EqualError(t, err, "failed to unmarshal C kyber.Point: invalid Ed25519 curve point")
+	require.EqualError(t, err,
+		"could not hash shuffle : could not decode electionId : encoding/hex: invalid byte: U+0075 'u'")
+
+	// Signatures not matching:
+	dummyId := hex.EncodeToString([]byte("dummyId"))
+	dummyElection.ElectionID = dummyId
+	jsElection, _ = json.Marshal(dummyElection)
+	_ = snap.Set(dummyElectionIdBuff, jsElection)
+
+	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
+	require.EqualError(t, err, "signature does not match the Shuffle : bls verify failed: bls: invalid signature ")
+
+	// Good format, signature not updated thus not matching, no random vector yet :
+	KsMarshalled, CsMarshalled, pubKey := fakeKCPointsMarshalled(k)
 
 	for i := 0; i < k; i++ {
-		ballot := types.Ciphertext{
+		ballot := types.EncryptedBallot{types.Ciphertext{
 			K: KsMarshalled[i],
 			C: CsMarshalled[i],
-		}
-		js, _ := json.Marshal(ballot)
-		dummyShuffleBallotsTransaction.ShuffledBallots[i] = js
+		}}
+		dummyShuffleBallotsTransaction.ShuffledBallots[i] = ballot
 	}
+
+	hash, _ := dummyShuffleBallotsTransaction.HashShuffle(dummyId)
+	signature, _ = fakeCommonSigner.Sign(hash)
+	wrongSignature, _ = signature.Serialize(contract.context)
+
+	dummyShuffleBallotsTransaction.Signature = wrongSignature
+
+	dummyElection.BallotSize = 1
+
+	jsElection, _ = json.Marshal(dummyElection)
+	_ = snap.Set(dummyElectionIdBuff, jsElection)
+
 	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
+
+	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
+	require.EqualError(t, err, "randomVector has unexpected length : 0 != 1")
+
+	// random vector with right length, but different value :
+	lenRandomVector := dummyElection.ChunksPerBallot()
+	e := make([]kyber.Scalar, lenRandomVector)
+	for i := 0; i < lenRandomVector; i++ {
+		v := suite.Scalar().Pick(suite.RandomStream())
+		e[i] = v
+	}
+
+	err = dummyShuffleBallotsTransaction.RandomVector.LoadFromScalars(e)
+	require.NoError(t, err)
+
+	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
+
+	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
+	require.EqualError(t, err, "random vector from shuffle transaction is different than expected random vector")
+
+	// generate correct random vector:
+	hash, _ = dummyShuffleBallotsTransaction.HashShuffle(dummyId)
+	semiRandomStream, err := NewSemiRandomStream(hash)
+	require.NoError(t, err)
+
+	e = make([]kyber.Scalar, lenRandomVector)
+	for i := 0; i < lenRandomVector; i++ {
+		v := suite.Scalar().Pick(semiRandomStream)
+		e[i] = v
+	}
+
+	err = dummyShuffleBallotsTransaction.RandomVector.LoadFromScalars(e)
+	require.NoError(t, err)
+
+	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
+
 	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
 	require.EqualError(t, err, "failed to unmarshal public key: invalid Ed25519 curve point")
 
+	// Wrong format in encrypted ballots :
 	pubKeyMarshalled, _ := pubKey.MarshalBinary()
 	dummyElection.Pubkey = pubKeyMarshalled
+	dummyShuffleBallotsTransaction.Round = 0
+	dummyElection.ShuffleInstances = make([]types.ShuffleInstance, 0)
+	dummyElection.PublicBulletinBoard.Ballots = make([]types.EncryptedBallot, 0)
 
 	for i := 0; i < k; i++ {
-		ballot := []byte("badCiphertext")
-		dummyElection.EncryptedBallots.CastVote(fmt.Sprintf("user%d", i), ballot)
-	}
-
-	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
-	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
-	require.EqualError(t, err, "failed to unmarshal Ciphertext: invalid character 'b' looking for beginning of value")
-
-	for i := 0; i < k; i++ {
-		ballot := types.Ciphertext{
+		ballot := types.EncryptedBallot{types.Ciphertext{
 			K: []byte("fakeVoteK"),
 			C: []byte("fakeVoteC"),
-		}
-		js, _ := json.Marshal(ballot)
-		dummyElection.EncryptedBallots.CastVote(fmt.Sprintf("user%d", i), js)
+		}}
+		dummyElection.PublicBulletinBoard.CastVote(fmt.Sprintf("user%d", i), ballot)
 	}
 
+	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
 	jsElection, _ = json.Marshal(dummyElection)
 	_ = snap.Set(dummyElectionIdBuff, jsElection)
-	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
-	require.EqualError(t, err, "failed to unmarshal K kyber.Point: invalid Ed25519 curve point")
 
+	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
+	require.EqualError(t, err, "failed to get X, Y: failed to get points: failed to unmarshal K: invalid Ed25519 curve point")
+
+	// C of encrypted ballots is wrong
 	for i := 0; i < k; i++ {
-		ballot := types.Ciphertext{
+		ballot := types.EncryptedBallot{types.Ciphertext{
 			K: KsMarshalled[i],
 			C: []byte("fakeVoteC"),
-		}
-		js, _ := json.Marshal(ballot)
-		dummyElection.EncryptedBallots.CastVote(fmt.Sprintf("user%d", i), js)
+		}}
+		dummyElection.PublicBulletinBoard.CastVote(fmt.Sprintf("user%d", i), ballot)
 	}
 
 	jsElection, _ = json.Marshal(dummyElection)
 	_ = snap.Set(dummyElectionIdBuff, jsElection)
+
 	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
-	require.EqualError(t, err, "failed to unmarshal C kyber.Point: invalid Ed25519 curve point")
-
-	for i := 0; i < k; i++ {
-		ballot := types.Ciphertext{
-			K: KsMarshalled[i],
-			C: CsMarshalled[i],
-		}
-		js, _ := json.Marshal(ballot)
-		dummyElection.EncryptedBallots.CastVote(fmt.Sprintf("user%d", i), js)
-	}
-
-	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
-	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
-	require.NoError(t, err)
-
-	dummyShuffleBallotsTransaction.Round = k
-	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
-
-	for i := 1; i <= k-1; i++ {
-		dummyElection.ShuffledBallots[i] = make([][]byte, 3)
-	}
-
-	for i := 0; i < k; i++ {
-		ballot := types.Ciphertext{
-			K: KsMarshalled[i],
-			C: CsMarshalled[i],
-		}
-		js, _ := json.Marshal(ballot)
-		dummyElection.ShuffledBallots[k-1][i] = js
-	}
-
-	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
-	err = cmd.shuffleBallots(snap, makeStep(t, ShuffleBallotsArg, string(jsShuffleBallotsTransaction)))
-	require.NoError(t, err)
+	require.EqualError(t, err, "failed to get X, Y: failed to get points: failed to unmarshal C: invalid Ed25519 curve point")
 
 }
 
 func TestCommand_DecryptBallots(t *testing.T) {
-	fakeDkg := fakeDKG{
-		actor: fakeDkgActor{},
-		err:   nil,
-	}
-
-	ballot1 := types.Ballot{Vote: "vote1"}
-	ballot2 := types.Ballot{Vote: "vote2"}
+	ballot1 := types.Ballot{}
+	ballot2 := types.Ballot{}
 
 	dummyDecryptBallotsTransaction := types.DecryptBallotsTransaction{
 		ElectionID:       fakeElectionID,
-		UserId:           "dummyUserId",
+		UserID:           hex.EncodeToString([]byte("dummyUserId")),
 		DecryptedBallots: []types.Ballot{ballot1, ballot2},
 	}
 	jsDecryptBallotsTransaction, _ := json.Marshal(dummyDecryptBallotsTransaction)
 
-	dummyElection := types.Election{
-		Title:            "dummyTitle",
-		ElectionID:       types.ID(fakeElectionID),
-		AdminID:          "dummyAdminID",
-		Status:           0,
-		Pubkey:           nil,
-		EncryptedBallots: &types.EncryptedBallots{},
-		ShuffledBallots:  nil,
-		ShuffledProofs:   nil,
-		DecryptedBallots: []types.Ballot{},
-		ShuffleThreshold: 0,
-	}
-	jsElection, _ := json.Marshal(dummyElection)
+	dummyElection, contract := initElectionAndContract()
+	dummyElection.ElectionID = fakeElectionID
 
-	contract := NewContract([]byte{}, fakeAccess{}, fakeDkg)
+	jsElection, err := json.Marshal(dummyElection)
+	require.NoError(t, err)
 
 	cmd := evotingCommand{
 		Contract: &contract,
 	}
 
-	err := cmd.decryptBallots(fake.NewSnapshot(), makeStep(t))
+	err = cmd.decryptBallots(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, DecryptBallotsArg))
 
 	err = cmd.decryptBallots(fake.NewSnapshot(), makeStep(t, DecryptBallotsArg, "dummy"))
@@ -561,7 +670,7 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	err = cmd.decryptBallots(snap, makeStep(t, DecryptBallotsArg, string(jsDecryptBallotsTransaction)))
 	require.EqualError(t, err, "only the admin can decrypt the ballots")
 
-	dummyDecryptBallotsTransaction.UserId = "dummyAdminID"
+	dummyDecryptBallotsTransaction.UserID = hex.EncodeToString([]byte("dummyAdminID"))
 	jsDecryptBallotsTransaction, _ = json.Marshal(dummyDecryptBallotsTransaction)
 	err = cmd.decryptBallots(snap, makeStep(t, DecryptBallotsArg, string(jsDecryptBallotsTransaction)))
 	require.EqualError(t, err, fmt.Sprintf("the ballots are not shuffled, current status: %d", types.Initial))
@@ -586,38 +695,23 @@ func TestCommand_DecryptBallots(t *testing.T) {
 }
 
 func TestCommand_CancelElection(t *testing.T) {
-	fakeDkg := fakeDKG{
-		actor: fakeDkgActor{},
-		err:   nil,
-	}
-
 	dummyCancelElectionTransaction := types.CancelElectionTransaction{
 		ElectionID: fakeElectionID,
-		UserId:     "dummyUserId",
+		UserID:     "dummyUserId",
 	}
 	jsCancelElectionTransaction, _ := json.Marshal(dummyCancelElectionTransaction)
 
-	dummyElection := types.Election{
-		Title:            "dummyTitle",
-		ElectionID:       types.ID(fakeElectionID),
-		AdminID:          "dummyAdminID",
-		Status:           1,
-		Pubkey:           nil,
-		EncryptedBallots: &types.EncryptedBallots{},
-		ShuffledBallots:  nil,
-		ShuffledProofs:   nil,
-		DecryptedBallots: nil,
-		ShuffleThreshold: 0,
-	}
-	jsElection, _ := json.Marshal(dummyElection)
+	dummyElection, contract := initElectionAndContract()
+	dummyElection.ElectionID = fakeElectionID
 
-	contract := NewContract([]byte{}, fakeAccess{}, fakeDkg)
+	jsElection, err := json.Marshal(dummyElection)
+	require.NoError(t, err)
 
 	cmd := evotingCommand{
 		Contract: &contract,
 	}
 
-	err := cmd.cancelElection(fake.NewSnapshot(), makeStep(t))
+	err = cmd.cancelElection(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, CancelElectionArg))
 
 	err = cmd.cancelElection(fake.NewSnapshot(), makeStep(t, CancelElectionArg, "dummy"))
@@ -637,7 +731,7 @@ func TestCommand_CancelElection(t *testing.T) {
 	err = cmd.cancelElection(snap, makeStep(t, CancelElectionArg, string(jsCancelElectionTransaction)))
 	require.EqualError(t, err, "only the admin can cancel the election")
 
-	dummyCancelElectionTransaction.UserId = "dummyAdminID"
+	dummyCancelElectionTransaction.UserID = hex.EncodeToString([]byte("dummyAdminID"))
 	jsCancelElectionTransaction, _ = json.Marshal(dummyCancelElectionTransaction)
 	err = cmd.cancelElection(snap, makeStep(t, CancelElectionArg, string(jsCancelElectionTransaction)))
 	require.NoError(t, err)
@@ -658,6 +752,135 @@ func TestRegisterContract(t *testing.T) {
 
 // -----------------------------------------------------------------------------
 // Utility functions
+
+func initElectionAndContract() (types.Election, Contract) {
+	fakeDkg := fakeDKG{
+		actor: fakeDkgActor{},
+		err:   nil,
+	}
+	adminID := hex.EncodeToString([]byte("dummyAdminID"))
+
+	dummyElection := types.Election{
+		ElectionID:          "dummyID",
+		AdminID:             adminID,
+		Status:              0,
+		Pubkey:              nil,
+		PublicBulletinBoard: types.PublicBulletinBoard{},
+		ShuffleInstances:    make([]types.ShuffleInstance, 0),
+		DecryptedBallots:    nil,
+		ShuffleThreshold:    0,
+	}
+
+	var evotingAccessKey = [32]byte{3}
+	rosterKey := [32]byte{}
+
+	service := fakeAccess{err: fake.GetError()}
+	rosterFac := fakeAuthorityFactory{}
+
+	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
+
+	return dummyElection, contract
+}
+
+func initGoodShuffleBallot(k int) (types.Election, types.ShuffleBallotsTransaction, Contract) {
+	dummyElection, dummyShuffleBallotsTransaction, contract := initBadShuffleBallot(3)
+	dummyElection.Status = types.Closed
+
+	dummyElection.BallotSize = 1
+
+	KsMarshalled, CsMarshalled, pubKey := fakeKCPointsMarshalled(k)
+	dummyShuffleBallotsTransaction.PublicKey, _ = fakeCommonSigner.GetPublicKey().MarshalBinary()
+
+	// ShuffledBallots:
+	for i := 0; i < k; i++ {
+		ballot := types.EncryptedBallot{types.Ciphertext{
+			K: KsMarshalled[i],
+			C: CsMarshalled[i],
+		}}
+		dummyShuffleBallotsTransaction.ShuffledBallots[i] = ballot
+	}
+
+	// Encrypted ballots:
+	pubKeyMarshalled, _ := pubKey.MarshalBinary()
+	dummyElection.Pubkey = pubKeyMarshalled
+	dummyShuffleBallotsTransaction.Round = 0
+	dummyElection.ShuffleInstances = make([]types.ShuffleInstance, 0)
+
+	for i := 0; i < k; i++ {
+		ballot := types.EncryptedBallot{types.Ciphertext{
+			K: KsMarshalled[i],
+			C: CsMarshalled[i],
+		}}
+		dummyElection.PublicBulletinBoard.CastVote(fmt.Sprintf("user%d", i), ballot)
+	}
+
+	// Valid Signature of shuffle
+	dummyId := hex.EncodeToString([]byte("dummyId"))
+	dummyElection.ElectionID = dummyId
+	hash, _ := dummyShuffleBallotsTransaction.HashShuffle(dummyId)
+	signature, _ := fakeCommonSigner.Sign(hash)
+	wrongSignature, _ := signature.Serialize(contract.context)
+	dummyShuffleBallotsTransaction.Signature = wrongSignature
+
+	semiRandomStream, _ := NewSemiRandomStream(hash)
+
+	lenRandomVector := dummyElection.ChunksPerBallot()
+	e := make([]kyber.Scalar, lenRandomVector)
+	for i := 0; i < lenRandomVector; i++ {
+		v := suite.Scalar().Pick(semiRandomStream)
+		e[i] = v
+	}
+	dummyShuffleBallotsTransaction.RandomVector.LoadFromScalars(e)
+
+	return dummyElection, dummyShuffleBallotsTransaction, contract
+}
+
+func initBadShuffleBallot(sizeOfElection int) (types.Election, types.ShuffleBallotsTransaction, Contract) {
+	FakePubKey := fake.NewBadPublicKey()
+	FakePubKeyMarshalled, _ := FakePubKey.MarshalBinary()
+	shuffledBallots := make([]types.EncryptedBallot, sizeOfElection)
+
+	dummyShuffleBallotsTransaction := types.ShuffleBallotsTransaction{
+		ElectionID:      fakeElectionID,
+		Round:           2,
+		ShuffledBallots: shuffledBallots,
+		Proof:           nil,
+		PublicKey:       FakePubKeyMarshalled,
+	}
+
+	dummyElection, contract := initElectionAndContract()
+
+	return dummyElection, dummyShuffleBallotsTransaction, contract
+
+}
+
+func fakeKCPointsMarshalled(k int) ([][]byte, [][]byte, kyber.Point) {
+	RandomStream := suite.RandomStream()
+	h := suite.Scalar().Pick(RandomStream)
+	pubKey := suite.Point().Mul(h, nil)
+
+	KsMarshalled := make([][]byte, 0, k)
+	CsMarshalled := make([][]byte, 0, k)
+
+	for i := 0; i < k; i++ {
+		// Embed the message into a curve point
+		message := "Ballot" + strconv.Itoa(i)
+		M := suite.Point().Embed([]byte(message), random.New())
+
+		// ElGamal-encrypt the point to produce ciphertext (K,C).
+		k := suite.Scalar().Pick(random.New()) // ephemeral private key
+		K := suite.Point().Mul(k, nil)         // ephemeral DH public key
+		S := suite.Point().Mul(k, pubKey)      // ephemeral DH shared secret
+		C := S.Add(S, M)                       // message blinded with secret
+
+		Kmarshalled, _ := K.MarshalBinary()
+		Cmarshalled, _ := C.MarshalBinary()
+
+		KsMarshalled = append(KsMarshalled, Kmarshalled)
+		CsMarshalled = append(CsMarshalled, Cmarshalled)
+	}
+	return KsMarshalled, CsMarshalled, pubKey
+}
 
 func makeStep(t *testing.T, args ...string) execution.Step {
 	return execution.Step{Current: makeTx(t, args...)}
@@ -680,12 +903,12 @@ type fakeDKG struct {
 	err   error
 }
 
-func (f fakeDKG) Listen() (dkg.Actor, error) {
+func (f fakeDKG) Listen(electionID []byte) (dkg.Actor, error) {
 	return f.actor, f.err
 }
 
-func (f fakeDKG) GetLastActor() (dkg.Actor, error) {
-	return f.actor, f.err
+func (f fakeDKG) GetActor(electionID []byte) (dkg.Actor, bool) {
+	return f.actor, false
 }
 
 func (f fakeDKG) SetService(service ordering.Service) {
@@ -696,7 +919,7 @@ type fakeDkgActor struct {
 	err       error
 }
 
-func (f fakeDkgActor) Setup(co crypto.CollectiveAuthority, threshold int) (pubKey kyber.Point, err error) {
+func (f fakeDkgActor) Setup() (pubKey kyber.Point, err error) {
 	return nil, f.err
 }
 
@@ -708,12 +931,16 @@ func (f fakeDkgActor) Encrypt(message []byte) (K, C kyber.Point, remainder []byt
 	return nil, nil, nil, f.err
 }
 
-func (f fakeDkgActor) Decrypt(K, C kyber.Point, electionId string) ([]byte, error) {
+func (f fakeDkgActor) Decrypt(K, C kyber.Point) ([]byte, error) {
 	return nil, f.err
 }
 
 func (f fakeDkgActor) Reshare() error {
 	return f.err
+}
+
+func (f fakeDkgActor) MarshalJSON() ([]byte, error) {
+	return nil, f.err
 }
 
 type fakeAccess struct {
@@ -746,7 +973,11 @@ type fakeCmd struct {
 	err error
 }
 
-func (c fakeCmd) createElection(snap store.Snapshot, step execution.Step, dkgActor dkg.Actor) error {
+func (c fakeCmd) createElection(snap store.Snapshot, step execution.Step) error {
+	return c.err
+}
+
+func (c fakeCmd) openElection(snap store.Snapshot, step execution.Step) error {
 	return c.err
 }
 
@@ -768,4 +999,42 @@ func (c fakeCmd) decryptBallots(snap store.Snapshot, step execution.Step) error 
 
 func (c fakeCmd) cancelElection(snap store.Snapshot, step execution.Step) error {
 	return c.err
+}
+
+type fakeAuthorityFactory struct {
+	serde.Factory
+
+	//AuthorityOf(serde.Context, []byte) (authority.Authority, error)
+}
+
+func (f fakeAuthorityFactory) AuthorityOf(ctx serde.Context, rosterBuf []byte) (authority.Authority, error) {
+	fakeAuthority := fakeAuthority{}
+	return fakeAuthority, nil
+}
+
+type fakeAuthority struct {
+	serde.Message
+	serde.Fingerprinter
+	crypto.CollectiveAuthority
+}
+
+func (f fakeAuthority) Apply(c authority.ChangeSet) authority.Authority {
+	return nil
+}
+
+// Diff should return the change set to apply to get the given authority.
+func (f fakeAuthority) Diff(a authority.Authority) authority.ChangeSet {
+	return nil
+}
+
+func (f fakeAuthority) PublicKeyIterator() crypto.PublicKeyIterator {
+	signers := make([]crypto.Signer, 2)
+	signers[0] = fake.NewSigner()
+	signers[1] = fakeCommonSigner
+
+	return fake.NewPublicKeyIterator(signers)
+}
+
+func (f fakeAuthority) Len() int {
+	return 0
 }

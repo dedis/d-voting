@@ -10,10 +10,12 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/dedis/d-voting/services/shuffle/neff/types"
+	"go.dedis.ch/kyber/v3"
+
 	evotingController "github.com/dedis/d-voting/contracts/evoting/controller"
 	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
-	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/ordering"
@@ -23,6 +25,7 @@ import (
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/core/validation"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
@@ -42,12 +45,294 @@ func TestHandler_Stream(t *testing.T) {
 	)
 	err = handler.Stream(fake.Sender{}, receiver)
 	require.EqualError(t, err, "expected StartShuffle message, got: fake.Message")
+
+	receiver = fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0),
+		types.NewStartShuffle("dummyID", make([]mino.Address, 0))))
+
+	err = handler.Stream(fake.Sender{}, receiver)
+	require.EqualError(t, err, "failed to handle StartShuffle message: failed "+
+		"to get election: failed to decode election id: encoding/hex: invalid byte: U+0075 'u'")
+
+	//Test successful Shuffle round from message:
+	dummyId := hex.EncodeToString([]byte("dummyId"))
+	handler = initValidHandler(dummyId)
+
+	receiver = fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), types.NewStartShuffle(dummyId, make([]mino.Address, 0))))
+	err = handler.Stream(fake.Sender{}, receiver)
+
+	require.NoError(t, err)
+
 }
 
 func TestHandler_StartShuffle(t *testing.T) {
-
+	// Some initialisation:
 	k := 3
 
+	KsMarshalled, CsMarshalled, pubKey := fakeKCPointsMarshalled(k)
+
+	fakeErr := xerrors.Errorf("fake error")
+
+	handler := Handler{
+		me: fake.NewAddress(0),
+	}
+	dummyId := hex.EncodeToString([]byte("dummyId"))
+
+	// Service not working:
+	badService := FakeService{
+		err:        fakeErr,
+		election:   "fakeElection",
+		electionId: electionTypes.ID(dummyId),
+	}
+	handler.service = &badService
+
+	err := handler.handleStartShuffle(dummyId)
+	require.EqualError(t, err, "failed to get election: failed to read on the blockchain: fake error")
+
+	// Wrong format for election
+	service := FakeService{
+		err:        nil,
+		election:   "fakeElection",
+		electionId: electionTypes.ID(dummyId),
+	}
+	handler.service = &service
+
+	err = handler.handleStartShuffle(dummyId)
+	require.EqualError(t, err, "failed to get election: failed to unmarshal Election: json: cannot unmarshal string into Go value of type types.Election")
+
+	// Election still opened:
+	election := electionTypes.Election{
+		ElectionID:          dummyId,
+		AdminID:             "dummyAdminID",
+		Status:              0,
+		Pubkey:              nil,
+		PublicBulletinBoard: electionTypes.PublicBulletinBoard{},
+		ShuffleInstances:    []electionTypes.ShuffleInstance{},
+		DecryptedBallots:    nil,
+		ShuffleThreshold:    1,
+		BallotSize:          1,
+	}
+
+	service = updateService(election, dummyId)
+	handler.service = &service
+
+	err = handler.handleStartShuffle(dummyId)
+	require.EqualError(t, err, "the election must be closed: but status is 0")
+
+	// Wrong formatted ballots:
+	election.Status = electionTypes.Closed
+
+	election.PublicBulletinBoard.DeleteUser("fakeUser")
+
+	for i := 0; i < k; i++ {
+		ballot := electionTypes.EncryptedBallot{electionTypes.Ciphertext{
+			K: []byte("fakeVoteK"),
+			C: []byte("fakeVoteC"),
+		},
+		}
+		election.PublicBulletinBoard.CastVote("dummyUser"+strconv.Itoa(i), ballot)
+	}
+
+	service = updateService(election, dummyId)
+
+	handler.service = &service
+	err = handler.handleStartShuffle(dummyId)
+	require.EqualError(t, err,
+		"failed to make tx: failed to get shuffled ballots: failed to get X, Y:"+
+			" failed to get points: failed to unmarshal K: invalid Ed25519 curve point")
+
+	// Wrong formatted Ks
+	for i := 0; i < k; i++ {
+		ballot := electionTypes.EncryptedBallot{electionTypes.Ciphertext{
+			K: KsMarshalled[i],
+			C: []byte("fakeVoteC"),
+		},
+		}
+		election.PublicBulletinBoard.CastVote("dummyUser"+strconv.Itoa(i), ballot)
+	}
+
+	service = updateService(election, dummyId)
+
+	handler.service = &service
+
+	err = handler.handleStartShuffle(dummyId)
+	require.EqualError(t, err, "failed to make tx: failed to get shuffled ballots:"+
+		" failed to get X, Y: failed to get points: failed to unmarshal C: invalid Ed25519 curve point")
+
+	// Valid Ballots, bad election.PubKey
+	for i := 0; i < k; i++ {
+		ballot := electionTypes.EncryptedBallot{electionTypes.Ciphertext{
+			K: KsMarshalled[i],
+			C: CsMarshalled[i],
+		},
+		}
+		election.PublicBulletinBoard.CastVote("dummyUser"+strconv.Itoa(i), ballot)
+	}
+
+	service = updateService(election, dummyId)
+
+	handler.service = &service
+
+	err = handler.handleStartShuffle(dummyId)
+	require.EqualError(t, err, "failed to make tx: failed to get shuffled ballots: couldn't unmarshal public key: invalid Ed25519 curve point")
+
+	// Wrong shuffle signer
+	pubKeyMarshalled, _ := pubKey.MarshalBinary()
+	election.Pubkey = pubKeyMarshalled
+
+	service = updateService(election, dummyId)
+	handler.service = &service
+
+	handler.shuffleSigner = fake.NewBadSigner()
+
+	err = handler.handleStartShuffle(dummyId)
+	require.EqualError(t, err, fake.Err("failed to make tx: Could not sign the shuffle "))
+
+	// Bad common signer :
+	service = updateService(election, dummyId)
+
+	handler.service = &service
+	handler.shuffleSigner = fake.NewSigner()
+
+	// Bad manager
+
+	handler.txmngr = fakeManager{}
+
+	err = handler.handleStartShuffle(dummyId)
+	require.EqualError(t, err, fake.Err("failed to make tx: failed to use manager"))
+
+	manager := signed.NewManager(fake.NewSigner(), &evotingController.Client{
+		Nonce: 0,
+		Blocks: FakeBlockStore{
+			getErr:  nil,
+			lastErr: nil,
+		},
+	})
+
+	handler.txmngr = manager
+
+	// Bad pool :
+
+	service = updateService(election, dummyId)
+	badPool := FakePool{err: fakeErr,
+		service: &service}
+	handler.p = &badPool
+	handler.service = &service
+
+	err = handler.handleStartShuffle(dummyId)
+	require.EqualError(t, err, "failed to add transaction to the pool: fake error")
+
+	// Valid, basic scenario : (all errors fixed)
+	fakePool := FakePool{service: &service}
+
+	handler.service = &service
+	handler.p = &fakePool
+
+	err = handler.handleStartShuffle(dummyId)
+	require.NoError(t, err)
+
+	// Threshold is reached :
+	election.ShuffleThreshold = 0
+	service = updateService(election, dummyId)
+	fakePool = FakePool{service: &service}
+	handler.service = &service
+
+	err = handler.handleStartShuffle(dummyId)
+	require.NoError(t, err)
+
+	// Service not working :
+	election.ShuffleThreshold = 1
+	service = FakeService{
+		err:        nil,
+		election:   election,
+		electionId: electionTypes.ID(dummyId),
+		status:     true,
+	}
+	fakePool = FakePool{service: &service}
+	service.status = false
+	handler.service = &service
+	err = handler.handleStartShuffle(dummyId)
+	// all transactions got denied
+	require.NoError(t, err)
+
+	// Shuffle already started:
+	shuffledBallots := append(electionTypes.EncryptedBallots{}, election.PublicBulletinBoard.Ballots...)
+	election.ShuffleInstances = append(election.ShuffleInstances, electionTypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
+
+	election.ShuffleThreshold = 2
+
+	service = updateService(election, dummyId)
+	fakePool = FakePool{service: &service}
+	handler = *NewHandler(handler.me, &service, &fakePool, manager, handler.shuffleSigner)
+
+	err = handler.handleStartShuffle(dummyId)
+	require.NoError(t, err)
+}
+
+// -----------------------------------------------------------------------------
+// Utility functions
+func updateService(election electionTypes.Election, dummyId string) FakeService {
+	return FakeService{
+		err:        nil,
+		election:   election,
+		electionId: electionTypes.ID(dummyId),
+	}
+}
+
+func initValidHandler(dummyId string) Handler {
+	handler := Handler{}
+
+	election := initFakeElection(dummyId)
+
+	service := FakeService{
+		err:        nil,
+		election:   election,
+		electionId: electionTypes.ID(dummyId),
+		status:     true,
+	}
+	fakePool := FakePool{service: &service}
+
+	handler.service = &service
+	handler.p = &fakePool
+	handler.me = fake.NewAddress(0)
+	handler.shuffleSigner = fake.NewSigner()
+	handler.txmngr = signed.NewManager(fake.NewSigner(), &evotingController.Client{
+		Nonce: 0,
+		Blocks: FakeBlockStore{
+			getErr:  nil,
+			lastErr: nil,
+		},
+	})
+	return handler
+}
+
+func initFakeElection(electionId string) electionTypes.Election {
+	k := 3
+	KsMarshalled, CsMarshalled, pubKey := fakeKCPointsMarshalled(k)
+	pubKeyMarshalled, _ := pubKey.MarshalBinary()
+	election := electionTypes.Election{
+		ElectionID:          electionId,
+		AdminID:             "dummyAdminID",
+		Status:              electionTypes.Closed,
+		Pubkey:              pubKeyMarshalled,
+		PublicBulletinBoard: electionTypes.PublicBulletinBoard{},
+		ShuffleInstances:    []electionTypes.ShuffleInstance{},
+		DecryptedBallots:    nil,
+		ShuffleThreshold:    1,
+		BallotSize:          1,
+	}
+
+	for i := 0; i < k; i++ {
+		ballot := electionTypes.EncryptedBallot{electionTypes.Ciphertext{
+			K: KsMarshalled[i],
+			C: CsMarshalled[i],
+		},
+		}
+		election.PublicBulletinBoard.CastVote("dummyUser"+strconv.Itoa(i), ballot)
+	}
+	return election
+}
+
+func fakeKCPointsMarshalled(k int) ([][]byte, [][]byte, kyber.Point) {
 	RandomStream := suite.RandomStream()
 	h := suite.Scalar().Pick(RandomStream)
 	pubKey := suite.Point().Mul(h, nil)
@@ -72,291 +357,8 @@ func TestHandler_StartShuffle(t *testing.T) {
 		KsMarshalled = append(KsMarshalled, Kmarshalled)
 		CsMarshalled = append(CsMarshalled, Cmarshalled)
 	}
-
-	fakeErr := xerrors.Errorf("fake error")
-
-	handler := Handler{
-		me: fake.NewAddress(0),
-	}
-
-	badService := FakeService{
-		err:        fakeErr,
-		election:   "fakeElection",
-		electionId: "dummyId",
-	}
-	handler.service = &badService
-
-	badDummyId := "dummyId"
-	startShuffle := types.NewStartShuffle(
-		badDummyId,
-		nil)
-
-	from := fake.NewAddress(0)
-
-	err := handler.HandleStartShuffleMessage(startShuffle, from, nil, nil)
-	require.EqualError(t, err, "failed to get election: failed to decode election id: encoding/hex: invalid byte: U+0075 'u'")
-
-	dummyId := hex.EncodeToString([]byte("dummyId"))
-	startShuffle = types.NewStartShuffle(
-		dummyId,
-		nil)
-	err = handler.HandleStartShuffleMessage(startShuffle, from, nil, nil)
-	require.EqualError(t, err, "failed to get election: failed to read on the blockchain: fake error")
-
-	service := FakeService{
-		err:        nil,
-		election:   "fakeElection",
-		electionId: electionTypes.ID(dummyId),
-	}
-	handler.service = &service
-
-	err = handler.HandleStartShuffleMessage(startShuffle, from, nil, nil)
-	require.EqualError(t, err, "failed to get election: failed to unmarshal Election: json: cannot unmarshal string into Go value of type types.Election")
-
-	election := electionTypes.Election{
-		Title:            "dummyTitle",
-		ElectionID:       electionTypes.ID(dummyId),
-		AdminID:          "dummyAdminID",
-		Status:           0,
-		Pubkey:           nil,
-		EncryptedBallots: &electionTypes.EncryptedBallots{},
-		ShuffledBallots:  [][][]byte{},
-		DecryptedBallots: nil,
-		ShuffleThreshold: 1,
-	}
-
-	service = FakeService{
-		err:        nil,
-		election:   election,
-		electionId: electionTypes.ID(dummyId),
-	}
-	handler.service = &service
-
-	err = handler.HandleStartShuffleMessage(startShuffle, from, nil, nil)
-	require.EqualError(t, err, "the election must be closed")
-
-	election.Status = electionTypes.Closed
-	election.EncryptedBallots.CastVote("fakeUser", []byte("fakeVote"))
-
-	service = FakeService{
-		err:        nil,
-		election:   election,
-		electionId: electionTypes.ID(dummyId),
-	}
-
-	handler.service = &service
-	err = handler.HandleStartShuffleMessage(startShuffle, from, nil, nil)
-	require.EqualError(t, err, "failed to unmarshal Ciphertext: invalid character 'k' in literal false (expecting 'l')")
-
-	election.EncryptedBallots.DeleteUser("fakeUser")
-
-	for i := 0; i < k; i++ {
-		ballot := electionTypes.Ciphertext{
-			K: []byte("fakeVoteK"),
-			C: []byte("fakeVoteC"),
-		}
-		js, _ := json.Marshal(ballot)
-		election.EncryptedBallots.CastVote("dummyUser"+strconv.Itoa(i), js)
-	}
-
-	service = FakeService{
-		err:        nil,
-		election:   election,
-		electionId: electionTypes.ID(dummyId),
-	}
-
-	handler.service = &service
-	err = handler.HandleStartShuffleMessage(startShuffle, from, nil, nil)
-	require.EqualError(t, err, "failed to unmarshal K: invalid Ed25519 curve point")
-
-	for i := 0; i < k; i++ {
-		ballot := electionTypes.Ciphertext{
-			K: KsMarshalled[i],
-			C: []byte("fakeVoteC"),
-		}
-		js, _ := json.Marshal(ballot)
-		election.EncryptedBallots.CastVote("dummyUser"+strconv.Itoa(i), js)
-	}
-
-	service = FakeService{
-		err:        nil,
-		election:   election,
-		electionId: electionTypes.ID(dummyId),
-	}
-
-	handler.service = &service
-
-	err = handler.HandleStartShuffleMessage(startShuffle, from, nil, nil)
-	require.EqualError(t, err, "failed to unmarshal C: invalid Ed25519 curve point")
-
-	for i := 0; i < k; i++ {
-		ballot := electionTypes.Ciphertext{
-			K: KsMarshalled[i],
-			C: CsMarshalled[i],
-		}
-		js, _ := json.Marshal(ballot)
-		election.EncryptedBallots.CastVote("dummyUser"+strconv.Itoa(i), js)
-	}
-
-	service = FakeService{
-		err:        nil,
-		election:   election,
-		electionId: electionTypes.ID(dummyId),
-	}
-
-	handler.service = &service
-
-	err = handler.HandleStartShuffleMessage(startShuffle, from, nil, nil)
-	require.EqualError(t, err, "couldn't unmarshal public key: invalid Ed25519 curve point")
-
-	pubKeyMarshalled, _ := pubKey.MarshalBinary()
-	election.Pubkey = pubKeyMarshalled
-
-	service = FakeService{
-		err:        nil,
-		election:   election,
-		electionId: electionTypes.ID(dummyId),
-	}
-
-	handler.service = &service
-	/*
-	   todo : use this code to test getNonce from evotingController.Client
-
-	   	badBlockstore := FakeBlockStore{
-	   		lastErr: fakeErr,
-	   	}
-
-	   	handler.blocks = badBlockstore
-
-	   	err = handler.HandleStartShuffleMessage(startShuffle, from, nil, nil)
-	   	require.EqualError(t, err, "failed to get Client: failed to fetch
-	   last block: fake error")
-
-	   	badBlockstore = FakeBlockStore{
-	   		getErr: fakeErr,
-	   	}
-
-	   	handler.blocks = badBlockstore
-
-	   	err = handler.HandleStartShuffleMessage(startShuffle, from, nil, nil)
-	   	require.EqualError(t, err, "failed to get Client: failed to fetch previous
-	   block: fake error")
-
-	   	blocks := FakeBlockStore{
-	   		getErr: xerrors.Errorf("not found: no block"),
-	   	}
-
-	   	handler.blocks = blocks
-
-	*/
-	handler.signer = fake.NewBadSigner()
-	handler.client = &evotingController.Client{
-		Nonce: 0,
-		Blocks: FakeBlockStore{
-			getErr:  nil,
-			lastErr: nil,
-		},
-	}
-	err = handler.HandleStartShuffleMessage(startShuffle, from, nil, nil)
-	require.EqualError(t, err, fake.Err("failed to make transaction: failed to sign: signer"))
-
-	handler.signer = fake.NewSigner()
-	badPool := FakePool{err: fakeErr}
-	handler.p = &badPool
-
-	service = FakeService{
-		err:        nil,
-		election:   election,
-		electionId: electionTypes.ID(dummyId),
-		pool:       &badPool,
-	}
-	handler.service = &service
-
-	err = handler.HandleStartShuffleMessage(startShuffle, from, nil, nil)
-	require.EqualError(t, err, "failed to add transaction to the pool: fake error")
-
-	fakePool := FakePool{}
-	service = FakeService{
-		err:        nil,
-		election:   election,
-		electionId: electionTypes.ID(dummyId),
-		pool:       &fakePool,
-		status:     true,
-	}
-
-	handler.service = &service
-	handler.p = &fakePool
-
-	startShuffle = types.NewStartShuffle(
-		dummyId,
-		[]mino.Address{fake.NewAddress(0), fake.NewAddress(1)})
-
-	badSender := fake.NewBadSender()
-
-	fmt.Println("##### sending..")
-	err = handler.HandleStartShuffleMessage(startShuffle, from, badSender, nil)
-	require.EqualError(t, err, fake.Err("failed to send EndShuffle message"))
-
-	fakeSender := fake.Sender{}
-	err = handler.HandleStartShuffleMessage(startShuffle, from, fakeSender, nil)
-	require.NoError(t, err)
-
-	election.ShuffleThreshold = 2
-	service = FakeService{
-		err:        nil,
-		election:   election,
-		electionId: electionTypes.ID(dummyId),
-		pool:       &fakePool,
-		status:     true,
-	}
-	handler.service = &service
-	badReceiver := fake.NewBadReceiver()
-	err = handler.HandleStartShuffleMessage(startShuffle, from, fakeSender, badReceiver)
-	require.EqualError(t, err, fake.Err("got an error from '%!s(<nil>)' while receiving"))
-
-	fakeReceiver := fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), nil))
-	err = handler.HandleStartShuffleMessage(startShuffle, from, fakeSender, fakeReceiver)
-	require.EqualError(t, err, "expected to receive an EndShuffle message, but go the following: <nil>")
-
-	fakeReceiver = fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), types.NewEndShuffle()))
-	err = handler.HandleStartShuffleMessage(startShuffle, from, fakeSender, fakeReceiver)
-	require.NoError(t, err)
-
-	election.ShuffleThreshold = 1
-	service = FakeService{
-		err:        nil,
-		election:   election,
-		electionId: electionTypes.ID(dummyId),
-		pool:       &fakePool,
-		status:     true,
-	}
-	service.status = false
-	handler.service = &service
-	err = handler.HandleStartShuffleMessage(startShuffle, from, fakeSender, fakeReceiver)
-	// all transactions got denied
-	require.NoError(t, err)
-
-	for _, value := range election.EncryptedBallots.Ballots {
-		election.ShuffledBallots[1] = append(election.ShuffledBallots[1], value)
-	}
-
-	election.ShuffleThreshold = 2
-	fakePool = FakePool{}
-	service = FakeService{
-		err:        nil,
-		election:   election,
-		electionId: electionTypes.ID(dummyId),
-		pool:       &fakePool,
-		status:     false,
-	}
-
-	err = handler.HandleStartShuffleMessage(startShuffle, from, fakeSender, fakeReceiver)
-	require.NoError(t, err)
-
+	return KsMarshalled, CsMarshalled, pubKey
 }
-
-// -----------------------------------------------------------------------------
-// Utility functions
 
 // FakeProof
 // - implements ordering.Proof
@@ -384,8 +386,8 @@ type FakeService struct {
 	err        error
 	election   interface{}
 	electionId electionTypes.ID
-	pool       *FakePool
 	status     bool
+	channel    chan ordering.Event
 }
 
 func (f FakeService) GetProof(key []byte) (ordering.Proof, error) {
@@ -407,8 +409,7 @@ func (f FakeService) GetStore() store.Readable {
 	return nil
 }
 
-func (f *FakeService) Watch(ctx context.Context) <-chan ordering.Event {
-
+func (f *FakeService) AddTx(tx FakeTransaction) {
 	results := make([]validation.TransactionResult, 3)
 
 	results[0] = FakeTransactionResult{
@@ -426,21 +427,23 @@ func (f *FakeService) Watch(ctx context.Context) <-chan ordering.Event {
 	results[2] = FakeTransactionResult{
 		status:      f.status,
 		message:     "",
-		transaction: f.pool.transaction,
+		transaction: tx,
 	}
 
 	f.status = true
 
-	channel := make(chan ordering.Event, 1)
 	fmt.Println("watch", results[0])
-	channel <- ordering.Event{
+	f.channel <- ordering.Event{
 		Index:        0,
 		Transactions: results,
 	}
-	close(channel)
+	close(f.channel)
 
-	return channel
+}
 
+func (f *FakeService) Watch(ctx context.Context) <-chan ordering.Event {
+	f.channel = make(chan ordering.Event, 100)
+	return f.channel
 }
 
 func (f FakeService) Close() error {
@@ -454,6 +457,7 @@ func (f FakeService) Close() error {
 type FakePool struct {
 	err         error
 	transaction FakeTransaction
+	service     *FakeService
 }
 
 func (f FakePool) SetPlayers(players mino.Players) error {
@@ -474,6 +478,8 @@ func (f *FakePool) Add(transaction txn.Transaction) error {
 	}
 
 	f.transaction = newTx
+	f.service.AddTx(newTx)
+
 	return f.err
 }
 
