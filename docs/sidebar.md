@@ -4,5 +4,8 @@
 - [API documentation](api.md)
 - [Message signature](msg_sig.md)
 - [Encoding of a Ballot](ballot_encoding.md)
+- **Front-end**
+- [Front-end](frontend_doc.md)
 - **Smart contract**
 - [Smart contract](smart_contract.md)
+- [Data structure](state of smart contract.md)
