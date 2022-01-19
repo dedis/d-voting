@@ -5,7 +5,8 @@ import { LanguageContext } from '../language/LanguageContext';
 import { Translations } from '../language/Translations';
 import { NavLink } from 'react-router-dom';
 
-const NavBar = () => {
+// eslint-disable-next-line react/prop-types
+const NavBar = ({name, firstname, sciper, role}) => {
 
     const [lanContext] = useContext(LanguageContext);
 
@@ -50,13 +51,23 @@ const NavBar = () => {
                         <div className="hidden sm:block sm:ml-6">
                             <div className="flex space-x-4">
 
-                                <NavLink to='/create-election' title={Translations[lanContext].navBarCreate} className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium" activeClassName={"bg-gray-900 text-white"}>
+                                {(role == 'admin' || role == 'operator') &&
+                                <NavLink title={Translations[lanContext].navBarCreate} to='/create-election' className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium" activeClassName={"bg-gray-900 text-white"}>
                                     {Translations[lanContext].navBarCreate}
                                 </NavLink>
+                                }
 
+                                {(role == 'admin' || role == 'operator') &&
                                 <NavLink to='/elections' title={Translations[lanContext].navBarCreate} className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium" activeClassName={"bg-gray-900 text-white"}>
                                     {Translations[lanContext].navBarStatus}
                                 </NavLink>
+                                }
+
+                                {(role == 'admin') &&
+                                <NavLink to='/admin' className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium" activeClassName={"bg-gray-900 text-white"}>
+                                    Admin
+                                </NavLink>
+                                }
 
                                 <NavLink to='/vote' className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium" activeClassName={"bg-gray-900 text-white"}>
                                     {Translations[lanContext].navBarVote}
@@ -70,6 +81,8 @@ const NavBar = () => {
                                     {Translations[lanContext].navBarAbout}
                                 </NavLink>
 
+                                {sciper != 0 ? <li>Logged as {firstname} {name}<br/><a href='/api/logout'>Logout</a></li> : ''}
+                                
                             </div>
                         </div>
                     </div>
