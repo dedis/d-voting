@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
-	"testing"
 	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting"
@@ -89,7 +88,7 @@ type dVotingCosiDela interface {
 //
 // - implements dVotingCosiDela
 type dVotingNode struct {
-	t             *testing.T
+	t             require.TestingT
 	onet          mino.Mino
 	ordering      ordering.Service
 	cosi          *threshold.Threshold
@@ -106,7 +105,7 @@ type dVotingNode struct {
 
 // Creates n dela nodes using tempDir as root to file path and returns an array
 // of nodes or error
-func setupDVotingNodes(t *testing.T, numberOfNodes int, tempDir string) []dVotingCosiDela {
+func setupDVotingNodes(t require.TestingT, numberOfNodes int, tempDir string) []dVotingCosiDela {
 
 	wait := sync.WaitGroup{}
 
@@ -140,7 +139,7 @@ func setupDVotingNodes(t *testing.T, numberOfNodes int, tempDir string) []dVotin
 }
 
 // Creates a single dVotingCosiDela node
-func newDVotingNode(t *testing.T, path string, randSource rand.Source) dVotingCosiDela {
+func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVotingCosiDela {
 	err := os.MkdirAll(path, 0700)
 	require.NoError(t, err)
 
@@ -276,7 +275,7 @@ func newDVotingNode(t *testing.T, path string, randSource rand.Source) dVotingCo
 }
 
 // Creates an access on all dVotingCosiDela node given
-func createDVotingAccess(t *testing.T, nodes []dVotingCosiDela, dir string) crypto.AggregateSigner {
+func createDVotingAccess(t require.TestingT, nodes []dVotingCosiDela, dir string) crypto.AggregateSigner {
 	l := loader.NewFileLoader(filepath.Join(dir, "private.key"))
 
 	signerdata, err := l.LoadOrCreate(newKeyGenerator())

@@ -19,5 +19,5 @@ jobs:
         go-version: ^1.17
 
 
-    - name: Test integration with coverage
-      run: go test -cover ./test/...
+    - name: Test integration & benchmark with coverage
+      run: go test -bench -cover ./test/...
