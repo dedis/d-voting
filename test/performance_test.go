@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 package integration
 
 import (
@@ -6,14 +9,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/dedis/d-voting/contracts/evoting"
-	"github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/services/dkg"
-	"github.com/rs/zerolog"
-	"github.com/stretchr/testify/require"
-	delaPkg "go.dedis.ch/dela"
-	"go.dedis.ch/dela/core/txn"
-	"golang.org/x/xerrors"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -22,6 +17,15 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/dedis/d-voting/contracts/evoting"
+	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/services/dkg"
+	"github.com/rs/zerolog"
+	"github.com/stretchr/testify/require"
+	delaPkg "go.dedis.ch/dela"
+	"go.dedis.ch/dela/core/txn"
+	"golang.org/x/xerrors"
 )
 
 // Check the shuffled votes versus the casted votes and a few nodes
