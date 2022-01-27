@@ -71,14 +71,7 @@ func (a *initAction) Execute(ctx node.Context) error {
 
 	dela.Logger.Info().Msg("DKG has been initialized successfully")
 
-	// Place it in the map to keep it in sync
-	var db kv.DB
-	err = ctx.Injector.Resolve(&db)
-	if err != nil {
-		return xerrors.Errorf("failed to resolve db: %v", err)
-	}
-
-	err = db.Update(func(tx kv.WritableTx) error {
+	err = updateDKGStore(ctx.Injector, func(tx kv.WritableTx) error {
 		bucket, err := tx.GetBucketOrCreate([]byte(BucketName))
 		if err != nil {
 			return err
@@ -92,7 +85,7 @@ func (a *initAction) Execute(ctx node.Context) error {
 		return bucket.Set(electionIDBuf, actorBuf)
 	})
 	if err != nil {
-		return xerrors.Errorf("database write failed: %v", err)
+		return xerrors.Errorf("failed to update DKG store: %v", err)
 	}
 
 	dela.Logger.Info().Msgf("DKG was successfully linked to election %v", electionIDBuf)
@@ -141,14 +134,7 @@ func (a *setupAction) Execute(ctx node.Context) error {
 		Hex("DKG public key", pubkeyBuf).
 		Msg("DKG public key")
 
-	// Save actor data to disk after Setup
-	var db kv.DB
-	err = ctx.Injector.Resolve(&db)
-	if err != nil {
-		return xerrors.Errorf("failed to resolve db: %v", err)
-	}
-
-	err = db.Update(func(tx kv.WritableTx) error {
+	err = updateDKGStore(ctx.Injector, func(tx kv.WritableTx) error {
 		bucket, err := tx.GetBucketOrCreate([]byte(BucketName))
 		if err != nil {
 			return err
@@ -162,7 +148,7 @@ func (a *setupAction) Execute(ctx node.Context) error {
 		return bucket.Set(electionIDBuf, actorBuf)
 	})
 	if err != nil {
-		return xerrors.Errorf("database write failed: %v", err)
+		return xerrors.Errorf("failed to update DKG store: %v", err)
 	}
 
 	return nil
@@ -461,4 +447,19 @@ func SetupHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 
 		w.Write(pubKeyBuf)
 	}
+}
+
+func updateDKGStore(inj node.Injector, fn func(kv.WritableTx) error) error {
+	var db kv.DB
+	err := inj.Resolve(&db)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve db: %v", err)
+	}
+
+	err = db.Update(fn)
+	if err != nil {
+		return xerrors.Errorf("failed to update: %v", err)
+	}
+
+	return nil
 }
