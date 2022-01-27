@@ -1,3 +1,6 @@
+[![Go Test](https://github.com/dedis/d-voting/actions/workflows/go_test.yml/badge.svg)](https://github.com/dedis/d-voting/actions/workflows/go_test.yml)
+[![Coverage Status](https://coveralls.io/repos/github/dedis/d-voting/badge.svg)](https://coveralls.io/github/dedis/d-voting)
+
 # Setup
 
 First be sure to have Go installed.
