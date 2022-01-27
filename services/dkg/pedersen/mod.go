@@ -10,7 +10,6 @@ import (
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
-	"go.dedis.ch/dela/core/store/kv"
 
 	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 
@@ -378,23 +377,6 @@ func (a *Actor) Reshare() error {
 func (a *Actor) MarshalJSON() ([]byte, error) {
 	return a.handler.MarshalJSON()
 }
-
-// Store tags a store for Pedersen
-type Store interface {
-	kv.DB
-
-	// DKGStore is a marker to distinguish Store from kv.DB.
-	DKGStore()
-}
-
-// SimpleStore wraps a store for Pedersen
-//
-// - implements pedersen.Store
-type SimpleStore struct {
-	kv.DB
-}
-
-func (s SimpleStore) DKGStore() {}
 
 func electionExists(service ordering.Service, electionIDBuf []byte) (ordering.Proof, bool) {
 	proof, err := service.GetProof(electionIDBuf)

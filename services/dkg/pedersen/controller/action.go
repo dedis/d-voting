@@ -72,13 +72,13 @@ func (a *initAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("DKG has been initialized successfully")
 
 	// Place it in the map to keep it in sync
-	var dkgMap pedersen.Store
-	err = ctx.Injector.Resolve(&dkgMap)
+	var db kv.DB
+	err = ctx.Injector.Resolve(&db)
 	if err != nil {
-		return xerrors.Errorf("failed to resolve dkgMap: %v", err)
+		return xerrors.Errorf("failed to resolve db: %v", err)
 	}
 
-	err = dkgMap.Update(func(tx kv.WritableTx) error {
+	err = db.Update(func(tx kv.WritableTx) error {
 		bucket, err := tx.GetBucketOrCreate([]byte(BucketName))
 		if err != nil {
 			return err
@@ -142,13 +142,13 @@ func (a *setupAction) Execute(ctx node.Context) error {
 		Msg("DKG public key")
 
 	// Save actor data to disk after Setup
-	var dkgMap pedersen.Store
-	err = ctx.Injector.Resolve(&dkgMap)
+	var db kv.DB
+	err = ctx.Injector.Resolve(&db)
 	if err != nil {
-		return xerrors.Errorf("failed to resolve dkgMap: %v", err)
+		return xerrors.Errorf("failed to resolve db: %v", err)
 	}
 
-	err = dkgMap.Update(func(tx kv.WritableTx) error {
+	err = db.Update(func(tx kv.WritableTx) error {
 		bucket, err := tx.GetBucketOrCreate([]byte(BucketName))
 		if err != nil {
 			return err
@@ -249,13 +249,13 @@ func (a *exportInfoAction) Execute(ctx node.Context) error {
 	// Print address
 	fmt.Fprint(ctx.Out, desc)
 
-	var dkgMap pedersen.Store
-	err = ctx.Injector.Resolve(&dkgMap)
+	var db kv.DB
+	err = ctx.Injector.Resolve(&db)
 	if err != nil {
 		return xerrors.Errorf("injector: %v", err)
 	}
 
-	err = dkgMap.View(func(tx kv.ReadableTx) error {
+	err = db.View(func(tx kv.ReadableTx) error {
 		bucket := tx.GetBucket([]byte(BucketName))
 		if bucket == nil {
 			return nil
