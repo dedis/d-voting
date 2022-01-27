@@ -69,6 +69,8 @@ func TestMinimal_OnStart(t *testing.T) {
 
 	ctx.Injector.Inject(&cosipbft.Service{})
 
+	ctx.Injector.Inject(&fake.InMemoryDB{})
+
 	// Should miss flags
 	err = c.OnStart(nil, ctx.Injector)
 	require.EqualError(t, err, "no flags")

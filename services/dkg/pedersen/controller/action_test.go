@@ -7,7 +7,6 @@ import (
 
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg"
-	"github.com/dedis/d-voting/services/dkg/pedersen"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
@@ -41,15 +40,15 @@ func TestInitAction_Execute(t *testing.T) {
 	p := fake.Pedersen{Actors: make(map[string]dkg.Actor)}
 	ctx.Injector.Inject(p)
 	err = action.Execute(ctx)
-	require.EqualError(t, err, "failed to resolve dkgMap: couldn't find dependency for 'pedersen.Store'")
+	require.EqualError(t, err, "failed to update DKG store: failed to resolve db: couldn't find dependency for 'kv.DB'")
 
 	ctx.Injector = node.NewInjector()
 
 	// Try with a DKG and a DKGMap in the system
 	p.Actors = make(map[string]dkg.Actor)
 	ctx.Injector.Inject(p)
-	dkgMap := pedersen.SimpleStore{DB: fake.NewInMemoryDB()}
-	ctx.Injector.Inject(dkgMap)
+	db := fake.NewInMemoryDB()
+	ctx.Injector.Inject(db)
 
 	err = action.Execute(ctx)
 	require.NoError(t, err)
@@ -91,12 +90,11 @@ func TestSetupAction_Execute(t *testing.T) {
 	inj.Inject(p)
 
 	err = action.Execute(ctx)
-	require.EqualError(t, err, "failed to resolve dkgMap: couldn't find dependency for 'pedersen.Store'")
+	require.EqualError(t, err, "failed to update DKG store: failed to resolve db: couldn't find dependency for 'kv.DB'")
 
 	// DKG and DKGMap
 	db := fake.NewInMemoryDB()
-	dkgMap := pedersen.SimpleStore{DB: db}
-	ctx.Injector.Inject(dkgMap)
+	ctx.Injector.Inject(db)
 
 	err = action.Execute(ctx)
 	require.NoError(t, err)
@@ -139,9 +137,10 @@ func TestExportInfoAction_Execute(t *testing.T) {
 
 	ctx.Injector.Inject(fake.Mino{})
 	err = action.Execute(ctx)
-	require.EqualError(t, err, "injector: couldn't find dependency for 'pedersen.Store'")
+	require.EqualError(t, err, "injector: couldn't find dependency for 'kv.DB'")
 
-	ctx.Injector.Inject(pedersen.SimpleStore{DB: fake.NewInMemoryDB()})
+	db := fake.NewInMemoryDB()
+	ctx.Injector.Inject(db)
 	err = action.Execute(ctx)
 	require.NoError(t, err)
 
