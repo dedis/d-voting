@@ -18,6 +18,8 @@ instruction about running a react-app in the app folder.
  
 # Setup
 
+First of all, ensure that you installed [nodejs](https://nodejs.org/en/download/)
+
 For the front-end to work, you need to have 3 dela nodes running on your
 computer. See instructions in `../README.md`.
 
