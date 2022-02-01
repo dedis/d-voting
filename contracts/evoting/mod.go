@@ -15,16 +15,13 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const protocolName = "PairShuffle"
-const messageOnlyOneShufflePerRound = "shuffle is already happening in this round"
-const ElectionsMetadataKey = "ElectionsMetadataKey"
-
-const errDecodeElectionID = "failed to decode Election ID: %v"
-const errArgNotFound = "%q not found in tx arg"
+const (
+	// ElectionsMetadataKey is the key at which election metadata are saved in
+	// the storage.
+	ElectionsMetadataKey = "ElectionsMetadataKey"
+)
 
 var suite = suites.MustFind("Ed25519")
-
-// TODO : the smart contract should create its own dkg Actor
 
 const (
 	// ContractName is the name of the contract.
@@ -34,19 +31,24 @@ const (
 	// run on the contract. Should be one of the Command type.
 	CmdArg = "evoting:command"
 
-	CreateElectionArg = "evoting:create_election"
+	// ElectionArg is the key at which the election argument is stored in the
+	// transaction. The content is defined by the type of command.
+	ElectionArg = "evoting:arg"
 
-	OpenElectionArg = "evoting:open_election"
+	// // CreateElectionArg
+	// CreateElectionArg = "evoting:create_election"
 
-	CastVoteArg = "evoting:cast_vote"
+	// OpenElectionArg = "evoting:open_election"
 
-	CancelElectionArg = "evoting:cancel_election"
+	// CastVoteArg = "evoting:cast_vote"
 
-	CloseElectionArg = "evoting:close_election"
+	// CancelElectionArg = "evoting:cancel_election"
 
-	ShuffleBallotsArg = "evoting:shuffle_ballots"
+	// CloseElectionArg = "evoting:close_election"
 
-	DecryptBallotsArg = "evoting:decrypt_ballots"
+	// ShuffleBallotsArg = "evoting:shuffle_ballots"
+
+	// DecryptBallotsArg = "evoting:decrypt_ballots"
 
 	// credentialAllCommand defines the credential command that is allowed to
 	// perform all commands.
@@ -145,7 +147,7 @@ func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 
 	cmd := step.Current.GetArg(CmdArg)
 	if len(cmd) == 0 {
-		return xerrors.Errorf(errArgNotFound, CmdArg)
+		return xerrors.Errorf("%q not found in tx arg", CmdArg)
 	}
 
 	switch Command(cmd) {

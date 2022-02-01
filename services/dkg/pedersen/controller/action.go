@@ -7,23 +7,17 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/dkg/pedersen"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli/node"
-	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/store/kv"
-	"go.dedis.ch/dela/crypto"
-	"go.dedis.ch/dela/crypto/ed25519"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/proxy"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 )
-
-const separator = ":"
 
 const (
 	initEndpoint  = "/evoting/dkg/init"
@@ -152,61 +146,6 @@ func (a *setupAction) Execute(ctx node.Context) error {
 	}
 
 	return nil
-}
-
-func (a setupAction) readMembers(ctx node.Context) (authority.Authority, error) {
-	members := ctx.Flags.StringSlice("member")
-
-	addrs := make([]mino.Address, len(members))
-	pubkeys := make([]crypto.PublicKey, len(members))
-
-	for i, member := range members {
-		addr, pubkey, err := decodeMember(ctx, member)
-		if err != nil {
-			return nil, xerrors.Errorf("failed to decode: %v", err)
-		}
-
-		addrs[i] = addr
-		pubkeys[i] = pubkey
-	}
-
-	return authority.New(addrs, pubkeys), nil
-}
-
-func decodeMember(ctx node.Context, str string) (mino.Address, crypto.PublicKey, error) {
-	parts := strings.Split(str, separator)
-	if len(parts) != 2 {
-		return nil, nil, xerrors.Errorf("invalid member base64 string '%s'", str)
-	}
-
-	// 1. Deserialize the address.
-	var m mino.Mino
-	err := ctx.Injector.Resolve(&m)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("injector: %v", err)
-	}
-
-	addrBuf, err := base64.StdEncoding.DecodeString(parts[0])
-	if err != nil {
-		return nil, nil, xerrors.Errorf("base64 address: %v", err)
-	}
-
-	addr := m.GetAddressFactory().FromText(addrBuf)
-
-	// 2. Deserialize the public key.
-	publicKeyFactory := ed25519.NewPublicKeyFactory()
-
-	pubkeyBuf, err := base64.StdEncoding.DecodeString(parts[1])
-	if err != nil {
-		return nil, nil, xerrors.Errorf("base64 public key: %v", err)
-	}
-
-	pubkey, err := publicKeyFactory.FromBytes(pubkeyBuf)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to decode public key: %v", err)
-	}
-
-	return addr, pubkey, nil
 }
 
 // exportInfoAction is an action to display a base64 string describing the node.
@@ -346,7 +285,8 @@ func (a *registerHandlersAction) Execute(ctx node.Context) error {
 	return nil
 }
 
-// ListenHandler runs Listen to initialize an Actor corresponding to the given electionID
+// ListenHandler runs Listen to initialize an Actor corresponding to the given
+// electionID
 func ListenHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 

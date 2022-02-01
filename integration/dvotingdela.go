@@ -410,7 +410,8 @@ func (c dVotingNode) GetValidationSrv() validation.Service {
 	return c.vs
 }
 
-// certGenerator can generate a private key compatible with the x509 certificate.
+// certGenerator can generate a private key compatible with the x509
+// certificate.
 //
 // - implements loader.Generator
 type certGenerator struct {
@@ -425,9 +426,9 @@ func newCertGenerator(r io.Reader, c elliptic.Curve) loader.Generator {
 	}
 }
 
-// Generate implements loader.Generator. It returns the serialized data of
-// a private key generated from the an elliptic curve. The data is formatted as
-// a PEM block "EC PRIVATE KEY".
+// Generate implements loader.Generator. It returns the serialized data of a
+// private key generated from the an elliptic curve. The data is formatted as a
+// PEM block "EC PRIVATE KEY".
 func (g certGenerator) Generate() ([]byte, error) {
 	priv, err := ecdsa.GenerateKey(g.curve, g.random)
 	if err != nil {

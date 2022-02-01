@@ -453,8 +453,9 @@ func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionID strin
 
 }
 
-// MarshalJSON returns a JSON-encoded bytestring containing all the data in the Handler
-// that is meant to be persistent. It allows for saving the data to disk.
+// MarshalJSON returns a JSON-encoded bytestring containing all the data in the
+// Handler that is meant to be persistent. It allows for saving the data to
+// disk.
 func (h *Handler) MarshalJSON() ([]byte, error) {
 	handlerData := HandlerData{
 		StartRes:  h.startRes,

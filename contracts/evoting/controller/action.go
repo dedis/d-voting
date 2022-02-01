@@ -6,13 +6,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"go.dedis.ch/kyber/v3"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"go.dedis.ch/kyber/v3"
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
@@ -28,7 +29,6 @@ import (
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/bls"
-	"go.dedis.ch/dela/crypto/ed25519"
 	"go.dedis.ch/dela/crypto/loader"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/proxy"
@@ -136,32 +136,6 @@ func createTransaction(manager txn.Manager, commandType evoting.Command, command
 		return nil, xerrors.Errorf("failed to create transaction from manager: %v", err)
 	}
 	return tx, nil
-}
-
-func decodeMember(address string, publicKey string, m mino.Mino) (mino.Address, crypto.PublicKey, error) {
-
-	// 1. Deserialize the address.
-	addrBuf, err := base64.StdEncoding.DecodeString(address)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to b64 decode address: %v", err)
-	}
-
-	addr := m.GetAddressFactory().FromText(addrBuf)
-
-	// 2. Deserialize the public key.
-	publicKeyFactory := ed25519.NewPublicKeyFactory()
-
-	pubkeyBuf, err := base64.StdEncoding.DecodeString(publicKey)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to b64 decode public key: %v", err)
-	}
-
-	pubkey, err := publicKeyFactory.FromBytes(pubkeyBuf)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to decode public key: %v", err)
-	}
-
-	return addr, pubkey, nil
 }
 
 // getSigner creates a signer from a file.
@@ -323,16 +297,16 @@ func (a *scenarioTestPart1Action) Execute(ctx node.Context) error {
 	return nil
 }
 
-// scenarioTestPart2Action is an action to run the second part of a test scenario
+// scenarioTestPart2Action is an action to run the second part of a test
+// scenario
 //
 // - implements node.ActionTemplate
 type scenarioTestPart2Action struct {
 }
 
-// Execute implements node.ActionTemplate. It
-// simulates the full election process after the creation (which
-// is done in scenarioTestPart1Action), and after initialising
-// the DKG service on each node.
+// Execute implements node.ActionTemplate. It simulates the full election
+// process after the creation (which is done in scenarioTestPart1Action), and
+// after initialising the DKG service on each node.
 func (a *scenarioTestPart2Action) Execute(ctx node.Context) error {
 
 	proxyAddr := ctx.Flags.String("proxy-addr")
@@ -437,7 +411,7 @@ func (a *scenarioTestPart2Action) Execute(ctx node.Context) error {
 		Hex("DKG public key", pubkeyBuf).
 		Msg("DKG public key")
 
-	// ##################################### ATTEMPT TO CLOSE ELECTION #################
+	// ############################# ATTEMPT TO CLOSE ELECTION #################
 
 	dela.Logger.Info().Msg("----------------------- CLOSE ELECTION : ")
 
@@ -971,7 +945,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	resp, err = http.Post(proxyAddr1+"/evoting/dkg/setup", "application/json", bytes.NewBuffer(electionIDBuf))
-	// resp, err = http.Post(proxyAddr1+"/evoting/dkg/"+election.ElectionID, "application/json", bytes.NewBuffer(electionIDBuf))
+	// resp, err = http.Post(proxyAddr1+"/evoting/dkg/"+election.ElectionID,
+	//   "application/json", bytes.NewBuffer(electionIDBuf))
 	if err != nil {
 		return xerrors.Errorf("failed to retrieve the decryption from the server: %v", err)
 	}
@@ -1058,7 +1033,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		Hex("DKG public key", pubkeyBuf).
 		Msg("DKG public key")
 
-	// ##################################### ATTEMPT TO CLOSE ELECTION #################
+	// ############################# ATTEMPT TO CLOSE ELECTION #################
 
 	dela.Logger.Info().Msg("----------------------- CLOSE ELECTION : ")
 
@@ -1204,7 +1179,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("ID of the election: " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Status of the election: " + strconv.Itoa(int(election.Status)))
 
-	// ###################################### CLOSE ELECTION FOR REAL ###################
+	// ############################# CLOSE ELECTION FOR REAL ###################
 
 	dela.Logger.Info().Msg("----------------------- CLOSE ELECTION : ")
 
@@ -1478,35 +1453,6 @@ func castVote(castVoteRequest types.CastVoteRequest, proxyAddr string) (string, 
 	resp.Body.Close()
 
 	return string(body), nil
-}
-
-func readMembers(ctx node.Context) ([]types.CollectiveAuthorityMember, error) {
-	members := ctx.Flags.StringSlice("member")
-
-	roster := make([]types.CollectiveAuthorityMember, len(members))
-
-	for i, member := range members {
-		addr, pubkey, err := decodeMemberFromContext(member)
-		if err != nil {
-			return nil, xerrors.Errorf("failed to decode: %v", err)
-		}
-
-		roster[i] = types.CollectiveAuthorityMember{
-			Address:   addr,
-			PublicKey: pubkey,
-		}
-	}
-
-	return roster, nil
-}
-
-func decodeMemberFromContext(str string) (string, string, error) {
-	parts := strings.Split(str, ":")
-	if len(parts) != 2 {
-		return "", "", xerrors.New("invalid member base64 string")
-	}
-
-	return parts[0], parts[1], nil
 }
 
 func contains(s []string, str string) bool {

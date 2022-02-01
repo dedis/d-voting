@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/base64"
+
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
 )
@@ -101,8 +102,8 @@ func (r *RandomVector) LoadFromScalars(e []kyber.Scalar) error {
 	return nil
 }
 
-// ShuffleInstance is an instance of a shuffle, it contains the shuffled ballots,
-// the proofs and the identity of the shuffler.
+// ShuffleInstance is an instance of a shuffle, it contains the shuffled
+// ballots, the proofs and the identity of the shuffler.
 type ShuffleInstance struct {
 	// ShuffledBallots contains the list of shuffled ciphertext for this round
 	ShuffledBallots EncryptedBallots

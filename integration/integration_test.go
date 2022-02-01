@@ -1,6 +1,3 @@
-//go:build integration
-// +build integration
-
 package integration
 
 import (
@@ -133,7 +130,8 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	fmt.Println("Status of the election : " + strconv.Itoa(int(election.Status)))
 	fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
 
-	// TODO: check that decrypted ballots are equals to cast ballots (maybe through hashing)
+	// TODO: check that decrypted ballots are equals to cast ballots (maybe
+	// through hashing)
 	for _, b := range election.DecryptedBallots {
 		fmt.Println("decrypted ballot:", b)
 	}
@@ -147,7 +145,8 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 
 // Check more shuffled votes versus the cast votes on more nodes.
 func TestIntegration_ManyVotesScenario(t *testing.T) {
-	// The following constants are limited by VSC build in debug function that times out after 30s.
+	// The following constants are limited by VSC build in debug function that
+	// times out after 30s.
 	numNodes := 10
 	numVotes := 10
 	adminID := "I am an admin"
@@ -238,7 +237,8 @@ func TestIntegration_ManyVotesScenario(t *testing.T) {
 	fmt.Println("Status of the election : " + strconv.Itoa(int(election.Status)))
 	fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
 
-	// TODO: check that decrypted ballots are equals to casted ballots (maybe through hashing)
+	// TODO: check that decrypted ballots are equals to casted ballots (maybe
+	// through hashing)
 	for _, b := range election.DecryptedBallots {
 		fmt.Println("decrypted ballot:", b)
 	}
@@ -405,7 +405,7 @@ func createElection(m txManager, title string, admin string) ([]byte, error) {
 
 	args := []txn.Arg{
 		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.CreateElectionArg, Value: createElectionBuf},
+		{Key: evoting.ElectionArg, Value: createElectionBuf},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCreateElection)},
 	}
 	txID, err := m.addAndWait(args...)
@@ -432,7 +432,7 @@ func openElection(m txManager, electionID []byte) error {
 
 	args := []txn.Arg{
 		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.OpenElectionArg, Value: openElectionBuf},
+		{Key: evoting.ElectionArg, Value: openElectionBuf},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdOpenElection)},
 	}
 	_, err = m.addAndWait(args...)
@@ -493,7 +493,7 @@ func castVotesRandomly(m txManager, actor dkg.Actor, electionID []byte, numberOf
 
 		args := []txn.Arg{
 			{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-			{Key: evoting.CastVoteArg, Value: castedVoteBuf},
+			{Key: evoting.ElectionArg, Value: castedVoteBuf},
 			{Key: evoting.CmdArg, Value: []byte(evoting.CmdCastVote)},
 		}
 		_, err = m.addAndWait(args...)
@@ -553,7 +553,7 @@ func closeElection(m txManager, electionID []byte, admin string) error {
 
 	args := []txn.Arg{
 		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.CloseElectionArg, Value: closeElectionBuf},
+		{Key: evoting.ElectionArg, Value: closeElectionBuf},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCloseElection)},
 	}
 	_, err = m.addAndWait(args...)
@@ -651,7 +651,7 @@ func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error
 
 	args := []txn.Arg{
 		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.DecryptBallotsArg, Value: decryptBallotsBuf},
+		{Key: evoting.ElectionArg, Value: decryptBallotsBuf},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdDecryptBallots)},
 	}
 	_, err = m.addAndWait(args...)

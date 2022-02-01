@@ -16,5 +16,6 @@ require (
 	go.dedis.ch/kyber/v3 v3.1.0-alpha
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
+	golang.org/x/tools v0.1.0
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 )

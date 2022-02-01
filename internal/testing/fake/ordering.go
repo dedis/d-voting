@@ -42,7 +42,8 @@ type Service struct {
 	Channel   chan ordering.Event
 }
 
-// GetProof implements ordering.Service. It returns the proof associated to the election.
+// GetProof implements ordering.Service. It returns the proof associated to the
+// election.
 func (f Service) GetProof(key []byte) (ordering.Proof, error) {
 	keyString := hex.EncodeToString(key)
 
@@ -64,12 +65,14 @@ func (f Service) GetProof(key []byte) (ordering.Proof, error) {
 	return proof, f.Err
 }
 
-// GetStore implements ordering.Service. It returns the store associated to the service.
+// GetStore implements ordering.Service. It returns the store associated to the
+// service.
 func (f Service) GetStore() store.Readable {
 	return nil
 }
 
-// Watch implements ordering.Service. It returns the events that occurred within the service.
+// Watch implements ordering.Service. It returns the events that occurred within
+// the service.
 func (f Service) Watch(ctx context.Context) <-chan ordering.Event {
 
 	results := make([]validation.TransactionResult, 3)
@@ -91,8 +94,6 @@ func (f Service) Watch(ctx context.Context) <-chan ordering.Event {
 		message: "",
 		tx:      f.Pool.Transaction,
 	}
-
-	f.Status = true
 
 	channel := make(chan ordering.Event, 1)
 	fmt.Println("watch", results[0])

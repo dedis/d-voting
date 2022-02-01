@@ -94,7 +94,8 @@ func (s *Pedersen) Listen(electionIDBuf []byte) (dkg.Actor, error) {
 	return s.NewActor(electionIDBuf, NewHandlerData())
 }
 
-// NewActor initializes a dkg.Actor with an RPC specific to the election with the given keypair
+// NewActor initializes a dkg.Actor with an RPC specific to the election with
+// the given keypair
 func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.Actor, error) {
 
 	// hex-encoded string

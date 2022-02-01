@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+
 	"golang.org/x/xerrors"
 )
 
@@ -29,7 +30,7 @@ func (e ElectionIDs) Contains(el string) bool {
 // Add adds an election ID or returns an error if already present
 func (e *ElectionIDs) Add(id string) error {
 	if e.Contains(id) {
-		return xerrors.Errorf("id '%s' already exist")
+		return xerrors.Errorf("id %q already exist", id)
 	}
 
 	*e = append(*e, id)

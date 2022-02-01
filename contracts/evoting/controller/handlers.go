@@ -56,7 +56,7 @@ func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	txID, err := h.submitAndWaitForTxn(r.Context(), evoting.CmdCreateElection, evoting.CreateElectionArg, payload)
+	txID, err := h.submitAndWaitForTxn(r.Context(), evoting.CmdCreateElection, evoting.ElectionArg, payload)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -111,7 +111,7 @@ func (h *votingProxy) OpenElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdOpenElection, evoting.OpenElectionArg, payload)
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdOpenElection, evoting.ElectionArg, payload)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -160,7 +160,7 @@ func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCastVote, evoting.CastVoteArg, payload)
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCastVote, evoting.ElectionArg, payload)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -360,7 +360,7 @@ func (h *votingProxy) CloseElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCloseElection, evoting.CloseElectionArg, payload)
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCloseElection, evoting.ElectionArg, payload)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -441,7 +441,7 @@ func (h *votingProxy) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := types.ShuffleBallotsResponse{
-		Message: fmt.Sprintf("shuffle started"),
+		Message: "shuffle started",
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -555,7 +555,7 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdDecryptBallots, evoting.DecryptBallotsArg, payload)
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdDecryptBallots, evoting.ElectionArg, payload)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -660,7 +660,7 @@ func (h *votingProxy) CancelElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCancelElection, evoting.CancelElectionArg, payload)
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCancelElection, evoting.ElectionArg, payload)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return

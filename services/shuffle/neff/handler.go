@@ -17,7 +17,6 @@ import (
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
-	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
 	jsondela "go.dedis.ch/dela/serde/json"
@@ -223,7 +222,7 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 		Value: []byte(evoting.CmdShuffleBallots),
 	}
 	args[2] = txn.Arg{
-		Key:   evoting.ShuffleBallotsArg,
+		Key:   evoting.ElectionArg,
 		Value: js,
 	}
 
@@ -317,10 +316,4 @@ func getElection(service ordering.Service, electionID string) (*electionTypes.El
 		return nil, xerrors.Errorf("failed to unmarshal Election: %v", err)
 	}
 	return election, nil
-}
-
-// getManager is the function called when we need a transaction manager. It
-// allows us to use a different manager for the tests.
-var getManager = func(signer crypto.Signer, s signed.Client) txn.Manager {
-	return signed.NewManager(signer, s)
 }

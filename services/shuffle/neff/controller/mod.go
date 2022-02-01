@@ -2,6 +2,8 @@ package controller
 
 import (
 	"encoding"
+	"path/filepath"
+
 	"github.com/dedis/d-voting/services/shuffle/neff"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
@@ -14,7 +16,6 @@ import (
 	"go.dedis.ch/dela/crypto/loader"
 	"go.dedis.ch/dela/mino"
 	"golang.org/x/xerrors"
-	"path/filepath"
 )
 
 const privateKeyFile = "private.key"
@@ -151,7 +152,8 @@ func (g generator) Generate() ([]byte, error) {
 	return data, nil
 }
 
-// blsSigner is a wrapper to use a signer with the primitives to use a BLS signature
+// blsSigner is a wrapper to use a signer with the primitives to use a BLS
+// signature
 func blsSigner() encoding.BinaryMarshaler {
 	return bls.NewSigner()
 }

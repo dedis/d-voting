@@ -1,6 +1,3 @@
-//go:build integration
-// +build integration
-
 package integration
 
 import (
@@ -134,7 +131,8 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
 	fmt.Println("Chunks per ballot : " + strconv.Itoa(election.ChunksPerBallot()))
 
-	// TODO: check that decrypted ballots are equals to casted ballots (maybe through hashing)
+	// TODO: check that decrypted ballots are equals to casted ballots (maybe
+	// through hashing)
 	for _, b := range election.DecryptedBallots {
 		fmt.Println("decrypted ballot:", b)
 	}
@@ -187,7 +185,7 @@ func createElectionNChunks(m txManager, title string, admin string, numChunks in
 
 	args := []txn.Arg{
 		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.CreateElectionArg, Value: createElectionBuf},
+		{Key: evoting.ElectionArg, Value: createElectionBuf},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCreateElection)},
 	}
 	txID, err := m.addAndWait(args...)
@@ -242,7 +240,7 @@ func castVotesNChunks(m txManager, actor dkg.Actor, electionID []byte, numberOfV
 
 		args := []txn.Arg{
 			{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-			{Key: evoting.CastVoteArg, Value: castedVoteBuf},
+			{Key: evoting.ElectionArg, Value: castedVoteBuf},
 			{Key: evoting.CmdArg, Value: []byte(evoting.CmdCastVote)},
 		}
 		_, err = m.addAndWait(args...)

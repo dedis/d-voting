@@ -30,7 +30,8 @@ func (f ChangeSet) GetNewAddresses() []mino.Address {
 	return make([]mino.Address, 10)
 }
 
-// ChangeSet is a fake implementation of ordering.cosipbft.authority.ChangeSetFactory.
+// ChangeSet is a fake implementation of
+// ordering.cosipbft.authority.ChangeSetFactory.
 //
 // - implements ordering.cosipbft.ChangeSetFactory
 type ChangeSetFactory struct {

@@ -28,7 +28,8 @@ func (m controller) SetCommands(builder node.Builder) {
 	cmd := builder.SetCommand("e-voting")
 	cmd.SetDescription("interact with the evoting service")
 
-	// memcoin --config /tmp/node1 e-voting registerHandlers --signer private.key
+	// memcoin --config /tmp/node1 e-voting \
+	//   registerHandlers --signer private.key
 	sub := cmd.SetSubCommand("registerHandlers")
 	sub.SetDescription("register the e-voting handlers on the default proxy")
 	sub.SetFlags(
@@ -40,7 +41,8 @@ func (m controller) SetCommands(builder node.Builder) {
 	)
 	sub.SetAction(builder.MakeAction(&registerAction{}))
 
-	// memcoin --config /tmp/node1 e-voting scenarioTestPart1 --proxy-addr http://localhost:8081
+	// memcoin --config /tmp/node1 e-voting scenarioTestPart1 \
+	//   --proxy-addr http://localhost:8081
 	sub = cmd.SetSubCommand("scenarioTestPart1")
 	sub.SetDescription("evoting scenario test, before dkg init on each node")
 	sub.SetFlags(
@@ -52,7 +54,8 @@ func (m controller) SetCommands(builder node.Builder) {
 	)
 	sub.SetAction(builder.MakeAction(&scenarioTestPart1Action{}))
 
-	// memcoin --config /tmp/node1 e-voting scenarioTestPart2 --proxy-addr http://localhost:8081
+	// memcoin --config /tmp/node1 e-voting scenarioTestPart2 \
+	//   --proxy-addr http://localhost:8081
 	sub = cmd.SetSubCommand("scenarioTestPart2")
 	sub.SetDescription("evoting scenario test, after dkg init on each node")
 	sub.SetFlags(
@@ -124,7 +127,8 @@ func (c *Client) GetNonce(id access.Identity) (uint64, error) {
 		for _, txResult := range transactionResults {
 			_, msg := txResult.GetStatus()
 			if !strings.Contains(msg, "nonce") && txResult.GetTransaction().GetNonce() > nonce {
-				// && txResult.GetTransaction().GetIdentity().Equal(signer.GetPublicKey())
+				// && txResult.GetTransaction().GetIdentity()
+				//   .Equal(signer.GetPublicKey())
 				nonce = txResult.GetTransaction().GetNonce()
 			}
 		}

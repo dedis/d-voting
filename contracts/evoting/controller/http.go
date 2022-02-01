@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"sync"
-	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
@@ -34,8 +33,6 @@ const (
 	getElectionResultEndpoint   = "/evoting/result"
 	cancelElectionEndpoint      = "/evoting/cancel"
 )
-
-const srvShutdownTimeout = 10 * time.Second
 
 // HTTP exposes an http proxy for all evoting contract commands.
 type votingProxy struct {

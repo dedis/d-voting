@@ -22,6 +22,12 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const (
+	shufflingProtocolName = "PairShuffle"
+	errArgNotFound        = "%q not found in tx arg"
+	errDecodeElectionID   = "failed to decode Election ID: %v"
+)
+
 // evotingCommand implements the commands of the Evoting contract.
 //
 // - implements commands
@@ -35,9 +41,9 @@ type prover func(suite proof.Suite, protocolName string, verifier proof.Verifier
 
 // createElection implements commands. It performs the CREATE_ELECTION command
 func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step) error {
-	createElectionBuf := step.Current.GetArg(CreateElectionArg)
+	createElectionBuf := step.Current.GetArg(ElectionArg)
 	if len(createElectionBuf) == 0 {
-		return xerrors.Errorf(errArgNotFound, CreateElectionArg)
+		return xerrors.Errorf(errArgNotFound, ElectionArg)
 	}
 
 	createElectionTxn := &types.CreateElectionTransaction{}
@@ -125,9 +131,9 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 // openElection set the public key on the election. The public key is fetched
 // from the DKG actor. It works only if DKG is set up.
 func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) error {
-	openElecBuf := step.Current.GetArg(OpenElectionArg)
+	openElecBuf := step.Current.GetArg(ElectionArg)
 	if len(openElecBuf) == 0 {
-		return xerrors.Errorf(errArgNotFound, OpenElectionArg)
+		return xerrors.Errorf(errArgNotFound, ElectionArg)
 	}
 
 	openElectTransaction := &types.OpenElectionTransaction{}
@@ -168,7 +174,7 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) e
 
 	dkgActor, exists := e.pedersen.GetActor(electionIDBuf)
 	if !exists {
-		return xerrors.Errorf("failed to get actor for election %d: %v", election.ElectionID, err)
+		return xerrors.Errorf("failed to get actor for election %q: %v", election.ElectionID, err)
 	}
 
 	pubkey, err := dkgActor.GetPublicKey()
@@ -198,9 +204,9 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) e
 
 // castVote implements commands. It performs the CAST_VOTE command
 func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error {
-	castVoteBuf := step.Current.GetArg(CastVoteArg)
+	castVoteBuf := step.Current.GetArg(ElectionArg)
 	if len(castVoteBuf) == 0 {
-		return xerrors.Errorf(errArgNotFound, CastVoteArg)
+		return xerrors.Errorf(errArgNotFound, ElectionArg)
 	}
 
 	castVoteTransaction := &types.CastVoteTransaction{}
@@ -267,9 +273,9 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 
 // shuffleBallots implements commands. It performs the SHUFFLE_BALLOTS command
 func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step) error {
-	shuffledBallotsBuf := step.Current.GetArg(ShuffleBallotsArg)
+	shuffledBallotsBuf := step.Current.GetArg(ElectionArg)
 	if len(shuffledBallotsBuf) == 0 {
-		return xerrors.Errorf(errArgNotFound, ShuffleBallotsArg)
+		return xerrors.Errorf(errArgNotFound, ElectionArg)
 	}
 
 	shuffleBallotsTransaction := &types.ShuffleBallotsTransaction{}
@@ -324,7 +330,8 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("could not verify identity of shuffler : %v", err)
 	}
 
-	// Chek the node who submitted the shuffle did not already submit an accepted shuffle
+	// Chek the node who submitted the shuffle did not already submit an
+	// accepted shuffle
 	for i, shuffleInstance := range election.ShuffleInstances {
 		if bytes.Equal(shufflerPublicKey, shuffleInstance.ShufflerPublicKey) {
 			return xerrors.Errorf("a node already submitted a shuffle that"+
@@ -411,7 +418,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 
 	verifier := shuffle.Verifier(suite, nil, pubKey, XXUp, YYUp, XXDown, YYDown)
 
-	err = e.prover(suite, protocolName, verifier, shuffleBallotsTransaction.Proof)
+	err = e.prover(suite, shufflingProtocolName, verifier, shuffleBallotsTransaction.Proof)
 	if err != nil {
 		return xerrors.Errorf("proof verification failed: %v", err)
 	}
@@ -448,16 +455,16 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	return nil
 }
 
-// checkPreviousTransactions checks if a ShuffleBallotsTransaction has
-// already been accepted and executed for a specific round.
+// checkPreviousTransactions checks if a ShuffleBallotsTransaction has already
+// been accepted and executed for a specific round.
 func checkPreviousTransactions(step execution.Step, round int) error {
 	for _, tx := range step.Previous {
 
 		if string(tx.GetArg(native.ContractArg)) == ContractName {
 
-			if string(tx.GetArg(CmdArg)) == ShuffleBallotsArg {
+			if string(tx.GetArg(CmdArg)) == ElectionArg {
 
-				shuffledBallotsBuf := tx.GetArg(ShuffleBallotsArg)
+				shuffledBallotsBuf := tx.GetArg(ElectionArg)
 				shuffleBallotsTransaction := &types.ShuffleBallotsTransaction{}
 
 				err := json.Unmarshal(shuffledBallotsBuf, shuffleBallotsTransaction)
@@ -466,7 +473,7 @@ func checkPreviousTransactions(step execution.Step, round int) error {
 				}
 
 				if shuffleBallotsTransaction.Round == round {
-					return xerrors.Errorf(messageOnlyOneShufflePerRound)
+					return xerrors.Errorf("shuffle is already happening in this round")
 				}
 			}
 		}
@@ -476,10 +483,10 @@ func checkPreviousTransactions(step execution.Step, round int) error {
 
 // closeElection implements commands. It performs the CLOSE_ELECTION command
 func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) error {
-	closeElectionBuf := step.Current.GetArg(CloseElectionArg)
+	closeElectionBuf := step.Current.GetArg(ElectionArg)
 
 	if len(closeElectionBuf) == 0 {
-		return xerrors.Errorf(errArgNotFound, CloseElectionArg)
+		return xerrors.Errorf(errArgNotFound, ElectionArg)
 	}
 
 	closeElectionTransaction := &types.CloseElectionTransaction{}
@@ -540,9 +547,9 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 
 // decryptBallots implements commands. It performs the DECRYPT_BALLOTS command
 func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step) error {
-	decryptBallotsBuf := step.Current.GetArg(DecryptBallotsArg)
+	decryptBallotsBuf := step.Current.GetArg(ElectionArg)
 	if len(decryptBallotsBuf) == 0 {
-		return xerrors.Errorf(errArgNotFound, DecryptBallotsArg)
+		return xerrors.Errorf(errArgNotFound, ElectionArg)
 	}
 
 	decryptBallotsTransaction := &types.DecryptBallotsTransaction{}
@@ -598,9 +605,9 @@ func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step)
 
 // cancelElection implements commands. It performs the CANCEL_ELECTION command
 func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step) error {
-	cancelElectionBuf := step.Current.GetArg(CancelElectionArg)
+	cancelElectionBuf := step.Current.GetArg(ElectionArg)
 	if len(cancelElectionBuf) == 0 {
-		return xerrors.Errorf(errArgNotFound, CancelElectionArg)
+		return xerrors.Errorf(errArgNotFound, ElectionArg)
 	}
 
 	cancelElectionTransaction := new(types.CancelElectionTransaction)
@@ -649,8 +656,8 @@ func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step)
 	return nil
 }
 
-// isMemberOf is a utility function to verify if a public key is associated
-// to a member of the roster or not. Returns nil if it's the case.
+// isMemberOf is a utility function to verify if a public key is associated to a
+// member of the roster or not. Returns nil if it's the case.
 func isMemberOf(roster authority.Authority, publicKey []byte) error {
 	pubKeyIterator := roster.PublicKeyIterator()
 	isAMember := false
