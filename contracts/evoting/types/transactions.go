@@ -102,16 +102,11 @@ func RandomID() (string, error) {
 }
 
 // HashShuffle hashes a given shuffle so that it can be signed or a signature
-// can be verified, using a common template.
-func (s ShuffleBallotsTransaction) HashShuffle(electionID string) ([]byte, error) {
+// can be verified, using a common template. Election is NOT hex encoded.
+func (s ShuffleBallotsTransaction) HashShuffle(electionID []byte) ([]byte, error) {
 	hash := sha256.New()
 
-	id, err := hex.DecodeString(electionID)
-	if err != nil {
-		return nil, xerrors.Errorf("could not decode electionId : %v", err)
-	}
-
-	hash.Write(id)
+	hash.Write(electionID)
 
 	shuffledBallots, err := json.Marshal(s.ShuffledBallots)
 	if err != nil {

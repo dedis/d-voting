@@ -31,8 +31,8 @@ import (
 	"go.dedis.ch/kyber/v3/util/random"
 )
 
-var dummyElectionIdBuff = []byte("dummyID")
-var fakeElectionID = hex.EncodeToString(dummyElectionIdBuff)
+var dummyElectionIDBuff = []byte("dummyID")
+var fakeElectionID = hex.EncodeToString(dummyElectionIDBuff)
 var fakeCommonSigner = bls.NewSigner()
 
 func fakeProver(proof.Suite, string, proof.Verifier, []byte) error {
@@ -59,7 +59,7 @@ func TestExecute(t *testing.T) {
 
 	contract = NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
 	err = contract.Execute(fakeStore{}, makeStep(t))
-	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, CmdArg))
+	require.EqualError(t, err, "\"evoting:command\" not found in tx arg")
 
 	contract.cmd = fakeCmd{err: fake.GetError()}
 
@@ -120,11 +120,10 @@ func TestCommand_CreateElection(t *testing.T) {
 	}
 
 	err := cmd.createElection(fake.NewSnapshot(), makeStep(t))
-	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, ElectionArg))
+	require.EqualError(t, err, "failed to get transaction: \"evoting:arg\" not found in tx arg")
 
 	err = cmd.createElection(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
-	require.EqualError(t, err, "failed to unmarshal CreateElectionTransaction : "+
-		"invalid character 'd' looking for beginning of value")
+	require.EqualError(t, err, "failed to get transaction: failed to unmarshal e: invalid character 'd' looking for beginning of value")
 
 	err = cmd.createElection(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(js)))
 	require.EqualError(t, err, "failed to get roster")
@@ -137,9 +136,9 @@ func TestCommand_CreateElection(t *testing.T) {
 	// recover election ID:
 	h := sha256.New()
 	h.Write(step.Current.GetID())
-	electionIdBuff := h.Sum(nil)
+	electionIDBuff := h.Sum(nil)
 
-	res, err := snap.Get(electionIdBuff)
+	res, err := snap.Get(electionIDBuff)
 	require.NoError(t, err)
 
 	election := new(types.Election)
@@ -171,24 +170,23 @@ func TestCommand_CastVote(t *testing.T) {
 	}
 
 	err = cmd.castVote(fake.NewSnapshot(), makeStep(t))
-	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, ElectionArg))
+	require.EqualError(t, err, "failed to get transaction: \"evoting:arg\" not found in tx arg")
 
 	err = cmd.castVote(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
-	require.EqualError(t, err, "failed to unmarshal CastVoteTransaction: "+
-		"invalid character 'd' looking for beginning of value")
+	require.EqualError(t, err, "failed to get transaction: failed to unmarshal e: invalid character 'd' looking for beginning of value")
 
 	err = cmd.castVote(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(jsCastVoteTransaction)))
 	require.Contains(t, err.Error(), "failed to get key")
 
 	snap := fake.NewSnapshot()
 
-	err = snap.Set(dummyElectionIdBuff, []byte("fake election"))
+	err = snap.Set(dummyElectionIDBuff, []byte("fake election"))
 	require.NoError(t, err)
 
 	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(jsCastVoteTransaction)))
 	require.Contains(t, err.Error(), "failed to unmarshal Election")
 
-	err = snap.Set(dummyElectionIdBuff, jsElection)
+	err = snap.Set(dummyElectionIDBuff, jsElection)
 	require.NoError(t, err)
 
 	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(jsCastVoteTransaction)))
@@ -197,7 +195,7 @@ func TestCommand_CastVote(t *testing.T) {
 	dummyElection.Status = types.Open
 	jsElection, _ = json.Marshal(dummyElection)
 
-	err = snap.Set(dummyElectionIdBuff, jsElection)
+	err = snap.Set(dummyElectionIDBuff, jsElection)
 	require.NoError(t, err)
 
 	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(jsCastVoteTransaction)))
@@ -206,7 +204,7 @@ func TestCommand_CastVote(t *testing.T) {
 	dummyElection.BallotSize = 29
 	jsElection, _ = json.Marshal(dummyElection)
 
-	err = snap.Set(dummyElectionIdBuff, jsElection)
+	err = snap.Set(dummyElectionIDBuff, jsElection)
 	require.NoError(t, err)
 
 	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(jsCastVoteTransaction)))
@@ -221,7 +219,7 @@ func TestCommand_CastVote(t *testing.T) {
 
 	jsCastVoteTransaction, _ = json.Marshal(dummyCastVoteTransaction)
 
-	err = snap.Set(dummyElectionIdBuff, jsElection)
+	err = snap.Set(dummyElectionIDBuff, jsElection)
 	require.NoError(t, err)
 
 	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(jsCastVoteTransaction)))
@@ -251,26 +249,33 @@ func TestCommand_CastVote(t *testing.T) {
 		},
 	}
 
+	dummyCastVoteTransaction.ElectionID = "X"
+
 	jsCastVoteTransaction, err = json.Marshal(dummyCastVoteTransaction)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIdBuff, jsElection)
+	err = snap.Set(dummyElectionIDBuff, jsElection)
 	require.NoError(t, err)
 
 	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(jsCastVoteTransaction)))
-	require.EqualError(t, err, "failed to decode Election ID: encoding/hex: invalid byte: U+0075 'u'")
+	require.EqualError(t, err, "failed to get election: failed to decode electionIDHex: encoding/hex: invalid byte: U+0058 'X'")
 
 	dummyElection.ElectionID = fakeElectionID
 	jsElection, err = json.Marshal(dummyElection)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIdBuff, jsElection)
+	err = snap.Set(dummyElectionIDBuff, jsElection)
+	require.NoError(t, err)
+
+	dummyCastVoteTransaction.ElectionID = fakeElectionID
+
+	jsCastVoteTransaction, err = json.Marshal(dummyCastVoteTransaction)
 	require.NoError(t, err)
 
 	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(jsCastVoteTransaction)))
 	require.NoError(t, err)
 
-	res, err := snap.Get(dummyElectionIdBuff)
+	res, err := snap.Get(dummyElectionIDBuff)
 	require.NoError(t, err)
 
 	election := new(types.Election)
@@ -301,23 +306,22 @@ func TestCommand_CloseElection(t *testing.T) {
 	}
 
 	err = cmd.closeElection(fake.NewSnapshot(), makeStep(t))
-	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, ElectionArg))
+	require.EqualError(t, err, "failed to get transaction: \"evoting:arg\" not found in tx arg")
 
 	err = cmd.closeElection(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
-	require.EqualError(t, err, "failed to unmarshal CloseElectionTransaction: "+
-		"invalid character 'd' looking for beginning of value")
+	require.EqualError(t, err, "failed to get transaction: failed to unmarshal e: invalid character 'd' looking for beginning of value")
 
 	err = cmd.closeElection(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(jsCloseElectionTransaction)))
 	require.Contains(t, err.Error(), "failed to get key")
 
 	snap := fake.NewSnapshot()
 
-	_ = snap.Set(dummyElectionIdBuff, []byte("fake election"))
+	_ = snap.Set(dummyElectionIDBuff, []byte("fake election"))
 
 	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(jsCloseElectionTransaction)))
 	require.Contains(t, err.Error(), "failed to unmarshal Election")
 
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	_ = snap.Set(dummyElectionIDBuff, jsElection)
 
 	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(jsCloseElectionTransaction)))
 	require.EqualError(t, err, "only the admin can close the election")
@@ -333,7 +337,7 @@ func TestCommand_CloseElection(t *testing.T) {
 
 	jsElection, _ = json.Marshal(dummyElection)
 
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	_ = snap.Set(dummyElectionIDBuff, jsElection)
 
 	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(jsCloseElectionTransaction)))
 	require.EqualError(t, err, "at least two ballots are required")
@@ -342,12 +346,12 @@ func TestCommand_CloseElection(t *testing.T) {
 	dummyElection.PublicBulletinBoard.CastVote("dummyUser2", types.EncryptedBallot{})
 
 	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	_ = snap.Set(dummyElectionIDBuff, jsElection)
 
 	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(jsCloseElectionTransaction)))
 	require.NoError(t, err)
 
-	res, err := snap.Get(dummyElectionIdBuff)
+	res, err := snap.Get(dummyElectionIDBuff)
 	require.NoError(t, err)
 
 	election := new(types.Election)
@@ -386,7 +390,7 @@ func TestCommand_ShuffleBallotsCannotShuffleTwice(t *testing.T) {
 	dummyElection.ShuffleInstances[0].ShufflerPublicKey = dummyShuffleBallotsTransaction.PublicKey
 
 	jsElection, _ := json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	_ = snap.Set(dummyElectionIDBuff, jsElection)
 	jsShuffleBallotsTransaction, _ := json.Marshal(dummyShuffleBallotsTransaction)
 
 	err := cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
@@ -407,7 +411,7 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 	snap := fake.NewSnapshot()
 
 	jsElection, _ := json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	_ = snap.Set(dummyElectionIDBuff, jsElection)
 
 	jsShuffleBallotsTransaction, _ := json.Marshal(dummyShuffleBallotsTransaction)
 	step := makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction))
@@ -434,7 +438,7 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 	}
 
 	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	_ = snap.Set(dummyElectionIDBuff, jsElection)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.NoError(t, err)
@@ -461,31 +465,30 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	}
 
 	err := cmd.shuffleBallots(fake.NewSnapshot(), makeStep(t))
-	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, ElectionArg))
+	require.EqualError(t, err, "failed to get transaction: \"evoting:arg\" not found in tx arg")
 
 	err = cmd.shuffleBallots(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
-	require.EqualError(t, err, "failed to unmarshal ShuffleBallotsTransaction: "+
-		"invalid character 'd' looking for beginning of value")
+	require.EqualError(t, err, "failed to get transaction: failed to unmarshal e: invalid character 'd' looking for beginning of value")
 
 	err = cmd.shuffleBallots(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.Contains(t, err.Error(), "failed to get key")
 
 	// Wrong election id format
 	snap := fake.NewSnapshot()
-	_ = snap.Set(dummyElectionIdBuff, []byte("fake election"))
+	_ = snap.Set(dummyElectionIDBuff, []byte("fake election"))
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.Contains(t, err.Error(), "failed to unmarshal Election")
 
 	// Election not closed
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	_ = snap.Set(dummyElectionIDBuff, jsElection)
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.EqualError(t, err, "the election is not closed")
 
 	// Wrong round :
 	dummyElection.Status = types.Closed
 	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	_ = snap.Set(dummyElectionIDBuff, jsElection)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.EqualError(t, err, "wrong shuffle round: expected round '0', transaction is for round '2'")
@@ -497,7 +500,7 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 
 	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
 	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	_ = snap.Set(dummyElectionIDBuff, jsElection)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.EqualError(t, err, "could not verify identity of shuffler : public key not associated to a member of the roster: 77726f6e67204b6579")
@@ -515,15 +518,10 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	dummyShuffleBallotsTransaction.Signature = wrongSignature
 	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
 
-	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
-	require.EqualError(t, err,
-		"could not hash shuffle : could not decode electionId : encoding/hex: invalid byte: U+0075 'u'")
-
 	// Signatures not matching:
-	dummyId := hex.EncodeToString([]byte("dummyId"))
-	dummyElection.ElectionID = dummyId
+	dummyElection.ElectionID = fakeElectionID
 	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	_ = snap.Set(dummyElectionIDBuff, jsElection)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.EqualError(t, err, "signature does not match the Shuffle : bls verify failed: bls: invalid signature ")
@@ -539,7 +537,7 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 		dummyShuffleBallotsTransaction.ShuffledBallots[i] = ballot
 	}
 
-	hash, _ := dummyShuffleBallotsTransaction.HashShuffle(dummyId)
+	hash, _ := dummyShuffleBallotsTransaction.HashShuffle(dummyElectionIDBuff)
 	signature, _ = fakeCommonSigner.Sign(hash)
 	wrongSignature, _ = signature.Serialize(contract.context)
 
@@ -548,7 +546,7 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	dummyElection.BallotSize = 1
 
 	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	_ = snap.Set(dummyElectionIDBuff, jsElection)
 
 	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
 
@@ -572,7 +570,7 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	require.EqualError(t, err, "random vector from shuffle transaction is different than expected random vector")
 
 	// generate correct random vector:
-	hash, _ = dummyShuffleBallotsTransaction.HashShuffle(dummyId)
+	hash, _ = dummyShuffleBallotsTransaction.HashShuffle(dummyElectionIDBuff)
 	semiRandomStream, err := NewSemiRandomStream(hash)
 	require.NoError(t, err)
 
@@ -607,7 +605,7 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 
 	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
 	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	_ = snap.Set(dummyElectionIDBuff, jsElection)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.EqualError(t, err, "failed to get X, Y: failed to get points: failed to unmarshal K: invalid Ed25519 curve point")
@@ -622,7 +620,7 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	}
 
 	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	_ = snap.Set(dummyElectionIDBuff, jsElection)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.EqualError(t, err, "failed to get X, Y: failed to get points: failed to unmarshal C: invalid Ed25519 curve point")
@@ -651,22 +649,21 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	}
 
 	err = cmd.decryptBallots(fake.NewSnapshot(), makeStep(t))
-	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, ElectionArg))
+	require.EqualError(t, err, "failed to get transaction: \"evoting:arg\" not found in tx arg")
 
 	err = cmd.decryptBallots(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
-	require.EqualError(t, err, "failed to unmarshal DecryptBallotsTransaction: "+
-		"invalid character 'd' looking for beginning of value")
+	require.EqualError(t, err, "failed to get transaction: failed to unmarshal e: invalid character 'd' looking for beginning of value")
 
 	err = cmd.decryptBallots(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(jsDecryptBallotsTransaction)))
 	require.Contains(t, err.Error(), "failed to get key")
 
 	snap := fake.NewSnapshot()
 
-	_ = snap.Set(dummyElectionIdBuff, []byte("fake election"))
+	_ = snap.Set(dummyElectionIDBuff, []byte("fake election"))
 	err = cmd.decryptBallots(snap, makeStep(t, ElectionArg, string(jsDecryptBallotsTransaction)))
 	require.Contains(t, err.Error(), "failed to unmarshal Election")
 
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	_ = snap.Set(dummyElectionIDBuff, jsElection)
 	err = cmd.decryptBallots(snap, makeStep(t, ElectionArg, string(jsDecryptBallotsTransaction)))
 	require.EqualError(t, err, "only the admin can decrypt the ballots")
 
@@ -679,11 +676,11 @@ func TestCommand_DecryptBallots(t *testing.T) {
 
 	jsElection, _ = json.Marshal(dummyElection)
 
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	_ = snap.Set(dummyElectionIDBuff, jsElection)
 	err = cmd.decryptBallots(snap, makeStep(t, ElectionArg, string(jsDecryptBallotsTransaction)))
 	require.NoError(t, err)
 
-	res, err := snap.Get(dummyElectionIdBuff)
+	res, err := snap.Get(dummyElectionIDBuff)
 	require.NoError(t, err)
 
 	election := new(types.Election)
@@ -712,22 +709,21 @@ func TestCommand_CancelElection(t *testing.T) {
 	}
 
 	err = cmd.cancelElection(fake.NewSnapshot(), makeStep(t))
-	require.EqualError(t, err, fmt.Sprintf(errArgNotFound, ElectionArg))
+	require.EqualError(t, err, "failed to get transaction: \"evoting:arg\" not found in tx arg")
 
 	err = cmd.cancelElection(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
-	require.EqualError(t, err, "failed to unmarshal CancelElectionTransaction: "+
-		"invalid character 'd' looking for beginning of value")
+	require.EqualError(t, err, "failed to get transaction: failed to unmarshal e: invalid character 'd' looking for beginning of value")
 
 	err = cmd.cancelElection(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(jsCancelElectionTransaction)))
 	require.Contains(t, err.Error(), "failed to get key")
 
 	snap := fake.NewSnapshot()
 
-	_ = snap.Set(dummyElectionIdBuff, []byte("fake election"))
+	_ = snap.Set(dummyElectionIDBuff, []byte("fake election"))
 	err = cmd.cancelElection(snap, makeStep(t, ElectionArg, string(jsCancelElectionTransaction)))
 	require.Contains(t, err.Error(), "failed to unmarshal Election")
 
-	_ = snap.Set(dummyElectionIdBuff, jsElection)
+	_ = snap.Set(dummyElectionIDBuff, jsElection)
 	err = cmd.cancelElection(snap, makeStep(t, ElectionArg, string(jsCancelElectionTransaction)))
 	require.EqualError(t, err, "only the admin can cancel the election")
 
@@ -736,7 +732,7 @@ func TestCommand_CancelElection(t *testing.T) {
 	err = cmd.cancelElection(snap, makeStep(t, ElectionArg, string(jsCancelElectionTransaction)))
 	require.NoError(t, err)
 
-	res, err := snap.Get(dummyElectionIdBuff)
+	res, err := snap.Get(dummyElectionIDBuff)
 	require.NoError(t, err)
 
 	election := new(types.Election)
@@ -761,7 +757,7 @@ func initElectionAndContract() (types.Election, Contract) {
 	adminID := hex.EncodeToString([]byte("dummyAdminID"))
 
 	dummyElection := types.Election{
-		ElectionID:          "dummyID",
+		ElectionID:          fakeElectionID,
 		AdminID:             adminID,
 		Status:              0,
 		Pubkey:              nil,
@@ -815,9 +811,8 @@ func initGoodShuffleBallot(k int) (types.Election, types.ShuffleBallotsTransacti
 	}
 
 	// Valid Signature of shuffle
-	dummyId := hex.EncodeToString([]byte("dummyId"))
-	dummyElection.ElectionID = dummyId
-	hash, _ := dummyShuffleBallotsTransaction.HashShuffle(dummyId)
+	dummyElection.ElectionID = fakeElectionID
+	hash, _ := dummyShuffleBallotsTransaction.HashShuffle(dummyElectionIDBuff)
 	signature, _ := fakeCommonSigner.Sign(hash)
 	wrongSignature, _ := signature.Serialize(contract.context)
 	dummyShuffleBallotsTransaction.Signature = wrongSignature

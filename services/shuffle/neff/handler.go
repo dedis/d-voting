@@ -149,7 +149,12 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 		ShuffledBallots: shuffledBallots,
 	}
 
-	shuffleHash, err := shuffleBallotsTransaction.HashShuffle(election.ElectionID)
+	electionIDBuff, err := hex.DecodeString(election.ElectionID)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to decode election id: %v", err)
+	}
+
+	shuffleHash, err := shuffleBallotsTransaction.HashShuffle(electionIDBuff)
 	if err != nil {
 		return nil, xerrors.Errorf("Could not hash the shuffle while creating transaction: %v", err)
 	}

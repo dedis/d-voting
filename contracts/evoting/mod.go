@@ -35,27 +35,13 @@ const (
 	// transaction. The content is defined by the type of command.
 	ElectionArg = "evoting:arg"
 
-	// // CreateElectionArg
-	// CreateElectionArg = "evoting:create_election"
-
-	// OpenElectionArg = "evoting:open_election"
-
-	// CastVoteArg = "evoting:cast_vote"
-
-	// CancelElectionArg = "evoting:cancel_election"
-
-	// CloseElectionArg = "evoting:close_election"
-
-	// ShuffleBallotsArg = "evoting:shuffle_ballots"
-
-	// DecryptBallotsArg = "evoting:decrypt_ballots"
-
 	// credentialAllCommand defines the credential command that is allowed to
 	// perform all commands.
 	credentialAllCommand = "all"
 )
 
-// commands defines the commands of the evoting contract.
+// commands defines the commands of the evoting contract. Using an interface
+// helps in testing.
 type commands interface {
 	createElection(snap store.Snapshot, step execution.Step) error
 	openElection(snap store.Snapshot, step execution.Step) error
@@ -136,6 +122,7 @@ func NewContract(accessKey, rosterKey []byte, srvc access.Service,
 	return contract
 }
 
+// Execute implements native.Contract
 func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 	creds := NewCreds(c.accessKey)
 
