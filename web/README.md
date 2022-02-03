@@ -40,10 +40,24 @@ npm start
 The project uses the following external libraries: 
 * [dedis/cothority](https://github.com/dedis/cothority/tree/main/external/js/kyber)
   which is used for elliptic curve cryptography when encrypting a vote
-* [mui-org/material-ui](https://github.com/mui-org/material-ui)
+* [Material UI website](https://mui.com)
+* [material-ui on github](https://github.com/mui-org/material-ui)
 * [ReactTraining/react-router](https://github.com/ReactTraining/react-router)
+* [Translation: i18next website](https://react.i18next.com/getting-started)
+
+```bash
+npm install @mui/material
+npm install @mui/x-data-grid
+npm install @material-ui/core
+npm install react-i18next
+npm install i18next
+npm install i18next-http-backend
+npm install @dedis/kyber
+```
+
 
 # Running the tests
 
 The unit tests can be found in src/components/_test_ folder. They can be run
 with `npm run test`.
+

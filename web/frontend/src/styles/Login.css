@@ -1,0 +1,17 @@
+.login-wrapper{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+
+}
+.login-txt{
+    display: flex;
+    padding-top: 5%;
+    padding-bottom: 10%;
+
+}
+.login-btn{
+    display: flex;
+
+}
