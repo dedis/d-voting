@@ -1,10 +1,11 @@
-import Button from "@mui/material/Button";
 import { useState } from "react";
+import Button from "@mui/material/Button";
 import { DataGrid } from "@mui/x-data-grid";
-import "./Admin.css";
+
 import { GET_ADMIN_ROWS } from "./utils/ExpressEndoints";
 import AddAdminUserModal from "./modal/AddAdminUserModal";
 import RemoveAdminUserModal from "./modal/RemoveAdminUserModal";
+import "../styles/Admin.css";
 
 const Admin = () => {
   const [rows, setRows] = useState(undefined);

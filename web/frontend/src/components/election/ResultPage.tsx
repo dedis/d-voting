@@ -1,12 +1,11 @@
-import "./ResultPage.css";
 import { FC } from "react";
 import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
-import "i18n";
 import { useTranslation } from "react-i18next";
 
 import Result from "./Result";
 import useElection from "../utils/useElection";
+import "../../styles/ResultPage.css";
 
 const ResultPage: FC = (props) => {
   const { t } = useTranslation();

@@ -1,11 +1,10 @@
-import "./Status.css";
 import { FC, useState } from "react";
 import PropTypes from "prop-types";
-import "i18n";
 import { useTranslation } from "react-i18next";
 
 import useChangeAction from "../utils/useChangeAction";
 import Modal from "../modal/Modal";
+import "../../styles/Status.css";
 
 type ActionProps = {
   status: number;

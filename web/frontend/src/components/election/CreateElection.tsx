@@ -1,8 +1,7 @@
 import { FC, useState } from "react";
-import "i18n";
 import { useTranslation } from "react-i18next";
 
-import ElectionForm from "./ElectionForm.js";
+import ElectionForm from "./ElectionForm";
 import UploadFile from "./UploadFile";
 import Modal from "../modal/Modal";
 

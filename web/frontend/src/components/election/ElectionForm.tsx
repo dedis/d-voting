@@ -1,6 +1,5 @@
 import { FC, useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import "i18n";
 import { useTranslation } from "react-i18next";
 
 import { CREATE_ENDPOINT } from "../utils/Endpoints";

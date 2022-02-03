@@ -1,5 +1,6 @@
-import "./Modal.css";
 import PropTypes from "prop-types";
+
+import "../../styles/Modal.css";
 
 const Modal = ({ showModal, setShowModal, textModal, buttonRightText }) => {
   const closeModal = () => {

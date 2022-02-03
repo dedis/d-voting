@@ -1,17 +1,16 @@
-import "./Ballot.css";
 import { FC, useState, useEffect } from "react";
-import "i18n";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
+import kyber from "@dedis/kyber";
+import PropTypes from "prop-types";
 
 import useElection from "../utils/useElection";
 import usePostCall from "../utils/usePostCall";
 import { CAST_BALLOT_ENDPOINT } from "../utils/Endpoints";
-import { encryptVote } from "./VoteEncrypt";
 import Modal from "../modal/Modal";
 import { OPEN } from "../utils/StatusNumber";
-import { Link } from "react-router-dom";
-import kyber from "@dedis/kyber";
-import PropTypes from "prop-types";
+import { encryptVote } from "./VoteEncrypt";
+import "../../styles/Ballot.css";
 
 const Ballot: FC = (props) => {
   //props.location.data = id of the election

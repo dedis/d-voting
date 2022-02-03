@@ -47,12 +47,14 @@ The project uses the following external libraries:
 
 ```bash
 npm install @mui/material
+npm install @emotion/react @emotion/styled 
 npm install @mui/x-data-grid
 npm install @material-ui/core
 npm install react-i18next
 npm install i18next
 npm install i18next-http-backend
 npm install @dedis/kyber
+npm install file-saver
 ```
 
 

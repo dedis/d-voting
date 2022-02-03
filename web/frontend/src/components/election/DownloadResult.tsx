@@ -1,10 +1,9 @@
 import { FC } from "react";
 import { saveAs } from "file-saver";
 import PropTypes from "prop-types";
-import "i18n";
 import { useTranslation } from "react-i18next";
 
-const DownloadResult: FC = ({ resultData }) => {
+const DownloadResult: FC = ({ resultData: string }) => {
   const { t } = useTranslation();
   const fileName = "result.json";
 

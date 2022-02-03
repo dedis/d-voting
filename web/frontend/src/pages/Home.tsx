@@ -1,7 +1,7 @@
-import "Home.css";
 import { FC } from "react";
-import "i18n";
 import { useTranslation } from "react-i18next";
+
+import "../styles/Home.css";
 
 const Home: FC = () => {
   const { t } = useTranslation();

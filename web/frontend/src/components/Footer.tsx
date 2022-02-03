@@ -1,4 +1,4 @@
-import "./Footer.css";
+import "../styles/Footer.css";
 
 const Footer = () => (
   <div className="flex flex-row justify-center items-center bg-gray-800 w-full p-4 text-gray-300 text-xs">

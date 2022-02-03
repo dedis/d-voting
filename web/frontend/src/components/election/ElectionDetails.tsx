@@ -1,8 +1,6 @@
-import "./ElectionDetails.css";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
-import "i18n";
 import { useTranslation } from "react-i18next";
 
 import Action from "./Action";
@@ -11,6 +9,7 @@ import Status from "./Status";
 import useElection from "../utils/useElection";
 import { RESULT_AVAILABLE } from "../utils/StatusNumber";
 import useGetResults from "../utils/useGetResults";
+import "../../styles/ElectionDetails.css";
 
 const ElectionDetails = (props) => {
   //props.location.data = id of the election

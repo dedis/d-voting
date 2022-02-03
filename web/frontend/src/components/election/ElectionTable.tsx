@@ -10,7 +10,6 @@ import TableRow from "@material-ui/core/TableRow";
 import TablePagination from "@material-ui/core/TablePagination";
 import { withStyles } from "@material-ui/core/styles";
 import PropTypes from "prop-types";
-import "i18n";
 import { useTranslation } from "react-i18next";
 
 import Action from "./Action";

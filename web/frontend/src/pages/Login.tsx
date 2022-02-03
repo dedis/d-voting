@@ -1,10 +1,9 @@
-import "./Login.css";
 import { FC, useState } from "react";
-import "i18n";
 import { useTranslation } from "react-i18next";
-
-import { GET_TEQ_EENDPOINT } from "./utils/ExpressEndoints";
 import PropTypes from "prop-types";
+
+import { GET_TEQ_EENDPOINT } from "../components/utils/ExpressEndoints";
+import "../styles/Login.css";
 
 const Login: FC = () => {
   const { t } = useTranslation();

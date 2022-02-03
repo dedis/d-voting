@@ -20,7 +20,12 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
-  "include": [
-    "src"
-  ]
+    "files": [
+    "src/language/Lang.tsx",
+  ],
+    "include": [
+    "src/components",
+    "src/styles",
+    "src",
+  ],
 }
