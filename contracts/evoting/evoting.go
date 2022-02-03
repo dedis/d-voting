@@ -1,3 +1,5 @@
+// Code generated ...
+
 package evoting
 
 import (
@@ -12,12 +14,14 @@ import (
 	"go.dedis.ch/dela/core/execution"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/cosi/threshold"
 	_ "go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/bls"
 	_ "go.dedis.ch/dela/crypto/bls/json"
+	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/shuffle"
 	"golang.org/x/xerrors"
@@ -55,7 +59,13 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("failed to get roster")
 	}
 
-	roster, err := e.rosterFac.AuthorityOf(e.context, rosterBuf)
+	fac := e.context.GetFactory(ctypes.RosterKey{})
+	rosterFac, ok := fac.(authority.Factory)
+	if !ok {
+		return xerrors.Errorf("failed to get roster factory: %T", fac)
+	}
+
+	roster, err := rosterFac.AuthorityOf(e.context, rosterBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to get roster: %v", err)
 	}
@@ -85,12 +95,12 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 		ShuffleThreshold: threshold.ByzantineThreshold(roster.Len()),
 	}
 
-	electionJSON, err := json.Marshal(election)
+	electionBuf, err := election.Serialize(e.context)
 	if err != nil {
 		return xerrors.Errorf("failed to marshal Election : %v", err)
 	}
 
-	err = snap.Set(electionIDBuf, electionJSON)
+	err = snap.Set(electionIDBuf, electionBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
@@ -139,7 +149,7 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) e
 		return xerrors.Errorf(errGetTransaction, err)
 	}
 
-	election, electionID, err := getElection(tx.ElectionID, snap)
+	election, electionID, err := getElection(e.context, tx.ElectionID, snap)
 	if err != nil {
 		return xerrors.Errorf(errGetElection, err)
 	}
@@ -171,12 +181,12 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) e
 
 	election.Pubkey = pubkeyBuf
 
-	electionMarshaled, err := json.Marshal(election)
+	electionBuf, err := election.Serialize(e.context)
 	if err != nil {
 		return xerrors.Errorf("failed to marshal Election : %v", err)
 	}
 
-	err = snap.Set(electionID, electionMarshaled)
+	err = snap.Set(electionID, electionBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
@@ -194,7 +204,7 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 		return xerrors.Errorf(errGetTransaction, err)
 	}
 
-	election, electionID, err := getElection(tx.ElectionID, snap)
+	election, electionID, err := getElection(e.context, tx.ElectionID, snap)
 	if err != nil {
 		return xerrors.Errorf(errGetElection, err)
 	}
@@ -220,12 +230,12 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 
 	election.PublicBulletinBoard.CastVote(tx.UserID, tx.Ballot)
 
-	electionMarshaled, err := json.Marshal(election)
+	electionBuf, err := election.Serialize(e.context)
 	if err != nil {
 		return xerrors.Errorf("failed to marshal Election : %v", err)
 	}
 
-	err = snap.Set(electionID, electionMarshaled)
+	err = snap.Set(electionID, electionBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
@@ -248,7 +258,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("check previous transactions failed: %v", err)
 	}
 
-	election, electionID, err := getElection(tx.ElectionID, snap)
+	election, electionID, err := getElection(e.context, tx.ElectionID, snap)
 	if err != nil {
 		return xerrors.Errorf(errGetElection, err)
 	}
@@ -267,8 +277,14 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 
 	shufflerPublicKey := tx.PublicKey
 
+	fac := e.context.GetFactory(ctypes.RosterKey{})
+	rosterFac, ok := fac.(authority.Factory)
+	if !ok {
+		return xerrors.Errorf("failed to get roster factory: %T", fac)
+	}
+
 	// Check the shuffler is a valid member of the roster
-	roster, err := e.rosterFac.AuthorityOf(e.context, election.RosterBuf)
+	roster, err := rosterFac.AuthorityOf(e.context, election.RosterBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to deserialize roster: %v", err)
 	}
@@ -387,9 +403,9 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		election.Status = types.ShuffledBallots
 	}
 
-	electionBuf, err := json.Marshal(election)
+	electionBuf, err := election.Serialize(e.context)
 	if err != nil {
-		return xerrors.Errorf("failed to marshall Election : %v", err)
+		return xerrors.Errorf("failed to marshal Election : %v", err)
 	}
 
 	err = snap.Set(electionID, electionBuf)
@@ -436,7 +452,7 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 		return xerrors.Errorf(errGetTransaction, err)
 	}
 
-	election, electionID, err := getElection(tx.ElectionID, snap)
+	election, electionID, err := getElection(e.context, tx.ElectionID, snap)
 	if err != nil {
 		return xerrors.Errorf(errGetElection, err)
 	}
@@ -455,12 +471,12 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 
 	election.Status = types.Closed
 
-	electionMarshaled, err := json.Marshal(election)
+	electionBuf, err := election.Serialize(e.context)
 	if err != nil {
-		return xerrors.Errorf("failed to marshal Election: %v", err)
+		return xerrors.Errorf("failed to marshal Election : %v", err)
 	}
 
-	err = snap.Set(electionID, electionMarshaled)
+	err = snap.Set(electionID, electionBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
@@ -478,7 +494,7 @@ func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf(errGetTransaction, err)
 	}
 
-	election, electionID, err := getElection(tx.ElectionID, snap)
+	election, electionID, err := getElection(e.context, tx.ElectionID, snap)
 	if err != nil {
 		return xerrors.Errorf(errGetElection, err)
 	}
@@ -494,12 +510,12 @@ func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step)
 	election.Status = types.ResultAvailable
 	election.DecryptedBallots = tx.DecryptedBallots
 
-	electionMarshaled, err := json.Marshal(election)
+	electionBuf, err := election.Serialize(e.context)
 	if err != nil {
-		return xerrors.Errorf("failed to marshall Election : %v", err)
+		return xerrors.Errorf("failed to marshal Election : %v", err)
 	}
 
-	err = snap.Set(electionID, electionMarshaled)
+	err = snap.Set(electionID, electionBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
@@ -517,7 +533,7 @@ func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf(errGetTransaction, err)
 	}
 
-	election, electionID, err := getElection(tx.ElectionID, snap)
+	election, electionID, err := getElection(e.context, tx.ElectionID, snap)
 	if err != nil {
 		return xerrors.Errorf(errGetElection, err)
 	}
@@ -528,12 +544,12 @@ func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step)
 
 	election.Status = types.Canceled
 
-	js, err := json.Marshal(election)
+	electionBuf, err := election.Serialize(e.context)
 	if err != nil {
 		return xerrors.Errorf("failed to marshal Election : %v", err)
 	}
 
-	err = snap.Set(electionID, js)
+	err = snap.Set(electionID, electionBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
@@ -608,7 +624,7 @@ func (s SemiRandomStream) XORKeyStream(dst, src []byte) {
 
 // getElection gets the election from the snap. Returns the election ID NOT hex
 // encoded.
-func getElection(electionIDHex string, snap store.Snapshot) (types.Election, []byte, error) {
+func getElection(ctx serde.Context, electionIDHex string, snap store.Snapshot) (types.Election, []byte, error) {
 	var election types.Election
 
 	electionID, err := hex.DecodeString(electionIDHex)
@@ -621,9 +637,19 @@ func getElection(electionIDHex string, snap store.Snapshot) (types.Election, []b
 		return election, nil, xerrors.Errorf("failed to get key %q: %v", electionID, err)
 	}
 
-	err = json.Unmarshal(electionBuff, &election)
+	fac := ctx.GetFactory(types.ElectionKey{})
+	if fac == nil {
+		return election, nil, xerrors.New("election factory not found")
+	}
+
+	message, err := fac.Deserialize(ctx, electionBuff)
 	if err != nil {
-		return election, nil, xerrors.Errorf("failed to unmarshal Election: %v", err)
+		return election, nil, xerrors.Errorf("failed to deserialize Election: %v", err)
+	}
+
+	election, ok := message.(types.Election)
+	if !ok {
+		return election, nil, xerrors.Errorf("wrong message type: %T", message)
 	}
 
 	if electionIDHex != election.ElectionID {

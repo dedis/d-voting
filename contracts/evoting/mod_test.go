@@ -184,7 +184,7 @@ func TestCommand_CastVote(t *testing.T) {
 	require.NoError(t, err)
 
 	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(jsCastVoteTransaction)))
-	require.Contains(t, err.Error(), "failed to unmarshal Election")
+	require.Contains(t, err.Error(), "failed to deserialize Election")
 
 	err = snap.Set(dummyElectionIDBuff, jsElection)
 	require.NoError(t, err)
@@ -319,7 +319,7 @@ func TestCommand_CloseElection(t *testing.T) {
 	_ = snap.Set(dummyElectionIDBuff, []byte("fake election"))
 
 	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(jsCloseElectionTransaction)))
-	require.Contains(t, err.Error(), "failed to unmarshal Election")
+	require.Contains(t, err.Error(), "failed to deserialize Election")
 
 	_ = snap.Set(dummyElectionIDBuff, jsElection)
 
@@ -478,7 +478,7 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	_ = snap.Set(dummyElectionIDBuff, []byte("fake election"))
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
-	require.Contains(t, err.Error(), "failed to unmarshal Election")
+	require.Contains(t, err.Error(), "failed to deserialize Election")
 
 	// Election not closed
 	_ = snap.Set(dummyElectionIDBuff, jsElection)
@@ -661,7 +661,7 @@ func TestCommand_DecryptBallots(t *testing.T) {
 
 	_ = snap.Set(dummyElectionIDBuff, []byte("fake election"))
 	err = cmd.decryptBallots(snap, makeStep(t, ElectionArg, string(jsDecryptBallotsTransaction)))
-	require.Contains(t, err.Error(), "failed to unmarshal Election")
+	require.Contains(t, err.Error(), "failed to deserialize Election")
 
 	_ = snap.Set(dummyElectionIDBuff, jsElection)
 	err = cmd.decryptBallots(snap, makeStep(t, ElectionArg, string(jsDecryptBallotsTransaction)))
@@ -721,7 +721,7 @@ func TestCommand_CancelElection(t *testing.T) {
 
 	_ = snap.Set(dummyElectionIDBuff, []byte("fake election"))
 	err = cmd.cancelElection(snap, makeStep(t, ElectionArg, string(jsCancelElectionTransaction)))
-	require.Contains(t, err.Error(), "failed to unmarshal Election")
+	require.Contains(t, err.Error(), "failed to deserialize Election")
 
 	_ = snap.Set(dummyElectionIDBuff, jsElection)
 	err = cmd.cancelElection(snap, makeStep(t, ElectionArg, string(jsCancelElectionTransaction)))

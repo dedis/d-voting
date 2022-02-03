@@ -1,11 +1,13 @@
 package evoting
 
 import (
+	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/dkg"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/execution"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/json"
@@ -97,7 +99,6 @@ type Contract struct {
 
 	pedersen dkg.DKG
 
-	rosterFac authority.Factory
 	rosterKey []byte
 
 	context serde.Context
@@ -106,15 +107,19 @@ type Contract struct {
 // NewContract creates a new Value contract
 func NewContract(accessKey, rosterKey []byte, srvc access.Service,
 	pedersen dkg.DKG, rosterFac authority.Factory) Contract {
+
+	ctx := json.NewContext()
+	ctx = serde.WithFactory(ctx, types.ElectionKey{}, types.ElectionFactory{})
+	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, rosterFac)
+
 	contract := Contract{
 		access:    srvc,
 		accessKey: accessKey,
 		pedersen:  pedersen,
 
 		rosterKey: rosterKey,
-		rosterFac: rosterFac,
 
-		context: json.NewContext(),
+		context: ctx,
 	}
 
 	contract.cmd = evotingCommand{Contract: &contract, prover: proof.HashVerify}

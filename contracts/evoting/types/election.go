@@ -3,6 +3,8 @@ package types
 import (
 	"encoding/base64"
 
+	"go.dedis.ch/dela/serde"
+	"go.dedis.ch/dela/serde/registry"
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
 )
@@ -19,6 +21,17 @@ const (
 	ResultAvailable status = 5
 	Canceled        status = 6
 )
+
+// electionFormat contains the supported formats for the election. Right now
+// only JSON is supported.
+var electionFormat = registry.NewSimpleRegistry()
+
+func init() {
+	electionFormat.Register(serde.FormatJSON, jsonEngine{})
+}
+
+// ElectionKey is the key of the election factory
+type ElectionKey struct{}
 
 // Election contains all information about a simple election
 type Election struct {
@@ -55,6 +68,69 @@ type Election struct {
 	// authority.Authority.
 
 	RosterBuf []byte
+}
+
+// Serialize implements serde.Context
+func (e Election) Serialize(ctx serde.Context) ([]byte, error) {
+	format := electionFormat.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, e)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to encode election: %v", err)
+	}
+
+	return data, nil
+}
+
+// jsonEngine defines how the election messages are encoded/decoded using the
+// JSON format.
+//
+// - implements serde.FormatEngine
+type jsonEngine struct{}
+
+// Encode implements serde.FormatEngine
+func (jsonEngine) Encode(ctx serde.Context, message serde.Message) ([]byte, error) {
+	switch m := message.(type) {
+	case Election:
+		buff, err := ctx.Marshal(&m)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to marshal election: %v", err)
+		}
+
+		return buff, nil
+	default:
+		return nil, xerrors.Errorf("unknown format: %T", message)
+	}
+}
+
+// Decode implements serde.FormatEngine
+func (jsonEngine) Decode(ctx serde.Context, data []byte) (serde.Message, error) {
+	var election Election
+
+	err := ctx.Unmarshal(data, &election)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to unmarshal election: %v", err)
+	}
+
+	return election, nil
+}
+
+// ElectionFactory provides the mean to deserialize an election. It naturally
+// uses the electionFormat.
+//
+// - implements serde.Factory
+type ElectionFactory struct{}
+
+// Deserialize implements serde.Factory
+func (ElectionFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
+	format := electionFormat.Get(ctx.GetFormat())
+
+	message, err := format.Decode(ctx, data)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to decode: %v", err)
+	}
+
+	return message, nil
 }
 
 // ChunksPerBallot returns the number of chunks of El Gamal pairs needed to
