@@ -247,11 +247,17 @@ func (h *votingProxy) ElectionInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	pubkeyBuf, err := election.Pubkey.MarshalBinary()
+	if err != nil {
+		http.Error(w, "failed to marshal pubkey: "+err.Error(),
+			http.StatusInternalServerError)
+	}
+
 	response := types.GetElectionInfoResponse{
 		ElectionID:    string(election.ElectionID),
 		Configuration: election.Configuration,
 		Status:        uint16(election.Status),
-		Pubkey:        hex.EncodeToString(election.Pubkey),
+		Pubkey:        hex.EncodeToString(pubkeyBuf),
 		Result:        election.DecryptedBallots,
 	}
 
@@ -305,11 +311,17 @@ func (h *votingProxy) AllElectionInfo(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		pubkeyBuf, err := election.Pubkey.MarshalBinary()
+		if err != nil {
+			http.Error(w, "failed to marshal pubkey: "+err.Error(),
+				http.StatusInternalServerError)
+		}
+
 		info := types.GetElectionInfoResponse{
 			ElectionID:    string(election.ElectionID),
 			Configuration: election.Configuration,
 			Status:        uint16(election.Status),
-			Pubkey:        hex.EncodeToString(election.Pubkey),
+			Pubkey:        hex.EncodeToString(pubkeyBuf),
 			Result:        election.DecryptedBallots,
 		}
 

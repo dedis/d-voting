@@ -15,6 +15,9 @@ import (
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
+
+	// Register the JSON format for the election
+	_ "github.com/dedis/d-voting/contracts/evoting/types/json"
 )
 
 const (

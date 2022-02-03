@@ -174,12 +174,7 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) e
 		return xerrors.Errorf("failed to get pubkey: %v", err)
 	}
 
-	pubkeyBuf, err := pubkey.MarshalBinary()
-	if err != nil {
-		return xerrors.Errorf("failed to marshal pubkey: %v", err)
-	}
-
-	election.Pubkey = pubkeyBuf
+	election.Pubkey = pubkey
 
 	electionBuf, err := election.Serialize(e.context)
 	if err != nil {
@@ -357,14 +352,6 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("failed to get X, Y: %v", err)
 	}
 
-	// get the election public key
-	pubKey := suite.Point()
-
-	err = pubKey.UnmarshalBinary(election.Pubkey)
-	if err != nil {
-		return xerrors.Errorf("failed to unmarshal public key: %v", err)
-	}
-
 	var encryptedBallots types.EncryptedBallots
 
 	if tx.Round == 0 {
@@ -382,7 +369,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	XXUp, YYUp, XXDown, YYDown := shuffle.GetSequenceVerifiable(suite, X, Y, XX,
 		YY, randomVector)
 
-	verifier := shuffle.Verifier(suite, nil, pubKey, XXUp, YYUp, XXDown, YYDown)
+	verifier := shuffle.Verifier(suite, nil, election.Pubkey, XXUp, YYUp, XXDown, YYDown)
 
 	err = e.prover(suite, shufflingProtocolName, verifier, tx.Proof)
 	if err != nil {

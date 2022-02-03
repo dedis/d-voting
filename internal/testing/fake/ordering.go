@@ -3,13 +3,14 @@ package fake
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 
 	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/core/validation"
+	"go.dedis.ch/dela/serde"
+	"golang.org/x/xerrors"
 )
 
 // Proof
@@ -40,6 +41,7 @@ type Service struct {
 	Pool      *Pool
 	Status    bool
 	Channel   chan ordering.Event
+	context   serde.Context
 }
 
 // GetProof implements ordering.Service. It returns the proof associated to the
@@ -56,10 +58,14 @@ func (f Service) GetProof(key []byte) (ordering.Proof, error) {
 		return proof, f.Err
 	}
 
-	js, _ := json.Marshal(election)
+	electionBuf, err := election.Serialize(f.context)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to serialize election: %v", err)
+	}
+
 	proof := Proof{
 		key:   key,
-		value: js,
+		value: electionBuf,
 	}
 
 	return proof, f.Err
@@ -143,12 +149,14 @@ func (f *Service) AddTx(tx Transaction) {
 
 }
 
-func NewService(electionID string, election electionTypes.Election) Service {
+// NewService returns a new initialized service
+func NewService(electionID string, election electionTypes.Election, ctx serde.Context) Service {
 	elections := make(map[string]electionTypes.Election)
 	elections[electionID] = election
 
 	return Service{
 		Err:       nil,
 		Elections: elections,
+		context:   ctx,
 	}
 }

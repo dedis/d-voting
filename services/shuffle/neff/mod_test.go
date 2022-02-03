@@ -11,7 +11,7 @@ import (
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/serde"
 
-	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"github.com/stretchr/testify/require"
@@ -19,7 +19,13 @@ import (
 	"go.dedis.ch/kyber/v3/proof"
 	shuffleKyber "go.dedis.ch/kyber/v3/shuffle"
 	"go.dedis.ch/kyber/v3/util/random"
+
+	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
+	sjson "go.dedis.ch/dela/serde/json"
 )
+
+var serdecontext = serde.WithFactory(serde.WithFactory(sjson.NewContext(), etypes.ElectionKey{},
+	etypes.ElectionFactory{}), ctypes.RosterKey{}, fake.Factory{})
 
 func TestNeffShuffle_Listen(t *testing.T) {
 
@@ -46,18 +52,18 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	election := fake.NewElection(electionID)
 	election.RosterBuf = rosterBuf
 
-	shuffledBallots := append(electionTypes.EncryptedBallots{}, election.PublicBulletinBoard.Ballots...)
-	election.ShuffleInstances = append(election.ShuffleInstances, electionTypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
+	shuffledBallots := append(etypes.EncryptedBallots{}, election.PublicBulletinBoard.Ballots...)
+	election.ShuffleInstances = append(election.ShuffleInstances, etypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
 
 	election.ShuffleThreshold = 1
 
-	service := fake.NewService(electionID, election)
+	service := fake.NewService(electionID, election, serdecontext)
 
 	actor := Actor{
-		rpc:       fake.NewBadRPC(),
-		mino:      fake.Mino{},
-		service:   service,
-		rosterFac: fake.NewRosterFac(roster),
+		rpc:     fake.NewBadRPC(),
+		mino:    fake.Mino{},
+		service: service,
+		context: serdecontext,
 	}
 
 	err = actor.Shuffle(electionIDBuf)

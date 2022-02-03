@@ -19,6 +19,7 @@ import (
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/serde"
 	jsondela "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3/proof"
 	shuffleKyber "go.dedis.ch/kyber/v3/shuffle"
@@ -40,17 +41,19 @@ type Handler struct {
 	p             pool.Pool
 	txmngr        txn.Manager
 	shuffleSigner crypto.Signer
+	context       serde.Context
 }
 
 // NewHandler creates a new handler
 func NewHandler(me mino.Address, service ordering.Service, p pool.Pool,
-	txmngr txn.Manager, shuffleSigner crypto.Signer) *Handler {
+	txmngr txn.Manager, shuffleSigner crypto.Signer, ctx serde.Context) *Handler {
 	return &Handler{
 		me:            me,
 		service:       service,
 		p:             p,
 		txmngr:        txmngr,
 		shuffleSigner: shuffleSigner,
+		context:       ctx,
 	}
 }
 
@@ -83,7 +86,7 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 
 	// loop until the threshold is reached or our transaction has been accepted
 	for {
-		election, err := getElection(h.service, electionID)
+		election, err := getElection(h.context, electionID, h.service)
 		if err != nil {
 			return xerrors.Errorf("failed to get election: %v", err)
 		}
@@ -100,7 +103,7 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 			return xerrors.Errorf("the election must be closed: but status is %v", election.Status)
 		}
 
-		tx, err := makeTx(election, h.txmngr, h.shuffleSigner)
+		tx, err := makeTx(&election, h.txmngr, h.shuffleSigner)
 		if err != nil {
 			return xerrors.Errorf("failed to make tx: %v", err)
 		}
@@ -191,7 +194,6 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 	}
 
 	// Sign the shuffle:
-
 	signature, err := shuffleSigner.Sign(shuffleHash)
 	if err != nil {
 		return nil, xerrors.Errorf("Could not sign the shuffle : %v", err)
@@ -258,15 +260,8 @@ func getShuffledBallots(election *electionTypes.Election) ([]electionTypes.Encry
 		return nil, nil, xerrors.Errorf("failed to get X, Y: %v", err)
 	}
 
-	pubKey := suite.Point()
-
-	err = pubKey.UnmarshalBinary(election.Pubkey)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("couldn't unmarshal public key: %v", err)
-	}
-
 	// shuffle sequences
-	XX, YY, getProver := shuffleKyber.SequencesShuffle(suite, nil, pubKey, X, Y, suite.RandomStream())
+	XX, YY, getProver := shuffleKyber.SequencesShuffle(suite, nil, election.Pubkey, X, Y, suite.RandomStream())
 
 	var shuffledBallots electionTypes.EncryptedBallots
 
@@ -300,25 +295,4 @@ func watchTx(events <-chan ordering.Event, txID []byte) (bool, string) {
 	}
 
 	return false, "watch timeout"
-}
-
-// getElection returns the election state from the global state.
-func getElection(service ordering.Service, electionID string) (*electionTypes.Election, error) {
-	electionIDBuff, err := hex.DecodeString(electionID)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to decode election id: %v", err)
-	}
-
-	prf, err := service.GetProof(electionIDBuff)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to read on the blockchain: %v", err)
-	}
-
-	election := new(electionTypes.Election)
-
-	err = json.NewDecoder(bytes.NewBuffer(prf.GetValue())).Decode(election)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to unmarshal Election: %v", err)
-	}
-	return election, nil
 }

@@ -3,7 +3,6 @@ package evoting
 // todo: json marshall and unmarshall branch is are not covered yet
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -20,12 +19,14 @@ import (
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/bls"
 	"go.dedis.ch/dela/serde"
+	sjson "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/util/random"
@@ -34,6 +35,9 @@ import (
 var dummyElectionIDBuff = []byte("dummyID")
 var fakeElectionID = hex.EncodeToString(dummyElectionIDBuff)
 var fakeCommonSigner = bls.NewSigner()
+
+var context = serde.WithFactory(serde.WithFactory(sjson.NewContext(), types.ElectionKey{},
+	types.ElectionFactory{}), ctypes.RosterKey{}, fakeAuthorityFactory{})
 
 func fakeProver(proof.Suite, string, proof.Verifier, []byte) error {
 	return nil
@@ -141,8 +145,13 @@ func TestCommand_CreateElection(t *testing.T) {
 	res, err := snap.Get(electionIDBuff)
 	require.NoError(t, err)
 
-	election := new(types.Election)
-	_ = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
+	fac := context.GetFactory(types.ElectionKey{})
+
+	message, err := fac.Deserialize(context, res)
+	require.NoError(t, err)
+
+	election, ok := message.(types.Election)
+	require.True(t, ok)
 
 	require.Equal(t, dummyCreateElectionTransaction.AdminID, election.AdminID)
 	require.Equal(t, types.Initial, election.Status)
@@ -158,11 +167,12 @@ func TestCommand_CastVote(t *testing.T) {
 		}},
 	}
 
-	jsCastVoteTransaction, _ := json.Marshal(dummyCastVoteTransaction)
+	jsCastVoteTransaction, err := json.Marshal(dummyCastVoteTransaction)
+	require.NoError(t, err)
 
 	dummyElection, contract := initElectionAndContract()
 
-	jsElection, err := json.Marshal(dummyElection)
+	electionBuf, err := dummyElection.Serialize(context)
 	require.NoError(t, err)
 
 	cmd := evotingCommand{
@@ -186,25 +196,29 @@ func TestCommand_CastVote(t *testing.T) {
 	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(jsCastVoteTransaction)))
 	require.Contains(t, err.Error(), "failed to deserialize Election")
 
-	err = snap.Set(dummyElectionIDBuff, jsElection)
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
 	require.NoError(t, err)
 
 	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(jsCastVoteTransaction)))
 	require.EqualError(t, err, fmt.Sprintf("the election is not open, current status: %d", types.Initial))
 
 	dummyElection.Status = types.Open
-	jsElection, _ = json.Marshal(dummyElection)
 
-	err = snap.Set(dummyElectionIDBuff, jsElection)
+	electionBuf, err = dummyElection.Serialize(context)
+	require.NoError(t, err)
+
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
 	require.NoError(t, err)
 
 	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(jsCastVoteTransaction)))
 	require.EqualError(t, err, "the ballot has unexpected length: 1 != 0")
 
 	dummyElection.BallotSize = 29
-	jsElection, _ = json.Marshal(dummyElection)
 
-	err = snap.Set(dummyElectionIDBuff, jsElection)
+	electionBuf, err = dummyElection.Serialize(context)
+	require.NoError(t, err)
+
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
 	require.NoError(t, err)
 
 	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(jsCastVoteTransaction)))
@@ -217,9 +231,10 @@ func TestCommand_CastVote(t *testing.T) {
 		},
 	}
 
-	jsCastVoteTransaction, _ = json.Marshal(dummyCastVoteTransaction)
+	jsCastVoteTransaction, err = json.Marshal(dummyCastVoteTransaction)
+	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, jsElection)
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
 	require.NoError(t, err)
 
 	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(jsCastVoteTransaction)))
@@ -254,17 +269,18 @@ func TestCommand_CastVote(t *testing.T) {
 	jsCastVoteTransaction, err = json.Marshal(dummyCastVoteTransaction)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, jsElection)
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
 	require.NoError(t, err)
 
 	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(jsCastVoteTransaction)))
 	require.EqualError(t, err, "failed to get election: failed to decode electionIDHex: encoding/hex: invalid byte: U+0058 'X'")
 
 	dummyElection.ElectionID = fakeElectionID
-	jsElection, err = json.Marshal(dummyElection)
+
+	electionBuf, err = dummyElection.Serialize(context)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, jsElection)
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
 	require.NoError(t, err)
 
 	dummyCastVoteTransaction.ElectionID = fakeElectionID
@@ -278,9 +294,13 @@ func TestCommand_CastVote(t *testing.T) {
 	res, err := snap.Get(dummyElectionIDBuff)
 	require.NoError(t, err)
 
-	election := new(types.Election)
-	err = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
+	fac := context.GetFactory(types.ElectionKey{})
+
+	message, err := fac.Deserialize(context, res)
 	require.NoError(t, err)
+
+	election, ok := message.(types.Election)
+	require.True(t, ok)
 
 	require.Equal(t, dummyCastVoteTransaction.Ballot,
 		election.PublicBulletinBoard.Ballots[0])
@@ -293,12 +313,14 @@ func TestCommand_CloseElection(t *testing.T) {
 		ElectionID: fakeElectionID,
 		UserID:     "dummyUserId",
 	}
-	jsCloseElectionTransaction, _ := json.Marshal(dummyCloseElectionTransaction)
+
+	jsCloseElectionTransaction, err := json.Marshal(dummyCloseElectionTransaction)
+	require.NoError(t, err)
 
 	dummyElection, contract := initElectionAndContract()
 	dummyElection.ElectionID = fakeElectionID
 
-	jsElection, err := json.Marshal(dummyElection)
+	electionBuf, err := dummyElection.Serialize(context)
 	require.NoError(t, err)
 
 	cmd := evotingCommand{
@@ -321,7 +343,7 @@ func TestCommand_CloseElection(t *testing.T) {
 	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(jsCloseElectionTransaction)))
 	require.Contains(t, err.Error(), "failed to deserialize Election")
 
-	_ = snap.Set(dummyElectionIDBuff, jsElection)
+	_ = snap.Set(dummyElectionIDBuff, electionBuf)
 
 	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(jsCloseElectionTransaction)))
 	require.EqualError(t, err, "only the admin can close the election")
@@ -335,9 +357,11 @@ func TestCommand_CloseElection(t *testing.T) {
 
 	dummyElection.Status = types.Open
 
-	jsElection, _ = json.Marshal(dummyElection)
+	electionBuf, err = dummyElection.Serialize(context)
+	require.NoError(t, err)
 
-	_ = snap.Set(dummyElectionIDBuff, jsElection)
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
 
 	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(jsCloseElectionTransaction)))
 	require.EqualError(t, err, "at least two ballots are required")
@@ -345,8 +369,11 @@ func TestCommand_CloseElection(t *testing.T) {
 	dummyElection.PublicBulletinBoard.CastVote("dummyUser1", types.EncryptedBallot{})
 	dummyElection.PublicBulletinBoard.CastVote("dummyUser2", types.EncryptedBallot{})
 
-	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIDBuff, jsElection)
+	electionBuf, err = dummyElection.Serialize(context)
+	require.NoError(t, err)
+
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
 
 	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(jsCloseElectionTransaction)))
 	require.NoError(t, err)
@@ -354,8 +381,13 @@ func TestCommand_CloseElection(t *testing.T) {
 	res, err := snap.Get(dummyElectionIDBuff)
 	require.NoError(t, err)
 
-	election := new(types.Election)
-	_ = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
+	fac := context.GetFactory(types.ElectionKey{})
+
+	message, err := fac.Deserialize(context, res)
+	require.NoError(t, err)
+
+	election, ok := message.(types.Election)
+	require.True(t, ok)
 
 	require.Equal(t, types.Closed, election.Status)
 }
@@ -389,11 +421,16 @@ func TestCommand_ShuffleBallotsCannotShuffleTwice(t *testing.T) {
 
 	dummyElection.ShuffleInstances[0].ShufflerPublicKey = dummyShuffleBallotsTransaction.PublicKey
 
-	jsElection, _ := json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIDBuff, jsElection)
-	jsShuffleBallotsTransaction, _ := json.Marshal(dummyShuffleBallotsTransaction)
+	electionBuf, err := dummyElection.Serialize(context)
+	require.NoError(t, err)
 
-	err := cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
+
+	jsShuffleBallotsTransaction, err := json.Marshal(dummyShuffleBallotsTransaction)
+	require.NoError(t, err)
+
+	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.EqualError(t, err, "a node already submitted a shuffle that has been accepted in round 0")
 }
 
@@ -410,13 +447,18 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 
 	snap := fake.NewSnapshot()
 
-	jsElection, _ := json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIDBuff, jsElection)
+	electionBuf, err := dummyElection.Serialize(context)
+	require.NoError(t, err)
 
-	jsShuffleBallotsTransaction, _ := json.Marshal(dummyShuffleBallotsTransaction)
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
+
+	jsShuffleBallotsTransaction, err := json.Marshal(dummyShuffleBallotsTransaction)
+	require.NoError(t, err)
+
 	step := makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction))
 
-	err := cmd.shuffleBallots(snap, step)
+	err = cmd.shuffleBallots(snap, step)
 	require.NoError(t, err)
 
 	// Valid Shuffle is over :
@@ -437,17 +479,29 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 		dummyElection.ShuffleInstances[k-1].ShuffledBallots[i] = ballot
 	}
 
-	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIDBuff, jsElection)
+	electionBuf, err = dummyElection.Serialize(context)
+	require.NoError(t, err)
+
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.NoError(t, err)
 
 	// Check the shuffle is over:
-	electionTxIDBuff, _ := hex.DecodeString(dummyElection.ElectionID)
-	electionMarshaled, _ := snap.Get(electionTxIDBuff)
-	election := &types.Election{}
-	_ = json.Unmarshal(electionMarshaled, election)
+	electionTxIDBuff, err := hex.DecodeString(dummyElection.ElectionID)
+	require.NoError(t, err)
+
+	electionBuf, err = snap.Get(electionTxIDBuff)
+	require.NoError(t, err)
+
+	fac := context.GetFactory(types.ElectionKey{})
+
+	message, err := fac.Deserialize(context, electionBuf)
+	require.NoError(t, err)
+
+	election, ok := message.(types.Election)
+	require.True(t, ok)
 
 	require.Equal(t, election.Status, types.ShuffledBallots)
 }
@@ -456,15 +510,19 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	k := 3
 
 	dummyElection, dummyShuffleBallotsTransaction, contract := initBadShuffleBallot(k)
-	jsShuffleBallotsTransaction, _ := json.Marshal(dummyShuffleBallotsTransaction)
-	jsElection, _ := json.Marshal(dummyElection)
+
+	jsShuffleBallotsTransaction, err := json.Marshal(dummyShuffleBallotsTransaction)
+	require.NoError(t, err)
+
+	electionBuf, err := dummyElection.Serialize(context)
+	require.NoError(t, err)
 
 	cmd := evotingCommand{
 		Contract: &contract,
 		prover:   fakeProver,
 	}
 
-	err := cmd.shuffleBallots(fake.NewSnapshot(), makeStep(t))
+	err = cmd.shuffleBallots(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, "failed to get transaction: \"evoting:arg\" not found in tx arg")
 
 	err = cmd.shuffleBallots(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
@@ -475,20 +533,28 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 
 	// Wrong election id format
 	snap := fake.NewSnapshot()
-	_ = snap.Set(dummyElectionIDBuff, []byte("fake election"))
+
+	err = snap.Set(dummyElectionIDBuff, []byte("fake election"))
+	require.NoError(t, err)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.Contains(t, err.Error(), "failed to deserialize Election")
 
 	// Election not closed
-	_ = snap.Set(dummyElectionIDBuff, jsElection)
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
+
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.EqualError(t, err, "the election is not closed")
 
 	// Wrong round :
 	dummyElection.Status = types.Closed
-	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIDBuff, jsElection)
+
+	electionBuf, err = dummyElection.Serialize(context)
+	require.NoError(t, err)
+
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.EqualError(t, err, "wrong shuffle round: expected round '0', transaction is for round '2'")
@@ -499,8 +565,12 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	dummyShuffleBallotsTransaction.PublicKey = []byte("wrong Key")
 
 	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
-	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIDBuff, jsElection)
+
+	electionBuf, err = dummyElection.Serialize(context)
+	require.NoError(t, err)
+
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.EqualError(t, err, "could not verify identity of shuffler : public key not associated to a member of the roster: 77726f6e67204b6579")
@@ -513,15 +583,25 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	require.EqualError(t, err, "could node deserialize shuffle signature : couldn't decode signature: couldn't deserialize data: unexpected end of JSON input")
 
 	// Wrong election ID (Hash of shuffle fails)
-	signature, _ := fakeCommonSigner.Sign([]byte("fake shuffle"))
-	wrongSignature, _ := signature.Serialize(contract.context)
+	signature, err := fakeCommonSigner.Sign([]byte("fake shuffle"))
+	require.NoError(t, err)
+
+	wrongSignature, err := signature.Serialize(contract.context)
+	require.NoError(t, err)
+
 	dummyShuffleBallotsTransaction.Signature = wrongSignature
-	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
+
+	jsShuffleBallotsTransaction, err = json.Marshal(dummyShuffleBallotsTransaction)
+	require.NoError(t, err)
 
 	// Signatures not matching:
 	dummyElection.ElectionID = fakeElectionID
-	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIDBuff, jsElection)
+
+	electionBuf, err = dummyElection.Serialize(context)
+	require.NoError(t, err)
+
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.EqualError(t, err, "signature does not match the Shuffle : bls verify failed: bls: invalid signature ")
@@ -545,10 +625,14 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 
 	dummyElection.BallotSize = 1
 
-	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIDBuff, jsElection)
+	electionBuf, err = dummyElection.Serialize(context)
+	require.NoError(t, err)
 
-	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
+
+	jsShuffleBallotsTransaction, err = json.Marshal(dummyShuffleBallotsTransaction)
+	require.NoError(t, err)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.EqualError(t, err, "randomVector has unexpected length : 0 != 1")
@@ -583,14 +667,8 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	err = dummyShuffleBallotsTransaction.RandomVector.LoadFromScalars(e)
 	require.NoError(t, err)
 
-	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
-
-	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
-	require.EqualError(t, err, "failed to unmarshal public key: invalid Ed25519 curve point")
-
 	// Wrong format in encrypted ballots :
-	pubKeyMarshalled, _ := pubKey.MarshalBinary()
-	dummyElection.Pubkey = pubKeyMarshalled
+	dummyElection.Pubkey = pubKey
 	dummyShuffleBallotsTransaction.Round = 0
 	dummyElection.ShuffleInstances = make([]types.ShuffleInstance, 0)
 	dummyElection.PublicBulletinBoard.Ballots = make([]types.EncryptedBallot, 0)
@@ -603,9 +681,14 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 		dummyElection.PublicBulletinBoard.CastVote(fmt.Sprintf("user%d", i), ballot)
 	}
 
-	jsShuffleBallotsTransaction, _ = json.Marshal(dummyShuffleBallotsTransaction)
-	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIDBuff, jsElection)
+	jsShuffleBallotsTransaction, err = json.Marshal(dummyShuffleBallotsTransaction)
+	require.NoError(t, err)
+
+	electionBuf, err = dummyElection.Serialize(context)
+	require.NoError(t, err)
+
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.EqualError(t, err, "failed to get X, Y: failed to get points: failed to unmarshal K: invalid Ed25519 curve point")
@@ -619,8 +702,11 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 		dummyElection.PublicBulletinBoard.CastVote(fmt.Sprintf("user%d", i), ballot)
 	}
 
-	jsElection, _ = json.Marshal(dummyElection)
-	_ = snap.Set(dummyElectionIDBuff, jsElection)
+	electionBuf, err = dummyElection.Serialize(context)
+	require.NoError(t, err)
+
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(jsShuffleBallotsTransaction)))
 	require.EqualError(t, err, "failed to get X, Y: failed to get points: failed to unmarshal C: invalid Ed25519 curve point")
@@ -641,7 +727,7 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	dummyElection, contract := initElectionAndContract()
 	dummyElection.ElectionID = fakeElectionID
 
-	jsElection, err := json.Marshal(dummyElection)
+	electionBuf, err := dummyElection.Serialize(context)
 	require.NoError(t, err)
 
 	cmd := evotingCommand{
@@ -659,32 +745,47 @@ func TestCommand_DecryptBallots(t *testing.T) {
 
 	snap := fake.NewSnapshot()
 
-	_ = snap.Set(dummyElectionIDBuff, []byte("fake election"))
+	err = snap.Set(dummyElectionIDBuff, []byte("fake election"))
+	require.NoError(t, err)
+
 	err = cmd.decryptBallots(snap, makeStep(t, ElectionArg, string(jsDecryptBallotsTransaction)))
 	require.Contains(t, err.Error(), "failed to deserialize Election")
 
-	_ = snap.Set(dummyElectionIDBuff, jsElection)
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
+
 	err = cmd.decryptBallots(snap, makeStep(t, ElectionArg, string(jsDecryptBallotsTransaction)))
 	require.EqualError(t, err, "only the admin can decrypt the ballots")
 
 	dummyDecryptBallotsTransaction.UserID = hex.EncodeToString([]byte("dummyAdminID"))
-	jsDecryptBallotsTransaction, _ = json.Marshal(dummyDecryptBallotsTransaction)
+
+	jsDecryptBallotsTransaction, err = json.Marshal(dummyDecryptBallotsTransaction)
+	require.NoError(t, err)
+
 	err = cmd.decryptBallots(snap, makeStep(t, ElectionArg, string(jsDecryptBallotsTransaction)))
 	require.EqualError(t, err, fmt.Sprintf("the ballots are not shuffled, current status: %d", types.Initial))
 
 	dummyElection.Status = types.ShuffledBallots
 
-	jsElection, _ = json.Marshal(dummyElection)
+	electionBuf, err = dummyElection.Serialize(context)
+	require.NoError(t, err)
 
-	_ = snap.Set(dummyElectionIDBuff, jsElection)
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
+
 	err = cmd.decryptBallots(snap, makeStep(t, ElectionArg, string(jsDecryptBallotsTransaction)))
 	require.NoError(t, err)
 
 	res, err := snap.Get(dummyElectionIDBuff)
 	require.NoError(t, err)
 
-	election := new(types.Election)
-	_ = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
+	fac := context.GetFactory(types.ElectionKey{})
+
+	message, err := fac.Deserialize(context, res)
+	require.NoError(t, err)
+
+	election, ok := message.(types.Election)
+	require.True(t, ok)
 
 	require.Equal(t, dummyDecryptBallotsTransaction.DecryptedBallots, election.DecryptedBallots)
 	require.Equal(t, types.ResultAvailable, election.Status)
@@ -701,7 +802,7 @@ func TestCommand_CancelElection(t *testing.T) {
 	dummyElection, contract := initElectionAndContract()
 	dummyElection.ElectionID = fakeElectionID
 
-	jsElection, err := json.Marshal(dummyElection)
+	electionBuf, err := dummyElection.Serialize(context)
 	require.NoError(t, err)
 
 	cmd := evotingCommand{
@@ -719,11 +820,15 @@ func TestCommand_CancelElection(t *testing.T) {
 
 	snap := fake.NewSnapshot()
 
-	_ = snap.Set(dummyElectionIDBuff, []byte("fake election"))
+	err = snap.Set(dummyElectionIDBuff, []byte("fake election"))
+	require.NoError(t, err)
+
 	err = cmd.cancelElection(snap, makeStep(t, ElectionArg, string(jsCancelElectionTransaction)))
 	require.Contains(t, err.Error(), "failed to deserialize Election")
 
-	_ = snap.Set(dummyElectionIDBuff, jsElection)
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
+
 	err = cmd.cancelElection(snap, makeStep(t, ElectionArg, string(jsCancelElectionTransaction)))
 	require.EqualError(t, err, "only the admin can cancel the election")
 
@@ -735,8 +840,13 @@ func TestCommand_CancelElection(t *testing.T) {
 	res, err := snap.Get(dummyElectionIDBuff)
 	require.NoError(t, err)
 
-	election := new(types.Election)
-	_ = json.NewDecoder(bytes.NewBuffer(res)).Decode(election)
+	fac := context.GetFactory(types.ElectionKey{})
+
+	message, err := fac.Deserialize(context, res)
+	require.NoError(t, err)
+
+	election, ok := message.(types.Election)
+	require.True(t, ok)
 
 	require.Equal(t, types.Canceled, election.Status)
 
@@ -797,8 +907,7 @@ func initGoodShuffleBallot(k int) (types.Election, types.ShuffleBallotsTransacti
 	}
 
 	// Encrypted ballots:
-	pubKeyMarshalled, _ := pubKey.MarshalBinary()
-	dummyElection.Pubkey = pubKeyMarshalled
+	dummyElection.Pubkey = pubKey
 	dummyShuffleBallotsTransaction.Round = 0
 	dummyElection.ShuffleInstances = make([]types.ShuffleInstance, 0)
 

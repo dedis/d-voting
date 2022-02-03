@@ -10,24 +10,24 @@ import (
 )
 
 type ID string
-type status uint16
+type Status uint16
 
 const (
-	Initial         status = 0
-	Open            status = 1
-	Closed          status = 2
-	ShuffledBallots status = 3
+	Initial         Status = 0
+	Open            Status = 1
+	Closed          Status = 2
+	ShuffledBallots Status = 3
 	// DecryptedBallots = 4
-	ResultAvailable status = 5
-	Canceled        status = 6
+	ResultAvailable Status = 5
+	Canceled        Status = 6
 )
 
 // electionFormat contains the supported formats for the election. Right now
 // only JSON is supported.
 var electionFormat = registry.NewSimpleRegistry()
 
-func init() {
-	electionFormat.Register(serde.FormatJSON, jsonEngine{})
+func RegisterFormat(format serde.Format, engine serde.FormatEngine) {
+	electionFormat.Register(format, engine)
 }
 
 // ElectionKey is the key of the election factory
@@ -42,8 +42,8 @@ type Election struct {
 	ElectionID string
 
 	AdminID string
-	Status  status
-	Pubkey  []byte
+	Status  Status
+	Pubkey  kyber.Point
 
 	// BallotSize represents the total size in bytes of one ballot. It is used
 	// to pad smaller ballots such that all  ballots cast have the same size
@@ -80,39 +80,6 @@ func (e Election) Serialize(ctx serde.Context) ([]byte, error) {
 	}
 
 	return data, nil
-}
-
-// jsonEngine defines how the election messages are encoded/decoded using the
-// JSON format.
-//
-// - implements serde.FormatEngine
-type jsonEngine struct{}
-
-// Encode implements serde.FormatEngine
-func (jsonEngine) Encode(ctx serde.Context, message serde.Message) ([]byte, error) {
-	switch m := message.(type) {
-	case Election:
-		buff, err := ctx.Marshal(&m)
-		if err != nil {
-			return nil, xerrors.Errorf("failed to marshal election: %v", err)
-		}
-
-		return buff, nil
-	default:
-		return nil, xerrors.Errorf("unknown format: %T", message)
-	}
-}
-
-// Decode implements serde.FormatEngine
-func (jsonEngine) Decode(ctx serde.Context, data []byte) (serde.Message, error) {
-	var election Election
-
-	err := ctx.Unmarshal(data, &election)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to unmarshal election: %v", err)
-	}
-
-	return election, nil
 }
 
 // ElectionFactory provides the mean to deserialize an election. It naturally

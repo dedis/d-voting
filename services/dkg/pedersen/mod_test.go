@@ -3,26 +3,30 @@ package pedersen
 import (
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"testing"
 	"time"
 
-	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/core/store/kv"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/minogrpc"
 	"go.dedis.ch/dela/mino/router/tree"
 	"go.dedis.ch/dela/serde"
+	sjson "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/util/random"
 )
+
+var serdecontext = serde.WithFactory(serde.WithFactory(sjson.NewContext(), etypes.ElectionKey{},
+	etypes.ElectionFactory{}), ctypes.RosterKey{}, fake.Factory{})
 
 // If you get the persistent data from an actor and then recreate an actor
 // from that data, the persistent data should be the same in both actors.
@@ -144,7 +148,7 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 		require.True(t, exists)
 
 		otherActor := Actor{
-			handler: NewHandler(fake.NewAddress(0), fake.Service{}, handlerData),
+			handler: NewHandler(fake.NewAddress(0), fake.Service{}, handlerData, serdecontext),
 		}
 
 		requireActorsEqual(t, actor, &otherActor)
@@ -247,7 +251,7 @@ func TestPedersen_Listen(t *testing.T) {
 	electionIDBuf, err := hex.DecodeString(electionID)
 	require.NoError(t, err)
 
-	p := NewPedersen(fake.Mino{}, fake.NewService(electionID, electionTypes.Election{}), fake.Factory{})
+	p := NewPedersen(fake.Mino{}, fake.NewService(electionID, etypes.Election{}, serdecontext), fake.Factory{})
 
 	actor, err := p.Listen(electionIDBuf)
 	require.NoError(t, err)
@@ -261,7 +265,7 @@ func TestPedersen_TwoListens(t *testing.T) {
 	electionIDBuf, err := hex.DecodeString(electionID)
 	require.NoError(t, err)
 
-	p := NewPedersen(fake.Mino{}, fake.NewService(electionID, electionTypes.Election{}), fake.Factory{})
+	p := NewPedersen(fake.Mino{}, fake.NewService(electionID, etypes.Election{}, serdecontext), fake.Factory{})
 
 	actor1, err := p.Listen(electionIDBuf)
 	require.NoError(t, err)
@@ -276,13 +280,15 @@ func TestPedersen_Setup(t *testing.T) {
 	electionID := "d3adbeef"
 
 	actor := Actor{
-		rpc:       nil,
-		factory:   nil,
-		service:   fake.NewService(electionID, electionTypes.Election{}),
-		rosterFac: fake.Factory{},
+		rpc:     nil,
+		factory: nil,
+		service: fake.NewService(electionID, etypes.Election{
+			ElectionID: electionID,
+		}, serdecontext),
 		handler: &Handler{
 			startRes: &state{},
 		},
+		context: serdecontext,
 	}
 
 	// Wrong electionID
@@ -290,7 +296,7 @@ func TestPedersen_Setup(t *testing.T) {
 	actor.electionID = wrongElectionID
 
 	_, err := actor.Setup()
-	require.EqualError(t, err, fmt.Sprintf("election %s was not found", wrongElectionID))
+	require.EqualError(t, err, "failed to get election: election does not exist")
 
 	actor.electionID = electionID
 
@@ -324,16 +330,18 @@ func TestPedersen_Setup(t *testing.T) {
 	}
 
 	// This fake RosterFac always returns roster upon Deserialize
-	actor.rosterFac = fake.NewRosterFac(roster)
+	actor.context = serde.WithFactory(actor.context, ctypes.RosterKey{}, fake.NewRosterFac(roster))
 
 	rosterBuf, err := roster.Serialize(fake.NewContextWithFormat(serde.Format("JSON")))
 	require.NoError(t, err)
 
 	actor.service = fake.NewService(
 		electionID,
-		electionTypes.Election{
-			RosterBuf: rosterBuf,
+		etypes.Election{
+			ElectionID: electionID,
+			RosterBuf:  rosterBuf,
 		},
+		serdecontext,
 	)
 	pubKey1 := suite.Point().Pick(suite.RandomStream())
 	pubKey2 := suite.Point().Pick(suite.RandomStream())
@@ -370,6 +378,7 @@ func TestPedersen_Decrypt(t *testing.T) {
 		handler: &Handler{
 			startRes: &state{participants: []mino.Address{fake.NewAddress(0)}, distKey: suite.Point()},
 		},
+		context: serdecontext,
 	}
 
 	_, err := actor.Decrypt(suite.Point(), suite.Point())
@@ -481,7 +490,7 @@ func TestPedersen_Scenario(t *testing.T) {
 	election := fake.NewElection(electionID)
 	election.RosterBuf = rosterBuf
 
-	service := fake.NewService(electionID, election)
+	service := fake.NewService(electionID, election, serdecontext)
 
 	rosterFac := fake.NewRosterFac(roster)
 
@@ -513,7 +522,7 @@ func TestPedersen_Scenario(t *testing.T) {
 	KsMarshalled, CsMarshalled, _ := fakeKCPointsMarshalled(k, message, pubKey)
 
 	for i := 0; i < k; i++ {
-		ballot := electionTypes.EncryptedBallot{electionTypes.Ciphertext{
+		ballot := etypes.EncryptedBallot{etypes.Ciphertext{
 			K: KsMarshalled[i],
 			C: CsMarshalled[i],
 		}}
@@ -521,7 +530,7 @@ func TestPedersen_Scenario(t *testing.T) {
 	}
 
 	shuffledBallots := election.PublicBulletinBoard.Ballots
-	shuffleInstance := electionTypes.ShuffleInstance{ShuffledBallots: shuffledBallots}
+	shuffleInstance := etypes.ShuffleInstance{ShuffledBallots: shuffledBallots}
 	election.ShuffleInstances = append(election.ShuffleInstances, shuffleInstance)
 
 	election.ShuffleThreshold = 1

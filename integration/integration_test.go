@@ -20,6 +20,7 @@ import (
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg"
 	_ "github.com/dedis/d-voting/services/dkg/pedersen/json"
 	"github.com/dedis/d-voting/services/shuffle"
@@ -31,9 +32,16 @@ import (
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
+
+	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
+	sjson "go.dedis.ch/dela/serde/json"
 )
+
+var serdecontext = serde.WithFactory(serde.WithFactory(sjson.NewContext(), types.ElectionKey{},
+	types.ElectionFactory{}), ctypes.RosterKey{}, fake.Factory{})
 
 // Check the shuffled votes versus the cast votes on a few nodes
 func TestIntegration_ThreeVotesScenario(t *testing.T) {
@@ -45,7 +53,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	// make tests reproducible
 	rand.Seed(1)
 
-	delaPkg.Logger = delaPkg.Logger.Level(zerolog.InfoLevel)
+	delaPkg.Logger = delaPkg.Logger.Level(zerolog.Disabled)
 
 	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-three-votes")
 	require.NoError(t, err)
@@ -451,9 +459,23 @@ func getElection(electionID []byte, service ordering.Service) (types.Election, e
 		return election, xerrors.Errorf("failed to GetProof: %v", err)
 	}
 
-	err = json.NewDecoder(bytes.NewBuffer(proof.GetValue())).Decode(&election)
+	if proof == nil {
+		return election, xerrors.Errorf("election does not exist: %v", err)
+	}
+
+	fac := serdecontext.GetFactory(types.ElectionKey{})
+	if fac == nil {
+		return election, xerrors.New("election factory not found")
+	}
+
+	message, err := fac.Deserialize(serdecontext, proof.GetValue())
 	if err != nil {
-		return election, xerrors.Errorf("failed to unmarshal Election: %v", err)
+		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
+	}
+
+	election, ok := message.(types.Election)
+	if !ok {
+		return election, xerrors.Errorf("wrong message type: %T", message)
 	}
 
 	return election, nil

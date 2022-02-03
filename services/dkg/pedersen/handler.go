@@ -1,20 +1,20 @@
 package pedersen
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
 	"sync"
 	"time"
 
-	evotingTypes "github.com/dedis/d-voting/contracts/evoting/types"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/cosi/threshold"
 	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/serde"
 
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
@@ -42,10 +42,12 @@ type Handler struct {
 	privShare *share.PriShare
 	privKey   kyber.Scalar
 	pubKey    kyber.Point
+
+	context serde.Context
 }
 
 // NewHandler creates a new handler
-func NewHandler(me mino.Address, service ordering.Service, handlerData HandlerData) *Handler {
+func NewHandler(me mino.Address, service ordering.Service, handlerData HandlerData, context serde.Context) *Handler {
 
 	privKey := handlerData.PrivKey
 	pubKey := handlerData.PubKey
@@ -60,6 +62,8 @@ func NewHandler(me mino.Address, service ordering.Service, handlerData HandlerDa
 		privShare: privShare,
 		privKey:   privKey,
 		pubKey:    pubKey,
+
+		context: context,
 	}
 }
 
@@ -426,10 +430,16 @@ func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionID strin
 		return false, xerrors.Errorf("election does not exist: %v", err)
 	}
 
-	election := new(evotingTypes.Election)
-	err = json.NewDecoder(bytes.NewBuffer(proof.GetValue())).Decode(election)
+	fac := h.context.GetFactory(etypes.ElectionKey{})
+
+	message, err := fac.Deserialize(h.context, proof.GetValue())
 	if err != nil {
-		return false, xerrors.Errorf("failed to unmarshal Election: %v", err)
+		return false, xerrors.Errorf("failed to deserialize election: %v", err)
+	}
+
+	election, ok := message.(etypes.Election)
+	if !ok {
+		return false, xerrors.Errorf("wrong election type: %T", election)
 	}
 
 	if len(election.ShuffleInstances) == 0 {

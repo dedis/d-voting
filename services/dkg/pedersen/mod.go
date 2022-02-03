@@ -1,9 +1,7 @@
 package pedersen
 
 import (
-	"bytes"
 	"encoding/hex"
-	"encoding/json"
 	"sync"
 	"time"
 
@@ -11,7 +9,8 @@ import (
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 
-	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
+	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 
 	"github.com/dedis/d-voting/internal/tracing"
 	"github.com/dedis/d-voting/services/dkg"
@@ -26,6 +25,9 @@ import (
 	"go.dedis.ch/kyber/v3/util/random"
 	"golang.org/x/net/context"
 	"golang.org/x/xerrors"
+
+	// Register the JSON format for the election
+	_ "github.com/dedis/d-voting/contracts/evoting/types/json"
 )
 
 // suite is the Kyber suite for Pedersen.
@@ -101,8 +103,12 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.
 	// hex-encoded string
 	electionID := hex.EncodeToString(electionIDBuf)
 
+	ctx := jsonserde.NewContext()
+	ctx = serde.WithFactory(ctx, etypes.ElectionKey{}, etypes.ElectionFactory{})
+	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, s.rosterFac)
+
 	// link the actor to an RPC by the election ID
-	h := NewHandler(s.mino.GetAddress(), s.service, handlerData)
+	h := NewHandler(s.mino.GetAddress(), s.service, handlerData, ctx)
 	no := s.mino.WithSegment(electionID)
 	rpc := mino.MustCreateRPC(no, RPC_NAME, h, s.factory)
 
@@ -110,8 +116,7 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.
 		rpc:        rpc,
 		factory:    s.factory,
 		service:    s.service,
-		rosterFac:  s.rosterFac,
-		context:    jsonserde.NewContext(),
+		context:    ctx,
 		handler:    h,
 		electionID: electionID,
 	}
@@ -137,7 +142,6 @@ type Actor struct {
 	rpc        mino.RPC
 	factory    serde.Factory
 	service    ordering.Service
-	rosterFac  authority.Factory
 	context    serde.Context
 	handler    *Handler
 	electionID string
@@ -151,23 +155,18 @@ func (a *Actor) Setup() (kyber.Point, error) {
 		return nil, xerrors.Errorf("setup() was already called, only one call is allowed")
 	}
 
-	electionIDBuf, err := hex.DecodeString(a.electionID)
+	election, err := getElection(a.context, a.electionID, a.service)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to decode electionID: %v", err)
+		return nil, xerrors.Errorf("failed to get election: %v", err)
 	}
 
-	proof, exists := electionExists(a.service, electionIDBuf)
-	if !exists {
-		return nil, xerrors.Errorf("election %s was not found", a.electionID)
+	fac := a.context.GetFactory(ctypes.RosterKey{})
+	rosterFac, ok := fac.(authority.Factory)
+	if !ok {
+		return nil, xerrors.Errorf("failed to get roster factory: %T", fac)
 	}
 
-	election := new(electionTypes.Election)
-	err = json.NewDecoder(bytes.NewBuffer(proof.GetValue())).Decode(election)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to unmarshal Election: %v", err)
-	}
-
-	roster, err := a.rosterFac.AuthorityOf(a.context, election.RosterBuf)
+	roster, err := rosterFac.AuthorityOf(a.context, election.RosterBuf)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to deserialize roster: %v", err)
 	}
@@ -391,4 +390,46 @@ func electionExists(service ordering.Service, electionIDBuf []byte) (ordering.Pr
 	}
 
 	return proof, true
+}
+
+// getElection gets the election from the service.
+func getElection(ctx serde.Context, electionIDHex string, srv ordering.Service) (etypes.Election, error) {
+	var election etypes.Election
+
+	electionID, err := hex.DecodeString(electionIDHex)
+	if err != nil {
+		return election, xerrors.Errorf("failed to decode electionIDHex: %v", err)
+	}
+
+	proof, err := srv.GetProof(electionID)
+	if err != nil {
+		return election, xerrors.Errorf("failed to get proof: %v", err)
+	}
+
+	electionBuff := proof.GetValue()
+	if len(electionBuff) == 0 {
+		return election, xerrors.Errorf("election does not exist")
+	}
+
+	fac := ctx.GetFactory(etypes.ElectionKey{})
+	if fac == nil {
+		return election, xerrors.New("election factory not found")
+	}
+
+	message, err := fac.Deserialize(ctx, electionBuff)
+	if err != nil {
+		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
+	}
+
+	election, ok := message.(etypes.Election)
+	if !ok {
+		return election, xerrors.Errorf("wrong message type: %T", message)
+	}
+
+	if electionIDHex != election.ElectionID {
+		return election, xerrors.Errorf("electionID do not match: %q != %q",
+			electionIDHex, election.ElectionID)
+	}
+
+	return election, nil
 }

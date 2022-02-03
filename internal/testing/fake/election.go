@@ -14,7 +14,6 @@ var suite = suites.MustFind("Ed25519")
 func NewElection(electionID string) types.Election {
 	k := 3
 	KsMarshalled, CsMarshalled, pubKey := NewKCPointsMarshalled(k)
-	pubKeyMarshalled, _ := pubKey.MarshalBinary()
 
 	election := types.Election{
 		Configuration: types.Configuration{
@@ -23,7 +22,7 @@ func NewElection(electionID string) types.Election {
 		ElectionID: electionID,
 		AdminID:    "dummyAdminID",
 		Status:     types.Closed,
-		Pubkey:     pubKeyMarshalled,
+		Pubkey:     pubKey,
 		PublicBulletinBoard: types.PublicBulletinBoard{
 			Ballots: types.EncryptedBallots{},
 		},

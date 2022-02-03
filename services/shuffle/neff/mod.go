@@ -1,13 +1,11 @@
 package neff
 
 import (
-	"bytes"
 	"encoding/hex"
-	"encoding/json"
 	"sync"
 	"time"
 
-	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/shuffle"
 	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"go.dedis.ch/dela"
@@ -26,6 +24,7 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/xerrors"
 
+	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	jsonserde "go.dedis.ch/dela/serde/json"
 )
 
@@ -38,14 +37,13 @@ const (
 //
 // - implements shuffle.SHUFFLE
 type NeffShuffle struct {
-	mino          mino.Mino
-	factory       serde.Factory
-	service       ordering.Service
-	p             pool.Pool
-	blocks        *blockstore.InDisk
-	rosterFactory authority.Factory
-	context       serde.Context
-	nodeSigner    crypto.Signer
+	mino       mino.Mino
+	factory    serde.Factory
+	service    ordering.Service
+	p          pool.Pool
+	blocks     *blockstore.InDisk
+	context    serde.Context
+	nodeSigner crypto.Signer
 }
 
 // NewNeffShuffle returns a new NeffShuffle factory.
@@ -54,15 +52,18 @@ func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool,
 
 	factory := types.NewMessageFactory(m.GetAddressFactory())
 
+	ctx := jsonserde.NewContext()
+	ctx = serde.WithFactory(ctx, etypes.ElectionKey{}, etypes.ElectionFactory{})
+	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, rosterFac)
+
 	return &NeffShuffle{
-		mino:          m,
-		factory:       factory,
-		service:       s,
-		p:             p,
-		blocks:        blocks,
-		rosterFactory: rosterFac,
-		context:       jsonserde.NewContext(),
-		nodeSigner:    signer,
+		mino:       m,
+		factory:    factory,
+		service:    s,
+		p:          p,
+		blocks:     blocks,
+		context:    ctx,
+		nodeSigner: signer,
 	}
 }
 
@@ -76,15 +77,14 @@ func (n NeffShuffle) Listen(txmngr txn.Manager) (shuffle.Actor, error) {
 		return nil, xerrors.Errorf("failed to sync manager: %v", err)
 	}
 
-	h := NewHandler(n.mino.GetAddress(), n.service, n.p, txmngr, n.nodeSigner)
+	h := NewHandler(n.mino.GetAddress(), n.service, n.p, txmngr, n.nodeSigner, n.context)
 
 	a := &Actor{
-		rpc:       mino.MustCreateRPC(n.mino, "shuffle", h, n.factory),
-		factory:   n.factory,
-		mino:      n.mino,
-		service:   n.service,
-		rosterFac: n.rosterFactory,
-		context:   n.context,
+		rpc:     mino.MustCreateRPC(n.mino, "shuffle", h, n.factory),
+		factory: n.factory,
+		mino:    n.mino,
+		service: n.service,
+		context: n.context,
 	}
 
 	return a, nil
@@ -102,8 +102,7 @@ type Actor struct {
 	// startRes *state
 	service ordering.Service
 
-	rosterFac authority.Factory
-	context   serde.Context
+	context serde.Context
 }
 
 // Shuffle must be called by ONE of the actor to shuffle the list of ElGamal
@@ -113,18 +112,18 @@ func (a *Actor) Shuffle(electionID []byte) error {
 	a.Lock()
 	defer a.Unlock()
 
-	proof, exists := electionExists(a.service, electionID)
-	if !exists {
-		return xerrors.Errorf("election %s was not found", electionID)
-	}
-
-	election := new(electionTypes.Election)
-	err := json.NewDecoder(bytes.NewBuffer(proof.GetValue())).Decode(election)
+	election, err := getElection(a.context, hex.EncodeToString(electionID), a.service)
 	if err != nil {
-		return xerrors.Errorf("failed to unmarshal Election: %v", err)
+		return xerrors.Errorf("failed to get election: %v", err)
 	}
 
-	roster, err := a.rosterFac.AuthorityOf(a.context, election.RosterBuf)
+	fac := a.context.GetFactory(ctypes.RosterKey{})
+	rosterFac, ok := fac.(authority.Factory)
+	if !ok {
+		return xerrors.Errorf("failed to get roster factory: %T", fac)
+	}
+
+	roster, err := rosterFac.AuthorityOf(a.context, election.RosterBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to deserialize roster: %v", err)
 	}
@@ -171,11 +170,11 @@ func (a *Actor) Shuffle(electionID []byte) error {
 // returns an error if the shuffling is not done after a while. The retry and
 // waiting time depends on the rosterLen.
 func (a *Actor) waitAndCheckShuffling(electionID string, rosterLen int) error {
-	var election *electionTypes.Election
+	var election etypes.Election
 	var err error
 
 	for i := 0; i < rosterLen*10; i++ {
-		election, err = getElection(a.service, electionID)
+		election, err = getElection(a.context, string(electionID), a.service)
 		if err != nil {
 			return xerrors.Errorf("failed to get election: %v", err)
 		}
@@ -210,16 +209,43 @@ func (a *Actor) Verify(suiteName string, Ks []kyber.Point, Cs []kyber.Point,
 	return proof.HashVerify(suite, protocolName, verifier, prf)
 }
 
-func electionExists(service ordering.Service, electionIDBuf []byte) (ordering.Proof, bool) {
-	proof, err := service.GetProof(electionIDBuf)
+// getElection gets the election from the service.
+func getElection(ctx serde.Context, electionIDHex string, srv ordering.Service) (etypes.Election, error) {
+	var election etypes.Election
+
+	electionID, err := hex.DecodeString(electionIDHex)
 	if err != nil {
-		return proof, false
+		return election, xerrors.Errorf("failed to decode electionIDHex: %v", err)
 	}
 
-	// this is proof of absence
-	if string(proof.GetValue()) == "" {
-		return proof, false
+	proof, err := srv.GetProof(electionID)
+	if err != nil {
+		return election, xerrors.Errorf("failed to get proof: %v", err)
 	}
 
-	return proof, true
+	if proof == nil {
+		return election, xerrors.Errorf("election does not exist")
+	}
+
+	fac := ctx.GetFactory(etypes.ElectionKey{})
+	if fac == nil {
+		return election, xerrors.New("election factory not found")
+	}
+
+	message, err := fac.Deserialize(ctx, proof.GetValue())
+	if err != nil {
+		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
+	}
+
+	election, ok := message.(etypes.Election)
+	if !ok {
+		return election, xerrors.Errorf("wrong message type: %T", message)
+	}
+
+	if electionIDHex != election.ElectionID {
+		return election, xerrors.Errorf("electionID do not match: %q != %q",
+			electionIDHex, election.ElectionID)
+	}
+
+	return election, nil
 }
