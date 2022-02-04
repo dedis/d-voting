@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import React, { FC, useState } from "react";
 import PropTypes from "prop-types";
 import { useTranslation } from "react-i18next";
 
@@ -7,12 +7,12 @@ import Modal from "../modal/Modal";
 import "../../styles/Status.css";
 
 type ActionProps = {
-  status: number;
-  electionID: string;
-  setStatus(): string;
-  setResultAvailable(): void;
-  setTextModalError?(): string;
-  setShowModal?(): void;
+  status: typeof PropTypes.number;
+  electionID: typeof PropTypes.string;
+  setStatus: typeof PropTypes.func;
+  setResultAvailable: typeof PropTypes.func;
+  setTextModalError?: typeof PropTypes.func;
+  setShowModal?: typeof PropTypes.func;
 };
 
 /**/
@@ -50,13 +50,6 @@ const Action: FC<ActionProps> = ({
       }
     </span>
   );
-};
-
-Action.propTypes = {
-  status: PropTypes.number,
-  electionID: PropTypes.string,
-  setStatus: PropTypes.func,
-  setResultAvailable: PropTypes.func,
 };
 
 export default Action;

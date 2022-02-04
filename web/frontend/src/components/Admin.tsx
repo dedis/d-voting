@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import Button from "@mui/material/Button";
 import { DataGrid } from "@mui/x-data-grid";
 
@@ -8,7 +8,7 @@ import RemoveAdminUserModal from "./modal/RemoveAdminUserModal";
 import "../styles/Admin.css";
 
 const Admin = () => {
-  const [rows, setRows] = useState(undefined);
+  const [rows, setRows] = useState([]);
   const [newusrOpen, setNewusrOpen] = useState(false);
 
   const [sciperToDelete, setSciperToDelete] = useState(0);
@@ -16,7 +16,7 @@ const Admin = () => {
 
   const openModal = () => setNewusrOpen(true);
 
-  if (rows === undefined) {
+  if (rows.length === 0) {
     try {
       fetch(GET_ADMIN_ROWS)
         .then((resp) => {
