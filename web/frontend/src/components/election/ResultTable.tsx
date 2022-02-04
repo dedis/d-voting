@@ -1,16 +1,21 @@
+import { FC } from "react";
+import { useTranslation } from "react-i18next";
 
-import {React, useContext} from 'react';
-import SimpleTable from '../utils/SimpleTable';
-import {RESULT_AVAILABLE} from '../utils/StatusNumber';
-import {Translations} from '../language/Translations';
-import {LanguageContext} from '../language/LanguageContext';
+import SimpleTable from "../utils/SimpleTable";
+import { RESULT_AVAILABLE } from "../utils/StatusNumber";
 
-const ResultTable = () => {
-    const [context,] = useContext(LanguageContext);
-    return (<div>
-        <SimpleTable statusToKeep={RESULT_AVAILABLE} pathLink='results' textWhenData={Translations[context].displayResults} textWhenNoData={Translations[context].noResultsAvailable}/>
-    </div>)
-}
+const ResultTable: FC = () => {
+  const { t } = useTranslation();
+  return (
+    <div>
+      <SimpleTable
+        statusToKeep={RESULT_AVAILABLE}
+        pathLink="results"
+        textWhenData={t("displayResults")}
+        textWhenNoData={t("noResultsAvailable")}
+      />
+    </div>
+  );
+};
 
 export default ResultTable;
-

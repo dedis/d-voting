@@ -1,17 +1,17 @@
-import {React, useContext} from 'react';
-import './Home.css';
-import {Translations} from '../language/Translations';
-import {LanguageContext} from '../language/LanguageContext';
+import React, { FC } from "react";
+import { useTranslation } from "react-i18next";
 
-const Home = () => {
-  const [context, ] = useContext(LanguageContext);
+import "../styles/Home.css";
 
-  return(
-    <div className='home'>
-      <h1>{Translations[context].homeTitle}</h1>  
-      <div className='home-txt'>{Translations[context].homeText}</div>
+const Home: FC = () => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="home">
+      <h1>{t("homeTitle")}</h1>
+      <div className="home-txt">{t("homeText")}</div>
     </div>
   );
-}
+};
 
 export default Home;
