@@ -2,6 +2,19 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+👉 Quick setup:
+
+```
+npm install
+npm start
+```
+
+Then you can open http://localhost:3000. If the dela proxy is running, you
+should be able to create an election and cast votes. By default, the app will
+try to contact the dela node on http://localhost:1000. Note that you must
+perform at least two votes from different voters to close an election. For that
+you can open a new browser page and cast a new vote.
+
 ## Available Scripts
 
 In the project directory, you can run:

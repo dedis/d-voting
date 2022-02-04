@@ -1,53 +1,44 @@
-.result-title{
-    font-weight: bold;
-    padding-bottom: 3%;
+.result-title {
+  font-weight: bold;
+  padding-bottom: 3%;
 }
 
-.percentage{
-
+ol {
+  padding-left: 10%;
 }
 
-.number-votes{
-    
+.progress-box {
+  display: flex;
+  justify-content: center;
 }
 
-ol{
-    padding-left: 10%;
+.progress-box-in {
+  width: 100%;
+  margin-right: 3%;
+  align-self: center;
 }
 
-.progress-box{
-    display: flex;
-    justify-content:center;
-    
+.progress-box-label {
+  min-width: 20%;
 }
 
-.progress-box-in{
-    width: 100%;
-    margin-right: 3%;
-    align-self: center;
+.progress-box-candidate-name {
+  width: 30%;
+  float: left;
+  min-width: 20%;
 }
 
-.progress-box-label{
-    min-width: 20%;
+.progress-bar > * {
+  width: 70%;
+  float: left;
+  background-color: #177368 !important;
+  vertical-align: middle !important;
 }
 
-.progress-box-candidate-name{
-    width:30%;
-    float: left;
-    min-width: 20%
+.progress-bar {
+  background-color: #9bc0bc !important;
 }
 
-.progress-bar > *{
-    width : 70%;
-    float: left;
-    background-color: #177368 !important;
-   vertical-align: middle !important; 
-}
-
-.progress-bar {  
-    background-color: #9bc0bc !important;
-}
-
-.number-votes{
-    padding-top: 3%;
+.number-votes {
+  padding-top: 3%;
 }

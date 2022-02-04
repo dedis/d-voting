@@ -8,7 +8,7 @@ import "../styles/Login.css";
 const Login: FC = () => {
   const { t } = useTranslation();
 
-  const [loginError, setLoginError] = useState();
+  const [loginError] = useState();
 
   const handleClick = async () => {
     try {
