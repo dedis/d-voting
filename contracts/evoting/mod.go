@@ -53,6 +53,7 @@ type commands interface {
 	castVote(snap store.Snapshot, step execution.Step) error
 	closeElection(snap store.Snapshot, step execution.Step) error
 	shuffleBallots(snap store.Snapshot, step execution.Step) error
+	registerPubShares(snap store.Snapshot, step execution.Step) error
 	decryptBallots(snap store.Snapshot, step execution.Step) error
 	cancelElection(snap store.Snapshot, step execution.Step) error
 }
@@ -70,6 +71,8 @@ const (
 	CmdCloseElection Command = "CLOSE_ELECTION"
 
 	CmdShuffleBallots Command = "SHUFFLE_BALLOTS"
+
+	CmdRegisterPubShares Command = "REGISTER_PUB_SHARES"
 
 	CmdDecryptBallots Command = "DECRYPT_BALLOTS"
 
@@ -170,6 +173,11 @@ func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 		err := c.cmd.shuffleBallots(snap, step)
 		if err != nil {
 			return xerrors.Errorf("failed to shuffle ballots: %v", err)
+		}
+	case CmdRegisterPubShares:
+		err := c.cmd.registerPubShares(snap, step)
+		if err != nil {
+			return xerrors.Errorf("failed to register the pubShares: %v", err)
 		}
 	case CmdDecryptBallots:
 		err := c.cmd.decryptBallots(snap, step)

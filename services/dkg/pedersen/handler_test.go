@@ -24,21 +24,24 @@ func TestHandler_Stream(t *testing.T) {
 		fake.NewRecvMsg(fake.NewAddress(0), types.DecryptRequest{}),
 	)
 	err = h.Stream(fake.Sender{}, receiver)
-	require.EqualError(t, err, "you must first initialize DKG. Did you call setup() first?")
+	require.EqualError(t, err, "you must first initialize DKG."+
+		" Did you call setup() first?")
 
 	h.startRes.distKey = suite.Point()
 	h.startRes.participants = []mino.Address{fake.NewAddress(0)}
 	h.privShare = &share.PriShare{I: 0, V: suite.Scalar()}
 	receiver = fake.NewReceiver(
-		fake.NewRecvMsg(fake.NewAddress(0), types.DecryptRequest{C: suite.Point()}),
+		fake.NewRecvMsg(fake.NewAddress(0), types.DecryptRequest{}),
 	)
 	err = h.Stream(fake.NewBadSender(), receiver)
-	require.EqualError(t, err, "failed to check if the ciphertext has been shuffled: election does not exist: <nil>")
+	require.EqualError(t, err, "failed to check if the ciphertext has"+
+		" been shuffled: election does not exist: <nil>")
 	receiver = fake.NewReceiver(
 		fake.NewRecvMsg(fake.NewAddress(0), fake.Message{}),
 	)
 	err = h.Stream(fake.Sender{}, receiver)
-	require.EqualError(t, err, "expected Start message, decrypt request or Deal as first message, got: fake.Message")
+	require.EqualError(t, err, "expected Start message, decrypt request or"+
+		" Deal as first message, got: fake.Message")
 }
 
 func TestHandler_Start(t *testing.T) {

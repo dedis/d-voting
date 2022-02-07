@@ -670,7 +670,7 @@ func (a *scenarioTestPart2Action) Execute(ctx node.Context) error {
 
 	dela.Logger.Info().Msg("----------------------- DECRYPT BALLOTS : ")
 
-	decryptBallotsRequest := types.DecryptBallotsRequest{
+	decryptBallotsRequest := types.BeginDecryptionRequest{
 		ElectionID: electionID,
 		UserID:     "adminId",
 		Token:      token,
@@ -1284,7 +1284,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	dela.Logger.Info().Msg("----------------------- DECRYPT BALLOTS : ")
 
-	decryptBallotsRequest := types.DecryptBallotsRequest{
+	decryptBallotsRequest := types.BeginDecryptionRequest{
 		ElectionID: electionID,
 		UserID:     "adminId",
 		Token:      token,

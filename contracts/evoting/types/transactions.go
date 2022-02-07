@@ -77,11 +77,22 @@ type ShuffleBallotsTransaction struct {
 	PublicKey []byte
 }
 
+type RegisterPubSharesTransaction struct {
+	ElectionID string
+	// PubShares are the public shares of the node submitting the transaction
+	// so that they can be used for decryption.
+	PubShares PubShares
+	// Signature is the signature of the result of HashPubShares() with the
+	// private key corresponding to PublicKey
+	Signature []byte
+	// PublicKey is the public key of the signer
+	PublicKey []byte
+}
+
 type DecryptBallotsTransaction struct {
 	// ElectionID is hex-encoded
-	ElectionID       string
-	UserID           string
-	DecryptedBallots []Ballot
+	ElectionID string
+	UserID     string
 }
 
 type CancelElectionTransaction struct {
@@ -102,7 +113,7 @@ func RandomID() (string, error) {
 }
 
 // HashShuffle hashes a given shuffle so that it can be signed or a signature
-// can be verified, using a common template. Election is NOT hex encoded.
+// can be verified, using a common template. electionID is NOT hex encoded.
 func (s ShuffleBallotsTransaction) HashShuffle(electionID []byte) ([]byte, error) {
 	hash := sha256.New()
 
@@ -114,6 +125,24 @@ func (s ShuffleBallotsTransaction) HashShuffle(electionID []byte) ([]byte, error
 	}
 
 	hash.Write(shuffledBallots)
+
+	return hash.Sum(nil), nil
+}
+
+// HashPubShares hashes the public shares from the tx along with the electionID
+// so that it can be signed, or a signature can be verified using a common
+// template. electionID is NOT hex encoded
+func (t RegisterPubSharesTransaction) HashPubShares(electionID []byte) ([]byte, error) {
+	hash := sha256.New()
+
+	hash.Write(electionID)
+
+	pubShares, err := json.Marshal(t.PubShares)
+	if err != nil {
+		return nil, xerrors.Errorf("could not marshal the pubShares: %v", err)
+	}
+
+	hash.Write(pubShares)
 
 	return hash.Sum(nil), nil
 }

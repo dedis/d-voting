@@ -5,6 +5,7 @@ import (
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/registry"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/share"
 	"golang.org/x/xerrors"
 )
 
@@ -257,28 +258,14 @@ func (s StartDone) Serialize(ctx serde.Context) ([]byte, error) {
 //
 // - implements serde.Message
 type DecryptRequest struct {
-	K          kyber.Point
-	C          kyber.Point
 	electionId string
 }
 
 // NewDecryptRequest creates a new decryption request.
-func NewDecryptRequest(k, c kyber.Point, electionId string) DecryptRequest {
+func NewDecryptRequest(electionId string) DecryptRequest {
 	return DecryptRequest{
-		K:          k,
-		C:          c,
 		electionId: electionId,
 	}
-}
-
-// GetK returns K.
-func (req DecryptRequest) GetK() kyber.Point {
-	return req.K
-}
-
-// GetC returns C.
-func (req DecryptRequest) GetC() kyber.Point {
-	return req.C
 }
 
 // GetElectionId returns electionId.
@@ -302,26 +289,19 @@ func (req DecryptRequest) Serialize(ctx serde.Context) ([]byte, error) {
 //
 // - implements serde.Message
 type DecryptReply struct {
-	V kyber.Point
-	I int64
+	PublicShares [][]share.PubShare
 }
 
 // NewDecryptReply returns a new decryption reply.
-func NewDecryptReply(i int64, v kyber.Point) DecryptReply {
+func NewDecryptReply(PublicShares [][]share.PubShare) DecryptReply {
 	return DecryptReply{
-		I: i,
-		V: v,
+		PublicShares: PublicShares,
 	}
 }
 
-// GetV returns V.
-func (resp DecryptReply) GetV() kyber.Point {
-	return resp.V
-}
-
-// GetI returns I.
-func (resp DecryptReply) GetI() int64 {
-	return resp.I
+// GetPubShares returns the public shares
+func (resp DecryptReply) GetPubShares() [][]share.PubShare {
+	return resp.PublicShares
 }
 
 // Serialize implements serde.Message.

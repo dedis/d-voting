@@ -2,7 +2,6 @@ package types
 
 import (
 	"encoding/base64"
-
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/registry"
 	"go.dedis.ch/kyber/v3"
@@ -13,10 +12,11 @@ type ID string
 type Status uint16
 
 const (
-	Initial         Status = 0
-	Open            Status = 1
-	Closed          Status = 2
-	ShuffledBallots Status = 3
+	Initial            Status = 0
+	Open               Status = 1
+	Closed             Status = 2
+	ShuffledBallots    Status = 3
+	PubSharesSubmitted Status = 4
 	// DecryptedBallots = 4
 	ResultAvailable Status = 5
 	Canceled        Status = 6
@@ -59,6 +59,10 @@ type Election struct {
 	// ShuffleThreshold is set based on the roster. We save it so we do not have
 	// to compute it based on the roster each time we need it.
 	ShuffleThreshold int
+
+	// PubSharesArchive is an array containing all the pubShares. One entry per node,
+	// each entry contains one array of pubShares for each ballot.
+	PubSharesArchive PubSharesArchive
 
 	DecryptedBallots []Ballot
 
@@ -253,6 +257,25 @@ func (p *PublicBulletinBoard) DeleteUser(userID string) bool {
 	}
 
 	return false
+}
+
+// PubShare represents a public share.
+type PubShare struct {
+	I int    // Index of the public share
+	V []byte // Value of the public share (marshalled kyber.Point)
+}
+
+// PubShares holds all the PubShare produced by a given node, []PubShare per ballot
+type PubShares [][]PubShare
+
+// PubSharesArchive groups all the PubShares submitted
+type PubSharesArchive struct {
+	// PubSharesSubmissions is a slice, with each entry being the pubShares
+	// submitted by one node of the roster.
+	PubSharesSubmissions []PubShares
+	// PublicKeys are the public keys corresponding to the nodes who made a
+	// submission
+	PublicKeys [][]byte
 }
 
 // EncryptedBallot represents a list of Ciphertext

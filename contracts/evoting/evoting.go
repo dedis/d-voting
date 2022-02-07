@@ -8,7 +8,10 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/share"
 	"math/rand"
+	"strings"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/execution"
@@ -471,6 +474,103 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 	return nil
 }
 
+// registerPubShares implements commands.It performs the REGISTER_PUB_SHARES command
+func (e evotingCommand) registerPubShares(snap store.Snapshot, step execution.Step) error {
+	var tx types.RegisterPubSharesTransaction
+
+	err := getTransaction(step.Current, &tx)
+	if err != nil {
+		return xerrors.Errorf(errGetTransaction, err)
+	}
+
+	election, electionID, err := getElection(e.context, tx.ElectionID, snap)
+	if err != nil {
+		return xerrors.Errorf(errGetElection, err)
+	}
+
+	if election.Status != types.ShuffledBallots {
+		return xerrors.Errorf("the ballots have not been shuffled")
+	}
+
+	nodePublicKey := tx.PublicKey
+
+	fac := e.context.GetFactory(ctypes.RosterKey{})
+	rosterFac, ok := fac.(authority.Factory)
+	if !ok {
+		return xerrors.Errorf("failed to get roster factory: %T", fac)
+	}
+
+	// Check the node is a valid member of the roster
+	roster, err := rosterFac.AuthorityOf(e.context, election.RosterBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to deserialize roster: %v", err)
+	}
+
+	err = isMemberOf(roster, nodePublicKey)
+	if err != nil {
+		return xerrors.Errorf("could not verify identity of node : %v", err)
+	}
+
+	// Check the node who submitted the pubShares did not already submit any
+	for _, pubKey := range election.PubSharesArchive.PublicKeys {
+		if bytes.Equal(nodePublicKey, pubKey) {
+			return xerrors.Errorf("the node %v already submitted its pubShares",
+				nodePublicKey)
+		}
+	}
+
+	// Check the shuffler indeed signed the transaction:
+	signerPubKey, err := bls.NewPublicKey(tx.PublicKey)
+	if err != nil {
+		return xerrors.Errorf("could not decode public key of signer : %v ", err)
+	}
+
+	txSignature := tx.Signature
+
+	signature, err := bls.NewSignatureFactory().SignatureOf(e.context, txSignature)
+	if err != nil {
+		return xerrors.Errorf("could node deserialize pubShare signature : %v", err)
+	}
+
+	pubSharesHash, err := tx.HashPubShares(electionID)
+	if err != nil {
+		return xerrors.Errorf("could not hash pubShares : %v", err)
+	}
+
+	// Check the signature matches the shuffle using the shuffler's public key
+	err = signerPubKey.Verify(pubSharesHash, signature)
+	if err != nil {
+		return xerrors.Errorf("signature does not match the PubShares : %v ", err)
+	}
+
+	//TODO : make sure the pubShares are valid ? => determine the expected format
+
+	// add the pubShares to the election
+	election.PubSharesArchive.PubSharesSubmissions = append(
+		election.PubSharesArchive.PubSharesSubmissions,
+		tx.PubShares)
+
+	election.PubSharesArchive.PublicKeys = append(
+		election.PubSharesArchive.PublicKeys,
+		tx.PublicKey)
+
+	if len(election.PubSharesArchive.PubSharesSubmissions) >= election.ShuffleThreshold {
+		election.Status = types.PubSharesSubmitted
+	}
+
+	electionBuf, err := election.Serialize(e.context)
+	if err != nil {
+		return xerrors.Errorf("failed to marshal Election : %v", err)
+	}
+
+	err = snap.Set(electionID, electionBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to set value: %v", err)
+	}
+
+	return nil
+}
+
 // decryptBallots implements commands. It performs the DECRYPT_BALLOTS command
 func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step) error {
 
@@ -490,12 +590,44 @@ func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("only the admin can decrypt the ballots")
 	}
 
-	if election.Status != types.ShuffledBallots {
-		return xerrors.Errorf("the ballots are not shuffled, current status: %d", election.Status)
+	if election.Status != types.PubSharesSubmitted {
+		return xerrors.Errorf("the ballots pubShares are not available, "+
+			"current status: %d", election.Status)
 	}
 
+	pubSharesSubmitted := election.PubSharesArchive.PubSharesSubmissions
+
+	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
+
+	nbrBallots := len(pubSharesSubmitted[0])
+	nbrPairsPerBallot := len(pubSharesSubmitted[0][0])
+
+	for i := 0; i < nbrBallots; i++ {
+		// decryption of one ballot:
+		marshalledBallot := strings.Builder{}
+
+		for j := 0; j < nbrPairsPerBallot; j++ {
+			chunk, err := Decrypt(i, j, pubSharesSubmitted)
+			if err != nil {
+				return xerrors.Errorf("failed to decrypt (K, C) : ", err)
+			}
+
+			marshalledBallot.Write(chunk)
+		}
+
+		var ballot types.Ballot
+		err = ballot.Unmarshal(marshalledBallot.String(), election)
+		if err != nil {
+			//TODO: Do we want to remember which ballots yield an error?
+			// store the raw decryption somewhere?
+		}
+
+		decryptedBallots = append(decryptedBallots, ballot)
+	}
+
+	election.DecryptedBallots = decryptedBallots
+
 	election.Status = types.ResultAvailable
-	election.DecryptedBallots = tx.DecryptedBallots
 
 	electionBuf, err := election.Serialize(e.context)
 	if err != nil {
@@ -508,6 +640,36 @@ func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step)
 	}
 
 	return nil
+}
+
+func Decrypt(ballot int, pair int, allPubShares []types.PubShares) ([]byte, error) {
+	pubShares := make([]*share.PubShare, len(allPubShares))
+
+	for i := 0; i < len(allPubShares); i++ {
+		pubShare := allPubShares[i][ballot][pair]
+		var V kyber.Point
+		err := V.UnmarshalBinary(pubShare.V)
+		if err != nil {
+			return nil, xerrors.Errorf("could not unmarshal Value of pubShare: %v", err)
+		}
+
+		pubShares[i] = &share.PubShare{
+			I: pubShare.I,
+			V: V,
+		}
+	}
+
+	res, err := share.RecoverCommit(suite, pubShares, len(allPubShares), len(allPubShares))
+	if err != nil {
+		return nil, xerrors.Errorf("failed to recover commit: %v", err)
+	}
+
+	decryptedMessage, err := res.Data()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get embedded data: %v", err)
+	}
+
+	return decryptedMessage, nil
 }
 
 // cancelElection implements commands. It performs the CANCEL_ELECTION command

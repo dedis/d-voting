@@ -6,14 +6,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"strings"
-
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/xerrors"
+	"io/ioutil"
+	"net/http"
 )
 
 // Login responds with the user token.
@@ -465,7 +463,88 @@ func (h *votingProxy) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// DecryptBallots decrypts the shuffled ballots in an election.
+// BeginDecryption starts the decryption process by gather the pubShares
+func (h *votingProxy) BeginDecryption(w http.ResponseWriter, r *http.Request) {
+	beginDecryptionRequest := &types.BeginDecryptionRequest{}
+	err := json.NewDecoder(r.Body).Decode(beginDecryptionRequest)
+	if err != nil {
+		http.Error(w, "failed to decode BeginDecryptionRequest: "+err.Error(),
+			http.StatusBadRequest)
+		return
+	}
+
+	electionsMetadata, err := h.getElectionsMetadata()
+	if err != nil {
+		http.Error(w, "failed to get election metadata", http.StatusNotFound)
+		return
+	}
+
+	if !contains(electionsMetadata.ElectionsIDs, beginDecryptionRequest.ElectionID) {
+		http.Error(w, "The election does not exist", http.StatusNotFound)
+		return
+	}
+
+	electionIDBuf, err := hex.DecodeString(beginDecryptionRequest.ElectionID)
+	if err != nil {
+		http.Error(w, "failed to decode electionID: "+err.Error(),
+			http.StatusInternalServerError)
+		return
+	}
+
+	proof, err := h.orderingSvc.GetProof(electionIDBuf)
+	if err != nil {
+		http.Error(w, "failed to read on the blockchain: "+err.Error(),
+			http.StatusInternalServerError)
+		return
+	}
+
+	election := &types.Election{}
+	err = json.Unmarshal(proof.GetValue(), election)
+	if err != nil {
+		http.Error(w, "failed to unmarshal Election: "+err.Error(),
+			http.StatusInternalServerError)
+		return
+	}
+
+	if election.Status != types.ShuffledBallots {
+		http.Error(w, "the ballots must have been shuffled !", http.StatusUnauthorized)
+		return
+	}
+
+	if election.AdminID != beginDecryptionRequest.UserID {
+		http.Error(w, "only the admin can decrypt the ballots!", http.StatusUnauthorized)
+		return
+	}
+
+	actor, exists := h.dkg.GetActor(electionIDBuf)
+	if !exists {
+		http.Error(w, "failed to get actor:"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = actor.RequestPubShares()
+	if err != nil {
+		http.Error(w, "failed to request the public shares"+err.Error(),
+			http.StatusInternalServerError)
+		return
+	}
+
+	response := types.BeginDecryptionResponse{
+		Message: "Decryption process started. Gathering public shares...",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
+			http.StatusInternalServerError)
+		return
+	}
+
+}
+
+// DecryptBallots sends a tx that will commit the public shares and decrypt
+// the ballots
 func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 	decryptBallotsRequest := &types.DecryptBallotsRequest{}
 	err := json.NewDecoder(r.Body).Decode(decryptBallotsRequest)
@@ -508,8 +587,9 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if election.Status != types.ShuffledBallots {
-		http.Error(w, "the ballots must have been shuffled !", http.StatusUnauthorized)
+	if election.Status != types.PubSharesSubmitted {
+		http.Error(w, "the submission of public shares must be over!",
+			http.StatusUnauthorized)
 		return
 	}
 
@@ -518,46 +598,9 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	X, Y, err := election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots.GetElGPairs()
-	if err != nil {
-		http.Error(w, "failed to get X, Y:"+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
-	wrongBallots := 0
-
-	actor, exists := h.dkg.GetActor(electionIDBuf)
-	if !exists {
-		http.Error(w, "failed to get actor:"+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	for i := 0; i < len(X[0]); i++ {
-		// decryption of one ballot:
-		marshalledBallot := strings.Builder{}
-		for j := 0; j < len(X); j++ {
-			chunk, err := actor.Decrypt(X[j][i], Y[j][i])
-			if err != nil {
-				http.Error(w, "failed to decrypt (K, C): "+err.Error(), http.StatusInternalServerError)
-				return
-			}
-			marshalledBallot.Write(chunk)
-		}
-
-		var ballot types.Ballot
-		err = ballot.Unmarshal(marshalledBallot.String(), *election)
-		if err != nil {
-			wrongBallots += 1 // TODO do we ever send back through http if it's not an error?
-		}
-
-		decryptedBallots = append(decryptedBallots, ballot)
-	}
-
 	decryptBallotsTransaction := types.DecryptBallotsTransaction{
-		ElectionID:       decryptBallotsRequest.ElectionID,
-		UserID:           decryptBallotsRequest.UserID,
-		DecryptedBallots: decryptedBallots,
+		ElectionID: decryptBallotsRequest.ElectionID,
+		UserID:     decryptBallotsRequest.UserID,
 	}
 
 	payload, err := json.Marshal(decryptBallotsTransaction)
@@ -574,6 +617,7 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := types.DecryptBallotsResponse{}
+
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {

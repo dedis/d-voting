@@ -123,6 +123,17 @@ type ShuffleBallotsResponse struct {
 	Message string
 }
 
+type BeginDecryptionRequest struct {
+	// ElectionID is hex-encoded
+	ElectionID string
+	UserID     string
+	Token      string
+}
+
+type BeginDecryptionResponse struct {
+	Message string
+}
+
 type DecryptBallotsRequest struct {
 	// ElectionID is hex-encoded
 	ElectionID string

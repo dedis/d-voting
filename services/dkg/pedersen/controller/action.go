@@ -5,6 +5,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"go.dedis.ch/dela/core/access"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/txn/signed"
+	"go.dedis.ch/dela/core/validation"
+	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/crypto/bls"
+	"go.dedis.ch/dela/crypto/loader"
 	"io/ioutil"
 	"net/http"
 
@@ -58,7 +65,19 @@ func (a *initAction) Execute(ctx node.Context) error {
 		)
 	}
 
-	actor, err := dkg.Listen(electionIDBuf)
+	keyPath := ctx.Flags.String("signer")
+
+	signer, err := getSigner(keyPath)
+	if err != nil {
+		return xerrors.Errorf("failed to get signer: %v", err)
+	}
+
+	client, err := makeClient(ctx.Injector)
+	if err != nil {
+		return xerrors.Errorf("failed to make client: %v", err)
+	}
+
+	actor, err := dkg.Listen(electionIDBuf, signed.NewManager(signer, &client))
 	if err != nil {
 		return xerrors.Errorf("failed to start the RPC: %v", err)
 	}
@@ -277,7 +296,7 @@ func (a *registerHandlersAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve dkg.DKG: %v", err)
 	}
 
-	proxy.RegisterHandler(initEndpoint, ListenHandler(dkg))
+	proxy.RegisterHandler(initEndpoint, ListenHandler(dkg, ctx))
 	proxy.RegisterHandler(setupEndpoint, SetupHandler(dkg))
 
 	dela.Logger.Info().Msg("DKG handler registered")
@@ -287,7 +306,7 @@ func (a *registerHandlersAction) Execute(ctx node.Context) error {
 
 // ListenHandler runs Listen to initialize an Actor corresponding to the given
 // electionID
-func ListenHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
+func ListenHandler(dkg dkg.DKG, ctx node.Context) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		electionIDBuf, err := ioutil.ReadAll(r.Body)
@@ -314,7 +333,27 @@ func ListenHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		_, err = dkg.Listen(electionIDBuf)
+		keyPath := ctx.Flags.String("signer")
+
+		signer, err := getSigner(keyPath)
+		if err != nil {
+			http.Error(w,
+				fmt.Sprintf("failed to get signer for txmngr : %v", err),
+				http.StatusBadRequest,
+			)
+			return
+		}
+
+		client, err := makeClient(ctx.Injector)
+		if err != nil {
+			http.Error(w,
+				fmt.Sprintf("failed to make client: %v", err),
+				http.StatusBadRequest,
+			)
+			return
+		}
+
+		_, err = dkg.Listen(electionIDBuf, signed.NewManager(signer, &client))
 		if err != nil {
 			http.Error(
 				w,
@@ -402,4 +441,62 @@ func updateDKGStore(inj node.Injector, fn func(kv.WritableTx) error) error {
 	}
 
 	return nil
+}
+
+func makeClient(inj node.Injector) (client, error) {
+	var service ordering.Service
+	err := inj.Resolve(&service)
+	if err != nil {
+		return client{}, xerrors.Errorf("failed to resolve ordering.Service: %v", err)
+	}
+
+	var vs validation.Service
+	err = inj.Resolve(&vs)
+	if err != nil {
+		return client{}, xerrors.Errorf("failed to resolve validation.Service: %v", err)
+	}
+
+	client := client{
+		srvc: service,
+		vs:   vs,
+	}
+
+	return client, nil
+}
+
+// client fetches the last nonce used by the client
+//
+// - implements signed.Client
+type client struct {
+	srvc ordering.Service
+	vs   validation.Service
+}
+
+// GetNonce implements signed.Client. It uses the validation service to get the
+// last nonce.
+func (c *client) GetNonce(id access.Identity) (uint64, error) {
+	store := c.srvc.GetStore()
+
+	nonce, err := c.vs.GetNonce(store, id)
+	if err != nil {
+		return 0, xerrors.Errorf("failed to get nonce from validation: %v", err)
+	}
+
+	return nonce, nil
+}
+
+func getSigner(filePath string) (crypto.Signer, error) {
+	l := loader.NewFileLoader(filePath)
+
+	signerData, err := l.Load()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load signer: %v", err)
+	}
+
+	signer, err := bls.NewSignerFromBytes(signerData)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to unmarshal signer: %v", err)
+	}
+
+	return signer, nil
 }

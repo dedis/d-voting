@@ -240,7 +240,7 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 	contract := accessContract.NewContract(aKey[:], accessService, accessStore)
 	accessContract.RegisterContract(exec, contract)
 
-	dkg := pedersen.NewPedersen(onet, srvc, rosterFac)
+	dkg := pedersen.NewPedersen(onet, srvc, pool, rosterFac, signer)
 
 	rosterKey := [32]byte{}
 	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:],

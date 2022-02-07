@@ -2,6 +2,9 @@ package pedersen
 
 import (
 	"encoding/hex"
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/crypto"
 	"sync"
 	"time"
 
@@ -20,7 +23,6 @@ import (
 	"go.dedis.ch/dela/serde"
 	jsonserde "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/random"
 	"golang.org/x/net/context"
@@ -54,32 +56,36 @@ const (
 type Pedersen struct {
 	sync.RWMutex
 
-	mino      mino.Mino
-	factory   serde.Factory
-	service   ordering.Service
-	rosterFac authority.Factory
-	actors    map[string]dkg.Actor
+	mino            mino.Mino
+	factory         serde.Factory
+	service         ordering.Service
+	rosterFac       authority.Factory
+	pool            pool.Pool
+	pubSharesSigner crypto.Signer
+	actors          map[string]dkg.Actor
 }
 
 // NewPedersen returns a new DKG Pedersen factory
-func NewPedersen(m mino.Mino, service ordering.Service,
-	rosterFac authority.Factory) *Pedersen {
+func NewPedersen(m mino.Mino, service ordering.Service, pool pool.Pool,
+	rosterFac authority.Factory, pubSharesSigner crypto.Signer) *Pedersen {
 
 	factory := types.NewMessageFactory(m.GetAddressFactory())
 	actors := make(map[string]dkg.Actor)
 
 	return &Pedersen{
-		mino:      m,
-		factory:   factory,
-		service:   service,
-		rosterFac: rosterFac,
-		actors:    actors,
+		mino:            m,
+		factory:         factory,
+		service:         service,
+		rosterFac:       rosterFac,
+		pool:            pool,
+		actors:          actors,
+		pubSharesSigner: pubSharesSigner,
 	}
 }
 
 // Listen implements dkg.DKG. It must be called on each node that participates
 // in the DKG.
-func (s *Pedersen) Listen(electionIDBuf []byte) (dkg.Actor, error) {
+func (s *Pedersen) Listen(electionIDBuf []byte, txmngr txn.Manager) (dkg.Actor, error) {
 
 	electionID := hex.EncodeToString(electionIDBuf)
 
@@ -93,12 +99,14 @@ func (s *Pedersen) Listen(electionIDBuf []byte) (dkg.Actor, error) {
 		return actor, xerrors.Errorf("actor already exists for electionID %s", electionID)
 	}
 
-	return s.NewActor(electionIDBuf, NewHandlerData())
+	return s.NewActor(electionIDBuf, s.pool, txmngr, NewHandlerData())
 }
 
 // NewActor initializes a dkg.Actor with an RPC specific to the election with
 // the given keypair
-func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.Actor, error) {
+func (s *Pedersen) NewActor(electionIDBuf []byte, pool pool.Pool, txmngr txn.Manager,
+	handlerData HandlerData) (dkg.Actor,
+	error) {
 
 	// hex-encoded string
 	electionID := hex.EncodeToString(electionIDBuf)
@@ -108,7 +116,9 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.
 	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, s.rosterFac)
 
 	// link the actor to an RPC by the election ID
-	h := NewHandler(s.mino.GetAddress(), s.service, handlerData, ctx)
+	h := NewHandler(s.mino.GetAddress(), s.service, pool, txmngr, s.pubSharesSigner,
+		handlerData, ctx)
+
 	no := s.mino.WithSegment(electionID)
 	rpc := mino.MustCreateRPC(no, RPC_NAME, h, s.factory)
 
@@ -303,9 +313,73 @@ func (a *Actor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte,
 // TODO: perform a re-encryption instead of gathering the private shares, which
 // should never happen.
 func (a *Actor) Decrypt(K, C kyber.Point) ([]byte, error) {
+	/*
+		if !a.handler.startRes.Done() {
+			return nil, xerrors.Errorf("setup() was not called")
+		}
+
+		players := mino.NewAddresses(a.handler.startRes.GetParticipants()...)
+
+		ctx, cancel := context.WithTimeout(context.Background(), decryptTimeout)
+		defer cancel()
+		ctx = context.WithValue(ctx, tracing.ProtocolKey, protocolNameDecrypt)
+
+		sender, receiver, err := a.rpc.Stream(ctx, players)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to create stream: %v", err)
+		}
+
+		iterator := players.AddressIterator()
+		addrs := make([]mino.Address, 0, players.Len())
+		for iterator.HasNext() {
+			addrs = append(addrs, iterator.GetNext())
+		}
+
+		message := types.NewDecryptRequest(K, C, a.electionID)
+
+		err = <-sender.Send(message, addrs...)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to send decrypt request: %v", err)
+		}
+
+		pubShares := make([]*share.PubShare, len(addrs))
+
+		for i := 0; i < len(addrs); i++ {
+			_, message, err := receiver.Recv(ctx)
+			if err != nil {
+				return []byte{}, xerrors.Errorf("stream stopped unexpectedly: %v", err)
+			}
+
+			decryptReply, ok := message.(types.DecryptReply)
+			if !ok {
+				return []byte{}, xerrors.Errorf("got unexpected reply, expected "+
+					"%T but got: %T", decryptReply, message)
+			}
+
+			pubShares[i] = &share.PubShare{
+				I: int(decryptReply.I),
+				V: decryptReply.V,
+			}
+		}
+
+		res, err := share.RecoverCommit(suite, pubShares, len(addrs), len(addrs))
+		if err != nil {
+			return []byte{}, xerrors.Errorf("failed to recover commit: %v", err)
+		}
+
+		decryptedMessage, err := res.Data()
+		if err != nil {
+			return []byte{}, xerrors.Errorf("failed to get embedded data: %v", err)
+		}
+
+		return decryptedMessage, nil*/
+	return []byte{}, nil
+}
+
+func (a *Actor) RequestPubShares() error {
 
 	if !a.handler.startRes.Done() {
-		return nil, xerrors.Errorf("setup() was not called")
+		return xerrors.Errorf("setup() was not called")
 	}
 
 	players := mino.NewAddresses(a.handler.startRes.GetParticipants()...)
@@ -314,9 +388,9 @@ func (a *Actor) Decrypt(K, C kyber.Point) ([]byte, error) {
 	defer cancel()
 	ctx = context.WithValue(ctx, tracing.ProtocolKey, protocolNameDecrypt)
 
-	sender, receiver, err := a.rpc.Stream(ctx, players)
+	sender, _, err := a.rpc.Stream(ctx, players)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to create stream: %v", err)
+		return xerrors.Errorf("failed to create stream: %v", err)
 	}
 
 	iterator := players.AddressIterator()
@@ -325,44 +399,14 @@ func (a *Actor) Decrypt(K, C kyber.Point) ([]byte, error) {
 		addrs = append(addrs, iterator.GetNext())
 	}
 
-	message := types.NewDecryptRequest(K, C, a.electionID)
+	message := types.NewDecryptRequest(a.electionID)
 
 	err = <-sender.Send(message, addrs...)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to send decrypt request: %v", err)
+		return xerrors.Errorf("failed to send decrypt request: %v", err)
 	}
 
-	pubShares := make([]*share.PubShare, len(addrs))
-
-	for i := 0; i < len(addrs); i++ {
-		_, message, err := receiver.Recv(ctx)
-		if err != nil {
-			return []byte{}, xerrors.Errorf("stream stopped unexpectedly: %v", err)
-		}
-
-		decryptReply, ok := message.(types.DecryptReply)
-		if !ok {
-			return []byte{}, xerrors.Errorf("got unexpected reply, expected "+
-				"%T but got: %T", decryptReply, message)
-		}
-
-		pubShares[i] = &share.PubShare{
-			I: int(decryptReply.I),
-			V: decryptReply.V,
-		}
-	}
-
-	res, err := share.RecoverCommit(suite, pubShares, len(addrs), len(addrs))
-	if err != nil {
-		return []byte{}, xerrors.Errorf("failed to recover commit: %v", err)
-	}
-
-	decryptedMessage, err := res.Data()
-	if err != nil {
-		return []byte{}, xerrors.Errorf("failed to get embedded data: %v", err)
-	}
-
-	return decryptedMessage, nil
+	return nil
 }
 
 // Reshare implements dkg.Actor. It recreates the DKG with an updated list of
@@ -401,14 +445,9 @@ func getElection(ctx serde.Context, electionIDHex string, srv ordering.Service) 
 		return election, xerrors.Errorf("failed to decode electionIDHex: %v", err)
 	}
 
-	proof, err := srv.GetProof(electionID)
-	if err != nil {
-		return election, xerrors.Errorf("failed to get proof: %v", err)
-	}
-
-	electionBuff := proof.GetValue()
-	if len(electionBuff) == 0 {
-		return election, xerrors.Errorf("election does not exist")
+	proof, exists := electionExists(srv, electionID)
+	if !exists {
+		return election, xerrors.Errorf("election does not exist: %v", err)
 	}
 
 	fac := ctx.GetFactory(etypes.ElectionKey{})
@@ -416,7 +455,7 @@ func getElection(ctx serde.Context, electionIDHex string, srv ordering.Service) 
 		return election, xerrors.New("election factory not found")
 	}
 
-	message, err := fac.Deserialize(ctx, electionBuff)
+	message, err := fac.Deserialize(ctx, proof.GetValue())
 	if err != nil {
 		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
 	}

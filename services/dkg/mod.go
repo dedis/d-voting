@@ -1,6 +1,7 @@
 package dkg
 
 import (
+	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/kyber/v3"
 )
 
@@ -8,7 +9,7 @@ import (
 type DKG interface {
 	// Listen starts the RPC. This function should be called on each node that
 	// wishes to participate in a DKG.
-	Listen(electionID []byte) (Actor, error)
+	Listen(electionID []byte, txmngr txn.Manager) (Actor, error)
 
 	// GetActor allows to retrieve the Actor corresponding to a given electionID
 	GetActor(electionID []byte) (Actor, bool)
@@ -31,6 +32,10 @@ type Actor interface {
 
 	Encrypt(message []byte) (K, C kyber.Point, remainder []byte, err error)
 	Decrypt(K, C kyber.Point) ([]byte, error)
+
+	// RequestPubShares sends a decryption request to all nodes in order to gather
+	// the public shares
+	RequestPubShares() error
 
 	Reshare() error
 

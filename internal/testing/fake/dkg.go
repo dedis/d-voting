@@ -52,6 +52,10 @@ func (f DKGActor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte, e
 	return nil, nil, nil, f.Err
 }
 
+func (f DKGActor) RequestPubShares() error {
+	return f.Err
+}
+
 func (f DKGActor) Decrypt(K, C kyber.Point) ([]byte, error) {
 	return nil, f.Err
 }
