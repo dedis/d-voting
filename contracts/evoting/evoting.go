@@ -251,7 +251,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf(errGetTransaction, err)
 	}
 
-	err = checkPreviousTransactions(step, tx.Round)
+	err = checkPreviousShuffleTransactions(step, tx.Round)
 	if err != nil {
 		return xerrors.Errorf("check previous transactions failed: %v", err)
 	}
@@ -406,9 +406,9 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	return nil
 }
 
-// checkPreviousTransactions checks if a ShuffleBallotsTransaction has already
+// checkPreviousShuffleTransactions checks if a ShuffleBallotsTransaction has already
 // been accepted and executed for a specific round.
-func checkPreviousTransactions(step execution.Step, round int) error {
+func checkPreviousShuffleTransactions(step execution.Step, round int) error {
 	for _, tx := range step.Previous {
 
 		if string(tx.GetArg(native.ContractArg)) == ContractName {
@@ -483,6 +483,11 @@ func (e evotingCommand) registerPubShares(snap store.Snapshot, step execution.St
 		return xerrors.Errorf(errGetTransaction, err)
 	}
 
+	err = checkPreviousPubSharesTransactions(step, tx.Round)
+	if err != nil {
+		return xerrors.Errorf("check previous transactions failed: %v", err)
+	}
+
 	election, electionID, err := getElection(e.context, tx.ElectionID, snap)
 	if err != nil {
 		return xerrors.Errorf(errGetElection, err)
@@ -490,6 +495,14 @@ func (e evotingCommand) registerPubShares(snap store.Snapshot, step execution.St
 
 	if election.Status != types.ShuffledBallots {
 		return xerrors.Errorf("the ballots have not been shuffled")
+	}
+
+	// Round starts at 0
+	expectedRound := len(election.PubSharesArchive.PubSharesSubmissions)
+
+	if tx.Round != expectedRound {
+		return xerrors.Errorf("wrong pubShare submission round:"+
+			" expected round '%d',transaction is for round '%d'", expectedRound, tx.Round)
 	}
 
 	nodePublicKey := tx.PublicKey
@@ -568,6 +581,33 @@ func (e evotingCommand) registerPubShares(snap store.Snapshot, step execution.St
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
 
+	return nil
+}
+
+// checkPreviousPubSharesTransactions checks if a ShuffleBallotsTransaction has already
+// been accepted and executed for a specific round.
+func checkPreviousPubSharesTransactions(step execution.Step, round int) error {
+	for _, tx := range step.Previous {
+
+		if string(tx.GetArg(native.ContractArg)) == ContractName {
+
+			if string(tx.GetArg(CmdArg)) == ElectionArg {
+
+				registerPubsSharesBuf := tx.GetArg(ElectionArg)
+				var registerPubSharesTransaction types.RegisterPubSharesTransaction
+
+				err := json.Unmarshal(registerPubsSharesBuf, &registerPubSharesTransaction)
+				if err != nil {
+					return xerrors.Errorf("failed to unmarshall"+
+						" RegisterPubSharesTransaction : %v", err)
+				}
+
+				if registerPubSharesTransaction.Round == round {
+					return xerrors.Errorf("pubShares have already been submitted in this round")
+				}
+			}
+		}
+	}
 	return nil
 }
 

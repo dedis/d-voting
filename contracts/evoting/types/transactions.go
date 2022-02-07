@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-
 	"golang.org/x/xerrors"
 )
 
@@ -79,6 +78,9 @@ type ShuffleBallotsTransaction struct {
 
 type RegisterPubSharesTransaction struct {
 	ElectionID string
+	// Round is the "submission number". It is used to make sure no pubShares
+	// will be lost by "overwrite".
+	Round int
 	// PubShares are the public shares of the node submitting the transaction
 	// so that they can be used for decryption.
 	PubShares PubShares

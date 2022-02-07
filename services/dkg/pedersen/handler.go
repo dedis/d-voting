@@ -226,7 +226,8 @@ mainSwitch:
 
 			if accepted {
 				dela.Logger.Info().Msgf("our pubShares have been accepted on the chain, "+
-					"total # of submissions = %d", len(election.PubSharesArchive.PubSharesSubmissions))
+					"total # of submissions = %d, "+
+					"pubShares: %v", len(election.PubSharesArchive.PubSharesSubmissions), publicShares)
 				return nil
 			}
 
@@ -789,6 +790,7 @@ func makeTx(election *etypes.Election, pubShares etypes.PubShares, manager txn.M
 	pubShareTx := etypes.RegisterPubSharesTransaction{
 		ElectionID: election.ElectionID,
 		PubShares:  pubShares,
+		Round:      len(election.PubSharesArchive.PubSharesSubmissions),
 	}
 
 	electionIDBuff, err := hex.DecodeString(election.ElectionID)
