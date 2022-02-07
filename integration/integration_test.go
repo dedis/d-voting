@@ -116,14 +116,19 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	err = sActor.Shuffle(electionID)
 	require.NoError(t, err)
 
-	// ##### DECRYPT BALLOTS #####
-	time.Sleep(time.Second * 1)
-
-	t.Logf("decrypting")
+	// ##### SUBMIT PUBLIC SHARES #####
+	time.Sleep(time.Second * 5)
 
 	election, err = getElection(electionID, nodes[0].GetOrdering())
 	require.NoError(t, err)
+	err = actor.RequestPubShares()
+	require.NoError(t, err)
 
+	// ##### DECRYPT BALLOTS #####
+	time.Sleep(time.Second * 2 * time.Duration(numNodes))
+
+	election, err = getElection(electionID, nodes[0].GetOrdering())
+	require.NoError(t, err)
 	err = decryptBallots(m, actor, election)
 	require.NoError(t, err)
 
