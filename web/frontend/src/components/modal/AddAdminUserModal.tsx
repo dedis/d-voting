@@ -47,7 +47,7 @@ export default function AddAdminUserModal({ open, setOpen }) {
       body: JSON.stringify({ sciper: sciperValue, role: roleValue }),
     };
     fetch(ADD_API_ROLE, requestOptions).then((data) => {
-      if (data.status == 200) {
+      if (data.status === 200) {
         alert("User added successfully");
         window.location = "/admin";
       } else {

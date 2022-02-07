@@ -1,5 +1,4 @@
-import { FC } from "react";
-import "i18n";
+import React, { FC } from "react";
 import { useTranslation } from "react-i18next";
 
 const Page404: FC = () => {
