@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -20,7 +19,6 @@ import (
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg"
 	_ "github.com/dedis/d-voting/services/dkg/pedersen/json"
 	"github.com/dedis/d-voting/services/shuffle"
@@ -36,12 +34,19 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
 
-	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	sjson "go.dedis.ch/dela/serde/json"
 )
 
-var serdecontext = serde.WithFactory(serde.WithFactory(sjson.NewContext(), types.ElectionKey{},
-	types.ElectionFactory{}), ctypes.RosterKey{}, fake.Factory{})
+var serdecontext serde.Context
+
+func init() {
+	ctx := sjson.NewContext()
+	ctx = serde.WithFactory(ctx, types.ElectionKey{}, types.ElectionFactory{})
+	ctx = serde.WithFactory(ctx, types.CiphervoteKey{}, types.CiphervoteFactory{})
+	ctx = serde.WithFactory(ctx, types.TransactionKey{}, types.TransactionFactory{})
+
+	serdecontext = ctx
+}
 
 // Check the shuffled votes versus the cast votes on a few nodes
 func TestIntegration_ThreeVotesScenario(t *testing.T) {
@@ -53,7 +58,7 @@ func TestIntegration_ThreeVotesScenario(t *testing.T) {
 	// make tests reproducible
 	rand.Seed(1)
 
-	delaPkg.Logger = delaPkg.Logger.Level(zerolog.Disabled)
+	delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 
 	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-three-votes")
 	require.NoError(t, err)
@@ -401,21 +406,22 @@ func createElection(m txManager, title string, admin string) ([]byte, error) {
 		},
 	}
 
-	createSimpleElectionRequest := types.CreateElectionRequest{
+	createElection := types.CreateElection{
 		Configuration: configuration,
 		AdminID:       admin,
 	}
 
-	createElectionBuf, err := json.Marshal(createSimpleElectionRequest)
+	data, err := createElection.Serialize(serdecontext)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to create createElectionBuf: %v", err)
+		return nil, xerrors.Errorf("failed to serialize: %v", err)
 	}
 
 	args := []txn.Arg{
 		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.ElectionArg, Value: createElectionBuf},
+		{Key: evoting.ElectionArg, Value: data},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCreateElection)},
 	}
+
 	txID, err := m.addAndWait(args...)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to addAndWait: %v", err)
@@ -430,19 +436,21 @@ func createElection(m txManager, title string, admin string) ([]byte, error) {
 }
 
 func openElection(m txManager, electionID []byte) error {
-	openElectTransaction := &types.OpenElectionTransaction{
+	openElection := &types.OpenElection{
 		ElectionID: hex.EncodeToString(electionID),
 	}
-	openElectionBuf, err := json.Marshal(openElectTransaction)
+
+	data, err := openElection.Serialize(serdecontext)
 	if err != nil {
-		return xerrors.Errorf("failed to Marshall: %v", err)
+		return xerrors.Errorf("failed to serialize open election: %v", err)
 	}
 
 	args := []txn.Arg{
 		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.ElectionArg, Value: openElectionBuf},
+		{Key: evoting.ElectionArg, Value: data},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdOpenElection)},
 	}
+
 	_, err = m.addAndWait(args...)
 	if err != nil {
 		return xerrors.Errorf("failed to addAndWait: %v", err)
@@ -503,21 +511,24 @@ func castVotesRandomly(m txManager, actor dkg.Actor, electionID []byte, numberOf
 		}
 
 		userID := "user " + strconv.Itoa(i)
-		castVoteTransaction := types.CastVoteTransaction{
+
+		castVote := types.CastVote{
 			ElectionID: hex.EncodeToString(electionID),
 			UserID:     userID,
 			Ballot:     ballot,
 		}
-		castedVoteBuf, err := json.Marshal(castVoteTransaction)
+
+		data, err := castVote.Serialize(serdecontext)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to Marshall vote transaction: %v", err)
+			return nil, xerrors.Errorf("failed to serialize cast vote: %v", err)
 		}
 
 		args := []txn.Arg{
 			{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-			{Key: evoting.ElectionArg, Value: castedVoteBuf},
+			{Key: evoting.ElectionArg, Value: data},
 			{Key: evoting.CmdArg, Value: []byte(evoting.CmdCastVote)},
 		}
+
 		_, err = m.addAndWait(args...)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to addAndWait: %v", err)
@@ -529,9 +540,9 @@ func castVotesRandomly(m txManager, actor dkg.Actor, electionID []byte, numberOf
 	return votes, nil
 }
 
-func marshallBallot(vote io.Reader, actor dkg.Actor, chunks int) (types.EncryptedBallot, error) {
+func marshallBallot(vote io.Reader, actor dkg.Actor, chunks int) (types.Ciphervote, error) {
 
-	var ballot = make([]types.Ciphertext, chunks)
+	var ballot = make([]types.EGPair, chunks)
 
 	buf := make([]byte, 29)
 
@@ -545,39 +556,36 @@ func marshallBallot(vote io.Reader, actor dkg.Actor, chunks int) (types.Encrypte
 		}
 
 		K, C, _, err = actor.Encrypt(buf[:n])
-
 		if err != nil {
-			return types.EncryptedBallot{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
+			return types.Ciphervote{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
 		}
 
-		var chunk types.Ciphertext
-
-		err = chunk.FromPoints(K, C)
-		if err != nil {
-			return types.EncryptedBallot{}, err
+		ballot[i] = types.EGPair{
+			K: K,
+			C: C,
 		}
-
-		ballot[i] = chunk
 	}
 
 	return ballot, nil
 }
 
 func closeElection(m txManager, electionID []byte, admin string) error {
-	closeElectTransaction := &types.CloseElectionTransaction{
+	closeElection := &types.CloseElection{
 		ElectionID: hex.EncodeToString(electionID),
 		UserID:     admin,
 	}
-	closeElectionBuf, err := json.Marshal(closeElectTransaction)
+
+	data, err := closeElection.Serialize(serdecontext)
 	if err != nil {
-		return xerrors.Errorf("failed to Marshall closeElection: %v", err)
+		return xerrors.Errorf("failed to serialize open election: %v", err)
 	}
 
 	args := []txn.Arg{
 		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.ElectionArg, Value: closeElectionBuf},
+		{Key: evoting.ElectionArg, Value: data},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCloseElection)},
 	}
+
 	_, err = m.addAndWait(args...)
 	if err != nil {
 		return xerrors.Errorf("failed to Marshall closeElection: %v", err)
@@ -610,6 +618,7 @@ func initDkg(nodes []dVotingCosiDela, electionID []byte) (dkg.Actor, error) {
 
 func initShuffle(nodes []dVotingCosiDela) (shuffle.Actor, error) {
 	var sActor shuffle.Actor
+
 	for _, node := range nodes {
 		client := client{
 			srvc: node.GetOrdering(),
@@ -618,6 +627,7 @@ func initShuffle(nodes []dVotingCosiDela) (shuffle.Actor, error) {
 
 		var err error
 		shuffler := node.GetShuffle()
+
 		sActor, err = shuffler.Listen(signed.NewManager(node.GetShuffleSigner(), client))
 		if err != nil {
 			return nil, xerrors.Errorf("failed to init Shuffle: %v", err)
@@ -632,10 +642,12 @@ func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error
 		return xerrors.Errorf("cannot decrypt: shuffle is not finished")
 	}
 
-	X, Y, err := election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots.GetElGPairs()
-	if err != nil {
-		return xerrors.Errorf("failed to get Elg pairs")
-	}
+	X, Y := types.CiphervotesToPairs(election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots)
+
+	// X, Y, err := election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots.GetElGPairs()
+	// if err != nil {
+	// 	return xerrors.Errorf("failed to get Elg pairs")
+	// }
 
 	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
 	wrongBallots := 0
@@ -648,11 +660,13 @@ func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error
 			if err != nil {
 				return xerrors.Errorf("failed to decrypt (K,C): %v", err)
 			}
+
 			marshalledBallot.Write(chunk)
 		}
 
 		var ballot types.Ballot
-		err = ballot.Unmarshal(marshalledBallot.String(), election)
+
+		err := ballot.Unmarshal(marshalledBallot.String(), election)
 		if err != nil {
 			wrongBallots++
 		}
@@ -660,22 +674,23 @@ func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error
 		decryptedBallots = append(decryptedBallots, ballot)
 	}
 
-	decryptBallotsTransaction := types.DecryptBallotsTransaction{
+	decryptBallots := types.DecryptBallots{
 		ElectionID:       election.ElectionID,
 		UserID:           election.AdminID,
 		DecryptedBallots: decryptedBallots,
 	}
 
-	decryptBallotsBuf, err := json.Marshal(decryptBallotsTransaction)
+	data, err := decryptBallots.Serialize(serdecontext)
 	if err != nil {
-		return xerrors.Errorf("failed to marshal DecryptBallotsTransaction: %v", err)
+		return xerrors.Errorf("failed to serialize ballots: %v", err)
 	}
 
 	args := []txn.Arg{
 		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.ElectionArg, Value: decryptBallotsBuf},
+		{Key: evoting.ElectionArg, Value: data},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdDecryptBallots)},
 	}
+
 	_, err = m.addAndWait(args...)
 	if err != nil {
 		return xerrors.Errorf("failed to addAndWait: %v", err)

@@ -36,8 +36,9 @@ var dummyElectionIDBuff = []byte("dummyID")
 var fakeElectionID = hex.EncodeToString(dummyElectionIDBuff)
 var fakeCommonSigner = bls.NewSigner()
 
-var context = serde.WithFactory(serde.WithFactory(sjson.NewContext(), types.ElectionKey{},
-	types.ElectionFactory{}), ctypes.RosterKey{}, fakeAuthorityFactory{})
+var context = serde.WithFactory(
+	serde.WithFactory(sjson.NewContext(), types.ElectionKey{},
+		types.ElectionFactory{}), ctypes.RosterKey{}, fakeAuthorityFactory{})
 
 func fakeProver(proof.Suite, string, proof.Verifier, []byte) error {
 	return nil
@@ -161,7 +162,7 @@ func TestCommand_CastVote(t *testing.T) {
 	dummyCastVoteTransaction := types.CastVoteTransaction{
 		ElectionID: fakeElectionID,
 		UserID:     "dummyUserId",
-		Ballot: types.EncryptedBallot{types.Ciphertext{
+		Ballot: types.Suffragia{types.Ciphertext{
 			K: []byte{},
 			C: []byte{},
 		}},

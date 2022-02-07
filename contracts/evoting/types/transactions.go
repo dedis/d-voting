@@ -2,13 +2,25 @@ package types
 
 import (
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
+	"io"
 
+	"go.dedis.ch/dela/serde"
+	"go.dedis.ch/dela/serde/registry"
 	"golang.org/x/xerrors"
 )
 
+var transactionFormats = registry.NewSimpleRegistry()
+
+// TransactionKey is the key for the transaction factory
+type TransactionKey struct{}
+
+// RegisterTransactionFormat registers the engine for the provided format
+func RegisterTransactionFormat(f serde.Format, e serde.FormatEngine) {
+	transactionFormats.Register(f, e)
+}
+
+// ElectionsMetadata ...
 type ElectionsMetadata struct {
 	ElectionsIDs ElectionIDs
 }
@@ -38,33 +50,114 @@ func (e *ElectionIDs) Add(id string) error {
 	return nil
 }
 
-type CreateElectionTransaction struct {
+// TransactionFactory provides the mean to deserialize a transaction.
+//
+// - implements serde.Factory
+type TransactionFactory struct{}
+
+// Deserialize implements serde.Factory
+func (TransactionFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
+	format := transactionFormats.Get(ctx.GetFormat())
+
+	message, err := format.Decode(ctx, data)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to decode: %v", err)
+	}
+
+	return message, nil
+}
+
+// CreateElection ...
+//
+// - implements serde.Message
+type CreateElection struct {
 	Configuration Configuration
 	AdminID       string
 }
 
-type OpenElectionTransaction struct {
+// Serialize implements serde.Message
+func (ce CreateElection) Serialize(ctx serde.Context) ([]byte, error) {
+	format := transactionFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, ce)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to encode create election: %v", err)
+	}
+
+	return data, nil
+}
+
+// OpenElection ...
+//
+// - implements serde.Message
+type OpenElection struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 }
 
-type CastVoteTransaction struct {
+// Serialize implements serde.Message
+func (oe OpenElection) Serialize(ctx serde.Context) ([]byte, error) {
+	format := transactionFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, oe)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to encode open election: %v", err)
+	}
+
+	return data, nil
+}
+
+// CastVote ...
+//
+// - implements serde.Message
+type CastVote struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 	UserID     string
-	Ballot     EncryptedBallot
+	Ballot     Ciphervote
 }
 
-type CloseElectionTransaction struct {
+// Serialize implements serde.Message
+func (cv CastVote) Serialize(ctx serde.Context) ([]byte, error) {
+	format := transactionFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, cv)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to encode cast vote: %v", err)
+	}
+
+	return data, nil
+}
+
+// CloseElection ...
+//
+// - implements serde.Message
+type CloseElection struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 	UserID     string
 }
 
-type ShuffleBallotsTransaction struct {
+// Serialize implements serde.Message
+func (ce CloseElection) Serialize(ctx serde.Context) ([]byte, error) {
+	format := transactionFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, ce)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to encode close election: %v", err)
+	}
+
+	return data, nil
+}
+
+// ShuffleBallots ...
+//
+// - implements serde.Message
+// - implements serde.Fingerprinter
+type ShuffleBallots struct {
 	ElectionID      string
 	Round           int
-	ShuffledBallots EncryptedBallots
+	ShuffledBallots []Ciphervote
 	// RandomVector is the vector to be used to generate the proof of the next
 	// shuffle
 	RandomVector RandomVector
@@ -77,17 +170,59 @@ type ShuffleBallotsTransaction struct {
 	PublicKey []byte
 }
 
-type DecryptBallotsTransaction struct {
+// Serialize implements serde.Message
+func (sb ShuffleBallots) Serialize(ctx serde.Context) ([]byte, error) {
+	format := transactionFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, sb)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to encode shuffle ballots: %v", err)
+	}
+
+	return data, nil
+}
+
+// DecryptBallots ...
+//
+// - implements serde.Message
+type DecryptBallots struct {
 	// ElectionID is hex-encoded
 	ElectionID       string
 	UserID           string
 	DecryptedBallots []Ballot
 }
 
-type CancelElectionTransaction struct {
+// Serialize implements serde.Message
+func (db DecryptBallots) Serialize(ctx serde.Context) ([]byte, error) {
+	format := transactionFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, db)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to encode decrypt ballot: %v", err)
+	}
+
+	return data, nil
+}
+
+// CancelElection ...
+//
+// - implements serde.Message
+type CancelElection struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 	UserID     string
+}
+
+// Serialize implements serde.Message
+func (ce CancelElection) Serialize(ctx serde.Context) ([]byte, error) {
+	format := transactionFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, ce)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to encode cancel election: %v", err)
+	}
+
+	return data, nil
 }
 
 // RandomID returns the hex encoding of a randomly created 32 byte ID.
@@ -101,19 +236,16 @@ func RandomID() (string, error) {
 	return hex.EncodeToString(buf), nil
 }
 
-// HashShuffle hashes a given shuffle so that it can be signed or a signature
-// can be verified, using a common template. Election is NOT hex encoded.
-func (s ShuffleBallotsTransaction) HashShuffle(electionID []byte) ([]byte, error) {
-	hash := sha256.New()
+// Fingerprint implements serde.Fingerprinter
+func (sb ShuffleBallots) Fingerprint(writer io.Writer) error {
+	writer.Write([]byte(sb.ElectionID))
 
-	hash.Write(electionID)
-
-	shuffledBallots, err := json.Marshal(s.ShuffledBallots)
-	if err != nil {
-		return nil, xerrors.Errorf("could not marshal shuffled ballots : %v", err)
+	for _, ballot := range sb.ShuffledBallots {
+		err := ballot.FingerPrint(writer)
+		if err != nil {
+			return xerrors.Errorf("failed to fingerprint shuffled ballot: %v", err)
+		}
 	}
 
-	hash.Write(shuffledBallots)
-
-	return hash.Sum(nil), nil
+	return nil
 }

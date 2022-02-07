@@ -13,7 +13,7 @@ var suite = suites.MustFind("Ed25519")
 
 func NewElection(electionID string) types.Election {
 	k := 3
-	KsMarshalled, CsMarshalled, pubKey := NewKCPointsMarshalled(k)
+	Ks, Cs, pubKey := NewKCPointsMarshalled(k)
 
 	election := types.Election{
 		Configuration: types.Configuration{
@@ -23,8 +23,8 @@ func NewElection(electionID string) types.Election {
 		AdminID:    "dummyAdminID",
 		Status:     types.Closed,
 		Pubkey:     pubKey,
-		PublicBulletinBoard: types.PublicBulletinBoard{
-			Ballots: types.EncryptedBallots{},
+		Suffragia: types.Suffragia{
+			Ciphervotes: []types.Ciphervote{},
 		},
 		ShuffleInstances: []types.ShuffleInstance{},
 		DecryptedBallots: nil,
@@ -32,23 +32,23 @@ func NewElection(electionID string) types.Election {
 	}
 
 	for i := 0; i < k; i++ {
-		ballot := types.Ciphertext{
-			K: KsMarshalled[i],
-			C: CsMarshalled[i],
+		ballot := types.EGPair{
+			K: Ks[i],
+			C: Cs[i],
 		}
-		election.PublicBulletinBoard.CastVote("dummyUser"+strconv.Itoa(i), []types.Ciphertext{ballot})
+		election.Suffragia.CastVote("dummyUser"+strconv.Itoa(i), types.Ciphervote{ballot})
 	}
 
 	return election
 }
 
-func NewKCPointsMarshalled(k int) ([][]byte, [][]byte, kyber.Point) {
+func NewKCPointsMarshalled(k int) ([]kyber.Point, []kyber.Point, kyber.Point) {
 	RandomStream := suite.RandomStream()
 	h := suite.Scalar().Pick(RandomStream)
 	pubKey := suite.Point().Mul(h, nil)
 
-	KsMarshalled := make([][]byte, 0, k)
-	CsMarshalled := make([][]byte, 0, k)
+	Ks := make([]kyber.Point, 0, k)
+	Cs := make([]kyber.Point, 0, k)
 
 	for i := 0; i < k; i++ {
 		// Embed the message into a curve point
@@ -61,11 +61,8 @@ func NewKCPointsMarshalled(k int) ([][]byte, [][]byte, kyber.Point) {
 		S := suite.Point().Mul(k, pubKey)      // ephemeral DH shared secret
 		C := S.Add(S, M)                       // message blinded with secret
 
-		Kmarshalled, _ := K.MarshalBinary()
-		Cmarshalled, _ := C.MarshalBinary()
-
-		KsMarshalled = append(KsMarshalled, Kmarshalled)
-		CsMarshalled = append(CsMarshalled, Cmarshalled)
+		Ks = append(Ks, K)
+		Cs = append(Cs, C)
 	}
-	return KsMarshalled, CsMarshalled, pubKey
+	return Ks, Cs, pubKey
 }

@@ -447,13 +447,9 @@ func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionID strin
 	}
 
 	for _, ct := range election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots {
-		for _, ciphertext := range ct {
-			kPrime, cPrime, err := ciphertext.GetPoints()
-			if err != nil {
-				return false, xerrors.Errorf("failed to get points: %v", err)
-			}
+		for _, egpair := range ct {
 
-			if kPrime.Equal(K) && cPrime.Equal(C) {
+			if egpair.K.Equal(K) && egpair.C.Equal(C) {
 				return true, nil
 			}
 		}

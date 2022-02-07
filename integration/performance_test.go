@@ -227,7 +227,7 @@ func castVotesNChunks(m txManager, actor dkg.Actor, electionID []byte, numberOfV
 	for i := 0; i < numberOfVotes; i++ {
 
 		userID := "user " + strconv.Itoa(i)
-		castVoteTransaction := types.CastVoteTransaction{
+		castVoteTransaction := types.CastVote{
 			ElectionID: hex.EncodeToString(electionID),
 			UserID:     userID,
 			Ballot:     ballot,

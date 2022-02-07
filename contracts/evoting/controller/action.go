@@ -32,8 +32,11 @@ import (
 	"go.dedis.ch/dela/crypto/loader"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/proxy"
+	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
+
+	sjson "go.dedis.ch/dela/serde/json"
 )
 
 const token = "token"
@@ -109,8 +112,11 @@ func (a *registerAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve proxy: %v", err)
 	}
 
+	serdecontext := sjson.NewContext()
+	serdecontext = serde.WithFactory(serdecontext, types.CiphervoteKey{}, types.CiphervoteFactory{})
+
 	registerVotingProxy(proxy, signer, client, dkg, shuffleActor,
-		orderingSvc, p, m)
+		orderingSvc, p, m, serdecontext)
 
 	return nil
 }
@@ -558,10 +564,10 @@ func (a *scenarioTestPart2Action) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to unmarshal election: %v", err)
 	}
 
-	dela.Logger.Info().Msg("Length encrypted ballots : " + strconv.Itoa(len(election.PublicBulletinBoard.Ballots)))
-	dela.Logger.Info().Msgf("Ballot of user1 : %s", election.PublicBulletinBoard.Ballots[0])
-	dela.Logger.Info().Msgf("Ballot of user2 : %s", election.PublicBulletinBoard.Ballots[1])
-	dela.Logger.Info().Msgf("Ballot of user3 : %s", election.PublicBulletinBoard.Ballots[2])
+	dela.Logger.Info().Msg("Length encrypted ballots : " + strconv.Itoa(len(election.Suffragia.Ciphervotes)))
+	dela.Logger.Info().Msgf("Ballot of user1 : %s", election.Suffragia.Ciphervotes[0])
+	dela.Logger.Info().Msgf("Ballot of user2 : %s", election.Suffragia.Ciphervotes[1])
+	dela.Logger.Info().Msgf("Ballot of user3 : %s", election.Suffragia.Ciphervotes[2])
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 
@@ -664,7 +670,7 @@ func (a *scenarioTestPart2Action) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 	dela.Logger.Info().Msg("Number of shuffled ballots : " + strconv.Itoa(len(election.ShuffleInstances)))
-	dela.Logger.Info().Msg("Number of encrypted ballots : " + strconv.Itoa(len(election.PublicBulletinBoard.Ballots)))
+	dela.Logger.Info().Msg("Number of encrypted ballots : " + strconv.Itoa(len(election.Suffragia.Ciphervotes)))
 
 	// ###################################### DECRYPT BALLOTS ##################
 
@@ -1171,7 +1177,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to unmarshal election: %v", err)
 	}
 
-	encryptedBallots := election.PublicBulletinBoard.Ballots
+	encryptedBallots := election.Suffragia.Ciphervotes
 	dela.Logger.Info().Msg("Length encrypted ballots: " + strconv.Itoa(len(encryptedBallots)))
 	dela.Logger.Info().Msgf("Ballot of user1: %s", encryptedBallots[0])
 	dela.Logger.Info().Msgf("Ballot of user2: %s", encryptedBallots[1])
@@ -1278,7 +1284,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 	dela.Logger.Info().Msg("Number of shuffled ballots : " + strconv.Itoa(len(election.ShuffleInstances)))
-	dela.Logger.Info().Msg("Number of encrypted ballots : " + strconv.Itoa(len(election.PublicBulletinBoard.Ballots)))
+	dela.Logger.Info().Msg("Number of encrypted ballots : " + strconv.Itoa(len(election.Suffragia.Ciphervotes)))
 
 	// ###################################### DECRYPT BALLOTS ##################
 
@@ -1394,9 +1400,9 @@ func encodeID(ID string) types.ID {
 	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
 }
 
-func marshallBallot(vote_string string, actor dkg.Actor, chunks int) (types.EncryptedBallot, error) {
+func marshallBallot(vote_string string, actor dkg.Actor, chunks int) (types.Ciphervote, error) {
 
-	var ballot = make([]types.Ciphertext, chunks)
+	var ballot = make(types.Ciphervote, chunks)
 	vote := strings.NewReader(vote_string)
 
 	buf := make([]byte, 29)
@@ -1413,17 +1419,13 @@ func marshallBallot(vote_string string, actor dkg.Actor, chunks int) (types.Encr
 		K, C, _, err = actor.Encrypt(buf[:n])
 
 		if err != nil {
-			return types.EncryptedBallot{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
+			return types.Ciphervote{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
 		}
 
-		var chunk types.Ciphertext
-
-		err = chunk.FromPoints(K, C)
-		if err != nil {
-			return types.EncryptedBallot{}, err
+		ballot[i] = types.EGPair{
+			K: K,
+			C: C,
 		}
-
-		ballot[i] = chunk
 	}
 
 	return ballot, nil

@@ -17,7 +17,7 @@ import (
 	"golang.org/x/xerrors"
 
 	// Register the JSON format for the election
-	_ "github.com/dedis/d-voting/contracts/evoting/types/json"
+	_ "github.com/dedis/d-voting/contracts/evoting/json"
 )
 
 const (
@@ -112,8 +112,10 @@ func NewContract(accessKey, rosterKey []byte, srvc access.Service,
 	pedersen dkg.DKG, rosterFac authority.Factory) Contract {
 
 	ctx := json.NewContext()
-	ctx = serde.WithFactory(ctx, types.ElectionKey{}, types.ElectionFactory{})
 	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, rosterFac)
+	ctx = serde.WithFactory(ctx, types.ElectionKey{}, types.ElectionFactory{})
+	ctx = serde.WithFactory(ctx, types.CiphervoteKey{}, types.CiphervoteFactory{})
+	ctx = serde.WithFactory(ctx, types.TransactionKey{}, types.TransactionFactory{})
 
 	contract := Contract{
 		access:    srvc,
