@@ -1,16 +1,19 @@
-import { FC } from "react";
+import React, { FC } from "react";
 import { saveAs } from "file-saver";
 import PropTypes from "prop-types";
 import { useTranslation } from "react-i18next";
 
-const DownloadResult: FC = ({ resultData: string }) => {
+type DownloadResultProps = {
+  resultData: string;
+};
+
+const DownloadResult: FC<DownloadResultProps> = (resultData) => {
   const { t } = useTranslation();
   const fileName = "result.json";
 
   // Create a blob of the data
   const fileToSave = new Blob([JSON.stringify({ Result: resultData })], {
     type: "application/json",
-    name: fileName,
   });
 
   const handleClick = () => {
@@ -25,9 +28,11 @@ const DownloadResult: FC = ({ resultData: string }) => {
     </div>
   );
 };
+
 DownloadResult.propTypes = {
-  resultData: PropTypes.object,
+  resultData: PropTypes.string.isRequired,
 };
+
 export default DownloadResult;
 
 //https://stackoverflow.com/questions/19721439/download-json-object-as-a-file-from-browser

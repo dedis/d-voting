@@ -81,7 +81,6 @@ const SimpleTable: FC<SimpleTableProps> = ({
                             className="election-link"
                             to={{
                               pathname: `/${pathLink}/${row[1]}`,
-                              data: row[1],
                             }}
                           >
                             {row[0]}

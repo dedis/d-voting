@@ -30,7 +30,12 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }: any) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
-  const columns = [
+  const columns: Array<{
+    id: string;
+    label: string;
+    minWidth: number;
+    align: "left";
+  }> = [
     {
       id: "title",
       label: t("title"),
@@ -68,10 +73,7 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }: any) => {
     elections.map((elec) => {
       let { title, id, status, setStatus } = ElectionFields(elec);
       let link = (
-        <Link
-          className="election-link"
-          to={{ pathname: `/elections/${id}`, data: id }}
-        >
+        <Link className="election-link" to={{ pathname: `/elections/${id}` }}>
           {title}
         </Link>
       );
@@ -140,7 +142,7 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }: any) => {
           count={rows.length}
           rowsPerPage={rowsPerPage}
           page={page}
-          onChangePage={handleChangePage}
+          onPageChange={handleChangePage}
           onChangeRowsPerPage={handleChangeRowsPerPage}
           labelDisplayedRows={({ from, to, count }) => {
             return "" + from + "-" + to + t("of") + count;

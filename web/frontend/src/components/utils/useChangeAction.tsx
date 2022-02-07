@@ -54,7 +54,7 @@ const useChangeAction = (
       setUserConfirmedAction={setUserConfirmedCanceling}
     />
   );
-  const [postError, setPostError] = useState(t("operationFailure"));
+  const [postError, setPostError] = useState(t("operationFailure") as string);
   const { postData } = usePostCall(setPostError);
   const simplePostRequest = {
     method: "POST",
@@ -218,7 +218,7 @@ const useChangeAction = (
           <span>
             <Link
               className="election-link"
-              to={{ pathname: `/elections/${electionID}`, data: electionID }}
+              to={{ pathname: `/elections/${electionID}` }}
             >
               <button className="election-btn">{t("seeResult")}</button>
             </Link>

@@ -1,4 +1,4 @@
-import { FC } from "react";
+import React, { FC } from "react";
 import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import { useTranslation } from "react-i18next";
@@ -7,7 +7,11 @@ import Result from "./Result";
 import useElection from "../utils/useElection";
 import "../../styles/ResultPage.css";
 
-const ResultPage: FC = (props) => {
+type ResultPageProps = {
+  location?: any;
+};
+
+const ResultPage: FC<ResultPageProps> = (props) => {
   const { t } = useTranslation();
   //props.location.data = id of the election
   const token = sessionStorage.getItem("token");
@@ -34,7 +38,9 @@ const ResultPage: FC = (props) => {
     </div>
   );
 };
+
 ResultPage.propTypes = {
   location: PropTypes.any,
 };
+
 export default ResultPage;

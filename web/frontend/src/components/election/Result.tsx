@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import LinearProgress from "@material-ui/core/LinearProgress";
 import Typography from "@material-ui/core/Typography";
 import PropTypes from "prop-types";
@@ -10,7 +10,8 @@ import "../../styles/Result.css";
  the result as total percentage of the votes */
 const Result = ({ resultData, candidates }) => {
   const [dataToDownload, setDataToDownload] = useState(null);
-  const countBallots = (result) => {
+
+  const countBallots = (result): Record<any, number> => {
     let resultMap = {};
     for (var i = 0; i < candidates.length; i++) {
       resultMap[candidates[i]] = 0;
@@ -24,9 +25,9 @@ const Result = ({ resultData, candidates }) => {
   const displayPercentage = (result) => {
     let resultMap = countBallots(result);
     const sortedResultMap = Object.fromEntries(
-      Object.entries(resultMap).sort(function ([, a], [, b]) {
-        return b - a;
-      })
+      Object.entries(resultMap).sort(
+        ([, aCount], [, bCount]) => bCount - aCount
+      )
     );
     if (dataToDownload === null) {
       setDataToDownload(sortedResultMap);

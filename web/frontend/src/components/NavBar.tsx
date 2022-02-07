@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import React, { FC, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -96,8 +96,11 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
                   <NavLink
                     title={t("navBarCreate")}
                     to="/create-election"
-                    className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-                    activeClassName={"bg-gray-900 text-white"}
+                    className={(isActive) =>
+                      isActive
+                        ? "bg-gray-900 text-white"
+                        : "text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                    }
                   >
                     {t("navBarCreate")}
                   </NavLink>
@@ -107,8 +110,11 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
                   <NavLink
                     to="/elections"
                     title={t("navBarCreate")}
-                    className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-                    activeClassName={"bg-gray-900 text-white"}
+                    className={(isActive) =>
+                      isActive
+                        ? "bg-gray-900 text-white"
+                        : "text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                    }
                   >
                     {t("navBarStatus")}
                   </NavLink>
@@ -117,8 +123,11 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
                 {role === "admin" && (
                   <NavLink
                     to="/admin"
-                    className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-                    activeClassName={"bg-gray-900 text-white"}
+                    className={(isActive) =>
+                      isActive
+                        ? "bg-gray-900 text-white"
+                        : "text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                    }
                   >
                     Admin
                   </NavLink>
@@ -126,29 +135,38 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
 
                 <NavLink
                   to="/vote"
-                  className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-                  activeClassName={"bg-gray-900 text-white"}
+                  className={(isActive) =>
+                    isActive
+                      ? "bg-gray-900 text-white"
+                      : "text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                  }
                 >
                   {t("navBarVote")}
                 </NavLink>
 
                 <NavLink
                   to="/results"
-                  className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-                  activeClassName={"bg-gray-900 text-white"}
+                  className={(isActive) =>
+                    isActive
+                      ? "bg-gray-900 text-white"
+                      : "text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                  }
                 >
                   {t("navBarResult")}
                 </NavLink>
 
                 <NavLink
                   to="/about"
-                  className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-                  activeClassName={"bg-gray-900 text-white"}
+                  className={(isActive) =>
+                    isActive
+                      ? "bg-gray-900 text-white"
+                      : "text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                  }
                 >
                   {t("navBarAbout")}
                 </NavLink>
 
-                {sciper != 0 ? (
+                {sciper !== 0 ? (
                   <li>
                     Logged as {firstname} {lastname}
                     <br />
@@ -210,13 +228,13 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
                 role="menu"
                 aria-orientation="vertical"
                 aria-labelledby="user-menu-button"
-                tabIndex="-1"
+                tabIndex={-1}
               >
                 <a
                   href="#"
                   className="block px-4 py-2 text-sm text-gray-700"
                   role="menuitem"
-                  tabIndex="-1"
+                  tabIndex={-1}
                   id="user-menu-item-0"
                 >
                   Your Profile
@@ -225,7 +243,7 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
                   href="#"
                   className="block px-4 py-2 text-sm text-gray-700"
                   role="menuitem"
-                  tabIndex="-1"
+                  tabIndex={-1}
                   id="user-menu-item-1"
                 >
                   Settings
@@ -234,7 +252,7 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
                   href="#"
                   className="block px-4 py-2 text-sm text-gray-700"
                   role="menuitem"
-                  tabIndex="-1"
+                  tabIndex={-1}
                   id="user-menu-item-2"
                 >
                   Sign out
@@ -254,8 +272,11 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
           <NavLink
             to="/create-election"
             title={t("navBarCreate")}
-            className="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
-            activeClassName={"bg-gray-900 text-white px-3 py-2"}
+            className={(isActive) =>
+              isActive
+                ? "bg-gray-900 text-white px-3 py-2"
+                : "text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
+            }
           >
             {t("navBarCreate")}
           </NavLink>
@@ -263,32 +284,44 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
           <NavLink
             to="/elections"
             title={t("navBarCreate")}
-            className="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
-            activeClassName={"bg-gray-900 text-white px-3 py-2"}
+            className={(isActive) =>
+              isActive
+                ? "bg-gray-900 text-white px-3 py-2"
+                : "text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
+            }
           >
             {t("navBarStatus")}
           </NavLink>
 
           <NavLink
             to="/vote"
-            className="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
-            activeClassName={"bg-gray-900 text-white px-3 py-2"}
+            className={(isActive) =>
+              isActive
+                ? "bg-gray-900 text-white px-3 py-2"
+                : "text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
+            }
           >
             {t("navBarVote")}
           </NavLink>
 
           <NavLink
             to="/results"
-            className="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
-            activeClassName={"bg-gray-900 text-white px-3 py-2"}
+            className={(isActive) =>
+              isActive
+                ? "bg-gray-900 text-white px-3 py-2"
+                : "text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
+            }
           >
             {t("navBarResult")}
           </NavLink>
 
           <NavLink
             to="/about"
-            className="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
-            activeClassName={"bg-gray-900 text-white px-3 py-2"}
+            className={(isActive) =>
+              isActive
+                ? "bg-gray-900 text-white px-3 py-2"
+                : "text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
+            }
           >
             {t("navBarAbout")}
           </NavLink>
@@ -345,7 +378,7 @@ const LanguageSelector = () => {
         role="menu"
         aria-orientation="vertical"
         aria-labelledby="menu-button"
-        tabIndex="-1"
+        tabIndex={-1}
       >
         <div className="py-1" role="none">
           <select

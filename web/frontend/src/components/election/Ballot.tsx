@@ -1,8 +1,9 @@
 import React, { FC, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import kyber from "@dedis/kyber";
 import PropTypes from "prop-types";
+import { Buffer } from "buffer";
 
 import useElection from "../utils/useElection";
 import usePostCall from "../utils/usePostCall";
@@ -13,19 +14,19 @@ import { encryptVote } from "./VoteEncrypt";
 import "../../styles/Ballot.css";
 
 const Ballot: FC = (props) => {
-  //props.location.data = id of the election
   const { t } = useTranslation();
+  const { electionId } = useParams();
   const token = sessionStorage.getItem("token");
   const { loading, title, candidates, electionID, status, pubKey } =
-    useElection(props.location.data, token);
+    useElection(electionId, token);
   const [choice, setChoice] = useState("");
-  const [userErrors, setUserErrors] = useState({});
+  const [userErrors, setUserErrors] = useState({ noCandidate: "" });
   const edCurve = kyber.curve.newCurve("edwards25519");
   const [postRequest, setPostRequest] = useState(null);
   const [postError, setPostError] = useState(null);
   const { postData } = usePostCall(setPostError);
   const [showModal, setShowModal] = useState(false);
-  const [modalText, setModalText] = useState(t("voteSuccess"));
+  const [modalText, setModalText] = useState(t("voteSuccess") as string);
 
   useEffect(() => {
     if (postRequest !== null) {
@@ -61,7 +62,7 @@ const Ballot: FC = (props) => {
     let vote = JSON.stringify({ K: Array.from(K), C: Array.from(C) });
     ballot["ElectionID"] = electionID;
     ballot["UserId"] = sessionStorage.getItem("id");
-    ballot["Ballot"] = [...Buffer.from(vote)];
+    ballot["Ballot"] = Buffer.from(vote);
     ballot["Token"] = token;
     return ballot;
   };
@@ -83,14 +84,14 @@ const Ballot: FC = (props) => {
   };
 
   const handleClick = () => {
-    let errors = {};
     if (choice === "") {
-      errors["noCandidate"] = t("noCandidate");
-      setUserErrors(errors);
+      userErrors.noCandidate = t("noCandidate");
+      setUserErrors(userErrors);
       return;
     }
     sendBallot();
-    setUserErrors({});
+    userErrors.noCandidate = "";
+    setUserErrors(userErrors);
   };
 
   const electionClosedDisplay = () => {

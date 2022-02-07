@@ -18,7 +18,7 @@ const ConfirmModal: FC<ConfirmModalProps> = ({
   const { t } = useTranslation();
 
   const closeModal = () => {
-    setShowModal((prev) => !prev);
+    setShowModal(false);
   };
 
   const validateChoice = () => {

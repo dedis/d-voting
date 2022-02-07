@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { FC, useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import { useTranslation } from "react-i18next";
 
@@ -11,12 +11,9 @@ import { RESULT_AVAILABLE } from "../utils/StatusNumber";
 import useGetResults from "../utils/useGetResults";
 import "../../styles/ElectionDetails.css";
 
-type ElectionDetailsProps = {
-  location: any; // location.data = id of the election
-};
-
-const ElectionDetails = (props: ElectionDetailsProps) => {
+const ElectionDetails: FC = () => {
   const { t } = useTranslation();
+  const { electionId } = useParams();
 
   const token = sessionStorage.getItem("token");
   const {
@@ -30,7 +27,7 @@ const ElectionDetails = (props: ElectionDetailsProps) => {
     setStatus,
     isResultSet,
     setIsResultSet,
-  } = useElection(props.location.data, token);
+  } = useElection(electionId, token);
   const [, setError] = useState(null);
   const [isResultAvailable, setIsResultAvailable] = useState(false);
   const { getResults } = useGetResults();

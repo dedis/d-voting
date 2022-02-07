@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { useTranslation } from "react-i18next";
 
@@ -9,7 +9,7 @@ const UploadFile = ({ setShowModal, setTextModal }) => {
   const { t } = useTranslation();
   const [file, setFile] = useState(null);
   const [fileExt, setFileExt] = useState(null);
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState({ nothing: "", extension: "" });
   const [name, setName] = useState("");
   const [, setIsSubmitting] = useState(false);
   const [postError, setPostError] = useState(null);
@@ -59,9 +59,8 @@ const UploadFile = ({ setShowModal, setTextModal }) => {
   Important: User can bypass this test by renaming the extension
    -> backend needs to perform other verification! */
   const validateFileExtension = () => {
-    let errors = {};
     if (fileExt === null) {
-      errors["nothing"] = t("noFile");
+      errors.nothing = t("noFile");
       setErrors(errors);
       return false;
     } else {
@@ -69,7 +68,7 @@ const UploadFile = ({ setShowModal, setTextModal }) => {
       if (
         fileName.substring(fileName.length - 5, fileName.length) !== ".json"
       ) {
-        errors["extension"] = t("notJson");
+        errors.extension = t("notJson");
         setErrors(errors);
         return false;
       }
@@ -114,7 +113,7 @@ const UploadFile = ({ setShowModal, setTextModal }) => {
       <input
         type="button"
         className="block bg-blue-500 hover:bg-blue-700 text-white font-bold mt-7 py-2 px-5 rounded-full text-xs"
-        value={t("createElec")}
+        value={t("createElec") as string}
         onClick={uploadJSON}
       />
     </div>

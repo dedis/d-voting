@@ -1,4 +1,4 @@
-import { FC } from "react";
+import React, { FC } from "react";
 import { useTranslation } from "react-i18next";
 
 import SimpleTable from "../utils/SimpleTable";

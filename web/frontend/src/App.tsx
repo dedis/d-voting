@@ -1,4 +1,4 @@
-import { FC, Suspense, useState } from "react";
+import React, { FC, Suspense, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import { GET_PERSONNAL_INFOS } from "./components/utils/ExpressEndoints";
@@ -60,11 +60,14 @@ const App: FC = () => {
                   <Route path="/" element={<Home />} />
                   <Route path="/create-election" element={<CreateElection />} />
                   <Route path="/elections" element={<Election />} />
-                  <Route path="/elections/:id" element={<ElectionDetails />} />
+                  <Route
+                    path="/elections/:electionId"
+                    element={<ElectionDetails />}
+                  />
                   <Route path="/results" element={<ResultTable />} />
-                  <Route path="/results/:id" element={<ResultPage />} />
+                  <Route path="/results/:electionId" element={<ResultPage />} />
                   <Route path="/vote" element={<BallotsTable />} />
-                  <Route path="/vote/:id" element={<Ballot />} />
+                  <Route path="/vote/:electionId" element={<Ballot />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/admin" element={<Admin />} />
                 </Routes>

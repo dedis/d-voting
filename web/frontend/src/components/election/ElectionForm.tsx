@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from "react";
+import React, { FC, useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { useTranslation } from "react-i18next";
 
@@ -23,7 +23,12 @@ const ElectionForm: FC<ElectionFormProps> = ({
   const [electionName, setElectionName] = useState("");
   const [newCandidate, setNewCandidate] = useState("");
   const [candidates, setCandidates] = useState([]);
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState({
+    unique: "",
+    empty: "",
+    newCandidate: "",
+    candidates: "",
+  });
   const [postError, setPostError] = useState(null);
   const { postData } = usePostCall(setPostError);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,15 +64,14 @@ const ElectionForm: FC<ElectionFormProps> = ({
   };
 
   const validate = () => {
-    let errors = {};
     let isValid = true;
 
     if (candidates.length === 0) {
-      errors["candidates"] = t("errorCandidates");
+      errors.candidates = t("errorCandidates");
       isValid = false;
     }
     if (newCandidate.length !== 0) {
-      errors["newCandidate"] = t("errorNewCandidate") + newCandidate + "?";
+      errors.newCandidate = t("errorNewCandidate") + newCandidate + "?";
       isValid = false;
     }
     setErrors(errors);
@@ -105,22 +109,22 @@ const ElectionForm: FC<ElectionFormProps> = ({
 
   const handleAdd = (e) => {
     e.preventDefault();
-    let errors = {};
     if (newCandidate.length === 0) {
-      errors["empty"] = t("nothingToAdd");
+      errors.empty = t("nothingToAdd");
       setErrors(errors);
       return;
     }
 
     if (!isCandidateUnique(newCandidate)) {
-      errors["unique"] = t("duplicateCandidate");
+      errors.unique = t("duplicateCandidate");
       setErrors(errors);
       setNewCandidate("");
       return;
     }
 
     setNewCandidate("");
-    setErrors({ newCandidate: "" });
+    errors.newCandidate = "";
+    setErrors(errors);
     setCandidates(candidates.concat(newCandidate));
   };
 
