@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FC } from "react";
 import { Link } from "react-router-dom";
 import Paper from "@material-ui/core/Paper";
 import Table from "@material-ui/core/Table";
@@ -14,11 +14,18 @@ import { useTranslation } from "react-i18next";
 import useFetchCall from "./useFetchCall";
 import { GET_ALL_ELECTIONS_ENDPOINT } from "./Endpoints";
 
+type SimpleTableProps = {
+  statusToKeep: number;
+  pathLink: string;
+  textWhenData: string;
+  textWhenNoData: string;
+};
+
 /*functional component that fetches all the elections, only keeps the elections
 whose status = statusToKeep and display them in a table with a single title
 column. It adds a link to '/pathLink/:id' when the title is clicked 
 If table is empty, it display textWhenNoData instead*/
-const SimpleTable = ({
+const SimpleTable: FC<SimpleTableProps> = ({
   statusToKeep,
   pathLink,
   textWhenData,

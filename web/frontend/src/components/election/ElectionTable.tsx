@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { FC, useState } from "react";
 import { Link } from "react-router-dom";
 import Paper from "@material-ui/core/Paper";
 import Table from "@material-ui/core/Table";
@@ -16,12 +16,16 @@ import Action from "./Action";
 import Status from "./Status";
 import ElectionFields from "../utils/ElectionFields";
 
+type ElectionTableProps = {
+  elections: string[];
+};
+
 /**
  *
  * @param {*} props : array of Elections
  * @returns a table where each line corresponds to an election with its name and status
  */
-const ElectionTable = ({ elections }) => {
+const ElectionTable: FC<ElectionTableProps> = ({ elections }: any) => {
   const { t } = useTranslation();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -58,6 +62,7 @@ const ElectionTable = ({ elections }) => {
   const createData = (title, status, action, key) => {
     return { title, status, action, key };
   };
+
   const constructRows = () => {
     let rows = [];
     elections.map((elec) => {

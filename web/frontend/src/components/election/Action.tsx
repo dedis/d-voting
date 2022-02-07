@@ -7,12 +7,10 @@ import Modal from "../modal/Modal";
 import "../../styles/Status.css";
 
 type ActionProps = {
-  status: typeof PropTypes.number;
-  electionID: typeof PropTypes.string;
-  setStatus: typeof PropTypes.func;
-  setResultAvailable: typeof PropTypes.func;
-  setTextModalError?: typeof PropTypes.func;
-  setShowModal?: typeof PropTypes.func;
+  status: number;
+  electionID: number;
+  setStatus: (status: number) => void;
+  setResultAvailable?: (available: boolean) => void | null;
 };
 
 /**/
@@ -50,6 +48,13 @@ const Action: FC<ActionProps> = ({
       }
     </span>
   );
+};
+
+Action.propTypes = {
+  status: PropTypes.number.isRequired,
+  electionID: PropTypes.number.isRequired,
+  setStatus: PropTypes.func.isRequired,
+  setResultAvailable: PropTypes.func,
 };
 
 export default Action;

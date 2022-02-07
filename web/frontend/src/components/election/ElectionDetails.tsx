@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import { useTranslation } from "react-i18next";
@@ -11,8 +11,11 @@ import { RESULT_AVAILABLE } from "../utils/StatusNumber";
 import useGetResults from "../utils/useGetResults";
 import "../../styles/ElectionDetails.css";
 
-const ElectionDetails = (props) => {
-  //props.location.data = id of the election
+type ElectionDetailsProps = {
+  location: any; // location.data = id of the election
+};
+
+const ElectionDetails = (props: ElectionDetailsProps) => {
   const { t } = useTranslation();
 
   const token = sessionStorage.getItem("token");
@@ -32,7 +35,7 @@ const ElectionDetails = (props) => {
   const [isResultAvailable, setIsResultAvailable] = useState(false);
   const { getResults } = useGetResults();
   //fetch result when available after a status change
-  useEffect(async () => {
+  useEffect(() => {
     if (status === RESULT_AVAILABLE && isResultAvailable) {
       getResults(electionID, token, setError, setResult, setIsResultSet);
     }
@@ -57,7 +60,6 @@ const ElectionDetails = (props) => {
                   <Action
                     status={status}
                     electionID={electionID}
-                    candidates={candidates}
                     setStatus={setStatus}
                     setResultAvailable={setIsResultAvailable}
                   />{" "}
@@ -87,4 +89,5 @@ const ElectionDetails = (props) => {
 ElectionDetails.propTypes = {
   location: PropTypes.any,
 };
+
 export default ElectionDetails;

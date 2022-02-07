@@ -1,7 +1,15 @@
+import React, { FC } from "react";
 import PropTypes from "prop-types";
 import { useTranslation } from "react-i18next";
 
-const ConfirmModal = ({
+type ConfirmModalProps = {
+  showModal: boolean;
+  setShowModal: (prev: boolean) => void;
+  textModal: string;
+  setUserConfirmedAction: (confirmed: boolean) => void;
+};
+
+const ConfirmModal: FC<ConfirmModalProps> = ({
   showModal,
   setShowModal,
   textModal,
@@ -48,6 +56,7 @@ const ConfirmModal = ({
     </div>
   );
 };
+
 ConfirmModal.propTypes = {
   showModal: PropTypes.bool.isRequired,
   setShowModal: PropTypes.func.isRequired,

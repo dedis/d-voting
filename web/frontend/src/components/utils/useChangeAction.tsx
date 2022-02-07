@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 import ConfirmModal from "../modal/ConfirmModal";
 import usePostCall from "./usePostCall";
@@ -16,16 +17,15 @@ import {
   RESULT_AVAILABLE,
   CANCELED,
 } from "./StatusNumber";
-import { Link } from "react-router-dom";
 import { COLLECTIVE_AUTHORITY_MEMBERS } from "./CollectiveAuthorityMembers";
 
 const useChangeAction = (
-  status,
-  electionID,
-  setStatus,
-  setResultAvailable = null,
-  setTextModalError,
-  setShowModalError
+  status: number,
+  electionID: number,
+  setStatus: (status: number) => void,
+  setResultAvailable: (available: boolean) => void,
+  setTextModalError: (text: string) => void,
+  setShowModalError: (willShow: boolean) => void
 ) => {
   const { t } = useTranslation();
   const userID = sessionStorage.getItem("id");
@@ -40,7 +40,6 @@ const useChangeAction = (
   const [userConfirmedCanceling, setUserConfirmedCanceling] = useState(false);
   const modalClose = (
     <ConfirmModal
-      id="close-modal"
       showModal={showModalClose}
       setShowModal={setShowModalClose}
       textModal={t("confirmCloseElection")}
@@ -65,7 +64,6 @@ const useChangeAction = (
       Token: token,
     }),
   };
-
   const shuffleRequest = {
     method: "POST",
     body: JSON.stringify({
@@ -83,37 +81,46 @@ const useChangeAction = (
     }
   }, [postError]);
 
-  useEffect(async () => {
+  useEffect(() => {
     //check if close button was clicked and the user validated the confirmation window
     if (isClosing && userConfirmedClosing) {
-      const closeSuccess = await postData(
-        CLOSE_ENDPOINT,
-        simplePostRequest,
-        setIsClosing
-      );
-      if (closeSuccess) {
-        setStatus(CLOSED);
-      } else {
-        setShowModalError(true);
-      }
-      setUserConfirmedClosing(false);
+      const close = async () => {
+        const closeSuccess = await postData(
+          CLOSE_ENDPOINT,
+          simplePostRequest,
+          setIsClosing
+        );
+
+        if (closeSuccess) {
+          setStatus(CLOSED);
+        } else {
+          setShowModalError(true);
+        }
+        setUserConfirmedClosing(false);
+      };
+
+      close().catch(console.error);
     }
   }, [isClosing, showModalClose]);
 
-  useEffect(async () => {
+  useEffect(() => {
     if (isCanceling && userConfirmedCanceling) {
-      const cancelSuccess = await postData(
-        CANCEL_ENDPOINT,
-        simplePostRequest,
-        setIsCanceling
-      );
-      if (cancelSuccess) {
-        setStatus(CANCELED);
-      } else {
-        setShowModalError(true);
-      }
-      setUserConfirmedCanceling(false);
-      setPostError(null);
+      const cancel = async () => {
+        const cancelSuccess = await postData(
+          CANCEL_ENDPOINT,
+          simplePostRequest,
+          setIsCanceling
+        );
+        if (cancelSuccess) {
+          setStatus(CANCELED);
+        } else {
+          setShowModalError(true);
+        }
+        setUserConfirmedCanceling(false);
+        setPostError(null);
+      };
+
+      cancel().catch(console.error);
     }
   }, [isCanceling, showModalCancel]);
 
