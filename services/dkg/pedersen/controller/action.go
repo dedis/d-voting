@@ -289,8 +289,8 @@ func (a *registerHandlersAction) Execute(ctx node.Context) error {
 // electionID
 func ListenHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		electionIDBuf, err := ioutil.ReadAll(r.Body)
+		// Receive the hex-encoded electionID
+		data, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			http.Error(
 				w,
@@ -300,11 +300,10 @@ func ListenHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		// hex-encoded string obtained from the URL
-		electionID := string(electionIDBuf)
+		electionID := string(data)
 
 		// sanity check
-		_, err = hex.DecodeString(electionID)
+		electionIDBuf, err := hex.DecodeString(electionID)
 		if err != nil {
 			http.Error(
 				w,
@@ -331,7 +330,7 @@ func ListenHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 func SetupHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		electionIDBuf, err := ioutil.ReadAll(r.Body)
+		data, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			http.Error(
 				w,
@@ -342,50 +341,41 @@ func SetupHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 		}
 
 		// hex-encoded string obtained from the URL
-		electionID := string(electionIDBuf)
+		electionID := string(data)
 
 		// sanity check
-		_, err = hex.DecodeString(electionID)
+		electionIDBuf, err := hex.DecodeString(electionID)
 		if err != nil {
-			http.Error(
-				w,
-				"failed to decode electionID: "+electionID,
-				http.StatusBadRequest,
-			)
+			http.Error(w, "failed to decode electionID: "+electionID,
+				http.StatusBadRequest)
 			return
 		}
 
 		a, exists := dkg.GetActor(electionIDBuf)
 		if !exists {
-			http.Error(
-				w,
-				"failed to get actor: "+err.Error(),
-				http.StatusInternalServerError,
-			)
+			http.Error(w, "actor does not exist",
+				http.StatusInternalServerError)
 			return
 		}
 
 		pubKey, err := a.Setup()
 		if err != nil {
-			http.Error(
-				w,
-				"failed to setup: "+err.Error(),
-				http.StatusInternalServerError,
-			)
+			http.Error(w, "failed to setup: "+err.Error(),
+				http.StatusInternalServerError)
 			return
 		}
 
 		pubKeyBuf, err := pubKey.MarshalBinary()
 		if err != nil {
-			http.Error(
-				w,
-				"failed to marshal the pubKey: "+err.Error(),
-				http.StatusInternalServerError,
-			)
+			http.Error(w, "failed to marshal the pubKey: "+err.Error(),
+				http.StatusInternalServerError)
 			return
 		}
 
+		fmt.Println("pubkyeBuf", string(pubKeyBuf))
+
 		w.Write(pubKeyBuf)
+		r.Body.Close()
 	}
 }
 

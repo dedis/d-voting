@@ -11,7 +11,6 @@ import (
 	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"go.dedis.ch/kyber/v3"
 
-	evotingController "github.com/dedis/d-voting/contracts/evoting/controller"
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/stretchr/testify/require"
@@ -173,13 +172,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 	err = handler.handleStartShuffle(dummyID)
 	require.EqualError(t, err, fake.Err("failed to make tx: failed to use manager"))
 
-	manager := signed.NewManager(fake.NewSigner(), &evotingController.Client{
-		Nonce: 0,
-		Blocks: FakeBlockStore{
-			getErr:  nil,
-			lastErr: nil,
-		},
-	})
+	manager := signed.NewManager(fake.NewSigner(), fakeClient{})
 
 	handler.txmngr = manager
 
@@ -271,13 +264,7 @@ func initValidHandler(dummyID string) Handler {
 	handler.p = &fakePool
 	handler.me = fake.NewAddress(0)
 	handler.shuffleSigner = fake.NewSigner()
-	handler.txmngr = signed.NewManager(fake.NewSigner(), &evotingController.Client{
-		Nonce: 0,
-		Blocks: FakeBlockStore{
-			getErr:  nil,
-			lastErr: nil,
-		},
-	})
+	handler.txmngr = signed.NewManager(fake.NewSigner(), fakeClient{})
 	handler.context = serdecontext
 
 	return handler
@@ -649,4 +636,10 @@ func (f FakeBlockStore) Watch(ctx context.Context) <-chan orderingTypes.BlockLin
 
 func (f FakeBlockStore) WithTx(transaction store.Transaction) blockstore.BlockStore {
 	return nil
+}
+
+type fakeClient struct{}
+
+func (fakeClient) GetNonce(access.Identity) (uint64, error) {
+	return 0, nil
 }
