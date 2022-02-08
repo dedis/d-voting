@@ -1,6 +1,7 @@
 import React, { FC, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import i18n from "../language/Lang";
 
 import logoWhite from "../assets/logo-white.png";
 import { availableLanguages } from "../language/Lang";
@@ -14,7 +15,7 @@ type NavBarProps = {
 };
 
 const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   // used for the profile button
   const [profileToggle, setProfileToggle] = useState(false);
@@ -215,7 +216,7 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
                   aria-haspopup="true"
                 >
                   <span className="sr-only">Open user menu</span>
-                  <ProfilePicture className="max-w-xs" />
+                  <ProfilePicture />
                 </button>
               </div>
 
@@ -334,8 +335,6 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
 export default NavBar;
 
 const LanguageSelector = () => {
-  const { t, i18n } = useTranslation();
-
   const [toggle, setToggle] = useState(false);
   const triggerToggle = () => {
     setToggle(!toggle);

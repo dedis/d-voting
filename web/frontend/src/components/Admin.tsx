@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Button from "@mui/material/Button";
 import { DataGrid } from "@mui/x-data-grid";
 
@@ -16,23 +16,23 @@ const Admin = () => {
 
   const openModal = () => setNewusrOpen(true);
 
-  if (rows.length === 0) {
-    try {
-      fetch(GET_ADMIN_ROWS)
-        .then((resp) => {
-          const json_data = resp.json();
-          json_data.then((result) => {
-            console.log(result);
-            setRows(result);
-          });
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    } catch (error) {
-      console.log(error);
+  useEffect(() => {
+    if (newusrOpen || showDeleteModal) {
+      return;
     }
-  }
+
+    fetch(GET_ADMIN_ROWS)
+      .then((resp) => {
+        const json_data = resp.json();
+        json_data.then((result) => {
+          console.log(result);
+          setRows(result);
+        });
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  }, [newusrOpen, showDeleteModal]);
 
   const columns = [
     {
@@ -49,7 +49,6 @@ const Admin = () => {
       field: "action",
       headerName: "Action",
       width: 150,
-      // eslint-disable-next-line react/display-name
       renderCell: function (params: any) {
         function handledClick() {
           setSciperToDelete(params.row.sciper);

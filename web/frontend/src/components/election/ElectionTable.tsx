@@ -25,7 +25,7 @@ type ElectionTableProps = {
  * @param {*} props : array of Elections
  * @returns a table where each line corresponds to an election with its name and status
  */
-const ElectionTable: FC<ElectionTableProps> = ({ elections }: any) => {
+const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
   const { t } = useTranslation();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -70,7 +70,7 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }: any) => {
 
   const constructRows = () => {
     let rows = [];
-    elections.map((elec) => {
+    elections.forEach((elec) => {
       let { title, id, status, setStatus } = ElectionFields(elec);
       let link = (
         <Link className="election-link" to={{ pathname: `/elections/${id}` }}>

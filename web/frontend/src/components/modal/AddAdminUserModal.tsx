@@ -23,7 +23,6 @@ const style = {
   p: 4,
 };
 
-// eslint-disable-next-line react/prop-types
 export default function AddAdminUserModal({ open, setOpen }) {
   const handleClose = () => setOpen(false);
   const ariaLabel = { "aria-label": "description" };
@@ -49,7 +48,7 @@ export default function AddAdminUserModal({ open, setOpen }) {
     fetch(ADD_API_ROLE, requestOptions).then((data) => {
       if (data.status === 200) {
         alert("User added successfully");
-        window.location = "/admin";
+        setOpen(false);
       } else {
         alert("Error while adding the user");
       }

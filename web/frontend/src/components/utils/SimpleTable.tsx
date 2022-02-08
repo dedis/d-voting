@@ -51,7 +51,7 @@ const SimpleTable: FC<SimpleTableProps> = ({
 
   const ballotsToDisplay = (elections) => {
     let dataToDisplay = [];
-    elections.map((elec) => {
+    elections.forEach((elec) => {
       if (elec.Status === statusToKeep) {
         dataToDisplay.push([elec.Title, elec.ElectionID]);
       }

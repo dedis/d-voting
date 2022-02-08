@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import React, { FC, useState } from "react";
 import { useTranslation } from "react-i18next";
 import PropTypes from "prop-types";
 
@@ -8,7 +8,7 @@ import "../styles/Login.css";
 const Login: FC = () => {
   const { t } = useTranslation();
 
-  const [loginError, setLoginError] = useState();
+  const [loginError] = useState();
 
   const handleClick = async () => {
     try {
