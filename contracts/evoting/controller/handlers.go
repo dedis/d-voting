@@ -56,6 +56,7 @@ func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "failed to marshal CreateElectionTransaction: "+err.Error(),
 			http.StatusInternalServerError)
+		return
 	}
 
 	txID, err := h.submitAndWaitForTxn(r.Context(), evoting.CmdCreateElection, evoting.ElectionArg, data)
@@ -151,10 +152,28 @@ func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fac := h.context.GetFactory(types.CiphervoteKey{})
+	if fac == nil {
+		http.Error(w, "empty ciphervote factory", http.StatusInternalServerError)
+		return
+	}
+
+	msg, err := fac.Deserialize(h.context, req.Ballot)
+	if err != nil {
+		http.Error(w, "failed to deserialize ballot: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ciphervote, ok := msg.(types.Ciphervote)
+	if !ok {
+		http.Error(w, fmt.Sprintf("wrong type of ciphervote: %T", msg), http.StatusInternalServerError)
+		return
+	}
+
 	castVote := types.CastVote{
 		ElectionID: req.ElectionID,
 		UserID:     req.UserID,
-		Ballot:     req.Ballot,
+		Ballot:     ciphervote,
 	}
 
 	data, err := castVote.Serialize(h.context)
@@ -224,12 +243,18 @@ func (h *votingProxy) ElectionInfo(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "failed to get election: "+err.Error(),
 			http.StatusInternalServerError)
+		return
 	}
 
-	pubkeyBuf, err := election.Pubkey.MarshalBinary()
-	if err != nil {
-		http.Error(w, "failed to marshal pubkey: "+err.Error(),
-			http.StatusInternalServerError)
+	var pubkeyBuf []byte
+
+	if election.Pubkey != nil {
+		pubkeyBuf, err = election.Pubkey.MarshalBinary()
+		if err != nil {
+			http.Error(w, "failed to marshal pubkey: "+err.Error(),
+				http.StatusInternalServerError)
+			return
+		}
 	}
 
 	response := types.GetElectionInfoResponse{
@@ -465,6 +490,7 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "failed to get election: "+err.Error(),
 			http.StatusInternalServerError)
+		return
 	}
 
 	if election.Status != types.ShuffledBallots {
@@ -477,7 +503,10 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
+	if len(election.ShuffleInstances) == 0 {
+		http.Error(w, "no shuffled instances", http.StatusInternalServerError)
+		return
+	}
 	wrongBallots := 0
 
 	actor, exists := h.dkg.GetActor(electionIDBuf)
@@ -490,14 +519,14 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 	numVotes := len(lastShuffled)
 	seqSize := len(lastShuffled[0])
 
-	// We iterate over the sequence size first, then the number of vote. Not
-	// logical, but follows the Neff paper.
-	for i := 0; i < seqSize; i++ {
+	decryptedBallots := make([]types.Ballot, 0, numVotes)
+
+	for j := 0; j < numVotes; j++ {
 
 		// decryption of one ballot:
 		marshalledBallot := strings.Builder{}
 
-		for j := 0; j < numVotes; j++ {
+		for i := 0; i < seqSize; i++ {
 
 			chunk, err := actor.Decrypt(lastShuffled[j][i].K, lastShuffled[j][i].C)
 			if err != nil {

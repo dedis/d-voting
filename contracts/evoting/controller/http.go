@@ -13,6 +13,7 @@ import (
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/proxy"
@@ -47,7 +48,7 @@ type votingProxy struct {
 	dkg          dkg.DKG
 
 	pool   pool.Pool
-	client *Client
+	client signed.Client
 
 	logger zerolog.Logger
 
@@ -55,7 +56,7 @@ type votingProxy struct {
 }
 
 func registerVotingProxy(proxy proxy.Proxy, signer crypto.Signer,
-	client *Client, dkg dkg.DKG, shuffleActor shuffle.Actor,
+	client signed.Client, dkg dkg.DKG, shuffleActor shuffle.Actor,
 	oSvc ordering.Service, p pool.Pool, m mino.Mino, ctx serde.Context) {
 
 	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()

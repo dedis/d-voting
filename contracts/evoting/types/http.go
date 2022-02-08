@@ -35,8 +35,9 @@ type CastVoteRequest struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 	UserID     string
-	Ballot     Ciphervote
-	Token      string
+	// Marshalled representation of Ciphervote
+	Ballot []byte
+	Token  string
 }
 
 type CastVoteResponse struct {
