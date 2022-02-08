@@ -21,10 +21,10 @@ import (
 	"go.dedis.ch/kyber/v3/util/random"
 
 	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
-	sjson "go.dedis.ch/dela/serde/json"
+	"go.dedis.ch/dela/serde/json"
 )
 
-var serdecontext = serde.WithFactory(serde.WithFactory(sjson.NewContext(), etypes.ElectionKey{},
+var serdecontext = serde.WithFactory(serde.WithFactory(json.NewContext(), etypes.ElectionKey{},
 	etypes.ElectionFactory{}), ctypes.RosterKey{}, fake.Factory{})
 
 func TestNeffShuffle_Listen(t *testing.T) {
@@ -52,7 +52,7 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	election := fake.NewElection(electionID)
 	election.RosterBuf = rosterBuf
 
-	shuffledBallots := append(etypes.EncryptedBallots{}, election.PublicBulletinBoard.Ballots...)
+	shuffledBallots := append([]etypes.Ciphervote{}, election.Suffragia.Ciphervotes...)
 	election.ShuffleInstances = append(election.ShuffleInstances, etypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
 
 	election.ShuffleThreshold = 1

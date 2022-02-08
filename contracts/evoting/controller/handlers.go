@@ -477,12 +477,6 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// X, Y, err := election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots.GetElGPairs()
-	// if err != nil {
-	// 	http.Error(w, "failed to get X, Y:"+err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
-
 	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
 	wrongBallots := 0
 
@@ -516,7 +510,8 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		var ballot types.Ballot
 		err = ballot.Unmarshal(marshalledBallot.String(), election)
 		if err != nil {
-			wrongBallots++ // TODO do we ever send back through http if it's not an error?
+			// TODO do we ever send back through http if it's not an error ?
+			wrongBallots++
 		}
 
 		decryptedBallots = append(decryptedBallots, ballot)

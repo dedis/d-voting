@@ -34,13 +34,13 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
 
-	sjson "go.dedis.ch/dela/serde/json"
+	"go.dedis.ch/dela/serde/json"
 )
 
 var serdecontext serde.Context
 
 func init() {
-	ctx := sjson.NewContext()
+	ctx := json.NewContext()
 	ctx = serde.WithFactory(ctx, types.ElectionKey{}, types.ElectionFactory{})
 	ctx = serde.WithFactory(ctx, types.CiphervoteKey{}, types.CiphervoteFactory{})
 	ctx = serde.WithFactory(ctx, types.TransactionKey{}, types.TransactionFactory{})
@@ -643,11 +643,6 @@ func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error
 	}
 
 	X, Y := types.CiphervotesToPairs(election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots)
-
-	// X, Y, err := election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots.GetElGPairs()
-	// if err != nil {
-	// 	return xerrors.Errorf("failed to get Elg pairs")
-	// }
 
 	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
 	wrongBallots := 0

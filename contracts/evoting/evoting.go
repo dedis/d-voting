@@ -379,8 +379,8 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	// 	return xerrors.Errorf("failed to get X, Y: %v", err)
 	// }
 
-	if len(ciphervotes) == 0 {
-		return xerrors.Errorf("there are no votes")
+	if len(ciphervotes) < 2 {
+		return xerrors.Errorf("not enough votes: %d < 2", len(ciphervotes))
 	}
 
 	X, Y := types.CiphervotesToPairs(ciphervotes)

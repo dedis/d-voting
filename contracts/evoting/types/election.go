@@ -117,6 +117,7 @@ func (e *Election) ChunksPerBallot() int {
 // and verify the proof of a shuffle
 type RandomVector [][]byte
 
+// Unmarshal ...
 func (r RandomVector) Unmarshal() ([]kyber.Scalar, error) {
 	e := make([]kyber.Scalar, len(r))
 
@@ -190,7 +191,7 @@ func (c *Configuration) GetQuestion(ID ID) Question {
 	return nil
 }
 
-// isValid returns true if and only if the whole configuration is coherent and
+// IsValid returns true if and only if the whole configuration is coherent and
 // valid
 func (c *Configuration) IsValid() bool {
 	// serves as a set to check each ID is unique
@@ -276,33 +277,6 @@ type Suffragia struct {
 	Ciphervotes []Ciphervote
 }
 
-// GetElGPairs returns 2 2-dimensional arrays with the Elgamal pairs of each
-// encrypted ballot
-// func (b EncryptedBallots) GetElGPairs() ([][]kyber.Point, [][]kyber.Point, error) {
-// 	if len(b) == 0 {
-// 		return nil, nil, xerrors.Errorf("there are no ballots")
-// 	}
-
-// 	ballotSize := len(b[0])
-
-// 	X := make([][]kyber.Point, ballotSize)
-// 	Y := make([][]kyber.Point, ballotSize)
-
-// 	for _, ballot := range b {
-// 		x, y, err := ballot.GetElGPairs()
-// 		if err != nil {
-// 			return nil, nil, err
-// 		}
-
-// 		for i := 0; i < len(x); i++ {
-// 			X[i] = append(X[i], x[i])
-// 			Y[i] = append(Y[i], y[i])
-// 		}
-// 	}
-
-// 	return X, Y, nil
-// }
-
 // CiphervotesFromPairs ...
 func CiphervotesFromPairs(X, Y [][]kyber.Point) ([]Ciphervote, error) {
 	if len(X) != len(Y) {
@@ -337,35 +311,6 @@ func CiphervotesFromPairs(X, Y [][]kyber.Point) ([]Ciphervote, error) {
 
 	return res, nil
 }
-
-// GetElGPairs returns corresponding kyber.Points from the ciphertexts
-// func (b EncryptedBallot) GetElGPairs() (ks []kyber.Point, cs []kyber.Point, err error) {
-// 	ks = make([]kyber.Point, len(b))
-// 	cs = make([]kyber.Point, len(b))
-
-// 	for i, ct := range b {
-// 		k, c, err := ct.GetPoints()
-// 		if err != nil {
-// 			return nil, nil, xerrors.Errorf("failed to get points: %v", err)
-// 		}
-
-// 		ks[i] = k
-// 		cs[i] = c
-// 	}
-
-// 	return ks, cs, nil
-// }
-
-// Copy returns a deep copy of EncryptedBallot
-// func (b EncryptedBallot) Copy() EncryptedBallot {
-// 	ciphertexts := make([]Ciphertext, len(b))
-
-// 	for i, ciphertext := range b {
-// 		ciphertexts[i] = ciphertext.Copy()
-// 	}
-
-// 	return ciphertexts
-// }
 
 func ciphervoteFromPairs(ks []kyber.Point, cs []kyber.Point) (Ciphervote, error) {
 	if len(ks) != len(cs) {

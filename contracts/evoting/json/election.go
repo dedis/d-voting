@@ -33,7 +33,7 @@ func (electionFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, 
 			}
 		}
 
-		suffargia, err := encodeSuffragia(ctx, m.Suffragia)
+		suffragia, err := encodeSuffragia(ctx, m.Suffragia)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to encode suffragia: %v", err)
 		}
@@ -50,7 +50,7 @@ func (electionFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, 
 			Status:           uint16(m.Status),
 			Pubkey:           pubkey,
 			BallotSize:       m.BallotSize,
-			Suffragia:        suffargia,
+			Suffragia:        suffragia,
 			ShuffleInstances: shuffleInstances,
 			ShuffleThreshold: m.ShuffleThreshold,
 			DecryptedBallots: m.DecryptedBallots,
@@ -90,7 +90,7 @@ func (electionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, err
 	// TODO: check if this is the right place to provide the factory
 	ctx = serde.WithFactory(ctx, types.CiphervoteKey{}, types.CiphervoteFactory{})
 
-	suffagia, err := decodeSuffragia(ctx, electionJSON.Suffragia)
+	suffragia, err := decodeSuffragia(ctx, electionJSON.Suffragia)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to decode suffragia: %v", err)
 	}
@@ -107,7 +107,7 @@ func (electionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, err
 		Status:           types.Status(electionJSON.Status),
 		Pubkey:           pubKey,
 		BallotSize:       electionJSON.BallotSize,
-		Suffragia:        suffagia,
+		Suffragia:        suffragia,
 		ShuffleInstances: shuffleInstances,
 		ShuffleThreshold: electionJSON.ShuffleThreshold,
 		DecryptedBallots: electionJSON.DecryptedBallots,

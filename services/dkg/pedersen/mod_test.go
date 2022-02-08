@@ -519,17 +519,17 @@ func TestPedersen_Scenario(t *testing.T) {
 
 	message := "Hello world"
 
-	KsMarshalled, CsMarshalled, _ := fakeKCPointsMarshalled(k, message, pubKey)
+	Ks, Cs, _ := fakeKCPoints(k, message, pubKey)
 
 	for i := 0; i < k; i++ {
-		ballot := etypes.EncryptedBallot{etypes.Ciphertext{
-			K: KsMarshalled[i],
-			C: CsMarshalled[i],
+		ballot := etypes.Ciphervote{etypes.EGPair{
+			K: Ks[i],
+			C: Cs[i],
 		}}
-		election.PublicBulletinBoard.CastVote("dummyUser"+strconv.Itoa(i), ballot)
+		election.Suffragia.CastVote("dummyUser"+strconv.Itoa(i), ballot)
 	}
 
-	shuffledBallots := election.PublicBulletinBoard.Ballots
+	shuffledBallots := election.Suffragia.Ciphervotes
 	shuffleInstance := etypes.ShuffleInstance{ShuffledBallots: shuffledBallots}
 	election.ShuffleInstances = append(election.ShuffleInstances, shuffleInstance)
 
@@ -542,8 +542,7 @@ func TestPedersen_Scenario(t *testing.T) {
 
 	// every node should be able to decrypt
 
-	ks, cs, err := shuffledBallots[0].GetElGPairs()
-	require.NoError(t, err)
+	ks, cs := shuffledBallots[0].GetElGPairs()
 
 	for _, actor := range actors {
 		decrypted, err := actor.Decrypt(ks[0], cs[0])
@@ -562,9 +561,9 @@ func requireActorsEqual(t require.TestingT, actor1, actor2 dkg.Actor) {
 	require.Equal(t, actor1Data, actor2Data)
 }
 
-func fakeKCPointsMarshalled(k int, msg string, pubKey kyber.Point) ([][]byte, [][]byte, kyber.Point) {
-	KsMarshalled := make([][]byte, 0, k)
-	CsMarshalled := make([][]byte, 0, k)
+func fakeKCPoints(k int, msg string, pubKey kyber.Point) ([]kyber.Point, []kyber.Point, kyber.Point) {
+	Ks := make([]kyber.Point, 0, k)
+	Cs := make([]kyber.Point, 0, k)
 
 	for i := 0; i < k; i++ {
 		// Embed the message into a curve point
@@ -576,11 +575,8 @@ func fakeKCPointsMarshalled(k int, msg string, pubKey kyber.Point) ([][]byte, []
 		S := suite.Point().Mul(k, pubKey)      // ephemeral DH shared secret
 		C := S.Add(S, M)                       // message blinded with secret
 
-		Kmarshalled, _ := K.MarshalBinary()
-		Cmarshalled, _ := C.MarshalBinary()
-
-		KsMarshalled = append(KsMarshalled, Kmarshalled)
-		CsMarshalled = append(CsMarshalled, Cmarshalled)
+		Ks = append(Ks, K)
+		Cs = append(Cs, C)
 	}
-	return KsMarshalled, CsMarshalled, pubKey
+	return Ks, Cs, pubKey
 }

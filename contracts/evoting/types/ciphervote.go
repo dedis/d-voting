@@ -79,6 +79,21 @@ func (c Ciphervote) GetElGPairs() (ks []kyber.Point, cs []kyber.Point) {
 	return ks, cs
 }
 
+// Equal returns if the other ciphervote is equal
+func (c Ciphervote) Equal(other Ciphervote) bool {
+	if len(c) != len(other) {
+		return false
+	}
+
+	for i, e := range c {
+		if !e.K.Equal(other[i].K) || !e.C.Equal(other[i].C) {
+			return false
+		}
+	}
+
+	return true
+}
+
 // EGPair defines an ElGamal pair.
 type EGPair struct {
 	K kyber.Point
