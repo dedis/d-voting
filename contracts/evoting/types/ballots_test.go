@@ -2,9 +2,10 @@ package types
 
 import (
 	"encoding/base64"
-	"github.com/stretchr/testify/require"
 	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 var ballot1 = string("select:" + questionID(1) + ":1,0,1\n" +
@@ -95,7 +96,7 @@ func TestBallot_Unmarshal(t *testing.T) {
 
 	// with line wrongly formatted
 	err = b.Unmarshal("x", election)
-	require.EqualError(t, err, "a line in the ballot has length != 3")
+	require.EqualError(t, err, "a line in the ballot has length != 3: x")
 
 	// with ID not encoded in base64
 	ballotWrongID := string("select:" + "aaa" + ":1,0,1\n" +
@@ -468,5 +469,72 @@ func TestSubject_IsValid(t *testing.T) {
 
 	valid = configuration.IsValid()
 	require.False(t, valid)
+}
 
+func TestBallot_Equal(t *testing.T) {
+	ballot := Ballot{}
+	other := Ballot{}
+
+	// > Empty ballots are equal
+	require.True(t, ballot.Equal(other))
+
+	// > SelectResultIDs
+	ballot.SelectResultIDs = []ID{"1"}
+	require.False(t, ballot.Equal(other))
+
+	other.SelectResultIDs = []ID{"0"}
+	require.False(t, ballot.Equal(other))
+	other.SelectResultIDs = []ID{"1"}
+	require.True(t, ballot.Equal(other))
+
+	// > SelectResult
+	ballot.SelectResult = [][]bool{{true}}
+	require.False(t, ballot.Equal(other))
+
+	other.SelectResult = [][]bool{{false}}
+	require.False(t, ballot.Equal(other))
+	other.SelectResult = [][]bool{{false, false}}
+	require.False(t, ballot.Equal(other))
+	other.SelectResult = [][]bool{{true}}
+	require.True(t, ballot.Equal(other))
+
+	// > RankResultIDs
+	ballot.RankResultIDs = []ID{"1"}
+	require.False(t, ballot.Equal(other))
+
+	other.RankResultIDs = []ID{"0"}
+	require.False(t, ballot.Equal(other))
+	other.RankResultIDs = []ID{"1"}
+	require.True(t, ballot.Equal(other))
+
+	// > RankResult
+	ballot.RankResult = [][]int8{{1}}
+	require.False(t, ballot.Equal(other))
+
+	other.RankResult = [][]int8{{0}}
+	require.False(t, ballot.Equal(other))
+	other.RankResult = [][]int8{{0, 0}}
+	require.False(t, ballot.Equal(other))
+	other.RankResult = [][]int8{{1}}
+	require.True(t, ballot.Equal(other))
+
+	// > TestResultIDs
+	ballot.TextResultIDs = []ID{"1"}
+	require.False(t, ballot.Equal(other))
+
+	other.TextResultIDs = []ID{"0"}
+	require.False(t, ballot.Equal(other))
+	other.TextResultIDs = []ID{"1"}
+	require.True(t, ballot.Equal(other))
+
+	// > TextResult
+	ballot.TextResult = [][]string{{"1"}}
+	require.False(t, ballot.Equal(other))
+
+	other.TextResult = [][]string{{"0"}}
+	require.False(t, ballot.Equal(other))
+	other.TextResult = [][]string{{"0", "0"}}
+	require.False(t, ballot.Equal(other))
+	other.TextResult = [][]string{{"1"}}
+	require.True(t, ballot.Equal(other))
 }

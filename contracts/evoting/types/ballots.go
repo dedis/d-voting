@@ -3,10 +3,11 @@ package types
 import (
 	"encoding/base64"
 	"fmt"
-	"golang.org/x/xerrors"
 	"math"
 	"strconv"
 	"strings"
+
+	"golang.org/x/xerrors"
 )
 
 // Ballot contains all information about a simple ballot
@@ -64,7 +65,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 
 		if len(question) != 3 {
 			b.invalidate()
-			return xerrors.Errorf("a line in the ballot has length != 3")
+			return xerrors.Errorf("a line in the ballot has length != 3: %s", line)
 		}
 
 		_, err := base64.StdEncoding.DecodeString(question[1])
@@ -218,6 +219,91 @@ func (b *Ballot) invalidate() {
 	b.TextResult = nil
 	b.SelectResultIDs = nil
 	b.SelectResult = nil
+}
+
+// Equal performs a loose comparison of a ballot.
+func (b *Ballot) Equal(other Ballot) bool {
+	fmt.Printf("b: %v\n", b)
+	fmt.Printf("other: %v\n", other)
+	if len(b.SelectResultIDs) != len(other.SelectResultIDs) {
+		return false
+	}
+
+	for i, id := range b.SelectResultIDs {
+		if id != other.SelectResultIDs[i] {
+			return false
+		}
+	}
+
+	if len(b.SelectResult) != len(other.SelectResult) {
+		return false
+	}
+
+	for i, sr := range b.SelectResult {
+		if len(sr) != len(other.SelectResult[i]) {
+			return false
+		}
+
+		for j, r := range sr {
+			if r != other.SelectResult[i][j] {
+				return false
+			}
+		}
+	}
+
+	if len(b.RankResultIDs) != len(other.RankResultIDs) {
+		return false
+	}
+
+	for i, id := range b.RankResultIDs {
+		if id != other.RankResultIDs[i] {
+			return false
+		}
+	}
+
+	if len(b.RankResult) != len(other.RankResult) {
+		return false
+	}
+
+	for i, rr := range b.RankResult {
+		if len(rr) != len(other.RankResult[i]) {
+			return false
+		}
+
+		for j, r := range rr {
+			if r != other.RankResult[i][j] {
+				return false
+			}
+		}
+	}
+
+	if len(b.TextResultIDs) != len(other.TextResultIDs) {
+		return false
+	}
+
+	for i, id := range b.TextResultIDs {
+		if id != other.TextResultIDs[i] {
+			return false
+		}
+	}
+
+	if len(b.TextResult) != len(other.TextResult) {
+		return false
+	}
+
+	for i, tr := range b.TextResult {
+		if len(tr) != len(other.TextResult[i]) {
+			return false
+		}
+
+		for j, r := range tr {
+			if r != other.TextResult[i][j] {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 // Subject is a wrapper around multiple questions that can be of type "select",

@@ -53,218 +53,125 @@ func init() {
 }
 
 // Check the shuffled votes versus the cast votes on a few nodes
-func TestIntegration_ThreeVotesScenario(t *testing.T) {
-	numNodes := 3
-	numVotes := 3
-	adminID := "first admin"
-
-	// ##### SETUP ENV #####
-	// make tests reproducible
-	rand.Seed(1)
-
-	delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
-
-	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-three-votes")
-	require.NoError(t, err)
-
-	defer os.RemoveAll(dirPath)
-
-	t.Logf("using temp dir %s", dirPath)
-
-	// ##### CREATE NODES #####
-	nodes := setupDVotingNodes(t, numNodes, dirPath)
-
-	signer := createDVotingAccess(t, nodes, dirPath)
-
-	m := newTxManager(signer, nodes[0], time.Second*10, 10)
-
-	err = grantAccess(m, signer)
-	require.NoError(t, err)
-
-	for _, n := range nodes {
-		err = grantAccess(m, n.GetShuffleSigner())
-		require.NoError(t, err)
-	}
-
-	// ##### CREATE ELECTION #####
-	electionID, err := createElection(m, "Three votes election", adminID)
-	require.NoError(t, err)
-
-	time.Sleep(time.Millisecond * 100)
-
-	// ##### SETUP DKG #####
-	actor, err := initDkg(nodes, electionID)
-	require.NoError(t, err)
-
-	// ##### OPEN ELECTION #####
-	err = openElection(m, electionID)
-	require.NoError(t, err)
-
-	t.Logf("start casting votes")
-	election, err := getElection(electionID, nodes[0].GetOrdering())
-	require.NoError(t, err)
-
-	castedVotes, err := castVotesRandomly(m, actor, electionID, numVotes,
-		election.ChunksPerBallot())
-	require.NoError(t, err)
-
-	// ##### CLOSE ELECTION #####
-	err = closeElection(m, electionID, adminID)
-	require.NoError(t, err)
-
-	time.Sleep(time.Millisecond * 100)
-
-	// ##### SHUFFLE BALLOTS #####
-	t.Logf("initializing shuffle")
-	sActor, err := initShuffle(nodes)
-	require.NoError(t, err)
-
-	time.Sleep(time.Second * 1)
-
-	t.Logf("shuffling")
-	err = sActor.Shuffle(electionID)
-	require.NoError(t, err)
-
-	// ##### DECRYPT BALLOTS #####
-	time.Sleep(time.Second * 1)
-
-	t.Logf("decrypting")
-
-	election, err = getElection(electionID, nodes[0].GetOrdering())
-	require.NoError(t, err)
-
-	err = decryptBallots(m, actor, election)
-	require.NoError(t, err)
-
-	time.Sleep(time.Second * 1)
-
-	t.Logf("get vote proof")
-	election, err = getElection(electionID, nodes[0].GetOrdering())
-	require.NoError(t, err)
-
-	fmt.Println("Title of the election : " + election.Configuration.MainTitle)
-	fmt.Println("ID of the election : " + string(election.ElectionID))
-	fmt.Println("Status of the election : " + strconv.Itoa(int(election.Status)))
-	fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
-
-	// TODO: check that decrypted ballots are equals to cast ballots (maybe
-	// through hashing)
-	for _, b := range election.DecryptedBallots {
-		fmt.Println("decrypted ballot:", b)
-	}
-
-	for _, c := range castedVotes {
-		fmt.Println("casted ballot:", c)
-	}
-
-	closeNodes(t, nodes)
+func TestIntegration(t *testing.T) {
+	t.Run("3 nodes, 3 votes", getIntegrationTest(3, 3))
+	t.Run("10 nodes, 10 votes", getIntegrationTest(10, 10))
 }
 
-// Check more shuffled votes versus the cast votes on more nodes.
-func TestIntegration_ManyVotesScenario(t *testing.T) {
-	// The following constants are limited by VSC build in debug function that
-	// times out after 30s.
-	numNodes := 10
-	numVotes := 10
-	adminID := "I am an admin"
+func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
+	return func(t *testing.T) {
+		t.Parallel()
 
-	// ##### SETUP ENV #####
-	// make tests reproducible
-	rand.Seed(2)
+		adminID := "first admin"
 
-	delaPkg.Logger = delaPkg.Logger.Level(zerolog.InfoLevel)
+		// ##### SETUP ENV #####
+		// make tests reproducible
+		rand.Seed(1)
 
-	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-many-votes")
-	require.NoError(t, err)
+		delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 
-	defer os.RemoveAll(dirPath)
-
-	t.Logf("using temp dir %s", dirPath)
-
-	// ##### CREATE NODES #####
-	nodes := setupDVotingNodes(t, numNodes, dirPath)
-
-	signer := createDVotingAccess(t, nodes, dirPath)
-
-	m := newTxManager(signer, nodes[0], time.Second*time.Duration(numNodes/2+1), numNodes*2)
-
-	err = grantAccess(m, signer)
-	require.NoError(t, err)
-
-	for _, n := range nodes {
-		err = grantAccess(m, n.GetShuffleSigner())
+		dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-three-votes")
 		require.NoError(t, err)
+
+		defer os.RemoveAll(dirPath)
+
+		t.Logf("using temp dir %s", dirPath)
+
+		// ##### CREATE NODES #####
+		nodes := setupDVotingNodes(t, numNodes, dirPath)
+
+		signer := createDVotingAccess(t, nodes, dirPath)
+
+		m := newTxManager(signer, nodes[0], time.Second*time.Duration(numNodes/2+1), numNodes*2)
+
+		err = grantAccess(m, signer)
+		require.NoError(t, err)
+
+		for _, n := range nodes {
+			err = grantAccess(m, n.GetShuffleSigner())
+			require.NoError(t, err)
+		}
+
+		// ##### CREATE ELECTION #####
+		electionID, err := createElection(m, "Three votes election", adminID)
+		require.NoError(t, err)
+
+		time.Sleep(time.Millisecond * 500)
+
+		// ##### SETUP DKG #####
+		actor, err := initDkg(nodes, electionID)
+		require.NoError(t, err)
+
+		// ##### OPEN ELECTION #####
+		err = openElection(m, electionID)
+		require.NoError(t, err)
+
+		t.Logf("start casting votes")
+		election, err := getElection(electionID, nodes[0].GetOrdering())
+		require.NoError(t, err)
+
+		castedVotes, err := castVotesRandomly(m, actor, election, numVotes)
+		require.NoError(t, err)
+
+		fmt.Println("casted votes:", castedVotes)
+
+		// ##### CLOSE ELECTION #####
+		err = closeElection(m, electionID, adminID)
+		require.NoError(t, err)
+
+		time.Sleep(time.Millisecond * 100)
+
+		// ##### SHUFFLE BALLOTS #####
+		t.Logf("initializing shuffle")
+		sActor, err := initShuffle(nodes)
+		require.NoError(t, err)
+
+		time.Sleep(time.Second * 1)
+
+		t.Logf("shuffling")
+		err = sActor.Shuffle(electionID)
+		require.NoError(t, err)
+
+		// ##### DECRYPT BALLOTS #####
+		time.Sleep(time.Second * 1)
+
+		t.Logf("decrypting")
+
+		election, err = getElection(electionID, nodes[0].GetOrdering())
+		require.NoError(t, err)
+
+		err = decryptBallots(m, actor, election)
+		require.NoError(t, err)
+
+		time.Sleep(time.Second * 1)
+
+		t.Logf("get vote proof")
+		election, err = getElection(electionID, nodes[0].GetOrdering())
+		require.NoError(t, err)
+
+		fmt.Println("Title of the election : " + election.Configuration.MainTitle)
+		fmt.Println("ID of the election : " + string(election.ElectionID))
+		fmt.Println("Status of the election : " + strconv.Itoa(int(election.Status)))
+		fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
+
+		// TODO: check that decrypted ballots are equals to cast ballots (maybe
+		// through hashing)
+
+		require.Len(t, election.DecryptedBallots, len(castedVotes))
+
+		for _, b := range election.DecryptedBallots {
+			ok := false
+			for _, casted := range castedVotes {
+				if b.Equal(casted) {
+					ok = true
+					break
+				}
+			}
+			require.True(t, ok)
+		}
+
+		closeNodes(t, nodes)
 	}
-
-	// ##### CREATE ELECTION #####
-	electionID, err := createElection(m, "Many votes election", adminID)
-	require.NoError(t, err)
-
-	time.Sleep(time.Millisecond * 1000)
-
-	// ##### SETUP DKG #####
-	actor, err := initDkg(nodes, electionID)
-	require.NoError(t, err)
-
-	// ##### OPEN ELECTION #####
-	err = openElection(m, electionID)
-	require.NoError(t, err)
-
-	t.Logf("start casting votes")
-	election, err := getElection(electionID, nodes[0].GetOrdering())
-	require.NoError(t, err)
-
-	castedVotes, err := castVotesRandomly(m, actor, electionID, numVotes,
-		election.ChunksPerBallot())
-	require.NoError(t, err)
-
-	// ##### CLOSE ELECTION #####
-	err = closeElection(m, electionID, adminID)
-	require.NoError(t, err)
-
-	time.Sleep(time.Millisecond * 1000)
-
-	// ##### SHUFFLE BALLOTS #####
-	t.Logf("initializing shuffle")
-	sActor, err := initShuffle(nodes)
-	require.NoError(t, err)
-
-	time.Sleep(time.Second * 1)
-
-	t.Logf("shuffling")
-	err = sActor.Shuffle(electionID)
-	require.NoError(t, err)
-
-	// ##### DECRYPT BALLOTS #####
-	time.Sleep(time.Second * 10)
-
-	election, err = getElection(electionID, nodes[0].GetOrdering())
-	require.NoError(t, err)
-	err = decryptBallots(m, actor, election)
-	require.NoError(t, err)
-
-	time.Sleep(time.Second * 1)
-
-	t.Logf("get vote proof")
-	election, err = getElection(electionID, nodes[0].GetOrdering())
-	require.NoError(t, err)
-
-	fmt.Println("Title of the election : " + election.Configuration.MainTitle)
-	fmt.Println("ID of the election : " + string(election.ElectionID))
-	fmt.Println("Status of the election : " + strconv.Itoa(int(election.Status)))
-	fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
-
-	// TODO: check that decrypted ballots are equals to casted ballots (maybe
-	// through hashing)
-	for _, b := range election.DecryptedBallots {
-		fmt.Println("decrypted ballot:", b)
-	}
-
-	for _, c := range castedVotes {
-		fmt.Println("casted ballot:", c)
-	}
-
-	closeNodes(t, nodes)
 }
 
 // -----------------------------------------------------------------------------
@@ -453,23 +360,23 @@ func getElection(electionID []byte, service ordering.Service) (types.Election, e
 	return election, nil
 }
 
-func castVotesRandomly(m txManager, actor dkg.Actor, electionID []byte, numberOfVotes int, chunkPerBallot int) ([]string, error) {
+func castVotesRandomly(m txManager, actor dkg.Actor, election types.Election, numberOfVotes int) ([]types.Ballot, error) {
 	possibleBallots := []string{
 		string("select:" + encodeID("bb") + ":0,0,1,0\n" +
 			"text:" + encodeID("ee") + ":eWVz\n\n"), //encoding of "yes"
 		string("select:" + encodeID("bb") + ":1,1,0,0\n" +
 			"text:" + encodeID("ee") + ":amE=\n\n"), //encoding of "ja
 		string("select:" + encodeID("bb") + ":0,0,0,1\n" +
-			"text:" + encodeID("ee") + "b3Vp\n\n"), //encoding of "oui"
+			"text:" + encodeID("ee") + ":b3Vp\n\n"), //encoding of "oui"
 	}
 
-	votes := make([]string, numberOfVotes)
+	votes := make([]types.Ballot, numberOfVotes)
 
 	for i := 0; i < numberOfVotes; i++ {
 		randomIndex := rand.Intn(len(possibleBallots))
 		vote := possibleBallots[randomIndex]
 
-		ballot, err := marshallBallot(strings.NewReader(vote), actor, chunkPerBallot)
+		ciphervote, err := marshallBallot(strings.NewReader(vote), actor, election.ChunksPerBallot())
 		if err != nil {
 			return nil, xerrors.Errorf("failed to marshallBallot: %v", err)
 		}
@@ -477,9 +384,9 @@ func castVotesRandomly(m txManager, actor dkg.Actor, electionID []byte, numberOf
 		userID := "user " + strconv.Itoa(i)
 
 		castVote := types.CastVote{
-			ElectionID: hex.EncodeToString(electionID),
+			ElectionID: election.ElectionID,
 			UserID:     userID,
-			Ballot:     ballot,
+			Ballot:     ciphervote,
 		}
 
 		data, err := castVote.Serialize(serdecontext)
@@ -498,7 +405,13 @@ func castVotesRandomly(m txManager, actor dkg.Actor, electionID []byte, numberOf
 			return nil, xerrors.Errorf(addAndWaitErr, err)
 		}
 
-		votes[i] = vote
+		var ballot types.Ballot
+		err = ballot.Unmarshal(vote, election)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to unmarshal ballot: %v", err)
+		}
+
+		votes[i] = ballot
 	}
 
 	return votes, nil
