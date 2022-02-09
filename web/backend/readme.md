@@ -20,7 +20,7 @@ This files contains all the secrets and also the running information. It should 
 }
 ```
 
-Execute a small piece of code to generate the private and public keys:
+Here is  a small piece of code to help generating the keys:
 
 ```go
 func GenerateKey() {

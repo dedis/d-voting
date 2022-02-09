@@ -11,20 +11,16 @@ const Login: FC = () => {
   const [loginError] = useState();
 
   const handleClick = async () => {
-    try {
-      fetch(GET_TEQ_EENDPOINT)
-        .then((resp) => {
-          const json_data = resp.json();
-          json_data.then((result) => {
-            window.location = result["url"];
-          });
-        })
-        .catch((error) => {
-          console.log(error);
+    fetch(GET_TEQ_EENDPOINT)
+      .then((resp) => {
+        const json_data = resp.json();
+        json_data.then((result) => {
+          window.location = result["url"];
         });
-    } catch (error) {
-      console.log(error);
-    }
+      })
+      .catch((error) => {
+        console.log(error);
+      });
 
     return (
       <div>{loginError === null ? <div></div> : t("errorServerDown")}</div>
