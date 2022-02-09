@@ -294,7 +294,8 @@ func ciphervoteFromPairs(ks []kyber.Point, cs []kyber.Point) (Ciphervote, error)
 // PubShare represents a public share.
 type PubShare kyber.Point
 
-// PubSharesSubmission holds all the PubSharesSubmission produced by a given node, []PubSharesSubmission per ballot
+// PubSharesSubmission holds all the PubShares produced by a given node,
+// 1 for each ElGamal pair
 type PubSharesSubmission [][]PubShare
 
 func (p PubSharesSubmission) FingerPrint(writer io.Writer) error {
