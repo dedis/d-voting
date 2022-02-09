@@ -342,7 +342,7 @@ func (a *Actor) Decrypt(K, C kyber.Point) ([]byte, error) {
 			return nil, xerrors.Errorf("failed to send decrypt request: %v", err)
 		}
 
-		pubShares := make([]*share.PubShare, len(addrs))
+		pubShares := make([]*share.PubSharesSubmission, len(addrs))
 
 		for i := 0; i < len(addrs); i++ {
 			_, message, err := receiver.Recv(ctx)
@@ -356,7 +356,7 @@ func (a *Actor) Decrypt(K, C kyber.Point) ([]byte, error) {
 					"%T but got: %T", decryptReply, message)
 			}
 
-			pubShares[i] = &share.PubShare{
+			pubShares[i] = &share.PubSharesSubmission{
 				I: int(decryptReply.I),
 				V: decryptReply.V,
 			}

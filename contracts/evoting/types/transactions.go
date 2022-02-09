@@ -189,7 +189,7 @@ type RegisterPubShares struct {
 	Index int
 	// PubShares are the public shares of the node submitting the transaction
 	// so that they can be used for decryption.
-	PubShares PubShares
+	PubShares PubSharesSubmission
 	// Signature is the signature of the result of HashPubShares() with the
 	// private key corresponding to PublicKey
 	Signature []byte

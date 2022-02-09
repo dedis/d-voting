@@ -91,11 +91,11 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 		AdminID:       tx.AdminID,
 		Status:        types.Initial,
 		// Pubkey is set by the opening command
-		BallotSize:       tx.Configuration.MaxBallotSize(),
-		Suffragia:        types.Suffragia{},
-		PubSharesArchive: make([]types.PubShares, roster.Len()),
-		ShuffleInstances: []types.ShuffleInstance{},
-		DecryptedBallots: []types.Ballot{},
+		BallotSize:          tx.Configuration.MaxBallotSize(),
+		Suffragia:           types.Suffragia{},
+		PubShareSubmissions: make([]types.PubSharesSubmission, roster.Len()),
+		ShuffleInstances:    []types.ShuffleInstance{},
+		DecryptedBallots:    []types.Ballot{},
 		// We set the participant in the e-voting once for all. If it happens
 		// that 1/3 of the participants go away, the election will never end.
 		RosterBuf:        append([]byte{}, rosterBuf...),
@@ -568,10 +568,10 @@ func (e evotingCommand) registerPubShares(snap store.Snapshot, step execution.St
 	//TODO : make sure the pubShares are valid ? => determine the expected format
 
 	// add the pubShares to the election
-	election.PubSharesArchive[tx.Index] = tx.PubShares
+	election.PubShareSubmissions[tx.Index] = tx.PubShares
 
 	nbrSubmissions := 0
-	for _, submission := range election.PubSharesArchive {
+	for _, submission := range election.PubShareSubmissions {
 		if submission != nil {
 			nbrSubmissions++
 		}
@@ -619,7 +619,7 @@ func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("the ballots are not shuffled, current status: %d", election.Status)
 	}
 
-	allPubShares := election.PubSharesArchive
+	allPubShares := election.PubShareSubmissions
 
 	nbrBallots := len(allPubShares[0])
 	nbrPairsPerBallot := len(allPubShares[0][0])
@@ -832,7 +832,7 @@ func getTransaction(ctx serde.Context, tx txn.Transaction) (serde.Message, error
 	return message, nil
 }
 
-func Decrypt(ballot int, pair int, allPubShares []types.PubShares) ([]byte, error) {
+func Decrypt(ballot int, pair int, allPubShares []types.PubSharesSubmission) ([]byte, error) {
 	pubShares := make([]*share.PubShare, 0)
 
 	for i := 0; i < len(allPubShares); i++ {

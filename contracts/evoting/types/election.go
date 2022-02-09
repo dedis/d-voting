@@ -64,9 +64,10 @@ type Election struct {
 	// to compute it based on the roster each time we need it.
 	ShuffleThreshold int
 
-	// PubSharesArchive is an array containing all the pubShares. One entry per node,
-	// each entry contains one array of pubShares for each ballot.
-	PubSharesArchive PubSharesArchive
+	// PubShareSubmissions is an array containing all the submission of pubShares.
+	// One entry per node, the index of a node's submission is its index in the
+	// roster.
+	PubShareSubmissions []PubSharesSubmission
 
 	DecryptedBallots []Ballot
 
@@ -293,10 +294,10 @@ func ciphervoteFromPairs(ks []kyber.Point, cs []kyber.Point) (Ciphervote, error)
 // PubShare represents a public share.
 type PubShare kyber.Point
 
-// PubShares holds all the PubShare produced by a given node, []PubShare per ballot
-type PubShares [][]PubShare
+// PubSharesSubmission holds all the PubSharesSubmission produced by a given node, []PubSharesSubmission per ballot
+type PubSharesSubmission [][]PubShare
 
-func (p PubShares) FingerPrint(writer io.Writer) error {
+func (p PubSharesSubmission) FingerPrint(writer io.Writer) error {
 	for _, ballotShares := range p {
 		for _, pubShare := range ballotShares {
 			_, err := pubShare.MarshalTo(writer)
@@ -308,7 +309,3 @@ func (p PubShares) FingerPrint(writer io.Writer) error {
 
 	return nil
 }
-
-// PubSharesArchive groups all the PubShares submitted. Eah entry is the
-// submission of the node of the given index.
-type PubSharesArchive []PubShares

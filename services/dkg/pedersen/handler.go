@@ -180,7 +180,7 @@ mainSwitch:
 			//TODO: Works with current "shuffleThreshold", but the shuffle threshold
 			// should be smaller in theory ? (1/3 + 1 vs 2/3 + 1 ? )
 			differentPubShares := 0
-			for _, submission := range election.PubSharesArchive {
+			for _, submission := range election.PubShareSubmissions {
 				if submission != nil {
 					differentPubShares++
 				}
@@ -220,7 +220,7 @@ mainSwitch:
 			if accepted {
 				dela.Logger.Info().Msgf("our pubShares have been accepted on the chain, "+
 					"total # of submissions = %d, "+
-					"index: %v", len(election.PubSharesArchive), h.privShare.I)
+					"index: %v", len(election.PubShareSubmissions), h.privShare.I)
 				return nil
 			}
 
@@ -777,7 +777,7 @@ func watchTx(events <-chan ordering.Event, txID []byte) (bool, string) {
 	return false, "watch timeout"
 }
 
-func makeTx(election *etypes.Election, pubShares etypes.PubShares, index int, manager txn.Manager,
+func makeTx(election *etypes.Election, pubShares etypes.PubSharesSubmission, index int, manager txn.Manager,
 	pubSharesSigner crypto.Signer) (txn.Transaction, error) {
 
 	pubShareTx := etypes.RegisterPubShares{
