@@ -14,6 +14,7 @@ import { encryptVote } from "./VoteEncrypt";
 import "../../styles/Ballot.css";
 
 const Ballot: FC = (props) => {
+  var bytes: number[];
   const { t } = useTranslation();
   const { electionId } = useParams();
   const token = sessionStorage.getItem("token");
@@ -52,20 +53,19 @@ const Ballot: FC = (props) => {
   };
 
   const hexToBytes = (hex) => {
-    for (var bytes = [], c = 0; c < hex.length; c += 2)
+    for (c = 0; c < hex.length; c += 2)
       bytes.push(parseInt(hex.substr(c, 2), 16));
     return new Uint8Array(bytes);
   };
 
   const createBallot = (K, C) => {
     let vote = JSON.stringify({ K: Array.from(K), C: Array.from(C) });
-    let ballot = {
+    return {
       ElectionID: electionID,
       UserId: sessionStorage.getItem("id"),
       Ballot: Buffer.from(vote),
       Token: token,
     };
-    return ballot;
   };
 
   const sendBallot = async () => {

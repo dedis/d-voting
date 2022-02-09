@@ -1,10 +1,9 @@
 import React, { FC, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import i18n from "../language/Lang";
 
 import logoWhite from "../assets/logo-white.png";
-import { availableLanguages } from "../language/Lang";
+import i18n, { availableLanguages } from "../language/Lang";
 import "../styles/App.css";
 
 type NavBarProps = {
