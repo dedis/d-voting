@@ -40,11 +40,12 @@ type Handler struct {
 	txmngr        txn.Manager
 	shuffleSigner crypto.Signer
 	context       serde.Context
+	electionFac   serde.Factory
 }
 
 // NewHandler creates a new handler
 func NewHandler(me mino.Address, service ordering.Service, p pool.Pool,
-	txmngr txn.Manager, shuffleSigner crypto.Signer, ctx serde.Context) *Handler {
+	txmngr txn.Manager, shuffleSigner crypto.Signer, ctx serde.Context, electionFac serde.Factory) *Handler {
 	return &Handler{
 		me:            me,
 		service:       service,
@@ -52,6 +53,7 @@ func NewHandler(me mino.Address, service ordering.Service, p pool.Pool,
 		txmngr:        txmngr,
 		shuffleSigner: shuffleSigner,
 		context:       ctx,
+		electionFac:   electionFac,
 	}
 }
 
@@ -84,7 +86,7 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 
 	// loop until the threshold is reached or our transaction has been accepted
 	for {
-		election, err := getElection(h.context, electionID, h.service)
+		election, err := getElection(h.electionFac, h.context, electionID, h.service)
 		if err != nil {
 			return xerrors.Errorf("failed to get election: %v", err)
 		}

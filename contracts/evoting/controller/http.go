@@ -52,25 +52,30 @@ type votingProxy struct {
 
 	logger zerolog.Logger
 
-	context serde.Context
+	context       serde.Context
+	electionFac   serde.Factory
+	ciphervoteFac serde.Factory
 }
 
 func registerVotingProxy(proxy proxy.Proxy, signer crypto.Signer,
 	client signed.Client, dkg dkg.DKG, shuffleActor shuffle.Actor,
-	oSvc ordering.Service, p pool.Pool, m mino.Mino, ctx serde.Context) {
+	oSvc ordering.Service, p pool.Pool, m mino.Mino, ctx serde.Context,
+	electionFac serde.Factory, ciphervoteFac serde.Factory) {
 
 	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
 
 	h := &votingProxy{
-		logger:       logger,
-		signer:       signer,
-		client:       client,
-		dkg:          dkg,
-		shuffleActor: shuffleActor,
-		orderingSvc:  oSvc,
-		pool:         p,
-		mino:         m,
-		context:      ctx,
+		logger:        logger,
+		signer:        signer,
+		client:        client,
+		dkg:           dkg,
+		shuffleActor:  shuffleActor,
+		orderingSvc:   oSvc,
+		pool:          p,
+		mino:          m,
+		context:       ctx,
+		electionFac:   electionFac,
+		ciphervoteFac: ciphervoteFac,
 	}
 
 	proxy.RegisterHandler(loginEndpoint, h.Login)

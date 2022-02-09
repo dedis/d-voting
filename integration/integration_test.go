@@ -29,30 +29,18 @@ import (
 	delaPkg "go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
-	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/serde"
+	"go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
-
-	"go.dedis.ch/dela/serde/json"
 )
-
-var serdecontext serde.Context
 
 const addAndWaitErr = "failed to addAndWait: %v"
 
-func init() {
-	ctx := json.NewContext()
-	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, fake.Factory{})
-	ctx = serde.WithFactory(ctx, types.ElectionKey{}, types.ElectionFactory{})
-	ctx = serde.WithFactory(ctx, types.CiphervoteKey{}, types.CiphervoteFactory{})
-	ctx = serde.WithFactory(ctx, types.TransactionKey{}, types.TransactionFactory{})
-
-	serdecontext = ctx
-}
+var serdecontext = json.NewContext()
 
 // Check the shuffled votes versus the cast votes on a few nodes
 func TestIntegration(t *testing.T) {
@@ -108,8 +96,10 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		err = openElection(m, electionID)
 		require.NoError(t, err)
 
+		electionFac := types.NewElectionFactory(types.CiphervoteFactory{}, nodes[0].GetRosterFac())
+
 		t.Logf("start casting votes")
-		election, err := getElection(electionID, nodes[0].GetOrdering())
+		election, err := getElection(electionFac, electionID, nodes[0].GetOrdering())
 		require.NoError(t, err)
 
 		castedVotes, err := castVotesRandomly(m, actor, election, numVotes)
@@ -139,7 +129,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 
 		t.Logf("decrypting")
 
-		election, err = getElection(electionID, nodes[0].GetOrdering())
+		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
 		require.NoError(t, err)
 
 		err = decryptBallots(m, actor, election)
@@ -148,16 +138,13 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		time.Sleep(time.Second * 1)
 
 		t.Logf("get vote proof")
-		election, err = getElection(electionID, nodes[0].GetOrdering())
+		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
 		require.NoError(t, err)
 
 		fmt.Println("Title of the election : " + election.Configuration.MainTitle)
 		fmt.Println("ID of the election : " + string(election.ElectionID))
 		fmt.Println("Status of the election : " + strconv.Itoa(int(election.Status)))
 		fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
-
-		// TODO: check that decrypted ballots are equals to cast ballots (maybe
-		// through hashing)
 
 		require.Len(t, election.DecryptedBallots, len(castedVotes))
 
@@ -332,7 +319,7 @@ func openElection(m txManager, electionID []byte) error {
 	return nil
 }
 
-func getElection(electionID []byte, service ordering.Service) (types.Election, error) {
+func getElection(electionFac serde.Factory, electionID []byte, service ordering.Service) (types.Election, error) {
 	election := types.Election{}
 
 	proof, err := service.GetProof(electionID)
@@ -344,12 +331,7 @@ func getElection(electionID []byte, service ordering.Service) (types.Election, e
 		return election, xerrors.Errorf("election does not exist: %v", err)
 	}
 
-	fac := serdecontext.GetFactory(types.ElectionKey{})
-	if fac == nil {
-		return election, xerrors.New("election factory not found")
-	}
-
-	message, err := fac.Deserialize(serdecontext, proof.GetValue())
+	message, err := electionFac.Deserialize(serdecontext, proof.GetValue())
 	if err != nil {
 		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
 	}

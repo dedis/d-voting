@@ -13,7 +13,6 @@ import (
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
-	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/core/store/kv"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/minogrpc"
@@ -25,8 +24,17 @@ import (
 	"go.dedis.ch/kyber/v3/util/random"
 )
 
-var serdecontext = serde.WithFactory(serde.WithFactory(sjson.NewContext(), etypes.ElectionKey{},
-	etypes.ElectionFactory{}), ctypes.RosterKey{}, fake.Factory{})
+var serdecontext serde.Context
+var electionFac serde.Factory
+var transactionFac serde.Factory
+
+func init() {
+	serdecontext = sjson.NewContext()
+
+	ciphervoteFac := etypes.CiphervoteFactory{}
+	electionFac = etypes.NewElectionFactory(ciphervoteFac, fake.Factory{})
+	transactionFac = etypes.NewTransactionFactory(ciphervoteFac)
+}
 
 // If you get the persistent data from an actor and then recreate an actor
 // from that data, the persistent data should be the same in both actors.
@@ -148,7 +156,7 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 		require.True(t, exists)
 
 		otherActor := Actor{
-			handler: NewHandler(fake.NewAddress(0), fake.Service{}, handlerData, serdecontext),
+			handler: NewHandler(fake.NewAddress(0), fake.Service{}, handlerData, serdecontext, electionFac),
 		}
 
 		requireActorsEqual(t, actor, &otherActor)
@@ -289,7 +297,8 @@ func TestPedersen_Setup(t *testing.T) {
 		handler: &Handler{
 			startRes: &state{},
 		},
-		context: serdecontext,
+		context:     serdecontext,
+		electionFac: electionFac,
 	}
 
 	// Wrong electionID
@@ -331,7 +340,8 @@ func TestPedersen_Setup(t *testing.T) {
 	}
 
 	// This fake RosterFac always returns roster upon Deserialize
-	actor.context = serde.WithFactory(actor.context, ctypes.RosterKey{}, fake.NewRosterFac(roster))
+	fac := etypes.NewElectionFactory(etypes.CiphervoteFactory{}, fake.NewRosterFac(roster))
+	actor.electionFac = fac
 
 	actor.service = fake.NewService(
 		electionID,
@@ -376,7 +386,8 @@ func TestPedersen_Decrypt(t *testing.T) {
 		handler: &Handler{
 			startRes: &state{participants: []mino.Address{fake.NewAddress(0)}, distKey: suite.Point()},
 		},
-		context: serdecontext,
+		context:     serdecontext,
+		electionFac: electionFac,
 	}
 
 	_, err := actor.Decrypt(suite.Point(), suite.Point())
@@ -487,10 +498,10 @@ func TestPedersen_Scenario(t *testing.T) {
 
 	service := fake.NewService(electionID, election, serdecontext)
 
-	rosterFac := fake.NewRosterFac(roster)
-
 	for i, mino := range minos {
-		dkg := NewPedersen(mino, service, rosterFac)
+		fac := etypes.NewElectionFactory(etypes.CiphervoteFactory{}, fake.NewRosterFac(roster))
+
+		dkg := NewPedersen(mino, service, fac)
 
 		actor, err := dkg.Listen(electionIDBuf)
 		require.NoError(t, err)
@@ -545,6 +556,9 @@ func TestPedersen_Scenario(t *testing.T) {
 		require.Equal(t, message, string(decrypted))
 	}
 }
+
+// -----------------------------------------------------------------------------
+// Utility functions
 
 // actorsEqual checks that two actors hold the same data
 func requireActorsEqual(t require.TestingT, actor1, actor2 dkg.Actor) {

@@ -152,13 +152,7 @@ func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fac := h.context.GetFactory(types.CiphervoteKey{})
-	if fac == nil {
-		http.Error(w, "empty ciphervote factory", http.StatusInternalServerError)
-		return
-	}
-
-	msg, err := fac.Deserialize(h.context, req.Ballot)
+	msg, err := h.ciphervoteFac.Deserialize(h.context, req.Ballot)
 	if err != nil {
 		http.Error(w, "failed to deserialize ballot: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -239,7 +233,7 @@ func (h *votingProxy) ElectionInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	election, err := getElection(h.context, req.ElectionID, h.orderingSvc)
+	election, err := getElection(h.context, h.electionFac, req.ElectionID, h.orderingSvc)
 	if err != nil {
 		http.Error(w, xerrors.Errorf(getElectionErr, err).Error(),
 			http.StatusInternalServerError)
@@ -294,15 +288,8 @@ func (h *votingProxy) AllElectionInfo(w http.ResponseWriter, r *http.Request) {
 
 	allElectionsInfo := make([]types.GetElectionInfoResponse, len(elecMD.ElectionsIDs))
 
-	fac := h.context.GetFactory(types.ElectionKey{})
-	if fac == nil {
-		http.Error(w, xerrors.New("election factory not found").Error(),
-			http.StatusInternalServerError)
-		return
-	}
-
 	for i, id := range elecMD.ElectionsIDs {
-		election, err := getElection(h.context, id, h.orderingSvc)
+		election, err := getElection(h.context, h.electionFac, id, h.orderingSvc)
 		if err != nil {
 			http.Error(w, xerrors.Errorf(getElectionErr, err).Error(),
 				http.StatusInternalServerError)
@@ -409,7 +396,7 @@ func (h *votingProxy) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	election, err := getElection(h.context, req.ElectionID, h.orderingSvc)
+	election, err := getElection(h.context, h.electionFac, req.ElectionID, h.orderingSvc)
 	if err != nil {
 		http.Error(w, xerrors.Errorf(getElectionErr, err).Error(),
 			http.StatusInternalServerError)
@@ -486,7 +473,7 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	election, err := getElection(h.context, req.ElectionID, h.orderingSvc)
+	election, err := getElection(h.context, h.electionFac, req.ElectionID, h.orderingSvc)
 	if err != nil {
 		http.Error(w, xerrors.Errorf(getElectionErr, err).Error(),
 			http.StatusInternalServerError)
@@ -599,7 +586,7 @@ func (h *votingProxy) ElectionResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	election, err := getElection(h.context, req.ElectionID, h.orderingSvc)
+	election, err := getElection(h.context, h.electionFac, req.ElectionID, h.orderingSvc)
 	if err != nil {
 		http.Error(w, xerrors.Errorf(getElectionErr, err).Error(),
 			http.StatusInternalServerError)
@@ -715,7 +702,9 @@ func (h *votingProxy) submitAndWaitForTxn(ctx context.Context, cmd evoting.Comma
 
 // getElection gets the election from the snap. Returns the election ID NOT hex
 // encoded.
-func getElection(ctx serde.Context, electionIDHex string, srv ordering.Service) (types.Election, error) {
+func getElection(ctx serde.Context, electionFac serde.Factory, electionIDHex string,
+	srv ordering.Service) (types.Election, error) {
+
 	var election types.Election
 
 	electionID, err := hex.DecodeString(electionIDHex)
@@ -733,12 +722,7 @@ func getElection(ctx serde.Context, electionIDHex string, srv ordering.Service) 
 		return election, xerrors.Errorf("election does not exist")
 	}
 
-	fac := ctx.GetFactory(types.ElectionKey{})
-	if fac == nil {
-		return election, xerrors.New("election factory not found")
-	}
-
-	message, err := fac.Deserialize(ctx, electionBuff)
+	message, err := electionFac.Deserialize(ctx, electionBuff)
 	if err != nil {
 		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
 	}

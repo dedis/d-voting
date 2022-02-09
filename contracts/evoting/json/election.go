@@ -94,9 +94,6 @@ func (electionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, err
 		}
 	}
 
-	// TODO: check if this is the right place to provide the factory
-	ctx = serde.WithFactory(ctx, types.CiphervoteKey{}, types.CiphervoteFactory{})
-
 	suffragia, err := decodeSuffragia(ctx, electionJSON.Suffragia)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to decode suffragia: %v", err)

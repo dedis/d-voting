@@ -7,7 +7,6 @@ import (
 	"go.dedis.ch/dela/core/execution"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
-	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/json"
@@ -105,6 +104,10 @@ type Contract struct {
 	rosterKey []byte
 
 	context serde.Context
+
+	electionFac    serde.Factory
+	rosterFac      authority.Factory
+	transactionFac serde.Factory
 }
 
 // NewContract creates a new Value contract
@@ -112,10 +115,10 @@ func NewContract(accessKey, rosterKey []byte, srvc access.Service,
 	pedersen dkg.DKG, rosterFac authority.Factory) Contract {
 
 	ctx := json.NewContext()
-	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, rosterFac)
-	ctx = serde.WithFactory(ctx, types.ElectionKey{}, types.ElectionFactory{})
-	ctx = serde.WithFactory(ctx, types.CiphervoteKey{}, types.CiphervoteFactory{})
-	ctx = serde.WithFactory(ctx, types.TransactionKey{}, types.TransactionFactory{})
+
+	ciphervoteFac := types.CiphervoteFactory{}
+	electionFac := types.NewElectionFactory(ciphervoteFac, rosterFac)
+	transactionFac := types.NewTransactionFactory(ciphervoteFac)
 
 	contract := Contract{
 		access:    srvc,
@@ -125,6 +128,10 @@ func NewContract(accessKey, rosterKey []byte, srvc access.Service,
 		rosterKey: rosterKey,
 
 		context: ctx,
+
+		electionFac:    electionFac,
+		rosterFac:      rosterFac,
+		transactionFac: transactionFac,
 	}
 
 	contract.cmd = evotingCommand{Contract: &contract, prover: proof.HashVerify}

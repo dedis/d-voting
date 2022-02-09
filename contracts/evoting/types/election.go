@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/registry"
 	"go.dedis.ch/kyber/v3"
@@ -90,11 +91,25 @@ func (e Election) Serialize(ctx serde.Context) ([]byte, error) {
 // uses the electionFormat.
 //
 // - implements serde.Factory
-type ElectionFactory struct{}
+type ElectionFactory struct {
+	ciphervoteFac serde.Factory
+	rosterFac     authority.Factory
+}
+
+// NewElectionFactory creates a new Election factory
+func NewElectionFactory(cf serde.Factory, rf authority.Factory) ElectionFactory {
+	return ElectionFactory{
+		ciphervoteFac: cf,
+		rosterFac:     rf,
+	}
+}
 
 // Deserialize implements serde.Factory
-func (ElectionFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
+func (e ElectionFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
 	format := electionFormat.Get(ctx.GetFormat())
+
+	ctx = serde.WithFactory(ctx, CiphervoteKey{}, e.ciphervoteFac)
+	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, e.rosterFac)
 
 	message, err := format.Decode(ctx, data)
 	if err != nil {

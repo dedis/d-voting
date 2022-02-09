@@ -114,6 +114,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 	service = updateService(election, dummyID)
 	handler.service = &service
 	handler.context = serdecontext
+	handler.electionFac = electionFac
 
 	err = handler.handleStartShuffle(dummyID)
 	require.EqualError(t, err, "the election must be closed: but status is 0")
@@ -230,7 +231,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 
 	service = updateService(election, dummyID)
 	fakePool = FakePool{service: &service}
-	handler = *NewHandler(handler.me, &service, &fakePool, manager, handler.shuffleSigner, serdecontext)
+	handler = *NewHandler(handler.me, &service, &fakePool, manager, handler.shuffleSigner, serdecontext, electionFac)
 
 	err = handler.handleStartShuffle(dummyID)
 	require.NoError(t, err)
@@ -267,6 +268,7 @@ func initValidHandler(dummyID string) Handler {
 	handler.shuffleSigner = fake.NewSigner()
 	handler.txmngr = signed.NewManager(fake.NewSigner(), fakeClient{})
 	handler.context = serdecontext
+	handler.electionFac = electionFac
 
 	return handler
 }

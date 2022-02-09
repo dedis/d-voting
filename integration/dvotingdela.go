@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/dkg/pedersen"
 	"github.com/dedis/d-voting/services/shuffle"
@@ -82,6 +83,7 @@ type dVotingCosiDela interface {
 	GetShuffle() shuffle.Shuffle
 	GetShuffleSigner() crypto.AggregateSigner
 	GetValidationSrv() validation.Service
+	GetRosterFac() authority.Factory
 }
 
 // dVotingNode represents a Dela node using cosi pbft aimed to execute d-voting
@@ -101,6 +103,7 @@ type dVotingNode struct {
 	shuffle       *neff.NeffShuffle
 	shuffleSigner crypto.AggregateSigner
 	vs            validation.Service
+	rosterFac     authority.Factory
 }
 
 // Creates n dela nodes using tempDir as root to file path and returns an array
@@ -240,13 +243,13 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 	contract := accessContract.NewContract(aKey[:], accessService, accessStore)
 	accessContract.RegisterContract(exec, contract)
 
-	dkg := pedersen.NewPedersen(onet, srvc, rosterFac)
+	dkg := pedersen.NewPedersen(onet, srvc, etypes.NewElectionFactory(etypes.CiphervoteFactory{}, rosterFac))
 
 	rosterKey := [32]byte{}
 	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:],
 		accessService, dkg, rosterFac))
 
-	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, rosterFac, signer)
+	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, etypes.NewElectionFactory(etypes.CiphervoteFactory{}, rosterFac), signer)
 
 	// Neff shuffle signer
 	l := loader.NewFileLoader(filepath.Join(path, "private_neff.key"))
@@ -271,6 +274,7 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 		shuffle:       neffShuffle,
 		shuffleSigner: neffSigner,
 		vs:            vs,
+		rosterFac:     rosterFac,
 	}
 }
 
@@ -408,6 +412,11 @@ func (c dVotingNode) GetShuffleSigner() crypto.AggregateSigner {
 // GetValidationSrv implements dVotingNode
 func (c dVotingNode) GetValidationSrv() validation.Service {
 	return c.vs
+}
+
+// GetRosterFac implements dVotingNode
+func (c dVotingNode) GetRosterFac() authority.Factory {
+	return c.rosterFac
 }
 
 // certGenerator can generate a private key compatible with the x509

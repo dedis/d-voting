@@ -18,7 +18,6 @@ import (
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
-	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/signed"
@@ -43,12 +42,15 @@ var invalidElection = []byte("fake election")
 
 var ctx serde.Context
 
+var electionFac serde.Factory
+var transactionFac serde.Factory
+
 func init() {
+	ciphervoteFac := types.CiphervoteFactory{}
+	electionFac = types.NewElectionFactory(ciphervoteFac, fakeAuthorityFactory{})
+	transactionFac = types.NewTransactionFactory(ciphervoteFac)
+
 	ctx = sjson.NewContext()
-	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, fakeAuthorityFactory{})
-	ctx = serde.WithFactory(ctx, types.ElectionKey{}, types.ElectionFactory{})
-	ctx = serde.WithFactory(ctx, types.CiphervoteKey{}, types.CiphervoteFactory{})
-	ctx = serde.WithFactory(ctx, types.TransactionKey{}, types.TransactionFactory{})
 }
 
 func fakeProver(proof.Suite, string, proof.Verifier, []byte) error {
@@ -158,9 +160,7 @@ func TestCommand_CreateElection(t *testing.T) {
 	res, err := snap.Get(electionIDBuff)
 	require.NoError(t, err)
 
-	fac := ctx.GetFactory(types.ElectionKey{})
-
-	message, err := fac.Deserialize(ctx, res)
+	message, err := electionFac.Deserialize(ctx, res)
 	require.NoError(t, err)
 
 	election, ok := message.(types.Election)
@@ -285,9 +285,7 @@ func TestCommand_CastVote(t *testing.T) {
 	res, err := snap.Get(dummyElectionIDBuff)
 	require.NoError(t, err)
 
-	fac := ctx.GetFactory(types.ElectionKey{})
-
-	message, err := fac.Deserialize(ctx, res)
+	message, err := electionFac.Deserialize(ctx, res)
 	require.NoError(t, err)
 
 	election, ok := message.(types.Election)
@@ -376,9 +374,7 @@ func TestCommand_CloseElection(t *testing.T) {
 	res, err := snap.Get(dummyElectionIDBuff)
 	require.NoError(t, err)
 
-	fac := ctx.GetFactory(types.ElectionKey{})
-
-	message, err := fac.Deserialize(ctx, res)
+	message, err := electionFac.Deserialize(ctx, res)
 	require.NoError(t, err)
 
 	election, ok := message.(types.Election)
@@ -492,9 +488,7 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 	electionBuf, err = snap.Get(electionTxIDBuff)
 	require.NoError(t, err)
 
-	fac := ctx.GetFactory(types.ElectionKey{})
-
-	message, err := fac.Deserialize(ctx, electionBuf)
+	message, err := electionFac.Deserialize(ctx, electionBuf)
 	require.NoError(t, err)
 
 	election, ok := message.(types.Election)
@@ -786,9 +780,7 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	res, err := snap.Get(dummyElectionIDBuff)
 	require.NoError(t, err)
 
-	fac := ctx.GetFactory(types.ElectionKey{})
-
-	message, err := fac.Deserialize(ctx, res)
+	message, err := electionFac.Deserialize(ctx, res)
 	require.NoError(t, err)
 
 	election, ok := message.(types.Election)
@@ -852,9 +844,7 @@ func TestCommand_CancelElection(t *testing.T) {
 	res, err := snap.Get(dummyElectionIDBuff)
 	require.NoError(t, err)
 
-	fac := ctx.GetFactory(types.ElectionKey{})
-
-	message, err := fac.Deserialize(ctx, res)
+	message, err := electionFac.Deserialize(ctx, res)
 	require.NoError(t, err)
 
 	election, ok := message.(types.Election)
@@ -1124,8 +1114,6 @@ func (c fakeCmd) cancelElection(snap store.Snapshot, step execution.Step) error 
 
 type fakeAuthorityFactory struct {
 	serde.Factory
-
-	//AuthorityOf(serde.Context, []byte) (authority.Authority, error)
 }
 
 func (f fakeAuthorityFactory) AuthorityOf(ctx serde.Context, rosterBuf []byte) (authority.Authority, error) {

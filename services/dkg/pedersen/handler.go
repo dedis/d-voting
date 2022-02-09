@@ -43,11 +43,13 @@ type Handler struct {
 	privKey   kyber.Scalar
 	pubKey    kyber.Point
 
-	context serde.Context
+	context     serde.Context
+	electionFac serde.Factory
 }
 
 // NewHandler creates a new handler
-func NewHandler(me mino.Address, service ordering.Service, handlerData HandlerData, context serde.Context) *Handler {
+func NewHandler(me mino.Address, service ordering.Service, handlerData HandlerData,
+	context serde.Context, electionFac serde.Factory) *Handler {
 
 	privKey := handlerData.PrivKey
 	pubKey := handlerData.PubKey
@@ -63,7 +65,8 @@ func NewHandler(me mino.Address, service ordering.Service, handlerData HandlerDa
 		privKey:   privKey,
 		pubKey:    pubKey,
 
-		context: context,
+		context:     context,
+		electionFac: electionFac,
 	}
 }
 
@@ -430,9 +433,7 @@ func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionID strin
 		return false, xerrors.Errorf("election does not exist: %v", err)
 	}
 
-	fac := h.context.GetFactory(etypes.ElectionKey{})
-
-	message, err := fac.Deserialize(h.context, proof.GetValue())
+	message, err := h.electionFac.Deserialize(h.context, proof.GetValue())
 	if err != nil {
 		return false, xerrors.Errorf("failed to deserialize election: %v", err)
 	}

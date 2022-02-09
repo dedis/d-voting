@@ -26,7 +26,6 @@ import (
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
-	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/core/txn/signed"
@@ -36,7 +35,6 @@ import (
 	"go.dedis.ch/dela/crypto/loader"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/proxy"
-	"go.dedis.ch/dela/serde"
 	sjson "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
@@ -48,8 +46,6 @@ const contentType = "application/json"
 const getElectionErr = "failed to get election: %v"
 
 var suite = suites.MustFind("Ed25519")
-
-// TODO : Merge evoting and DKG web server ?
 
 // getManager is the function called when we need a transaction manager. It
 // allows us to use a different manager for the tests.
@@ -140,13 +136,11 @@ func (a *registerAction) Execute(ctx node.Context) error {
 	}
 
 	serdecontext := sjson.NewContext()
-	serdecontext = serde.WithFactory(serdecontext, ctypes.RosterKey{}, rosterFac)
-	serdecontext = serde.WithFactory(serdecontext, types.ElectionKey{}, types.ElectionFactory{})
-	serdecontext = serde.WithFactory(serdecontext, types.CiphervoteKey{}, types.CiphervoteFactory{})
-	serdecontext = serde.WithFactory(serdecontext, types.TransactionKey{}, types.TransactionFactory{})
+	electionFac := types.NewElectionFactory(types.CiphervoteFactory{}, rosterFac)
+	ciphervoteFac := types.CiphervoteFactory{}
 
 	registerVotingProxy(proxy, signer, client, dkg, shuffleActor,
-		orderingSvc, p, m, serdecontext)
+		orderingSvc, p, m, serdecontext, electionFac, ciphervoteFac)
 
 	return nil
 }
@@ -211,10 +205,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	serdecontext := sjson.NewContext()
-	serdecontext = serde.WithFactory(serdecontext, ctypes.RosterKey{}, rosterFac)
-	serdecontext = serde.WithFactory(serdecontext, types.ElectionKey{}, types.ElectionFactory{})
-	serdecontext = serde.WithFactory(serdecontext, types.CiphervoteKey{}, types.CiphervoteFactory{})
-	serdecontext = serde.WithFactory(serdecontext, types.TransactionKey{}, types.TransactionFactory{})
+	electionFac := types.NewElectionFactory(types.CiphervoteFactory{}, rosterFac)
 
 	var service ordering.Service
 	err = ctx.Injector.Resolve(&service)
@@ -274,7 +265,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to decode electionID '%s': %v", electionID, err)
 	}
 
-	election, err := getElection(serdecontext, electionID, service)
+	election, err := getElection(serdecontext, electionFac, electionID, service)
 	if err != nil {
 		return xerrors.Errorf(getElectionErr, err)
 	}
@@ -403,7 +394,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("Response body : " + string(body))
 	resp.Body.Close()
 
-	election, err = getElection(serdecontext, electionID, service)
+	election, err = getElection(serdecontext, electionFac, electionID, service)
 	if err != nil {
 		return xerrors.Errorf(getElectionErr, err)
 	}
@@ -451,7 +442,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("Response body : " + string(body))
 	resp.Body.Close()
 
-	election, err = getElection(serdecontext, electionID, service)
+	election, err = getElection(serdecontext, electionFac, electionID, service)
 	if err != nil {
 		return xerrors.Errorf(getElectionErr, err)
 	}
@@ -569,7 +560,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	dela.Logger.Info().Msg("Response body: " + respBody)
 
-	election, err = getElection(serdecontext, electionID, service)
+	election, err = getElection(serdecontext, electionFac, electionID, service)
 	if err != nil {
 		return xerrors.Errorf(getElectionErr, err)
 	}
@@ -613,7 +604,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("Response body: " + string(body))
 	resp.Body.Close()
 
-	election, err = getElection(serdecontext, electionID, service)
+	election, err = getElection(serdecontext, electionFac, electionID, service)
 	if err != nil {
 		return xerrors.Errorf(getElectionErr, err)
 	}
@@ -657,7 +648,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	// time.Sleep(20 * time.Second)
 
-	election, err = getElection(serdecontext, electionID, service)
+	election, err = getElection(serdecontext, electionFac, electionID, service)
 	if err != nil {
 		return xerrors.Errorf(getElectionErr, err)
 	}
@@ -701,7 +692,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("Response body : " + string(body))
 	resp.Body.Close()
 
-	election, err = getElection(serdecontext, electionID, service)
+	election, err = getElection(serdecontext, electionFac, electionID, service)
 	if err != nil {
 		return xerrors.Errorf(getElectionErr, err)
 	}
@@ -745,7 +736,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("Response body : " + string(body))
 	resp.Body.Close()
 
-	election, err = getElection(serdecontext, electionID, service)
+	election, err = getElection(serdecontext, electionFac, electionID, service)
 	if err != nil {
 		return xerrors.Errorf(getElectionErr, err)
 	}

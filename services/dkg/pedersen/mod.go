@@ -7,10 +7,8 @@ import (
 
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
-	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
-	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 
 	"github.com/dedis/d-voting/internal/tracing"
 	"github.com/dedis/d-voting/services/dkg"
@@ -54,26 +52,26 @@ const (
 type Pedersen struct {
 	sync.RWMutex
 
-	mino      mino.Mino
-	factory   serde.Factory
-	service   ordering.Service
-	rosterFac authority.Factory
-	actors    map[string]dkg.Actor
+	mino        mino.Mino
+	factory     serde.Factory
+	service     ordering.Service
+	electionFac serde.Factory
+	actors      map[string]dkg.Actor
 }
 
 // NewPedersen returns a new DKG Pedersen factory
 func NewPedersen(m mino.Mino, service ordering.Service,
-	rosterFac authority.Factory) *Pedersen {
+	electionFac serde.Factory) *Pedersen {
 
 	factory := types.NewMessageFactory(m.GetAddressFactory())
 	actors := make(map[string]dkg.Actor)
 
 	return &Pedersen{
-		mino:      m,
-		factory:   factory,
-		service:   service,
-		rosterFac: rosterFac,
-		actors:    actors,
+		mino:        m,
+		factory:     factory,
+		service:     service,
+		electionFac: electionFac,
+		actors:      actors,
 	}
 }
 
@@ -104,21 +102,20 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.
 	electionID := hex.EncodeToString(electionIDBuf)
 
 	ctx := jsonserde.NewContext()
-	ctx = serde.WithFactory(ctx, etypes.ElectionKey{}, etypes.ElectionFactory{})
-	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, s.rosterFac)
 
 	// link the actor to an RPC by the election ID
-	h := NewHandler(s.mino.GetAddress(), s.service, handlerData, ctx)
+	h := NewHandler(s.mino.GetAddress(), s.service, handlerData, ctx, s.electionFac)
 	no := s.mino.WithSegment(electionID)
 	rpc := mino.MustCreateRPC(no, RPC_NAME, h, s.factory)
 
 	a := &Actor{
-		rpc:        rpc,
-		factory:    s.factory,
-		service:    s.service,
-		context:    ctx,
-		handler:    h,
-		electionID: electionID,
+		rpc:         rpc,
+		factory:     s.factory,
+		service:     s.service,
+		context:     ctx,
+		electionFac: s.electionFac,
+		handler:     h,
+		electionID:  electionID,
 	}
 
 	s.Lock()
@@ -139,12 +136,13 @@ func (s *Pedersen) GetActor(electionIDBuf []byte) (dkg.Actor, bool) {
 //
 // - implements dkg.Actor
 type Actor struct {
-	rpc        mino.RPC
-	factory    serde.Factory
-	service    ordering.Service
-	context    serde.Context
-	handler    *Handler
-	electionID string
+	rpc         mino.RPC
+	factory     serde.Factory
+	service     ordering.Service
+	context     serde.Context
+	electionFac serde.Factory
+	handler     *Handler
+	electionID  string
 }
 
 // Setup implements dkg.Actor. It initializes the DKG protocol
@@ -155,7 +153,7 @@ func (a *Actor) Setup() (kyber.Point, error) {
 		return nil, xerrors.Errorf("setup() was already called, only one call is allowed")
 	}
 
-	election, err := getElection(a.context, a.electionID, a.service)
+	election, err := a.getElection()
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get election: %v", err)
 	}
@@ -382,15 +380,15 @@ func electionExists(service ordering.Service, electionIDBuf []byte) (ordering.Pr
 }
 
 // getElection gets the election from the service.
-func getElection(ctx serde.Context, electionIDHex string, srv ordering.Service) (etypes.Election, error) {
+func (a Actor) getElection() (etypes.Election, error) {
 	var election etypes.Election
 
-	electionID, err := hex.DecodeString(electionIDHex)
+	electionID, err := hex.DecodeString(a.electionID)
 	if err != nil {
 		return election, xerrors.Errorf("failed to decode electionIDHex: %v", err)
 	}
 
-	proof, err := srv.GetProof(electionID)
+	proof, err := a.service.GetProof(electionID)
 	if err != nil {
 		return election, xerrors.Errorf("failed to get proof: %v", err)
 	}
@@ -400,12 +398,7 @@ func getElection(ctx serde.Context, electionIDHex string, srv ordering.Service) 
 		return election, xerrors.Errorf("election does not exist")
 	}
 
-	fac := ctx.GetFactory(etypes.ElectionKey{})
-	if fac == nil {
-		return election, xerrors.New("election factory not found")
-	}
-
-	message, err := fac.Deserialize(ctx, electionBuff)
+	message, err := a.electionFac.Deserialize(a.context, electionBuff)
 	if err != nil {
 		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
 	}
@@ -415,9 +408,9 @@ func getElection(ctx serde.Context, electionIDHex string, srv ordering.Service) 
 		return election, xerrors.Errorf("wrong message type: %T", message)
 	}
 
-	if electionIDHex != election.ElectionID {
+	if a.electionID != election.ElectionID {
 		return election, xerrors.Errorf("electionID do not match: %q != %q",
-			electionIDHex, election.ElectionID)
+			a.electionID, election.ElectionID)
 	}
 
 	return election, nil

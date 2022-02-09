@@ -53,11 +53,22 @@ func (e *ElectionIDs) Add(id string) error {
 // TransactionFactory provides the mean to deserialize a transaction.
 //
 // - implements serde.Factory
-type TransactionFactory struct{}
+type TransactionFactory struct {
+	ciphervoteFac serde.Factory
+}
+
+// NewTransactionFactory creates a new transaction factory
+func NewTransactionFactory(cf serde.Factory) TransactionFactory {
+	return TransactionFactory{
+		ciphervoteFac: cf,
+	}
+}
 
 // Deserialize implements serde.Factory
-func (TransactionFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
+func (t TransactionFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
 	format := transactionFormats.Get(ctx.GetFormat())
+
+	ctx = serde.WithFactory(ctx, CiphervoteKey{}, t.ciphervoteFac)
 
 	message, err := format.Decode(ctx, data)
 	if err != nil {

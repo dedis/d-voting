@@ -14,7 +14,6 @@ import (
 	"go.dedis.ch/dela/core/execution"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
-	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/cosi/threshold"
@@ -48,7 +47,7 @@ type prover func(suite proof.Suite, protocolName string, verifier proof.Verifier
 // createElection implements commands. It performs the CREATE_ELECTION command
 func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step) error {
 
-	msg, err := getTransaction(e.context, step.Current)
+	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
 	}
@@ -63,13 +62,7 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("failed to get roster")
 	}
 
-	fac := e.context.GetFactory(ctypes.RosterKey{})
-	rosterFac, ok := fac.(authority.Factory)
-	if !ok {
-		return xerrors.Errorf("failed to get roster factory: %T", fac)
-	}
-
-	roster, err := rosterFac.AuthorityOf(e.context, rosterBuf)
+	roster, err := e.rosterFac.AuthorityOf(e.context, rosterBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to get roster: %v", err)
 	}
@@ -146,7 +139,7 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 // from the DKG actor. It works only if DKG is set up.
 func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) error {
 
-	msg, err := getTransaction(e.context, step.Current)
+	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
 	}
@@ -156,7 +149,7 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) e
 		return xerrors.Errorf(errWrongTx, msg)
 	}
 
-	election, electionID, err := getElection(e.context, tx.ElectionID, snap)
+	election, electionID, err := e.getElection(tx.ElectionID, snap)
 	if err != nil {
 		return xerrors.Errorf(errGetElection, err)
 	}
@@ -199,7 +192,7 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) e
 // castVote implements commands. It performs the CAST_VOTE command
 func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error {
 
-	msg, err := getTransaction(e.context, step.Current)
+	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
 	}
@@ -209,7 +202,7 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 		return xerrors.Errorf(errWrongTx, msg)
 	}
 
-	election, electionID, err := getElection(e.context, tx.ElectionID, snap)
+	election, electionID, err := e.getElection(tx.ElectionID, snap)
 	if err != nil {
 		return xerrors.Errorf(errGetElection, err)
 	}
@@ -241,7 +234,7 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 // shuffleBallots implements commands. It performs the SHUFFLE_BALLOTS command
 func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step) error {
 
-	msg, err := getTransaction(e.context, step.Current)
+	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
 	}
@@ -251,12 +244,12 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf(errWrongTx, msg)
 	}
 
-	err = checkPreviousTransactions(e.context, step, tx.Round)
+	err = e.checkPreviousTransactions(step, tx.Round)
 	if err != nil {
 		return xerrors.Errorf("check previous transactions failed: %v", err)
 	}
 
-	election, electionID, err := getElection(e.context, tx.ElectionID, snap)
+	election, electionID, err := e.getElection(tx.ElectionID, snap)
 	if err != nil {
 		return xerrors.Errorf(errGetElection, err)
 	}
@@ -414,7 +407,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 
 // checkPreviousTransactions checks if a ShuffleBallotsTransaction has already
 // been accepted and executed for a specific round.
-func checkPreviousTransactions(ctx serde.Context, step execution.Step, round int) error {
+func (e evotingCommand) checkPreviousTransactions(step execution.Step, round int) error {
 	for _, tx := range step.Previous {
 		// skip tx not concerning the evoting contract
 		if string(tx.GetArg(native.ContractArg)) != ContractName {
@@ -426,7 +419,7 @@ func checkPreviousTransactions(ctx serde.Context, step execution.Step, round int
 			continue
 		}
 
-		msg, err := getTransaction(ctx, step.Current)
+		msg, err := e.getTransaction(step.Current)
 		if err != nil {
 			return xerrors.Errorf(errGetTransaction, err)
 		}
@@ -448,7 +441,7 @@ func checkPreviousTransactions(ctx serde.Context, step execution.Step, round int
 // closeElection implements commands. It performs the CLOSE_ELECTION command
 func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) error {
 
-	msg, err := getTransaction(e.context, step.Current)
+	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
 	}
@@ -458,7 +451,7 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 		return xerrors.Errorf(errWrongTx, msg)
 	}
 
-	election, electionID, err := getElection(e.context, tx.ElectionID, snap)
+	election, electionID, err := e.getElection(tx.ElectionID, snap)
 	if err != nil {
 		return xerrors.Errorf(errGetElection, err)
 	}
@@ -493,7 +486,7 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 // decryptBallots implements commands. It performs the DECRYPT_BALLOTS command
 func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step) error {
 
-	msg, err := getTransaction(e.context, step.Current)
+	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
 	}
@@ -503,7 +496,7 @@ func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf(errWrongTx, msg)
 	}
 
-	election, electionID, err := getElection(e.context, tx.ElectionID, snap)
+	election, electionID, err := e.getElection(tx.ElectionID, snap)
 	if err != nil {
 		return xerrors.Errorf(errGetElection, err)
 	}
@@ -535,7 +528,7 @@ func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step)
 // cancelElection implements commands. It performs the CANCEL_ELECTION command
 func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step) error {
 
-	msg, err := getTransaction(e.context, step.Current)
+	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
 	}
@@ -545,7 +538,7 @@ func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf(errWrongTx, msg)
 	}
 
-	election, electionID, err := getElection(e.context, tx.ElectionID, snap)
+	election, electionID, err := e.getElection(tx.ElectionID, snap)
 	if err != nil {
 		return xerrors.Errorf(errGetElection, err)
 	}
@@ -636,7 +629,7 @@ func (s SemiRandomStream) XORKeyStream(dst, src []byte) {
 
 // getElection gets the election from the snap. Returns the election ID NOT hex
 // encoded.
-func getElection(ctx serde.Context, electionIDHex string, snap store.Snapshot) (types.Election, []byte, error) {
+func (e evotingCommand) getElection(electionIDHex string, snap store.Snapshot) (types.Election, []byte, error) {
 	var election types.Election
 
 	electionID, err := hex.DecodeString(electionIDHex)
@@ -649,12 +642,7 @@ func getElection(ctx serde.Context, electionIDHex string, snap store.Snapshot) (
 		return election, nil, xerrors.Errorf("failed to get key %q: %v", electionID, err)
 	}
 
-	fac := ctx.GetFactory(types.ElectionKey{})
-	if fac == nil {
-		return election, nil, xerrors.New("election factory not found")
-	}
-
-	message, err := fac.Deserialize(ctx, electionBuff)
+	message, err := e.electionFac.Deserialize(e.context, electionBuff)
 	if err != nil {
 		return election, nil, xerrors.Errorf("failed to deserialize Election: %v", err)
 	}
@@ -679,18 +667,13 @@ func getElection(ctx serde.Context, electionIDHex string, snap store.Snapshot) (
 
 // getTransaction extracts the argument from the transaction and unmarshals it
 // to e. e MUST be a pointer.
-func getTransaction(ctx serde.Context, tx txn.Transaction) (serde.Message, error) {
+func (e evotingCommand) getTransaction(tx txn.Transaction) (serde.Message, error) {
 	buff := tx.GetArg(ElectionArg)
 	if len(buff) == 0 {
 		return nil, xerrors.Errorf("%q not found in tx arg", ElectionArg)
 	}
 
-	fac := ctx.GetFactory(types.TransactionKey{})
-	if fac == nil {
-		return nil, xerrors.Errorf("transaction factory not found")
-	}
-
-	message, err := fac.Deserialize(ctx, buff)
+	message, err := e.transactionFac.Deserialize(e.context, buff)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to deserialize transaction: %v", err)
 	}
