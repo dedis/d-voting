@@ -53,7 +53,7 @@ const Ballot: FC = (props) => {
   };
 
   const hexToBytes = (hex) => {
-    for (c = 0; c < hex.length; c += 2)
+    for (var c = 0; c < hex.length; c += 2)
       bytes.push(parseInt(hex.substr(c, 2), 16));
     return new Uint8Array(bytes);
   };

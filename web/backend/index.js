@@ -6,12 +6,11 @@ const session = require('express-session');
 const kyber = require('@dedis/kyber')
 const crypto = require('crypto');
 const request = require('request');
-const mysql = require('mysql2');
 const config = require('./config.json');
 const access_config = require('./access_config.json');
+const lmdb = require('lmdb');
 
 /*global Buffer, __dirname, process */
-/*eslint no-undef: "error"*/
 
 const app = express();
 
@@ -34,7 +33,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 var access_control = function (req, res, next){
-
     const begin = req.url.split('?')[0];
     var role = 'everyone';
     if(req.session.userid){
@@ -46,10 +44,10 @@ var access_control = function (req, res, next){
     } else {
         res.status(400).send('Unauthorized');
     }
-
-
 }
 app.use(access_control);
+
+let usersDB = lmdb.open({path: 'dvoting-users'});
 
 /*
 * This is via this endpoint that the client request the tequila key, this key will then be used for redirection on the tequila server
@@ -57,7 +55,7 @@ app.use(access_control);
 app.get('/api/getTkKey', (req,res) => {
 
     const body = 'urlaccess=' + config.FRONT_END_URL + '/api/control_key\nservice=Evoting\nrequest=name,firstname,email,uniqueid,allunits';
-    axios
+    axios 
         .post('http://tequila.epfl.ch/cgi-bin/tequila/createrequest', body)
         .then(response => {
             const key = response.data.split('\n')[0].split('=')[1];
@@ -71,7 +69,7 @@ app.get('/api/getTkKey', (req,res) => {
 
 
 /*
-* Here the the client will send the key he/she receive from the tequila, it is then verified on the tequila.
+* Here the client will send the key he/she received from the tequila, it is then verified on the tequila.
 * If the key is valid, the user is then logged in the website through this backend
 */
 app.get('/api/control_key', (req, res) => {
@@ -83,38 +81,23 @@ app.get('/api/control_key', (req, res) => {
         .then(resa => {
             if(resa.data.includes('status=ok')){
                 const sciper = resa.data.split('uniqueid=')[1].split('\n')[0];
-                const name = resa.data.split('\nname=')[1].split('\n')[0];
+                const lastname = resa.data.split('\nname=')[1].split('\n')[0];
                 const firstname = resa.data.split('\nfirstname=')[1].split('\n')[0];
 
-                const connection = mysql.createConnection({
-                    host     : 'localhost',
-                    user     : config.DB_USER,
-                    password : config.DB_PASS,
-                    database : config.DB_DB
-                });
+                var user = usersDB.get(sciper);
+                if(user["role"] === "") {
+                    user["role"] = "voter";
+                    user["lastname"] = lastname;
+                    user["firstname"] = firstname;
+                    user["loggedin"] = false;
+                }
+                usersDB.put(sciper, user);
 
-                connection.connect();
-
-                connection.query('SELECT * from user_rights WHERE sciper = ?',[sciper], function(err, rows, fields) {
-                    if (err) {
-                        res.status(500).send('Error while querying the DB');
-                    }
-
-                    req.session.userid = parseInt(sciper);
-                    req.session.name = name;
-                    req.session.firstname = firstname;
-                    if(rows.length != 0){
-                        req.session.role = rows[0].role;
-                    } else {
-                        req.session.role = 'voter';
-                    }
-
-                    res.redirect('/');
-
-                });
-
-
-
+                req.session.userid = parseInt(sciper);
+                req.session.lastname = lastname;
+                req.session.firstname = firstname;
+                req.session.role = user["role"];
+                res.redirect('/');
             } else {
                 res.status(500).send('Login did not work')
             }
@@ -142,7 +125,7 @@ app.get('/api/getpersonnalinfo', (req, res) => {
     if(req.session.userid){
         res.json({
             'sciper' : req.session.userid,
-            'name' : req.session.name,
+            'lastname' : req.session.lastname,
             'firstname' : req.session.firstname,
             'role' : req.session.role,
             'islogged' : true
@@ -150,7 +133,7 @@ app.get('/api/getpersonnalinfo', (req, res) => {
     } else {
         res.json({
             'sciper' : 0,
-            'name' : '',
+            'lastname' : '',
             'firstname' : '',
             'role' : '',
             'islogged' : false
@@ -163,28 +146,23 @@ app.get('/api/getpersonnalinfo', (req, res) => {
 * This call allow a user that is admin to get the list of the poeple that have a special role (not a voter)
 */
 app.get('/api/get_user_rights', (req, res) => {
+    var sciper = req.session.userid;
 
-    if(req.session.userid){
-        if(req.session.role == 'admin'){
-            const connection = mysql.createConnection({
-                host     : 'localhost',
-                user     : config.DB_USER,
-                password : config.DB_PASS,
-                database : config.DB_DB
-            });
-
-            connection.connect();
-
-            connection.query('SELECT * from user_rights', function(err, rows, fields) {
-                if (err) {
-                    res.status(500).send('Error while querying the DB');
-                }
-
-                res.json(rows);
-            });
-        }else {
+    if(sciper){
+        var user = usersDB.get(sciper);
+        if(user["role"] === "admin") {
+            var users = [];
+            usersDB.getRange().filter(({key, value}) => {
+                    return key != sciper; // filter out self
+                })
+                .forEach(({key, value}) => {
+                    users.push(value);
+                });
+        } else {
             res.status(400).send('You must be admin to request this');
         }
+
+        res.json(users);
     } else {
         res.status(400).send('Not logged in');
     }
@@ -195,35 +173,15 @@ app.get('/api/get_user_rights', (req, res) => {
 * This call (only for admins) allow an admin to add a role to a voter
 */
 app.post('/api/add_role', (req, res) => {
-
-    if(req.session.userid) {
-        if (req.session.role == 'admin') {
+    if(req.session.userid){
+        var requester = usersDB.get(req.session.userid);
+        if(requester["role"] === "admin") {
 
             const sciper = req.body.sciper;
             const role = req.body.role;
-            const connection = mysql.createConnection({
-                host     : 'localhost',
-                user     : config.DB_USER,
-                password : config.DB_PASS,
-                database : config.DB_DB
-            });
-
-            connection.connect();
-            connection.query('SELECT * from user_rights WHERE sciper = ?', [sciper] ,function(err, rows, fields) {
-
-                if(rows.length == 0){
-                    const post  = {sciper: sciper, role: role};
-                    connection.query('INSERT INTO user_rights SET ?', post, function (error, results, fields) {
-                        if (error) {
-                            res.status(500).send('Error while inserting in DB');
-                        }
-                        res.status(200).send('Success');
-                    });
-
-                } else {
-                    res.status(300).send('Please remove first the current right on this user');
-                }
-            });
+            var user = usersDB.get(sciper);
+            user["role"] = role;
+            usersDB.put(sciper, user);
 
         } else {
             res.status(400).send('You must be admin to request this');
@@ -238,27 +196,12 @@ app.post('/api/add_role', (req, res) => {
 * This call (only for admins) allow an admin to remove a role to a user
 */
 app.post('/api/remove_role', (req, res) => {
-
     if(req.session.userid){
         if(req.session.role == 'admin'){
-
             const sciper = req.body.sciper;
 
-            const connection = mysql.createConnection({
-                host     : 'localhost',
-                user     : config.DB_USER,
-                password : config.DB_PASS,
-                database : config.DB_DB
-            });
-
-            connection.connect();
-
-            connection.query('DELETE FROM user_rights WHERE sciper = ?', [sciper], function (error, results, fields) {
-                if (error){
-                    res.status(500).send('Error while deleting the user in DB');
-                }
-                res.status(200).send('Deleted');
-            });
+            usersDB.remove(sciper);
+            res.status(200).send('Deleted');
         } else {
             res.status(400).send('You must be admin to request this')
         }
