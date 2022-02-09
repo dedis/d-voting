@@ -2,11 +2,11 @@ package types
 
 import (
 	"encoding/base64"
-
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/registry"
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
+	"io"
 )
 
 type ID string
@@ -219,24 +219,9 @@ func (c *Configuration) IsValid() bool {
 	return true
 }
 
-// PublicBulletinBoard maintains a list of encrypted ballots with the associated
-// user ID.
-type PublicBulletinBoard struct {
-	UserIDs []string
-	Ballots []Ciphervote
-}
-
-// CastVote adds a new vote and its associated user or updates a user's vote.
-func (p *PublicBulletinBoard) CastVote(userID string, ciphervote Ciphervote) {
-	for i, u := range p.UserIDs {
-		if u == userID {
-			p.Ballots[i] = ciphervote
-			return
-		}
-	}
-
-	p.UserIDs = append(p.UserIDs, userID)
-	p.Ballots = append(p.Ballots, ciphervote.Copy())
+type Suffragia struct {
+	UserIDs     []string
+	Ciphervotes []Ciphervote
 }
 
 // CastVote adds a new vote and its associated user or updates a user's vote.
@@ -250,36 +235,6 @@ func (s *Suffragia) CastVote(userID string, ciphervote Ciphervote) {
 
 	s.UserIDs = append(s.UserIDs, userID)
 	s.Ciphervotes = append(s.Ciphervotes, ciphervote.Copy())
-}
-
-// GetBallotFromUser returns the ballot associated to a user. Returns nil if
-// user is not found.
-func (p *PublicBulletinBoard) GetBallotFromUser(userID string) (Ciphervote, bool) {
-	for i, u := range p.UserIDs {
-		if u == userID {
-			return p.Ballots[i].Copy(), true
-		}
-	}
-
-	return Ciphervote{}, false
-}
-
-// DeleteUser removes a user and its associated votes if found.
-func (p *PublicBulletinBoard) DeleteUser(userID string) bool {
-	for i, u := range p.UserIDs {
-		if u == userID {
-			p.UserIDs = append(p.UserIDs[:i], p.UserIDs[i+1:]...)
-			p.Ballots = append(p.Ballots[:i], p.Ballots[i+1:]...)
-			return true
-		}
-	}
-
-	return false
-}
-
-type Suffragia struct {
-	UserIDs     []string
-	Ciphervotes []Ciphervote
 }
 
 // CiphervotesFromPairs ...
@@ -334,3 +289,26 @@ func ciphervoteFromPairs(ks []kyber.Point, cs []kyber.Point) (Ciphervote, error)
 
 	return res, nil
 }
+
+// PubShare represents a public share.
+type PubShare kyber.Point
+
+// PubShares holds all the PubShare produced by a given node, []PubShare per ballot
+type PubShares [][]PubShare
+
+func (p PubShares) FingerPrint(writer io.Writer) error {
+	for _, ballotShares := range p {
+		for _, pubShare := range ballotShares {
+			_, err := pubShare.MarshalTo(writer)
+			if err != nil {
+				return xerrors.Errorf("failed to Marshal V: %v", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// PubSharesArchive groups all the PubShares submitted. Eah entry is the
+// submission of the node of the given index.
+type PubSharesArchive []PubShares

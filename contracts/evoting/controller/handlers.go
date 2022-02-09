@@ -6,14 +6,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"strings"
-
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	uuid "github.com/satori/go.uuid"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/serde"
 	"golang.org/x/xerrors"
+	"io/ioutil"
+	"net/http"
 )
 
 // Login responds with the user token.
@@ -500,13 +500,13 @@ func (h *votingProxy) BeginDecryption(w http.ResponseWriter, r *http.Request) {
 
 	actor, exists := h.dkg.GetActor(electionIDBuf)
 	if !exists {
-		http.Error(w, "failed to get actor:"+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to get actor: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	err = actor.RequestPubShares()
 	if err != nil {
-		http.Error(w, "failed to request the public shares"+err.Error(),
+		http.Error(w, "failed to request the public shares: "+err.Error(),
 			http.StatusInternalServerError)
 		return
 	}
@@ -547,13 +547,6 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	electionIDBuf, err := hex.DecodeString(req.ElectionID)
-	if err != nil {
-		http.Error(w, "failed to decode electionID: "+err.Error(),
-			http.StatusInternalServerError)
-		return
-	}
-
 	election, err := getElection(h.context, req.ElectionID, h.orderingSvc)
 	if err != nil {
 		http.Error(w, "failed to get election: "+err.Error(),
@@ -572,8 +565,8 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 	}
 
 	decryptBallots := types.DecryptBallots{
-		ElectionID:       req.ElectionID,
-		UserID:           req.UserID,
+		ElectionID: req.ElectionID,
+		UserID:     req.UserID,
 	}
 
 	data, err := decryptBallots.Serialize(h.context)

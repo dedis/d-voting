@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"io"
+	"strconv"
 
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/registry"
@@ -184,17 +185,26 @@ func (sb ShuffleBallots) Serialize(ctx serde.Context) ([]byte, error) {
 
 type RegisterPubShares struct {
 	ElectionID string
-	// Round is the "submission number". It is used to make sure no pubShares
-	// will be lost by "overwrite".
-	Round int
+	// Index is the index of the node making the submission
+	Index int
 	// PubShares are the public shares of the node submitting the transaction
 	// so that they can be used for decryption.
 	PubShares PubShares
 	// Signature is the signature of the result of HashPubShares() with the
 	// private key corresponding to PublicKey
 	Signature []byte
-	// PublicKey is the public key of the signer
-	PublicKey []byte
+}
+
+// Serialize implements serde.Message
+func (rp RegisterPubShares) Serialize(ctx serde.Context) ([]byte, error) {
+	format := transactionFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, rp)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to encode register pubShares: %v", err)
+	}
+
+	return data, nil
 }
 
 // DecryptBallots ...
@@ -253,7 +263,10 @@ func RandomID() (string, error) {
 
 // Fingerprint implements serde.Fingerprinter
 func (sb ShuffleBallots) Fingerprint(writer io.Writer) error {
-	writer.Write([]byte(sb.ElectionID))
+	_, err := writer.Write([]byte(sb.ElectionID))
+	if err != nil {
+		return xerrors.Errorf("failed to write election ID to fingerprint: %v", err)
+	}
 
 	for _, ballot := range sb.ShuffledBallots {
 		err := ballot.FingerPrint(writer)
@@ -267,13 +280,19 @@ func (sb ShuffleBallots) Fingerprint(writer io.Writer) error {
 
 // Fingerprint implements serde.Fingerprinter
 func (ps RegisterPubShares) Fingerprint(writer io.Writer) error {
-	writer.Write([]byte(ps.ElectionID))
+	_, err := writer.Write([]byte(ps.ElectionID))
+	if err != nil {
+		return xerrors.Errorf("failed to write election ID to fingerprint: %v", err)
+	}
 
-	for _, pubShare := range ps.PubShares  {
-		 err := pubShare.FingerPrint(writer)
-		if err != nil {
-			return xerrors.Errorf("failed to fingerprint pubShares: %v", err)
-		}
+	_, err = writer.Write([]byte(strconv.Itoa(ps.Index)))
+	if err != nil {
+		return xerrors.Errorf("failed to write pubShare index to fingerprint: %v", err)
+	}
+
+	err = ps.PubShares.FingerPrint(writer)
+	if err != nil {
+		return xerrors.Errorf("failed to fingerprint pubShares: %V", err)
 	}
 
 	return nil

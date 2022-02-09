@@ -3,7 +3,7 @@ package pedersen
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
+	"crypto/sha256"
 	"encoding/json"
 	"github.com/dedis/d-voting/contracts/evoting"
 	"go.dedis.ch/dela/core/execution/native"
@@ -157,23 +157,11 @@ mainSwitch:
 			ballotShares := make([]etypes.PubShare, len(ballot))
 
 			for _, ciphertext := range ballot {
-				K, C, err := ciphertext.GetPoints()
-				if err != nil {
-					return xerrors.Errorf(
-						"could not retrieve a ballot's ElGamal pairs: %v", err)
-				}
-				S := suite.Point().Mul(h.privShare.V, K)
-				partialVal := suite.Point().Sub(C, S)
+				S := suite.Point().Mul(h.privShare.V, ciphertext.K)
 
-				partialValMarshalled, err := partialVal.MarshalBinary()
-				if err != nil {
-					return xerrors.Errorf("could not marshal pubShare: %v", err)
-				}
+				partialVal := suite.Point().Sub(ciphertext.C, S)
 
-				ballotShares = append(ballotShares, etypes.PubShare{
-					I: h.privShare.I,
-					V: partialValMarshalled,
-				})
+				ballotShares = append(ballotShares, partialVal)
 			}
 
 			publicShares = append(publicShares, ballotShares)
@@ -191,14 +179,19 @@ mainSwitch:
 
 			//TODO: Works with current "shuffleThreshold", but the shuffle threshold
 			// should be smaller in theory ? (1/3 + 1 vs 2/3 + 1 ? )
-			differentPubShares := len(election.PubSharesArchive.PubSharesSubmissions)
+			differentPubShares := 0
+			for _, submission := range election.PubSharesArchive {
+				if submission != nil {
+					differentPubShares++
+				}
+			}
 			if differentPubShares >= election.ShuffleThreshold {
 				dela.Logger.Info().Msgf("decryption possible with shares from %d nodes",
 					differentPubShares)
 				return nil
 			}
 
-			tx, err := makeTx(&election, publicShares, h.txmnger, h.pubSharesSigner)
+			tx, err := makeTx(&election, publicShares, h.privShare.I, h.txmnger, h.pubSharesSigner)
 			if err != nil {
 				return xerrors.Errorf("failed to make tx: %v", err)
 			}
@@ -227,7 +220,7 @@ mainSwitch:
 			if accepted {
 				dela.Logger.Info().Msgf("our pubShares have been accepted on the chain, "+
 					"total # of submissions = %d, "+
-					"pubShares: %v", len(election.PubSharesArchive.PubSharesSubmissions), publicShares)
+					"index: %v", len(election.PubSharesArchive), h.privShare.I)
 				return nil
 			}
 
@@ -267,8 +260,8 @@ func (h *Handler) start(start types.Start, receivedDeals []types.Deal,
 	}
 
 	// create the DKG
-	threshold := threshold.ByzantineThreshold(len(start.GetPublicKeys()))
-	d, err := pedersen.NewDistKeyGenerator(suite, h.privKey, start.GetPublicKeys(), threshold)
+	thrshold := threshold.ByzantineThreshold(len(start.GetPublicKeys()))
+	d, err := pedersen.NewDistKeyGenerator(suite, h.privKey, start.GetPublicKeys(), thrshold)
 	if err != nil {
 		return xerrors.Errorf("failed to create new DKG: %v", err)
 	}
@@ -758,4 +751,88 @@ func (s *state) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
+}
+
+// watchTx checks the transaction to find one that match txID. Return if the
+// transaction has been accepted or not. Will also return false if/when the
+// events chan is closed, which is expected to happen.
+func watchTx(events <-chan ordering.Event, txID []byte) (bool, string) {
+	for event := range events {
+		for _, res := range event.Transactions {
+			if !bytes.Equal(res.GetTransaction().GetID(), txID) {
+				continue
+			}
+
+			dela.Logger.Info().Hex("id", txID).Msg("transaction included in the block")
+
+			accepted, msg := res.GetStatus()
+			if accepted {
+				return true, ""
+			}
+
+			return false, msg
+		}
+	}
+
+	return false, "watch timeout"
+}
+
+func makeTx(election *etypes.Election, pubShares etypes.PubShares, index int, manager txn.Manager,
+	pubSharesSigner crypto.Signer) (txn.Transaction, error) {
+
+	pubShareTx := etypes.RegisterPubShares{
+		ElectionID: election.ElectionID,
+		PubShares:  pubShares,
+		Index:      index,
+	}
+
+	h := sha256.New()
+
+	err := pubShareTx.Fingerprint(h)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get fingerprint: %v", err)
+	}
+
+	hash := h.Sum(nil)
+
+	// Sign the pubShares :
+	signature, err := pubSharesSigner.Sign(hash)
+	if err != nil {
+		return nil, xerrors.Errorf("Could not sign the pubShares : %v", err)
+	}
+
+	encodedSignature, err := signature.Serialize(jsondela.NewContext())
+	if err != nil {
+		return nil, xerrors.Errorf("Could not encode signature as []byte : %v ", err)
+	}
+
+	// Complete transaction:
+	pubShareTx.Signature = encodedSignature
+
+	js, err := json.Marshal(pubShareTx)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to marshal "+
+			"RegisterPubSharesTransaction: %v", err)
+	}
+
+	args := make([]txn.Arg, 3)
+	args[0] = txn.Arg{
+		Key:   native.ContractArg,
+		Value: []byte(evoting.ContractName),
+	}
+	args[1] = txn.Arg{
+		Key:   evoting.CmdArg,
+		Value: []byte(evoting.CmdRegisterPubShares),
+	}
+	args[2] = txn.Arg{
+		Key:   evoting.ElectionArg,
+		Value: js,
+	}
+
+	tx, err := manager.Make(args...)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to use manager: %v", err.Error())
+	}
+
+	return tx, nil
 }
