@@ -25,7 +25,7 @@ import (
 	"golang.org/x/xerrors"
 
 	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
-	jsonserde "go.dedis.ch/dela/serde/json"
+	"go.dedis.ch/dela/serde/json"
 )
 
 const (
@@ -52,9 +52,11 @@ func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool,
 
 	factory := types.NewMessageFactory(m.GetAddressFactory())
 
-	ctx := jsonserde.NewContext()
+	ctx := json.NewContext()
 	ctx = serde.WithFactory(ctx, etypes.ElectionKey{}, etypes.ElectionFactory{})
 	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, rosterFac)
+	ctx = serde.WithFactory(ctx, etypes.CiphervoteKey{}, etypes.CiphervoteFactory{})
+	ctx = serde.WithFactory(ctx, etypes.TransactionKey{}, etypes.TransactionFactory{})
 
 	return &NeffShuffle{
 		mino:       m,

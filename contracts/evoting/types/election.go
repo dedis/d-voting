@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/base64"
+
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/registry"
 	"go.dedis.ch/kyber/v3"
@@ -26,7 +27,8 @@ const (
 // only JSON is supported.
 var electionFormat = registry.NewSimpleRegistry()
 
-func RegisterFormat(format serde.Format, engine serde.FormatEngine) {
+// RegisterElectionFormat registers the engine for the provided format
+func RegisterElectionFormat(format serde.Format, engine serde.FormatEngine) {
 	electionFormat.Register(format, engine)
 }
 
@@ -34,6 +36,8 @@ func RegisterFormat(format serde.Format, engine serde.FormatEngine) {
 type ElectionKey struct{}
 
 // Election contains all information about a simple election
+//
+// - implements serde.Message
 type Election struct {
 	Configuration Configuration
 
@@ -49,8 +53,8 @@ type Election struct {
 	// to pad smaller ballots such that all  ballots cast have the same size
 	BallotSize int
 
-	// PublicBulletinBoard is a map from User ID to their ballot EncryptedBallot
-	PublicBulletinBoard PublicBulletinBoard
+	// Suffragia is a map from User ID to their encrypted ballot
+	Suffragia Suffragia
 
 	// ShuffleInstances is all the shuffles, along with their proof and identity
 	// of shuffler.
@@ -74,7 +78,7 @@ type Election struct {
 	RosterBuf []byte
 }
 
-// Serialize implements serde.Context
+// Serialize implements serde.Message
 func (e Election) Serialize(ctx serde.Context) ([]byte, error) {
 	format := electionFormat.Get(ctx.GetFormat())
 
@@ -118,6 +122,7 @@ func (e *Election) ChunksPerBallot() int {
 // and verify the proof of a shuffle
 type RandomVector [][]byte
 
+// Unmarshal ...
 func (r RandomVector) Unmarshal() ([]kyber.Scalar, error) {
 	e := make([]kyber.Scalar, len(r))
 
@@ -153,7 +158,7 @@ func (r *RandomVector) LoadFromScalars(e []kyber.Scalar) error {
 // ballots, the proofs and the identity of the shuffler.
 type ShuffleInstance struct {
 	// ShuffledBallots contains the list of shuffled ciphertext for this round
-	ShuffledBallots EncryptedBallots
+	ShuffledBallots []Ciphervote
 
 	// ShuffleProofs is the proof of the shuffle for this round
 	ShuffleProofs []byte
@@ -191,7 +196,7 @@ func (c *Configuration) GetQuestion(ID ID) Question {
 	return nil
 }
 
-// isValid returns true if and only if the whole configuration is coherent and
+// IsValid returns true if and only if the whole configuration is coherent and
 // valid
 func (c *Configuration) IsValid() bool {
 	// serves as a set to check each ID is unique
@@ -218,32 +223,45 @@ func (c *Configuration) IsValid() bool {
 // user ID.
 type PublicBulletinBoard struct {
 	UserIDs []string
-	Ballots EncryptedBallots
+	Ballots []Ciphervote
 }
 
 // CastVote adds a new vote and its associated user or updates a user's vote.
-func (p *PublicBulletinBoard) CastVote(userID string, encryptedVote EncryptedBallot) {
+func (p *PublicBulletinBoard) CastVote(userID string, ciphervote Ciphervote) {
 	for i, u := range p.UserIDs {
 		if u == userID {
-			p.Ballots[i] = encryptedVote
+			p.Ballots[i] = ciphervote
 			return
 		}
 	}
 
 	p.UserIDs = append(p.UserIDs, userID)
-	p.Ballots = append(p.Ballots, encryptedVote.Copy())
+	p.Ballots = append(p.Ballots, ciphervote.Copy())
+}
+
+// CastVote adds a new vote and its associated user or updates a user's vote.
+func (s *Suffragia) CastVote(userID string, ciphervote Ciphervote) {
+	for i, u := range s.UserIDs {
+		if u == userID {
+			s.Ciphervotes[i] = ciphervote
+			return
+		}
+	}
+
+	s.UserIDs = append(s.UserIDs, userID)
+	s.Ciphervotes = append(s.Ciphervotes, ciphervote.Copy())
 }
 
 // GetBallotFromUser returns the ballot associated to a user. Returns nil if
 // user is not found.
-func (p *PublicBulletinBoard) GetBallotFromUser(userID string) (EncryptedBallot, bool) {
+func (p *PublicBulletinBoard) GetBallotFromUser(userID string) (Ciphervote, bool) {
 	for i, u := range p.UserIDs {
 		if u == userID {
 			return p.Ballots[i].Copy(), true
 		}
 	}
 
-	return EncryptedBallot{}, false
+	return Ciphervote{}, false
 }
 
 // DeleteUser removes a user and its associated votes if found.
@@ -259,71 +277,25 @@ func (p *PublicBulletinBoard) DeleteUser(userID string) bool {
 	return false
 }
 
-// PubShare represents a public share.
-type PubShare struct {
-	I int    // Index of the public share
-	V []byte // Value of the public share (marshalled kyber.Point)
+type Suffragia struct {
+	UserIDs     []string
+	Ciphervotes []Ciphervote
 }
 
-// PubShares holds all the PubShare produced by a given node, []PubShare per ballot
-type PubShares [][]PubShare
-
-// PubSharesArchive groups all the PubShares submitted
-type PubSharesArchive struct {
-	// PubSharesSubmissions is a slice, with each entry being the pubShares
-	// submitted by one node of the roster.
-	PubSharesSubmissions []PubShares
-	// PublicKeys are the public keys corresponding to the nodes who made a
-	// submission
-	PublicKeys [][]byte
-}
-
-// EncryptedBallot represents a list of Ciphertext
-type EncryptedBallot []Ciphertext
-
-// EncryptedBallots represents a list of EncryptedBallot
-type EncryptedBallots []EncryptedBallot
-
-// GetElGPairs returns 2 2-dimensional arrays with the Elgamal pairs of each
-// encrypted ballot
-func (b EncryptedBallots) GetElGPairs() ([][]kyber.Point, [][]kyber.Point, error) {
-	if len(b) == 0 {
-		return nil, nil, xerrors.Errorf("there are no ballots")
-	}
-
-	ballotSize := len(b[0])
-
-	X := make([][]kyber.Point, ballotSize)
-	Y := make([][]kyber.Point, ballotSize)
-
-	for _, ballot := range b {
-		x, y, err := ballot.GetElGPairs()
-		if err != nil {
-			return nil, nil, err
-		}
-
-		for i := 0; i < len(x); i++ {
-			X[i] = append(X[i], x[i])
-			Y[i] = append(Y[i], y[i])
-		}
-	}
-
-	return X, Y, nil
-}
-
-func (b *EncryptedBallots) InitFromElGPairs(X, Y [][]kyber.Point) error {
+// CiphervotesFromPairs ...
+func CiphervotesFromPairs(X, Y [][]kyber.Point) ([]Ciphervote, error) {
 	if len(X) != len(Y) {
-		return xerrors.Errorf("X and Y must have same length: %d != %d",
+		return nil, xerrors.Errorf("X and Y must have same length: %d != %d",
 			len(X), len(Y))
 	}
 
 	if len(X) == 0 {
-		return xerrors.Errorf("El Gamal pairs are empty")
+		return nil, xerrors.Errorf("ElGamal pairs are empty")
 	}
 
-	NQ := len(X)
-	k := len(X[0])
-	*b = make([]EncryptedBallot, k)
+	NQ := len(X)   // sequence size
+	k := len(X[0]) // number of votes
+	res := make([]Ciphervote, k)
 
 	for i := 0; i < k; i++ {
 		x := make([]kyber.Point, NQ)
@@ -334,66 +306,31 @@ func (b *EncryptedBallots) InitFromElGPairs(X, Y [][]kyber.Point) error {
 			y[j] = Y[j][i]
 		}
 
-		encryptedBallot := EncryptedBallot{}
-		err := encryptedBallot.InitFromElGPairs(x, y)
+		ciphervote, err := ciphervoteFromPairs(x, y)
 		if err != nil {
-			return err
+			return nil, xerrors.Errorf("failed to init from ElGamal pairs: %v", err)
 		}
 
-		(*b)[i] = encryptedBallot
+		res[i] = ciphervote
 	}
 
-	return nil
+	return res, nil
 }
 
-// GetElGPairs returns corresponding kyber.Points from the ciphertexts
-func (b EncryptedBallot) GetElGPairs() (ks []kyber.Point, cs []kyber.Point, err error) {
-	ks = make([]kyber.Point, len(b))
-	cs = make([]kyber.Point, len(b))
-
-	for i, ct := range b {
-		k, c, err := ct.GetPoints()
-		if err != nil {
-			return nil, nil, xerrors.Errorf("failed to get points: %v", err)
-		}
-
-		ks[i] = k
-		cs[i] = c
-	}
-
-	return ks, cs, nil
-}
-
-// Copy returns a deep copy of EncryptedBallot
-func (b EncryptedBallot) Copy() EncryptedBallot {
-	ciphertexts := make([]Ciphertext, len(b))
-
-	for i, ciphertext := range b {
-		ciphertexts[i] = ciphertext.Copy()
-	}
-
-	return ciphertexts
-}
-
-// InitFromElGPairs sets the ciphertext based on ks, cs
-func (b *EncryptedBallot) InitFromElGPairs(ks []kyber.Point, cs []kyber.Point) error {
+func ciphervoteFromPairs(ks []kyber.Point, cs []kyber.Point) (Ciphervote, error) {
 	if len(ks) != len(cs) {
-		return xerrors.Errorf("ks and cs must have same length: %d != %d",
+		return Ciphervote{}, xerrors.Errorf("ks and cs must have same length: %d != %d",
 			len(ks), len(cs))
 	}
 
-	*b = make([]Ciphertext, len(ks))
+	res := make(Ciphervote, len(ks))
 
 	for i := range ks {
-		var ct Ciphertext
-
-		err := ct.FromPoints(ks[i], cs[i])
-		if err != nil {
-			return xerrors.Errorf("failed to init ciphertext: %v", err)
+		res[i] = EGPair{
+			K: ks[i],
+			C: cs[i],
 		}
-
-		(*b)[i] = ct
 	}
 
-	return nil
+	return res, nil
 }

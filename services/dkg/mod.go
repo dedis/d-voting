@@ -8,10 +8,11 @@ import (
 // DKG defines the primitive to start a DKG protocol
 type DKG interface {
 	// Listen starts the RPC. This function should be called on each node that
-	// wishes to participate in a DKG.
+	// wishes to participate in a DKG. electionID is NOT hex-encoded.
 	Listen(electionID []byte, txmngr txn.Manager) (Actor, error)
 
-	// GetActor allows to retrieve the Actor corresponding to a given electionID
+	// GetActor allows to retrieve the Actor corresponding to a given
+	// electionID. electionID is NOT hex-encoded.
 	GetActor(electionID []byte) (Actor, bool)
 }
 

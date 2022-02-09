@@ -13,9 +13,11 @@ import (
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/proxy"
+	"go.dedis.ch/dela/serde"
 	"golang.org/x/xerrors"
 )
 
@@ -47,14 +49,16 @@ type votingProxy struct {
 	dkg          dkg.DKG
 
 	pool   pool.Pool
-	client *Client
+	client signed.Client
 
 	logger zerolog.Logger
+
+	context serde.Context
 }
 
 func registerVotingProxy(proxy proxy.Proxy, signer crypto.Signer,
-	client *Client, dkg dkg.DKG, shuffleActor shuffle.Actor,
-	oSvc ordering.Service, p pool.Pool, m mino.Mino) {
+	client signed.Client, dkg dkg.DKG, shuffleActor shuffle.Actor,
+	oSvc ordering.Service, p pool.Pool, m mino.Mino, ctx serde.Context) {
 
 	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
 
@@ -67,6 +71,7 @@ func registerVotingProxy(proxy proxy.Proxy, signer crypto.Signer,
 		orderingSvc:  oSvc,
 		pool:         p,
 		mino:         m,
+		context:      ctx,
 	}
 
 	proxy.RegisterHandler(loginEndpoint, h.Login)

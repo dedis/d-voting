@@ -29,7 +29,7 @@ import (
 	"golang.org/x/xerrors"
 
 	// Register the JSON format for the election
-	_ "github.com/dedis/d-voting/contracts/evoting/types/json"
+	_ "github.com/dedis/d-voting/contracts/evoting/json"
 )
 
 // suite is the Kyber suite for Pedersen.
