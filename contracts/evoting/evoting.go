@@ -95,7 +95,7 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 		DecryptedBallots: []types.Ballot{},
 		// We set the participant in the e-voting once for all. If it happens
 		// that 1/3 of the participants go away, the election will never end.
-		RosterBuf:        append([]byte{}, rosterBuf...),
+		Roster:           roster,
 		ShuffleThreshold: threshold.ByzantineThreshold(roster.Len()),
 	}
 
@@ -275,19 +275,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 
 	shufflerPublicKey := tx.PublicKey
 
-	fac := e.context.GetFactory(ctypes.RosterKey{})
-	rosterFac, ok := fac.(authority.Factory)
-	if !ok {
-		return xerrors.Errorf("failed to get roster factory: %T", fac)
-	}
-
-	// Check the shuffler is a valid member of the roster
-	roster, err := rosterFac.AuthorityOf(e.context, election.RosterBuf)
-	if err != nil {
-		return xerrors.Errorf("failed to deserialize roster: %v", err)
-	}
-
-	err = isMemberOf(roster, shufflerPublicKey)
+	err = isMemberOf(election.Roster, shufflerPublicKey)
 	if err != nil {
 		return xerrors.Errorf("could not verify identity of shuffler : %v", err)
 	}

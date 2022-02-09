@@ -24,7 +24,9 @@ import (
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
+	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/core/txn/signed"
@@ -131,7 +133,14 @@ func (a *registerAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve proxy: %v", err)
 	}
 
+	var rosterFac authority.Factory
+	err = ctx.Injector.Resolve(&rosterFac)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve authority factory: %v", err)
+	}
+
 	serdecontext := sjson.NewContext()
+	serdecontext = serde.WithFactory(serdecontext, ctypes.RosterKey{}, rosterFac)
 	serdecontext = serde.WithFactory(serdecontext, types.ElectionKey{}, types.ElectionFactory{})
 	serdecontext = serde.WithFactory(serdecontext, types.CiphervoteKey{}, types.CiphervoteFactory{})
 	serdecontext = serde.WithFactory(serdecontext, types.TransactionKey{}, types.TransactionFactory{})
@@ -195,13 +204,20 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	proxyAddr2 := ctx.Flags.String("proxy-addr2")
 	proxyAddr3 := ctx.Flags.String("proxy-addr3")
 
+	var rosterFac authority.Factory
+	err := ctx.Injector.Resolve(&rosterFac)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve authority factory: %v", err)
+	}
+
 	serdecontext := sjson.NewContext()
+	serdecontext = serde.WithFactory(serdecontext, ctypes.RosterKey{}, rosterFac)
 	serdecontext = serde.WithFactory(serdecontext, types.ElectionKey{}, types.ElectionFactory{})
 	serdecontext = serde.WithFactory(serdecontext, types.CiphervoteKey{}, types.CiphervoteFactory{})
 	serdecontext = serde.WithFactory(serdecontext, types.TransactionKey{}, types.TransactionFactory{})
 
 	var service ordering.Service
-	err := ctx.Injector.Resolve(&service)
+	err = ctx.Injector.Resolve(&service)
 	if err != nil {
 		return xerrors.Errorf("failed to resolve service: %v", err)
 	}

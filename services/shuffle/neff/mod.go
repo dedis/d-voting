@@ -119,32 +119,21 @@ func (a *Actor) Shuffle(electionID []byte) error {
 		return xerrors.Errorf("failed to get election: %v", err)
 	}
 
-	fac := a.context.GetFactory(ctypes.RosterKey{})
-	rosterFac, ok := fac.(authority.Factory)
-	if !ok {
-		return xerrors.Errorf("failed to get roster factory: %T", fac)
-	}
-
-	roster, err := rosterFac.AuthorityOf(a.context, election.RosterBuf)
-	if err != nil {
-		return xerrors.Errorf("failed to deserialize roster: %v", err)
-	}
-
-	if roster.Len() == 0 {
+	if election.Roster.Len() == 0 {
 		return xerrors.Errorf("the roster is empty")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), shuffleTimeout)
 	defer cancel()
 
-	sender, _, err := a.rpc.Stream(ctx, roster)
+	sender, _, err := a.rpc.Stream(ctx, election.Roster)
 	if err != nil {
 		return xerrors.Errorf("failed to stream: %v", err)
 	}
 
-	addrs := make([]mino.Address, 0, roster.Len())
+	addrs := make([]mino.Address, 0, election.Roster.Len())
 	addrs = append(addrs, a.mino.GetAddress())
-	addrIter := roster.AddressIterator()
+	addrIter := election.Roster.AddressIterator()
 	for addrIter.HasNext() {
 		addr := addrIter.GetNext()
 		if !addr.Equal(a.mino.GetAddress()) {
@@ -160,7 +149,7 @@ func (a *Actor) Shuffle(electionID []byte) error {
 		return xerrors.Errorf("failed to start shuffle: %v", err)
 	}
 
-	err = a.waitAndCheckShuffling(message.GetElectionId(), roster.Len())
+	err = a.waitAndCheckShuffling(message.GetElectionId(), election.Roster.Len())
 	if err != nil {
 		return xerrors.Errorf("failed to wait and check shuffling: %v", err)
 	}

@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/base64"
 
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/registry"
 	"go.dedis.ch/kyber/v3"
@@ -70,7 +71,7 @@ type Election struct {
 	// during an election and will be used for DKG and Neff. Its type is
 	// authority.Authority.
 
-	RosterBuf []byte
+	Roster authority.Authority
 }
 
 // Serialize implements serde.Message

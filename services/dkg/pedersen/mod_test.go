@@ -251,7 +251,7 @@ func TestPedersen_Listen(t *testing.T) {
 	electionIDBuf, err := hex.DecodeString(electionID)
 	require.NoError(t, err)
 
-	p := NewPedersen(fake.Mino{}, fake.NewService(electionID, etypes.Election{}, serdecontext), fake.Factory{})
+	p := NewPedersen(fake.Mino{}, fake.NewService(electionID, etypes.Election{Roster: fake.Authority{}}, serdecontext), fake.Factory{})
 
 	actor, err := p.Listen(electionIDBuf)
 	require.NoError(t, err)
@@ -265,7 +265,7 @@ func TestPedersen_TwoListens(t *testing.T) {
 	electionIDBuf, err := hex.DecodeString(electionID)
 	require.NoError(t, err)
 
-	p := NewPedersen(fake.Mino{}, fake.NewService(electionID, etypes.Election{}, serdecontext), fake.Factory{})
+	p := NewPedersen(fake.Mino{}, fake.NewService(electionID, etypes.Election{Roster: fake.Authority{}}, serdecontext), fake.Factory{})
 
 	actor1, err := p.Listen(electionIDBuf)
 	require.NoError(t, err)
@@ -284,6 +284,7 @@ func TestPedersen_Setup(t *testing.T) {
 		factory: nil,
 		service: fake.NewService(electionID, etypes.Election{
 			ElectionID: electionID,
+			Roster:     fake.Authority{},
 		}, serdecontext),
 		handler: &Handler{
 			startRes: &state{},
@@ -332,14 +333,11 @@ func TestPedersen_Setup(t *testing.T) {
 	// This fake RosterFac always returns roster upon Deserialize
 	actor.context = serde.WithFactory(actor.context, ctypes.RosterKey{}, fake.NewRosterFac(roster))
 
-	rosterBuf, err := roster.Serialize(fake.NewContextWithFormat(serde.Format("JSON")))
-	require.NoError(t, err)
-
 	actor.service = fake.NewService(
 		electionID,
 		etypes.Election{
 			ElectionID: electionID,
-			RosterBuf:  rosterBuf,
+			Roster:     roster,
 		},
 		serdecontext,
 	)
@@ -484,11 +482,8 @@ func TestPedersen_Scenario(t *testing.T) {
 
 	roster := authority.FromAuthority(fake.NewAuthorityFromMino(fake.NewSigner, minos...))
 
-	rosterBuf, err := roster.Serialize(fake.NewContextWithFormat(serde.Format("JSON")))
-	require.NoError(t, err)
-
 	election := fake.NewElection(electionID)
-	election.RosterBuf = rosterBuf
+	election.Roster = roster
 
 	service := fake.NewService(electionID, election, serdecontext)
 

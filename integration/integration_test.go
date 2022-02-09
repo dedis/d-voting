@@ -29,6 +29,7 @@ import (
 	delaPkg "go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
+	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
@@ -45,6 +46,7 @@ const addAndWaitErr = "failed to addAndWait: %v"
 
 func init() {
 	ctx := json.NewContext()
+	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, fake.Factory{})
 	ctx = serde.WithFactory(ctx, types.ElectionKey{}, types.ElectionFactory{})
 	ctx = serde.WithFactory(ctx, types.CiphervoteKey{}, types.CiphervoteFactory{})
 	ctx = serde.WithFactory(ctx, types.TransactionKey{}, types.TransactionFactory{})

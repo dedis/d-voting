@@ -160,28 +160,17 @@ func (a *Actor) Setup() (kyber.Point, error) {
 		return nil, xerrors.Errorf("failed to get election: %v", err)
 	}
 
-	fac := a.context.GetFactory(ctypes.RosterKey{})
-	rosterFac, ok := fac.(authority.Factory)
-	if !ok {
-		return nil, xerrors.Errorf("failed to get roster factory: %T", fac)
-	}
-
-	roster, err := rosterFac.AuthorityOf(a.context, election.RosterBuf)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to deserialize roster: %v", err)
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), setupTimeout)
 	defer cancel()
 	ctx = context.WithValue(ctx, tracing.ProtocolKey, protocolNameSetup)
 
-	sender, receiver, err := a.rpc.Stream(ctx, roster)
+	sender, receiver, err := a.rpc.Stream(ctx, election.Roster)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to stream: %v", err)
 	}
 
-	addrs := make([]mino.Address, 0, roster.Len())
-	addrIter := roster.AddressIterator()
+	addrs := make([]mino.Address, 0, election.Roster.Len())
+	addrIter := election.Roster.AddressIterator()
 	for addrIter.HasNext() {
 		addrs = append(addrs, addrIter.GetNext())
 	}

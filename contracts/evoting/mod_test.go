@@ -18,6 +18,7 @@ import (
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/signed"
@@ -44,6 +45,7 @@ var ctx serde.Context
 
 func init() {
 	ctx = sjson.NewContext()
+	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, fakeAuthorityFactory{})
 	ctx = serde.WithFactory(ctx, types.ElectionKey{}, types.ElectionFactory{})
 	ctx = serde.WithFactory(ctx, types.CiphervoteKey{}, types.CiphervoteFactory{})
 	ctx = serde.WithFactory(ctx, types.TransactionKey{}, types.TransactionFactory{})
@@ -885,6 +887,7 @@ func initElectionAndContract() (types.Election, Contract) {
 		ShuffleInstances: make([]types.ShuffleInstance, 0),
 		DecryptedBallots: nil,
 		ShuffleThreshold: 0,
+		Roster:           fake.Authority{},
 	}
 
 	var evotingAccessKey = [32]byte{3}
@@ -1134,6 +1137,10 @@ type fakeAuthority struct {
 	serde.Message
 	serde.Fingerprinter
 	crypto.CollectiveAuthority
+}
+
+func (fakeAuthority) Serialize(ctx serde.Context) ([]byte, error) {
+	return nil, nil
 }
 
 func (f fakeAuthority) Apply(c authority.ChangeSet) authority.Authority {

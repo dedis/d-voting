@@ -46,11 +46,8 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	rosterLen := 2
 	roster := authority.FromAuthority(fake.NewAuthority(rosterLen, fake.NewSigner))
 
-	rosterBuf, err := roster.Serialize(fake.NewContextWithFormat(serde.Format("JSON")))
-	require.NoError(t, err)
-
 	election := fake.NewElection(electionID)
-	election.RosterBuf = rosterBuf
+	election.Roster = roster
 
 	shuffledBallots := append([]etypes.Ciphervote{}, election.Suffragia.Ciphervotes...)
 	election.ShuffleInstances = append(election.ShuffleInstances, etypes.ShuffleInstance{ShuffledBallots: shuffledBallots})

@@ -108,6 +108,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 		DecryptedBallots: nil,
 		ShuffleThreshold: 1,
 		BallotSize:       1,
+		Roster:           fake.Authority{},
 	}
 
 	service = updateService(election, dummyID)
@@ -283,6 +284,7 @@ func initFakeElection(electionID string) etypes.Election {
 		DecryptedBallots: nil,
 		ShuffleThreshold: 1,
 		BallotSize:       1,
+		Roster:           fake.Authority{},
 	}
 
 	for i := 0; i < k; i++ {

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
@@ -43,6 +45,11 @@ func (electionFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, 
 			return nil, xerrors.Errorf("failed to encode shuffle instances: %v", err)
 		}
 
+		rosterBuf, err := m.Roster.Serialize(ctx)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to serialize roster: %v", err)
+		}
+
 		electionJSON := ElectionJSON{
 			Configuration:    m.Configuration,
 			ElectionID:       m.ElectionID,
@@ -54,7 +61,7 @@ func (electionFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, 
 			ShuffleInstances: shuffleInstances,
 			ShuffleThreshold: m.ShuffleThreshold,
 			DecryptedBallots: m.DecryptedBallots,
-			RosterBuf:        m.RosterBuf,
+			RosterBuf:        rosterBuf,
 		}
 
 		buff, err := ctx.Marshal(&electionJSON)
@@ -100,6 +107,17 @@ func (electionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, err
 		return nil, xerrors.Errorf("failed to decode shuffle instances: %v", err)
 	}
 
+	fac := ctx.GetFactory(ctypes.RosterKey{})
+	rosterFac, ok := fac.(authority.Factory)
+	if !ok {
+		return nil, xerrors.Errorf("failed to get roster factory: %T", fac)
+	}
+
+	roster, err := rosterFac.AuthorityOf(ctx, electionJSON.RosterBuf)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to decode roster: %v", err)
+	}
+
 	return types.Election{
 		Configuration:    electionJSON.Configuration,
 		ElectionID:       electionJSON.ElectionID,
@@ -111,7 +129,7 @@ func (electionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, err
 		ShuffleInstances: shuffleInstances,
 		ShuffleThreshold: electionJSON.ShuffleThreshold,
 		DecryptedBallots: electionJSON.DecryptedBallots,
-		RosterBuf:        electionJSON.RosterBuf,
+		Roster:           roster,
 	}, nil
 }
 
