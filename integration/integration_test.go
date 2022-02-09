@@ -19,6 +19,7 @@ import (
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg"
 	_ "github.com/dedis/d-voting/services/dkg/pedersen/json"
 	"github.com/dedis/d-voting/services/shuffle"
@@ -26,6 +27,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 	delaPkg "go.dedis.ch/dela"
+	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/signed"
@@ -38,6 +40,8 @@ import (
 )
 
 var serdecontext serde.Context
+
+const addAndWaitErr = "failed to addAndWait: %v"
 
 func init() {
 	ctx := json.NewContext()
@@ -347,7 +351,7 @@ func grantAccess(m txManager, signer crypto.Signer) error {
 	}
 
 	args := []txn.Arg{
-		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte("go.dedis.ch/dela.Access")},
+		{Key: native.ContractArg, Value: []byte("go.dedis.ch/dela.Access")},
 		{Key: "access:grant_id", Value: []byte(hex.EncodeToString(evotingAccessKey[:]))},
 		{Key: "access:grant_contract", Value: []byte("go.dedis.ch/dela.Evoting")},
 		{Key: "access:grant_command", Value: []byte("all")},
@@ -364,47 +368,7 @@ func grantAccess(m txManager, signer crypto.Signer) error {
 
 func createElection(m txManager, title string, admin string) ([]byte, error) {
 	// Define the configuration :
-	configuration := types.Configuration{
-		MainTitle: title,
-		Scaffold: []types.Subject{
-			{
-				ID:       encodeID("aa"),
-				Title:    "subject1",
-				Order:    nil,
-				Subjects: nil,
-				Selects: []types.Select{
-					{
-						ID:      encodeID("bb"),
-						Title:   "Select your favorite snacks",
-						MaxN:    3,
-						MinN:    0,
-						Choices: []string{"snickers", "mars", "vodka", "babibel"},
-					},
-				},
-				Ranks: []types.Rank{},
-				Texts: nil,
-			},
-			{
-				ID:       encodeID("dd"),
-				Title:    "subject2",
-				Order:    nil,
-				Subjects: nil,
-				Selects:  nil,
-				Ranks:    nil,
-				Texts: []types.Text{
-					{
-						ID:        encodeID("ee"),
-						Title:     "dissertation",
-						MaxN:      1,
-						MinN:      1,
-						MaxLength: 3,
-						Regex:     "",
-						Choices:   []string{"write yes in your language"},
-					},
-				},
-			},
-		},
-	}
+	configuration := fake.BasicConfiguration
 
 	createElection := types.CreateElection{
 		Configuration: configuration,
@@ -417,14 +381,14 @@ func createElection(m txManager, title string, admin string) ([]byte, error) {
 	}
 
 	args := []txn.Arg{
-		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
+		{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
 		{Key: evoting.ElectionArg, Value: data},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCreateElection)},
 	}
 
 	txID, err := m.addAndWait(args...)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to addAndWait: %v", err)
+		return nil, xerrors.Errorf(addAndWaitErr, err)
 	}
 
 	// Calculate electionID from
@@ -446,14 +410,14 @@ func openElection(m txManager, electionID []byte) error {
 	}
 
 	args := []txn.Arg{
-		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
+		{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
 		{Key: evoting.ElectionArg, Value: data},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdOpenElection)},
 	}
 
 	_, err = m.addAndWait(args...)
 	if err != nil {
-		return xerrors.Errorf("failed to addAndWait: %v", err)
+		return xerrors.Errorf(addAndWaitErr, err)
 	}
 
 	return nil
@@ -524,14 +488,14 @@ func castVotesRandomly(m txManager, actor dkg.Actor, electionID []byte, numberOf
 		}
 
 		args := []txn.Arg{
-			{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
+			{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
 			{Key: evoting.ElectionArg, Value: data},
 			{Key: evoting.CmdArg, Value: []byte(evoting.CmdCastVote)},
 		}
 
 		_, err = m.addAndWait(args...)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to addAndWait: %v", err)
+			return nil, xerrors.Errorf(addAndWaitErr, err)
 		}
 
 		votes[i] = vote
@@ -581,7 +545,7 @@ func closeElection(m txManager, electionID []byte, admin string) error {
 	}
 
 	args := []txn.Arg{
-		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
+		{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
 		{Key: evoting.ElectionArg, Value: data},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCloseElection)},
 	}
@@ -681,14 +645,14 @@ func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error
 	}
 
 	args := []txn.Arg{
-		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
+		{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
 		{Key: evoting.ElectionArg, Value: data},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdDecryptBallots)},
 	}
 
 	_, err = m.addAndWait(args...)
 	if err != nil {
-		return xerrors.Errorf("failed to addAndWait: %v", err)
+		return xerrors.Errorf(addAndWaitErr, err)
 	}
 
 	return nil

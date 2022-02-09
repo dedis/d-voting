@@ -1,6 +1,7 @@
 package fake
 
 import (
+	"encoding/base64"
 	"strconv"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
@@ -65,4 +66,51 @@ func NewKCPointsMarshalled(k int) ([]kyber.Point, []kyber.Point, kyber.Point) {
 		Cs = append(Cs, C)
 	}
 	return Ks, Cs, pubKey
+}
+
+// BasicConfiguration returns a basic election configuration
+var BasicConfiguration = types.Configuration{
+	MainTitle: "electionTitle",
+	Scaffold: []types.Subject{
+		{
+			ID:       encodeID("aa"),
+			Title:    "subject1",
+			Order:    nil,
+			Subjects: nil,
+			Selects: []types.Select{
+				{
+					ID:      encodeID("bb"),
+					Title:   "Select your favorite snacks",
+					MaxN:    3,
+					MinN:    0,
+					Choices: []string{"snickers", "mars", "vodka", "babibel"},
+				},
+			},
+			Ranks: []types.Rank{},
+			Texts: nil,
+		},
+		{
+			ID:       encodeID("dd"),
+			Title:    "subject2",
+			Order:    nil,
+			Subjects: nil,
+			Selects:  nil,
+			Ranks:    nil,
+			Texts: []types.Text{
+				{
+					ID:        encodeID("ee"),
+					Title:     "dissertation",
+					MaxN:      1,
+					MinN:      1,
+					MaxLength: 3,
+					Regex:     "",
+					Choices:   []string{"write yes in your language"},
+				},
+			},
+		},
+	},
+}
+
+func encodeID(ID string) types.ID {
+	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
 }

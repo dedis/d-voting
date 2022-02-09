@@ -34,6 +34,12 @@ var dummyElectionIDBuff = []byte("dummyID")
 var fakeElectionID = hex.EncodeToString(dummyElectionIDBuff)
 var fakeCommonSigner = bls.NewSigner()
 
+const getTransactionErr = "failed to get transaction: \"evoting:arg\" not found in tx arg"
+const unmarshalTransactionErr = "failed to get transaction: failed to deserialize transaction: failed to decode: failed to unmarshal transaction json: invalid character 'd' looking for beginning of value"
+const deserializeErr = "failed to deserialize Election"
+
+var invalidElection = []byte("fake election")
+
 var ctx serde.Context
 
 func init() {
@@ -129,10 +135,10 @@ func TestCommand_CreateElection(t *testing.T) {
 	}
 
 	err = cmd.createElection(fake.NewSnapshot(), makeStep(t))
-	require.EqualError(t, err, "failed to get transaction: \"evoting:arg\" not found in tx arg")
+	require.EqualError(t, err, getTransactionErr)
 
 	err = cmd.createElection(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
-	require.EqualError(t, err, "failed to get transaction: failed to deserialize transaction: failed to decode: failed to unmarshal transaction json: invalid character 'd' looking for beginning of value")
+	require.EqualError(t, err, unmarshalTransactionErr)
 
 	err = cmd.createElection(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(data)))
 	require.EqualError(t, err, "failed to get roster")
@@ -185,21 +191,21 @@ func TestCommand_CastVote(t *testing.T) {
 	}
 
 	err = cmd.castVote(fake.NewSnapshot(), makeStep(t))
-	require.EqualError(t, err, "failed to get transaction: \"evoting:arg\" not found in tx arg")
+	require.EqualError(t, err, getTransactionErr)
 
 	err = cmd.castVote(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
-	require.EqualError(t, err, "failed to get transaction: failed to deserialize transaction: failed to decode: failed to unmarshal transaction json: invalid character 'd' looking for beginning of value")
+	require.EqualError(t, err, unmarshalTransactionErr)
 
 	err = cmd.castVote(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(data)))
 	require.Contains(t, err.Error(), "failed to get key")
 
 	snap := fake.NewSnapshot()
 
-	err = snap.Set(dummyElectionIDBuff, []byte("fake election"))
+	err = snap.Set(dummyElectionIDBuff, invalidElection)
 	require.NoError(t, err)
 
 	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(data)))
-	require.Contains(t, err.Error(), "failed to deserialize Election")
+	require.Contains(t, err.Error(), deserializeErr)
 
 	err = snap.Set(dummyElectionIDBuff, electionBuf)
 	require.NoError(t, err)
@@ -312,21 +318,21 @@ func TestCommand_CloseElection(t *testing.T) {
 	}
 
 	err = cmd.closeElection(fake.NewSnapshot(), makeStep(t))
-	require.EqualError(t, err, "failed to get transaction: \"evoting:arg\" not found in tx arg")
+	require.EqualError(t, err, getTransactionErr)
 
 	err = cmd.closeElection(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
-	require.EqualError(t, err, "failed to get transaction: failed to deserialize transaction: failed to decode: failed to unmarshal transaction json: invalid character 'd' looking for beginning of value")
+	require.EqualError(t, err, unmarshalTransactionErr)
 
 	err = cmd.closeElection(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(data)))
 	require.Contains(t, err.Error(), "failed to get key")
 
 	snap := fake.NewSnapshot()
 
-	err = snap.Set(dummyElectionIDBuff, []byte("fake election"))
+	err = snap.Set(dummyElectionIDBuff, invalidElection)
 	require.NoError(t, err)
 
 	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(data)))
-	require.Contains(t, err.Error(), "failed to deserialize Election")
+	require.Contains(t, err.Error(), deserializeErr)
 
 	err = snap.Set(dummyElectionIDBuff, electionBuf)
 	require.NoError(t, err)
@@ -512,10 +518,10 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	}
 
 	err = cmd.shuffleBallots(fake.NewSnapshot(), makeStep(t))
-	require.EqualError(t, err, "failed to get transaction: \"evoting:arg\" not found in tx arg")
+	require.EqualError(t, err, getTransactionErr)
 
 	err = cmd.shuffleBallots(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
-	require.EqualError(t, err, "failed to get transaction: failed to deserialize transaction: failed to decode: failed to unmarshal transaction json: invalid character 'd' looking for beginning of value")
+	require.EqualError(t, err, unmarshalTransactionErr)
 
 	err = cmd.shuffleBallots(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(data)))
 	require.Contains(t, err.Error(), "failed to get key")
@@ -523,11 +529,11 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	// Wrong election id format
 	snap := fake.NewSnapshot()
 
-	err = snap.Set(dummyElectionIDBuff, []byte("fake election"))
+	err = snap.Set(dummyElectionIDBuff, invalidElection)
 	require.NoError(t, err)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
-	require.Contains(t, err.Error(), "failed to deserialize Election")
+	require.Contains(t, err.Error(), deserializeErr)
 
 	// Election not closed
 	err = snap.Set(dummyElectionIDBuff, electionBuf)
@@ -734,21 +740,21 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	}
 
 	err = cmd.decryptBallots(fake.NewSnapshot(), makeStep(t))
-	require.EqualError(t, err, "failed to get transaction: \"evoting:arg\" not found in tx arg")
+	require.EqualError(t, err, getTransactionErr)
 
 	err = cmd.decryptBallots(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
-	require.EqualError(t, err, "failed to get transaction: failed to deserialize transaction: failed to decode: failed to unmarshal transaction json: invalid character 'd' looking for beginning of value")
+	require.EqualError(t, err, unmarshalTransactionErr)
 
 	err = cmd.decryptBallots(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(data)))
 	require.Contains(t, err.Error(), "failed to get key")
 
 	snap := fake.NewSnapshot()
 
-	err = snap.Set(dummyElectionIDBuff, []byte("fake election"))
+	err = snap.Set(dummyElectionIDBuff, invalidElection)
 	require.NoError(t, err)
 
 	err = cmd.decryptBallots(snap, makeStep(t, ElectionArg, string(data)))
-	require.Contains(t, err.Error(), "failed to deserialize Election")
+	require.Contains(t, err.Error(), deserializeErr)
 
 	err = snap.Set(dummyElectionIDBuff, electionBuf)
 	require.NoError(t, err)
@@ -811,21 +817,21 @@ func TestCommand_CancelElection(t *testing.T) {
 	}
 
 	err = cmd.cancelElection(fake.NewSnapshot(), makeStep(t))
-	require.EqualError(t, err, "failed to get transaction: \"evoting:arg\" not found in tx arg")
+	require.EqualError(t, err, getTransactionErr)
 
 	err = cmd.cancelElection(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
-	require.EqualError(t, err, "failed to get transaction: failed to deserialize transaction: failed to decode: failed to unmarshal transaction json: invalid character 'd' looking for beginning of value")
+	require.EqualError(t, err, unmarshalTransactionErr)
 
 	err = cmd.cancelElection(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(data)))
 	require.Contains(t, err.Error(), "failed to get key")
 
 	snap := fake.NewSnapshot()
 
-	err = snap.Set(dummyElectionIDBuff, []byte("fake election"))
+	err = snap.Set(dummyElectionIDBuff, invalidElection)
 	require.NoError(t, err)
 
 	err = cmd.cancelElection(snap, makeStep(t, ElectionArg, string(data)))
-	require.Contains(t, err.Error(), "failed to deserialize Election")
+	require.Contains(t, err.Error(), deserializeErr)
 
 	err = snap.Set(dummyElectionIDBuff, electionBuf)
 	require.NoError(t, err)

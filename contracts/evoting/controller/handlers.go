@@ -241,7 +241,7 @@ func (h *votingProxy) ElectionInfo(w http.ResponseWriter, r *http.Request) {
 
 	election, err := getElection(h.context, req.ElectionID, h.orderingSvc)
 	if err != nil {
-		http.Error(w, "failed to get election: "+err.Error(),
+		http.Error(w, xerrors.Errorf(getElectionErr, err).Error(),
 			http.StatusInternalServerError)
 		return
 	}
@@ -304,7 +304,7 @@ func (h *votingProxy) AllElectionInfo(w http.ResponseWriter, r *http.Request) {
 	for i, id := range elecMD.ElectionsIDs {
 		election, err := getElection(h.context, id, h.orderingSvc)
 		if err != nil {
-			http.Error(w, "failed to get election: "+err.Error(),
+			http.Error(w, xerrors.Errorf(getElectionErr, err).Error(),
 				http.StatusInternalServerError)
 		}
 
@@ -411,7 +411,7 @@ func (h *votingProxy) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
 
 	election, err := getElection(h.context, req.ElectionID, h.orderingSvc)
 	if err != nil {
-		http.Error(w, "failed to get election: "+err.Error(),
+		http.Error(w, xerrors.Errorf(getElectionErr, err).Error(),
 			http.StatusInternalServerError)
 	}
 
@@ -420,7 +420,7 @@ func (h *votingProxy) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !(len(election.Suffragia.Ciphervotes) > 1) {
+	if len(election.Suffragia.Ciphervotes) <= 1 {
 		http.Error(w, "only one vote has been casted !", http.StatusNotAcceptable)
 		return
 	}
@@ -488,7 +488,7 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 
 	election, err := getElection(h.context, req.ElectionID, h.orderingSvc)
 	if err != nil {
-		http.Error(w, "failed to get election: "+err.Error(),
+		http.Error(w, xerrors.Errorf(getElectionErr, err).Error(),
 			http.StatusInternalServerError)
 		return
 	}
@@ -601,7 +601,7 @@ func (h *votingProxy) ElectionResult(w http.ResponseWriter, r *http.Request) {
 
 	election, err := getElection(h.context, req.ElectionID, h.orderingSvc)
 	if err != nil {
-		http.Error(w, "failed to get election: "+err.Error(),
+		http.Error(w, xerrors.Errorf(getElectionErr, err).Error(),
 			http.StatusInternalServerError)
 	}
 

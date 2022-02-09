@@ -21,6 +21,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 	delaPkg "go.dedis.ch/dela"
+	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/txn"
 	"golang.org/x/xerrors"
 )
@@ -184,7 +185,7 @@ func createElectionNChunks(m txManager, title string, admin string, numChunks in
 	}
 
 	args := []txn.Arg{
-		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
+		{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
 		{Key: evoting.ElectionArg, Value: createElectionBuf},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCreateElection)},
 	}
@@ -239,7 +240,7 @@ func castVotesNChunks(m txManager, actor dkg.Actor, electionID []byte, numberOfV
 		}
 
 		args := []txn.Arg{
-			{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
+			{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
 			{Key: evoting.ElectionArg, Value: castedVoteBuf},
 			{Key: evoting.CmdArg, Value: []byte(evoting.CmdCastVote)},
 		}

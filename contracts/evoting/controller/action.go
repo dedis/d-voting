@@ -17,6 +17,7 @@ import (
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/shuffle"
 	"go.dedis.ch/dela"
@@ -41,7 +42,8 @@ import (
 
 const token = "token"
 const inclusionTimeout = 2 * time.Second
-const BucketName = "dkgmap"
+const contentType = "application/json"
+const getElectionErr = "failed to get election: %v"
 
 var suite = suites.MustFind("Ed25519")
 
@@ -209,47 +211,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	fmt.Fprintln(ctx.Out, "Create election")
 
 	// Define the configuration
-	configuration := types.Configuration{
-		MainTitle: "electionTitle",
-		Scaffold: []types.Subject{
-			{
-				ID:       encodeID("aa"),
-				Title:    "subject1",
-				Order:    nil,
-				Subjects: nil,
-				Selects: []types.Select{
-					{
-						ID:      encodeID("bb"),
-						Title:   "Select your favorite snacks",
-						MaxN:    3,
-						MinN:    0,
-						Choices: []string{"snickers", "mars", "vodka", "babibel"},
-					},
-				},
-				Ranks: []types.Rank{},
-				Texts: nil,
-			},
-			{
-				ID:       encodeID("dd"),
-				Title:    "subject2",
-				Order:    nil,
-				Subjects: nil,
-				Selects:  nil,
-				Ranks:    nil,
-				Texts: []types.Text{
-					{
-						ID:        encodeID("ee"),
-						Title:     "dissertation",
-						MaxN:      1,
-						MinN:      1,
-						MaxLength: 3,
-						Regex:     "",
-						Choices:   []string{"write yes in your language"},
-					},
-				},
-			},
-		},
-	}
+	configuration := fake.BasicConfiguration
 
 	createSimpleElectionRequest := types.CreateElectionRequest{
 		Configuration: configuration,
@@ -263,7 +225,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "create election js:", string(js))
 
-	resp, err := http.Post(proxyAddr1+createElectionEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err := http.Post(proxyAddr1+createElectionEndpoint, contentType, bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -298,7 +260,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	election, err := getElection(serdecontext, electionID, service)
 	if err != nil {
-		return xerrors.Errorf("failed to get election: %v", err)
+		return xerrors.Errorf(getElectionErr, err)
 	}
 
 	// sanity check, the electionID returned and the one stored in the election
@@ -316,9 +278,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "Init DKG")
 
+	const initEndpoint = "/evoting/dkg/init"
+
 	fmt.Fprintf(ctx.Out, "Node 1")
 
-	resp, err = http.Post(proxyAddr1+"/evoting/dkg/init", "application/json", bytes.NewBuffer([]byte(electionID)))
+	resp, err = http.Post(proxyAddr1+initEndpoint, contentType, bytes.NewBuffer([]byte(electionID)))
 	if err != nil {
 		return xerrors.Errorf("failed to retrieve the decryption from the server: %v", err)
 	}
@@ -330,7 +294,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintf(ctx.Out, "Node 2")
 
-	resp, err = http.Post(proxyAddr2+"/evoting/dkg/init", "application/json", bytes.NewBuffer([]byte(electionID)))
+	resp, err = http.Post(proxyAddr2+initEndpoint, contentType, bytes.NewBuffer([]byte(electionID)))
 	if err != nil {
 		return xerrors.Errorf("failed to retrieve the decryption from the server: %v", err)
 	}
@@ -342,7 +306,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintf(ctx.Out, "Node 3")
 
-	resp, err = http.Post(proxyAddr3+"/evoting/dkg/init", "application/json", bytes.NewBuffer([]byte(electionID)))
+	resp, err = http.Post(proxyAddr3+initEndpoint, contentType, bytes.NewBuffer([]byte(electionID)))
 	if err != nil {
 		return xerrors.Errorf("failed to retrieve the decryption from the server: %v", err)
 	}
@@ -352,9 +316,9 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
 	}
 
-	resp, err = http.Post(proxyAddr1+"/evoting/dkg/setup", "application/json", bytes.NewBuffer([]byte(electionID)))
+	resp, err = http.Post(proxyAddr1+"/evoting/dkg/setup", contentType, bytes.NewBuffer([]byte(electionID)))
 	// resp, err = http.Post(proxyAddr1+"/evoting/dkg/"+election.ElectionID,
-	//   "application/json", bytes.NewBuffer(electionIDBuf))
+	//   contentType, bytes.NewBuffer(electionIDBuf))
 	if err != nil {
 		return xerrors.Errorf("failed to retrieve the decryption from the server: %v", err)
 	}
@@ -381,7 +345,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintf(ctx.Out, "Open election")
 
-	resp, err = http.Post(proxyAddr1+"/evoting/open", "application/json", bytes.NewBuffer(electionIDBuf))
+	resp, err = http.Post(proxyAddr1+"/evoting/open", contentType, bytes.NewBuffer(electionIDBuf))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -405,7 +369,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(proxyAddr1+getElectionInfoEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err = http.Post(proxyAddr1+getElectionInfoEndpoint, contentType, bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -425,7 +389,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	election, err = getElection(serdecontext, electionID, service)
 	if err != nil {
-		return xerrors.Errorf("failed to get election: %v", err)
+		return xerrors.Errorf(getElectionErr, err)
 	}
 
 	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
@@ -451,7 +415,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(proxyAddr1+closeElectionEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err = http.Post(proxyAddr1+closeElectionEndpoint, contentType, bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed to retrieve the decryption from the server: %v", err)
 	}
@@ -473,7 +437,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	election, err = getElection(serdecontext, electionID, service)
 	if err != nil {
-		return xerrors.Errorf("failed to get election: %v", err)
+		return xerrors.Errorf(getElectionErr, err)
 	}
 
 	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
@@ -506,6 +470,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to get actor: %v", err)
 	}
 
+	const ballotSerializeErr = "failed to serialize ballot: %v"
+
 	// Ballot 1
 	ballot1, err := marshallBallot(b1, dkgActor, election.ChunksPerBallot())
 	if err != nil {
@@ -514,7 +480,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	data1, err := ballot1.Serialize(serdecontext)
 	if err != nil {
-		return xerrors.Errorf("failed to serialize ballot: %v", err)
+		return xerrors.Errorf(ballotSerializeErr, err)
 	}
 
 	castVoteRequest := types.CastVoteRequest{
@@ -541,7 +507,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	data2, err := ballot2.Serialize(serdecontext)
 	if err != nil {
-		return xerrors.Errorf("failed to serialize ballot: %v", err)
+		return xerrors.Errorf(ballotSerializeErr, err)
 	}
 
 	castVoteRequest = types.CastVoteRequest{
@@ -568,7 +534,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	data3, err := ballot3.Serialize(serdecontext)
 	if err != nil {
-		return xerrors.Errorf("failed to serialize ballot: %v", err)
+		return xerrors.Errorf(ballotSerializeErr, err)
 	}
 
 	castVoteRequest = types.CastVoteRequest{
@@ -589,7 +555,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	election, err = getElection(serdecontext, electionID, service)
 	if err != nil {
-		return xerrors.Errorf("failed to get election: %v", err)
+		return xerrors.Errorf(getElectionErr, err)
 	}
 
 	encryptedBallots := election.Suffragia.Ciphervotes
@@ -597,8 +563,6 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msgf("Ballot of user1: %s", encryptedBallots[0])
 	dela.Logger.Info().Msgf("Ballot of user2: %s", encryptedBallots[1])
 	dela.Logger.Info().Msgf("Ballot of user3: %s", encryptedBallots[2])
-	dela.Logger.Info().Msg("ID of the election: " + string(election.ElectionID))
-	dela.Logger.Info().Msg("Status of the election: " + strconv.Itoa(int(election.Status)))
 
 	// ############################# CLOSE ELECTION FOR REAL ###################
 
@@ -615,7 +579,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(proxyAddr1+closeElectionEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err = http.Post(proxyAddr1+closeElectionEndpoint, contentType, bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -635,11 +599,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	election, err = getElection(serdecontext, electionID, service)
 	if err != nil {
-		return xerrors.Errorf("failed to get election: %v", err)
+		return xerrors.Errorf(getElectionErr, err)
 	}
 
 	dela.Logger.Info().Msg("Title of the election: " + election.Configuration.MainTitle)
-	dela.Logger.Info().Msg("ID of the election: " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Admin Id of the election: " + election.AdminID)
 	dela.Logger.Info().Msg("Status of the election: " + strconv.Itoa(int(election.Status)))
 
@@ -658,7 +621,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(proxyAddr1+shuffleBallotsEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err = http.Post(proxyAddr1+shuffleBallotsEndpoint, contentType, bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -680,7 +643,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	election, err = getElection(serdecontext, electionID, service)
 	if err != nil {
-		return xerrors.Errorf("failed to get election: %v", err)
+		return xerrors.Errorf(getElectionErr, err)
 	}
 
 	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
@@ -704,7 +667,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(proxyAddr1+decryptBallotsEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err = http.Post(proxyAddr1+decryptBallotsEndpoint, contentType, bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -724,7 +687,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	election, err = getElection(serdecontext, electionID, service)
 	if err != nil {
-		return xerrors.Errorf("failed to get election: %v", err)
+		return xerrors.Errorf(getElectionErr, err)
 	}
 
 	// dela.Logger.Info().Msg("----------------------- Election : " +
@@ -748,7 +711,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(proxyAddr1+getElectionResultEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err = http.Post(proxyAddr1+getElectionResultEndpoint, contentType, bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -768,7 +731,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	election, err = getElection(serdecontext, electionID, service)
 	if err != nil {
-		return xerrors.Errorf("failed to get election: %v", err)
+		return xerrors.Errorf(getElectionErr, err)
 	}
 
 	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
@@ -791,10 +754,10 @@ func encodeID(ID string) types.ID {
 	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
 }
 
-func marshallBallot(vote_string string, actor dkg.Actor, chunks int) (types.Ciphervote, error) {
+func marshallBallot(voteStr string, actor dkg.Actor, chunks int) (types.Ciphervote, error) {
 
 	var ballot = make(types.Ciphervote, chunks)
-	vote := strings.NewReader(vote_string)
+	vote := strings.NewReader(voteStr)
 
 	buf := make([]byte, 29)
 
@@ -828,7 +791,7 @@ func castVote(castVoteRequest types.CastVoteRequest, proxyAddr string) (string, 
 		return "", xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err := http.Post(proxyAddr+castVoteEndpoint, "application/json", bytes.NewBuffer(js))
+	resp, err := http.Post(proxyAddr+castVoteEndpoint, contentType, bytes.NewBuffer(js))
 	if err != nil {
 		return "", xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}

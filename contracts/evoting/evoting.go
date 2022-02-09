@@ -428,27 +428,32 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 // been accepted and executed for a specific round.
 func checkPreviousTransactions(ctx serde.Context, step execution.Step, round int) error {
 	for _, tx := range step.Previous {
+		// skip tx not concerning the evoting contract
+		if string(tx.GetArg(native.ContractArg)) != ContractName {
+			continue
+		}
 
-		if string(tx.GetArg(native.ContractArg)) == ContractName {
+		// skip tx that does not contain the election argument
+		if string(tx.GetArg(CmdArg)) != ElectionArg {
+			continue
+		}
 
-			if string(tx.GetArg(CmdArg)) == ElectionArg {
+		msg, err := getTransaction(ctx, step.Current)
+		if err != nil {
+			return xerrors.Errorf(errGetTransaction, err)
+		}
 
-				msg, err := getTransaction(ctx, step.Current)
-				if err != nil {
-					return xerrors.Errorf(errGetTransaction, err)
-				}
+		// skip if not a shuffling ballot transaction
+		shuffleBallots, ok := msg.(types.ShuffleBallots)
+		if !ok {
+			continue
+		}
 
-				shuffleBallots, ok := msg.(types.ShuffleBallots)
-				if !ok {
-					return xerrors.Errorf(errWrongTx, msg)
-				}
-
-				if shuffleBallots.Round == round {
-					return xerrors.Errorf("shuffle is already happening in this round")
-				}
-			}
+		if shuffleBallots.Round == round {
+			return xerrors.Errorf("shuffle is already happening in this round")
 		}
 	}
+
 	return nil
 }
 
