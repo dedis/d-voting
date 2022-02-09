@@ -1,11 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { FC, useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { useTranslation } from "react-i18next";
 
 import { CREATE_ENDPOINT } from "../utils/Endpoints";
 import usePostCall from "../utils/usePostCall";
 
-const UploadFile = ({ setShowModal, setTextModal }) => {
+type UploadFileProps = {
+  setShowModal(shown: boolean): void;
+  setTextModal(text: string): void;
+};
+
+const UploadFile: FC<UploadFileProps> = ({ setShowModal, setTextModal }) => {
   const { t } = useTranslation();
   const [file, setFile] = useState(null);
   const [fileExt, setFileExt] = useState(null);
@@ -25,12 +30,12 @@ const UploadFile = ({ setShowModal, setTextModal }) => {
         setTextModal(t("electionFail"));
       }
     }
-  }, [postError]);
+  }, [postError, setTextModal, t]);
 
   const validateJSONFields = () => {
     var data = JSON.parse(file);
     var candidates = JSON.parse(data.Format).Candidates;
-    if (data.Title == "") {
+    if (data.Title === "") {
       return false;
     }
     if (!Array.isArray(candidates)) {

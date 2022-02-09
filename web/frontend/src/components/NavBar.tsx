@@ -231,7 +231,7 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
                 aria-labelledby="user-menu-button"
                 tabIndex={-1}
               >
-                <a
+                {/* <a
                   href="#"
                   className="block px-4 py-2 text-sm text-gray-700"
                   role="menuitem"
@@ -257,7 +257,7 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
                   id="user-menu-item-2"
                 >
                   Sign out
-                </a>
+                </a> */}
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { FC } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
@@ -10,6 +10,7 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
+import PropTypes from "prop-types";
 
 const style = {
   position: "absolute",
@@ -23,7 +24,12 @@ const style = {
   p: 4,
 };
 
-export default function AddAdminUserModal({ open, setOpen }) {
+type AddAdminUserModalProps = {
+  open: boolean;
+  setOpen(opened: boolean): void;
+};
+
+const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen }) => {
   const handleClose = () => setOpen(false);
   const ariaLabel = { "aria-label": "description" };
 
@@ -98,4 +104,11 @@ export default function AddAdminUserModal({ open, setOpen }) {
       </Modal>
     </div>
   );
-}
+};
+
+AddAdminUserModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  setOpen: PropTypes.func.isRequired,
+};
+
+export default AddAdminUserModal;

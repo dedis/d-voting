@@ -36,7 +36,15 @@ const ElectionDetails: FC = () => {
     if (status === RESULT_AVAILABLE && isResultAvailable) {
       getResults(electionID, token, setError, setResult, setIsResultSet);
     }
-  }, [status, isResultAvailable]);
+  }, [
+    electionID,
+    getResults,
+    isResultAvailable,
+    setIsResultSet,
+    setResult,
+    status,
+    token,
+  ]);
 
   return (
     <div className="election-details-box">

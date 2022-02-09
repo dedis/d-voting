@@ -1,10 +1,11 @@
-import * as React from "react";
+import React, { FC } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
 import { DELETE_API_ROLE } from "../utils/ExpressEndoints";
 import Stack from "@mui/material/Stack";
+import PropTypes from "prop-types";
 
 const style = {
   position: "absolute",
@@ -18,7 +19,17 @@ const style = {
   p: 4,
 };
 
-export default function RemoveAdminUserModal({ open, setOpen, sciper }) {
+type RemoveAdminUserModalProps = {
+  open: boolean;
+  setOpen(opened: boolean): void;
+  sciper: number;
+};
+
+const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({
+  open,
+  setOpen,
+  sciper,
+}) => {
   const handleClose = () => setOpen(false);
 
   const handleDelete = () => {
@@ -62,4 +73,12 @@ export default function RemoveAdminUserModal({ open, setOpen, sciper }) {
       </Modal>
     </div>
   );
-}
+};
+
+RemoveAdminUserModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  setOpen: PropTypes.func.isRequired,
+  sciper: PropTypes.number.isRequired,
+};
+
+export default RemoveAdminUserModal;

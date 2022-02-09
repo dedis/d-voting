@@ -79,7 +79,7 @@ const useChangeAction = (
       setTextModalError(postError);
       setPostError(null);
     }
-  }, [postError]);
+  }, [postError, setTextModalError]);
 
   useEffect(() => {
     //check if close button was clicked and the user validated the confirmation window
@@ -101,7 +101,15 @@ const useChangeAction = (
 
       close().catch(console.error);
     }
-  }, [isClosing, showModalClose]);
+  }, [
+    isClosing,
+    postData,
+    setShowModalError,
+    setStatus,
+    simplePostRequest,
+    showModalClose,
+    userConfirmedClosing,
+  ]);
 
   useEffect(() => {
     if (isCanceling && userConfirmedCanceling) {
@@ -122,7 +130,14 @@ const useChangeAction = (
 
       cancel().catch(console.error);
     }
-  }, [isCanceling, showModalCancel]);
+  }, [
+    isCanceling,
+    postData,
+    setShowModalError,
+    setStatus,
+    simplePostRequest,
+    userConfirmedCanceling,
+  ]);
 
   const handleClose = () => {
     setShowModalClose(true);

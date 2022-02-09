@@ -33,7 +33,7 @@ const Ballot: FC = (props) => {
       setPostError(null);
       postData(CAST_BALLOT_ENDPOINT, postRequest, setShowModal);
     }
-  }, [postRequest]);
+  }, [postData, postRequest]);
 
   useEffect(() => {
     if (postError !== null) {
@@ -45,7 +45,7 @@ const Ballot: FC = (props) => {
     } else {
       setModalText(t("voteSuccess"));
     }
-  }, [postError]);
+  }, [postError, t]);
 
   const handleCheck = (e) => {
     setChoice(e.target.value);
@@ -58,12 +58,13 @@ const Ballot: FC = (props) => {
   };
 
   const createBallot = (K, C) => {
-    let ballot = {};
     let vote = JSON.stringify({ K: Array.from(K), C: Array.from(C) });
-    ballot["ElectionID"] = electionID;
-    ballot["UserId"] = sessionStorage.getItem("id");
-    ballot["Ballot"] = Buffer.from(vote);
-    ballot["Token"] = token;
+    let ballot = {
+      ElectionID: electionID,
+      UserId: sessionStorage.getItem("id"),
+      Ballot: Buffer.from(vote),
+      Token: token,
+    };
     return ballot;
   };
 

@@ -43,21 +43,24 @@ const ElectionForm: FC<ElectionFormProps> = ({
         setTextModal(t("electionFail"));
       }
     }
-  }, [isSubmitting]);
+  }, [isSubmitting, postError, setTextModal, t]);
 
   const sendFormData = async () => {
     //create the JSON object
-    const election = {};
-    election["Title"] = electionName;
-    election["AdminID"] = sessionStorage.getItem("id");
-    election["ShuffleThreshold"] = SHUFFLE_THRESHOLD;
-    election["Members"] = COLLECTIVE_AUTHORITY_MEMBERS;
-    election["Format"] = JSON.stringify({ Candidates: candidates });
-    election["Token"] = sessionStorage.getItem("token");
-    console.log(JSON.stringify(election));
+    const election = {
+      Title: electionName,
+      AdminID: sessionStorage.getItem("id"),
+      ShuffleThreshold: SHUFFLE_THRESHOLD,
+      Members: COLLECTIVE_AUTHORITY_MEMBERS,
+      Format: JSON.stringify({ Candidates: candidates }),
+      Token: sessionStorage.getItem("token"),
+    };
+
+    const jsonString = JSON.stringify(election);
+    console.log(jsonString);
     let postRequest = {
       method: "POST",
-      body: JSON.stringify(election),
+      body: jsonString,
     };
     setPostError(null);
     postData(CREATE_ENDPOINT, postRequest, setIsSubmitting);
@@ -239,6 +242,7 @@ const ElectionForm: FC<ElectionFormProps> = ({
     </div>
   );
 };
+
 ElectionForm.propTypes = {
   setShowModal: PropTypes.func.isRequired,
   setTextModal: PropTypes.func.isRequired,
