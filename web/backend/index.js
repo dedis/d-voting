@@ -84,8 +84,8 @@ app.get('/api/control_key', (req, res) => {
                 const lastname = resa.data.split('\nname=')[1].split('\n')[0];
                 const firstname = resa.data.split('\nfirstname=')[1].split('\n')[0];
 
-                var user = usersDB.get(sciper);
-                if(user["role"] === "") {
+                var user = usersDB.get(sciper) || {};
+                if(user["role"] === undefined || user["role"] === "") {
                     user["role"] = "voter";
                     user["lastname"] = lastname;
                     user["firstname"] = firstname;
@@ -105,7 +105,6 @@ app.get('/api/control_key', (req, res) => {
         }).catch(error => {
             console.log(error);
     });
-
 });
 
 /*
