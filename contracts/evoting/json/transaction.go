@@ -13,6 +13,7 @@ import (
 // - implements serde.FormatEngine
 type transactionFormat struct{}
 
+// Encode implements serde.FormatEngine
 func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, error) {
 	var m TransactionJSON
 
@@ -100,6 +101,7 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 	return data, nil
 }
 
+// Decode implements serde.FormatEngine
 func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, error) {
 	m := TransactionJSON{}
 
@@ -165,31 +167,31 @@ type TransactionJSON struct {
 	CancelElection *CancelElectionJSON `json:",omitempty"`
 }
 
-// CreateElectionJSON ...
+// CreateElectionJSON is the JSON representation of a CreateElection transaction
 type CreateElectionJSON struct {
 	Configuration types.Configuration
 	AdminID       string
 }
 
-// OpenElectionJSON ...
+// OpenElectionJSON is the JSON representation of a OpenElection transaction
 type OpenElectionJSON struct {
 	ElectionID string
 }
 
-// CastVoteJSON ...
+// CastVoteJSON is the JSON representation of a CastVote transaction
 type CastVoteJSON struct {
 	ElectionID string
 	UserID     string
 	Ciphervote json.RawMessage
 }
 
-// CloseElectionJSON ...
+// CloseElectionJSON is the JSON representation of a CloseElection transaction
 type CloseElectionJSON struct {
 	ElectionID string
 	UserID     string
 }
 
-// ShuffleBallotsJSON ...
+// ShuffleBallotsJSON is the JSON representation of a ShuffleBallots transaction
 type ShuffleBallotsJSON struct {
 	ElectionID   string
 	Round        int
@@ -200,14 +202,14 @@ type ShuffleBallotsJSON struct {
 	PublicKey    []byte
 }
 
-// DecryptBallotsJSON ...
+// DecryptBallotsJSON is the JSON representation of a DecryptBallots transaction
 type DecryptBallotsJSON struct {
 	ElectionID       string
 	UserID           string
 	DecryptedBallots []types.Ballot
 }
 
-// CancelElectionJSON ...
+// CancelElectionJSON is the JSON representation of a CancelElection transaction
 type CancelElectionJSON struct {
 	ElectionID string
 	UserID     string

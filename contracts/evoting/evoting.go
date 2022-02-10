@@ -17,9 +17,7 @@ import (
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/cosi/threshold"
-	_ "go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/bls"
-	_ "go.dedis.ch/dela/crypto/bls/json"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/shuffle"
@@ -335,11 +333,6 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		}
 	}
 
-	// XX, YY, err := tx.ShuffledBallots.GetElGPairs()
-	// if err != nil {
-	// 	return xerrors.Errorf("failed to get X, Y: %v", err)
-	// }
-
 	if len(tx.ShuffledBallots) == 0 {
 		return xerrors.Errorf("there are no shuffled ballots")
 	}
@@ -352,21 +345,15 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		ciphervotes = election.Suffragia.Ciphervotes
 	} else {
 		// get the election's last shuffled ballots
-		ciphervotes = election.ShuffleInstances[len(election.ShuffleInstances)-1].ShuffledBallots
+		lastIndex := len(election.ShuffleInstances) - 1
+		ciphervotes = election.ShuffleInstances[lastIndex].ShuffledBallots
 	}
-
-	// X, Y, err := encryptedBallots.GetElGPairs()
-	// if err != nil {
-	// 	return xerrors.Errorf("failed to get X, Y: %v", err)
-	// }
 
 	if len(ciphervotes) < 2 {
 		return xerrors.Errorf("not enough votes: %d < 2", len(ciphervotes))
 	}
 
 	X, Y := types.CiphervotesToPairs(ciphervotes)
-
-	// fmt.Printf("X: %v\nY:%v\nXX:%v\nYY:%v\n", X, Y, XX, YY)
 
 	XXUp, YYUp, XXDown, YYDown := shuffle.GetSequenceVerifiable(suite, X, Y, XX,
 		YY, randomVector)
@@ -629,7 +616,9 @@ func (s SemiRandomStream) XORKeyStream(dst, src []byte) {
 
 // getElection gets the election from the snap. Returns the election ID NOT hex
 // encoded.
-func (e evotingCommand) getElection(electionIDHex string, snap store.Snapshot) (types.Election, []byte, error) {
+func (e evotingCommand) getElection(electionIDHex string,
+	snap store.Snapshot) (types.Election, []byte, error) {
+
 	var election types.Election
 
 	electionID, err := hex.DecodeString(electionIDHex)
@@ -665,8 +654,7 @@ func (e evotingCommand) getElection(electionIDHex string, snap store.Snapshot) (
 	return election, electionIDBuff, nil
 }
 
-// getTransaction extracts the argument from the transaction and unmarshals it
-// to e. e MUST be a pointer.
+// getTransaction extracts the argument from the transaction.
 func (e evotingCommand) getTransaction(tx txn.Transaction) (serde.Message, error) {
 	buff := tx.GetArg(ElectionArg)
 	if len(buff) == 0 {

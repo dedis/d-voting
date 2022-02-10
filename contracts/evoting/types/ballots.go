@@ -108,7 +108,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 				}
 
 				if s {
-					selected += 1
+					selected++
 				}
 
 				b.SelectResult[index] = append(b.SelectResult[index], s)
@@ -138,7 +138,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 			var selected uint = 0
 			for _, rank := range ranks {
 				if len(rank) > 0 {
-					selected += 1
+					selected++
 
 					r, err := strconv.ParseInt(rank, 10, 8)
 					if err != nil {
@@ -183,7 +183,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 
 			for _, text := range texts {
 				if len(text) > 0 {
-					selected += 1
+					selected++
 				}
 
 				t, err := base64.StdEncoding.DecodeString(text)
@@ -389,7 +389,7 @@ func (s *Subject) MaxEncodedSize() int {
 
 	// Last line has 2 '\n'
 	if size != 0 {
-		size += 1
+		size++
 	}
 
 	return size

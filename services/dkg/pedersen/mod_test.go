@@ -156,7 +156,8 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 		require.True(t, exists)
 
 		otherActor := Actor{
-			handler: NewHandler(fake.NewAddress(0), fake.Service{}, handlerData, serdecontext, electionFac),
+			handler: NewHandler(fake.NewAddress(0), fake.Service{},
+				handlerData, serdecontext, electionFac),
 		}
 
 		requireActorsEqual(t, actor, &otherActor)
@@ -242,15 +243,15 @@ func TestPedersen_SyncDB(t *testing.T) {
 	require.Equal(t, len(q.actors), len(p.actors))
 
 	// Check equality of actor data
-	for electionID, actor_q := range q.actors {
+	for electionID, actorQ := range q.actors {
 
 		electionIDBuf, err := hex.DecodeString(electionID)
 		require.NoError(t, err)
 
-		actor_p, exists := p.GetActor(electionIDBuf)
+		actorP, exists := p.GetActor(electionIDBuf)
 		require.True(t, exists)
 
-		requireActorsEqual(t, actor_p, actor_q)
+		requireActorsEqual(t, actorP, actorQ)
 	}
 }
 
@@ -259,7 +260,8 @@ func TestPedersen_Listen(t *testing.T) {
 	electionIDBuf, err := hex.DecodeString(electionID)
 	require.NoError(t, err)
 
-	p := NewPedersen(fake.Mino{}, fake.NewService(electionID, etypes.Election{Roster: fake.Authority{}}, serdecontext), fake.Factory{})
+	p := NewPedersen(fake.Mino{}, fake.NewService(electionID,
+		etypes.Election{Roster: fake.Authority{}}, serdecontext), fake.Factory{})
 
 	actor, err := p.Listen(electionIDBuf)
 	require.NoError(t, err)
@@ -273,7 +275,8 @@ func TestPedersen_TwoListens(t *testing.T) {
 	electionIDBuf, err := hex.DecodeString(electionID)
 	require.NoError(t, err)
 
-	p := NewPedersen(fake.Mino{}, fake.NewService(electionID, etypes.Election{Roster: fake.Authority{}}, serdecontext), fake.Factory{})
+	p := NewPedersen(fake.Mino{}, fake.NewService(electionID,
+		etypes.Election{Roster: fake.Authority{}}, serdecontext), fake.Factory{})
 
 	actor1, err := p.Listen(electionIDBuf)
 	require.NoError(t, err)
@@ -384,7 +387,8 @@ func TestPedersen_Decrypt(t *testing.T) {
 	actor := Actor{
 		rpc: fake.NewBadRPC(),
 		handler: &Handler{
-			startRes: &state{participants: []mino.Address{fake.NewAddress(0)}, distKey: suite.Point()},
+			startRes: &state{participants: []mino.Address{fake.NewAddress(0)},
+				distKey: suite.Point()},
 		},
 		context:     serdecontext,
 		electionFac: electionFac,
@@ -440,11 +444,6 @@ func TestPedersen_GetPublicKey(t *testing.T) {
 
 	_, err = actor.GetPublicKey()
 	require.NoError(t, err)
-}
-
-func TestPedersen_Reshare(t *testing.T) {
-	actor := Actor{}
-	actor.Reshare()
 }
 
 func TestPedersen_Scenario(t *testing.T) {

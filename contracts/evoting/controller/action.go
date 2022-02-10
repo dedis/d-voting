@@ -145,7 +145,9 @@ func (a *registerAction) Execute(ctx node.Context) error {
 	return nil
 }
 
-func createTransaction(manager txn.Manager, commandType evoting.Command, commandArg string, buf []byte) (txn.Transaction, error) {
+func createTransaction(manager txn.Manager, commandType evoting.Command,
+	commandArg string, buf []byte) (txn.Transaction, error) {
+
 	args := []txn.Arg{
 		{
 			Key:   native.ContractArg,
@@ -324,8 +326,6 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	resp, err = http.Post(proxyAddr1+"/evoting/dkg/setup", contentType, bytes.NewBuffer([]byte(electionID)))
-	// resp, err = http.Post(proxyAddr1+"/evoting/dkg/"+election.ElectionID,
-	//   contentType, bytes.NewBuffer(electionIDBuf))
 	if err != nil {
 		return xerrors.Errorf("failed to retrieve the decryption from the server: %v", err)
 	}
@@ -352,7 +352,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintf(ctx.Out, "Open election")
 
-	resp, err = http.Post(proxyAddr1+"/evoting/open", contentType, bytes.NewBuffer(electionIDBuf))
+	resp, err = http.Post(proxyAddr1+"/evoting/open", contentType, bytes.NewBuffer([]byte(electionID)))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}

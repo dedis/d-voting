@@ -12,6 +12,8 @@ import (
 
 	"github.com/dedis/d-voting/internal/tracing"
 	"github.com/dedis/d-voting/services/dkg"
+
+	// Register the JSON types for Pedersen
 	_ "github.com/dedis/d-voting/services/dkg/pedersen/json"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"go.dedis.ch/dela/mino"
@@ -43,7 +45,9 @@ var (
 const (
 	setupTimeout   = time.Second * 300
 	decryptTimeout = time.Second * 100
-	RPC_NAME       = "dkgevoting"
+
+	// RPC defines the RPC name used for mino
+	RPC = "dkgevoting"
 )
 
 // Pedersen allows one to initialize a new DKG protocol.
@@ -106,7 +110,7 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.
 	// link the actor to an RPC by the election ID
 	h := NewHandler(s.mino.GetAddress(), s.service, handlerData, ctx, s.electionFac)
 	no := s.mino.WithSegment(electionID)
-	rpc := mino.MustCreateRPC(no, RPC_NAME, h, s.factory)
+	rpc := mino.MustCreateRPC(no, RPC, h, s.factory)
 
 	a := &Actor{
 		rpc:         rpc,
@@ -125,6 +129,7 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.
 	return a, nil
 }
 
+// GetActor implements dkg.DKG
 func (s *Pedersen) GetActor(electionIDBuf []byte) (dkg.Actor, bool) {
 	s.RLock()
 	defer s.RUnlock()
@@ -176,6 +181,7 @@ func (a *Actor) Setup() (kyber.Point, error) {
 	// get the peer DKG pub keys
 	getPeerKey := types.NewGetPeerPubKey()
 	errs := sender.Send(getPeerKey, addrs...)
+
 	err = <-errs
 	if err != nil {
 		return nil, xerrors.Errorf("failed to send getPeerKey message: %v", err)
@@ -242,7 +248,6 @@ func (a *Actor) Setup() (kyber.Point, error) {
 
 		// this is a simple check that every node sends back the same DKG pub
 		// key.
-		// TODO: handle the situation where a pub key is not the same
 		if i != 0 && !dkgPubKeys[i-1].Equal(doneMsg.GetPublicKey()) {
 			return nil, xerrors.Errorf("the public keys do not match: %v", dkgPubKeys)
 		}
@@ -287,8 +292,6 @@ func (a *Actor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte,
 
 // Decrypt implements dkg.Actor. It gets the private shares of the nodes and
 // decrypts the message.
-// TODO: perform a re-encryption instead of gathering the private shares, which
-// should never happen.
 func (a *Actor) Decrypt(K, C kyber.Point) ([]byte, error) {
 
 	if !a.handler.startRes.Done() {
@@ -350,13 +353,6 @@ func (a *Actor) Decrypt(K, C kyber.Point) ([]byte, error) {
 	}
 
 	return decryptedMessage, nil
-}
-
-// Reshare implements dkg.Actor. It recreates the DKG with an updated list of
-// participants.
-// TODO: to do
-func (a *Actor) Reshare() error {
-	return nil
 }
 
 // MarshalJSON implements dkg.Actor. It exports the data relevant to an Actor

@@ -319,7 +319,9 @@ func openElection(m txManager, electionID []byte) error {
 	return nil
 }
 
-func getElection(electionFac serde.Factory, electionID []byte, service ordering.Service) (types.Election, error) {
+func getElection(electionFac serde.Factory, electionID []byte,
+	service ordering.Service) (types.Election, error) {
+
 	election := types.Election{}
 
 	proof, err := service.GetProof(electionID)
@@ -344,7 +346,9 @@ func getElection(electionFac serde.Factory, electionID []byte, service ordering.
 	return election, nil
 }
 
-func castVotesRandomly(m txManager, actor dkg.Actor, election types.Election, numberOfVotes int) ([]types.Ballot, error) {
+func castVotesRandomly(m txManager, actor dkg.Actor, election types.Election,
+	numberOfVotes int) ([]types.Ballot, error) {
+
 	possibleBallots := []string{
 		string("select:" + encodeID("bb") + ":0,0,1,0\n" +
 			"text:" + encodeID("ee") + ":eWVz\n\n"), //encoding of "yes"

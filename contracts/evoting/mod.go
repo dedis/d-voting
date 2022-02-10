@@ -60,18 +60,19 @@ type commands interface {
 type Command string
 
 const (
+	// CmdCreateElection is the command to create an election
 	CmdCreateElection Command = "CREATE_ELECTION"
-
+	// CmdOpenElection is the command to open an election
 	CmdOpenElection Command = "OPEN_ELECTION"
-
+	// CmdCastVote is the command to cast a vote
 	CmdCastVote Command = "CAST_VOTE"
-
+	// CmdCloseElection is the command to close an election
 	CmdCloseElection Command = "CLOSE_ELECTION"
-
+	// CmdShuffleBallots is the command to shuffle ballots
 	CmdShuffleBallots Command = "SHUFFLE_BALLOTS"
-
+	// CmdDecryptBallots is the command to decrypt ballots
 	CmdDecryptBallots Command = "DECRYPT_BALLOTS"
-
+	// CmdCancelElection is the command to cancel an election
 	CmdCancelElection Command = "CANCEL_ELECTION"
 )
 

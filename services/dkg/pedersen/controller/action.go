@@ -52,10 +52,7 @@ func (a *initAction) Execute(ctx node.Context) error {
 
 	_, exists := dkg.GetActor(electionIDBuf)
 	if exists {
-		return xerrors.Errorf(
-			"DKG was already initialized for electionID %s",
-			electionID,
-		)
+		return xerrors.Errorf("DKG was already initialized for electionID %s", electionID)
 	}
 
 	actor, err := dkg.Listen(electionIDBuf)
@@ -292,11 +289,8 @@ func ListenHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 		// Receive the hex-encoded electionID
 		data, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			http.Error(
-				w,
-				"failed to read body: "+err.Error(),
-				http.StatusInternalServerError,
-			)
+			http.Error(w, "failed to read body: "+err.Error(),
+				http.StatusInternalServerError)
 			return
 		}
 
@@ -305,21 +299,15 @@ func ListenHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 		// sanity check
 		electionIDBuf, err := hex.DecodeString(electionID)
 		if err != nil {
-			http.Error(
-				w,
-				"failed to decode electionID: "+electionID,
-				http.StatusBadRequest,
-			)
+			http.Error(w, "failed to decode electionID: "+electionID,
+				http.StatusBadRequest)
 			return
 		}
 
 		_, err = dkg.Listen(electionIDBuf)
 		if err != nil {
-			http.Error(
-				w,
-				"failed to start actor: "+err.Error(),
-				http.StatusInternalServerError,
-			)
+			http.Error(w, "failed to start actor: "+err.Error(),
+				http.StatusInternalServerError)
 			return
 		}
 	}
@@ -332,11 +320,8 @@ func SetupHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 
 		data, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			http.Error(
-				w,
-				"failed to read body: "+err.Error(),
-				http.StatusInternalServerError,
-			)
+			http.Error(w, "failed to read body: "+err.Error(),
+				http.StatusInternalServerError)
 			return
 		}
 

@@ -33,8 +33,6 @@ type Actor interface {
 	Encrypt(message []byte) (K, C kyber.Point, remainder []byte, err error)
 	Decrypt(K, C kyber.Point) ([]byte, error)
 
-	Reshare() error
-
 	// MarshalJSON returns a JSON-encoded bytestring containing all the actor
 	// data that is meant to be persistent.
 	MarshalJSON() ([]byte, error)

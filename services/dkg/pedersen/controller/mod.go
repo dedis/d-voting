@@ -52,8 +52,7 @@ func (m controller) SetCommands(builder node.Builder) {
 	sub.SetFlags(electionIDFlag)
 	sub.SetAction(builder.MakeAction(&initAction{}))
 
-	// memcoin --config /tmp/node1 dkg setup --member $(memcoin --config
-	// /tmp/node1 dkg export) --member $(memcoin --config /tmp/node2 dkg export)
+	// memcoin --config /tmp/node1 dkg setup --electionID electionID
 	sub = cmd.SetSubCommand("setup")
 	sub.SetDescription("create the public distributed key and the private share on each node")
 	sub.SetFlags(electionIDFlag)

@@ -58,8 +58,6 @@ func TestController_OnStart(t *testing.T) {
 	err = c.OnStart(make(node.FlagSet), inj)
 	require.EqualError(t, err,
 		"failed to resolve authority.Factory")
-
-	//TODO: Inject fake roster factory (once it's in internal/testing)
 }
 
 func TestController_OnStop(t *testing.T) {

@@ -1,7 +1,5 @@
 package evoting
 
-// todo: json marshall and unmarshall branch is are not covered yet
-
 import (
 	"crypto/sha256"
 	"encoding/hex"
@@ -35,7 +33,9 @@ var fakeElectionID = hex.EncodeToString(dummyElectionIDBuff)
 var fakeCommonSigner = bls.NewSigner()
 
 const getTransactionErr = "failed to get transaction: \"evoting:arg\" not found in tx arg"
-const unmarshalTransactionErr = "failed to get transaction: failed to deserialize transaction: failed to decode: failed to unmarshal transaction json: invalid character 'd' looking for beginning of value"
+const unmarshalTransactionErr = "failed to get transaction: failed to deserialize " +
+	"transaction: failed to decode: failed to unmarshal transaction json: invalid " +
+	"character 'd' looking for beginning of value"
 const deserializeErr = "failed to deserialize Election"
 
 var invalidElection = []byte("fake election")
@@ -264,7 +264,8 @@ func TestCommand_CastVote(t *testing.T) {
 	require.NoError(t, err)
 
 	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, "failed to get election: failed to decode electionIDHex: encoding/hex: invalid byte: U+0058 'X'")
+	require.EqualError(t, err, "failed to get election: failed to decode "+
+		"electionIDHex: encoding/hex: invalid byte: U+0058 'X'")
 
 	dummyElection.ElectionID = fakeElectionID
 
@@ -346,7 +347,8 @@ func TestCommand_CloseElection(t *testing.T) {
 	require.NoError(t, err)
 
 	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, fmt.Sprintf("the election is not open, current status: %d", types.Initial))
+	require.EqualError(t, err, fmt.Sprintf("the election is not open, "+
+		"current status: %d", types.Initial))
 
 	dummyElection.Status = types.Open
 
@@ -422,7 +424,8 @@ func TestCommand_ShuffleBallotsCannotShuffleTwice(t *testing.T) {
 	require.NoError(t, err)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, "a node already submitted a shuffle that has been accepted in round 0")
+	require.EqualError(t, err, "a node already submitted a shuffle that has "+
+		"been accepted in round 0")
 }
 
 func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
@@ -548,7 +551,8 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	require.NoError(t, err)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, "wrong shuffle round: expected round '0', transaction is for round '2'")
+	require.EqualError(t, err, "wrong shuffle round: expected round '0', "+
+		"transaction is for round '2'")
 
 	// Missing public key of shuffler:
 	shuffleBallots.Round = 1
@@ -565,7 +569,8 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	require.NoError(t, err)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, "could not verify identity of shuffler : public key not associated to a member of the roster: 77726f6e67204b6579")
+	require.EqualError(t, err, "could not verify identity of shuffler : "+
+		"public key not associated to a member of the roster: 77726f6e67204b6579")
 
 	// Right key, wrong signature:
 	shuffleBallots.PublicKey, _ = fakeCommonSigner.GetPublicKey().MarshalBinary()
@@ -574,7 +579,8 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	require.NoError(t, err)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, "could node deserialize shuffle signature : couldn't decode signature: couldn't deserialize data: unexpected end of JSON input")
+	require.EqualError(t, err, "could node deserialize shuffle signature : "+
+		"couldn't decode signature: couldn't deserialize data: unexpected end of JSON input")
 
 	// Wrong election ID (Hash of shuffle fails)
 	signature, err := fakeCommonSigner.Sign([]byte("fake shuffle"))
@@ -598,7 +604,8 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	require.NoError(t, err)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, "signature does not match the Shuffle : bls verify failed: bls: invalid signature")
+	require.EqualError(t, err, "signature does not match the Shuffle : "+
+		"bls verify failed: bls: invalid signature")
 
 	// Good format, signature not updated thus not matching, no random vector yet :
 	Ks, Cs, pubKey := fakeKCPoints(k)
@@ -652,7 +659,8 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	require.NoError(t, err)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, "random vector from shuffle transaction is different than expected random vector")
+	require.EqualError(t, err, "random vector from shuffle transaction is "+
+		"different than expected random vector")
 
 	// generate correct random vector:
 	h = sha256.New()
@@ -764,7 +772,8 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	require.NoError(t, err)
 
 	err = cmd.decryptBallots(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, fmt.Sprintf("the ballots are not shuffled, current status: %d", types.Initial))
+	require.EqualError(t, err, fmt.Sprintf("the ballots are not shuffled, "+
+		"current status: %d", types.Initial))
 
 	dummyElection.Status = types.ShuffledBallots
 

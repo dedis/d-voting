@@ -229,7 +229,8 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 	err = blocks.Load()
 	require.NoError(t, err)
 
-	srvc, err := cosipbft.NewService(param, cosipbft.WithGenesisStore(genstore), cosipbft.WithBlockStore(blocks))
+	srvc, err := cosipbft.NewService(param, cosipbft.WithGenesisStore(genstore),
+		cosipbft.WithBlockStore(blocks))
 	require.NoError(t, err)
 
 	// tx
@@ -243,13 +244,15 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 	contract := accessContract.NewContract(aKey[:], accessService, accessStore)
 	accessContract.RegisterContract(exec, contract)
 
-	dkg := pedersen.NewPedersen(onet, srvc, etypes.NewElectionFactory(etypes.CiphervoteFactory{}, rosterFac))
+	electionFac := etypes.NewElectionFactory(etypes.CiphervoteFactory{}, rosterFac)
+
+	dkg := pedersen.NewPedersen(onet, srvc, electionFac)
 
 	rosterKey := [32]byte{}
 	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:],
 		accessService, dkg, rosterFac))
 
-	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, etypes.NewElectionFactory(etypes.CiphervoteFactory{}, rosterFac), signer)
+	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, electionFac, signer)
 
 	// Neff shuffle signer
 	l := loader.NewFileLoader(filepath.Join(path, "private_neff.key"))

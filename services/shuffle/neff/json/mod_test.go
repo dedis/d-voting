@@ -11,7 +11,6 @@ import (
 )
 
 func TestMessageFormat_StartShuffle_Encode(t *testing.T) {
-
 	format := NewMsgFormat()
 	ctx := serde.NewContext(fake.ContextEngine{})
 

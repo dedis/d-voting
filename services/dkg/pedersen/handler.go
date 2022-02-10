@@ -139,7 +139,6 @@ mainSwitch:
 			return xerrors.Errorf("the ciphertext has not been shuffled")
 		}
 
-		// TODO: check if started before
 		h.RLock()
 		S := suite.Point().Mul(h.privShare.V, msg.K)
 		h.RUnlock()
@@ -148,8 +147,6 @@ mainSwitch:
 
 		h.RLock()
 		decryptReply := types.NewDecryptReply(
-			// TODO: check if using the private index is the same as the public
-			// index.
 			int64(h.privShare.I),
 			partial,
 		)

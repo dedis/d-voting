@@ -87,14 +87,14 @@ func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
 // Body: hex-encoded electionID
 func (h *votingProxy) OpenElection(w http.ResponseWriter, r *http.Request) {
 	// hex-encoded string as byte array
-	electionIDBuf, err := ioutil.ReadAll(r.Body)
+	buff, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "failed to read body: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// hex-encoded string
-	electionID := hex.EncodeToString(electionIDBuf)
+	electionID := string(buff)
 
 	// sanity check that it is a hex-encoded string
 	_, err = hex.DecodeString(electionID)
@@ -517,7 +517,8 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 
 			chunk, err := actor.Decrypt(lastShuffled[j][i].K, lastShuffled[j][i].C)
 			if err != nil {
-				http.Error(w, "failed to decrypt (K, C): "+err.Error(), http.StatusInternalServerError)
+				http.Error(w, "failed to decrypt (K, C): "+err.Error(),
+					http.StatusInternalServerError)
 				return
 			}
 			marshalledBallot.Write(chunk)

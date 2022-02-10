@@ -16,10 +16,6 @@ import (
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/serde"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/proof"
-	shuffleKyber "go.dedis.ch/kyber/v3/shuffle"
-	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/net/context"
 	"golang.org/x/xerrors"
 
@@ -75,7 +71,8 @@ func (n NeffShuffle) Listen(txmngr txn.Manager) (shuffle.Actor, error) {
 		return nil, xerrors.Errorf("failed to sync manager: %v", err)
 	}
 
-	h := NewHandler(n.mino.GetAddress(), n.service, n.p, txmngr, n.nodeSigner, n.context, n.electionFac)
+	h := NewHandler(n.mino.GetAddress(), n.service, n.p, txmngr, n.nodeSigner,
+		n.context, n.electionFac)
 
 	a := &Actor{
 		rpc:         mino.MustCreateRPC(n.mino, "shuffle", h, n.factory),
@@ -112,7 +109,9 @@ func (a *Actor) Shuffle(electionID []byte) error {
 	a.Lock()
 	defer a.Unlock()
 
-	election, err := getElection(a.electionFac, a.context, hex.EncodeToString(electionID), a.service)
+	electionIDHex := hex.EncodeToString(electionID)
+
+	election, err := getElection(a.electionFac, a.context, electionIDHex, a.service)
 	if err != nil {
 		return xerrors.Errorf("failed to get election: %v", err)
 	}
@@ -139,7 +138,7 @@ func (a *Actor) Shuffle(electionID []byte) error {
 		}
 	}
 
-	message := types.NewStartShuffle(hex.EncodeToString(electionID), addrs)
+	message := types.NewStartShuffle(electionIDHex, addrs)
 
 	errs := sender.Send(message, addrs...)
 	err = <-errs
@@ -157,13 +156,13 @@ func (a *Actor) Shuffle(electionID []byte) error {
 
 // waitAndCheckShuffling periodically checks the state of the election. It
 // returns an error if the shuffling is not done after a while. The retry and
-// waiting time depends on the rosterLen.
+// waiting time depends on the rosterLen. electionID is Hex-encoded.
 func (a *Actor) waitAndCheckShuffling(electionID string, rosterLen int) error {
 	var election etypes.Election
 	var err error
 
 	for i := 0; i < rosterLen*10; i++ {
-		election, err = getElection(a.electionFac, a.context, string(electionID), a.service)
+		election, err = getElection(a.electionFac, a.context, electionID, a.service)
 		if err != nil {
 			return xerrors.Errorf("failed to get election: %v", err)
 		}
@@ -171,8 +170,7 @@ func (a *Actor) waitAndCheckShuffling(electionID string, rosterLen int) error {
 		round := len(election.ShuffleInstances)
 		dela.Logger.Info().Msgf("SHUFFLE / ROUND : %d", round)
 
-		// if the threshold is reached that means we have enough
-		// shuffling.
+		// if the threshold is reached that means we have enough shuffling.
 		if round >= election.ShuffleThreshold {
 			dela.Logger.Info().Msgf("shuffle done with round n°%d", round)
 			return nil
@@ -186,20 +184,10 @@ func (a *Actor) waitAndCheckShuffling(electionID string, rosterLen int) error {
 		len(election.ShuffleInstances), election.ShuffleThreshold)
 }
 
-// Todo : this is useless in the new implementation, maybe remove ?
-
-// Verify allows to verify a Shuffle
-func (a *Actor) Verify(suiteName string, Ks []kyber.Point, Cs []kyber.Point,
-	pubKey kyber.Point, KsShuffled []kyber.Point, CsShuffled []kyber.Point, prf []byte) (err error) {
-
-	suite := suites.MustFind(suiteName)
-
-	verifier := shuffleKyber.Verifier(suite, nil, pubKey, Ks, Cs, KsShuffled, CsShuffled)
-	return proof.HashVerify(suite, protocolName, verifier, prf)
-}
-
 // getElection gets the election from the service.
-func getElection(electionFac serde.Factory, ctx serde.Context, electionIDHex string, srv ordering.Service) (etypes.Election, error) {
+func getElection(electionFac serde.Factory, ctx serde.Context,
+	electionIDHex string, srv ordering.Service) (etypes.Election, error) {
+
 	var election etypes.Election
 
 	electionID, err := hex.DecodeString(electionIDHex)

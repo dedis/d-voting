@@ -40,7 +40,8 @@ func TestInitAction_Execute(t *testing.T) {
 	p := fake.Pedersen{Actors: make(map[string]dkg.Actor)}
 	ctx.Injector.Inject(p)
 	err = action.Execute(ctx)
-	require.EqualError(t, err, "failed to update DKG store: failed to resolve db: couldn't find dependency for 'kv.DB'")
+	require.EqualError(t, err, "failed to update DKG store: failed to resolve db: "+
+		"couldn't find dependency for 'kv.DB'")
 
 	ctx.Injector = node.NewInjector()
 
@@ -90,7 +91,8 @@ func TestSetupAction_Execute(t *testing.T) {
 	inj.Inject(p)
 
 	err = action.Execute(ctx)
-	require.EqualError(t, err, "failed to update DKG store: failed to resolve db: couldn't find dependency for 'kv.DB'")
+	require.EqualError(t, err, "failed to update DKG store: failed to resolve db: "+
+		"couldn't find dependency for 'kv.DB'")
 
 	// DKG and DKGMap
 	db := fake.NewInMemoryDB()
@@ -143,8 +145,6 @@ func TestExportInfoAction_Execute(t *testing.T) {
 	ctx.Injector.Inject(db)
 	err = action.Execute(ctx)
 	require.NoError(t, err)
-
-	// todo : check context writer
 }
 
 // -----------------------------------------------------------------------------
@@ -159,7 +159,3 @@ type fakeFlags struct {
 func (f fakeFlags) String(name string) string {
 	return f.strings[name]
 }
-
-// func (f fakeFlags) StringSlice(name string) []string {
-// 	return f.strings[name]
-// }

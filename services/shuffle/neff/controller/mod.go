@@ -98,8 +98,6 @@ func (controller) OnStop(node.Injector) error {
 	return nil
 }
 
-// TODO : the user has to create the file in advance, maybe we should create it
-//  here ?
 // getSigner creates a signer from a file.
 func getSigner(filePath string) (crypto.Signer, error) {
 	l := loader.NewFileLoader(filePath)

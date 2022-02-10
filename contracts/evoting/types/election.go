@@ -11,17 +11,25 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// ID defines the ID of a ballot question
 type ID string
+
+// Status defines the status of the election
 type Status uint16
 
 const (
-	Initial         Status = 0
-	Open            Status = 1
-	Closed          Status = 2
+	// Initial is when the election has just been created
+	Initial Status = 0
+	// Open is when the election is open, i.e. it fetched the public key
+	Open Status = 1
+	// Closed is when no more users can cast ballots
+	Closed Status = 2
+	// ShuffledBallots is when the ballots have been shuffled
 	ShuffledBallots Status = 3
-	// DecryptedBallots = 4
+	// ResultAvailable is when the ballots have been decrypted
 	ResultAvailable Status = 5
-	Canceled        Status = 6
+	// Canceled is when the election has been cancel
+	Canceled Status = 6
 )
 
 // electionFormat contains the supported formats for the election. Right now
@@ -133,7 +141,7 @@ func (e *Election) ChunksPerBallot() int {
 // and verify the proof of a shuffle
 type RandomVector [][]byte
 
-// Unmarshal ...
+// Unmarshal returns the native type of a random vector
 func (r RandomVector) Unmarshal() ([]kyber.Scalar, error) {
 	e := make([]kyber.Scalar, len(r))
 
@@ -141,7 +149,7 @@ func (r RandomVector) Unmarshal() ([]kyber.Scalar, error) {
 		scalar := suite.Scalar()
 		err := scalar.UnmarshalBinary(v)
 		if err != nil {
-			return nil, xerrors.Errorf("cannot unmarshall election random vector: %v", err)
+			return nil, xerrors.Errorf("cannot unmarshal election random vector: %v", err)
 		}
 		e[i] = scalar
 	}
@@ -208,7 +216,7 @@ func (c *Configuration) GetQuestion(ID ID) Question {
 }
 
 // IsValid returns true if and only if the whole configuration is coherent and
-// valid
+// valid.
 func (c *Configuration) IsValid() bool {
 	// serves as a set to check each ID is unique
 	uniqueIDs := make(map[ID]bool)
@@ -288,12 +296,14 @@ func (p *PublicBulletinBoard) DeleteUser(userID string) bool {
 	return false
 }
 
+// Suffragia defines the association between users and their (encrypted) votes.
 type Suffragia struct {
 	UserIDs     []string
 	Ciphervotes []Ciphervote
 }
 
-// CiphervotesFromPairs ...
+// CiphervotesFromPairs transforms two parallel lists of EGPoints to a list of
+// Ciphervotes.
 func CiphervotesFromPairs(X, Y [][]kyber.Point) ([]Ciphervote, error) {
 	if len(X) != len(Y) {
 		return nil, xerrors.Errorf("X and Y must have same length: %d != %d",
@@ -328,6 +338,8 @@ func CiphervotesFromPairs(X, Y [][]kyber.Point) ([]Ciphervote, error) {
 	return res, nil
 }
 
+// ciphervoteFromPairs transforms two parallel lists of EGPoints to a list of
+// ElGamal pairs.
 func ciphervoteFromPairs(ks []kyber.Point, cs []kyber.Point) (Ciphervote, error) {
 	if len(ks) != len(cs) {
 		return Ciphervote{}, xerrors.Errorf("ks and cs must have same length: %d != %d",
