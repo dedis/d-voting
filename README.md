@@ -1,6 +1,6 @@
 <div align="center">
 
-<img width="300px" src="docs/assets/logo.png"/>
+<img width="300px" src="docs/assets/logo-white-bg.png"/>
 
 | Tests  | Quality |
 | ------ | ------- |
