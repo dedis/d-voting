@@ -6,7 +6,7 @@ Once the project cloned type `npm install` to install the packages.
 
 The project contains one file that is not in git (because it is in the .gitignore).
 This file is called `config.json` and is located at the root of the express project.
-Please use the config.json.template to start with.
+Please use the `config.json.template` to start with.
 
 This files contains all the secrets and also the running information. It should be formatted this way :
 
@@ -30,6 +30,12 @@ func GenerateKey() {
   fmt.Println("PUBLIC_KEY:", pubK)
 	fmt.Println("PRIVATE_KEY:", privK)
 }
+```
+
+Tip: you might need to add the following line to your `/etc/hosts` file:
+
+```
+127.0.0.1       dvoting-dev.dedis.ch
 ```
 
 # Run the program
