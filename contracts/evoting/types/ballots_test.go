@@ -472,69 +472,193 @@ func TestSubject_IsValid(t *testing.T) {
 }
 
 func TestBallot_Equal(t *testing.T) {
-	ballot := Ballot{}
-	other := Ballot{}
+	type check struct {
+		ballot    Ballot
+		other     Ballot
+		assertion require.BoolAssertionFunc
+	}
 
-	// > Empty ballots are equal
-	require.True(t, ballot.Equal(other))
+	table := []check{
+		{
+			Ballot{},
+			Ballot{},
+			require.True,
+		},
+		{
+			Ballot{SelectResultIDs: []ID{"1"}},
+			Ballot{},
+			require.False,
+		},
+		{
+			Ballot{SelectResultIDs: []ID{"1"}},
+			Ballot{SelectResultIDs: []ID{"0"}},
+			require.False,
+		},
+		{
+			Ballot{SelectResultIDs: []ID{"1"}},
+			Ballot{SelectResultIDs: []ID{"1"}},
+			require.True,
+		},
+		{
+			Ballot{
+				SelectResultIDs: []ID{"1"},
+				SelectResult:    [][]bool{{true}},
+			},
+			Ballot{
+				SelectResultIDs: []ID{"1"},
+			},
+			require.False,
+		},
+		{
+			Ballot{
+				SelectResultIDs: []ID{"1"},
+				SelectResult:    [][]bool{{true}},
+			},
+			Ballot{
+				SelectResultIDs: []ID{"1"},
+				SelectResult:    [][]bool{{false}},
+			},
+			require.False,
+		},
+		{
+			Ballot{
+				SelectResultIDs: []ID{"1"},
+				SelectResult:    [][]bool{{true}},
+			},
+			Ballot{
+				SelectResultIDs: []ID{"1"},
+				SelectResult:    [][]bool{{false, false}},
+			},
+			require.False,
+		},
+		{
+			Ballot{
+				SelectResultIDs: []ID{"1"},
+				SelectResult:    [][]bool{{true}},
+			},
+			Ballot{
+				SelectResultIDs: []ID{"1"},
+				SelectResult:    [][]bool{{true}},
+			},
+			require.True,
+		},
+		{
+			Ballot{RankResultIDs: []ID{"1"}},
+			Ballot{},
+			require.False,
+		},
+		{
+			Ballot{RankResultIDs: []ID{"1"}},
+			Ballot{RankResultIDs: []ID{"0"}},
+			require.False,
+		},
+		{
+			Ballot{RankResultIDs: []ID{"1"}},
+			Ballot{RankResultIDs: []ID{"1"}},
+			require.True,
+		},
+		{
+			Ballot{
+				RankResultIDs: []ID{"1"},
+				RankResult:    [][]int8{{1}},
+			},
+			Ballot{
+				RankResultIDs: []ID{"1"},
+			},
+			require.False,
+		},
+		{
+			Ballot{
+				RankResultIDs: []ID{"1"},
+				RankResult:    [][]int8{{1}},
+			},
+			Ballot{
+				RankResultIDs: []ID{"1"},
+				RankResult:    [][]int8{{0}},
+			},
+			require.False,
+		},
+		{
+			Ballot{
+				RankResultIDs: []ID{"1"},
+				RankResult:    [][]int8{{1}},
+			},
+			Ballot{
+				RankResultIDs: []ID{"1"},
+				RankResult:    [][]int8{{0, 0}},
+			},
+			require.False,
+		},
+		{
+			Ballot{
+				RankResultIDs: []ID{"1"},
+				RankResult:    [][]int8{{1}},
+			},
+			Ballot{
+				RankResultIDs: []ID{"1"},
+				RankResult:    [][]int8{{1}},
+			},
+			require.True,
+		},
+		{
+			Ballot{TextResultIDs: []ID{"1"}},
+			Ballot{},
+			require.False,
+		},
+		{
+			Ballot{TextResultIDs: []ID{"1"}},
+			Ballot{TextResultIDs: []ID{"0"}},
+			require.False,
+		},
+		{
+			Ballot{TextResultIDs: []ID{"1"}},
+			Ballot{TextResultIDs: []ID{"1"}},
+			require.True,
+		},
+		{
+			Ballot{
+				TextResultIDs: []ID{"1"},
+				TextResult:    [][]string{{"0"}},
+			},
+			Ballot{TextResultIDs: []ID{"1"}},
+			require.False,
+		},
+		{
+			Ballot{
+				TextResultIDs: []ID{"1"},
+				TextResult:    [][]string{{"1"}},
+			},
+			Ballot{
+				TextResultIDs: []ID{"1"},
+				TextResult:    [][]string{{"0"}},
+			},
+			require.False,
+		},
+		{
+			Ballot{
+				TextResultIDs: []ID{"1"},
+				TextResult:    [][]string{{"1"}},
+			},
+			Ballot{
+				TextResultIDs: []ID{"1"},
+				TextResult:    [][]string{{"0", "0"}},
+			},
+			require.False,
+		},
+		{
+			Ballot{
+				TextResultIDs: []ID{"1"},
+				TextResult:    [][]string{{"1"}},
+			},
+			Ballot{
+				TextResultIDs: []ID{"1"},
+				TextResult:    [][]string{{"1"}},
+			},
+			require.True,
+		},
+	}
 
-	// > SelectResultIDs
-	ballot.SelectResultIDs = []ID{"1"}
-	require.False(t, ballot.Equal(other))
-
-	other.SelectResultIDs = []ID{"0"}
-	require.False(t, ballot.Equal(other))
-	other.SelectResultIDs = []ID{"1"}
-	require.True(t, ballot.Equal(other))
-
-	// > SelectResult
-	ballot.SelectResult = [][]bool{{true}}
-	require.False(t, ballot.Equal(other))
-
-	other.SelectResult = [][]bool{{false}}
-	require.False(t, ballot.Equal(other))
-	other.SelectResult = [][]bool{{false, false}}
-	require.False(t, ballot.Equal(other))
-	other.SelectResult = [][]bool{{true}}
-	require.True(t, ballot.Equal(other))
-
-	// > RankResultIDs
-	ballot.RankResultIDs = []ID{"1"}
-	require.False(t, ballot.Equal(other))
-
-	other.RankResultIDs = []ID{"0"}
-	require.False(t, ballot.Equal(other))
-	other.RankResultIDs = []ID{"1"}
-	require.True(t, ballot.Equal(other))
-
-	// > RankResult
-	ballot.RankResult = [][]int8{{1}}
-	require.False(t, ballot.Equal(other))
-
-	other.RankResult = [][]int8{{0}}
-	require.False(t, ballot.Equal(other))
-	other.RankResult = [][]int8{{0, 0}}
-	require.False(t, ballot.Equal(other))
-	other.RankResult = [][]int8{{1}}
-	require.True(t, ballot.Equal(other))
-
-	// > TestResultIDs
-	ballot.TextResultIDs = []ID{"1"}
-	require.False(t, ballot.Equal(other))
-
-	other.TextResultIDs = []ID{"0"}
-	require.False(t, ballot.Equal(other))
-	other.TextResultIDs = []ID{"1"}
-	require.True(t, ballot.Equal(other))
-
-	// > TextResult
-	ballot.TextResult = [][]string{{"1"}}
-	require.False(t, ballot.Equal(other))
-
-	other.TextResult = [][]string{{"0"}}
-	require.False(t, ballot.Equal(other))
-	other.TextResult = [][]string{{"0", "0"}}
-	require.False(t, ballot.Equal(other))
-	other.TextResult = [][]string{{"1"}}
-	require.True(t, ballot.Equal(other))
+	for _, e := range table {
+		e.assertion(t, e.ballot.Equal(e.other))
+	}
 }

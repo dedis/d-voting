@@ -1,6 +1,6 @@
 [![Go Test](https://github.com/dedis/d-voting/actions/workflows/go_test.yml/badge.svg)](https://github.com/dedis/d-voting/actions/workflows/go_test.yml)
-[![Go Test](https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml/badge.svg)](https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml)
-[![Go Test](https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml/badge.svg)](https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml)
+[![Go Integration tests](https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml/badge.svg)](https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml)
+[![Go memcoin test](https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml/badge.svg)](https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml)
 [![Coverage Status](https://coveralls.io/repos/github/dedis/d-voting/badge.svg)](https://coveralls.io/github/dedis/d-voting)
 
 # Setup
