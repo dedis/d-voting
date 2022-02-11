@@ -1,7 +1,21 @@
-[![Go Test](https://github.com/dedis/d-voting/actions/workflows/go_test.yml/badge.svg)](https://github.com/dedis/d-voting/actions/workflows/go_test.yml)
-[![Go Integration tests](https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml/badge.svg)](https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml)
-[![Go memcoin test](https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml/badge.svg)](https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml)
-[![Coverage Status](https://coveralls.io/repos/github/dedis/d-voting/badge.svg)](https://coveralls.io/github/dedis/d-voting)
+<div align="center">
+
+<img width="300px" src="docs/assets/logo.png"/>
+
+| Tests  | Quality |
+| ------ | ------- |
+| [![Go Test](https://github.com/dedis/d-voting/actions/workflows/go_test.yml/badge.svg)](https://github.com/dedis/d-voting/actions/workflows/go_test.yml) [![Go Integration tests](https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml/badge.svg)](https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml) [![Go memcoin test](https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml/badge.svg)](https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml) | [![Coverage Status](https://coveralls.io/repos/github/dedis/d-voting/badge.svg?branch=main)](https://coveralls.io/github/dedis/d-voting?branch=main) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=dedis_d-voting&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=dedis_d-voting) |
+
+</div>
+
+# D-Voting
+
+**D-Voting** is an e-voting platform based on the
+[Dela](https://github.com/dedis/dela) blockchain. In short:
+
+- An open platform to run voting instances on a blockchain
+- Provides privacy of votes with state-of-the art protocols
+- Fully auditable and decentralized process
 
 # Setup
 
