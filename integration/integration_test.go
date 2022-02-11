@@ -86,7 +86,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		electionID, err := createElection(m, "Three votes election", adminID)
 		require.NoError(t, err)
 
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Second * 1)
 
 		// ##### SETUP DKG #####
 		actor, err := initDkg(nodes, electionID)
@@ -111,7 +111,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		err = closeElection(m, electionID, adminID)
 		require.NoError(t, err)
 
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Second * 1)
 
 		// ##### SHUFFLE BALLOTS #####
 		t.Logf("initializing shuffle")
