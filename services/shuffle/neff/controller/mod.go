@@ -2,6 +2,9 @@ package controller
 
 import (
 	"encoding"
+	"path/filepath"
+
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/shuffle/neff"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
@@ -14,7 +17,6 @@ import (
 	"go.dedis.ch/dela/crypto/loader"
 	"go.dedis.ch/dela/mino"
 	"golang.org/x/xerrors"
-	"path/filepath"
 )
 
 const privateKeyFile = "private.key"
@@ -83,7 +85,8 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to get Signer for the shuffle : %v", err)
 	}
 
-	neffShuffle := neff.NewNeffShuffle(no, service, p, blocks, rosterFac, signer)
+	neffShuffle := neff.NewNeffShuffle(no, service, p, blocks,
+		etypes.NewElectionFactory(etypes.CiphervoteFactory{}, rosterFac), signer)
 
 	inj.Inject(neffShuffle)
 
@@ -95,8 +98,6 @@ func (controller) OnStop(node.Injector) error {
 	return nil
 }
 
-// TODO : the user has to create the file in advance, maybe we should create it
-//  here ?
 // getSigner creates a signer from a file.
 func getSigner(filePath string) (crypto.Signer, error) {
 	l := loader.NewFileLoader(filePath)
@@ -151,7 +152,8 @@ func (g generator) Generate() ([]byte, error) {
 	return data, nil
 }
 
-// blsSigner is a wrapper to use a signer with the primitives to use a BLS signature
+// blsSigner is a wrapper to use a signer with the primitives to use a BLS
+// signature
 func blsSigner() encoding.BinaryMarshaler {
 	return bls.NewSigner()
 }
