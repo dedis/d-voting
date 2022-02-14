@@ -17,8 +17,8 @@ const useFetchCall = (endpoint, request) => {
           setData(dataReceived);
           setLoading(false);
         }
-      } catch (error) {
-        setError(error);
+      } catch (e) {
+        setError(e);
       }
     };
 

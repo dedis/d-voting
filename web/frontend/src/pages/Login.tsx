@@ -13,8 +13,8 @@ const Login: FC = () => {
   const handleClick = async () => {
     fetch(GET_TEQ_EENDPOINT)
       .then((resp) => {
-        const json_data = resp.json();
-        json_data.then((result) => {
+        const jsonData = resp.json();
+        jsonData.then((result) => {
           window.location = result.url;
         });
       })

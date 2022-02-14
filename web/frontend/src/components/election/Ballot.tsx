@@ -13,7 +13,7 @@ import { OPEN } from "../utils/StatusNumber";
 import { encryptVote } from "./VoteEncrypt";
 import "../../styles/Ballot.css";
 
-const Ballot: FC = (props) => {
+const Ballot: FC = () => {
   var bytes: number[];
   const { t } = useTranslation();
   const { electionId } = useParams();

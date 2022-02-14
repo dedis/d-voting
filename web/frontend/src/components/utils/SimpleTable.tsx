@@ -37,7 +37,7 @@ const SimpleTable: FC<SimpleTableProps> = ({
     method: "POST",
     body: JSON.stringify({ Token: token }),
   };
-  const [data, loading, error] = useFetchCall(
+  const [fetchedData, loading, error] = useFetchCall(
     GET_ALL_ELECTIONS_ENDPOINT,
     fetchRequest
   );
@@ -99,6 +99,7 @@ const SimpleTable: FC<SimpleTableProps> = ({
       return <div>{textWhenNoData}</div>;
     }
   };
+
   const showBallots = (elections) => {
     return displayBallotTable(ballotsToDisplay(elections));
   };
@@ -106,7 +107,7 @@ const SimpleTable: FC<SimpleTableProps> = ({
   return (
     <div className="cast-ballot">
       {!loading ? (
-        showBallots(data.AllElectionsInfo)
+        showBallots(fetchedData.AllElectionsInfo)
       ) : error === null ? (
         <p className="loading">{t("loading")}</p>
       ) : (

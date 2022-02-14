@@ -94,8 +94,8 @@ const UploadFile: FC<UploadFileProps> = ({ setShowModal, setTextModal }) => {
     var newUpload = event.target.files[0];
     setName(event.target.value);
     var reader = new FileReader();
-    reader.onload = function (event) {
-      setFile(event.target.result);
+    reader.onload = function (param) {
+      setFile(param.target.result);
     };
     reader.readAsText(newUpload);
   };
