@@ -11,6 +11,7 @@
     "@mui/x-data-grid": "^5.5.0",
     "buffer": "^6.0.3",
     "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
     "file-saver": "^2.0.5",
     "formik": "^2.2.9",
     "i18next": "^21.6.10",
