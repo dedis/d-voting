@@ -2,9 +2,13 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/Server.ts",
   "scripts": {
-    "start": "node index.js",
+    "start": "ts-node src/Server.ts",
+    "dev": "./node_modules/.bin/nodemon",
+    "eslint": "./node_modules/.bin/eslint .",
+    "prettier": "./node_modules/.bin/prettier --write .",
+    "prettier-check": "./node_modules/.bin/prettier --write .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -12,6 +16,7 @@
   "license": "ISC",
   "dependencies": {
     "@dedis/kyber": "^3.4.4",
+    "@types/express-session": "^1.17.4",
     "axios": "^0.24.0",
     "cookie-parser": "^1.4.6",
     "crypto": "^1.0.1",
@@ -19,9 +24,21 @@
     "express-session": "^1.17.2",
     "lmdb": "^2.2.1",
     "lodash": "^4.17.21",
+    "nodemon": "^2.0.15",
     "request": "^2.88.2"
   },
   "devDependencies": {
-    "eslint": "^8.8.0"
+    "@types/express": "^4.17.13",
+    "@types/jest": "^27.4.0",
+    "@types/node": "^17.0.18",
+    "eslint": "^8.9.0",
+    "eslint-config-airbnb-typescript": "^16.1.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-jest": "^26.1.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "prettier": "2.5.1",
+    "ts-node": "^10.5.0",
+    "typescript": "^4.5.5"
   }
 }
