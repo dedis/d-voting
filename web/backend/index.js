@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const axios = require('axios');
-const cookieParser = require("cookie-parser");
+const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const kyber = require('@dedis/kyber')
 const crypto = require('crypto');
@@ -85,18 +85,18 @@ app.get('/api/control_key', (req, res) => {
                 const firstname = resa.data.split('\nfirstname=')[1].split('\n')[0];
 
                 var user = usersDB.get(sciper) || {};
-                if(user["role"] === undefined || user["role"] === "") {
-                    user["role"] = "voter";
-                    user["lastname"] = lastname;
-                    user["firstname"] = firstname;
-                    user["loggedin"] = false;
+                if(user['role'] === undefined || user['role'] === '') {
+                    user['role'] = 'voter';
+                    user['lastname'] = lastname;
+                    user['firstname'] = firstname;
+                    user['loggedin'] = false;
                 }
                 usersDB.put(sciper, user);
 
                 req.session.userid = parseInt(sciper);
                 req.session.lastname = lastname;
                 req.session.firstname = firstname;
-                req.session.role = user["role"];
+                req.session.role = user['role'];
                 res.redirect('/');
             } else {
                 res.status(500).send('Login did not work')
@@ -149,11 +149,9 @@ app.get('/api/get_user_rights', (req, res) => {
 
     if(sciper){
         var user = usersDB.get(sciper);
-        if(user["role"] === "admin") {
+        if(user['role'] === 'admin') {
             var users = [];
-            usersDB.getRange().filter(({key, value}) => {
-                    return key != sciper; // filter out self
-                })
+            usersDB.getRange()
                 .forEach(({key, value}) => {
                     users.push(value);
                 });
@@ -174,12 +172,12 @@ app.get('/api/get_user_rights', (req, res) => {
 app.post('/api/add_role', (req, res) => {
     if(req.session.userid){
         var requester = usersDB.get(req.session.userid);
-        if(requester["role"] === "admin") {
+        if(requester['role'] === 'admin') {
 
             const sciper = req.body.sciper;
             const role = req.body.role;
             var user = usersDB.get(sciper);
-            user["role"] = role;
+            user['role'] = role;
             usersDB.put(sciper, user);
 
         } else {
@@ -222,14 +220,14 @@ app.post('/evoting/*', (req, res) => {
     if(req.session.userid){
 
         const body_data = req.body;
-        body_data["AdminID"] = req.session.userid;
-        body_data["UserID"] = req.session.userid;
+        body_data['AdminID'] = req.session.userid;
+        body_data['UserID'] = req.session.userid;
         const data_str = JSON.stringify(body_data);
         const data_str_b64 = Buffer.from(data_str).toString('base64');
 
         const hash = crypto.createHash('sha256').update(data_str_b64).digest('base64');
 
-        const edCurve = kyber.curve.newCurve("edwards25519");
+        const edCurve = kyber.curve.newCurve('edwards25519');
 
         const priv = Buffer.from(config.PRIVATE_KEY, 'hex');
         const pub = Buffer.from(config.PUBLIC_KEY, 'hex');
