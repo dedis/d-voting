@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "strict": true,
+    "strict": false,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "module": "esnext",
@@ -18,9 +18,19 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
   },
   "include": [
     "src"
-  ]
+  ],
+  "exclude": [
+    "node_modules",
+    "jest.config.js",
+    "tailwind.config.js",
+    ".eslintrc",
+  ],
+  "typedocOptions": {
+    "entryPoints": ["App.tsx"],
+    "out": "tsdocs"
+  }
 }

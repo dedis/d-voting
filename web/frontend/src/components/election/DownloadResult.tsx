@@ -1,31 +1,38 @@
-import React, {useContext} from 'react';
-import {saveAs} from 'file-saver';
-import {Translations} from '../language/Translations';
-import {LanguageContext} from '../language/LanguageContext';
+import React, { FC } from 'react';
+import { saveAs } from 'file-saver';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
-const DownloadResult = ({resultData}) => {
-    const [context, ] = useContext(LanguageContext);
-    const fileName = 'result.json';
+type DownloadResultProps = {
+  resultData: string;
+};
 
-    // Create a blob of the data
-    const fileToSave = new Blob([JSON.stringify({Result: resultData})], {
-        type: 'application/json',
-        name: fileName
-    });
+const DownloadResult: FC<DownloadResultProps> = (resultData) => {
+  const { t } = useTranslation();
+  const fileName = 'result.json';
 
-    const handleClick = () => {
-        saveAs(fileToSave, fileName);
-    }
+  // Create a blob of the data
+  const fileToSave = new Blob([JSON.stringify({ Result: resultData })], {
+    type: 'application/json',
+  });
 
-    return( <div>
-                <button className='back-btn' onClick={handleClick}>{Translations[context].download}</button>
-            </div>
-    );
-}
+  const handleClick = () => {
+    saveAs(fileToSave, fileName);
+  };
+
+  return (
+    <div>
+      <button className="back-btn" onClick={handleClick}>
+        {t('download')}
+      </button>
+    </div>
+  );
+};
+
 DownloadResult.propTypes = {
-    resultData : PropTypes.object,
-}
+  resultData: PropTypes.string.isRequired,
+};
+
 export default DownloadResult;
 
 //https://stackoverflow.com/questions/19721439/download-json-object-as-a-file-from-browser

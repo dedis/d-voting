@@ -2,7 +2,14 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
-  "port": 2000,
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "eslint": "./node_modules/.bin/eslint .",
+    "prettier": "./node_modules/.bin/prettier --write ."
+  },
   "dependencies": {
     "@dedis/kyber": "^3.4.4",
     "@emotion/react": "^11.7.1",
@@ -10,58 +17,50 @@
     "@material-ui/core": "^4.12.3",
     "@mui/material": "^5.4.0",
     "@mui/x-data-grid": "^5.5.0",
-    "@testing-library/jest-dom": "^5.16.2",
-    "@testing-library/react": "^12.1.2",
-    "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^27.4.0",
-    "@types/node": "^16.11.22",
-    "@types/react": "^17.0.39",
-    "@types/react-dom": "^17.0.11",
-    "enzyme": "^3.11.0",
-    "enzyme-to-json": "^3.6.2",
+    "buffer": "^6.0.3",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
     "file-saver": "^2.0.5",
     "formik": "^2.2.9",
+    "http-proxy-middleware": "^2.0.3",
+    "i18next": "^21.6.10",
+    "i18next-browser-languagedetector": "^6.1.3",
+    "prettier": "2.5.1",
     "prop-types": "^15.8.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-i18next": "^11.15.3",
+    "react-router": "^6.2.1",
     "react-router-dom": "^6.2.1",
-    "react-scripts": "5.0.0",
+    "react-scripts": "^5.0.0",
     "react-table": "^7.7.0",
+    "tailwindcss": "^3.0.18",
     "typescript": "^4.5.5",
     "web-vitals": "^2.1.4"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
   "devDependencies": {
+    "@testing-library/jest-dom": "^5.16.2",
+    "@testing-library/react": "^12.1.2",
+    "@testing-library/user-event": "^13.5.0",
+    "@types/file-saver": "^2.0.5",
+    "@types/jest": "^27.4.0",
+    "@types/node": "^17.0.16",
+    "@types/react": "^17.0.39",
+    "@types/react-dom": "^17.0.11",
+    "@types/react-router": "^5.1.18",
+    "@types/react-router-dom": "^5.3.3",
     "@wojtekmaj/enzyme-adapter-react-17": "^0.6.6",
     "autoprefixer": "^10.4.2",
-    "eslint": "^8.8.0",
+    "enzyme": "^3.11.0",
+    "enzyme-to-json": "^3.6.2",
+    "eslint": "^8.9.0",
+    "eslint-config-airbnb-typescript": "^16.1.0",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-jest": "^26.1.0",
+    "eslint-plugin-jsx-a11y": "^6.5.1",
     "eslint-plugin-react": "^7.28.0",
     "eslint-plugin-react-hooks": "^4.3.0",
-    "postcss": "^8.4.6",
-    "tailwindcss": "^3.0.18"
+    "postcss": "^8.4.6"
   },
   "compilerOptions": {
     "paths": {

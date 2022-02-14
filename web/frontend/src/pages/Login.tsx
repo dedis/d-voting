@@ -1,45 +1,42 @@
-import {React, useContext, useState} from 'react';
-import {Translations} from '../language/Translations';
-import {LanguageContext} from '../language/LanguageContext';
-import {GET_TEQ_EENDPOINT} from '../utils/ExpressEndoints';
-import './Login.css';
+import React, { FC, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 
+import { GET_TEQ_EENDPOINT } from '../components/utils/ExpressEndoints';
+import './Login.css';
 
-const Login = () => {
-    const [loginError, setLoginError] = useState();
-    const [context, ] = useContext(LanguageContext);
+const Login: FC = () => {
+  const { t } = useTranslation();
 
-    const handleClick = async() => {
-        try{
-            fetch(GET_TEQ_EENDPOINT).then(resp => {
-                const json_data = resp.json();
-                json_data.then(result => {
-                    window.location = result['url'];
-                });
-            }).catch(error => {
-                console.log(error);
-            });
-        } catch (error){
-            console.log(error);
-        }
+  const [loginError] = useState();
 
+  const handleClick = async () => {
+    fetch(GET_TEQ_EENDPOINT)
+      .then((resp) => {
+        const jsonData = resp.json();
+        jsonData.then((result) => {
+          window.location = result.url;
+        });
+      })
+      .catch((error) => {
+        console.log(error);
+      });
 
-        return (<div>
-            {loginError === null? <div></div>: Translations[context].errorServerDown}
-        </div>)
-    }
+    return <div>{loginError === null ? <div></div> : t('errorServerDown')}</div>;
+  };
 
-    return (
-        <div className='login-wrapper'>
-            <div className='login-txt'>{Translations[context].loginText}</div>
-            <button id='login-button' className='login-btn' onClick={handleClick}>{Translations[context].login}</button>
-        </div>
-    )
-}
+  return (
+    <div className="login-wrapper">
+      <div className="login-txt">{t('loginText')}</div>
+      <button id="login-button" className="login-btn" onClick={handleClick}>
+        {t('login')}
+      </button>
+    </div>
+  );
+};
 
 Login.propTypes = {
-    setToken : PropTypes.func,
-}
+  setToken: PropTypes.func,
+};
 
 export default Login;

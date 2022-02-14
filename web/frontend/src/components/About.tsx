@@ -1,21 +1,29 @@
+import React, { FC, Fragment } from 'react';
+import { useTranslation } from 'react-i18next';
 
-import {React,useContext} from 'react';
+const About: FC = () => {
+  const { t } = useTranslation();
 
-import './About.css';
-import {Translations} from '../language/Translations';
-import {LanguageContext} from '../language/LanguageContext';
+  return (
+    <Fragment>
+      <div className="about-container">
+        <div className="about-text">
+          <br />
+          {t('about1')}
+          <br />
+          <br />
+          {t('about2')}
+          <br />
+          <br />
+          {t('about3')}
+          <br />
+          <br />
+          {t('about4')}
+          <br />
+        </div>
+      </div>
+    </Fragment>
+  );
+};
 
-
-const About = () => {
- const [context, ] = useContext(LanguageContext)
-  
-  return(
-    <div className='about-container'>
-      <div className='about-text'>
-        {Translations[context].about}
-      </div> 
-    </div>
-    );
-  }
- 
 export default About;
