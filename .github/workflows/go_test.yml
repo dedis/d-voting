@@ -2,12 +2,10 @@ name: Go Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
 
 jobs:
-
   test:
     name: Tests
     runs-on: ubuntu-latest
@@ -48,7 +46,7 @@ jobs:
         with:
           path-to-profile: profile.cov
           parallel: true
-          
+
   # notifies that all test jobs are finished.
   finish:
     needs: test
