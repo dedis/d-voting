@@ -23,8 +23,8 @@ const Admin = () => {
 
     fetch(GET_ADMIN_ROWS)
       .then((resp) => {
-        const json_data = resp.json();
-        json_data.then((result) => {
+        const jsonData = resp.json();
+        jsonData.then((result) => {
           console.log(result);
           setRows(result);
         });

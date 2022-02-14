@@ -17,7 +17,7 @@ const Result = ({ resultData, candidates }) => {
       resultMap[candidates[i]] = 0;
     }
     for (var j = 0; j < result.length; j++) {
-      resultMap[result[j]["Vote"]] = resultMap[result[j]["Vote"]] + 1;
+      resultMap[result[j].Vote] = resultMap[result[j].Vote] + 1;
     }
     return resultMap;
   };

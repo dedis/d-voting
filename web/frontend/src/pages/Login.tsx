@@ -15,7 +15,7 @@ const Login: FC = () => {
       .then((resp) => {
         const json_data = resp.json();
         json_data.then((result) => {
-          window.location = result["url"];
+          window.location = result.url;
         });
       })
       .catch((error) => {
