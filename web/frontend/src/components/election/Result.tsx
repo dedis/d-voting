@@ -4,7 +4,7 @@ import Typography from "@material-ui/core/Typography";
 import PropTypes from "prop-types";
 
 import DownloadResult from "./DownloadResult";
-import "../../styles/Result.css";
+import "./Result.css";
 
 /*functional component that counts the ballots and display
  the result as total percentage of the votes */

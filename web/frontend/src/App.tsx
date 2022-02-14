@@ -15,7 +15,7 @@ import Admin from "./components/Admin";
 import Footer from "./components/Footer";
 import ElectionDetails from "./components/election/ElectionDetails";
 import Login from "./pages/Login";
-import "./styles/App.css";
+import "./App.css";
 
 const App: FC = () => {
   const [isLogged, setIsLogged] = useState(undefined);

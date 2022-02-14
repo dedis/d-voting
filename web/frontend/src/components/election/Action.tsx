@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import useChangeAction from "../utils/useChangeAction";
 import Modal from "../modal/Modal";
-import "../../styles/Status.css";
+import "./Status.css";
 
 type ActionProps = {
   status: number;

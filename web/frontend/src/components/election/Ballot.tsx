@@ -11,7 +11,7 @@ import { CAST_BALLOT_ENDPOINT } from "../utils/Endpoints";
 import Modal from "../modal/Modal";
 import { OPEN } from "../utils/StatusNumber";
 import { encryptVote } from "./VoteEncrypt";
-import "../../styles/Ballot.css";
+import "./Ballot.css";
 
 const Ballot: FC = () => {
   var bytes: number[];

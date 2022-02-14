@@ -1,7 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-import "../../styles/Modal.css";
+import "./Modal.css";
 
 const Modal = ({ showModal, setShowModal, textModal, buttonRightText }) => {
   const closeModal = () => {

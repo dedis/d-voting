@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import PropTypes from "prop-types";
 
 import { GET_TEQ_EENDPOINT } from "../components/utils/ExpressEndoints";
-import "../styles/Login.css";
+import "./Login.css";
 
 const Login: FC = () => {
   const { t } = useTranslation();

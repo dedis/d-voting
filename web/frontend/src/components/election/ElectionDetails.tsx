@@ -9,7 +9,7 @@ import Status from "./Status";
 import useElection from "../utils/useElection";
 import { RESULT_AVAILABLE } from "../utils/StatusNumber";
 import useGetResults from "../utils/useGetResults";
-import "../../styles/ElectionDetails.css";
+import "./ElectionDetails.css";
 
 const ElectionDetails: FC = () => {
   const { t } = useTranslation();

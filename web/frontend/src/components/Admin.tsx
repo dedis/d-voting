@@ -5,7 +5,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import { GET_ADMIN_ROWS } from "./utils/ExpressEndoints";
 import AddAdminUserModal from "./modal/AddAdminUserModal";
 import RemoveAdminUserModal from "./modal/RemoveAdminUserModal";
-import "../styles/Admin.css";
+import "./Admin.css";
 
 const Admin = () => {
   const [rows, setRows] = useState([]);

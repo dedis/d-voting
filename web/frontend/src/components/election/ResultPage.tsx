@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import Result from "./Result";
 import useElection from "../utils/useElection";
-import "../../styles/ResultPage.css";
+import "./ResultPage.css";
 
 type ResultPageProps = {
   location?: any;

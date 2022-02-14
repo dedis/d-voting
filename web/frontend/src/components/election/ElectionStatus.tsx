@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import ElectionTable from "./ElectionTable";
 import useFetchCall from "../utils/useFetchCall";
 import { GET_ALL_ELECTIONS_ENDPOINT } from "../utils/Endpoints";
-import "../../styles/Election.css";
+import "./Election.css";
 
 /*Assumption : for now an election is simply a json file with the following field
     - electionName: string

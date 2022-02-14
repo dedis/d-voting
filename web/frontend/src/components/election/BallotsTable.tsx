@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import SimpleTable from "../utils/SimpleTable";
 import { OPEN } from "../utils/StatusNumber";
-import "../../styles/BallotsTable.css";
+import "./BallotsTable.css";
 
 const BallotsTable: FC = () => {
   const { t } = useTranslation();
