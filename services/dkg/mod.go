@@ -7,18 +7,18 @@ import (
 // DKG defines the primitive to start a DKG protocol
 type DKG interface {
 	// Listen starts the RPC. This function should be called on each node that
-	// wishes to participate in a DKG.
+	// wishes to participate in a DKG. electionID is NOT hex-encoded.
 	Listen(electionID []byte) (Actor, error)
 
-	// GetActor allows to retrieve the Actor corresponding to a given electionID
+	// GetActor allows to retrieve the Actor corresponding to a given
+	// electionID. electionID is NOT hex-encoded.
 	GetActor(electionID []byte) (Actor, bool)
 }
 
 // Actor defines the primitives to use a DKG protocol
 //
-// An actor is directly linked to an election; one should not
-// be able to create an Actor for an election that does not
-// exist
+// An actor is directly linked to an election; one should not be able to create
+// an Actor for an election that does not exist
 type Actor interface {
 	// Setup must be first called by ONE of the actors to use the subsequent
 	// functions. It creates the public distributed key and the private share on
@@ -33,9 +33,7 @@ type Actor interface {
 	Encrypt(message []byte) (K, C kyber.Point, remainder []byte, err error)
 	Decrypt(K, C kyber.Point) ([]byte, error)
 
-	Reshare() error
-
-	// MarshalJSON returns a JSON-encoded bytestring containing all the
-	// actor data that is meant to be persistent.
+	// MarshalJSON returns a JSON-encoded bytestring containing all the actor
+	// data that is meant to be persistent.
 	MarshalJSON() ([]byte, error)
 }

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/dkg/pedersen"
 	"github.com/dedis/d-voting/services/shuffle"
@@ -82,6 +83,7 @@ type dVotingCosiDela interface {
 	GetShuffle() shuffle.Shuffle
 	GetShuffleSigner() crypto.AggregateSigner
 	GetValidationSrv() validation.Service
+	GetRosterFac() authority.Factory
 }
 
 // dVotingNode represents a Dela node using cosi pbft aimed to execute d-voting
@@ -101,6 +103,7 @@ type dVotingNode struct {
 	shuffle       *neff.NeffShuffle
 	shuffleSigner crypto.AggregateSigner
 	vs            validation.Service
+	rosterFac     authority.Factory
 }
 
 // Creates n dela nodes using tempDir as root to file path and returns an array
@@ -226,7 +229,8 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 	err = blocks.Load()
 	require.NoError(t, err)
 
-	srvc, err := cosipbft.NewService(param, cosipbft.WithGenesisStore(genstore), cosipbft.WithBlockStore(blocks))
+	srvc, err := cosipbft.NewService(param, cosipbft.WithGenesisStore(genstore),
+		cosipbft.WithBlockStore(blocks))
 	require.NoError(t, err)
 
 	// tx
@@ -240,13 +244,15 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 	contract := accessContract.NewContract(aKey[:], accessService, accessStore)
 	accessContract.RegisterContract(exec, contract)
 
-	dkg := pedersen.NewPedersen(onet, srvc, rosterFac)
+	electionFac := etypes.NewElectionFactory(etypes.CiphervoteFactory{}, rosterFac)
+
+	dkg := pedersen.NewPedersen(onet, srvc, electionFac)
 
 	rosterKey := [32]byte{}
 	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:],
 		accessService, dkg, rosterFac))
 
-	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, rosterFac, signer)
+	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, electionFac, signer)
 
 	// Neff shuffle signer
 	l := loader.NewFileLoader(filepath.Join(path, "private_neff.key"))
@@ -271,6 +277,7 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 		shuffle:       neffShuffle,
 		shuffleSigner: neffSigner,
 		vs:            vs,
+		rosterFac:     rosterFac,
 	}
 }
 
@@ -410,7 +417,13 @@ func (c dVotingNode) GetValidationSrv() validation.Service {
 	return c.vs
 }
 
-// certGenerator can generate a private key compatible with the x509 certificate.
+// GetRosterFac implements dVotingNode
+func (c dVotingNode) GetRosterFac() authority.Factory {
+	return c.rosterFac
+}
+
+// certGenerator can generate a private key compatible with the x509
+// certificate.
 //
 // - implements loader.Generator
 type certGenerator struct {
@@ -425,9 +438,9 @@ func newCertGenerator(r io.Reader, c elliptic.Curve) loader.Generator {
 	}
 }
 
-// Generate implements loader.Generator. It returns the serialized data of
-// a private key generated from the an elliptic curve. The data is formatted as
-// a PEM block "EC PRIVATE KEY".
+// Generate implements loader.Generator. It returns the serialized data of a
+// private key generated from the an elliptic curve. The data is formatted as a
+// PEM block "EC PRIVATE KEY".
 func (g certGenerator) Generate() ([]byte, error) {
 	priv, err := ecdsa.GenerateKey(g.curve, g.random)
 	if err != nil {

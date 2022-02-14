@@ -3,24 +3,22 @@ package neff
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
-	"encoding/json"
+	"crypto/sha256"
 	"time"
 
 	"go.dedis.ch/kyber/v3"
 
 	"github.com/dedis/d-voting/contracts/evoting"
-	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
-	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
-	jsondela "go.dedis.ch/dela/serde/json"
+	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3/proof"
 	shuffleKyber "go.dedis.ch/kyber/v3/shuffle"
 	"go.dedis.ch/kyber/v3/suites"
@@ -41,17 +39,23 @@ type Handler struct {
 	p             pool.Pool
 	txmngr        txn.Manager
 	shuffleSigner crypto.Signer
+	context       serde.Context
+	electionFac   serde.Factory
 }
 
 // NewHandler creates a new handler
 func NewHandler(me mino.Address, service ordering.Service, p pool.Pool,
-	txmngr txn.Manager, shuffleSigner crypto.Signer) *Handler {
+	txmngr txn.Manager, shuffleSigner crypto.Signer, ctx serde.Context,
+	electionFac serde.Factory) *Handler {
+
 	return &Handler{
 		me:            me,
 		service:       service,
 		p:             p,
 		txmngr:        txmngr,
 		shuffleSigner: shuffleSigner,
+		context:       ctx,
+		electionFac:   electionFac,
 	}
 }
 
@@ -84,7 +88,7 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 
 	// loop until the threshold is reached or our transaction has been accepted
 	for {
-		election, err := getElection(h.service, electionID)
+		election, err := getElection(h.electionFac, h.context, electionID, h.service)
 		if err != nil {
 			return xerrors.Errorf("failed to get election: %v", err)
 		}
@@ -97,11 +101,11 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 			return nil
 		}
 
-		if election.Status != electionTypes.Closed {
-			return xerrors.Errorf("the election must be closed: but status is %v", election.Status)
+		if election.Status != etypes.Closed {
+			return xerrors.Errorf("the election must be closed: (%v)", election.Status)
 		}
 
-		tx, err := makeTx(election, h.txmngr, h.shuffleSigner)
+		tx, err := makeTx(h.context, &election, h.txmngr, h.shuffleSigner)
 		if err != nil {
 			return xerrors.Errorf("failed to make tx: %v", err)
 		}
@@ -138,30 +142,37 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 	}
 }
 
-func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner crypto.Signer) (txn.Transaction, error) {
+func makeTx(ctx serde.Context, election *etypes.Election, manager txn.Manager,
+	shuffleSigner crypto.Signer) (txn.Transaction, error) {
+
 	shuffledBallots, getProver, err := getShuffledBallots(election)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get shuffled ballots: %v", err)
 	}
 
-	shuffleBallotsTransaction := electionTypes.ShuffleBallotsTransaction{
+	shuffleBallots := etypes.ShuffleBallots{
 		ElectionID:      election.ElectionID,
 		Round:           len(election.ShuffleInstances),
 		ShuffledBallots: shuffledBallots,
 	}
 
-	shuffleHash, err := shuffleBallotsTransaction.HashShuffle(election.ElectionID)
+	h := sha256.New()
+
+	err = shuffleBallots.Fingerprint(h)
 	if err != nil {
-		return nil, xerrors.Errorf("Could not hash the shuffle while creating transaction: %v", err)
+		return nil, xerrors.Errorf("failed to get fingerprint: %v", err)
 	}
 
+	hash := h.Sum(nil)
+
 	// Generate random vector and proof
-	semiRandomStream, err := evoting.NewSemiRandomStream(shuffleHash)
+	semiRandomStream, err := evoting.NewSemiRandomStream(hash)
 	if err != nil {
 		return nil, xerrors.Errorf("could not create semi-random stream: %v", err)
 	}
 
 	e := make([]kyber.Scalar, election.ChunksPerBallot())
+
 	for i := 0; i < election.ChunksPerBallot(); i++ {
 		v := suite.Scalar().Pick(semiRandomStream)
 		e[i] = v
@@ -177,40 +188,37 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 		return nil, xerrors.Errorf("shuffle proof failed: %v", err)
 	}
 
-	shuffleBallotsTransaction.Proof = shuffleProof
+	shuffleBallots.Proof = shuffleProof
+	shuffleBallots.RandomVector = etypes.RandomVector{}
 
-	shuffleBallotsTransaction.RandomVector = electionTypes.RandomVector{}
-
-	err = shuffleBallotsTransaction.RandomVector.LoadFromScalars(e)
+	err = shuffleBallots.RandomVector.LoadFromScalars(e)
 	if err != nil {
 		return nil, xerrors.Errorf("could not marshal shuffle random vector")
 	}
 
 	// Sign the shuffle:
-
-	signature, err := shuffleSigner.Sign(shuffleHash)
+	signature, err := shuffleSigner.Sign(hash)
 	if err != nil {
-		return nil, xerrors.Errorf("Could not sign the shuffle : %v", err)
+		return nil, xerrors.Errorf("could not sign the shuffle : %v", err)
 	}
 
-	encodedSignature, err := signature.Serialize(jsondela.NewContext())
+	encodedSignature, err := signature.Serialize(ctx)
 	if err != nil {
-		return nil, xerrors.Errorf("Could not encode signature as []byte : %v ", err)
+		return nil, xerrors.Errorf("could not encode signature as []byte : %v ", err)
 	}
 
 	publicKey, err := shuffleSigner.GetPublicKey().MarshalBinary()
 	if err != nil {
-		return nil, xerrors.Errorf("Could not unmarshal public key from nodeSigner: %v", err)
+		return nil, xerrors.Errorf("could not unmarshal public key from nodeSigner: %v", err)
 	}
 
 	// Complete transaction:
-	shuffleBallotsTransaction.PublicKey = publicKey
-	shuffleBallotsTransaction.Signature = encodedSignature
+	shuffleBallots.PublicKey = publicKey
+	shuffleBallots.Signature = encodedSignature
 
-	js, err := json.Marshal(shuffleBallotsTransaction)
+	data, err := shuffleBallots.Serialize(ctx)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to marshal "+
-			"ShuffleBallotsTransaction: %v", err.Error())
+		return nil, xerrors.Errorf("failed to serialize shuffle ballots: %v", err)
 	}
 
 	args := make([]txn.Arg, 3)
@@ -223,8 +231,8 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 		Value: []byte(evoting.CmdShuffleBallots),
 	}
 	args[2] = txn.Arg{
-		Key:   evoting.ShuffleBallotsArg,
-		Value: js,
+		Key:   evoting.ElectionArg,
+		Value: data,
 	}
 
 	tx, err := manager.Make(args...)
@@ -236,42 +244,44 @@ func makeTx(election *electionTypes.Election, manager txn.Manager, shuffleSigner
 }
 
 // getShuffledBallots returns the shuffled ballots with the shuffling proof.
-func getShuffledBallots(election *electionTypes.Election) ([]electionTypes.EncryptedBallot,
+func getShuffledBallots(election *etypes.Election) ([]etypes.Ciphervote,
 	func(e []kyber.Scalar) (proof.Prover, error), error) {
 
 	round := len(election.ShuffleInstances)
 
-	var encryptedBallots electionTypes.EncryptedBallots
+	var ciphervotes []etypes.Ciphervote
 
 	if round == 0 {
-		encryptedBallots = election.PublicBulletinBoard.Ballots
+		ciphervotes = election.Suffragia.Ciphervotes
 	} else {
-		encryptedBallots = election.ShuffleInstances[round-1].ShuffledBallots
+		ciphervotes = election.ShuffleInstances[round-1].ShuffledBallots
 	}
 
-	X, Y, err := encryptedBallots.GetElGPairs()
-	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to get X, Y: %v", err)
-	}
+	seqSize := len(ciphervotes[0])
 
-	pubKey := suite.Point()
+	X := make([][]kyber.Point, seqSize)
+	Y := make([][]kyber.Point, seqSize)
 
-	err = pubKey.UnmarshalBinary(election.Pubkey)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("couldn't unmarshal public key: %v", err)
+	for _, ciphervote := range ciphervotes {
+
+		x, y := ciphervote.GetElGPairs()
+
+		for i := 0; i < seqSize; i++ {
+			X[i] = append(X[i], x[i])
+			Y[i] = append(Y[i], y[i])
+		}
 	}
 
 	// shuffle sequences
-	XX, YY, getProver := shuffleKyber.SequencesShuffle(suite, nil, pubKey, X, Y, suite.RandomStream())
+	XX, YY, getProver := shuffleKyber.SequencesShuffle(suite, nil, election.Pubkey,
+		X, Y, suite.RandomStream())
 
-	var shuffledBallots electionTypes.EncryptedBallots
-
-	err = shuffledBallots.InitFromElGPairs(XX, YY)
+	ciphervotes, err := etypes.CiphervotesFromPairs(XX, YY)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to init ciphertexts: %v", err)
+		return nil, nil, xerrors.Errorf("failed to get ciphervotes: %v", err)
 	}
 
-	return shuffledBallots, getProver, nil
+	return ciphervotes, getProver, nil
 }
 
 // watchTx checks the transaction to find one that match txID. Return if the
@@ -296,31 +306,4 @@ func watchTx(events <-chan ordering.Event, txID []byte) (bool, string) {
 	}
 
 	return false, "watch timeout"
-}
-
-// getElection returns the election state from the global state.
-func getElection(service ordering.Service, electionID string) (*electionTypes.Election, error) {
-	electionIDBuff, err := hex.DecodeString(electionID)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to decode election id: %v", err)
-	}
-
-	prf, err := service.GetProof(electionIDBuff)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to read on the blockchain: %v", err)
-	}
-
-	election := new(electionTypes.Election)
-
-	err = json.NewDecoder(bytes.NewBuffer(prf.GetValue())).Decode(election)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to unmarshal Election: %v", err)
-	}
-	return election, nil
-}
-
-// getManager is the function called when we need a transaction manager. It
-// allows us to use a different manager for the tests.
-var getManager = func(signer crypto.Signer, s signed.Client) txn.Manager {
-	return signed.NewManager(signer, s)
 }

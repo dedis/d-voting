@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"sync"
-	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
@@ -14,9 +13,11 @@ import (
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/proxy"
+	"go.dedis.ch/dela/serde"
 	"golang.org/x/xerrors"
 )
 
@@ -35,8 +36,6 @@ const (
 	cancelElectionEndpoint      = "/evoting/cancel"
 )
 
-const srvShutdownTimeout = 10 * time.Second
-
 // HTTP exposes an http proxy for all evoting contract commands.
 type votingProxy struct {
 	sync.Mutex
@@ -49,26 +48,34 @@ type votingProxy struct {
 	dkg          dkg.DKG
 
 	pool   pool.Pool
-	client *Client
+	client signed.Client
 
 	logger zerolog.Logger
+
+	context       serde.Context
+	electionFac   serde.Factory
+	ciphervoteFac serde.Factory
 }
 
 func registerVotingProxy(proxy proxy.Proxy, signer crypto.Signer,
-	client *Client, dkg dkg.DKG, shuffleActor shuffle.Actor,
-	oSvc ordering.Service, p pool.Pool, m mino.Mino) {
+	client signed.Client, dkg dkg.DKG, shuffleActor shuffle.Actor,
+	oSvc ordering.Service, p pool.Pool, m mino.Mino, ctx serde.Context,
+	electionFac serde.Factory, ciphervoteFac serde.Factory) {
 
 	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
 
 	h := &votingProxy{
-		logger:       logger,
-		signer:       signer,
-		client:       client,
-		dkg:          dkg,
-		shuffleActor: shuffleActor,
-		orderingSvc:  oSvc,
-		pool:         p,
-		mino:         m,
+		logger:        logger,
+		signer:        signer,
+		client:        client,
+		dkg:           dkg,
+		shuffleActor:  shuffleActor,
+		orderingSvc:   oSvc,
+		pool:          p,
+		mino:          m,
+		context:       ctx,
+		electionFac:   electionFac,
+		ciphervoteFac: ciphervoteFac,
 	}
 
 	proxy.RegisterHandler(loginEndpoint, h.Login)

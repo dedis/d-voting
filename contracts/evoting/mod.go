@@ -1,6 +1,7 @@
 package evoting
 
 import (
+	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/dkg"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/execution"
@@ -13,18 +14,18 @@ import (
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
+
+	// Register the JSON format for the election
+	_ "github.com/dedis/d-voting/contracts/evoting/json"
 )
 
-const protocolName = "PairShuffle"
-const messageOnlyOneShufflePerRound = "shuffle is already happening in this round"
-const ElectionsMetadataKey = "ElectionsMetadataKey"
-
-const errDecodeElectionID = "failed to decode Election ID: %v"
-const errArgNotFound = "%q not found in tx arg"
+const (
+	// ElectionsMetadataKey is the key at which election metadata are saved in
+	// the storage.
+	ElectionsMetadataKey = "ElectionsMetadataKey"
+)
 
 var suite = suites.MustFind("Ed25519")
-
-// TODO : the smart contract should create its own dkg Actor
 
 const (
 	// ContractName is the name of the contract.
@@ -34,26 +35,17 @@ const (
 	// run on the contract. Should be one of the Command type.
 	CmdArg = "evoting:command"
 
-	CreateElectionArg = "evoting:create_election"
-
-	OpenElectionArg = "evoting:open_election"
-
-	CastVoteArg = "evoting:cast_vote"
-
-	CancelElectionArg = "evoting:cancel_election"
-
-	CloseElectionArg = "evoting:close_election"
-
-	ShuffleBallotsArg = "evoting:shuffle_ballots"
-
-	DecryptBallotsArg = "evoting:decrypt_ballots"
+	// ElectionArg is the key at which the election argument is stored in the
+	// transaction. The content is defined by the type of command.
+	ElectionArg = "evoting:arg"
 
 	// credentialAllCommand defines the credential command that is allowed to
 	// perform all commands.
 	credentialAllCommand = "all"
 )
 
-// commands defines the commands of the evoting contract.
+// commands defines the commands of the evoting contract. Using an interface
+// helps in testing.
 type commands interface {
 	createElection(snap store.Snapshot, step execution.Step) error
 	openElection(snap store.Snapshot, step execution.Step) error
@@ -68,18 +60,19 @@ type commands interface {
 type Command string
 
 const (
+	// CmdCreateElection is the command to create an election
 	CmdCreateElection Command = "CREATE_ELECTION"
-
+	// CmdOpenElection is the command to open an election
 	CmdOpenElection Command = "OPEN_ELECTION"
-
+	// CmdCastVote is the command to cast a vote
 	CmdCastVote Command = "CAST_VOTE"
-
+	// CmdCloseElection is the command to close an election
 	CmdCloseElection Command = "CLOSE_ELECTION"
-
+	// CmdShuffleBallots is the command to shuffle ballots
 	CmdShuffleBallots Command = "SHUFFLE_BALLOTS"
-
+	// CmdDecryptBallots is the command to decrypt ballots
 	CmdDecryptBallots Command = "DECRYPT_BALLOTS"
-
+	// CmdCancelElection is the command to cancel an election
 	CmdCancelElection Command = "CANCEL_ELECTION"
 )
 
@@ -109,24 +102,37 @@ type Contract struct {
 
 	pedersen dkg.DKG
 
-	rosterFac authority.Factory
 	rosterKey []byte
 
 	context serde.Context
+
+	electionFac    serde.Factory
+	rosterFac      authority.Factory
+	transactionFac serde.Factory
 }
 
 // NewContract creates a new Value contract
 func NewContract(accessKey, rosterKey []byte, srvc access.Service,
 	pedersen dkg.DKG, rosterFac authority.Factory) Contract {
+
+	ctx := json.NewContext()
+
+	ciphervoteFac := types.CiphervoteFactory{}
+	electionFac := types.NewElectionFactory(ciphervoteFac, rosterFac)
+	transactionFac := types.NewTransactionFactory(ciphervoteFac)
+
 	contract := Contract{
 		access:    srvc,
 		accessKey: accessKey,
 		pedersen:  pedersen,
 
 		rosterKey: rosterKey,
-		rosterFac: rosterFac,
 
-		context: json.NewContext(),
+		context: ctx,
+
+		electionFac:    electionFac,
+		rosterFac:      rosterFac,
+		transactionFac: transactionFac,
 	}
 
 	contract.cmd = evotingCommand{Contract: &contract, prover: proof.HashVerify}
@@ -134,6 +140,7 @@ func NewContract(accessKey, rosterKey []byte, srvc access.Service,
 	return contract
 }
 
+// Execute implements native.Contract
 func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 	creds := NewCreds(c.accessKey)
 
@@ -145,7 +152,7 @@ func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 
 	cmd := step.Current.GetArg(CmdArg)
 	if len(cmd) == 0 {
-		return xerrors.Errorf(errArgNotFound, CmdArg)
+		return xerrors.Errorf("%q not found in tx arg", CmdArg)
 	}
 
 	switch Command(cmd) {

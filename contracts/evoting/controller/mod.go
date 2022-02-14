@@ -1,14 +1,11 @@
 package controller
 
 import (
-	"strings"
-
-	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/access"
-	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
-	"golang.org/x/xerrors"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/validation"
 )
 
 // NewController returns a new controller initializer
@@ -28,7 +25,8 @@ func (m controller) SetCommands(builder node.Builder) {
 	cmd := builder.SetCommand("e-voting")
 	cmd.SetDescription("interact with the evoting service")
 
-	// memcoin --config /tmp/node1 e-voting registerHandlers --signer private.key
+	// memcoin --config /tmp/node1 e-voting \
+	//   registerHandlers --signer private.key
 	sub := cmd.SetSubCommand("registerHandlers")
 	sub.SetDescription("register the e-voting handlers on the default proxy")
 	sub.SetFlags(
@@ -39,35 +37,6 @@ func (m controller) SetCommands(builder node.Builder) {
 		},
 	)
 	sub.SetAction(builder.MakeAction(&registerAction{}))
-
-	// memcoin --config /tmp/node1 e-voting scenarioTestPart1 --proxy-addr http://localhost:8081
-	sub = cmd.SetSubCommand("scenarioTestPart1")
-	sub.SetDescription("evoting scenario test, before dkg init on each node")
-	sub.SetFlags(
-		cli.StringFlag{
-			Name:  "proxy-addr",
-			Usage: "base address of the proxy",
-			Value: "http://localhost:8081",
-		},
-	)
-	sub.SetAction(builder.MakeAction(&scenarioTestPart1Action{}))
-
-	// memcoin --config /tmp/node1 e-voting scenarioTestPart2 --proxy-addr http://localhost:8081
-	sub = cmd.SetSubCommand("scenarioTestPart2")
-	sub.SetDescription("evoting scenario test, after dkg init on each node")
-	sub.SetFlags(
-		cli.StringFlag{
-			Name:     "electionID",
-			Usage:    "the election ID, formatted in hexadecimal",
-			Required: true,
-		},
-		cli.StringFlag{
-			Name:  "proxy-addr",
-			Usage: "base address of the proxy",
-			Value: "http://localhost:8081",
-		},
-	)
-	sub.SetAction(builder.MakeAction(&scenarioTestPart2Action{}))
 
 	// memcoin --config /tmp/node1 e-voting scenarioTest
 	sub = cmd.SetSubCommand("scenarioTest")
@@ -102,49 +71,23 @@ func (controller) OnStop(node.Injector) error {
 	return nil
 }
 
-// Client fetches the last nonce used and returns nonce + 1
+// client fetches the last nonce used by the client
 //
 // - implements signed.Client
-type Client struct {
-	Nonce  uint64
-	Blocks blockstore.BlockStore
+type client struct {
+	srvc ordering.Service
+	mgr  validation.Service
 }
 
-// GetNonce implements signed.Client
-func (c *Client) GetNonce(id access.Identity) (uint64, error) {
-	blockLink, err := c.Blocks.Last()
+// GetNonce implements signed.Client. It uses the validation service to get the
+// last nonce.
+func (c client) GetNonce(ident access.Identity) (uint64, error) {
+	store := c.srvc.GetStore()
+
+	nonce, err := c.mgr.GetNonce(store, ident)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to fetch last block: %v", err)
+		return 0, err
 	}
-
-	transactionResults := blockLink.GetBlock().GetData().GetTransactionResults()
-	nonce := uint64(0)
-
-	for nonce == 0 {
-		for _, txResult := range transactionResults {
-			_, msg := txResult.GetStatus()
-			if !strings.Contains(msg, "nonce") && txResult.GetTransaction().GetNonce() > nonce {
-				// && txResult.GetTransaction().GetIdentity().Equal(signer.GetPublicKey())
-				nonce = txResult.GetTransaction().GetNonce()
-			}
-		}
-
-		previousDigest := blockLink.GetFrom()
-
-		previousBlock, err := c.Blocks.Get(previousDigest)
-		if err != nil {
-			if strings.Contains(err.Error(), "not found: no block") {
-				dela.Logger.Info().Msg("FIRST BLOCK")
-				break
-			} else {
-				return 0, xerrors.Errorf("failed to fetch previous block: %v", err)
-			}
-		} else {
-			transactionResults = previousBlock.GetBlock().GetData().GetTransactionResults()
-		}
-	}
-	nonce++
-	c.Nonce = nonce
 
 	return nonce, nil
 }

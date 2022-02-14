@@ -1,0 +1,45 @@
+name: Memcoin (CLI+HTTP) Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  test:
+    name: Scenario
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go ^1.17
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.17
+
+      - name: Install crypto util from Dela
+        run: |
+          git clone https://github.com/dedis/dela.git
+          cd dela
+          go install ./cli/crypto
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Create a private key
+        run: crypto bls signer new --save private.key
+
+      - name: Install memcoin
+        run: go install ./cli/memcoin
+
+      - name: Start 3 nodes
+        run: |
+          memcoin --config /tmp/node1 start --port 2001 &
+          memcoin --config /tmp/node2 start --port 2002 &
+          memcoin --config /tmp/node3 start --port 2003 &
+
+      - name: Run the setup
+        run: ./setup.sh
+
+      - name: Run the scenario test
+        run: memcoin --config /tmp/node1 e-voting scenarioTest

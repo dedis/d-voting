@@ -1,107 +1,50 @@
 package types
 
 import (
-	"fmt"
-
-	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
-	"golang.org/x/xerrors"
 )
 
 var suite = suites.MustFind("Ed25519")
 
+// LoginResponse defines the HTPP request for login
 type LoginResponse struct {
 	UserID string
 	Token  string
 }
 
-type CollectiveAuthorityMember struct {
-	Address   string
-	PublicKey string
-}
-
+// CreateElectionRequest defines the HTTP request for creating an election
 type CreateElectionRequest struct {
 	Configuration Configuration
 	AdminID       string
 }
 
+// OpenElectionRequest defines the HTTP request for opening an election
 type OpenElectionRequest struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 }
 
+// CreateElectionResponse defines the HTTP response when creating an election
 type CreateElectionResponse struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 }
 
+// CastVoteRequest defines the HTTP request for casting a vote
 type CastVoteRequest struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 	UserID     string
-	Ballot     EncryptedBallot
-	Token      string
+	// Marshalled representation of Ciphervote
+	Ballot []byte
+	Token  string
 }
 
+// CastVoteResponse degines the HTTP response when casting a vote
 type CastVoteResponse struct {
 }
 
-// Ciphertext wraps K, C kyber points into their binary representation
-type Ciphertext struct {
-	K []byte
-	C []byte
-}
-
-// GetPoints returns the kyber.Point curve points
-func (ct Ciphertext) GetPoints() (k kyber.Point, c kyber.Point, err error) {
-	k = suite.Point()
-	c = suite.Point()
-
-	err = k.UnmarshalBinary(ct.K)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to unmarshal K: %v", err)
-	}
-
-	err = c.UnmarshalBinary(ct.C)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to unmarshal C: %v", err)
-	}
-
-	return k, c, nil
-}
-
-// Copy returns a copy of Ciphertext
-func (ct Ciphertext) Copy() Ciphertext {
-	return Ciphertext{
-		K: append([]byte{}, ct.K...),
-		C: append([]byte{}, ct.C...),
-	}
-}
-
-// String returns a string representation of a ciphertext
-func (ct Ciphertext) String() string {
-	return fmt.Sprintf("{K: %x, C: %x}", ct.K, ct.C)
-}
-
-// FromPoints fills the ciphertext with k, c
-func (ct *Ciphertext) FromPoints(k, c kyber.Point) error {
-	buf, err := k.MarshalBinary()
-	if err != nil {
-		return xerrors.Errorf("failed to marshall k: %v", err)
-	}
-
-	ct.K = buf
-
-	buf, err = c.MarshalBinary()
-	if err != nil {
-		return xerrors.Errorf("failed to marshall c: %v", err)
-	}
-
-	ct.C = buf
-
-	return nil
-}
-
+// CloseElectionRequest degines the HTTP request for closing an election
 type CloseElectionRequest struct {
 	// ElectionID is hex-encoded
 	ElectionID string
@@ -109,9 +52,11 @@ type CloseElectionRequest struct {
 	Token      string
 }
 
+// CloseElectionResponse defines the HTTP response when closing an election
 type CloseElectionResponse struct {
 }
 
+// ShuffleBallotsRequest defines the HTTP request for shuffling the ballots
 type ShuffleBallotsRequest struct {
 	// ElectionID is hex-encoded
 	ElectionID string
@@ -119,10 +64,12 @@ type ShuffleBallotsRequest struct {
 	Token      string
 }
 
+// ShuffleBallotsResponse defines the HTTP response when shuffling the ballots
 type ShuffleBallotsResponse struct {
 	Message string
 }
 
+// DecryptBallotsRequest defines the HTTP request for decrypting the ballots
 type DecryptBallotsRequest struct {
 	// ElectionID is hex-encoded
 	ElectionID string
@@ -130,9 +77,12 @@ type DecryptBallotsRequest struct {
 	Token      string
 }
 
+// DecryptBallotsResponse defines the HTTP response when decrypting the ballots
 type DecryptBallotsResponse struct {
 }
 
+// GetElectionResultRequest defines the HTTP request for getting the election
+// result.
 type GetElectionResultRequest struct {
 	// ElectionID is hex-encoded
 	ElectionID string
@@ -140,10 +90,13 @@ type GetElectionResultRequest struct {
 	Token string
 }
 
+// GetElectionResultResponse defines the HTTP response when getting the election
+// result.
 type GetElectionResultResponse struct {
 	Result []Ballot
 }
 
+// GetElectionInfoRequest defines the HTTP request for getting the election info
 type GetElectionInfoRequest struct {
 	// ElectionID is hex-encoded
 	ElectionID string
@@ -151,6 +104,8 @@ type GetElectionInfoRequest struct {
 	Token string
 }
 
+// GetElectionInfoResponse defines the HTTP response when getting the election
+// info
 type GetElectionInfoResponse struct {
 	// ElectionID is hex-encoded
 	ElectionID    string
@@ -161,27 +116,36 @@ type GetElectionInfoResponse struct {
 	Format        string
 }
 
+// GetAllElectionsInfoRequest defines the HTTP request for getting all elections
+// infos.
 type GetAllElectionsInfoRequest struct {
 	// UserId string
 	Token string
 }
 
+// GetAllElectionsInfoResponse defines the HTTP response when getting all
+// elections infos.
 type GetAllElectionsInfoResponse struct {
 	// UserId         string
 	AllElectionsInfo []GetElectionInfoResponse
 }
 
+// GetAllElectionsIDsRequest defines the HTTP request for getting all election
+// IDs.
 type GetAllElectionsIDsRequest struct {
 	// UserId string
 	Token string
 }
 
+// GetAllElectionsIDsResponse defines the HTTP response when getting all
+// election IDs.
 type GetAllElectionsIDsResponse struct {
 	// UserId         string
 	// ElectionsIDs is a slice of hex-encoded election IDs
 	ElectionsIDs []string
 }
 
+// CancelElectionRequest defines the HTTP request for canceling an election
 type CancelElectionRequest struct {
 	// ElectionID is hex-encoded
 	ElectionID string
@@ -189,5 +153,6 @@ type CancelElectionRequest struct {
 	Token      string
 }
 
+// CancelElectionResponse defines the HTTP response when canceling an election
 type CancelElectionResponse struct {
 }

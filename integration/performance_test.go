@@ -1,13 +1,8 @@
-//go:build integration
-// +build integration
-
 package integration
 
 import (
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -24,6 +19,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 	delaPkg "go.dedis.ch/dela"
+	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/txn"
 	"golang.org/x/xerrors"
 )
@@ -41,7 +37,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	// make tests reproducible
 	rand.Seed(1)
 
-	delaPkg.Logger = delaPkg.Logger.Level(zerolog.InfoLevel)
+	delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 
 	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-three-votes")
 	require.NoError(b, err)
@@ -55,7 +51,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 
 	signer := createDVotingAccess(b, nodes, dirPath)
 
-	m := newTxManager(signer, nodes[0], time.Second*10, 10)
+	m := newTxManager(signer, nodes[0], time.Second*time.Duration(numNodes/2+1), numNodes*2)
 
 	err = grantAccess(m, signer)
 	require.NoError(b, err)
@@ -69,7 +65,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	electionID, err := createElectionNChunks(m, "Three votes election", adminID, numChunksPerBallot)
 	require.NoError(b, err)
 
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Millisecond * 1000)
 
 	// ##### SETUP DKG #####
 	actor, err := initDkg(nodes, electionID)
@@ -79,19 +75,20 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	err = openElection(m, electionID)
 	require.NoError(b, err)
 
+	electionFac := types.NewElectionFactory(types.CiphervoteFactory{}, nodes[0].GetRosterFac())
+
 	b.Logf("start casting votes")
-	election, err := getElection(electionID, nodes[0].GetOrdering())
+	election, err := getElection(electionFac, electionID, nodes[0].GetOrdering())
 	require.NoError(b, err)
 
-	castedVotes, err := castVotesNChunks(m, actor, electionID, numVotes,
-		election.ChunksPerBallot())
+	castedVotes, err := castVotesNChunks(m, actor, election, numVotes)
 	require.NoError(b, err)
 
 	// ##### CLOSE ELECTION #####
 	err = closeElection(m, electionID, adminID)
 	require.NoError(b, err)
 
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Millisecond * 1000)
 
 	// ##### SHUFFLE BALLOTS ####
 
@@ -114,7 +111,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 
 	//b.ResetTimer()
 
-	election, err = getElection(electionID, nodes[0].GetOrdering())
+	election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
 	require.NoError(b, err)
 
 	err = decryptBallots(m, actor, election)
@@ -125,7 +122,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	time.Sleep(time.Second * 1)
 
 	b.Logf("get vote proof")
-	election, err = getElection(electionID, nodes[0].GetOrdering())
+	election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
 	require.NoError(b, err)
 
 	fmt.Println("Title of the election : " + election.Configuration.MainTitle)
@@ -134,13 +131,17 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
 	fmt.Println("Chunks per ballot : " + strconv.Itoa(election.ChunksPerBallot()))
 
-	// TODO: check that decrypted ballots are equals to casted ballots (maybe through hashing)
-	for _, b := range election.DecryptedBallots {
-		fmt.Println("decrypted ballot:", b)
-	}
+	require.Len(b, election.DecryptedBallots, len(castedVotes))
 
-	for _, c := range castedVotes {
-		fmt.Println("casted ballot:", c)
+	for _, ballot := range election.DecryptedBallots {
+		ok := false
+		for _, casted := range castedVotes {
+			if ballot.Equal(casted) {
+				ok = true
+				break
+			}
+		}
+		require.True(b, ok)
 	}
 
 	closeNodesBench(b, nodes)
@@ -175,21 +176,22 @@ func createElectionNChunks(m txManager, title string, admin string, numChunks in
 		},
 	}
 
-	createSimpleElectionRequest := types.CreateElectionRequest{
+	createElection := types.CreateElection{
 		Configuration: configuration,
 		AdminID:       admin,
 	}
 
-	createElectionBuf, err := json.Marshal(createSimpleElectionRequest)
+	data, err := createElection.Serialize(serdecontext)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to create createElectionBuf: %v", err)
+		return nil, xerrors.Errorf("failed to serialize create election: %v", err)
 	}
 
 	args := []txn.Arg{
-		{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-		{Key: evoting.CreateElectionArg, Value: createElectionBuf},
+		{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
+		{Key: evoting.ElectionArg, Value: data},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCreateElection)},
 	}
+
 	txID, err := m.addAndWait(args...)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to addAndWait: %v", err)
@@ -203,8 +205,8 @@ func createElectionNChunks(m txManager, title string, admin string, numChunks in
 	return electionID, nil
 }
 
-func castVotesNChunks(m txManager, actor dkg.Actor, electionID []byte, numberOfVotes int,
-	chunkPerBallot int) ([]string, error) {
+func castVotesNChunks(m txManager, actor dkg.Actor, election types.Election,
+	numberOfVotes int) ([]types.Ballot, error) {
 
 	ballotBuilder := strings.Builder{}
 
@@ -212,37 +214,38 @@ func castVotesNChunks(m txManager, actor dkg.Actor, electionID []byte, numberOfV
 	ballotBuilder.Write([]byte(encodeID("bb")))
 	ballotBuilder.Write([]byte(":"))
 
-	textSize := 29*chunkPerBallot - ballotBuilder.Len() - 3
+	textSize := 29*election.ChunksPerBallot() - ballotBuilder.Len() - 3
 
 	ballotBuilder.Write([]byte(strings.Repeat("=", textSize)))
 	ballotBuilder.Write([]byte("\n\n"))
 
 	vote := ballotBuilder.String()
 
-	ballot, err := marshallBallot(strings.NewReader(vote), actor, chunkPerBallot)
+	ballot, err := marshallBallot(strings.NewReader(vote), actor, election.ChunksPerBallot())
 	if err != nil {
 		return nil, xerrors.Errorf("failed to marshallBallot: %v", err)
 	}
 
-	votes := make([]string, numberOfVotes)
+	votes := make([]types.Ballot, numberOfVotes)
 
 	for i := 0; i < numberOfVotes; i++ {
 
 		userID := "user " + strconv.Itoa(i)
-		castVoteTransaction := types.CastVoteTransaction{
-			ElectionID: hex.EncodeToString(electionID),
+
+		castVote := types.CastVote{
+			ElectionID: election.ElectionID,
 			UserID:     userID,
 			Ballot:     ballot,
 		}
 
-		castedVoteBuf, err := json.Marshal(castVoteTransaction)
+		data, err := castVote.Serialize(serdecontext)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to Marshall vote transaction: %v", err)
+			return nil, xerrors.Errorf("failed to serialize castVote: %v", err)
 		}
 
 		args := []txn.Arg{
-			{Key: "go.dedis.ch/dela.ContractArg", Value: []byte(evoting.ContractName)},
-			{Key: evoting.CastVoteArg, Value: castedVoteBuf},
+			{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
+			{Key: evoting.ElectionArg, Value: data},
 			{Key: evoting.CmdArg, Value: []byte(evoting.CmdCastVote)},
 		}
 		_, err = m.addAndWait(args...)
@@ -250,7 +253,13 @@ func castVotesNChunks(m txManager, actor dkg.Actor, electionID []byte, numberOfV
 			return nil, xerrors.Errorf("failed to addAndWait: %v", err)
 		}
 
-		votes[i] = vote
+		var ballot types.Ballot
+		err = ballot.Unmarshal(vote, election)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to unmarshal ballot: %v", err)
+		}
+
+		votes[i] = ballot
 	}
 
 	return votes, nil

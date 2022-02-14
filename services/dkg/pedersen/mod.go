@@ -1,20 +1,19 @@
 package pedersen
 
 import (
-	"bytes"
 	"encoding/hex"
-	"encoding/json"
 	"sync"
 	"time"
 
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
-	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 
-	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 
 	"github.com/dedis/d-voting/internal/tracing"
 	"github.com/dedis/d-voting/services/dkg"
+
+	// Register the JSON types for Pedersen
 	_ "github.com/dedis/d-voting/services/dkg/pedersen/json"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"go.dedis.ch/dela/mino"
@@ -26,6 +25,9 @@ import (
 	"go.dedis.ch/kyber/v3/util/random"
 	"golang.org/x/net/context"
 	"golang.org/x/xerrors"
+
+	// Register the JSON format for the election
+	_ "github.com/dedis/d-voting/contracts/evoting/json"
 )
 
 // suite is the Kyber suite for Pedersen.
@@ -43,7 +45,9 @@ var (
 const (
 	setupTimeout   = time.Second * 300
 	decryptTimeout = time.Second * 100
-	RPC_NAME       = "dkgevoting"
+
+	// RPC defines the RPC name used for mino
+	RPC = "dkgevoting"
 )
 
 // Pedersen allows one to initialize a new DKG protocol.
@@ -52,26 +56,26 @@ const (
 type Pedersen struct {
 	sync.RWMutex
 
-	mino      mino.Mino
-	factory   serde.Factory
-	service   ordering.Service
-	rosterFac authority.Factory
-	actors    map[string]dkg.Actor
+	mino        mino.Mino
+	factory     serde.Factory
+	service     ordering.Service
+	electionFac serde.Factory
+	actors      map[string]dkg.Actor
 }
 
 // NewPedersen returns a new DKG Pedersen factory
 func NewPedersen(m mino.Mino, service ordering.Service,
-	rosterFac authority.Factory) *Pedersen {
+	electionFac serde.Factory) *Pedersen {
 
 	factory := types.NewMessageFactory(m.GetAddressFactory())
 	actors := make(map[string]dkg.Actor)
 
 	return &Pedersen{
-		mino:      m,
-		factory:   factory,
-		service:   service,
-		rosterFac: rosterFac,
-		actors:    actors,
+		mino:        m,
+		factory:     factory,
+		service:     service,
+		electionFac: electionFac,
+		actors:      actors,
 	}
 }
 
@@ -94,25 +98,28 @@ func (s *Pedersen) Listen(electionIDBuf []byte) (dkg.Actor, error) {
 	return s.NewActor(electionIDBuf, NewHandlerData())
 }
 
-// NewActor initializes a dkg.Actor with an RPC specific to the election with the given keypair
+// NewActor initializes a dkg.Actor with an RPC specific to the election with
+// the given keypair
 func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.Actor, error) {
 
 	// hex-encoded string
 	electionID := hex.EncodeToString(electionIDBuf)
 
+	ctx := jsonserde.NewContext()
+
 	// link the actor to an RPC by the election ID
-	h := NewHandler(s.mino.GetAddress(), s.service, handlerData)
+	h := NewHandler(s.mino.GetAddress(), s.service, handlerData, ctx, s.electionFac)
 	no := s.mino.WithSegment(electionID)
-	rpc := mino.MustCreateRPC(no, RPC_NAME, h, s.factory)
+	rpc := mino.MustCreateRPC(no, RPC, h, s.factory)
 
 	a := &Actor{
-		rpc:        rpc,
-		factory:    s.factory,
-		service:    s.service,
-		rosterFac:  s.rosterFac,
-		context:    jsonserde.NewContext(),
-		handler:    h,
-		electionID: electionID,
+		rpc:         rpc,
+		factory:     s.factory,
+		service:     s.service,
+		context:     ctx,
+		electionFac: s.electionFac,
+		handler:     h,
+		electionID:  electionID,
 	}
 
 	s.Lock()
@@ -122,6 +129,7 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.
 	return a, nil
 }
 
+// GetActor implements dkg.DKG
 func (s *Pedersen) GetActor(electionIDBuf []byte) (dkg.Actor, bool) {
 	s.RLock()
 	defer s.RUnlock()
@@ -133,13 +141,13 @@ func (s *Pedersen) GetActor(electionIDBuf []byte) (dkg.Actor, bool) {
 //
 // - implements dkg.Actor
 type Actor struct {
-	rpc        mino.RPC
-	factory    serde.Factory
-	service    ordering.Service
-	rosterFac  authority.Factory
-	context    serde.Context
-	handler    *Handler
-	electionID string
+	rpc         mino.RPC
+	factory     serde.Factory
+	service     ordering.Service
+	context     serde.Context
+	electionFac serde.Factory
+	handler     *Handler
+	electionID  string
 }
 
 // Setup implements dkg.Actor. It initializes the DKG protocol
@@ -150,38 +158,22 @@ func (a *Actor) Setup() (kyber.Point, error) {
 		return nil, xerrors.Errorf("setup() was already called, only one call is allowed")
 	}
 
-	electionIDBuf, err := hex.DecodeString(a.electionID)
+	election, err := a.getElection()
 	if err != nil {
-		return nil, xerrors.Errorf("failed to decode electionID: %v", err)
-	}
-
-	proof, exists := electionExists(a.service, electionIDBuf)
-	if !exists {
-		return nil, xerrors.Errorf("election %s was not found", a.electionID)
-	}
-
-	election := new(electionTypes.Election)
-	err = json.NewDecoder(bytes.NewBuffer(proof.GetValue())).Decode(election)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to unmarshal Election: %v", err)
-	}
-
-	roster, err := a.rosterFac.AuthorityOf(a.context, election.RosterBuf)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to deserialize roster: %v", err)
+		return nil, xerrors.Errorf("failed to get election: %v", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), setupTimeout)
 	defer cancel()
 	ctx = context.WithValue(ctx, tracing.ProtocolKey, protocolNameSetup)
 
-	sender, receiver, err := a.rpc.Stream(ctx, roster)
+	sender, receiver, err := a.rpc.Stream(ctx, election.Roster)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to stream: %v", err)
 	}
 
-	addrs := make([]mino.Address, 0, roster.Len())
-	addrIter := roster.AddressIterator()
+	addrs := make([]mino.Address, 0, election.Roster.Len())
+	addrIter := election.Roster.AddressIterator()
 	for addrIter.HasNext() {
 		addrs = append(addrs, addrIter.GetNext())
 	}
@@ -189,6 +181,7 @@ func (a *Actor) Setup() (kyber.Point, error) {
 	// get the peer DKG pub keys
 	getPeerKey := types.NewGetPeerPubKey()
 	errs := sender.Send(getPeerKey, addrs...)
+
 	err = <-errs
 	if err != nil {
 		return nil, xerrors.Errorf("failed to send getPeerKey message: %v", err)
@@ -255,7 +248,6 @@ func (a *Actor) Setup() (kyber.Point, error) {
 
 		// this is a simple check that every node sends back the same DKG pub
 		// key.
-		// TODO: handle the situation where a pub key is not the same
 		if i != 0 && !dkgPubKeys[i-1].Equal(doneMsg.GetPublicKey()) {
 			return nil, xerrors.Errorf("the public keys do not match: %v", dkgPubKeys)
 		}
@@ -300,8 +292,6 @@ func (a *Actor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte,
 
 // Decrypt implements dkg.Actor. It gets the private shares of the nodes and
 // decrypts the message.
-// TODO: perform a re-encryption instead of gathering the private shares, which
-// should never happen.
 func (a *Actor) Decrypt(K, C kyber.Point) ([]byte, error) {
 
 	if !a.handler.startRes.Done() {
@@ -365,13 +355,6 @@ func (a *Actor) Decrypt(K, C kyber.Point) ([]byte, error) {
 	return decryptedMessage, nil
 }
 
-// Reshare implements dkg.Actor. It recreates the DKG with an updated list of
-// participants.
-// TODO: to do
-func (a *Actor) Reshare() error {
-	return nil
-}
-
 // MarshalJSON implements dkg.Actor. It exports the data relevant to an Actor
 // that is meant to be persistent.
 func (a *Actor) MarshalJSON() ([]byte, error) {
@@ -390,4 +373,41 @@ func electionExists(service ordering.Service, electionIDBuf []byte) (ordering.Pr
 	}
 
 	return proof, true
+}
+
+// getElection gets the election from the service.
+func (a Actor) getElection() (etypes.Election, error) {
+	var election etypes.Election
+
+	electionID, err := hex.DecodeString(a.electionID)
+	if err != nil {
+		return election, xerrors.Errorf("failed to decode electionIDHex: %v", err)
+	}
+
+	proof, err := a.service.GetProof(electionID)
+	if err != nil {
+		return election, xerrors.Errorf("failed to get proof: %v", err)
+	}
+
+	electionBuff := proof.GetValue()
+	if len(electionBuff) == 0 {
+		return election, xerrors.Errorf("election does not exist")
+	}
+
+	message, err := a.electionFac.Deserialize(a.context, electionBuff)
+	if err != nil {
+		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
+	}
+
+	election, ok := message.(etypes.Election)
+	if !ok {
+		return election, xerrors.Errorf("wrong message type: %T", message)
+	}
+
+	if a.electionID != election.ElectionID {
+		return election, xerrors.Errorf("electionID do not match: %q != %q",
+			a.electionID, election.ElectionID)
+	}
+
+	return election, nil
 }

@@ -9,7 +9,7 @@ on:
 jobs:
 
   test:
-    name: Integration tests
+    name: Tests
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go ^1.17
@@ -21,4 +21,4 @@ jobs:
         uses: actions/checkout@v2
         
       - name: Test integration & benchmark with coverage
-        run: go test -bench -cover -tags=integration ./test/...
+        run: go test -bench -cover -tags=integration ./integration/...

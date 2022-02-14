@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/dedis/d-voting/contracts/evoting"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/dkg/pedersen"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
@@ -51,8 +52,7 @@ func (m controller) SetCommands(builder node.Builder) {
 	sub.SetFlags(electionIDFlag)
 	sub.SetAction(builder.MakeAction(&initAction{}))
 
-	// memcoin --config /tmp/node1 dkg setup --member $(memcoin --config
-	// /tmp/node1 dkg export) --member $(memcoin --config /tmp/node2 dkg export)
+	// memcoin --config /tmp/node1 dkg setup --electionID electionID
 	sub = cmd.SetSubCommand("setup")
 	sub.SetDescription("create the public distributed key and the private share on each node")
 	sub.SetFlags(electionIDFlag)
@@ -124,7 +124,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to resolve db: %v", err)
 	}
 
-	dkg := pedersen.NewPedersen(no, srvc, rosterFac)
+	dkg := pedersen.NewPedersen(no, srvc, etypes.NewElectionFactory(etypes.CiphervoteFactory{}, rosterFac))
 
 	// Use dkgMap to fill the actors map
 	err = db.View(func(tx kv.ReadableTx) error {

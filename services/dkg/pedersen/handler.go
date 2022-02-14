@@ -1,20 +1,20 @@
 package pedersen
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
 	"sync"
 	"time"
 
-	evotingTypes "github.com/dedis/d-voting/contracts/evoting/types"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/cosi/threshold"
 	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/serde"
 
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
@@ -42,10 +42,14 @@ type Handler struct {
 	privShare *share.PriShare
 	privKey   kyber.Scalar
 	pubKey    kyber.Point
+
+	context     serde.Context
+	electionFac serde.Factory
 }
 
 // NewHandler creates a new handler
-func NewHandler(me mino.Address, service ordering.Service, handlerData HandlerData) *Handler {
+func NewHandler(me mino.Address, service ordering.Service, handlerData HandlerData,
+	context serde.Context, electionFac serde.Factory) *Handler {
 
 	privKey := handlerData.PrivKey
 	pubKey := handlerData.PubKey
@@ -60,6 +64,9 @@ func NewHandler(me mino.Address, service ordering.Service, handlerData HandlerDa
 		privShare: privShare,
 		privKey:   privKey,
 		pubKey:    pubKey,
+
+		context:     context,
+		electionFac: electionFac,
 	}
 }
 
@@ -132,7 +139,6 @@ mainSwitch:
 			return xerrors.Errorf("the ciphertext has not been shuffled")
 		}
 
-		// TODO: check if started before
 		h.RLock()
 		S := suite.Point().Mul(h.privShare.V, msg.K)
 		h.RUnlock()
@@ -141,8 +147,6 @@ mainSwitch:
 
 		h.RLock()
 		decryptReply := types.NewDecryptReply(
-			// TODO: check if using the private index is the same as the public
-			// index.
 			int64(h.privShare.I),
 			partial,
 		)
@@ -426,10 +430,14 @@ func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionID strin
 		return false, xerrors.Errorf("election does not exist: %v", err)
 	}
 
-	election := new(evotingTypes.Election)
-	err = json.NewDecoder(bytes.NewBuffer(proof.GetValue())).Decode(election)
+	message, err := h.electionFac.Deserialize(h.context, proof.GetValue())
 	if err != nil {
-		return false, xerrors.Errorf("failed to unmarshal Election: %v", err)
+		return false, xerrors.Errorf("failed to deserialize election: %v", err)
+	}
+
+	election, ok := message.(etypes.Election)
+	if !ok {
+		return false, xerrors.Errorf("wrong election type: %T", election)
 	}
 
 	if len(election.ShuffleInstances) == 0 {
@@ -437,13 +445,9 @@ func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionID strin
 	}
 
 	for _, ct := range election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots {
-		for _, ciphertext := range ct {
-			kPrime, cPrime, err := ciphertext.GetPoints()
-			if err != nil {
-				return false, xerrors.Errorf("failed to get points: %v", err)
-			}
+		for _, egpair := range ct {
 
-			if kPrime.Equal(K) && cPrime.Equal(C) {
+			if egpair.K.Equal(K) && egpair.C.Equal(C) {
 				return true, nil
 			}
 		}
@@ -453,8 +457,9 @@ func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionID strin
 
 }
 
-// MarshalJSON returns a JSON-encoded bytestring containing all the data in the Handler
-// that is meant to be persistent. It allows for saving the data to disk.
+// MarshalJSON returns a JSON-encoded bytestring containing all the data in the
+// Handler that is meant to be persistent. It allows for saving the data to
+// disk.
 func (h *Handler) MarshalJSON() ([]byte, error) {
 	handlerData := HandlerData{
 		StartRes:  h.startRes,
