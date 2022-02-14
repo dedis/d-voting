@@ -1,18 +1,18 @@
-import React, { FC } from "react";
-import { Link } from "react-router-dom";
-import Paper from "@material-ui/core/Paper";
-import Table from "@material-ui/core/Table";
-import TableBody from "@material-ui/core/TableBody";
-import TableCell from "@material-ui/core/TableCell";
-import TableContainer from "@material-ui/core/TableContainer";
-import TableHead from "@material-ui/core/TableHead";
-import TableRow from "@material-ui/core/TableRow";
-import { withStyles } from "@material-ui/core/styles";
-import PropTypes from "prop-types";
-import { useTranslation } from "react-i18next";
+import React, { FC } from 'react';
+import { Link } from 'react-router-dom';
+import Paper from '@material-ui/core/Paper';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableContainer from '@material-ui/core/TableContainer';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
+import { withStyles } from '@material-ui/core/styles';
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
-import useFetchCall from "./useFetchCall";
-import { GET_ALL_ELECTIONS_ENDPOINT } from "./Endpoints";
+import useFetchCall from './useFetchCall';
+import { GET_ALL_ELECTIONS_ENDPOINT } from './Endpoints';
 
 type SimpleTableProps = {
   statusToKeep: number;
@@ -32,18 +32,15 @@ const SimpleTable: FC<SimpleTableProps> = ({
   textWhenNoData,
 }) => {
   const { t } = useTranslation();
-  const token = sessionStorage.getItem("token");
+  const token = sessionStorage.getItem('token');
   const fetchRequest = {
-    method: "POST",
+    method: 'POST',
     body: JSON.stringify({ Token: token }),
   };
-  const [fetchedData, loading, error] = useFetchCall(
-    GET_ALL_ELECTIONS_ENDPOINT,
-    fetchRequest
-  );
+  const [fetchedData, loading, error] = useFetchCall(GET_ALL_ELECTIONS_ENDPOINT, fetchRequest);
   const StyledTableRow = withStyles((theme) => ({
     root: {
-      "&:nth-of-type(odd)": {
+      '&:nth-of-type(odd)': {
         backgroundColor: theme.palette.action.hover,
       },
     },
@@ -69,7 +66,7 @@ const SimpleTable: FC<SimpleTableProps> = ({
               <Table stickyHeader aria-label="sticky table">
                 <TableHead className="table-header">
                   <TableRow className="row-head">
-                    <TableCell key={"Title"}>{t("elecName")}</TableCell>
+                    <TableCell key={'Title'}>{t('elecName')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -81,8 +78,7 @@ const SimpleTable: FC<SimpleTableProps> = ({
                             className="election-link"
                             to={{
                               pathname: `/${pathLink}/${row[1]}`,
-                            }}
-                          >
+                            }}>
                             {row[0]}
                           </Link>
                         </TableCell>
@@ -109,9 +105,9 @@ const SimpleTable: FC<SimpleTableProps> = ({
       {!loading ? (
         showBallots(fetchedData.AllElectionsInfo)
       ) : error === null ? (
-        <p className="loading">{t("loading")}</p>
+        <p className="loading">{t('loading')}</p>
       ) : (
-        <div className="error-retrieving">{t("errorRetrievingElection")}</div>
+        <div className="error-retrieving">{t('errorRetrievingElection')}</div>
       )}
     </div>
   );

@@ -1,10 +1,10 @@
-import React, { FC, useState } from "react";
-import PropTypes from "prop-types";
-import { useTranslation } from "react-i18next";
+import React, { FC, useState } from 'react';
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
-import useChangeAction from "../utils/useChangeAction";
-import Modal from "../modal/Modal";
-import "./Status.css";
+import useChangeAction from '../utils/useChangeAction';
+import Modal from '../modal/Modal';
+import './Status.css';
 
 type ActionProps = {
   status: number;
@@ -14,12 +14,7 @@ type ActionProps = {
 };
 
 /**/
-const Action: FC<ActionProps> = ({
-  status,
-  electionID,
-  setStatus,
-  setResultAvailable,
-}) => {
+const Action: FC<ActionProps> = ({ status, electionID, setStatus, setResultAvailable }) => {
   const { t } = useTranslation();
 
   const [textModalError, setTextModalError] = useState(null);
@@ -42,8 +37,8 @@ const Action: FC<ActionProps> = ({
         <Modal
           showModal={showModalError}
           setShowModal={setShowModalError}
-          textModal={textModalError === null ? "" : textModalError}
-          buttonRightText={t("close")}
+          textModal={textModalError === null ? '' : textModalError}
+          buttonRightText={t('close')}
         />
       }
     </span>

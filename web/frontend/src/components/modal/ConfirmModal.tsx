@@ -1,6 +1,6 @@
-import React, { FC } from "react";
-import PropTypes from "prop-types";
-import { useTranslation } from "react-i18next";
+import React, { FC } from 'react';
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 type ConfirmModalProps = {
   showModal: boolean;
@@ -30,14 +30,10 @@ const ConfirmModal: FC<ConfirmModalProps> = ({
     return (
       <div>
         <button className="btn-left" onClick={closeModal}>
-          {t("no")}
+          {t('no')}
         </button>
-        <button
-          id="confirm-button"
-          className="btn-right"
-          onClick={validateChoice}
-        >
-          {t("yes")}
+        <button id="confirm-button" className="btn-right" onClick={validateChoice}>
+          {t('yes')}
         </button>
       </div>
     );

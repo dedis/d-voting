@@ -1,33 +1,32 @@
-import React, { FC, useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { useParams, Link } from "react-router-dom";
-import kyber from "@dedis/kyber";
-import PropTypes from "prop-types";
-import { Buffer } from "buffer";
+import React, { FC, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useParams, Link } from 'react-router-dom';
+import kyber from '@dedis/kyber';
+import PropTypes from 'prop-types';
+import { Buffer } from 'buffer';
 
-import useElection from "../utils/useElection";
-import usePostCall from "../utils/usePostCall";
-import { CAST_BALLOT_ENDPOINT } from "../utils/Endpoints";
-import Modal from "../modal/Modal";
-import { OPEN } from "../utils/StatusNumber";
-import { encryptVote } from "./VoteEncrypt";
-import "./Ballot.css";
+import useElection from '../utils/useElection';
+import usePostCall from '../utils/usePostCall';
+import { CAST_BALLOT_ENDPOINT } from '../utils/Endpoints';
+import Modal from '../modal/Modal';
+import { OPEN } from '../utils/StatusNumber';
+import { encryptVote } from './VoteEncrypt';
+import './Ballot.css';
 
 const Ballot: FC = () => {
   var bytes: number[];
   const { t } = useTranslation();
   const { electionId } = useParams();
-  const token = sessionStorage.getItem("token");
-  const { loading, title, candidates, electionID, status, pubKey } =
-    useElection(electionId, token);
-  const [choice, setChoice] = useState("");
-  const [userErrors, setUserErrors] = useState({ noCandidate: "" });
-  const edCurve = kyber.curve.newCurve("edwards25519");
+  const token = sessionStorage.getItem('token');
+  const { loading, title, candidates, electionID, status, pubKey } = useElection(electionId, token);
+  const [choice, setChoice] = useState('');
+  const [userErrors, setUserErrors] = useState({ noCandidate: '' });
+  const edCurve = kyber.curve.newCurve('edwards25519');
   const [postRequest, setPostRequest] = useState(null);
   const [postError, setPostError] = useState(null);
   const { postData } = usePostCall(setPostError);
   const [showModal, setShowModal] = useState(false);
-  const [modalText, setModalText] = useState(t("voteSuccess") as string);
+  const [modalText, setModalText] = useState(t('voteSuccess') as string);
 
   useEffect(() => {
     if (postRequest !== null) {
@@ -38,13 +37,13 @@ const Ballot: FC = () => {
 
   useEffect(() => {
     if (postError !== null) {
-      if (postError.includes("ECONNREFUSED")) {
-        setModalText(t("errorServerDown"));
+      if (postError.includes('ECONNREFUSED')) {
+        setModalText(t('errorServerDown'));
       } else {
-        setModalText(t("voteFailure"));
+        setModalText(t('voteFailure'));
       }
     } else {
-      setModalText(t("voteSuccess"));
+      setModalText(t('voteSuccess'));
     }
   }, [postError, t]);
 
@@ -53,8 +52,7 @@ const Ballot: FC = () => {
   };
 
   const hexToBytes = (hex) => {
-    for (var c = 0; c < hex.length; c += 2)
-      bytes.push(parseInt(hex.substr(c, 2), 16));
+    for (var c = 0; c < hex.length; c += 2) bytes.push(parseInt(hex.substr(c, 2), 16));
     return new Uint8Array(bytes);
   };
 
@@ -62,41 +60,37 @@ const Ballot: FC = () => {
     let vote = JSON.stringify({ K: Array.from(K), C: Array.from(C) });
     return {
       ElectionID: electionID,
-      UserId: sessionStorage.getItem("id"),
+      UserId: sessionStorage.getItem('id'),
       Ballot: Buffer.from(vote),
       Token: token,
     };
   };
 
   const sendBallot = async () => {
-    const [K, C] = encryptVote(
-      choice,
-      Buffer.from(hexToBytes(pubKey).buffer),
-      edCurve
-    );
+    const [K, C] = encryptVote(choice, Buffer.from(hexToBytes(pubKey).buffer), edCurve);
 
     //sending the ballot to evoting server
     let ballot = createBallot(K, C);
     let newRequest = {
-      method: "POST",
+      method: 'POST',
       body: JSON.stringify(ballot),
     };
     setPostRequest(newRequest);
   };
 
   const handleClick = () => {
-    if (choice === "") {
-      userErrors.noCandidate = t("noCandidate");
+    if (choice === '') {
+      userErrors.noCandidate = t('noCandidate');
       setUserErrors(userErrors);
       return;
     }
     sendBallot();
-    userErrors.noCandidate = "";
+    userErrors.noCandidate = '';
     setUserErrors(userErrors);
   };
 
   const electionClosedDisplay = () => {
-    return <div> {t("voteImpossible")}</div>;
+    return <div> {t('voteImpossible')}</div>;
   };
 
   const possibleChoice = (candidate) => {
@@ -119,7 +113,7 @@ const Ballot: FC = () => {
     return (
       <div>
         <h3 className="ballot-title">{title}</h3>
-        <div className="checkbox-text">{t("pickCandidate")}</div>
+        <div className="checkbox-text">{t('pickCandidate')}</div>
         {candidates !== null && candidates.length !== 0 ? (
           candidates.map((candidate) => possibleChoice(candidate))
         ) : (
@@ -129,7 +123,7 @@ const Ballot: FC = () => {
           <div>
             <div className="cast-ballot-error">{userErrors.noCandidate}</div>
             <button className="cast-ballot-btn" onClick={handleClick}>
-              {t("castVote")}
+              {t('castVote')}
             </button>
           </div>
         ) : null}
@@ -143,16 +137,16 @@ const Ballot: FC = () => {
         showModal={showModal}
         setShowModal={setShowModal}
         textModal={modalText}
-        buttonRightText={t("close")}
+        buttonRightText={t('close')}
       />
       {loading ? (
-        <p className="loading">{t("loading")}</p>
+        <p className="loading">{t('loading')}</p>
       ) : (
         <div>
-          {" "}
+          {' '}
           {status === OPEN ? ballotDisplay() : electionClosedDisplay()}
           <Link to="/vote">
-            <button className="back-btn">{t("back")}</button>
+            <button className="back-btn">{t('back')}</button>
           </Link>
         </div>
       )}

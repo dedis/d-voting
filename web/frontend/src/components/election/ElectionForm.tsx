@@ -1,33 +1,30 @@
-import React, { FC, useState, useEffect } from "react";
-import PropTypes from "prop-types";
-import { useTranslation } from "react-i18next";
+import React, { FC, useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
-import { CREATE_ENDPOINT } from "../utils/Endpoints";
-import usePostCall from "../utils/usePostCall";
+import { CREATE_ENDPOINT } from '../utils/Endpoints';
+import usePostCall from '../utils/usePostCall';
 import {
   COLLECTIVE_AUTHORITY_MEMBERS,
   SHUFFLE_THRESHOLD,
-} from "../utils/CollectiveAuthorityMembers";
+} from '../utils/CollectiveAuthorityMembers';
 
 type ElectionFormProps = {
   setShowModal(modal: any): void;
   setTextModal(text: string): void;
 };
 
-const ElectionForm: FC<ElectionFormProps> = ({
-  setShowModal,
-  setTextModal,
-}) => {
+const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => {
   const { t } = useTranslation();
 
-  const [electionName, setElectionName] = useState("");
-  const [newCandidate, setNewCandidate] = useState("");
+  const [electionName, setElectionName] = useState('');
+  const [newCandidate, setNewCandidate] = useState('');
   const [candidates, setCandidates] = useState([]);
   const [errors, setErrors] = useState({
-    unique: "",
-    empty: "",
-    newCandidate: "",
-    candidates: "",
+    unique: '',
+    empty: '',
+    newCandidate: '',
+    candidates: '',
   });
   const [postError, setPostError] = useState(null);
   const { postData } = usePostCall(setPostError);
@@ -35,12 +32,12 @@ const ElectionForm: FC<ElectionFormProps> = ({
 
   useEffect(() => {
     if (postError === null) {
-      setTextModal(t("electionSuccess"));
+      setTextModal(t('electionSuccess'));
     } else {
-      if (postError.includes("ECONNREFUSED")) {
-        setTextModal(t("errorServerDown"));
+      if (postError.includes('ECONNREFUSED')) {
+        setTextModal(t('errorServerDown'));
       } else {
-        setTextModal(t("electionFail"));
+        setTextModal(t('electionFail'));
       }
     }
   }, [isSubmitting, postError, setTextModal, t]);
@@ -49,17 +46,17 @@ const ElectionForm: FC<ElectionFormProps> = ({
     //create the JSON object
     const election = {
       Title: electionName,
-      AdminID: sessionStorage.getItem("id"),
+      AdminID: sessionStorage.getItem('id'),
       ShuffleThreshold: SHUFFLE_THRESHOLD,
       Members: COLLECTIVE_AUTHORITY_MEMBERS,
       Format: JSON.stringify({ Candidates: candidates }),
-      Token: sessionStorage.getItem("token"),
+      Token: sessionStorage.getItem('token'),
     };
 
     const jsonString = JSON.stringify(election);
     console.log(jsonString);
     let postRequest = {
-      method: "POST",
+      method: 'POST',
       body: jsonString,
     };
     setPostError(null);
@@ -70,11 +67,11 @@ const ElectionForm: FC<ElectionFormProps> = ({
     let isValid = true;
 
     if (candidates.length === 0) {
-      errors.candidates = t("errorCandidates");
+      errors.candidates = t('errorCandidates');
       isValid = false;
     }
     if (newCandidate.length !== 0) {
-      errors.newCandidate = t("errorNewCandidate") + newCandidate + "?";
+      errors.newCandidate = t('errorNewCandidate') + newCandidate + '?';
       isValid = false;
     }
     setErrors(errors);
@@ -86,8 +83,8 @@ const ElectionForm: FC<ElectionFormProps> = ({
     if (validate()) {
       await sendFormData();
       setShowModal((prev) => !prev);
-      setElectionName("");
-      setNewCandidate("");
+      setElectionName('');
+      setNewCandidate('');
       setCandidates([]);
       setPostError(null);
     }
@@ -113,20 +110,20 @@ const ElectionForm: FC<ElectionFormProps> = ({
   const handleAdd = (e) => {
     e.preventDefault();
     if (newCandidate.length === 0) {
-      errors.empty = t("nothingToAdd");
+      errors.empty = t('nothingToAdd');
       setErrors(errors);
       return;
     }
 
     if (!isCandidateUnique(newCandidate)) {
-      errors.unique = t("duplicateCandidate");
+      errors.unique = t('duplicateCandidate');
       setErrors(errors);
-      setNewCandidate("");
+      setNewCandidate('');
       return;
     }
 
-    setNewCandidate("");
-    errors.newCandidate = "";
+    setNewCandidate('');
+    errors.newCandidate = '';
     setErrors(errors);
     setCandidates(candidates.concat(newCandidate));
   };
@@ -137,14 +134,14 @@ const ElectionForm: FC<ElectionFormProps> = ({
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
       handleAdd(e);
     }
   };
 
   const handleKeyPressTitle = (e) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
     }
   };
@@ -158,15 +155,14 @@ const ElectionForm: FC<ElectionFormProps> = ({
           <div className="w-full px-3">
             <label
               className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2"
-              htmlFor="new-name"
-            >
-              {t("elecName")}*:
+              htmlFor="new-name">
+              {t('elecName')}*:
             </label>
             <input
               required
               id="new-name"
               type="text"
-              placeholder={t("namePlaceHolder")}
+              placeholder={t('namePlaceHolder')}
               value={electionName}
               onChange={handleChangeName}
               onKeyPress={handleKeyPressTitle}
@@ -179,14 +175,13 @@ const ElectionForm: FC<ElectionFormProps> = ({
           <div className="w-full px-3">
             <label
               className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2"
-              htmlFor="new-choice"
-            >
-              {t("addCandidate")} *:
+              htmlFor="new-choice">
+              {t('addCandidate')} *:
             </label>
             <input
               id="new-choice"
               type="text"
-              placeholder={t("addCandPlaceHolder")}
+              placeholder={t('addCandPlaceHolder')}
               name="newCandidate"
               value={newCandidate}
               onChange={handleChangeCandidate}
@@ -200,9 +195,8 @@ const ElectionForm: FC<ElectionFormProps> = ({
             type="button"
             className="bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white text-xs ml-4 py-1 px-4 border border-blue-500 hover:border-transparent rounded"
             onClick={handleAdd}
-            onSubmit={onSubmitPreventDefault}
-          >
-            {t("add")}
+            onSubmit={onSubmitPreventDefault}>
+            {t('add')}
           </button>
           <div className="form-error">{errors.unique}</div>
           <div className="form-error">{errors.empty}</div>
@@ -220,9 +214,8 @@ const ElectionForm: FC<ElectionFormProps> = ({
                     type="button"
                     className="font-semibold pl-4"
                     onClick={() => handleDelete(cand)}
-                    onSubmit={onSubmitPreventDefault}
-                  >
-                    {t("delete")}
+                    onSubmit={onSubmitPreventDefault}>
+                    {t('delete')}
                   </button>
                 </li>
               </div>
@@ -233,9 +226,8 @@ const ElectionForm: FC<ElectionFormProps> = ({
           <button
             type="submit"
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold mt-7 py-2 px-5 rounded-full text-xs"
-            onSubmit={handleSubmit}
-          >
-            {t("createElec")}
+            onSubmit={handleSubmit}>
+            {t('createElec')}
           </button>
         </div>
       </form>

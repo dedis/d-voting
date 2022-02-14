@@ -1,0 +1,24 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`About should render the About Component correctly in English 1`] = `
+<div
+  className="about-container"
+>
+  <div
+    className="about-text"
+  >
+    <br />
+    about1
+    <br />
+    <br />
+    about2
+    <br />
+    <br />
+    about3
+    <br />
+    <br />
+    about4
+    <br />
+  </div>
+</div>
+`;

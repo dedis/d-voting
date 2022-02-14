@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
-import Button from "@mui/material/Button";
-import { DataGrid } from "@mui/x-data-grid";
+import React, { useState, useEffect } from 'react';
+import Button from '@mui/material/Button';
+import { DataGrid } from '@mui/x-data-grid';
 
-import { GET_ADMIN_ROWS } from "./utils/ExpressEndoints";
-import AddAdminUserModal from "./modal/AddAdminUserModal";
-import RemoveAdminUserModal from "./modal/RemoveAdminUserModal";
-import "./Admin.css";
+import { GET_ADMIN_ROWS } from './utils/ExpressEndoints';
+import AddAdminUserModal from './modal/AddAdminUserModal';
+import RemoveAdminUserModal from './modal/RemoveAdminUserModal';
+import './Admin.css';
 
 const Admin = () => {
   const [rows, setRows] = useState([]);
@@ -36,18 +36,18 @@ const Admin = () => {
 
   const columns = [
     {
-      field: "sciper",
-      headerName: "sciper",
+      field: 'sciper',
+      headerName: 'sciper',
       width: 150,
     },
     {
-      field: "role",
-      headerName: "role",
+      field: 'role',
+      headerName: 'role',
       width: 150,
     },
     {
-      field: "action",
-      headerName: "Action",
+      field: 'action',
+      headerName: 'Action',
       width: 150,
       renderCell: function (params: any) {
         function handledClick() {
@@ -70,10 +70,7 @@ const Admin = () => {
           Add a user
         </Button>
         <DataGrid rows={rows} columns={columns} />
-        <AddAdminUserModal
-          open={newusrOpen}
-          setOpen={setNewusrOpen}
-        ></AddAdminUserModal>
+        <AddAdminUserModal open={newusrOpen} setOpen={setNewusrOpen}></AddAdminUserModal>
         <RemoveAdminUserModal
           setOpen={setShowDeleteModal}
           open={showDeleteModal}

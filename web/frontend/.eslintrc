@@ -18,6 +18,7 @@
   "root": true,
   "rules": {
     "react/jsx-filename-extension": ["error", { "extensions": [".jsx", ".tsx"] }],
+
     "import/extensions": ["error", "ignorePackages", {
       "js": "never",
       "mjs": "never",
@@ -25,6 +26,12 @@
       "ts": "never",
       "tsx": "never"
     }],
+
+    "import/no-extraneous-dependencies": ["error", {"devDependencies": [
+      "**/*.test.ts", "**/*.test.tsx",
+      "**/setupTest.ts"
+    ]}],
+
     // conflicts with the index.ts (eslint prefers default exports which are not compatible with index.ts)
     "import/prefer-default-export": "off",
 

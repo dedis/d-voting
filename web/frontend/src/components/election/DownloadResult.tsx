@@ -1,7 +1,7 @@
-import React, { FC } from "react";
-import { saveAs } from "file-saver";
-import PropTypes from "prop-types";
-import { useTranslation } from "react-i18next";
+import React, { FC } from 'react';
+import { saveAs } from 'file-saver';
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 type DownloadResultProps = {
   resultData: string;
@@ -9,11 +9,11 @@ type DownloadResultProps = {
 
 const DownloadResult: FC<DownloadResultProps> = (resultData) => {
   const { t } = useTranslation();
-  const fileName = "result.json";
+  const fileName = 'result.json';
 
   // Create a blob of the data
   const fileToSave = new Blob([JSON.stringify({ Result: resultData })], {
-    type: "application/json",
+    type: 'application/json',
   });
 
   const handleClick = () => {
@@ -23,7 +23,7 @@ const DownloadResult: FC<DownloadResultProps> = (resultData) => {
   return (
     <div>
       <button className="back-btn" onClick={handleClick}>
-        {t("download")}
+        {t('download')}
       </button>
     </div>
   );

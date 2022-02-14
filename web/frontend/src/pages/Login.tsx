@@ -1,9 +1,9 @@
-import React, { FC, useState } from "react";
-import { useTranslation } from "react-i18next";
-import PropTypes from "prop-types";
+import React, { FC, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import PropTypes from 'prop-types';
 
-import { GET_TEQ_EENDPOINT } from "../components/utils/ExpressEndoints";
-import "./Login.css";
+import { GET_TEQ_EENDPOINT } from '../components/utils/ExpressEndoints';
+import './Login.css';
 
 const Login: FC = () => {
   const { t } = useTranslation();
@@ -22,16 +22,14 @@ const Login: FC = () => {
         console.log(error);
       });
 
-    return (
-      <div>{loginError === null ? <div></div> : t("errorServerDown")}</div>
-    );
+    return <div>{loginError === null ? <div></div> : t('errorServerDown')}</div>;
   };
 
   return (
     <div className="login-wrapper">
-      <div className="login-txt">{t("loginText")}</div>
+      <div className="login-txt">{t('loginText')}</div>
       <button id="login-button" className="login-btn" onClick={handleClick}>
-        {t("login")}
+        {t('login')}
       </button>
     </div>
   );

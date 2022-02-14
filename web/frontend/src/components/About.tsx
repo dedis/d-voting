@@ -1,5 +1,5 @@
-import React, { FC, Fragment } from "react";
-import { useTranslation } from "react-i18next";
+import React, { FC, Fragment } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const About: FC = () => {
   const { t } = useTranslation();
@@ -9,16 +9,16 @@ const About: FC = () => {
       <div className="about-container">
         <div className="about-text">
           <br />
-          {t("about1")}
+          {t('about1')}
           <br />
           <br />
-          {t("about2")}
+          {t('about2')}
           <br />
           <br />
-          {t("about3")}
+          {t('about3')}
           <br />
           <br />
-          {t("about4")}
+          {t('about4')}
           <br />
         </div>
       </div>

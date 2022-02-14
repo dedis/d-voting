@@ -1,15 +1,9 @@
-import { GET_RESULT_ENDPOINT } from "./Endpoints";
+import { GET_RESULT_ENDPOINT } from './Endpoints';
 
 const useGetResults = () => {
-  async function getResults(
-    electionID,
-    token,
-    setError,
-    setResult,
-    setIsResultSet
-  ) {
+  async function getResults(electionID, token, setError, setResult, setIsResultSet) {
     const request = {
-      method: "POST",
+      method: 'POST',
       body: JSON.stringify({ ElectionID: electionID, Token: token }),
     };
     try {

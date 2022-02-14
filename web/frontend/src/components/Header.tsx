@@ -1,6 +1,6 @@
-import React, { Fragment, FC } from "react";
+import React, { Fragment, FC } from 'react';
 
-import headerImg from "../assets/logo.png";
+import headerImg from '../assets/logo.png';
 
 const Header: FC = () => {
   return (

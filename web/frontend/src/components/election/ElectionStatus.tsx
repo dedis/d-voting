@@ -1,10 +1,10 @@
-import React, { FC } from "react";
-import { useTranslation } from "react-i18next";
+import React, { FC } from 'react';
+import { useTranslation } from 'react-i18next';
 
-import ElectionTable from "./ElectionTable";
-import useFetchCall from "../utils/useFetchCall";
-import { GET_ALL_ELECTIONS_ENDPOINT } from "../utils/Endpoints";
-import "./Election.css";
+import ElectionTable from './ElectionTable';
+import useFetchCall from '../utils/useFetchCall';
+import { GET_ALL_ELECTIONS_ENDPOINT } from '../utils/Endpoints';
+import './Election.css';
 
 /*Assumption : for now an election is simply a json file with the following field
     - electionName: string
@@ -20,15 +20,12 @@ called Candidates
 
 const ElectionStatus: FC = () => {
   const { t } = useTranslation();
-  const token = sessionStorage.getItem("token");
+  const token = sessionStorage.getItem('token');
   const request = {
-    method: "POST",
+    method: 'POST',
     body: JSON.stringify({ Token: token }),
   };
-  const [data, loading, error] = useFetchCall(
-    GET_ALL_ELECTIONS_ENDPOINT,
-    request
-  );
+  const [data, loading, error] = useFetchCall(GET_ALL_ELECTIONS_ENDPOINT, request);
 
   /*Show all the elections retrieved if any */
   const showElection = () => {
@@ -36,13 +33,13 @@ const ElectionStatus: FC = () => {
       <div>
         {data.AllElectionsInfo.length > 0 ? (
           <div className="election-box">
-            <div className="click-info">{t("clickElection")}</div>
+            <div className="click-info">{t('clickElection')}</div>
             <div className="election-table-wrapper">
               <ElectionTable elections={data.AllElectionsInfo} />
             </div>
           </div>
         ) : (
-          <div className="no-election">{t("noElection")}</div>
+          <div className="no-election">{t('noElection')}</div>
         )}
       </div>
     );
@@ -50,13 +47,13 @@ const ElectionStatus: FC = () => {
 
   return (
     <div className="election-wrapper">
-      {t("listElection")}
+      {t('listElection')}
       {!loading ? (
         showElection()
       ) : error === null ? (
-        <p className="loading">{t("loading")} </p>
+        <p className="loading">{t('loading')} </p>
       ) : (
-        <div className="error-retrieving">{t("errorRetrievingElection")}</div>
+        <div className="error-retrieving">{t('errorRetrievingElection')}</div>
       )}
     </div>
   );

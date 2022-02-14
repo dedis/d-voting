@@ -1,21 +1,21 @@
-import React, { FC, useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import PropTypes from "prop-types";
-import { useTranslation } from "react-i18next";
+import React, { FC, useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
-import Action from "./Action";
-import Result from "./Result";
-import Status from "./Status";
-import useElection from "../utils/useElection";
-import { RESULT_AVAILABLE } from "../utils/StatusNumber";
-import useGetResults from "../utils/useGetResults";
-import "./ElectionDetails.css";
+import Action from './Action';
+import Result from './Result';
+import Status from './Status';
+import useElection from '../utils/useElection';
+import { RESULT_AVAILABLE } from '../utils/StatusNumber';
+import useGetResults from '../utils/useGetResults';
+import './ElectionDetails.css';
 
 const ElectionDetails: FC = () => {
   const { t } = useTranslation();
   const { electionId } = useParams();
 
-  const token = sessionStorage.getItem("token");
+  const token = sessionStorage.getItem('token');
   const {
     loading,
     title,
@@ -36,15 +36,7 @@ const ElectionDetails: FC = () => {
     if (status === RESULT_AVAILABLE && isResultAvailable) {
       getResults(electionID, token, setError, setResult, setIsResultSet);
     }
-  }, [
-    electionID,
-    getResults,
-    isResultAvailable,
-    setIsResultSet,
-    setResult,
-    status,
-    token,
-  ]);
+  }, [electionID, getResults, isResultAvailable, setIsResultSet, setResult, status, token]);
 
   return (
     <div className="election-details-box">
@@ -58,8 +50,8 @@ const ElectionDetails: FC = () => {
               </div>
             ) : (
               <div className="election-wrapper-child">
-                {" "}
-                {t("status")}:<Status status={status} />
+                {' '}
+                {t('status')}:<Status status={status} />
                 <span className="election-action">
                   Action :
                   <Action
@@ -67,10 +59,10 @@ const ElectionDetails: FC = () => {
                     electionID={electionID}
                     setStatus={setStatus}
                     setResultAvailable={setIsResultAvailable}
-                  />{" "}
+                  />{' '}
                 </span>
                 <div className="election-candidates">
-                  {t("candidates")}
+                  {t('candidates')}
                   {candidates.map((cand) => (
                     <li key={cand} className="election-candidate">
                       {cand}
@@ -80,12 +72,12 @@ const ElectionDetails: FC = () => {
               </div>
             )}
             <Link to="/elections">
-              <button className="back-btn">{t("back")}</button>
+              <button className="back-btn">{t('back')}</button>
             </Link>
           </div>
         </div>
       ) : (
-        <p className="loading">{t("loading")}</p>
+        <p className="loading">{t('loading')}</p>
       )}
     </div>
   );

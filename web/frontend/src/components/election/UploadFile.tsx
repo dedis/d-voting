@@ -1,9 +1,9 @@
-import React, { FC, useState, useEffect } from "react";
-import PropTypes from "prop-types";
-import { useTranslation } from "react-i18next";
+import React, { FC, useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
-import { CREATE_ENDPOINT } from "../utils/Endpoints";
-import usePostCall from "../utils/usePostCall";
+import { CREATE_ENDPOINT } from '../utils/Endpoints';
+import usePostCall from '../utils/usePostCall';
 
 type UploadFileProps = {
   setShowModal(shown: boolean): void;
@@ -14,20 +14,20 @@ const UploadFile: FC<UploadFileProps> = ({ setShowModal, setTextModal }) => {
   const { t } = useTranslation();
   const [file, setFile] = useState(null);
   const [fileExt, setFileExt] = useState(null);
-  const [errors, setErrors] = useState({ nothing: "", extension: "" });
-  const [name, setName] = useState("");
+  const [errors, setErrors] = useState({ nothing: '', extension: '' });
+  const [name, setName] = useState('');
   const [, setIsSubmitting] = useState(false);
   const [postError, setPostError] = useState(null);
   const { postData } = usePostCall(setPostError);
 
   useEffect(() => {
     if (postError === null) {
-      setTextModal(t("electionSuccess"));
+      setTextModal(t('electionSuccess'));
     } else {
-      if (postError.includes("ECONNREFUSED")) {
-        setTextModal(t("errorServerDown"));
+      if (postError.includes('ECONNREFUSED')) {
+        setTextModal(t('errorServerDown'));
       } else {
-        setTextModal(t("electionFail"));
+        setTextModal(t('electionFail'));
       }
     }
   }, [postError, setTextModal, t]);
@@ -35,7 +35,7 @@ const UploadFile: FC<UploadFileProps> = ({ setShowModal, setTextModal }) => {
   const validateJSONFields = () => {
     var data = JSON.parse(file);
     var candidates = JSON.parse(data.Format).Candidates;
-    if (data.Title === "") {
+    if (data.Title === '') {
       return false;
     }
     if (!Array.isArray(candidates)) {
@@ -43,7 +43,7 @@ const UploadFile: FC<UploadFileProps> = ({ setShowModal, setTextModal }) => {
     } else {
       /*check if the elements of the array are string*/
       for (var i = 0; i < candidates.length; i++) {
-        if (typeof candidates[i] !== "string") {
+        if (typeof candidates[i] !== 'string') {
           return false;
         }
       }
@@ -53,7 +53,7 @@ const UploadFile: FC<UploadFileProps> = ({ setShowModal, setTextModal }) => {
 
   const sendElection = async (data) => {
     let postRequest = {
-      method: "POST",
+      method: 'POST',
       body: JSON.stringify(data),
     };
     setPostError(null);
@@ -65,15 +65,13 @@ const UploadFile: FC<UploadFileProps> = ({ setShowModal, setTextModal }) => {
    -> backend needs to perform other verification! */
   const validateFileExtension = () => {
     if (fileExt === null) {
-      errors.nothing = t("noFile");
+      errors.nothing = t('noFile');
       setErrors(errors);
       return false;
     } else {
       let fileName = fileExt.name;
-      if (
-        fileName.substring(fileName.length - 5, fileName.length) !== ".json"
-      ) {
-        errors.extension = t("notJson");
+      if (fileName.substring(fileName.length - 5, fileName.length) !== '.json') {
+        errors.extension = t('notJson');
         setErrors(errors);
         return false;
       }
@@ -84,7 +82,7 @@ const UploadFile: FC<UploadFileProps> = ({ setShowModal, setTextModal }) => {
   const uploadJSON = async () => {
     if (validateFileExtension()) {
       sendElection(JSON.parse(file));
-      setName("");
+      setName('');
       setShowModal(true);
     }
   };
@@ -103,7 +101,7 @@ const UploadFile: FC<UploadFileProps> = ({ setShowModal, setTextModal }) => {
   return (
     <div className="form-content-right bg-gray-200 flex-1 m-1 p-10">
       <div className="uppercase font-bold py-5">Option 2</div>
-      {t("upload")}
+      {t('upload')}
 
       <input
         type="file"
@@ -118,7 +116,7 @@ const UploadFile: FC<UploadFileProps> = ({ setShowModal, setTextModal }) => {
       <input
         type="button"
         className="block bg-blue-500 hover:bg-blue-700 text-white font-bold mt-7 py-2 px-5 rounded-full text-xs"
-        value={t("createElec") as string}
+        value={t('createElec') as string}
         onClick={uploadJSON}
       />
     </div>

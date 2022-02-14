@@ -1,8 +1,8 @@
-import React from "react";
-import PropTypes from "prop-types";
+import React from 'react';
+import PropTypes from 'prop-types';
 
-import useChangeStatus from "../utils/useChangeStatus";
-import "./Status.css";
+import useChangeStatus from '../utils/useChangeStatus';
+import './Status.css';
 
 /*StatusSuccess is a class that acts as a container for the display of the
 status of an election */

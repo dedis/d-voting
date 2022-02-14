@@ -1,20 +1,20 @@
-import React, { FC, useState } from "react";
-import { Link } from "react-router-dom";
-import Paper from "@material-ui/core/Paper";
-import Table from "@material-ui/core/Table";
-import TableBody from "@material-ui/core/TableBody";
-import TableCell from "@material-ui/core/TableCell";
-import TableContainer from "@material-ui/core/TableContainer";
-import TableHead from "@material-ui/core/TableHead";
-import TableRow from "@material-ui/core/TableRow";
-import TablePagination from "@material-ui/core/TablePagination";
-import { withStyles } from "@material-ui/core/styles";
-import PropTypes from "prop-types";
-import { useTranslation } from "react-i18next";
+import React, { FC, useState } from 'react';
+import { Link } from 'react-router-dom';
+import Paper from '@material-ui/core/Paper';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableContainer from '@material-ui/core/TableContainer';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
+import TablePagination from '@material-ui/core/TablePagination';
+import { withStyles } from '@material-ui/core/styles';
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
-import Action from "./Action";
-import Status from "./Status";
-import ElectionFields from "../utils/ElectionFields";
+import Action from './Action';
+import Status from './Status';
+import ElectionFields from '../utils/ElectionFields';
 
 type ElectionTableProps = {
   elections: string[];
@@ -34,31 +34,31 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
     id: string;
     label: string;
     minWidth: number;
-    align: "left";
+    align: 'left';
   }> = [
     {
-      id: "title",
-      label: t("title"),
+      id: 'title',
+      label: t('title'),
       minWidth: 170,
-      align: "left",
+      align: 'left',
     },
     {
-      id: "status",
-      label: t("status"),
+      id: 'status',
+      label: t('status'),
       minWidth: 170,
-      align: "left",
+      align: 'left',
     },
     {
-      id: "action",
-      label: t("action"),
+      id: 'action',
+      label: t('action'),
       minWidth: 170,
-      align: "left",
+      align: 'left',
     },
   ];
 
   const StyledTableRow = withStyles((theme) => ({
     root: {
-      "&:nth-of-type(odd)": {
+      '&:nth-of-type(odd)': {
         backgroundColor: theme.palette.action.hover,
       },
     },
@@ -78,9 +78,7 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
         </Link>
       );
       let stat = <Status status={status} />;
-      let action = (
-        <Action status={status} electionID={id} setStatus={setStatus} />
-      );
+      let action = <Action status={status} electionID={id} setStatus={setStatus} />;
       rows.push(createData(link, stat, action, id));
     });
     return rows;
@@ -117,22 +115,20 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
           <Table>
             <TableHead className="table-header">{renderTH()}</TableHead>
             <TableBody>
-              {rows
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row) => {
-                  return (
-                    <StyledTableRow key={row.id}>
-                      {columns.map((column) => {
-                        const value = row[column.id];
-                        return (
-                          <TableCell key={column.id} align={column.align}>
-                            {value}
-                          </TableCell>
-                        );
-                      })}
-                    </StyledTableRow>
-                  );
-                })}
+              {rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
+                return (
+                  <StyledTableRow key={row.id}>
+                    {columns.map((column) => {
+                      const value = row[column.id];
+                      return (
+                        <TableCell key={column.id} align={column.align}>
+                          {value}
+                        </TableCell>
+                      );
+                    })}
+                  </StyledTableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>
@@ -145,9 +141,9 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
           onPageChange={handleChangePage}
           onChangeRowsPerPage={handleChangeRowsPerPage}
           labelDisplayedRows={({ from, to, count }) => {
-            return "" + from + "-" + to + t("of") + count;
+            return '' + from + '-' + to + t('of') + count;
           }}
-          labelRowsPerPage={t("rowsPerPage")}
+          labelRowsPerPage={t('rowsPerPage')}
         />
       </Paper>
     </div>

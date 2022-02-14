@@ -1,25 +1,25 @@
-import React, { FC, useState } from "react";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
-import Modal from "@mui/material/Modal";
-import Input from "@mui/material/Input";
-import InputLabel from "@mui/material/InputLabel";
-import MenuItem from "@mui/material/MenuItem";
-import FormControl from "@mui/material/FormControl";
-import Select from "@mui/material/Select";
-import PropTypes from "prop-types";
+import React, { FC, useState } from 'react';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Modal from '@mui/material/Modal';
+import Input from '@mui/material/Input';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import Select from '@mui/material/Select';
+import PropTypes from 'prop-types';
 
-import { ADD_API_ROLE } from "../utils/ExpressEndoints";
+import { ADD_API_ROLE } from '../utils/ExpressEndoints';
 
 const style = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
   width: 400,
-  bgcolor: "background.paper",
-  border: "2px solid #000",
+  bgcolor: 'background.paper',
+  border: '2px solid #000',
   boxShadow: 24,
   p: 4,
 };
@@ -31,11 +31,11 @@ type AddAdminUserModalProps = {
 
 const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen }) => {
   const handleClose = () => setOpen(false);
-  const ariaLabel = { "aria-label": "description" };
+  const ariaLabel = { 'aria-label': 'description' };
 
-  const [sciperValue, setSciperValue] = useState("");
+  const [sciperValue, setSciperValue] = useState('');
 
-  const [roleValue, setRoleValue] = useState("");
+  const [roleValue, setRoleValue] = useState('');
 
   const handleChange = (event: any) => {
     setRoleValue(event.target.value);
@@ -47,16 +47,16 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen }) => {
 
   const handleClick = () => {
     const requestOptions = {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sciper: sciperValue, role: roleValue }),
     };
     fetch(ADD_API_ROLE, requestOptions).then((data) => {
       if (data.status === 200) {
-        alert("User added successfully");
+        alert('User added successfully');
         setOpen(false);
       } else {
-        alert("Error while adding the user");
+        alert('Error while adding the user');
       }
     });
   };
@@ -67,8 +67,7 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen }) => {
         open={open}
         onClose={handleClose}
         aria-labelledby="modal-title"
-        aria-describedby="modal-description"
-      >
+        aria-describedby="modal-description">
         <Box sx={style}>
           <Typography variant="h6" component="h2">
             Please give the sciper of the user
@@ -89,10 +88,9 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen }) => {
                 id="select-role"
                 value={roleValue}
                 label="Role"
-                onChange={handleChange}
-              >
-                <MenuItem value={"operator"}>Operator</MenuItem>
-                <MenuItem value={"admin"}>Admin</MenuItem>
+                onChange={handleChange}>
+                <MenuItem value={'operator'}>Operator</MenuItem>
+                <MenuItem value={'admin'}>Admin</MenuItem>
               </Select>
             </FormControl>
           </Box>

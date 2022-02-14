@@ -1,23 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 
-import ConfirmModal from "../modal/ConfirmModal";
-import usePostCall from "./usePostCall";
-import {
-  CLOSE_ENDPOINT,
-  CANCEL_ENDPOINT,
-  DECRYPT_ENDPOINT,
-  SHUFFLE_ENDPOINT,
-} from "./Endpoints";
-import {
-  OPEN,
-  CLOSED,
-  SHUFFLED_BALLOT,
-  RESULT_AVAILABLE,
-  CANCELED,
-} from "./StatusNumber";
-import { COLLECTIVE_AUTHORITY_MEMBERS } from "./CollectiveAuthorityMembers";
+import ConfirmModal from '../modal/ConfirmModal';
+import usePostCall from './usePostCall';
+import { CLOSE_ENDPOINT, CANCEL_ENDPOINT, DECRYPT_ENDPOINT, SHUFFLE_ENDPOINT } from './Endpoints';
+import { OPEN, CLOSED, SHUFFLED_BALLOT, RESULT_AVAILABLE, CANCELED } from './StatusNumber';
+import { COLLECTIVE_AUTHORITY_MEMBERS } from './CollectiveAuthorityMembers';
 
 const useChangeAction = (
   status: number,
@@ -28,8 +17,8 @@ const useChangeAction = (
   setShowModalError: (willShow: boolean) => void
 ) => {
   const { t } = useTranslation();
-  const userID = sessionStorage.getItem("id");
-  const token = sessionStorage.getItem("token");
+  const userID = sessionStorage.getItem('id');
+  const token = sessionStorage.getItem('token');
   const [isClosing, setIsClosing] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
   const [isShuffling, setIsShuffling] = useState(false);
@@ -42,7 +31,7 @@ const useChangeAction = (
     <ConfirmModal
       showModal={showModalClose}
       setShowModal={setShowModalClose}
-      textModal={t("confirmCloseElection")}
+      textModal={t('confirmCloseElection')}
       setUserConfirmedAction={setUserConfirmedClosing}
     />
   );
@@ -50,14 +39,14 @@ const useChangeAction = (
     <ConfirmModal
       showModal={showModalCancel}
       setShowModal={setShowModalCancel}
-      textModal={t("confirmCancelElection")}
+      textModal={t('confirmCancelElection')}
       setUserConfirmedAction={setUserConfirmedCanceling}
     />
   );
-  const [postError, setPostError] = useState(t("operationFailure") as string);
+  const [postError, setPostError] = useState(t('operationFailure') as string);
   const { postData } = usePostCall(setPostError);
   const simplePostRequest = {
-    method: "POST",
+    method: 'POST',
     body: JSON.stringify({
       ElectionID: electionID,
       UserId: userID,
@@ -65,7 +54,7 @@ const useChangeAction = (
     }),
   };
   const shuffleRequest = {
-    method: "POST",
+    method: 'POST',
     body: JSON.stringify({
       ElectionID: electionID,
       UserId: userID,
@@ -85,11 +74,7 @@ const useChangeAction = (
     //check if close button was clicked and the user validated the confirmation window
     if (isClosing && userConfirmedClosing) {
       const close = async () => {
-        const closeSuccess = await postData(
-          CLOSE_ENDPOINT,
-          simplePostRequest,
-          setIsClosing
-        );
+        const closeSuccess = await postData(CLOSE_ENDPOINT, simplePostRequest, setIsClosing);
 
         if (closeSuccess) {
           setStatus(CLOSED);
@@ -114,11 +99,7 @@ const useChangeAction = (
   useEffect(() => {
     if (isCanceling && userConfirmedCanceling) {
       const cancel = async () => {
-        const cancelSuccess = await postData(
-          CANCEL_ENDPOINT,
-          simplePostRequest,
-          setIsCanceling
-        );
+        const cancelSuccess = await postData(CANCEL_ENDPOINT, simplePostRequest, setIsCanceling);
         if (cancelSuccess) {
           setStatus(CANCELED);
         } else {
@@ -151,11 +132,7 @@ const useChangeAction = (
 
   const handleShuffle = async () => {
     setIsShuffling(true);
-    const shuffleSuccess = await postData(
-      SHUFFLE_ENDPOINT,
-      shuffleRequest,
-      setIsShuffling
-    );
+    const shuffleSuccess = await postData(SHUFFLE_ENDPOINT, shuffleRequest, setIsShuffling);
     if (shuffleSuccess && postError === null) {
       setStatus(SHUFFLED_BALLOT);
     } else {
@@ -166,11 +143,7 @@ const useChangeAction = (
   };
 
   const handleDecrypt = async () => {
-    const decryptSucess = await postData(
-      DECRYPT_ENDPOINT,
-      simplePostRequest,
-      setIsDecrypting
-    );
+    const decryptSucess = await postData(DECRYPT_ENDPOINT, simplePostRequest, setIsDecrypting);
     if (decryptSucess && postError === null) {
       if (setResultAvailable !== null) {
         setResultAvailable(true);
@@ -188,15 +161,11 @@ const useChangeAction = (
       case OPEN:
         return (
           <span>
-            <button
-              id="close-button"
-              className="election-btn"
-              onClick={handleClose}
-            >
-              {t("close")}
+            <button id="close-button" className="election-btn" onClick={handleClose}>
+              {t('close')}
             </button>
             <button className="election-btn" onClick={handleCancel}>
-              {t("cancel")}
+              {t('cancel')}
             </button>
           </span>
         );
@@ -204,11 +173,11 @@ const useChangeAction = (
         return (
           <span>
             {isShuffling ? (
-              <p className="loading">{t("shuffleOnGoing")}</p>
+              <p className="loading">{t('shuffleOnGoing')}</p>
             ) : (
               <span>
                 <button className="election-btn" onClick={handleShuffle}>
-                  {t("shuffle")}
+                  {t('shuffle')}
                 </button>
               </span>
             )}
@@ -218,11 +187,11 @@ const useChangeAction = (
         return (
           <span>
             {isDecrypting ? (
-              <p className="loading">{t("decryptOnGoing")}</p>
+              <p className="loading">{t('decryptOnGoing')}</p>
             ) : (
               <span>
                 <button className="election-btn" onClick={handleDecrypt}>
-                  {t("decrypt")}
+                  {t('decrypt')}
                 </button>
               </span>
             )}
@@ -231,11 +200,8 @@ const useChangeAction = (
       case RESULT_AVAILABLE:
         return (
           <span>
-            <Link
-              className="election-link"
-              to={{ pathname: `/elections/${electionID}` }}
-            >
-              <button className="election-btn">{t("seeResult")}</button>
+            <Link className="election-link" to={{ pathname: `/elections/${electionID}` }}>
+              <button className="election-btn">{t('seeResult')}</button>
             </Link>
           </span>
         );

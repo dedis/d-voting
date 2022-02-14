@@ -1,40 +1,40 @@
-.vote-allowed{
-    padding-bottom: 3%;
+.vote-allowed {
+  padding-bottom: 3%;
 }
-.cast-ballot{
-    padding: 3%;
-    background-color: #f6f6fa;
-}
-
-.ballot-indication{
-    padding-bottom:2%;
+.cast-ballot {
+  padding: 3%;
+  background-color: #f6f6fa;
 }
 
-.cast-ballot-error{
-    color: #898a8d;
-    font-size: 12px;
-    padding-bottom: 3%;
-}
-.cast-ballot-card{
- padding: 0.5%;
- background-color: #f6f6fa;
- outline-style: solid;
- outline-width: 1px;
- outline-color: #ececf0;
+.ballot-indication {
+  padding-bottom: 2%;
 }
 
-.cast-ballot-btn{
-    align-content: center;
-    border-radius: 8px;
-    cursor: pointer;    
+.cast-ballot-error {
+  color: #898a8d;
+  font-size: 12px;
+  padding-bottom: 3%;
+}
+.cast-ballot-card {
+  padding: 0.5%;
+  background-color: #f6f6fa;
+  outline-style: solid;
+  outline-width: 1px;
+  outline-color: #ececf0;
 }
 
-.past-vote{
-    padding-top: 1%;
-    font-size: small;
+.cast-ballot-btn {
+  align-content: center;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
-th{
-    background-color: #177368 !important;
-    font-weight: bold !important;
+.past-vote {
+  padding-top: 1%;
+  font-size: small;
+}
+
+th {
+  background-color: #177368 !important;
+  font-weight: bold !important;
 }
