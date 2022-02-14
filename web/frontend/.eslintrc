@@ -5,6 +5,8 @@
     "jest": true
   },
   "extends": [
+    "react-app",
+    "react-app/jest",
     "airbnb-typescript",
     "plugin:import/recommended",
     "plugin:import/typescript",
