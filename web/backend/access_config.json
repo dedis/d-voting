@@ -1,17 +1,7 @@
 {
-  "everyone": [
-    "/api/getTkKey",
-    "/api/control_key",
-    "/api/getpersonnalinfo"
-  ],
-  "voter": [
-    "/api/logout",
-    "/api/getpersonnalinfo"
-  ],
-  "operator":[
-    "/api/logout",
-    "/api/getpersonnalinfo"
-  ],
+  "everyone": ["/api/getTkKey", "/api/control_key", "/api/getpersonnalinfo"],
+  "voter": ["/api/logout", "/api/getpersonnalinfo"],
+  "operator": ["/api/logout", "/api/getpersonnalinfo"],
   "admin": [
     "/api/logout",
     "/api/getpersonnalinfo",

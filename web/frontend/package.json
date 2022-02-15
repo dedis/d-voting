@@ -9,7 +9,7 @@
     "eject": "react-scripts eject",
     "eslint": "./node_modules/.bin/eslint .",
     "prettier": "./node_modules/.bin/prettier --write .",
-    "prettier-check": "./node_modules/.bin/prettier --write ."
+    "prettier-check": "./node_modules/.bin/prettier --check ."
   },
   "dependencies": {
     "@dedis/kyber": "^3.4.4",

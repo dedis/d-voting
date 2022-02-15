@@ -8,7 +8,7 @@
     "dev": "./node_modules/.bin/nodemon",
     "eslint": "./node_modules/.bin/eslint .",
     "prettier": "./node_modules/.bin/prettier --write .",
-    "prettier-check": "./node_modules/.bin/prettier --write .",
+    "prettier-check": "./node_modules/.bin/prettier --check .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

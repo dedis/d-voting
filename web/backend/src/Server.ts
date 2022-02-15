@@ -238,6 +238,7 @@ app.post('/evoting/*', (req, res) => {
   // check session
   if (!req.session.userid) {
     res.status(400).send('Unauthorized');
+    return;
   }
 
   const bodyData = req.body;
