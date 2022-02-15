@@ -38,8 +38,6 @@ type Actor interface {
 	// the public shares
 	RequestPubShares() error
 
-	Reshare() error
-
 	// MarshalJSON returns a JSON-encoded bytestring containing all the actor
 	// data that is meant to be persistent.
 	MarshalJSON() ([]byte, error)

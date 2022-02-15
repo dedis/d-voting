@@ -18,7 +18,7 @@ In order to use it some steps are required :
 - First it is needed to recover a token from the tequila service : this token will be used by one user and is linked to a particular redirection user
 - The user opens a webpage to the tequila authentication form and passes the key as a get parameter and enters username and password
 - The tequila controls the credentials and if they are valids the user is redirect to our own servers (actually the request ends up on the express server) with another key as a get parameter
-- This last key is then used by the express server to finally validate that the user request is valid and receive the user information from the tequila (sciper, name, firstname, etc...)
+- This last key is then used by the express server to finally validate that the user request is valid and receive the user information from the tequila (sciper, lastname, firstname, etc...)
 - If the previous request was valid, the express server logs the user in by setting in its session the sciper, the role, the first name and the name.
 
 The following picture picture shows the different steps:
@@ -133,7 +133,7 @@ Return:
 
 ```json{
     "sciper" : <current user's sciper>,
-    "name" : "<current user's name>",
+    "lastname" : "<current user's last name>",
     "firstname" : "<current user's first name>",
     "role" : "<voter|operator|admin>",
     "islogged" : <true|false>

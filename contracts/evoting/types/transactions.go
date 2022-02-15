@@ -54,11 +54,22 @@ func (e *ElectionIDs) Add(id string) error {
 // TransactionFactory provides the mean to deserialize a transaction.
 //
 // - implements serde.Factory
-type TransactionFactory struct{}
+type TransactionFactory struct {
+	ciphervoteFac serde.Factory
+}
+
+// NewTransactionFactory creates a new transaction factory
+func NewTransactionFactory(cf serde.Factory) TransactionFactory {
+	return TransactionFactory{
+		ciphervoteFac: cf,
+	}
+}
 
 // Deserialize implements serde.Factory
-func (TransactionFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
+func (t TransactionFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
 	format := transactionFormats.Get(ctx.GetFormat())
+
+	ctx = serde.WithFactory(ctx, CiphervoteKey{}, t.ciphervoteFac)
 
 	message, err := format.Decode(ctx, data)
 	if err != nil {
@@ -68,7 +79,7 @@ func (TransactionFactory) Deserialize(ctx serde.Context, data []byte) (serde.Mes
 	return message, nil
 }
 
-// CreateElection ...
+// CreateElection defines the transaction to create an election
 //
 // - implements serde.Message
 type CreateElection struct {
@@ -88,7 +99,7 @@ func (ce CreateElection) Serialize(ctx serde.Context) ([]byte, error) {
 	return data, nil
 }
 
-// OpenElection ...
+// OpenElection defines the transaction to open an election
 //
 // - implements serde.Message
 type OpenElection struct {
@@ -108,7 +119,7 @@ func (oe OpenElection) Serialize(ctx serde.Context) ([]byte, error) {
 	return data, nil
 }
 
-// CastVote ...
+// CastVote defines the transaction to cast a vote
 //
 // - implements serde.Message
 type CastVote struct {
@@ -130,7 +141,7 @@ func (cv CastVote) Serialize(ctx serde.Context) ([]byte, error) {
 	return data, nil
 }
 
-// CloseElection ...
+// CloseElection defines the transaction to close an election
 //
 // - implements serde.Message
 type CloseElection struct {
@@ -151,7 +162,7 @@ func (ce CloseElection) Serialize(ctx serde.Context) ([]byte, error) {
 	return data, nil
 }
 
-// ShuffleBallots ...
+// ShuffleBallots defines the transaction to shuffle the ballots
 //
 // - implements serde.Message
 // - implements serde.Fingerprinter
@@ -208,6 +219,7 @@ func (rp RegisterPubShares) Serialize(ctx serde.Context) ([]byte, error) {
 }
 
 // DecryptBallots ...
+// DecryptBallots defines the transaction to decrypt the ballots
 //
 // - implements serde.Message
 type DecryptBallots struct {
@@ -229,7 +241,7 @@ func (db DecryptBallots) Serialize(ctx serde.Context) ([]byte, error) {
 	return data, nil
 }
 
-// CancelElection ...
+// CancelElection defines the transaction to cancel the election
 //
 // - implements serde.Message
 type CancelElection struct {
@@ -261,7 +273,8 @@ func RandomID() (string, error) {
 	return hex.EncodeToString(buf), nil
 }
 
-// Fingerprint implements serde.Fingerprinter
+// Fingerprint implements serde.Fingerprinter. If creates a fingerprint only
+// based on the electionID and the shuffled ballots.
 func (sb ShuffleBallots) Fingerprint(writer io.Writer) error {
 	_, err := writer.Write([]byte(sb.ElectionID))
 	if err != nil {
@@ -279,18 +292,18 @@ func (sb ShuffleBallots) Fingerprint(writer io.Writer) error {
 }
 
 // Fingerprint implements serde.Fingerprinter
-func (ps RegisterPubShares) Fingerprint(writer io.Writer) error {
-	_, err := writer.Write([]byte(ps.ElectionID))
+func (rp RegisterPubShares) Fingerprint(writer io.Writer) error {
+	_, err := writer.Write([]byte(rp.ElectionID))
 	if err != nil {
 		return xerrors.Errorf("failed to write election ID to fingerprint: %v", err)
 	}
 
-	_, err = writer.Write([]byte(strconv.Itoa(ps.Index)))
+	_, err = writer.Write([]byte(strconv.Itoa(rp.Index)))
 	if err != nil {
 		return xerrors.Errorf("failed to write pubShare index to fingerprint: %v", err)
 	}
 
-	err = ps.PubShares.FingerPrint(writer)
+	err = rp.PubShares.FingerPrint(writer)
 	if err != nil {
 		return xerrors.Errorf("failed to fingerprint pubShares: %V", err)
 	}

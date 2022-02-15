@@ -3,12 +3,13 @@ package controller
 import (
 	"encoding"
 	"encoding/json"
+	"path/filepath"
+
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/bls"
 	"go.dedis.ch/dela/crypto/loader"
-	"path/filepath"
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/services/dkg/pedersen"
@@ -59,8 +60,7 @@ func (m controller) SetCommands(builder node.Builder) {
 	sub.SetFlags(electionIDFlag)
 	sub.SetAction(builder.MakeAction(&initAction{}))
 
-	// memcoin --config /tmp/node1 dkg setup --member $(memcoin --config
-	// /tmp/node1 dkg export) --member $(memcoin --config /tmp/node2 dkg export)
+	// memcoin --config /tmp/node1 dkg setup --electionID electionID
 	sub = cmd.SetSubCommand("setup")
 	sub.SetDescription("create the public distributed key and the private share on each node")
 	sub.SetFlags(electionIDFlag)
@@ -144,8 +144,6 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 			err)
 	}
 
-	dkg := pedersen.NewPedersen(no, srvc, p, rosterFac, pubSharesSigner)
-
 	keyPath := ctx.String("signer")
 
 	signer, err := getSigner(keyPath)
@@ -157,6 +155,8 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 	if err != nil {
 		return xerrors.Errorf("failed to make client: %v", err)
 	}
+
+	dkg := pedersen.NewPedersen(no, srvc, p, rosterFac, pubSharesSigner)
 
 	// Use dkgMap to fill the actors map
 	err = db.View(func(tx kv.ReadableTx) error {

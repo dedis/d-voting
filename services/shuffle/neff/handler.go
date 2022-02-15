@@ -40,11 +40,14 @@ type Handler struct {
 	txmngr        txn.Manager
 	shuffleSigner crypto.Signer
 	context       serde.Context
+	electionFac   serde.Factory
 }
 
 // NewHandler creates a new handler
 func NewHandler(me mino.Address, service ordering.Service, p pool.Pool,
-	txmngr txn.Manager, shuffleSigner crypto.Signer, ctx serde.Context) *Handler {
+	txmngr txn.Manager, shuffleSigner crypto.Signer, ctx serde.Context,
+	electionFac serde.Factory) *Handler {
+
 	return &Handler{
 		me:            me,
 		service:       service,
@@ -52,6 +55,7 @@ func NewHandler(me mino.Address, service ordering.Service, p pool.Pool,
 		txmngr:        txmngr,
 		shuffleSigner: shuffleSigner,
 		context:       ctx,
+		electionFac:   electionFac,
 	}
 }
 
@@ -84,7 +88,7 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 
 	// loop until the threshold is reached or our transaction has been accepted
 	for {
-		election, err := getElection(h.context, electionID, h.service)
+		election, err := getElection(h.electionFac, h.context, electionID, h.service)
 		if err != nil {
 			return xerrors.Errorf("failed to get election: %v", err)
 		}
@@ -98,7 +102,7 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 		}
 
 		if election.Status != etypes.Closed {
-			return xerrors.Errorf("the election must be closed: but status is %v", election.Status)
+			return xerrors.Errorf("the election must be closed: (%v)", election.Status)
 		}
 
 		tx, err := makeTx(h.context, &election, h.txmngr, h.shuffleSigner)
@@ -138,7 +142,9 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 	}
 }
 
-func makeTx(ctx serde.Context, election *etypes.Election, manager txn.Manager, shuffleSigner crypto.Signer) (txn.Transaction, error) {
+func makeTx(ctx serde.Context, election *etypes.Election, manager txn.Manager,
+	shuffleSigner crypto.Signer) (txn.Transaction, error) {
+
 	shuffledBallots, getProver, err := getShuffledBallots(election)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get shuffled ballots: %v", err)
@@ -183,7 +189,6 @@ func makeTx(ctx serde.Context, election *etypes.Election, manager txn.Manager, s
 	}
 
 	shuffleBallots.Proof = shuffleProof
-
 	shuffleBallots.RandomVector = etypes.RandomVector{}
 
 	err = shuffleBallots.RandomVector.LoadFromScalars(e)
@@ -252,11 +257,6 @@ func getShuffledBallots(election *etypes.Election) ([]etypes.Ciphervote,
 		ciphervotes = election.ShuffleInstances[round-1].ShuffledBallots
 	}
 
-	// X, Y, err := encryptedBallots.GetElGPairs()
-	// if err != nil {
-	// 	return nil, nil, xerrors.Errorf("failed to get X, Y: %v", err)
-	// }
-
 	seqSize := len(ciphervotes[0])
 
 	X := make([][]kyber.Point, seqSize)
@@ -273,7 +273,8 @@ func getShuffledBallots(election *etypes.Election) ([]etypes.Ciphervote,
 	}
 
 	// shuffle sequences
-	XX, YY, getProver := shuffleKyber.SequencesShuffle(suite, nil, election.Pubkey, X, Y, suite.RandomStream())
+	XX, YY, getProver := shuffleKyber.SequencesShuffle(suite, nil, election.Pubkey,
+		X, Y, suite.RandomStream())
 
 	ciphervotes, err := etypes.CiphervotesFromPairs(XX, YY)
 	if err != nil {

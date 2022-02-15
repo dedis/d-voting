@@ -4,15 +4,17 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"sync"
+	"time"
+
 	"github.com/dedis/d-voting/contracts/evoting"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/crypto"
 	jsondela "go.dedis.ch/dela/serde/json"
-	"sync"
-	"time"
 
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
@@ -53,13 +55,14 @@ type Handler struct {
 	privKey   kyber.Scalar
 	pubKey    kyber.Point
 
-	context serde.Context
+	context     serde.Context
+	electionFac serde.Factory
 }
 
 // NewHandler creates a new handler
 func NewHandler(me mino.Address, service ordering.Service, pool pool.Pool,
 	txnmngr txn.Manager, pubSharesSigner crypto.Signer, handlerData HandlerData,
-	context serde.Context) *Handler {
+	context serde.Context, electionFac serde.Factory) *Handler {
 
 	privKey := handlerData.PrivKey
 	pubKey := handlerData.PubKey
@@ -78,7 +81,8 @@ func NewHandler(me mino.Address, service ordering.Service, pool pool.Pool,
 		privKey:   privKey,
 		pubKey:    pubKey,
 
-		context: context,
+		context:     context,
+		electionFac: electionFac,
 	}
 }
 
@@ -150,7 +154,6 @@ mainSwitch:
 		publicShares := make([][]etypes.PubShare, len(shuffleInstances))
 		numberOfShuffles := len(shuffleInstances)
 
-		// TODO: check if started before
 		h.RLock()
 
 		for _, ballot := range shuffleInstances[numberOfShuffles-1].ShuffledBallots {
@@ -167,12 +170,10 @@ mainSwitch:
 			publicShares = append(publicShares, ballotShares)
 		}
 
-		h.RUnlock()
-
 		// loop until our transaction has been accepted, or enough nodes
 		// submitted their pubShares
 		for {
-			election, err := getElection(h.context, msg.GetElectionId(), h.service)
+			election, err := h.getElection(msg.GetElectionId())
 			if err != nil {
 				return xerrors.Errorf("could not get the election: %v", err)
 			}
@@ -490,7 +491,7 @@ func (h *Handler) handleDeal(msg types.Deal, from mino.Address, addrs []mino.Add
 // getShuffleIfValid allows checking if enough shuffles have been made on the
 // ballots.
 func (h *Handler) getShuffleIfValid(electionID string) ([]etypes.ShuffleInstance, error) {
-	election, err := getElection(h.context, electionID, h.service)
+	election, err := h.getElection(electionID)
 	if err != nil {
 		return nil, xerrors.Errorf("could not get the election: %v", err)
 	}
@@ -835,4 +836,36 @@ func makeTx(election *etypes.Election, pubShares etypes.PubSharesSubmission, ind
 	}
 
 	return tx, nil
+}
+
+// getElection gets the election from the service
+func (h Handler) getElection(electionIDHex string) (etypes.Election, error) {
+	var election etypes.Election
+
+	electionID, err := hex.DecodeString(electionIDHex)
+	if err != nil {
+		return election, xerrors.Errorf("failed to decode electionIDHex: %v", err)
+	}
+
+	proof, exists := electionExists(h.service, electionID)
+	if !exists {
+		return election, xerrors.Errorf("election does not exist: %v", err)
+	}
+
+	message, err := h.electionFac.Deserialize(h.context, proof.GetValue())
+	if err != nil {
+		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
+	}
+
+	election, ok := message.(etypes.Election)
+	if !ok {
+		return election, xerrors.Errorf("wrong message type: %T", message)
+	}
+
+	if string(electionID) != election.ElectionID {
+		return election, xerrors.Errorf("electionID do not match: %q != %q",
+			electionID, election.ElectionID)
+	}
+
+	return election, nil
 }

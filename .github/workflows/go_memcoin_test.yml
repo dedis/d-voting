@@ -1,4 +1,4 @@
-name: Memcoin (CLI+HTTP) test
+name: Memcoin (CLI+HTTP) Test
 
 on:
   push:

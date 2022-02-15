@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
@@ -43,6 +45,11 @@ func (electionFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, 
 			return nil, xerrors.Errorf("failed to encode shuffle instances: %v", err)
 		}
 
+		rosterBuf, err := m.Roster.Serialize(ctx)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to serialize roster: %v", err)
+		}
+
 		electionJSON := ElectionJSON{
 			Configuration:    m.Configuration,
 			ElectionID:       m.ElectionID,
@@ -54,7 +61,7 @@ func (electionFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, 
 			ShuffleInstances: shuffleInstances,
 			ShuffleThreshold: m.ShuffleThreshold,
 			DecryptedBallots: m.DecryptedBallots,
-			RosterBuf:        m.RosterBuf,
+			RosterBuf:        rosterBuf,
 		}
 
 		buff, err := ctx.Marshal(&electionJSON)
@@ -87,9 +94,6 @@ func (electionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, err
 		}
 	}
 
-	// TODO: check if this is the right place to provide the factory
-	ctx = serde.WithFactory(ctx, types.CiphervoteKey{}, types.CiphervoteFactory{})
-
 	suffragia, err := decodeSuffragia(ctx, electionJSON.Suffragia)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to decode suffragia: %v", err)
@@ -98,6 +102,17 @@ func (electionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, err
 	shuffleInstances, err := decodeShuffleInstances(ctx, electionJSON.ShuffleInstances)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to decode shuffle instances: %v", err)
+	}
+
+	fac := ctx.GetFactory(ctypes.RosterKey{})
+	rosterFac, ok := fac.(authority.Factory)
+	if !ok {
+		return nil, xerrors.Errorf("failed to get roster factory: %T", fac)
+	}
+
+	roster, err := rosterFac.AuthorityOf(ctx, electionJSON.RosterBuf)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to decode roster: %v", err)
 	}
 
 	return types.Election{
@@ -111,7 +126,7 @@ func (electionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, err
 		ShuffleInstances: shuffleInstances,
 		ShuffleThreshold: electionJSON.ShuffleThreshold,
 		DecryptedBallots: electionJSON.DecryptedBallots,
-		RosterBuf:        electionJSON.RosterBuf,
+		Roster:           roster,
 	}, nil
 }
 
@@ -175,11 +190,12 @@ func encodeSuffragia(ctx serde.Context, suffragia types.Suffragia) (SuffragiaJSO
 }
 
 func decodeSuffragia(ctx serde.Context, suffragiaJSON SuffragiaJSON) (types.Suffragia, error) {
+	var res types.Suffragia
 	fac := ctx.GetFactory(types.CiphervoteKey{})
 
 	factory, ok := fac.(types.CiphervoteFactory)
 	if !ok {
-		return types.Suffragia{}, xerrors.Errorf("invalid ciphervote factory: '%T'", fac)
+		return res, xerrors.Errorf("invalid ciphervote factory: '%T'", fac)
 	}
 
 	ciphervotes := make([]types.Ciphervote, len(suffragiaJSON.Ciphervotes))
@@ -187,21 +203,23 @@ func decodeSuffragia(ctx serde.Context, suffragiaJSON SuffragiaJSON) (types.Suff
 	for i, ciphervoteJSON := range suffragiaJSON.Ciphervotes {
 		msg, err := factory.Deserialize(ctx, ciphervoteJSON)
 		if err != nil {
-			return types.Suffragia{}, xerrors.Errorf("failed to deserialize ciphervote json: %v", err)
+			return res, xerrors.Errorf("failed to deserialize ciphervote json: %v", err)
 		}
 
 		ciphervote, ok := msg.(types.Ciphervote)
 		if !ok {
-			return types.Suffragia{}, xerrors.Errorf("wrong type: '%T'", msg)
+			return res, xerrors.Errorf("wrong type: '%T'", msg)
 		}
 
 		ciphervotes[i] = ciphervote
 	}
 
-	return types.Suffragia{
+	res = types.Suffragia{
 		UserIDs:     suffragiaJSON.UserIDs,
 		Ciphervotes: ciphervotes,
-	}, nil
+	}
+
+	return res, nil
 }
 
 // ShuffleInstanceJSON defines the JSON representation of a shuffle instance
@@ -216,7 +234,9 @@ type ShuffleInstanceJSON struct {
 	ShufflerPublicKey []byte
 }
 
-func encodeShuffleInstances(ctx serde.Context, shuffleInstances []types.ShuffleInstance) ([]ShuffleInstanceJSON, error) {
+func encodeShuffleInstances(ctx serde.Context,
+	shuffleInstances []types.ShuffleInstance) ([]ShuffleInstanceJSON, error) {
+
 	res := make([]ShuffleInstanceJSON, len(shuffleInstances))
 
 	for i, shuffleInstance := range shuffleInstances {
@@ -231,26 +251,33 @@ func encodeShuffleInstances(ctx serde.Context, shuffleInstances []types.ShuffleI
 	return res, nil
 }
 
-func encodeShuffleInstance(ctx serde.Context, shuffleInstance types.ShuffleInstance) (ShuffleInstanceJSON, error) {
+func encodeShuffleInstance(ctx serde.Context,
+	shuffleInstance types.ShuffleInstance) (ShuffleInstanceJSON, error) {
+
+	var res ShuffleInstanceJSON
 	shuffledBallots := make([]json.RawMessage, len(shuffleInstance.ShuffledBallots))
 
 	for i, shuffledBallot := range shuffleInstance.ShuffledBallots {
 		buff, err := shuffledBallot.Serialize(ctx)
 		if err != nil {
-			return ShuffleInstanceJSON{}, xerrors.Errorf("failed to serialize ciphervote: %v", err)
+			return res, xerrors.Errorf("failed to serialize ciphervote: %v", err)
 		}
 
 		shuffledBallots[i] = buff
 	}
 
-	return ShuffleInstanceJSON{
+	res = ShuffleInstanceJSON{
 		ShuffledBallots:   shuffledBallots,
 		ShuffleProofs:     shuffleInstance.ShuffleProofs,
 		ShufflerPublicKey: shuffleInstance.ShufflerPublicKey,
-	}, nil
+	}
+
+	return res, nil
 }
 
-func decodeShuffleInstances(ctx serde.Context, shuffleInstancesJSON []ShuffleInstanceJSON) ([]types.ShuffleInstance, error) {
+func decodeShuffleInstances(ctx serde.Context,
+	shuffleInstancesJSON []ShuffleInstanceJSON) ([]types.ShuffleInstance, error) {
+
 	res := make([]types.ShuffleInstance, len(shuffleInstancesJSON))
 
 	for i, shuffleInstanceJSON := range shuffleInstancesJSON {
@@ -265,12 +292,15 @@ func decodeShuffleInstances(ctx serde.Context, shuffleInstancesJSON []ShuffleIns
 	return res, nil
 }
 
-func decodeShuffleInstance(ctx serde.Context, shuffleInstanceJSON ShuffleInstanceJSON) (types.ShuffleInstance, error) {
+func decodeShuffleInstance(ctx serde.Context,
+	shuffleInstanceJSON ShuffleInstanceJSON) (types.ShuffleInstance, error) {
+
+	var res types.ShuffleInstance
 	fac := ctx.GetFactory(types.CiphervoteKey{})
 
 	factory, ok := fac.(types.CiphervoteFactory)
 	if !ok {
-		return types.ShuffleInstance{}, xerrors.Errorf("invalid ciphervote factory: '%T'", fac)
+		return res, xerrors.Errorf("invalid ciphervote factory: '%T'", fac)
 	}
 
 	shuffledBallots := make([]types.Ciphervote, len(shuffleInstanceJSON.ShuffledBallots))
@@ -278,20 +308,22 @@ func decodeShuffleInstance(ctx serde.Context, shuffleInstanceJSON ShuffleInstanc
 	for i, ciphervoteJSON := range shuffleInstanceJSON.ShuffledBallots {
 		msg, err := factory.Deserialize(ctx, ciphervoteJSON)
 		if err != nil {
-			return types.ShuffleInstance{}, xerrors.Errorf("failed to deserialize shuffle instance json: %v", err)
+			return res, xerrors.Errorf("failed to deserialize shuffle instance json: %v", err)
 		}
 
 		ciphervote, ok := msg.(types.Ciphervote)
 		if !ok {
-			return types.ShuffleInstance{}, xerrors.Errorf("wrong type: '%T'", msg)
+			return res, xerrors.Errorf("wrong type: '%T'", msg)
 		}
 
 		shuffledBallots[i] = ciphervote
 	}
 
-	return types.ShuffleInstance{
+	res = types.ShuffleInstance{
 		ShuffledBallots:   shuffledBallots,
 		ShuffleProofs:     shuffleInstanceJSON.ShuffleProofs,
 		ShufflerPublicKey: shuffleInstanceJSON.ShufflerPublicKey,
-	}, nil
+	}
+
+	return res, nil
 }

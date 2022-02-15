@@ -108,14 +108,16 @@ func TestHandler_StartShuffle(t *testing.T) {
 		DecryptedBallots: nil,
 		ShuffleThreshold: 1,
 		BallotSize:       1,
+		Roster:           fake.Authority{},
 	}
 
 	service = updateService(election, dummyID)
 	handler.service = &service
 	handler.context = serdecontext
+	handler.electionFac = electionFac
 
 	err = handler.handleStartShuffle(dummyID)
-	require.EqualError(t, err, "the election must be closed: but status is 0")
+	require.EqualError(t, err, "the election must be closed: (0)")
 
 	// Wrong formatted ballots:
 	election.Status = etypes.Closed
@@ -223,13 +225,16 @@ func TestHandler_StartShuffle(t *testing.T) {
 
 	// Shuffle already started:
 	shuffledBallots := append([]etypes.Ciphervote{}, election.Suffragia.Ciphervotes...)
-	election.ShuffleInstances = append(election.ShuffleInstances, etypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
+
+	election.ShuffleInstances = append(election.ShuffleInstances,
+		etypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
 
 	election.ShuffleThreshold = 2
 
 	service = updateService(election, dummyID)
 	fakePool = FakePool{service: &service}
-	handler = *NewHandler(handler.me, &service, &fakePool, manager, handler.shuffleSigner, serdecontext)
+	handler = *NewHandler(handler.me, &service, &fakePool, manager,
+		handler.shuffleSigner, serdecontext, electionFac)
 
 	err = handler.handleStartShuffle(dummyID)
 	require.NoError(t, err)
@@ -266,6 +271,7 @@ func initValidHandler(dummyID string) Handler {
 	handler.shuffleSigner = fake.NewSigner()
 	handler.txmngr = signed.NewManager(fake.NewSigner(), fakeClient{})
 	handler.context = serdecontext
+	handler.electionFac = electionFac
 
 	return handler
 }
@@ -283,6 +289,7 @@ func initFakeElection(electionID string) etypes.Election {
 		DecryptedBallots: nil,
 		ShuffleThreshold: 1,
 		BallotSize:       1,
+		Roster:           fake.Authority{},
 	}
 
 	for i := 0; i < k; i++ {

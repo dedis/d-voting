@@ -13,6 +13,7 @@ import (
 // - implements serde.FormatEngine
 type transactionFormat struct{}
 
+// Encode implements serde.FormatEngine
 func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, error) {
 	var m TransactionJSON
 
@@ -100,6 +101,7 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 	return data, nil
 }
 
+// Decode implements serde.FormatEngine
 func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, error) {
 	m := TransactionJSON{}
 
@@ -119,62 +121,24 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 			ElectionID: m.OpenElection.ElectionID,
 		}, nil
 	case m.CastVote != nil:
-		factory := ctx.GetFactory(types.CiphervoteKey{})
-		if factory == nil {
-			return nil, xerrors.Errorf("missing ciphervote factory")
-		}
-
-		msg, err := factory.Deserialize(ctx, m.CastVote.Ciphervote)
+		msg, err := decodeCastVote(ctx, *m.CastVote)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to deserialize ciphervote: %v", err)
+			return nil, xerrors.Errorf("failed to decode cast vote: %v", err)
 		}
 
-		ciphervote, ok := msg.(types.Ciphervote)
-		if !ok {
-			return nil, xerrors.Errorf("invalid ciphervote: '%T'", msg)
-		}
-
-		return types.CastVote{
-			ElectionID: m.CastVote.ElectionID,
-			UserID:     m.CastVote.UserID,
-			Ballot:     ciphervote,
-		}, nil
+		return msg, nil
 	case m.CloseElection != nil:
 		return types.CloseElection{
 			ElectionID: m.CloseElection.ElectionID,
 			UserID:     m.CloseElection.UserID,
 		}, nil
 	case m.ShuffleBallots != nil:
-		factory := ctx.GetFactory(types.CiphervoteKey{})
-		if factory == nil {
-			return nil, xerrors.Errorf("missing ciphervote factory")
+		msg, err := decodeShuffleBallots(ctx, *m.ShuffleBallots)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to decode shuffle ballots: %v", err)
 		}
 
-		ciphervotes := make([]types.Ciphervote, len(m.ShuffleBallots.Ciphervotes))
-
-		for i, buff := range m.ShuffleBallots.Ciphervotes {
-			msg, err := factory.Deserialize(ctx, buff)
-			if err != nil {
-				return nil, xerrors.Errorf("failed to deserialize ciphervote: %v", err)
-			}
-
-			ciphervote, ok := msg.(types.Ciphervote)
-			if !ok {
-				return nil, xerrors.Errorf("invalid ciphervote: '%T'", msg)
-			}
-
-			ciphervotes[i] = ciphervote
-		}
-
-		return types.ShuffleBallots{
-			ElectionID:      m.ShuffleBallots.ElectionID,
-			Round:           m.ShuffleBallots.Round,
-			ShuffledBallots: ciphervotes,
-			RandomVector:    m.ShuffleBallots.RandomVector,
-			Proof:           m.ShuffleBallots.Proof,
-			Signature:       m.ShuffleBallots.Signature,
-			PublicKey:       m.ShuffleBallots.PublicKey,
-		}, nil
+		return msg, nil
 	case m.DecryptBallots != nil:
 		return types.DecryptBallots{
 			ElectionID:       m.DecryptBallots.ElectionID,
@@ -203,31 +167,31 @@ type TransactionJSON struct {
 	CancelElection *CancelElectionJSON `json:",omitempty"`
 }
 
-// CreateElectionJSON ...
+// CreateElectionJSON is the JSON representation of a CreateElection transaction
 type CreateElectionJSON struct {
 	Configuration types.Configuration
 	AdminID       string
 }
 
-// OpenElectionJSON ...
+// OpenElectionJSON is the JSON representation of a OpenElection transaction
 type OpenElectionJSON struct {
 	ElectionID string
 }
 
-// CastVoteJSON ...
+// CastVoteJSON is the JSON representation of a CastVote transaction
 type CastVoteJSON struct {
 	ElectionID string
 	UserID     string
 	Ciphervote json.RawMessage
 }
 
-// CloseElectionJSON ...
+// CloseElectionJSON is the JSON representation of a CloseElection transaction
 type CloseElectionJSON struct {
 	ElectionID string
 	UserID     string
 }
 
-// ShuffleBallotsJSON ...
+// ShuffleBallotsJSON is the JSON representation of a ShuffleBallots transaction
 type ShuffleBallotsJSON struct {
 	ElectionID   string
 	Round        int
@@ -238,15 +202,71 @@ type ShuffleBallotsJSON struct {
 	PublicKey    []byte
 }
 
-// DecryptBallotsJSON ...
+// DecryptBallotsJSON is the JSON representation of a DecryptBallots transaction
 type DecryptBallotsJSON struct {
 	ElectionID       string
 	UserID           string
 	DecryptedBallots []types.Ballot
 }
 
-// CancelElectionJSON ...
+// CancelElectionJSON is the JSON representation of a CancelElection transaction
 type CancelElectionJSON struct {
 	ElectionID string
 	UserID     string
+}
+
+func decodeCastVote(ctx serde.Context, m CastVoteJSON) (serde.Message, error) {
+	factory := ctx.GetFactory(types.CiphervoteKey{})
+	if factory == nil {
+		return nil, xerrors.Errorf("missing ciphervote factory")
+	}
+
+	msg, err := factory.Deserialize(ctx, m.Ciphervote)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to deserialize ciphervote: %v", err)
+	}
+
+	ciphervote, ok := msg.(types.Ciphervote)
+	if !ok {
+		return nil, xerrors.Errorf("invalid ciphervote: '%T'", msg)
+	}
+
+	return types.CastVote{
+		ElectionID: m.ElectionID,
+		UserID:     m.UserID,
+		Ballot:     ciphervote,
+	}, nil
+}
+
+func decodeShuffleBallots(ctx serde.Context, m ShuffleBallotsJSON) (serde.Message, error) {
+	factory := ctx.GetFactory(types.CiphervoteKey{})
+	if factory == nil {
+		return nil, xerrors.Errorf("missing ciphervote factory")
+	}
+
+	ciphervotes := make([]types.Ciphervote, len(m.Ciphervotes))
+
+	for i, buff := range m.Ciphervotes {
+		msg, err := factory.Deserialize(ctx, buff)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to deserialize ciphervote: %v", err)
+		}
+
+		ciphervote, ok := msg.(types.Ciphervote)
+		if !ok {
+			return nil, xerrors.Errorf("invalid ciphervote: '%T'", msg)
+		}
+
+		ciphervotes[i] = ciphervote
+	}
+
+	return types.ShuffleBallots{
+		ElectionID:      m.ElectionID,
+		Round:           m.Round,
+		ShuffledBallots: ciphervotes,
+		RandomVector:    m.RandomVector,
+		Proof:           m.Proof,
+		Signature:       m.Signature,
+		PublicKey:       m.PublicKey,
+	}, nil
 }

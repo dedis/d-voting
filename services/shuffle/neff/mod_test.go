@@ -2,7 +2,6 @@ package neff
 
 import (
 	"encoding/hex"
-	"strconv"
 	"testing"
 
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
@@ -10,22 +9,26 @@ import (
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/serde"
+	"go.dedis.ch/dela/serde/json"
 
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/proof"
-	shuffleKyber "go.dedis.ch/kyber/v3/shuffle"
-	"go.dedis.ch/kyber/v3/util/random"
-
-	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
-	"go.dedis.ch/dela/serde/json"
 )
 
-var serdecontext = serde.WithFactory(serde.WithFactory(json.NewContext(), etypes.ElectionKey{},
-	etypes.ElectionFactory{}), ctypes.RosterKey{}, fake.Factory{})
+var serdecontext serde.Context
+
+var electionFac serde.Factory
+var transactionFac serde.Factory
+
+func init() {
+	ciphervoteFac := etypes.CiphervoteFactory{}
+	electionFac = etypes.NewElectionFactory(ciphervoteFac, fakeAuthorityFactory{})
+	transactionFac = etypes.NewTransactionFactory(ciphervoteFac)
+
+	serdecontext = json.NewContext()
+}
 
 func TestNeffShuffle_Listen(t *testing.T) {
 
@@ -46,11 +49,8 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	rosterLen := 2
 	roster := authority.FromAuthority(fake.NewAuthority(rosterLen, fake.NewSigner))
 
-	rosterBuf, err := roster.Serialize(fake.NewContextWithFormat(serde.Format("JSON")))
-	require.NoError(t, err)
-
 	election := fake.NewElection(electionID)
-	election.RosterBuf = rosterBuf
+	election.Roster = roster
 
 	shuffledBallots := append([]etypes.Ciphervote{}, election.Suffragia.Ciphervotes...)
 	election.ShuffleInstances = append(election.ShuffleInstances, etypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
@@ -60,10 +60,11 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	service := fake.NewService(electionID, election, serdecontext)
 
 	actor := Actor{
-		rpc:     fake.NewBadRPC(),
-		mino:    fake.Mino{},
-		service: service,
-		context: serdecontext,
+		rpc:         fake.NewBadRPC(),
+		mino:        fake.Mino{},
+		service:     service,
+		context:     serdecontext,
+		electionFac: etypes.NewElectionFactory(etypes.CiphervoteFactory{}, fake.NewRosterFac(roster)),
 	}
 
 	err = actor.Shuffle(electionIDBuf)
@@ -88,42 +89,6 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	actor.rpc = rpc
 
 	err = actor.Shuffle(electionIDBuf)
-	require.NoError(t, err)
-}
-
-func TestNeffShuffle_Verify(t *testing.T) {
-
-	actor := Actor{}
-
-	rand := suite.RandomStream()
-	h := suite.Scalar().Pick(rand)
-	H := suite.Point().Mul(h, nil)
-
-	k := 3
-	X := make([]kyber.Point, k)
-	Y := make([]kyber.Point, k)
-
-	for i := 0; i < k; i++ {
-		// Embed the message into a curve point
-		message := "Test" + strconv.Itoa(i)
-		M := suite.Point().Embed([]byte(message), random.New())
-
-		// ElGamal-encrypt the point to produce ciphertext (K,C).
-		k := suite.Scalar().Pick(random.New()) // ephemeral private key
-		K := suite.Point().Mul(k, nil)         // ephemeral DH public key
-		S := suite.Point().Mul(k, H)           // ephemeral DH shared secret
-		C := S.Add(S, M)                       // message blinded with secret
-		X[i] = K
-		Y[i] = C
-	}
-
-	Kbar, Cbar, prover := shuffleKyber.Shuffle(suite, nil, H, X, Y, rand)
-	shuffleProof, _ := proof.HashProve(suite, protocolName, prover)
-
-	err := actor.Verify(suite.String(), Y, Y, H, Kbar, Cbar, shuffleProof)
-	require.EqualError(t, err, "invalid PairShuffleProof")
-
-	err = actor.Verify(suite.String(), X, Y, H, Kbar, Cbar, shuffleProof)
 	require.NoError(t, err)
 }
 

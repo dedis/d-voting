@@ -2,21 +2,23 @@ package pedersen
 
 import (
 	"encoding/hex"
-	"go.dedis.ch/dela/core/txn"
-	"go.dedis.ch/dela/core/txn/pool"
-	"go.dedis.ch/dela/crypto"
 	"sync"
 	"time"
 
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/crypto"
+
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
-	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
-	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 
 	"github.com/dedis/d-voting/internal/tracing"
 	"github.com/dedis/d-voting/services/dkg"
+
+	// Register the JSON types for Pedersen
 	_ "github.com/dedis/d-voting/services/dkg/pedersen/json"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"go.dedis.ch/dela/mino"
@@ -47,7 +49,9 @@ var (
 const (
 	setupTimeout   = time.Second * 300
 	decryptTimeout = time.Second * 100
-	RPC_NAME       = "dkgevoting"
+
+	// RPC defines the RPC name used for mino
+	RPC = "dkgevoting"
 )
 
 // Pedersen allows one to initialize a new DKG protocol.
@@ -59,7 +63,7 @@ type Pedersen struct {
 	mino            mino.Mino
 	factory         serde.Factory
 	service         ordering.Service
-	rosterFac       authority.Factory
+	electionFac     serde.Factory
 	pool            pool.Pool
 	pubSharesSigner crypto.Signer
 	actors          map[string]dkg.Actor
@@ -76,10 +80,10 @@ func NewPedersen(m mino.Mino, service ordering.Service, pool pool.Pool,
 		mino:            m,
 		factory:         factory,
 		service:         service,
-		rosterFac:       rosterFac,
 		pool:            pool,
 		actors:          actors,
 		pubSharesSigner: pubSharesSigner,
+		electionFac:     factory,
 	}
 }
 
@@ -112,23 +116,22 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, pool pool.Pool, txmngr txn.Man
 	electionID := hex.EncodeToString(electionIDBuf)
 
 	ctx := jsonserde.NewContext()
-	ctx = serde.WithFactory(ctx, etypes.ElectionKey{}, etypes.ElectionFactory{})
-	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, s.rosterFac)
 
 	// link the actor to an RPC by the election ID
 	h := NewHandler(s.mino.GetAddress(), s.service, pool, txmngr, s.pubSharesSigner,
-		handlerData, ctx)
+		handlerData, ctx, s.electionFac)
 
 	no := s.mino.WithSegment(electionID)
-	rpc := mino.MustCreateRPC(no, RPC_NAME, h, s.factory)
+	rpc := mino.MustCreateRPC(no, RPC, h, s.factory)
 
 	a := &Actor{
-		rpc:        rpc,
-		factory:    s.factory,
-		service:    s.service,
-		context:    ctx,
-		handler:    h,
-		electionID: electionID,
+		rpc:         rpc,
+		factory:     s.factory,
+		service:     s.service,
+		context:     ctx,
+		electionFac: s.electionFac,
+		handler:     h,
+		electionID:  electionID,
 	}
 
 	s.Lock()
@@ -138,6 +141,7 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, pool pool.Pool, txmngr txn.Man
 	return a, nil
 }
 
+// GetActor implements dkg.DKG
 func (s *Pedersen) GetActor(electionIDBuf []byte) (dkg.Actor, bool) {
 	s.RLock()
 	defer s.RUnlock()
@@ -149,12 +153,13 @@ func (s *Pedersen) GetActor(electionIDBuf []byte) (dkg.Actor, bool) {
 //
 // - implements dkg.Actor
 type Actor struct {
-	rpc        mino.RPC
-	factory    serde.Factory
-	service    ordering.Service
-	context    serde.Context
-	handler    *Handler
-	electionID string
+	rpc         mino.RPC
+	factory     serde.Factory
+	service     ordering.Service
+	context     serde.Context
+	electionFac serde.Factory
+	handler     *Handler
+	electionID  string
 }
 
 // Setup implements dkg.Actor. It initializes the DKG protocol
@@ -165,33 +170,22 @@ func (a *Actor) Setup() (kyber.Point, error) {
 		return nil, xerrors.Errorf("setup() was already called, only one call is allowed")
 	}
 
-	election, err := getElection(a.context, a.electionID, a.service)
+	election, err := a.getElection()
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get election: %v", err)
-	}
-
-	fac := a.context.GetFactory(ctypes.RosterKey{})
-	rosterFac, ok := fac.(authority.Factory)
-	if !ok {
-		return nil, xerrors.Errorf("failed to get roster factory: %T", fac)
-	}
-
-	roster, err := rosterFac.AuthorityOf(a.context, election.RosterBuf)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to deserialize roster: %v", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), setupTimeout)
 	defer cancel()
 	ctx = context.WithValue(ctx, tracing.ProtocolKey, protocolNameSetup)
 
-	sender, receiver, err := a.rpc.Stream(ctx, roster)
+	sender, receiver, err := a.rpc.Stream(ctx, election.Roster)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to stream: %v", err)
 	}
 
-	addrs := make([]mino.Address, 0, roster.Len())
-	addrIter := roster.AddressIterator()
+	addrs := make([]mino.Address, 0, election.Roster.Len())
+	addrIter := election.Roster.AddressIterator()
 	for addrIter.HasNext() {
 		addrs = append(addrs, addrIter.GetNext())
 	}
@@ -199,6 +193,7 @@ func (a *Actor) Setup() (kyber.Point, error) {
 	// get the peer DKG pub keys
 	getPeerKey := types.NewGetPeerPubKey()
 	errs := sender.Send(getPeerKey, addrs...)
+
 	err = <-errs
 	if err != nil {
 		return nil, xerrors.Errorf("failed to send getPeerKey message: %v", err)
@@ -265,7 +260,6 @@ func (a *Actor) Setup() (kyber.Point, error) {
 
 		// this is a simple check that every node sends back the same DKG pub
 		// key.
-		// TODO: handle the situation where a pub key is not the same
 		if i != 0 && !dkgPubKeys[i-1].Equal(doneMsg.GetPublicKey()) {
 			return nil, xerrors.Errorf("the public keys do not match: %v", dkgPubKeys)
 		}
@@ -310,8 +304,6 @@ func (a *Actor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte,
 
 // Decrypt implements dkg.Actor. It gets the private shares of the nodes and
 // decrypts the message.
-// TODO: perform a re-encryption instead of gathering the private shares, which
-// should never happen.
 func (a *Actor) Decrypt(K, C kyber.Point) ([]byte, error) {
 	/*
 		if !a.handler.startRes.Done() {
@@ -409,13 +401,6 @@ func (a *Actor) RequestPubShares() error {
 	return nil
 }
 
-// Reshare implements dkg.Actor. It recreates the DKG with an updated list of
-// participants.
-// TODO: to do
-func (a *Actor) Reshare() error {
-	return nil
-}
-
 // MarshalJSON implements dkg.Actor. It exports the data relevant to an Actor
 // that is meant to be persistent.
 func (a *Actor) MarshalJSON() ([]byte, error) {
@@ -437,25 +422,20 @@ func electionExists(service ordering.Service, electionIDBuf []byte) (ordering.Pr
 }
 
 // getElection gets the election from the service.
-func getElection(ctx serde.Context, electionIDHex string, srv ordering.Service) (etypes.Election, error) {
+func (a Actor) getElection() (etypes.Election, error) {
 	var election etypes.Election
 
-	electionID, err := hex.DecodeString(electionIDHex)
+	electionID, err := hex.DecodeString(a.electionID)
 	if err != nil {
 		return election, xerrors.Errorf("failed to decode electionIDHex: %v", err)
 	}
 
-	proof, exists := electionExists(srv, electionID)
+	proof, exists := electionExists(a.service, electionID)
 	if !exists {
 		return election, xerrors.Errorf("election does not exist: %v", err)
 	}
 
-	fac := ctx.GetFactory(etypes.ElectionKey{})
-	if fac == nil {
-		return election, xerrors.New("election factory not found")
-	}
-
-	message, err := fac.Deserialize(ctx, proof.GetValue())
+	message, err := a.electionFac.Deserialize(a.context, proof.GetValue())
 	if err != nil {
 		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
 	}
@@ -465,9 +445,9 @@ func getElection(ctx serde.Context, electionIDHex string, srv ordering.Service) 
 		return election, xerrors.Errorf("wrong message type: %T", message)
 	}
 
-	if electionIDHex != election.ElectionID {
+	if a.electionID != election.ElectionID {
 		return election, xerrors.Errorf("electionID do not match: %q != %q",
-			electionIDHex, election.ElectionID)
+			a.electionID, election.ElectionID)
 	}
 
 	return election, nil

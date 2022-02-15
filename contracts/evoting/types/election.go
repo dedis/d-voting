@@ -2,25 +2,39 @@ package types
 
 import (
 	"encoding/base64"
+
+	"io"
+
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/registry"
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
-	"io"
 )
 
+// ID defines the ID of a ballot question
 type ID string
+
+// Status defines the status of the election
 type Status uint16
 
 const (
-	Initial            Status = 0
-	Open               Status = 1
-	Closed             Status = 2
-	ShuffledBallots    Status = 3
-	PubSharesSubmitted Status = 4
 	// DecryptedBallots = 4
+	// Initial is when the election has just been created
+	Initial Status = 0
+	// Open is when the election is open, i.e. it fetched the public key
+	Open Status = 1
+	// Closed is when no more users can cast ballots
+	Closed Status = 2
+	// ShuffledBallots is when the ballots have been shuffled
+	ShuffledBallots Status = 3
+	// ...
+	PubSharesSubmitted Status = 4
+	// ResultAvailable is when the ballots have been decrypted
 	ResultAvailable Status = 5
-	Canceled        Status = 6
+	// Canceled is when the election has been cancel
+	Canceled Status = 6
 )
 
 // electionFormat contains the supported formats for the election. Right now
@@ -76,7 +90,7 @@ type Election struct {
 	// during an election and will be used for DKG and Neff. Its type is
 	// authority.Authority.
 
-	RosterBuf []byte
+	Roster authority.Authority
 }
 
 // Serialize implements serde.Message
@@ -95,11 +109,25 @@ func (e Election) Serialize(ctx serde.Context) ([]byte, error) {
 // uses the electionFormat.
 //
 // - implements serde.Factory
-type ElectionFactory struct{}
+type ElectionFactory struct {
+	ciphervoteFac serde.Factory
+	rosterFac     authority.Factory
+}
+
+// NewElectionFactory creates a new Election factory
+func NewElectionFactory(cf serde.Factory, rf authority.Factory) ElectionFactory {
+	return ElectionFactory{
+		ciphervoteFac: cf,
+		rosterFac:     rf,
+	}
+}
 
 // Deserialize implements serde.Factory
-func (ElectionFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
+func (e ElectionFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
 	format := electionFormat.Get(ctx.GetFormat())
+
+	ctx = serde.WithFactory(ctx, CiphervoteKey{}, e.ciphervoteFac)
+	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, e.rosterFac)
 
 	message, err := format.Decode(ctx, data)
 	if err != nil {
@@ -123,7 +151,7 @@ func (e *Election) ChunksPerBallot() int {
 // and verify the proof of a shuffle
 type RandomVector [][]byte
 
-// Unmarshal ...
+// Unmarshal returns the native type of a random vector
 func (r RandomVector) Unmarshal() ([]kyber.Scalar, error) {
 	e := make([]kyber.Scalar, len(r))
 
@@ -131,7 +159,7 @@ func (r RandomVector) Unmarshal() ([]kyber.Scalar, error) {
 		scalar := suite.Scalar()
 		err := scalar.UnmarshalBinary(v)
 		if err != nil {
-			return nil, xerrors.Errorf("cannot unmarshall election random vector: %v", err)
+			return nil, xerrors.Errorf("cannot unmarshal election random vector: %v", err)
 		}
 		e[i] = scalar
 	}
@@ -198,7 +226,7 @@ func (c *Configuration) GetQuestion(ID ID) Question {
 }
 
 // IsValid returns true if and only if the whole configuration is coherent and
-// valid
+// valid.
 func (c *Configuration) IsValid() bool {
 	// serves as a set to check each ID is unique
 	uniqueIDs := make(map[ID]bool)
@@ -238,7 +266,8 @@ func (s *Suffragia) CastVote(userID string, ciphervote Ciphervote) {
 	s.Ciphervotes = append(s.Ciphervotes, ciphervote.Copy())
 }
 
-// CiphervotesFromPairs ...
+// CiphervotesFromPairs transforms two parallel lists of EGPoints to a list of
+// Ciphervotes.
 func CiphervotesFromPairs(X, Y [][]kyber.Point) ([]Ciphervote, error) {
 	if len(X) != len(Y) {
 		return nil, xerrors.Errorf("X and Y must have same length: %d != %d",
@@ -273,6 +302,8 @@ func CiphervotesFromPairs(X, Y [][]kyber.Point) ([]Ciphervote, error) {
 	return res, nil
 }
 
+// ciphervoteFromPairs transforms two parallel lists of EGPoints to a list of
+// ElGamal pairs.
 func ciphervoteFromPairs(ks []kyber.Point, cs []kyber.Point) (Ciphervote, error) {
 	if len(ks) != len(cs) {
 		return Ciphervote{}, xerrors.Errorf("ks and cs must have same length: %d != %d",

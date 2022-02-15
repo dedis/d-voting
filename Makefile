@@ -3,6 +3,7 @@ lint:
 	@go get -v honnef.co/go/tools/cmd/staticcheck
 	@go mod tidy
 	staticcheck ./...
+#	golint -set_exit_status ./...
 
 vet:
 	@echo "⚠️ Warning: the following only works with go >= 1.14" && \
