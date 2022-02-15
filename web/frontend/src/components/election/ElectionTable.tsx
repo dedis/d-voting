@@ -68,9 +68,8 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
     return { title, status, action, key };
   };
 
-  const constructRows = () => {
-    let rows = [];
-    elections.forEach((elec) => {
+  const constructRows = () =>
+    elections.map((elec) => {
       let { title, id, status, setStatus } = ElectionFields(elec);
       let link = (
         <Link className="election-link" to={{ pathname: `/elections/${id}` }}>
@@ -79,12 +78,10 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
       );
       let stat = <Status status={status} />;
       let action = <Action status={status} electionID={id} setStatus={setStatus} />;
-      rows.push(createData(link, stat, action, id));
+      return createData(link, stat, action, id);
     });
-    return rows;
-  };
-  const rows = constructRows();
 
+  const rows = constructRows();
   const renderTH = () => {
     return (
       <TableRow className="row-head">

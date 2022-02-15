@@ -42,10 +42,13 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const accessControl = (req, res, next) => {
+/*
+ * Access control
+ * */
+app.use((req, res, next) => {
   const begin = req.url.split('?')[0];
   let role = 'everyone';
-  if (req.session.userid) {
+  if (req.session.userid && req.session.role) {
     role = req.session.role;
   }
 
@@ -54,8 +57,7 @@ const accessControl = (req, res, next) => {
   } else {
     res.status(400).send('Unauthorized');
   }
-};
-app.use(accessControl);
+});
 
 const usersDB = lmdb.open({ path: 'dvoting-users' });
 

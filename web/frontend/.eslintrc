@@ -30,7 +30,7 @@
 
     "import/no-extraneous-dependencies": ["error", {"devDependencies": [
       "**/*.test.ts", "**/*.test.tsx",
-      "**/setupTest.ts"
+      "**/setupTest.ts", "**/setupProxy.js"
     ]}],
 
     // conflicts with the index.ts (eslint prefers default exports which are not compatible with index.ts)
