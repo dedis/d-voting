@@ -1023,7 +1023,7 @@ type fakeDKG struct {
 	err   error
 }
 
-func (f fakeDKG) Listen(electionID []byte) (dkg.Actor, error) {
+func (f fakeDKG) Listen(electionID []byte, txmanager txn.Manager) (dkg.Actor, error) {
 	return f.actor, f.err
 }
 
@@ -1061,6 +1061,10 @@ func (f fakeDkgActor) Reshare() error {
 
 func (f fakeDkgActor) MarshalJSON() ([]byte, error) {
 	return nil, f.err
+}
+
+func (f fakeDkgActor) RequestPubShares() error {
+	return f.err
 }
 
 type fakeAccess struct {
@@ -1118,6 +1122,10 @@ func (c fakeCmd) decryptBallots(snap store.Snapshot, step execution.Step) error 
 }
 
 func (c fakeCmd) cancelElection(snap store.Snapshot, step execution.Step) error {
+	return c.err
+}
+
+func (c fakeCmd) registerPubShares(snap store.Snapshot, step execution.Step) error {
 	return c.err
 }
 

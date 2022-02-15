@@ -8,9 +8,10 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"go.dedis.ch/kyber/v3/share"
 	"math/rand"
 	"strings"
+
+	"go.dedis.ch/kyber/v3/share"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/execution"
@@ -475,7 +476,7 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 
 // registerPubShares implements commands.It performs the REGISTER_PUB_SHARES command
 func (e evotingCommand) registerPubShares(snap store.Snapshot, step execution.Step) error {
-	msg, err := getTransaction(e.context, step.Current)
+	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
 	}
@@ -485,7 +486,7 @@ func (e evotingCommand) registerPubShares(snap store.Snapshot, step execution.St
 		return xerrors.Errorf(errWrongTx, msg)
 	}
 
-	election, electionID, err := getElection(e.context, tx.ElectionID, snap)
+	election, electionID, err := e.getElection(tx.ElectionID, snap)
 	if err != nil {
 		return xerrors.Errorf(errGetElection, err)
 	}
@@ -494,19 +495,7 @@ func (e evotingCommand) registerPubShares(snap store.Snapshot, step execution.St
 		return xerrors.Errorf("the ballots have not been shuffled")
 	}
 
-	fac := e.context.GetFactory(ctypes.RosterKey{})
-	rosterFac, ok := fac.(authority.Factory)
-	if !ok {
-		return xerrors.Errorf("failed to get roster factory: %T", fac)
-	}
-
-	// Check the node is a valid member of the roster
-	roster, err := rosterFac.AuthorityOf(e.context, election.RosterBuf)
-	if err != nil {
-		return xerrors.Errorf("failed to deserialize roster: %v", err)
-	}
-
-	pubKeyIterator := roster.PublicKeyIterator()
+	pubKeyIterator := election.Roster.PublicKeyIterator()
 	pubKeyIterator.Seek(tx.Index - 1)
 
 	if !pubKeyIterator.HasNext() {
