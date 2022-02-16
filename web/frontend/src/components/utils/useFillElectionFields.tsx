@@ -6,7 +6,7 @@ const useFillElectionFields = (electionData) => {
   const [candidates, setCandidates] = useState(null);
   const [id, setId] = useState(null);
   const [status, setStatus] = useState(null);
-  const [pubKey, setPubKey] = useState(null);
+  const [pubKey, setPubKey] = useState('');
   const [result, setResult] = useState(null);
   const [isResultSet, setIsResultSet] = useState(false);
 

@@ -4,7 +4,7 @@ import Adapter from '@wojtekmaj/enzyme-adapter-react-17';
 import { act } from 'react-dom/test-utils';
 Enzyme.configure({ adapter: new Adapter() });
 import Action from '../Action';
-import Status from '../Status';
+import ElectionStatus from '../ElectionStatus';
 import { MemoryRouter } from 'react-router-dom';
 
 describe('ChangeAction when status initialize with 1 (ongoing)', () => {
@@ -108,7 +108,7 @@ describe('ChangeStatus when status initialize with 6 (election canceled)', () =>
   let setResultAvailable = jest.fn();
   beforeEach(() => {
     wrapper = mount(
-      <Status
+      <ElectionStatus
         status={6}
         setStatus={setStat}
         electionID={1}
