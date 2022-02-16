@@ -23,6 +23,8 @@ import (
 	"go.dedis.ch/dela/cosi/threshold"
 	"go.dedis.ch/dela/mino"
 	"golang.org/x/xerrors"
+
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 )
 
 // BucketName is the name of the bucket in the database.
@@ -156,7 +158,9 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to make client: %v", err)
 	}
 
-	dkg := pedersen.NewPedersen(no, srvc, p, rosterFac, pubSharesSigner)
+	electionFac := etypes.NewElectionFactory(etypes.CiphervoteFactory{}, rosterFac)
+
+	dkg := pedersen.NewPedersen(no, srvc, p, electionFac, pubSharesSigner)
 
 	// Use dkgMap to fill the actors map
 	err = db.View(func(tx kv.ReadableTx) error {

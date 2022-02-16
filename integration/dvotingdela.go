@@ -246,7 +246,7 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 
 	electionFac := etypes.NewElectionFactory(etypes.CiphervoteFactory{}, rosterFac)
 
-	dkg := pedersen.NewPedersen(onet, srvc, pool, rosterFac, signer)
+	dkg := pedersen.NewPedersen(onet, srvc, pool, electionFac, signer)
 
 	rosterKey := [32]byte{}
 	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:],

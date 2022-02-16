@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/crypto"
@@ -71,7 +70,7 @@ type Pedersen struct {
 
 // NewPedersen returns a new DKG Pedersen factory
 func NewPedersen(m mino.Mino, service ordering.Service, pool pool.Pool,
-	rosterFac authority.Factory, pubSharesSigner crypto.Signer) *Pedersen {
+	electionFac serde.Factory, pubSharesSigner crypto.Signer) *Pedersen {
 
 	factory := types.NewMessageFactory(m.GetAddressFactory())
 	actors := make(map[string]dkg.Actor)
@@ -83,7 +82,7 @@ func NewPedersen(m mino.Mino, service ordering.Service, pool pool.Pool,
 		pool:            pool,
 		actors:          actors,
 		pubSharesSigner: pubSharesSigner,
-		electionFac:     factory,
+		electionFac:     electionFac,
 	}
 }
 
