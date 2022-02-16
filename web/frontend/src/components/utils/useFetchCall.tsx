@@ -23,7 +23,7 @@ const useFetchCall = (endpoint, request) => {
     };
 
     fetchData();
-  }, [endpoint, request]);
+  }, [endpoint]);
 
   return [data, loading, error];
 };

@@ -5,6 +5,11 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+if (process.env.NODE_ENV === 'development') {
+  const { dvotingserver } = require('./mocks/dvotingserver');
+  dvotingserver.start();
+}
+
 ReactDOM.render(
   <React.StrictMode>
     <App />

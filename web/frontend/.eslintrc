@@ -30,7 +30,8 @@
 
     "import/no-extraneous-dependencies": ["error", {"devDependencies": [
       "**/*.test.ts", "**/*.test.tsx",
-      "**/setupTest.ts", "**/setupProxy.js"
+      "**/setupTest.ts", "**/setupProxy.js",
+      "**/mocks/*"
     ]}],
 
     // conflicts with the index.ts (eslint prefers default exports which are not compatible with index.ts)
@@ -38,6 +39,8 @@
 
     // allow the usage of console output for debugging purposes
     "no-console": "off",
+
+    "@typescript-eslint/no-unused-vars": "off",
 
     // disable object shorthand
     "object-shorthand": "off",

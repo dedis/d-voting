@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 
 /*custom hook that given an election object returns its fields*/
 const useFillElectionFields = (electionData) => {
+  console.log('useFillElectionFields:', electionData);
+
   const [title, setTitle] = useState(null);
   const [candidates, setCandidates] = useState(null);
   const [id, setId] = useState(null);
@@ -13,7 +15,7 @@ const useFillElectionFields = (electionData) => {
   useEffect(() => {
     if (electionData !== null) {
       setTitle(electionData.Title);
-      setCandidates(JSON.parse(electionData.Format).Candidates);
+      setCandidates(electionData.Format.Candidates);
       setId(electionData.ElectionID);
       setStatus(electionData.Status);
       setPubKey(electionData.Pubkey);

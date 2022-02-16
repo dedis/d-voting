@@ -5,6 +5,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "build-dev": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "eslint": "./node_modules/.bin/eslint .",
@@ -76,5 +77,8 @@
         "node_modules/@dedis/kyber/*"
       ]
     }
+  },
+  "msw": {
+    "workerDirectory": "public"
   }
 }

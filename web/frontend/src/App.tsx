@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import { GET_PERSONNAL_INFOS } from './components/utils/ExpressEndoints';
 import CreateElection from './components/election/CreateElection';
-import Election from './components/election/ElectionStatus';
+import ElectionStatus from './components/election/ElectionStatus';
 import NavBar from './components/NavBar';
 import Home from './pages/Home';
 import BallotsTable from './components/election/BallotsTable';
@@ -18,7 +18,7 @@ import Login from './pages/Login';
 import './App.css';
 
 const App: FC = () => {
-  const [isLogged, setIsLogged] = useState(undefined);
+  const [isLogged, setIsLogged] = useState(false);
   const [lastname, setLastName] = useState('');
   const [firstname, setFirstname] = useState('');
   const [sciper, setSciper] = useState(0);
@@ -53,7 +53,7 @@ const App: FC = () => {
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/create-election" element={<CreateElection />} />
-                  <Route path="/elections" element={<Election />} />
+                  <Route path="/elections" element={<ElectionStatus />} />
                   <Route path="/elections/:electionId" element={<ElectionDetails />} />
                   <Route path="/results" element={<ResultTable />} />
                   <Route path="/results/:electionId" element={<ResultPage />} />
