@@ -839,7 +839,7 @@ func makeTx(election *etypes.Election, pubShares etypes.PubSharesSubmission, ind
 }
 
 // getElection gets the election from the service
-func (h Handler) getElection(electionIDHex string) (etypes.Election, error) {
+func (h *Handler) getElection(electionIDHex string) (etypes.Election, error) {
 	var election etypes.Election
 
 	electionID, err := hex.DecodeString(electionIDHex)
@@ -862,9 +862,9 @@ func (h Handler) getElection(electionIDHex string) (etypes.Election, error) {
 		return election, xerrors.Errorf("wrong message type: %T", message)
 	}
 
-	if string(electionID) != election.ElectionID {
+	if electionIDHex != election.ElectionID {
 		return election, xerrors.Errorf("electionID do not match: %q != %q",
-			electionID, election.ElectionID)
+			electionIDHex, election.ElectionID)
 	}
 
 	return election, nil
