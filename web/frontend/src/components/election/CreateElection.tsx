@@ -25,7 +25,6 @@ const CreateElection: FC = () => {
 
       <div className="election-form flex flex-row justify-center items-start">
         <ElectionForm setShowModal={setShowModal} setTextModal={setTextModal} />
-        <UploadFile setShowModal={setShowModal} setTextModal={setTextModal} />
       </div>
     </div>
   );

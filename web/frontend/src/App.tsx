@@ -1,4 +1,4 @@
-import React, { FC, Suspense, useState } from 'react';
+import React, { FC, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import { GET_PERSONNAL_INFOS } from './components/utils/ExpressEndoints';
@@ -24,31 +24,35 @@ const App: FC = () => {
   const [sciper, setSciper] = useState(0);
   const [role, setRole] = useState('');
 
-  fetch(GET_PERSONNAL_INFOS)
-    .then((res) => res.json())
-    .then((result) => {
-      setIsLogged(result.islogged);
-      setLastName(result.lastname);
-      setFirstname(result.firstname);
-      setSciper(result.sciper);
-      setRole(result.role);
-    });
+  useEffect(() => {
+    fetch(GET_PERSONNAL_INFOS)
+      .then((res) => res.json())
+      .then((result) => {
+        setIsLogged(result.islogged);
+        setLastName(result.lastname);
+        setFirstname(result.firstname);
+        setSciper(result.sciper);
+        setRole(result.role);
+      });
+  }, []);
 
   return (
     <Suspense fallback="...loading app">
       <Router>
         <div className="App flex flex-col h-screen justify-between">
           <div className="app-nav">
-            <NavBar firstname={firstname} lastname={lastname} sciper={sciper} role={role} />
+            <NavBar
+              firstname={firstname}
+              lastname={lastname}
+              sciper={sciper}
+              role={role}
+              isLogged={isLogged}
+            />
           </div>
           <div
             data-testid="content"
             className="app-page mb-auto flex flex-row justify-center items-center w-full">
-            {!isLogged ? (
-              <div className="login-container">
-                <Login />
-              </div>
-            ) : (
+            {isLogged ? (
               <div className="p-10 w-full max-w-screen-xl">
                 <Routes>
                   <Route path="/" element={<Home />} />
@@ -62,6 +66,10 @@ const App: FC = () => {
                   <Route path="/about" element={<About />} />
                   <Route path="/admin" element={<Admin />} />
                 </Routes>
+              </div>
+            ) : (
+              <div className="login-container">
+                <Login />
               </div>
             )}
           </div>
