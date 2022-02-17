@@ -123,6 +123,9 @@ func (electionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, err
 	}
 
 	pubSharesSubmissions, err := decodePubSharesSubmissions(electionJSON.PubSharesSubmissions)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to decode pubShares submissions: %v", err)
+	}
 
 	return types.Election{
 		Configuration:       electionJSON.Configuration,

@@ -141,7 +141,7 @@ func TestMessageFormat_Decode(t *testing.T) {
 		"couldn't unmarshal public key: invalid Ed25519 curve point")
 
 	// Decode decryption request messages.
-	data = []byte(fmt.Sprintf(`{"DecryptRequest":{}}`))
+	data = []byte(fmt.Sprint(`{"DecryptRequest":{}}`))
 	req, err := format.Decode(ctx, data)
 	require.NoError(t, err)
 	require.IsType(t, types.DecryptRequest{}, req)

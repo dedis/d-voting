@@ -597,18 +597,17 @@ func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step)
 		for j := 0; j < nbrPairsPerBallot; j++ {
 			chunk, err := Decrypt(i, j, allPubShares)
 			if err != nil {
-				return xerrors.Errorf("failed to decrypt (K, C): ", err)
+				return xerrors.Errorf("failed to decrypt (K, C): %v", err)
 			}
 
 			marshalledBallot.Write(chunk)
 		}
 
 		var ballot types.Ballot
-		err = ballot.Unmarshal(marshalledBallot.String(), election)
-		if err != nil {
-			//TODO: Do we want to remember which ballots yield an error?
-			// store the raw decryption somewhere?
-		}
+		_ = ballot.Unmarshal(marshalledBallot.String(), election)
+
+		//TODO: Do we want to remember which ballots yield an error?
+		// store the raw decryption somewhere?
 
 		decryptedBallots[i] = ballot
 	}
