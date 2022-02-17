@@ -32,7 +32,6 @@ type Actor interface {
 	GetPublicKey() (kyber.Point, error)
 
 	Encrypt(message []byte) (K, C kyber.Point, remainder []byte, err error)
-	Decrypt(K, C kyber.Point) ([]byte, error)
 
 	// RequestPubShares sends a decryption request to all nodes in order to gather
 	// the public shares

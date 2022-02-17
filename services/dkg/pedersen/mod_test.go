@@ -396,61 +396,6 @@ func TestPedersen_Setup(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestPedersen_Decrypt(t *testing.T) {
-	//
-	//actor := Actor{
-	//	rpc: fake.NewBadRPC(),
-	//	handler: &Handler{
-	//		startRes: &state{participants: []mino.Address{fake.NewAddress(0)},
-	//			distKey: suite.Point()},
-	//	},
-	//	context:     serdecontext,
-	//	electionFac: electionFac,
-	//}
-	//
-	//_, err := actor.Decrypt(suite.Point(), suite.Point())
-	//require.EqualError(t, err, fake.Err("failed to create stream"))
-	//rpc := fake.NewStreamRPC(fake.NewBadReceiver(), fake.NewBadSender())
-	//actor.rpc = rpc
-	//
-	//_, err = actor.Decrypt(suite.Point(), suite.Point())
-	//require.EqualError(t, err, fake.Err("failed to send decrypt request"))
-	//
-	//recv := fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), nil))
-	//
-	//rpc = fake.NewStreamRPC(recv, fake.Sender{})
-	//actor.rpc = rpc
-	//
-	//_, err = actor.Decrypt(suite.Point(), suite.Point())
-	//require.EqualError(t, err, "got unexpected reply,
-	// 			expected types.DecryptReply but got: <nil>")
-	//
-	///*
-	//recv = fake.NewReceiver(
-	//	fake.NewRecvMsg(fake.NewAddress(0),
-	//			types.DecryptReply{I: -1, V: suite.Point()}),
-	//)*/
-	//
-	//rpc = fake.NewStreamRPC(recv, fake.Sender{})
-	//actor.rpc = rpc
-	//
-	//_, err = actor.Decrypt(suite.Point(), suite.Point())
-	//require.EqualError(t, err, "failed to recover commit: share: not enough "+
-	//	"good public shares to reconstruct secret commitment")
-	//
-	///*
-	//recv = fake.NewReceiver(
-	//	fake.NewRecvMsg(fake.NewAddress(0),
-	//			types.DecryptReply{I: 1, V: suite.Point()}),
-	//)*/
-	//
-	//rpc = fake.NewStreamRPC(recv, fake.Sender{})
-	//actor.rpc = rpc
-	//
-	//_, err = actor.Decrypt(suite.Point(), suite.Point())
-	//require.NoError(t, err)
-}
-
 func TestPedersen_GetPublicKey(t *testing.T) {
 
 	actor := Actor{handler: &Handler{startRes: &state{}}}
