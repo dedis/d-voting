@@ -422,11 +422,13 @@ func TestPedersen_Decrypt(t *testing.T) {
 	//actor.rpc = rpc
 	//
 	//_, err = actor.Decrypt(suite.Point(), suite.Point())
-	//require.EqualError(t, err, "got unexpected reply, expected types.DecryptReply but got: <nil>")
+	//require.EqualError(t, err, "got unexpected reply,
+	// 			expected types.DecryptReply but got: <nil>")
 	//
 	///*
 	//recv = fake.NewReceiver(
-	//	fake.NewRecvMsg(fake.NewAddress(0), types.DecryptReply{I: -1, V: suite.Point()}),
+	//	fake.NewRecvMsg(fake.NewAddress(0),
+	//			types.DecryptReply{I: -1, V: suite.Point()}),
 	//)*/
 	//
 	//rpc = fake.NewStreamRPC(recv, fake.Sender{})
@@ -438,7 +440,8 @@ func TestPedersen_Decrypt(t *testing.T) {
 	//
 	///*
 	//recv = fake.NewReceiver(
-	//	fake.NewRecvMsg(fake.NewAddress(0), types.DecryptReply{I: 1, V: suite.Point()}),
+	//	fake.NewRecvMsg(fake.NewAddress(0),
+	//			types.DecryptReply{I: 1, V: suite.Point()}),
 	//)*/
 	//
 	//rpc = fake.NewStreamRPC(recv, fake.Sender{})
