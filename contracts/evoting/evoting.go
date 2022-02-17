@@ -585,8 +585,10 @@ func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step)
 
 	allPubShares := election.PubShareSubmissions
 
-	nbrBallots := len(allPubShares[0])
-	nbrPairsPerBallot := len(allPubShares[0][0])
+	nbrShuffles := len(election.ShuffleInstances)
+
+	nbrBallots := len(election.ShuffleInstances[nbrShuffles-1].ShuffledBallots)
+	nbrPairsPerBallot := len(election.ShuffleInstances[nbrShuffles-1].ShuffledBallots[0])
 
 	decryptedBallots := make([]types.Ballot, nbrBallots)
 
