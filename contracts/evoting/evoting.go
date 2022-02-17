@@ -528,8 +528,6 @@ func (e evotingCommand) registerPubShares(snap store.Snapshot, step execution.St
 		return xerrors.Errorf("signature does not match the PubShares: %v ", err)
 	}
 
-	//TODO : make sure the pubShares are valid ? => determine the expected format
-
 	// add the pubShares to the election
 	election.PubShareSubmissions[tx.Index] = tx.PubShares
 
