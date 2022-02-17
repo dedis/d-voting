@@ -205,9 +205,9 @@ func (controller) OnStop(node.Injector) error {
 
 //getNodeSigner creates a signer with the node's private key
 func getNodeSigner(flags cli.Flags) (crypto.AggregateSigner, error) {
-	loader := loader.NewFileLoader(filepath.Join(flags.Path("config"), privateKeyFile))
+	fileLoader := loader.NewFileLoader(filepath.Join(flags.Path("config"), privateKeyFile))
 
-	signerData, err := loader.LoadOrCreate(generator{newFn: blsSigner})
+	signerData, err := fileLoader.LoadOrCreate(generator{newFn: blsSigner})
 	if err != nil {
 		return nil, xerrors.Errorf("while loading: %v", err)
 	}

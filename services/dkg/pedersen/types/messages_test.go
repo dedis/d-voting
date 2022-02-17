@@ -158,20 +158,8 @@ func TestStartDone_Serialize(t *testing.T) {
 	require.EqualError(t, err, fake.Err("couldn't encode ack"))
 }
 
-func TestDecryptRequest_GetK(t *testing.T) {
-	req := NewDecryptRequest(fakePoint{}, nil, "")
-
-	require.Equal(t, fakePoint{}, req.GetK())
-}
-
-func TestDecryptRequest_GetC(t *testing.T) {
-	req := NewDecryptRequest(nil, fakePoint{}, "")
-
-	require.Equal(t, fakePoint{}, req.GetC())
-}
-
 func TestDecryptRequest_GetElectionId(t *testing.T) {
-	req := NewDecryptRequest(nil, nil, "electionId")
+	req := NewDecryptRequest("electionId")
 
 	require.Equal(t, "electionId", req.GetElectionId())
 }
@@ -185,29 +173,6 @@ func TestDecryptRequest_Serialize(t *testing.T) {
 
 	_, err = req.Serialize(fake.NewBadContext())
 	require.EqualError(t, err, fake.Err("couldn't encode decrypt request"))
-}
-
-func TestDecryptReply_GetV(t *testing.T) {
-	resp := NewDecryptReply(0, fakePoint{})
-
-	require.Equal(t, fakePoint{}, resp.GetV())
-}
-
-func TestDecryptReply_GetI(t *testing.T) {
-	resp := NewDecryptReply(1, nil)
-
-	require.Equal(t, int64(1), resp.GetI())
-}
-
-func TestDecryptReply_Serialize(t *testing.T) {
-	resp := DecryptReply{}
-
-	data, err := resp.Serialize(fake.NewContext())
-	require.NoError(t, err)
-	require.Equal(t, fake.GetFakeFormatValue(), data)
-
-	_, err = resp.Serialize(fake.NewBadContext())
-	require.EqualError(t, err, fake.Err("couldn't encode decrypt reply"))
 }
 
 func TestMessageFactory(t *testing.T) {

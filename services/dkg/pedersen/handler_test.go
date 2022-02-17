@@ -1,6 +1,9 @@
 package pedersen
 
 import (
+	"encoding/hex"
+	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
+	"go.dedis.ch/dela/serde/json"
 	"testing"
 
 	"github.com/dedis/d-voting/internal/testing/fake"
@@ -34,8 +37,49 @@ func TestHandler_Stream(t *testing.T) {
 		fake.NewRecvMsg(fake.NewAddress(0), types.DecryptRequest{}),
 	)
 	err = h.Stream(fake.NewBadSender(), receiver)
-	require.EqualError(t, err, "failed to check if the ciphertext has"+
-		" been shuffled: election does not exist: <nil>")
+	require.EqualError(t, err, "failed to check if the shuffle is over:"+
+		" could not get the election: election does not exist: <nil>")
+
+	electionIDHex := hex.EncodeToString([]byte("fakeElection"))
+
+	receiver = fake.NewReceiver(
+		fake.NewRecvMsg(fake.NewAddress(0), types.NewDecryptRequest(electionIDHex)),
+	)
+	fakeElection := electionTypes.Election{
+		Configuration:       electionTypes.Configuration{},
+		ElectionID:          electionIDHex,
+		AdminID:             "",
+		Status:              electionTypes.ShuffledBallots,
+		Pubkey:              nil,
+		BallotSize:          0,
+		Suffragia:           electionTypes.Suffragia{},
+		ShuffleInstances:    make([]electionTypes.ShuffleInstance, 1),
+		ShuffleThreshold:    0,
+		PubShareSubmissions: nil,
+		DecryptedBallots:    nil,
+		Roster:              fake.Authority{},
+	}
+
+	Elections := make(map[string]electionTypes.Election)
+	Elections[electionIDHex] = fakeElection
+
+	h.electionFac = electionTypes.NewElectionFactory(electionTypes.CiphervoteFactory{}, fake.RosterFac{})
+
+	h.service = fake.Service{
+		Err:       nil,
+		Elections: Elections,
+		Pool:      nil,
+		Status:    false,
+		Channel:   nil,
+		Context:   json.NewContext(),
+	}
+
+	h.context = json.NewContext()
+	h.pubSharesSigner = fake.NewSigner()
+
+	err = h.Stream(fake.NewBadSender(), receiver)
+	require.NoError(t, err) // Threshold = 0 => no submission required
+
 	receiver = fake.NewReceiver(
 		fake.NewRecvMsg(fake.NewAddress(0), fake.Message{}),
 	)

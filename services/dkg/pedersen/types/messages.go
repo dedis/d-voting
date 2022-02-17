@@ -5,7 +5,6 @@ import (
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/registry"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/share"
 	"golang.org/x/xerrors"
 )
 
@@ -280,37 +279,6 @@ func (req DecryptRequest) Serialize(ctx serde.Context) ([]byte, error) {
 	data, err := format.Encode(ctx, req)
 	if err != nil {
 		return nil, xerrors.Errorf("couldn't encode decrypt request: %v", err)
-	}
-
-	return data, nil
-}
-
-// DecryptReply is the response of a decryption request.
-//
-// - implements serde.Message
-type DecryptReply struct {
-	PublicShares [][]share.PubShare
-}
-
-// NewDecryptReply returns a new decryption reply.
-func NewDecryptReply(PublicShares [][]share.PubShare) DecryptReply {
-	return DecryptReply{
-		PublicShares: PublicShares,
-	}
-}
-
-// GetPubShares returns the public shares
-func (resp DecryptReply) GetPubShares() [][]share.PubShare {
-	return resp.PublicShares
-}
-
-// Serialize implements serde.Message.
-func (resp DecryptReply) Serialize(ctx serde.Context) ([]byte, error) {
-	format := msgFormats.Get(ctx.GetFormat())
-
-	data, err := format.Encode(ctx, resp)
-	if err != nil {
-		return nil, xerrors.Errorf("couldn't encode decrypt reply: %v", err)
 	}
 
 	return data, nil

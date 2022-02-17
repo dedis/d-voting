@@ -204,6 +204,8 @@ type RegisterPubShares struct {
 	// Signature is the signature of the result of HashPubShares() with the
 	// private key corresponding to PublicKey
 	Signature []byte
+	// PublicKey is the public key of the signer
+	PublicKey []byte
 }
 
 // Serialize implements serde.Message
@@ -303,7 +305,7 @@ func (rp RegisterPubShares) Fingerprint(writer io.Writer) error {
 		return xerrors.Errorf("failed to write pubShare index to fingerprint: %v", err)
 	}
 
-	err = rp.PubShares.FingerPrint(writer)
+	err = rp.PubShares.Fingerprint(writer)
 	if err != nil {
 		return xerrors.Errorf("failed to fingerprint pubShares: %V", err)
 	}

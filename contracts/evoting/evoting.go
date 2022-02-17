@@ -495,14 +495,15 @@ func (e evotingCommand) registerPubShares(snap store.Snapshot, step execution.St
 		return xerrors.Errorf("the ballots have not been shuffled")
 	}
 
-	pubKeyIterator := election.Roster.PublicKeyIterator()
-	pubKeyIterator.Seek(tx.Index - 1)
-
-	if !pubKeyIterator.HasNext() {
-		return xerrors.Errorf("index does not correspond to a public key in the roster")
+	err = isMemberOf(election.Roster, tx.PublicKey)
+	if err != nil {
+		return xerrors.Errorf("could not verify identity of node : %v", err)
 	}
 
-	signerPubKey := pubKeyIterator.GetNext()
+	signerPubKey, err := bls.NewPublicKey(tx.PublicKey)
+	if err != nil {
+		return xerrors.Errorf("could not recover public key from tx: %v", err)
+	}
 
 	// Check the node indeed signed the transaction:
 	txSignature := tx.Signature
@@ -577,8 +578,9 @@ func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("only the admin can decrypt the ballots")
 	}
 
-	if election.Status != types.ShuffledBallots {
-		return xerrors.Errorf("the ballots are not shuffled, current status: %d", election.Status)
+	if election.Status != types.PubSharesSubmitted {
+		return xerrors.Errorf("the public shares have not been submitted,"+
+			" current status: %d", election.Status)
 	}
 
 	allPubShares := election.PubShareSubmissions

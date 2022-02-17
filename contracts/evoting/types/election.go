@@ -29,7 +29,7 @@ const (
 	Closed Status = 2
 	// ShuffledBallots is when the ballots have been shuffled
 	ShuffledBallots Status = 3
-	// ...
+	// PubSharesSubmitted is when we have enough shares to decrypt the ballots
 	PubSharesSubmitted Status = 4
 	// ResultAvailable is when the ballots have been decrypted
 	ResultAvailable Status = 5
@@ -79,8 +79,7 @@ type Election struct {
 	ShuffleThreshold int
 
 	// PubShareSubmissions is an array containing all the submission of pubShares.
-	// One entry per node, the index of a node's submission is its index in the
-	// roster.
+	// Each node submits its share to its personal index from the DKG service.
 	PubShareSubmissions []PubSharesSubmission
 
 	DecryptedBallots []Ballot
@@ -329,7 +328,8 @@ type PubShare kyber.Point
 // 1 for each ElGamal pair
 type PubSharesSubmission [][]PubShare
 
-func (p PubSharesSubmission) FingerPrint(writer io.Writer) error {
+// Fingerprint implements serde.Fingerprinter
+func (p PubSharesSubmission) Fingerprint(writer io.Writer) error {
 	for _, ballotShares := range p {
 		for _, pubShare := range ballotShares {
 			_, err := pubShare.MarshalTo(writer)

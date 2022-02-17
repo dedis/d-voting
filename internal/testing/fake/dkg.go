@@ -2,6 +2,7 @@ package fake
 
 import (
 	"github.com/dedis/d-voting/services/dkg"
+	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/kyber/v3"
 )
 
@@ -10,7 +11,7 @@ type BadPedersen struct {
 	Err error
 }
 
-func (f BadPedersen) Listen(electionID []byte) (dkg.Actor, error) {
+func (f BadPedersen) Listen(electionID []byte, txmngr txn.Manager) (dkg.Actor, error) {
 	return nil, f.Err
 }
 
@@ -23,7 +24,7 @@ type Pedersen struct {
 	Actors map[string]dkg.Actor
 }
 
-func (f Pedersen) Listen(electionID []byte) (dkg.Actor, error) {
+func (f Pedersen) Listen(electionID []byte, txmngr txn.Manager) (dkg.Actor, error) {
 	actor := DKGActor{PubKey: suite.Point().Pick(suite.RandomStream())}
 	f.Actors[string(electionID)] = actor
 	return actor, nil

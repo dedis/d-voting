@@ -5,7 +5,6 @@ import (
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 )
@@ -175,33 +174,6 @@ func (f msgFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, error) 
 		}
 
 		m = Message{DecryptRequest: &req}
-	case types.DecryptReply:
-		pubShares := in.GetPubShares()
-
-		encodedPubShares := make([][]MarshalledPublicShare, 0)
-
-		for _, ballotShare := range pubShares {
-			encodedBallotShare := make([]MarshalledPublicShare, len(ballotShare))
-			for j, pubShare := range ballotShare {
-				V, err := pubShare.V.MarshalBinary()
-				if err != nil {
-					return nil, xerrors.Errorf("couldn't marshal V: %v", err)
-				}
-
-				encodedBallotShare[j] = MarshalledPublicShare{
-					V: V,
-					I: pubShare.I,
-				}
-			}
-
-			encodedPubShares = append(encodedPubShares, encodedBallotShare)
-		}
-
-		resp := DecryptReply{
-			PublicShares: encodedPubShares,
-		}
-
-		m = Message{DecryptReply: &resp}
 	case types.GetPeerPubKey:
 		m = Message{
 			GetPeerPubKey: &GetPeerPubKey{},
@@ -285,35 +257,6 @@ func (f msgFormat) Decode(ctx serde.Context, data []byte) (serde.Message, error)
 		req := types.NewDecryptRequest(m.DecryptRequest.ElectionId)
 
 		return req, nil
-	}
-
-	if m.DecryptReply != nil {
-		encodedPubShares := m.DecryptReply.PublicShares
-		pubShares := make([][]share.PubShare, 0)
-
-		for _, encodedBallotShare := range encodedPubShares {
-			ballotShare := make([]share.PubShare, len(encodedBallotShare))
-
-			for i, pubShare := range encodedBallotShare {
-				v := f.suite.Point()
-
-				err = v.UnmarshalBinary(pubShare.V)
-				if err != nil {
-					return nil, xerrors.Errorf("couldn't unmarshal V: %v", err)
-				}
-
-				ballotShare[i] = share.PubShare{
-					V: v,
-					I: pubShare.I,
-				}
-			}
-
-			pubShares = append(pubShares, ballotShare)
-		}
-
-		resp := types.NewDecryptReply(pubShares)
-
-		return resp, nil
 	}
 
 	if m.GetPeerPubKey != nil {

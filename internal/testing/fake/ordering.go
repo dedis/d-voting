@@ -41,7 +41,7 @@ type Service struct {
 	Pool      *Pool
 	Status    bool
 	Channel   chan ordering.Event
-	context   serde.Context
+	Context   serde.Context
 }
 
 // GetProof implements ordering.Service. It returns the proof associated to the
@@ -58,7 +58,7 @@ func (f Service) GetProof(key []byte) (ordering.Proof, error) {
 		return proof, f.Err
 	}
 
-	electionBuf, err := election.Serialize(f.context)
+	electionBuf, err := election.Serialize(f.Context)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to serialize election: %v", err)
 	}
@@ -157,6 +157,6 @@ func NewService(electionID string, election electionTypes.Election, ctx serde.Co
 	return Service{
 		Err:       nil,
 		Elections: elections,
-		context:   ctx,
+		Context:   ctx,
 	}
 }

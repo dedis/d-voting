@@ -124,16 +124,10 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		err = sActor.Shuffle(electionID)
 		require.NoError(t, err)
 
-		// ##### DECRYPT BALLOTS #####
-		time.Sleep(time.Second * 1)
-
-		t.Logf("decrypting")
-
-		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
-		require.NoError(t, err)
+		time.Sleep(time.Second * 5)
 
 		// ##### SUBMIT PUBLIC SHARES #####
-		time.Sleep(time.Second * 5)
+		t.Logf("submitting public shares")
 
 		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
 		require.NoError(t, err)
@@ -142,6 +136,12 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 
 		// ##### DECRYPT BALLOTS #####
 		time.Sleep(time.Second * 2 * time.Duration(numNodes))
+
+		t.Logf("decrypting")
+
+		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
+		t.Logf("PubShares: %v", election.PubShareSubmissions)
+		require.NoError(t, err)
 		err = decryptBallots(m, actor, election)
 		require.NoError(t, err)
 

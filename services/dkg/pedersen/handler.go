@@ -141,6 +141,7 @@ mainSwitch:
 		goto mainSwitch
 
 	case types.DecryptRequest:
+
 		if !h.startRes.Done() {
 			return xerrors.Errorf("you must first initialize DKG. Did you " +
 				"call setup() first?")
@@ -151,24 +152,27 @@ mainSwitch:
 			return xerrors.Errorf("failed to check if the shuffle is over: %v", err)
 		}
 
-		publicShares := make([][]etypes.PubShare, len(shuffleInstances))
 		numberOfShuffles := len(shuffleInstances)
+		numberOfBallots := len(shuffleInstances[numberOfShuffles-1].ShuffledBallots)
+		publicShares := make([][]etypes.PubShare, numberOfBallots)
 
 		h.RLock()
 
-		for _, ballot := range shuffleInstances[numberOfShuffles-1].ShuffledBallots {
+		for i, ballot := range shuffleInstances[numberOfShuffles-1].ShuffledBallots {
 			ballotShares := make([]etypes.PubShare, len(ballot))
 
-			for _, ciphertext := range ballot {
+			for j, ciphertext := range ballot {
 				S := suite.Point().Mul(h.privShare.V, ciphertext.K)
 
 				partialVal := suite.Point().Sub(ciphertext.C, S)
 
-				ballotShares = append(ballotShares, partialVal)
+				ballotShares[j] = partialVal
 			}
 
-			publicShares = append(publicShares, ballotShares)
+			publicShares[i] = ballotShares
 		}
+
+		h.RUnlock()
 
 		// loop until our transaction has been accepted, or enough nodes
 		// submitted their pubShares
@@ -192,7 +196,9 @@ mainSwitch:
 				return nil
 			}
 
-			tx, err := makeTx(&election, publicShares, h.privShare.I, h.txmnger, h.pubSharesSigner)
+			tx, err := makeTx(h.context, &election, publicShares, h.privShare.I,
+				h.txmnger, h.pubSharesSigner)
+
 			if err != nil {
 				return xerrors.Errorf("failed to make tx: %v", err)
 			}
@@ -778,7 +784,9 @@ func watchTx(events <-chan ordering.Event, txID []byte) (bool, string) {
 	return false, "watch timeout"
 }
 
-func makeTx(election *etypes.Election, pubShares etypes.PubSharesSubmission, index int, manager txn.Manager,
+func makeTx(ctx serde.Context, election *etypes.Election, pubShares etypes.PubSharesSubmission,
+	index int,
+	manager txn.Manager,
 	pubSharesSigner crypto.Signer) (txn.Transaction, error) {
 
 	pubShareTx := etypes.RegisterPubShares{
@@ -799,7 +807,12 @@ func makeTx(election *etypes.Election, pubShares etypes.PubSharesSubmission, ind
 	// Sign the pubShares :
 	signature, err := pubSharesSigner.Sign(hash)
 	if err != nil {
-		return nil, xerrors.Errorf("Could not sign the pubShares : %v", err)
+		return nil, xerrors.Errorf("could not sign the pubShares : %v", err)
+	}
+
+	pubKey, err := pubSharesSigner.GetPublicKey().MarshalBinary()
+	if err != nil {
+		return nil, xerrors.Errorf("could not marshal signer's public key: %v", err)
 	}
 
 	encodedSignature, err := signature.Serialize(jsondela.NewContext())
@@ -809,11 +822,11 @@ func makeTx(election *etypes.Election, pubShares etypes.PubSharesSubmission, ind
 
 	// Complete transaction:
 	pubShareTx.Signature = encodedSignature
+	pubShareTx.PublicKey = pubKey
 
-	js, err := json.Marshal(pubShareTx)
+	data, err := pubShareTx.Serialize(ctx)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to marshal "+
-			"RegisterPubSharesTransaction: %v", err)
+		return nil, xerrors.Errorf("failed to serialize register pubShares: %v", err)
 	}
 
 	args := make([]txn.Arg, 3)
@@ -827,7 +840,7 @@ func makeTx(election *etypes.Election, pubShares etypes.PubSharesSubmission, ind
 	}
 	args[2] = txn.Arg{
 		Key:   evoting.ElectionArg,
-		Value: js,
+		Value: data,
 	}
 
 	tx, err := manager.Make(args...)

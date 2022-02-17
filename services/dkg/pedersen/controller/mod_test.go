@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"go.dedis.ch/dela/crypto/bls"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/dedis/d-voting/internal/testing/fake"
@@ -53,6 +55,13 @@ func TestMinimal_OnStart(t *testing.T) {
 	//th := threshold.NewThreshold(fake.Mino{}, fake.NewAggregateSigner())
 	ctx.Injector.Inject(&threshold.Threshold{})
 
+	// Should miss pool.Pool
+	err = c.OnStart(nil, ctx.Injector)
+	require.EqualError(t, err, "failed to resolve p.Pool: couldn't find "+
+		"dependency for 'pool.Pool'")
+
+	ctx.Injector.Inject(&fake.Pool{})
+
 	// Should miss authority.Factory
 	err = c.OnStart(nil, ctx.Injector)
 	require.EqualError(t, err, "failed to resolve authority.Factory")
@@ -75,8 +84,27 @@ func TestMinimal_OnStart(t *testing.T) {
 	require.NoError(t, err)
 	flags.strings["config"] = dir
 
-	// Should work (have flags now)
+	signerFilePath := filepath.Join(dir, privateKeyFile)
+	file, err := os.Create(signerFilePath)
+	require.NoError(t, err)
+
+	signer, err := bls.NewSigner().MarshalBinary()
+	require.NoError(t, err)
+
+	_, err = file.Write(signer)
+
+	require.NoError(t, err)
+	require.NoError(t, file.Close())
+
+	// Should miss validation service to make client
 	err = c.OnStart(flags, ctx.Injector)
+	require.EqualError(t, err, "failed to make client: failed to resolve"+
+		" validation.Service: couldn't find dependency for 'validation.Service'")
+
+	// Should work now
+	// TODO: Inject validation service
+
+	err = os.Remove(signerFilePath)
 	require.NoError(t, err)
 }
 
