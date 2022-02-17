@@ -148,11 +148,6 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 
 	keyPath := ctx.String("signer")
 
-	signer, err := getSigner(keyPath)
-	if err != nil {
-		return xerrors.Errorf("failed to get signer: %v", err)
-	}
-
 	client, err := makeClient(inj)
 	if err != nil {
 		return xerrors.Errorf("failed to make client: %v", err)
@@ -175,6 +170,11 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 			err = json.Unmarshal(handlerDataBuf, &handlerData)
 			if err != nil {
 				return err
+			}
+
+			signer, err := getSigner(keyPath)
+			if err != nil {
+				return xerrors.Errorf("failed to get signer: %v", err)
 			}
 
 			_, err = dkg.NewActor(electionIDBuf, p, signed.NewManager(signer, &client), handlerData)
