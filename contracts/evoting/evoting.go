@@ -801,7 +801,7 @@ func Decrypt(ballot int, pair int, allPubShares []types.PubSharesSubmission) ([]
 		}
 	}
 
-	res, err := share.RecoverCommit(suite, pubShares, len(allPubShares), len(allPubShares))
+	res, err := share.RecoverCommit(suite, pubShares, len(pubShares), len(pubShares))
 	if err != nil {
 		return nil, xerrors.Errorf("failed to recover commit: %v", err)
 	}

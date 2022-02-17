@@ -14,7 +14,6 @@ import (
 	"go.dedis.ch/dela/crypto/loader"
 	"io/ioutil"
 	"net/http"
-	"path/filepath"
 
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/dkg/pedersen"
@@ -462,11 +461,11 @@ func (c *client) GetNonce(id access.Identity) (uint64, error) {
 }
 
 func getSigner(filePath string) (crypto.Signer, error) {
-	l := loader.NewFileLoader(filepath.Join(filePath, privateKeyFile))
+	l := loader.NewFileLoader(filePath)
 
-	signerData, err := l.LoadOrCreate(generator{newFn: blsSigner})
+	signerData, err := l.Load()
 	if err != nil {
-		return nil, xerrors.Errorf("while loading: %v", err)
+		return nil, xerrors.Errorf("failed to load signer: %v", err)
 	}
 
 	signer, err := bls.NewSignerFromBytes(signerData)

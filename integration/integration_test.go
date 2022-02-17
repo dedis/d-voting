@@ -124,7 +124,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		err = sActor.Shuffle(electionID)
 		require.NoError(t, err)
 
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 1)
 
 		// ##### SUBMIT PUBLIC SHARES #####
 		t.Logf("submitting public shares")
