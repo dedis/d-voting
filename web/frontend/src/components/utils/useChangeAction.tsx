@@ -12,8 +12,8 @@ const useChangeAction = (
   status: number,
   electionID: number,
   setStatus: (status: number) => void,
-  setResultAvailable: (available: boolean) => void,
-  setTextModalError: (text: string) => void,
+  setResultAvailable: ((available: boolean) => void | null) | undefined,
+  setTextModalError: (value: ((prevState: null) => '') | string) => void,
   setShowModalError: (willShow: boolean) => void
 ) => {
   const { t } = useTranslation();

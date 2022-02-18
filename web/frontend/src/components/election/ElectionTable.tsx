@@ -114,7 +114,7 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
             <TableBody>
               {rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
                 return (
-                  <StyledTableRow key={row.id}>
+                  <StyledTableRow key={row.key}>
                     {columns.map((column) => {
                       const value = row[column.id];
                       return (

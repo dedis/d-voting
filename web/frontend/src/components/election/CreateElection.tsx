@@ -2,7 +2,6 @@ import React, { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import ElectionForm from './ElectionForm';
-import UploadFile from './UploadFile';
 import Modal from '../modal/Modal';
 
 const CreateElection: FC = () => {
@@ -25,7 +24,6 @@ const CreateElection: FC = () => {
 
       <div className="election-form flex flex-row justify-center items-start">
         <ElectionForm setShowModal={setShowModal} setTextModal={setTextModal} />
-        <UploadFile setShowModal={setShowModal} setTextModal={setTextModal} />
       </div>
     </div>
   );
