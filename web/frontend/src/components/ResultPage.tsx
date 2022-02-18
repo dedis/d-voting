@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import Result from './Result';
-import useElection from '../utils/useElection';
+import useElection from './utils/useElection';
 import './ResultPage.css';
 
 type ResultPageProps = {

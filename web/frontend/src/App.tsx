@@ -1,20 +1,21 @@
 import React, { FC, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
+import About from './pages/About';
+import Admin from './pages/Admin';
+import ElectionStatus from './pages/ElectionIndex';
+import Login from './pages/Login';
+
 import { GET_PERSONNAL_INFOS } from './components/utils/ExpressEndoints';
-import CreateElection from './components/election/CreateElection';
-import ElectionStatus from './components/election/ElectionStatus';
+import CreateElection from './components/CreateElection';
 import NavBar from './components/NavBar';
 import Home from './pages/Home';
-import BallotsTable from './components/election/BallotsTable';
-import Ballot from './components/election/Ballot';
-import ResultTable from './components/election/ResultTable';
-import ResultPage from './components/election/ResultPage';
-import About from './components/About';
-import Admin from './components/Admin';
+import BallotsTable from './components/BallotsTable';
+import Ballot from './components/Ballot';
+import ResultTable from './components/ResultTable';
+import ResultPage from './components/ResultPage';
 import Footer from './components/Footer';
-import ElectionDetails from './components/election/ElectionDetails';
-import Login from './pages/Login';
+import ElectionDetails from './components/ElectionDetails';
 import './App.css';
 
 const App: FC = () => {
@@ -56,6 +57,7 @@ const App: FC = () => {
               <div className="p-10 w-full max-w-screen-xl">
                 <Routes>
                   <Route path="/" element={<Home />} />
+                  {/* <Route path="/elections/:electionId/ballots" element={<Ballots />} /> */}
                   <Route path="/create-election" element={<CreateElection />} />
                   <Route path="/elections" element={<ElectionStatus />} />
                   <Route path="/elections/:electionId" element={<ElectionDetails />} />

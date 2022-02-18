@@ -1,8 +1,8 @@
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import SimpleTable from '../utils/SimpleTable';
-import { RESULT_AVAILABLE } from '../utils/StatusNumber';
+import SimpleTable from './utils/SimpleTable';
+import { RESULT_AVAILABLE } from './utils/StatusNumber';
 
 const ResultTable: FC = () => {
   const { t } = useTranslation();

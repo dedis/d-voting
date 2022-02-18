@@ -6,9 +6,9 @@ import { useTranslation } from 'react-i18next';
 import Action from './Action';
 import Result from './Result';
 import Status from './Status';
-import useElection from '../utils/useElection';
-import { RESULT_AVAILABLE } from '../utils/StatusNumber';
-import useGetResults from '../utils/useGetResults';
+import useElection from './utils/useElection';
+import { RESULT_AVAILABLE } from './utils/StatusNumber';
+import useGetResults from './utils/useGetResults';
 import './ElectionDetails.css';
 
 const ElectionDetails: FC = () => {

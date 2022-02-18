@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import Button from '@mui/material/Button';
 import { DataGrid } from '@mui/x-data-grid';
 
-import { GET_ADMIN_ROWS } from './utils/ExpressEndoints';
-import AddAdminUserModal from './modal/AddAdminUserModal';
-import RemoveAdminUserModal from './modal/RemoveAdminUserModal';
+import { GET_ADMIN_ROWS } from '../components/utils/ExpressEndoints';
+import AddAdminUserModal from '../components/modal/AddAdminUserModal';
+import RemoveAdminUserModal from '../components/modal/RemoveAdminUserModal';
 import './Admin.css';
 
 const Admin = () => {

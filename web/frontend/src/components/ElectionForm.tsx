@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import { CREATE_ENDPOINT } from '../utils/Endpoints';
+import { CREATE_ENDPOINT } from './utils/Endpoints';
 
 type ElectionFormProps = {
   setShowModal(modal: any): void;

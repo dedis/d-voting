@@ -5,11 +5,11 @@ import kyber from '@dedis/kyber';
 import PropTypes from 'prop-types';
 import { Buffer } from 'buffer';
 
-import useElection from '../utils/useElection';
-import usePostCall from '../utils/usePostCall';
-import { CAST_BALLOT_ENDPOINT } from '../utils/Endpoints';
-import Modal from '../modal/Modal';
-import { OPEN } from '../utils/StatusNumber';
+import useElection from './utils/useElection';
+import usePostCall from './utils/usePostCall';
+import { CAST_BALLOT_ENDPOINT } from './utils/Endpoints';
+import Modal from './modal/Modal';
+import { OPEN } from './utils/StatusNumber';
 import { encryptVote } from './VoteEncrypt';
 import './Ballot.css';
 

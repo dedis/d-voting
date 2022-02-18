@@ -2,7 +2,7 @@ import React, { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import ElectionForm from './ElectionForm';
-import Modal from '../modal/Modal';
+import Modal from './modal/Modal';
 
 const CreateElection: FC = () => {
   const { t } = useTranslation();

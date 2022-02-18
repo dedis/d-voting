@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 
 import Action from './Action';
 import Status from './Status';
-import ElectionFields from '../utils/ElectionFields';
+import ElectionFields from './utils/ElectionFields';
 
 type ElectionTableProps = {
   elections: string[];
