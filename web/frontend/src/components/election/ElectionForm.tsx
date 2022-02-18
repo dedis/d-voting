@@ -1,13 +1,8 @@
-import React, { FC, useState, useEffect } from 'react';
+import React, { FC } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import { CREATE_ENDPOINT } from '../utils/Endpoints';
-import usePostCall from '../utils/usePostCall';
-import {
-  COLLECTIVE_AUTHORITY_MEMBERS,
-  SHUFFLE_THRESHOLD,
-} from '../utils/CollectiveAuthorityMembers';
 
 type ElectionFormProps = {
   setShowModal(modal: any): void;
@@ -38,7 +33,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
 
   return (
     <div className="form-wrapper bg-gray-200 flex-1 m-1 p-10">
-      <button onClick={createHandler}>Create election</button>
+      <button onClick={createHandler}>{t('createElection')}</button>
     </div>
   );
 };

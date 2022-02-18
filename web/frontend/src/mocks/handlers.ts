@@ -21,26 +21,11 @@ export const handlers = [
   }),
 
   rest.get('/api/getTkKey', (req, res, ctx) => {
-    // const key = 'abcdef123456';
-    // const url = `/mocked-tequilla/requestauth?requestkey=${key}`;
     const url = '/';
     sessionStorage.setItem('is-authenticated', 'true');
 
     return res(ctx.status(200), ctx.json({ url: url }));
   }),
-
-  // rest.get('/api/mocked-tequilla/requestauth', (req, res, ctx) => {
-  //   return res(ctx.status(200));
-  // }),
-
-  // rest.get('/api/control_key', (req, res, ctx) => {
-  //   return res(
-  //     ctx.status(200),
-  //     ctx.json({
-  //       role: 'voter',
-  //     })
-  //   );
-  // }),
 
   rest.post('/api/logout', (req, res, ctx) => {
     sessionStorage.setItem('is-authenticated', 'false');
@@ -66,20 +51,6 @@ export const handlers = [
   }),
 
   rest.post(CREATE_ENDPOINT, (req, res, ctx) => {
-    return res(
-      ctx.status(200),
-      ctx.json({
-        AllElectionsInfo: [
-          {
-            ElectionID: 'election ID1',
-            Title: 'election TITLE',
-            Status: 3,
-            Pubkey: 'DEADBEEF',
-            Result: [{ Vote: 'vote' }],
-            Format: { Candidates: ['candiate1', 'candiate2'] },
-          },
-        ],
-      })
-    );
+    return res(ctx.status(200));
   }),
 ];

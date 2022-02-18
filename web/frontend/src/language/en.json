@@ -47,6 +47,7 @@
     "login": "Login",
     "confirmCloseElection": "Are you sure you want to close this election?",
     "confirmCancelElection": "Are you sure you want to cancel this election?",
+    "createElection": "Create election",
     "statusOpen": "Open",
     "statusClose": "Closed",
     "statusCancel": "Canceled",
