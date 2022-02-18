@@ -196,6 +196,11 @@ mainSwitch:
 				return nil
 			}
 
+			err = h.txmnger.Sync()
+			if err != nil {
+				return xerrors.Errorf("failed to sync manager: %v", err)
+			}
+
 			tx, err := makeTx(h.context, &election, publicShares, h.privShare.I,
 				h.txmnger, h.pubSharesSigner)
 

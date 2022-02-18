@@ -322,6 +322,7 @@ func (a *Actor) RequestPubShares() error {
 	addrs := make([]mino.Address, 0, players.Len())
 	for iterator.HasNext() {
 		addrs = append(addrs, iterator.GetNext())
+		dela.Logger.Info().Msg("Requested pubShare to one node")
 	}
 
 	message := types.NewDecryptRequest(a.electionID)

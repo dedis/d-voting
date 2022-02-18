@@ -87,6 +87,7 @@ func TestMinimal_OnStart(t *testing.T) {
 	signerFilePath := filepath.Join(dir, privateKeyFile)
 	file, err := os.Create(signerFilePath)
 	require.NoError(t, err)
+	defer os.RemoveAll(signerFilePath)
 
 	signer, err := bls.NewSigner().MarshalBinary()
 	require.NoError(t, err)
@@ -104,7 +105,6 @@ func TestMinimal_OnStart(t *testing.T) {
 	// Should work now
 	// TODO: Inject validation service
 
-	err = os.Remove(signerFilePath)
 	require.NoError(t, err)
 }
 

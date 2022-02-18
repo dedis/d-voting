@@ -323,9 +323,9 @@ func ListenHandler(dkg dkg.DKG, ctx node.Context) func(http.ResponseWriter, *htt
 			return
 		}
 
-		keyPath := ctx.Flags.String("signer")
+		//keyPath := ctx.Flags.String("signer")
 
-		signer, err := getSigner(keyPath)
+		signer, err := getNodeSigner(ctx.Flags)
 		if err != nil {
 			http.Error(w,
 				fmt.Sprintf("failed to get signer for txmngr : %v", err),
