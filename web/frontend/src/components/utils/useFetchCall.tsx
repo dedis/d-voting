@@ -23,6 +23,7 @@ const useFetchCall = (endpoint, request) => {
     };
 
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [endpoint]);
 
   return [data, loading, error];
