@@ -102,6 +102,11 @@ func (s *Pedersen) Listen(electionIDBuf []byte, txmngr txn.Manager) (dkg.Actor, 
 		return actor, xerrors.Errorf("actor already exists for electionID %s", electionID)
 	}
 
+	err := txmngr.Sync()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to sync manager: %v", err)
+	}
+
 	return s.NewActor(electionIDBuf, s.pool, txmngr, NewHandlerData())
 }
 

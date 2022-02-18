@@ -174,6 +174,11 @@ mainSwitch:
 
 		h.RUnlock()
 
+		err = h.txmnger.Sync()
+		if err != nil {
+			return xerrors.Errorf("failed to sync manager: %v", err)
+		}
+
 		// loop until our transaction has been accepted, or enough nodes
 		// submitted their pubShares
 		for {
@@ -194,11 +199,6 @@ mainSwitch:
 				dela.Logger.Info().Msgf("decryption possible with shares from %d nodes",
 					differentPubShares)
 				return nil
-			}
-
-			err = h.txmnger.Sync()
-			if err != nil {
-				return xerrors.Errorf("failed to sync manager: %v", err)
 			}
 
 			tx, err := makeTx(h.context, &election, publicShares, h.privShare.I,
