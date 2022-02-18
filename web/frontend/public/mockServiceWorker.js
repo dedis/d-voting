@@ -69,8 +69,8 @@ self.addEventListener('message', async function (event) {
     case 'CLIENT_CLOSED': {
       activeClientIds.delete(clientId);
 
-      const remainingClients = allClients.filter((client) => {
-        return client.id !== clientId;
+      const remainingClients = allClients.filter((c) => {
+        return c.id !== clientId;
       });
 
       // Unregister itself when there are no more clients
@@ -97,14 +97,14 @@ async function resolveMainClient(event) {
   const allClients = await self.clients.matchAll();
 
   return allClients
-    .filter((client) => {
+    .filter((c) => {
       // Get only those clients that are currently visible.
-      return client.visibilityState === 'visible';
+      return c.visibilityState === 'visible';
     })
-    .find((client) => {
+    .find((c) => {
       // Find the client ID that's recorded in the
       // set of clients that have registered the worker.
-      return activeClientIds.has(client.id);
+      return activeClientIds.has(c.id);
     });
 }
 
@@ -152,7 +152,7 @@ async function getResponse(event, client, requestId) {
   // means that MSW hasn't dispatched the "MOCK_ACTIVATE" event yet
   // and is not ready to handle requests.
   if (!activeClientIds.has(client.id)) {
-    return await getOriginalResponse();
+    return getOriginalResponse();
   }
 
   // Bypass requests with the explicit bypass header
