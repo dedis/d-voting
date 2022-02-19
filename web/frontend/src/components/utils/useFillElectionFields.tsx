@@ -6,14 +6,14 @@ const useFillElectionFields = (electionData) => {
   const [candidates, setCandidates] = useState(null);
   const [id, setId] = useState(null);
   const [status, setStatus] = useState(null);
-  const [pubKey, setPubKey] = useState(null);
+  const [pubKey, setPubKey] = useState('');
   const [result, setResult] = useState(null);
   const [isResultSet, setIsResultSet] = useState(false);
 
   useEffect(() => {
     if (electionData !== null) {
       setTitle(electionData.Title);
-      setCandidates(JSON.parse(electionData.Format).Candidates);
+      setCandidates(electionData.Format.Candidates);
       setId(electionData.ElectionID);
       setStatus(electionData.Status);
       setPubKey(electionData.Pubkey);

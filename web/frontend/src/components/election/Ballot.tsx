@@ -23,14 +23,14 @@ const Ballot: FC = () => {
   const [userErrors, setUserErrors] = useState({ noCandidate: '' });
   const edCurve = kyber.curve.newCurve('edwards25519');
   const [postRequest, setPostRequest] = useState(null);
-  const [postError, setPostError] = useState(null);
+  const [postError, setPostError] = useState('');
   const { postData } = usePostCall(setPostError);
   const [showModal, setShowModal] = useState(false);
   const [modalText, setModalText] = useState(t('voteSuccess') as string);
 
   useEffect(() => {
     if (postRequest !== null) {
-      setPostError(null);
+      setPostError('');
       postData(CAST_BALLOT_ENDPOINT, postRequest, setShowModal);
     }
   }, [postData, postRequest]);
@@ -47,16 +47,16 @@ const Ballot: FC = () => {
     }
   }, [postError, t]);
 
-  const handleCheck = (e) => {
+  const handleCheck = (e: React.ChangeEvent<HTMLInputElement>) => {
     setChoice(e.target.value);
   };
 
-  const hexToBytes = (hex) => {
-    for (var c = 0; c < hex.length; c += 2) bytes.push(parseInt(hex.substr(c, 2), 16));
+  const hexToBytes = (hex: string) => {
+    for (let c = 0; c < hex.length; c += 2) bytes.push(parseInt(hex.substr(c, 2), 16));
     return new Uint8Array(bytes);
   };
 
-  const createBallot = (K, C) => {
+  const createBallot = (K: Buffer, C: Buffer) => {
     let vote = JSON.stringify({ K: Array.from(K), C: Array.from(C) });
     return {
       ElectionID: electionID,

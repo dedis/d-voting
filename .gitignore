@@ -3,3 +3,5 @@ private.key
 .vscode
 
 web/app/node_modules
+.idea
+

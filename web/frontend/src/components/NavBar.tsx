@@ -1,6 +1,7 @@
 import React, { FC, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { POST_LOGOUT } from '../components/utils/ExpressEndoints';
 
 import logoWhite from '../assets/logo-white.png';
 import { LanguageSelector } from '../language';
@@ -11,9 +12,10 @@ type NavBarProps = {
   firstname: string;
   sciper: number;
   role: string;
+  isLogged: boolean;
 };
 
-const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
+const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role, isLogged }) => {
   const { t } = useTranslation();
 
   // used for the profile button
@@ -26,6 +28,23 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
   const [menuToggle, setMenuToggle] = useState(false);
   const triggerMenuToggle = () => {
     setMenuToggle(!menuToggle);
+  };
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+
+    const opts = { method: 'POST' };
+
+    const res = await fetch(POST_LOGOUT, opts);
+    if (res.status !== 200) {
+      console.warn('failed to logout');
+    }
+
+    window.location.href = '/';
+  };
+
+  const onSubmitPreventDefault = (e) => {
+    e.preventDefault();
   };
 
   return (
@@ -149,12 +168,14 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
                   {t('navBarAbout')}
                 </NavLink>
 
-                {sciper !== 0 ? (
-                  <li>
-                    Logged as {firstname} {lastname}
-                    <br />
-                    <a href="/api/logout">Logout</a>
-                  </li>
+                {isLogged ? (
+                  <button
+                    type="button"
+                    className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                    onClick={handleLogout}
+                    onSubmit={onSubmitPreventDefault}>
+                    {t('logout')}
+                  </button>
                 ) : (
                   ''
                 )}
@@ -217,7 +238,7 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role }) => {
                       role="menuitem"
                       tabIndex={-1}
                       id="user-menu-item-0">
-                      Your Profile
+                      Logged as {firstname} {lastname}
                     </a>
                     <a
                       href="#top"

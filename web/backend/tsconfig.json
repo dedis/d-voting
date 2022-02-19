@@ -13,24 +13,27 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "module": "esnext",
+    "module": "es2022",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx",
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
   },
   "include": [
-    "src"
+    "src/Server.ts"
   ],
   "exclude": [
     "node_modules",
     "jest.config.js",
-    "tailwind.config.js",
     ".eslintrc",
   ],
   "typedocOptions": {
-    "entryPoints": ["App.tsx"],
+    "entryPoints": ["src/Server.ts"],
     "out": "tsdocs"
   }
 }
