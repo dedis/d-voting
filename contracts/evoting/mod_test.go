@@ -726,6 +726,160 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 
 func TestCommand_RegisterPubShares(t *testing.T) {
 	// TODO
+
+	registerPubShares := types.RegisterPubShares{
+		ElectionID: fakeElectionID,
+		Index:      0,
+		PubShares:  make([][]types.PubShare, 0),
+		Signature:  []byte{},
+		PublicKey:  []byte{},
+	}
+
+	data, err := registerPubShares.Serialize(ctx)
+	require.NoError(t, err)
+
+	dummyElection, contract := initElectionAndContract()
+	dummyElection.ElectionID = fakeElectionID
+
+	electionBuf, err := dummyElection.Serialize(ctx)
+	require.NoError(t, err)
+
+	cmd := evotingCommand{
+		Contract: &contract,
+	}
+
+	err = cmd.registerPubShares(fake.NewSnapshot(), makeStep(t))
+	require.EqualError(t, err, getTransactionErr)
+
+	err = cmd.registerPubShares(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
+	require.EqualError(t, err, unmarshalTransactionErr)
+
+	err = cmd.registerPubShares(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(data)))
+	require.Contains(t, err.Error(), "failed to get key")
+
+	snap := fake.NewSnapshot()
+
+	err = snap.Set(dummyElectionIDBuff, invalidElection)
+	require.NoError(t, err)
+
+	err = cmd.registerPubShares(snap, makeStep(t, ElectionArg, string(data)))
+	require.Contains(t, err.Error(), deserializeErr)
+
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
+
+	err = cmd.registerPubShares(snap, makeStep(t, ElectionArg, string(data)))
+	require.EqualError(t, err, "the ballots have not been shuffled")
+
+	// Requirements:
+	dummyElection.Status = types.ShuffledBallots
+	dummyElection.PubShareSubmissions = make([]types.PubSharesSubmission, 1)
+	dummyElection.ShuffleInstances = make([]types.ShuffleInstance, 1)
+	dummyElection.ShuffleInstances[0] = types.ShuffleInstance{
+		ShuffledBallots: make([]types.Ciphervote, 1),
+	}
+	dummyElection.ShuffleInstances[0].ShuffledBallots[0] = types.Ciphervote{types.EGPair{
+		K: suite.Point(),
+		C: suite.Point(),
+	}}
+
+	electionBuf, err = dummyElection.Serialize(ctx)
+	require.NoError(t, err)
+
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
+
+	err = cmd.registerPubShares(snap, makeStep(t, ElectionArg, string(data)))
+	require.EqualError(t, err, "could not verify identity of node : public key not associated to a member of the roster: ")
+
+	registerPubShares.PublicKey, err = fakeCommonSigner.GetPublicKey().MarshalBinary()
+	require.NoError(t, err)
+
+	data, err = registerPubShares.Serialize(ctx)
+	require.NoError(t, err)
+
+	err = cmd.registerPubShares(snap, makeStep(t, ElectionArg, string(data)))
+	require.EqualError(t, err, "could node deserialize pubShare signature:"+
+		" couldn't decode signature: couldn't deserialize data: unexpected end of JSON input")
+
+	signature, err := fakeCommonSigner.Sign([]byte("fake shares"))
+	require.NoError(t, err)
+
+	wrongSignature, err := signature.Serialize(ctx)
+	require.NoError(t, err)
+
+	registerPubShares.Signature = wrongSignature
+
+	data, err = registerPubShares.Serialize(ctx)
+	require.NoError(t, err)
+
+	err = cmd.registerPubShares(snap, makeStep(t, ElectionArg, string(data)))
+	require.EqualError(t, err, "signature does not match the PubShares:"+
+		" bls verify failed: bls: invalid signature ")
+
+	h := sha256.New()
+
+	err = registerPubShares.Fingerprint(h)
+	require.NoError(t, err)
+
+	hash := h.Sum(nil)
+
+	signature, err = fakeCommonSigner.Sign(hash)
+	require.NoError(t, err)
+	correctSignature, err := signature.Serialize(ctx)
+	require.NoError(t, err)
+
+	registerPubShares.Signature = correctSignature
+
+	data, err = registerPubShares.Serialize(ctx)
+	require.NoError(t, err)
+
+	err = cmd.registerPubShares(snap, makeStep(t, ElectionArg, string(data)))
+	require.EqualError(t, err, "unexpected size of pubshares submission")
+
+	registerPubShares.PubShares = make([][]types.PubShare, 1)
+
+	data, err = registerPubShares.Serialize(ctx)
+	require.NoError(t, err)
+
+	err = cmd.registerPubShares(snap, makeStep(t, ElectionArg, string(data)))
+	require.EqualError(t, err, "unexpected size of pubshares submission")
+
+	registerPubShares.PubShares[0] = make([]types.PubShare, 1)
+	registerPubShares.PubShares[0][0] = suite.Point()
+
+	// update signature:
+
+	h = sha256.New()
+
+	err = registerPubShares.Fingerprint(h)
+	require.NoError(t, err)
+
+	hash = h.Sum(nil)
+
+	signature, err = fakeCommonSigner.Sign(hash)
+	require.NoError(t, err)
+	correctSignature, err = signature.Serialize(ctx)
+	require.NoError(t, err)
+
+	registerPubShares.Signature = correctSignature
+
+	data, err = registerPubShares.Serialize(ctx)
+	require.NoError(t, err)
+
+	err = cmd.registerPubShares(snap, makeStep(t, ElectionArg, string(data)))
+	require.NoError(t, err)
+
+	res, err := snap.Get(dummyElectionIDBuff)
+	require.NoError(t, err)
+
+	message, err := electionFac.Deserialize(ctx, res)
+	require.NoError(t, err)
+
+	election, ok := message.(types.Election)
+	require.True(t, ok)
+
+	require.Equal(t, types.PubSharesSubmitted, election.Status)
 }
 
 func TestCommand_DecryptBallots(t *testing.T) {
@@ -742,7 +896,6 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	require.NoError(t, err)
 
 	dummyElection, contract := initElectionAndContract()
-	dummyElection.ElectionID = fakeElectionID
 
 	electionBuf, err := dummyElection.Serialize(ctx)
 	require.NoError(t, err)

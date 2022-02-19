@@ -522,10 +522,23 @@ func (e evotingCommand) registerPubShares(snap store.Snapshot, step execution.St
 
 	hash := h.Sum(nil)
 
-	// Check the signature matches the shuffle using the shuffler's public key
+	// Check the signature matches the shuffledBallots using the shuffler's public key
 	err = signerPubKey.Verify(hash, signature)
 	if err != nil {
 		return xerrors.Errorf("signature does not match the PubShares: %v ", err)
+	}
+
+	// coherence check on the length of the shares submitted
+	shuffledBallots := election.ShuffleInstances[len(election.ShuffleInstances)-1].
+		ShuffledBallots
+	if len(tx.PubShares) != len(shuffledBallots) {
+		return xerrors.Errorf("unexpected size of pubshares submission")
+	}
+
+	for i, ballot := range shuffledBallots {
+		if len(ballot) != len(tx.PubShares[i]) {
+			return xerrors.Errorf("unexpected size of pubshares submission")
+		}
 	}
 
 	// add the pubShares to the election
