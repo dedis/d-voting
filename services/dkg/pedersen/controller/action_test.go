@@ -54,6 +54,7 @@ func TestInitAction_Execute(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = file.Write(signer)
+	require.NoError(t, err)
 
 	// Try without ordering service
 	err = action.Execute(ctx)
