@@ -44,11 +44,11 @@ func init() {
 // If you get the persistent data from an actor and then recreate an actor
 // from that data, the persistent data should be the same in both actors.
 func TestActor_MarshalJSON(t *testing.T) {
-	p := NewPedersen(fake.Mino{}, fake.Service{}, &fake.Pool{}, fake.Factory{}, fake.Signer{})
+	p := NewPedersen(fake.Mino{}, &fake.Service{}, &fake.Pool{}, fake.Factory{}, fake.Signer{})
 
 	// Create new actor
 	actor1, err := p.NewActor([]byte("deadbeef"), &fake.Pool{},
-		signed.NewManager(fake.Signer{}, &client{}), NewHandlerData())
+		fake.Manager{}, NewHandlerData())
 	require.NoError(t, err)
 
 	// Serialize its persistent data
@@ -60,8 +60,7 @@ func TestActor_MarshalJSON(t *testing.T) {
 	err = handlerData.UnmarshalJSON(actor1Buf)
 	require.NoError(t, err)
 
-	actor2, err := p.NewActor([]byte("beefdead"), &fake.Pool{},
-		signed.NewManager(fake.Signer{}, &client{}), handlerData)
+	actor2, err := p.NewActor([]byte("beefdead"), &fake.Pool{}, fake.Manager{}, handlerData)
 	require.NoError(t, err)
 
 	// Check that the persistent data is the same for both actors
@@ -124,7 +123,7 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 	require.NoError(t, err)
 
 	// Initialize a Pedersen
-	p := NewPedersen(fake.Mino{}, fake.Service{}, &fake.Pool{}, fake.Factory{}, fake.Signer{})
+	p := NewPedersen(fake.Mino{}, &fake.Service{}, &fake.Pool{}, fake.Factory{}, fake.Signer{})
 
 	err = dkgMap.View(func(tx kv.ReadableTx) error {
 		bucket := tx.GetBucket([]byte("dkgmap"))
@@ -138,8 +137,7 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 				return err
 			}
 
-			_, err = p.NewActor(electionIDBuf, &fake.Pool{},
-				signed.NewManager(fake.Signer{}, &client{}), handlerData)
+			_, err = p.NewActor(electionIDBuf, &fake.Pool{}, fake.Manager{}, handlerData)
 			if err != nil {
 				return err
 			}
@@ -164,9 +162,8 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 		require.True(t, exists)
 
 		otherActor := Actor{
-			handler: NewHandler(fake.NewAddress(0), fake.Service{}, &fake.Pool{},
-				signed.NewManager(fake.Signer{}, &client{}), fake.Signer{},
-				handlerData, serdecontext, electionFac),
+			handler: NewHandler(fake.NewAddress(0), &fake.Service{}, &fake.Pool{},
+				fake.Manager{}, fake.Signer{}, handlerData, serdecontext, electionFac),
 		}
 
 		requireActorsEqual(t, actor, &otherActor)
@@ -183,14 +180,12 @@ func TestPedersen_SyncDB(t *testing.T) {
 	fake.NewElection(electionID2)
 
 	// Initialize a Pedersen
-	p := NewPedersen(fake.Mino{}, fake.Service{}, &fake.Pool{}, fake.Factory{}, fake.Signer{})
+	p := NewPedersen(fake.Mino{}, &fake.Service{}, &fake.Pool{}, fake.Factory{}, fake.Signer{})
 
 	// Create actors
-	a1, err := p.NewActor([]byte(electionID1), &fake.Pool{},
-		signed.NewManager(fake.Signer{}, &client{}), NewHandlerData())
+	a1, err := p.NewActor([]byte(electionID1), &fake.Pool{}, fake.Manager{}, NewHandlerData())
 	require.NoError(t, err)
-	_, err = p.NewActor([]byte(electionID2), &fake.Pool{},
-		signed.NewManager(fake.Signer{}, &client{}), NewHandlerData())
+	_, err = p.NewActor([]byte(electionID2), &fake.Pool{}, fake.Manager{}, NewHandlerData())
 	require.NoError(t, err)
 
 	// Only Setup the first actor
@@ -229,7 +224,7 @@ func TestPedersen_SyncDB(t *testing.T) {
 	require.NoError(t, err)
 
 	// Recover them from the map
-	q := NewPedersen(fake.Mino{}, fake.Service{}, &fake.Pool{}, fake.Factory{}, fake.Signer{})
+	q := NewPedersen(fake.Mino{}, &fake.Service{}, &fake.Pool{}, fake.Factory{}, fake.Signer{})
 
 	err = dkgMap.View(func(tx kv.ReadableTx) error {
 		bucket := tx.GetBucket([]byte("dkgmap"))
@@ -241,8 +236,7 @@ func TestPedersen_SyncDB(t *testing.T) {
 			err = json.Unmarshal(handlerDataBuf, &handlerData)
 			require.NoError(t, err)
 
-			_, err = q.NewActor(electionIDBuf, &fake.Pool{},
-				signed.NewManager(fake.Signer{}, &client{}), handlerData)
+			_, err = q.NewActor(electionIDBuf, &fake.Pool{}, fake.Manager{}, handlerData)
 			require.NoError(t, err)
 
 			return nil
@@ -272,11 +266,13 @@ func TestPedersen_Listen(t *testing.T) {
 	electionIDBuf, err := hex.DecodeString(electionID)
 	require.NoError(t, err)
 
-	p := NewPedersen(fake.Mino{}, fake.NewService(electionID,
-		etypes.Election{Roster: fake.Authority{}}, serdecontext), &fake.Pool{},
+	service := fake.NewService(electionID,
+		etypes.Election{Roster: fake.Authority{}}, serdecontext)
+
+	p := NewPedersen(fake.Mino{}, &service, &fake.Pool{},
 		fake.Factory{}, fake.Signer{})
 
-	actor, err := p.Listen(electionIDBuf, signed.NewManager(fake.Signer{}, &client{}))
+	actor, err := p.Listen(electionIDBuf, fake.Manager{})
 	require.NoError(t, err)
 
 	require.NotNil(t, actor)
@@ -288,14 +284,15 @@ func TestPedersen_TwoListens(t *testing.T) {
 	electionIDBuf, err := hex.DecodeString(electionID)
 	require.NoError(t, err)
 
-	p := NewPedersen(fake.Mino{}, fake.NewService(electionID,
-		etypes.Election{Roster: fake.Authority{}}, serdecontext), &fake.Pool{},
-		fake.Factory{}, fake.Signer{})
+	service := fake.NewService(electionID,
+		etypes.Election{Roster: fake.Authority{}}, serdecontext)
 
-	actor1, err := p.Listen(electionIDBuf, signed.NewManager(fake.Signer{}, &client{}))
+	p := NewPedersen(fake.Mino{}, &service, &fake.Pool{}, fake.Factory{}, fake.Signer{})
+
+	actor1, err := p.Listen(electionIDBuf, fake.Manager{})
 	require.NoError(t, err)
 
-	actor2, err := p.Listen(electionIDBuf, signed.NewManager(fake.Signer{}, &client{}))
+	actor2, err := p.Listen(electionIDBuf, fake.Manager{})
 	require.Error(t, err, "actor already exists for electionID deadbeef")
 
 	require.Equal(t, actor1, actor2)
@@ -304,13 +301,15 @@ func TestPedersen_TwoListens(t *testing.T) {
 func TestPedersen_Setup(t *testing.T) {
 	electionID := "d3adbeef"
 
+	service := fake.NewService(electionID, etypes.Election{
+		ElectionID: electionID,
+		Roster:     fake.Authority{},
+	}, serdecontext)
+
 	actor := Actor{
 		rpc:     nil,
 		factory: nil,
-		service: fake.NewService(electionID, etypes.Election{
-			ElectionID: electionID,
-			Roster:     fake.Authority{},
-		}, serdecontext),
+		service: &service,
 		handler: &Handler{
 			startRes: &state{},
 		},
@@ -360,14 +359,15 @@ func TestPedersen_Setup(t *testing.T) {
 	fac := etypes.NewElectionFactory(etypes.CiphervoteFactory{}, fake.NewRosterFac(roster))
 	actor.electionFac = fac
 
-	actor.service = fake.NewService(
+	service = fake.NewService(
 		electionID,
 		etypes.Election{
 			ElectionID: electionID,
 			Roster:     roster,
-		},
-		serdecontext,
-	)
+		}, serdecontext)
+
+	actor.service = &service
+
 	pubKey1 := suite.Point().Pick(suite.RandomStream())
 	pubKey2 := suite.Point().Pick(suite.RandomStream())
 
@@ -464,9 +464,12 @@ func TestPedersen_Scenario(t *testing.T) {
 	for i, mino := range minos {
 		fac := etypes.NewElectionFactory(etypes.CiphervoteFactory{}, fake.NewRosterFac(roster))
 
-		dkg := NewPedersen(mino, service, &fake.Pool{}, fac, fake.Signer{})
+		dkg := NewPedersen(mino, &service, &fake.Pool{}, fac, fake.Signer{})
 
-		actor, err := dkg.Listen(electionIDBuf, signed.NewManager(fake.Signer{}, &client{}))
+		actor, err := dkg.Listen(electionIDBuf, signed.NewManager(fake.Signer{}, &client{
+			srvc: &fake.Service{},
+			vs:   fake.ValidationService{},
+		}))
 		require.NoError(t, err)
 
 		dkgs[i] = dkg
@@ -476,9 +479,6 @@ func TestPedersen_Scenario(t *testing.T) {
 	// trying to call a decrypt/encrypt before a setup
 	_, _, _, err = actors[0].Encrypt(nil)
 	require.EqualError(t, err, "setup() was not called")
-
-	//_, err = actors[0].Decrypt(nil, nil)
-	//require.EqualError(t, err, "setup() was not called")
 
 	pubKey, err := actors[0].Setup()
 	require.NoError(t, err)
@@ -509,14 +509,11 @@ func TestPedersen_Scenario(t *testing.T) {
 	_, err = actors[0].Setup()
 	require.EqualError(t, err, "setup() was already called, only one call is allowed")
 
-	// every node should be able to decrypt
+	// every node should be able to request the public shares
 
-	//ks, cs := shuffledBallots[0].GetElGPairs()
-	//
-	//for _, actor := range actors {
-	//	decrypted, err := actor.Decrypt(ks[0], cs[0])
+	//for _, actor := range actors {  TODO : Doesn't pass? :(
+	//	err := actor.RequestPubShares()
 	//	require.NoError(t, err)
-	//	require.Equal(t, message, string(decrypted))
 	//}
 }
 

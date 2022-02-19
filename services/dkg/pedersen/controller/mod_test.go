@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"go.dedis.ch/dela/core/txn/signed"
+	"go.dedis.ch/dela/core/validation/simple"
 	"go.dedis.ch/dela/crypto/bls"
 	"io/ioutil"
 	"os"
@@ -103,7 +105,10 @@ func TestMinimal_OnStart(t *testing.T) {
 		" validation.Service: couldn't find dependency for 'validation.Service'")
 
 	// Should work now
-	// TODO: Inject validation service
+	valService := simple.NewService(native.NewExecution(), signed.NewTransactionFactory())
+	ctx.Injector.Inject(valService)
+
+	err = c.OnStart(flags, ctx.Injector)
 
 	require.NoError(t, err)
 }

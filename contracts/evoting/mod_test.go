@@ -170,6 +170,10 @@ func TestCommand_CreateElection(t *testing.T) {
 	require.Equal(t, types.Initial, election.Status)
 }
 
+func TestCommand_OpenElection(t *testing.T) {
+	// TODO
+}
+
 func TestCommand_CastVote(t *testing.T) {
 	castVote := types.CastVote{
 		ElectionID: fakeElectionID,

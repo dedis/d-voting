@@ -79,37 +79,9 @@ func (f Service) GetStore() store.Readable {
 
 // Watch implements ordering.Service. It returns the events that occurred within
 // the service.
-func (f Service) Watch(ctx context.Context) <-chan ordering.Event {
-
-	results := make([]validation.TransactionResult, 3)
-
-	results[0] = TransactionResult{
-		status:  true,
-		message: "",
-		tx:      Transaction{Nonce: 10, Id: []byte("dummyId1")},
-	}
-
-	results[1] = TransactionResult{
-		status:  true,
-		message: "",
-		tx:      Transaction{Nonce: 11, Id: []byte("dummyId2")},
-	}
-
-	results[2] = TransactionResult{
-		status:  f.Status,
-		message: "",
-		tx:      f.Pool.Transaction,
-	}
-
-	channel := make(chan ordering.Event, 1)
-	fmt.Println("watch", results[0])
-	channel <- ordering.Event{
-		Index:        0,
-		Transactions: results,
-	}
-	close(channel)
-
-	return channel
+func (f *Service) Watch(ctx context.Context) <-chan ordering.Event {
+	f.Channel = make(chan ordering.Event, 100)
+	return f.Channel
 
 }
 
@@ -135,7 +107,7 @@ func (f *Service) AddTx(tx Transaction) {
 	results[2] = TransactionResult{
 		status:  f.Status,
 		message: "",
-		tx:      f.Pool.Transaction,
+		tx:      tx,
 	}
 
 	f.Status = true

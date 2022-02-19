@@ -147,98 +147,9 @@ mainSwitch:
 				"call setup() first?")
 		}
 
-		shuffleInstances, err := h.getShuffleIfValid(msg.GetElectionId())
+		err = h.handleDecryptRequest(msg.GetElectionId())
 		if err != nil {
-			return xerrors.Errorf("failed to check if the shuffle is over: %v", err)
-		}
-
-		numberOfShuffles := len(shuffleInstances)
-		numberOfBallots := len(shuffleInstances[numberOfShuffles-1].ShuffledBallots)
-		publicShares := make([][]etypes.PubShare, numberOfBallots)
-
-		h.RLock()
-
-		for i, ballot := range shuffleInstances[numberOfShuffles-1].ShuffledBallots {
-			ballotShares := make([]etypes.PubShare, len(ballot))
-
-			for j, ciphertext := range ballot {
-				S := suite.Point().Mul(h.privShare.V, ciphertext.K)
-
-				partialVal := suite.Point().Sub(ciphertext.C, S)
-
-				ballotShares[j] = partialVal
-			}
-
-			publicShares[i] = ballotShares
-		}
-
-		h.RUnlock()
-
-		err = h.txmnger.Sync()
-		if err != nil {
-			return xerrors.Errorf("failed to sync manager: %v", err)
-		}
-
-		// loop until our transaction has been accepted, or enough nodes
-		// submitted their pubShares
-		for {
-			election, err := h.getElection(msg.GetElectionId())
-			if err != nil {
-				return xerrors.Errorf("could not get the election: %v", err)
-			}
-
-			//TODO: Works with current "shuffleThreshold", but the shuffle threshold
-			// should be smaller in theory ? (1/3 + 1 vs 2/3 + 1 ? )
-			differentPubShares := 0
-			for _, submission := range election.PubShareSubmissions {
-				if submission != nil {
-					differentPubShares++
-				}
-			}
-			if differentPubShares >= election.ShuffleThreshold {
-				dela.Logger.Info().Msgf("decryption possible with shares from %d nodes",
-					differentPubShares)
-				return nil
-			}
-
-			tx, err := makeTx(h.context, &election, publicShares, h.privShare.I,
-				h.txmnger, h.pubSharesSigner)
-
-			if err != nil {
-				return xerrors.Errorf("failed to make tx: %v", err)
-			}
-
-			//TODO: Define in term of size of election ? (same in shuffle)
-			watchTimeout := time.Second * 5
-			watchCtx, cancel := context.WithTimeout(context.Background(), watchTimeout)
-			defer cancel()
-
-			events := h.service.Watch(watchCtx)
-
-			err = h.pool.Add(tx)
-			if err != nil {
-				return xerrors.Errorf("failed to add transaction to the pool: %v", err)
-			}
-
-			accepted, msg := watchTx(events, tx.GetID())
-
-			if !accepted {
-				err = h.txmnger.Sync()
-				if err != nil {
-					return xerrors.Errorf("failed to sync manager: %v", err)
-				}
-			}
-
-			if accepted {
-				dela.Logger.Info().Msgf("our pubShares have been accepted on the chain, "+
-					"total # of submissions = %d, "+
-					"index: %v", len(election.PubShareSubmissions), h.privShare.I)
-				return nil
-			}
-
-			dela.Logger.Info().Msgf("submission of pubShares denied: %v", msg)
-
-			cancel()
+			return xerrors.Errorf("could not send pubShares: %v", err)
 		}
 
 	case types.GetPeerPubKey:
@@ -497,6 +408,104 @@ func (h *Handler) handleDeal(msg types.Deal, from mino.Address, addrs []mino.Add
 	}
 
 	return nil
+}
+
+// handleDecryptRequest computes the public shares of an election and sends them
+// to the chain to allow decryption to proceed.
+func (h *Handler) handleDecryptRequest(electionID string) error {
+	shuffleInstances, err := h.getShuffleIfValid(electionID)
+	if err != nil {
+		return xerrors.Errorf("failed to check if the shuffle is over: %v", err)
+	}
+
+	numberOfShuffles := len(shuffleInstances)
+	numberOfBallots := len(shuffleInstances[numberOfShuffles-1].ShuffledBallots)
+	publicShares := make([][]etypes.PubShare, numberOfBallots)
+
+	h.RLock()
+
+	for i, ballot := range shuffleInstances[numberOfShuffles-1].ShuffledBallots {
+		ballotShares := make([]etypes.PubShare, len(ballot))
+
+		for j, ciphertext := range ballot {
+			S := suite.Point().Mul(h.privShare.V, ciphertext.K)
+
+			partialVal := suite.Point().Sub(ciphertext.C, S)
+
+			ballotShares[j] = partialVal
+		}
+
+		publicShares[i] = ballotShares
+	}
+
+	h.RUnlock()
+
+	err = h.txmnger.Sync()
+	if err != nil {
+		return xerrors.Errorf("failed to sync manager: %v", err)
+	}
+
+	// loop until our transaction has been accepted, or enough nodes
+	// submitted their pubShares
+	for {
+		election, err := h.getElection(electionID)
+		if err != nil {
+			return xerrors.Errorf("could not get the election: %v", err)
+		}
+
+		//TODO: Works with current "shuffleThreshold", but the shuffle threshold
+		// should be smaller in theory ? (1/3 + 1 vs 2/3 + 1 ? )
+		differentPubShares := 0
+		for _, submission := range election.PubShareSubmissions {
+			if submission != nil {
+				differentPubShares++
+			}
+		}
+		if differentPubShares >= election.ShuffleThreshold {
+			dela.Logger.Info().Msgf("decryption possible with shares from %d nodes",
+				differentPubShares)
+			return nil
+		}
+
+		tx, err := makeTx(h.context, &election, publicShares, h.privShare.I,
+			h.txmnger, h.pubSharesSigner)
+
+		if err != nil {
+			return xerrors.Errorf("failed to make tx: %v", err)
+		}
+
+		//TODO: Define in term of size of election ? (same in shuffle)
+		watchTimeout := time.Second * 5
+		watchCtx, cancel := context.WithTimeout(context.Background(), watchTimeout)
+		defer cancel()
+
+		events := h.service.Watch(watchCtx)
+
+		err = h.pool.Add(tx)
+		if err != nil {
+			return xerrors.Errorf("failed to add transaction to the pool: %v", err)
+		}
+
+		accepted, msg := watchTx(events, tx.GetID())
+
+		if !accepted {
+			err = h.txmnger.Sync()
+			if err != nil {
+				return xerrors.Errorf("failed to sync manager: %v", err)
+			}
+		}
+
+		if accepted {
+			dela.Logger.Info().Msgf("our pubShares have been accepted on the chain, "+
+				"total # of submissions = %d, "+
+				"index: %v", len(election.PubShareSubmissions), h.privShare.I)
+			return nil
+		}
+
+		dela.Logger.Info().Msgf("submission of pubShares denied: %v", msg)
+
+		cancel()
+	}
 }
 
 // getShuffleIfValid allows checking if enough shuffles have been made on the

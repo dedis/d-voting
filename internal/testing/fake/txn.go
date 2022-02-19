@@ -86,3 +86,18 @@ func (f Pool) Gather(ctx context.Context, config pool.Config) []txn.Transaction 
 func (f Pool) Close() error {
 	return nil
 }
+
+// Manager is a fake manager
+//
+// - implements txn.Manager
+type Manager struct {
+	txn.Manager
+}
+
+func (m Manager) Sync() error {
+	return nil
+}
+
+func (m Manager) Make(args ...txn.Arg) (txn.Transaction, error) {
+	return nil, GetError()
+}
