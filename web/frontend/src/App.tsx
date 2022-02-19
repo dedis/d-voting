@@ -12,16 +12,17 @@ import {
   ROUTE_RESULT_SHOW,
   ROUTE_BALLOT_INDEX,
   ROUTE_BALLOT_SHOW,
-} from './components/Routes';
+} from './pages/Routes';
+import Home from './pages/Home';
 import About from './pages/About';
 import Admin from './pages/Admin';
-import ElectionStatus from './pages/ElectionIndex';
+import ElectionIndex from './pages/ElectionIndex';
+import ElectionCreate from './pages/ElectionCreate';
+import BallotIndex from './pages/BallotIndex';
+import BallotShow from './pages/BallotShow';
+
 import { GET_PERSONNAL_INFOS } from './components/utils/ExpressEndoints';
-import CreateElection from './components/CreateElection';
 import NavBar from './components/NavBar';
-import Home from './pages/Home';
-import BallotsTable from './components/BallotsTable';
-import Ballot from './components/Ballot';
 import ResultTable from './components/ResultTable';
 import ResultPage from './components/ResultPage';
 import Footer from './components/Footer';
@@ -60,13 +61,13 @@ const App: FC = () => {
                 <Route path={ROUTE_ADMIN} element={<Admin />} />
                 <Route path={ROUTE_ABOUT} element={<About />} />
                 <Route path={ROUTE_HOME} element={<Home isLogged={isLogged} />} />
-                <Route path={ROUTE_ELECTION_INDEX} element={<ElectionStatus />} />
-                <Route path={ROUTE_ELECTION_CREATE} element={<CreateElection />} />
+                <Route path={ROUTE_ELECTION_INDEX} element={<ElectionIndex />} />
+                <Route path={ROUTE_ELECTION_CREATE} element={<ElectionCreate />} />
                 <Route path={ROUTE_ELECTION_SHOW + '/:electionId'} element={<ElectionDetails />} />
                 <Route path={ROUTE_RESULT_INDEX} element={<ResultTable />} />
                 <Route path={ROUTE_RESULT_SHOW + '/:electionId'} element={<ResultPage />} />
-                <Route path={ROUTE_BALLOT_INDEX} element={<BallotsTable />} />
-                <Route path={ROUTE_BALLOT_SHOW + '/:electionId'} element={<Ballot />} />
+                <Route path={ROUTE_BALLOT_INDEX} element={<BallotIndex />} />
+                <Route path={ROUTE_BALLOT_SHOW + '/:electionId'} element={<BallotShow />} />
               </Routes>
             </div>
           </div>

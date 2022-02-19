@@ -9,7 +9,7 @@ import Status from './Status';
 import useElection from './utils/useElection';
 import { RESULT_AVAILABLE } from './utils/StatusNumber';
 import useGetResults from './utils/useGetResults';
-import { ROUTE_ELECTION_INDEX } from './Routes';
+import { ROUTE_ELECTION_INDEX } from '../pages/Routes';
 import './ElectionDetails.css';
 
 const ElectionDetails: FC = () => {

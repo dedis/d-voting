@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { ROUTE_RESULT_SHOW } from './Routes';
+import { ROUTE_RESULT_SHOW } from '../pages/Routes';
 import SimpleTable from './utils/SimpleTable';
 import { RESULT_AVAILABLE } from './utils/StatusNumber';
 

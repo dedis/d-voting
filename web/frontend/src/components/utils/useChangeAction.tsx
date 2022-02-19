@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import ConfirmModal from '../modal/ConfirmModal';
-import { ROUTE_ELECTION_SHOW } from '../Routes';
+import { ROUTE_ELECTION_SHOW } from '../../pages/Routes';
 import usePostCall from './usePostCall';
 import { CLOSE_ENDPOINT, CANCEL_ENDPOINT, DECRYPT_ENDPOINT, SHUFFLE_ENDPOINT } from './Endpoints';
 import { OPEN, CLOSED, SHUFFLED_BALLOT, RESULT_AVAILABLE, CANCELED } from './StatusNumber';

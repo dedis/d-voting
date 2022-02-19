@@ -18,7 +18,7 @@ Currently the Format parameter of an election is always a []string
 called Candidates
  */
 
-const ElectionStatus: FC = () => {
+const ElectionIndex: FC = () => {
   const { t } = useTranslation();
   const token = sessionStorage.getItem('token');
   const request = {
@@ -59,4 +59,4 @@ const ElectionStatus: FC = () => {
   );
 };
 
-export default ElectionStatus;
+export default ElectionIndex;

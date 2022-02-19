@@ -11,7 +11,7 @@ import {
   ROUTE_ELECTION_INDEX,
   ROUTE_RESULT_INDEX,
   ROUTE_BALLOT_INDEX,
-} from './Routes';
+} from '../pages/Routes';
 import logoWhite from '../assets/logo-white.png';
 import { LanguageSelector } from '../language';
 import { default as ProfilePicture } from './ProfilePicture';
