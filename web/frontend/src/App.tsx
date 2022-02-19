@@ -18,14 +18,14 @@ import About from './pages/About';
 import Admin from './pages/Admin';
 import ElectionIndex from './pages/ElectionIndex';
 import ElectionCreate from './pages/ElectionCreate';
+import ResultIndex from './pages/ResultIndex';
+import ResultShow from './pages/ResultShow';
 import BallotIndex from './pages/BallotIndex';
 import BallotShow from './pages/BallotShow';
+import NavBar from './pages/NavBar';
+import Footer from './pages/Footer';
 
 import { GET_PERSONNAL_INFOS } from './components/utils/ExpressEndoints';
-import NavBar from './components/NavBar';
-import ResultTable from './components/ResultTable';
-import ResultPage from './components/ResultPage';
-import Footer from './components/Footer';
 import ElectionDetails from './components/ElectionDetails';
 import './App.css';
 
@@ -64,8 +64,8 @@ const App: FC = () => {
                 <Route path={ROUTE_ELECTION_INDEX} element={<ElectionIndex />} />
                 <Route path={ROUTE_ELECTION_CREATE} element={<ElectionCreate />} />
                 <Route path={ROUTE_ELECTION_SHOW + '/:electionId'} element={<ElectionDetails />} />
-                <Route path={ROUTE_RESULT_INDEX} element={<ResultTable />} />
-                <Route path={ROUTE_RESULT_SHOW + '/:electionId'} element={<ResultPage />} />
+                <Route path={ROUTE_RESULT_INDEX} element={<ResultIndex />} />
+                <Route path={ROUTE_RESULT_SHOW + '/:electionId'} element={<ResultShow />} />
                 <Route path={ROUTE_BALLOT_INDEX} element={<BallotIndex />} />
                 <Route path={ROUTE_BALLOT_SHOW + '/:electionId'} element={<BallotShow />} />
               </Routes>

@@ -1,11 +1,11 @@
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { ROUTE_RESULT_SHOW } from '../pages/Routes';
-import SimpleTable from './utils/SimpleTable';
-import { RESULT_AVAILABLE } from './utils/StatusNumber';
+import { ROUTE_RESULT_SHOW } from './Routes';
+import SimpleTable from '../components/utils/SimpleTable';
+import { RESULT_AVAILABLE } from '../components/utils/StatusNumber';
 
-const ResultTable: FC = () => {
+const ResultIndex: FC = () => {
   const { t } = useTranslation();
   return (
     <div>
@@ -19,4 +19,4 @@ const ResultTable: FC = () => {
   );
 };
 
-export default ResultTable;
+export default ResultIndex;

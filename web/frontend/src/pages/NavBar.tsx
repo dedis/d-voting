@@ -14,7 +14,7 @@ import {
 } from '../pages/Routes';
 import logoWhite from '../assets/logo-white.png';
 import { LanguageSelector } from '../language';
-import { default as ProfilePicture } from './ProfilePicture';
+import { default as ProfilePicture } from '../components/ProfilePicture';
 
 type NavBarProps = {
   lastname: string;
