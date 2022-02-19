@@ -1,6 +1,7 @@
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { ROUTE_RESULT_SHOW } from './Routes';
 import SimpleTable from './utils/SimpleTable';
 import { RESULT_AVAILABLE } from './utils/StatusNumber';
 
@@ -10,7 +11,7 @@ const ResultTable: FC = () => {
     <div>
       <SimpleTable
         statusToKeep={RESULT_AVAILABLE}
-        pathLink="results"
+        pathLink={ROUTE_RESULT_SHOW}
         textWhenData={t('displayResults')}
         textWhenNoData={t('noResultsAvailable')}
       />

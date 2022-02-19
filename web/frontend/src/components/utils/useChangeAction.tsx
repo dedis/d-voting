@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import ConfirmModal from '../modal/ConfirmModal';
+import { ROUTE_ELECTION_SHOW } from '../Routes';
 import usePostCall from './usePostCall';
 import { CLOSE_ENDPOINT, CANCEL_ENDPOINT, DECRYPT_ENDPOINT, SHUFFLE_ENDPOINT } from './Endpoints';
 import { OPEN, CLOSED, SHUFFLED_BALLOT, RESULT_AVAILABLE, CANCELED } from './StatusNumber';
@@ -200,7 +201,9 @@ const useChangeAction = (
       case RESULT_AVAILABLE:
         return (
           <span>
-            <Link className="election-link" to={{ pathname: `/elections/${electionID}` }}>
+            <Link
+              className="election-link"
+              to={{ pathname: `${ROUTE_ELECTION_SHOW}/${electionID}` }}>
               <button className="election-btn">{t('seeResult')}</button>
             </Link>
           </span>

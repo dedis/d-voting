@@ -5,6 +5,7 @@ import kyber from '@dedis/kyber';
 import PropTypes from 'prop-types';
 import { Buffer } from 'buffer';
 
+import { ROUTE_BALLOT_INDEX } from './Routes';
 import useElection from './utils/useElection';
 import usePostCall from './utils/usePostCall';
 import { CAST_BALLOT_ENDPOINT } from './utils/Endpoints';
@@ -145,7 +146,7 @@ const Ballot: FC = () => {
         <div>
           {' '}
           {status === OPEN ? ballotDisplay() : electionClosedDisplay()}
-          <Link to="/vote">
+          <Link to={ROUTE_BALLOT_INDEX}>
             <button className="back-btn">{t('back')}</button>
           </Link>
         </div>

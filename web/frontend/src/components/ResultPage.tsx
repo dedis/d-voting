@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
+import { ROUTE_RESULT_INDEX } from './Routes';
 import Result from './Result';
 import useElection from './utils/useElection';
 import './ResultPage.css';
@@ -29,7 +30,7 @@ const ResultPage: FC<ResultPageProps> = (props) => {
       ) : (
         <div className="error-retrieving">{t('errorRetrievingElection')}</div>
       )}
-      <Link to="/results">
+      <Link to={ROUTE_RESULT_INDEX}>
         <button className="back-btn">{t('back')}</button>
       </Link>
     </div>

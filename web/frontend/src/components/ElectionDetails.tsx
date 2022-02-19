@@ -9,6 +9,7 @@ import Status from './Status';
 import useElection from './utils/useElection';
 import { RESULT_AVAILABLE } from './utils/StatusNumber';
 import useGetResults from './utils/useGetResults';
+import { ROUTE_ELECTION_INDEX } from './Routes';
 import './ElectionDetails.css';
 
 const ElectionDetails: FC = () => {
@@ -71,7 +72,7 @@ const ElectionDetails: FC = () => {
                 </div>
               </div>
             )}
-            <Link to="/elections">
+            <Link to={ROUTE_ELECTION_INDEX}>
               <button className="back-btn">{t('back')}</button>
             </Link>
           </div>
