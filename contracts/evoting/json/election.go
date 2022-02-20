@@ -347,8 +347,8 @@ func decodeShuffleInstance(ctx serde.Context,
 // one node.The first dimension is the pubshares marshalled into bytes.
 type PubsharesUnitJSON [][][]byte
 
-// PubsharesUnitsJSON defines the JSON representation of the types.PubsharesUnits
-// as used in the election.
+// PubsharesUnitsJSON defines the JSON representation of the
+// types.PubsharesUnits as used in the election.
 type PubsharesUnitsJSON struct {
 	// PubsharesJSON contains all the pubShares submitted.
 	PubsharesJSON []PubsharesUnitJSON
