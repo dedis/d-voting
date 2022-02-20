@@ -420,12 +420,12 @@ func (h *Handler) handleDecryptRequest(electionID string) error {
 
 	numberOfShuffles := len(shuffleInstances)
 	numberOfBallots := len(shuffleInstances[numberOfShuffles-1].ShuffledBallots)
-	publicShares := make([][]etypes.PubShare, numberOfBallots)
+	publicShares := make([][]etypes.Pubshare, numberOfBallots)
 
 	h.RLock()
 
 	for i, ballot := range shuffleInstances[numberOfShuffles-1].ShuffledBallots {
-		ballotShares := make([]etypes.PubShare, len(ballot))
+		ballotShares := make([]etypes.Pubshare, len(ballot))
 
 		for j, ciphertext := range ballot {
 			S := suite.Point().Mul(h.privShare.V, ciphertext.K)
@@ -455,15 +455,11 @@ func (h *Handler) handleDecryptRequest(electionID string) error {
 
 		//TODO: Works with current "shuffleThreshold", but the shuffle threshold
 		// should be smaller in theory ? (1/3 + 1 vs 2/3 + 1 ? )
-		differentPubShares := 0
-		for _, submission := range election.PubShareSubmissions {
-			if submission != nil {
-				differentPubShares++
-			}
-		}
-		if differentPubShares >= election.ShuffleThreshold {
+		nbrSubmissions := len(election.PubsharesUnits.Pubshares)
+
+		if nbrSubmissions >= election.ShuffleThreshold {
 			dela.Logger.Info().Msgf("decryption possible with shares from %d nodes",
-				differentPubShares)
+				nbrSubmissions)
 			return nil
 		}
 
@@ -498,7 +494,7 @@ func (h *Handler) handleDecryptRequest(electionID string) error {
 		if accepted {
 			dela.Logger.Info().Msgf("our pubShares have been accepted on the chain, "+
 				"total # of submissions = %d, "+
-				"index: %v", len(election.PubShareSubmissions), h.privShare.I)
+				"index: %v", len(election.PubsharesUnits.Pubshares), h.privShare.I)
 			return nil
 		}
 
@@ -798,14 +794,14 @@ func watchTx(events <-chan ordering.Event, txID []byte) (bool, string) {
 	return false, "watch timeout"
 }
 
-func makeTx(ctx serde.Context, election *etypes.Election, pubShares etypes.PubSharesSubmission,
+func makeTx(ctx serde.Context, election *etypes.Election, pubShares etypes.PubsharesUnit,
 	index int,
 	manager txn.Manager,
 	pubSharesSigner crypto.Signer) (txn.Transaction, error) {
 
 	pubShareTx := etypes.RegisterPubShares{
 		ElectionID: election.ElectionID,
-		PubShares:  pubShares,
+		Pubshares:  pubShares,
 		Index:      index,
 	}
 

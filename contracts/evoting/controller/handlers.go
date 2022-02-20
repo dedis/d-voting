@@ -500,7 +500,7 @@ func (h *votingProxy) BeginDecryption(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = actor.RequestPubShares()
+	err = actor.ComputePubshares()
 	if err != nil {
 		http.Error(w, "failed to request the public shares: "+err.Error(),
 			http.StatusInternalServerError)
@@ -521,13 +521,13 @@ func (h *votingProxy) BeginDecryption(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// DecryptBallots decrypts the shuffled ballots in an election.
-func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
-	req := &types.DecryptBallotsRequest{}
+// CombineShares decrypts the shuffled ballots in an election.
+func (h *votingProxy) CombineShares(w http.ResponseWriter, r *http.Request) {
+	req := &types.CombineSharesRequest{}
 
 	err := json.NewDecoder(r.Body).Decode(req)
 	if err != nil {
-		http.Error(w, "failed to decode DecryptBallotsRequest: "+err.Error(),
+		http.Error(w, "failed to decode CombineSharesRequest: "+err.Error(),
 			http.StatusBadRequest)
 		return
 	}
@@ -567,7 +567,7 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 
 	data, err := decryptBallots.Serialize(h.context)
 	if err != nil {
-		http.Error(w, "failed to marshal DecryptBallots: "+err.Error(),
+		http.Error(w, "failed to marshal decryptBallots: "+err.Error(),
 			http.StatusInternalServerError)
 		return
 	}
@@ -578,7 +578,7 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := types.DecryptBallotsResponse{}
+	response := types.CombineSharesResponse{}
 
 	w.Header().Set("Content-Type", "application/json")
 

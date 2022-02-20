@@ -77,17 +77,23 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("configuration of election is incoherent or has duplicated IDs")
 	}
 
+	emptyPubsharesUnits := types.PubsharesUnits{
+		Pubshares: make([]types.PubsharesUnit, 0),
+		PubKeys:   make([][]byte, 0),
+		Indexes:   make([]int, 0),
+	}
+
 	election := types.Election{
 		ElectionID:    hex.EncodeToString(electionIDBuf),
 		Configuration: tx.Configuration,
 		AdminID:       tx.AdminID,
 		Status:        types.Initial,
 		// Pubkey is set by the opening command
-		BallotSize:          tx.Configuration.MaxBallotSize(),
-		Suffragia:           types.Suffragia{},
-		PubShareSubmissions: make([]types.PubSharesSubmission, roster.Len()),
-		ShuffleInstances:    []types.ShuffleInstance{},
-		DecryptedBallots:    []types.Ballot{},
+		BallotSize:       tx.Configuration.MaxBallotSize(),
+		Suffragia:        types.Suffragia{},
+		PubsharesUnits:   emptyPubsharesUnits,
+		ShuffleInstances: []types.ShuffleInstance{},
+		DecryptedBallots: []types.Ballot{},
 		// We set the participant in the e-voting once for all. If it happens
 		// that 1/3 of the participants go away, the election will never end.
 		Roster:           roster,
@@ -474,8 +480,8 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 	return nil
 }
 
-// registerPubShares implements commands.It performs the REGISTER_PUB_SHARES command
-func (e evotingCommand) registerPubShares(snap store.Snapshot, step execution.Step) error {
+// registerPubshares implements commands.It performs the REGISTER_PUB_SHARES command
+func (e evotingCommand) registerPubshares(snap store.Snapshot, step execution.Step) error {
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
@@ -522,34 +528,45 @@ func (e evotingCommand) registerPubShares(snap store.Snapshot, step execution.St
 
 	hash := h.Sum(nil)
 
-	// Check the signature matches the shuffledBallots using the shuffler's public key
+	// Check the signature matches the pubshares using the node's public key
 	err = signerPubKey.Verify(hash, signature)
 	if err != nil {
-		return xerrors.Errorf("signature does not match the PubShares: %v ", err)
+		return xerrors.Errorf("signature does not match the PubsharesUnit: %v ", err)
 	}
 
 	// coherence check on the length of the shares submitted
 	shuffledBallots := election.ShuffleInstances[len(election.ShuffleInstances)-1].
 		ShuffledBallots
-	if len(tx.PubShares) != len(shuffledBallots) {
+	if len(tx.Pubshares) != len(shuffledBallots) {
 		return xerrors.Errorf("unexpected size of pubshares submission")
 	}
 
 	for i, ballot := range shuffledBallots {
-		if len(ballot) != len(tx.PubShares[i]) {
+		if len(ballot) != len(tx.Pubshares[i]) {
 			return xerrors.Errorf("unexpected size of pubshares submission")
 		}
 	}
 
-	// add the pubShares to the election
-	election.PubShareSubmissions[tx.Index] = tx.PubShares
-
-	nbrSubmissions := 0
-	for _, submission := range election.PubShareSubmissions {
-		if submission != nil {
-			nbrSubmissions++
+	// Check the node hasn't made any other submissions
+	for _, key := range election.PubsharesUnits.PubKeys {
+		if bytes.Equal(key, tx.PublicKey) {
+			return xerrors.Errorf("the node already made a submissions with this key")
 		}
 	}
+
+	for _, index := range election.PubsharesUnits.Indexes {
+		if index == tx.Index {
+			return xerrors.Errorf("a submission has already been made for this index")
+		}
+	}
+
+	// Add the pubshares to the election
+	election.PubsharesUnits.Pubshares = append(election.PubsharesUnits.Pubshares, tx.Pubshares)
+	election.PubsharesUnits.PubKeys = append(election.PubsharesUnits.PubKeys, tx.PublicKey)
+	election.PubsharesUnits.Indexes = append(election.PubsharesUnits.Indexes, tx.Index)
+
+	nbrSubmissions := len(election.PubsharesUnits.Pubshares)
+
 	if nbrSubmissions >= election.ShuffleThreshold {
 		election.Status = types.PubSharesSubmitted
 	}
@@ -594,7 +611,7 @@ func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step)
 			" current status: %d", election.Status)
 	}
 
-	allPubShares := election.PubShareSubmissions
+	allPubShares := election.PubsharesUnits.Pubshares
 
 	nbrShuffles := len(election.ShuffleInstances)
 
@@ -608,7 +625,7 @@ func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step)
 		marshalledBallot := strings.Builder{}
 
 		for j := 0; j < nbrPairsPerBallot; j++ {
-			chunk, err := Decrypt(i, j, allPubShares)
+			chunk, err := decrypt(i, j, allPubShares, election.PubsharesUnits.Indexes)
 			if err != nil {
 				return xerrors.Errorf("failed to decrypt (K, C): %v", err)
 			}
@@ -617,7 +634,7 @@ func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step)
 		}
 
 		var ballot types.Ballot
-		_ = ballot.Unmarshal(marshalledBallot.String(), election)
+		ballot.Unmarshal(marshalledBallot.String(), election)
 
 		//TODO: Do we want to remember which ballots yield an error?
 		// store the raw decryption somewhere?
@@ -799,7 +816,8 @@ func (e evotingCommand) getTransaction(tx txn.Transaction) (serde.Message, error
 	return message, nil
 }
 
-func Decrypt(ballot int, pair int, allPubShares []types.PubSharesSubmission) ([]byte, error) {
+func decrypt(ballot int, pair int, allPubShares []types.PubsharesUnit, indexes []int) (
+	[]byte, error) {
 	pubShares := make([]*share.PubShare, 0)
 
 	for i := 0; i < len(allPubShares); i++ {
@@ -807,7 +825,7 @@ func Decrypt(ballot int, pair int, allPubShares []types.PubSharesSubmission) ([]
 			pubShare := allPubShares[i][ballot][pair]
 
 			pubShares = append(pubShares, &share.PubShare{
-				I: i,
+				I: indexes[i],
 				V: pubShare,
 			})
 		}

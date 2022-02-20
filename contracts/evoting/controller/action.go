@@ -699,12 +699,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf(getElectionErr, err)
 	}
 
-	validSubmissions := 0
-	for _, submission := range election.PubShareSubmissions {
-		if submission != nil {
-			validSubmissions++
-		}
-	}
+	validSubmissions := len(election.PubsharesUnits.Pubshares)
 
 	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
@@ -715,7 +710,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "decrypt ballots")
 
-	decryptBallotsRequest := types.DecryptBallotsRequest{
+	decryptBallotsRequest := types.CombineSharesRequest{
 		ElectionID: electionID,
 		UserID:     "adminId",
 		Token:      token,

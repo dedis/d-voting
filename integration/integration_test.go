@@ -131,7 +131,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 
 		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
 		require.NoError(t, err)
-		err = actor.RequestPubShares()
+		err = actor.ComputePubshares()
 		require.NoError(t, err)
 
 		// ##### DECRYPT BALLOTS #####
@@ -140,7 +140,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		t.Logf("decrypting")
 
 		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
-		t.Logf("PubShares: %v", election.PubShareSubmissions)
+		t.Logf("PubsharesUnit: %v", election.PubsharesUnits)
 		require.NoError(t, err)
 		err = decryptBallots(m, actor, election)
 		require.NoError(t, err)

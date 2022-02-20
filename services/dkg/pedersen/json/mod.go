@@ -60,15 +60,6 @@ type DecryptRequest struct {
 	ElectionId string
 }
 
-type MarshalledPublicShare struct {
-	V []byte
-	I int
-}
-
-type DecryptReply struct {
-	PublicShares [][]MarshalledPublicShare
-}
-
 type GetPeerPubKey struct{}
 
 type GetPeerPubKeyResp struct {
@@ -81,7 +72,6 @@ type Message struct {
 	Response          *Response          `json:",omitempty"`
 	StartDone         *StartDone         `json:",omitempty"`
 	DecryptRequest    *DecryptRequest    `json:",omitempty"`
-	DecryptReply      *DecryptReply      `json:",omitempty"`
 	GetPeerPubKey     *GetPeerPubKey     `json:",omitempty"`
 	GetPeerPubKeyResp *GetPeerPubKeyResp `json:",omitempty"`
 }

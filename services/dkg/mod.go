@@ -33,9 +33,9 @@ type Actor interface {
 
 	Encrypt(message []byte) (K, C kyber.Point, remainder []byte, err error)
 
-	// RequestPubShares sends a decryption request to all nodes in order to gather
+	// ComputePubshares sends a decryption request to all nodes in order to gather
 	// the public shares
-	RequestPubShares() error
+	ComputePubshares() error
 
 	// MarshalJSON returns a JSON-encoded bytestring containing all the actor
 	// data that is meant to be persistent.

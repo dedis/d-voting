@@ -306,7 +306,9 @@ func (a *Actor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte,
 	return K, C, remainder, nil
 }
 
-func (a *Actor) RequestPubShares() error {
+// ComputePubshares implements dkg.Actor. It sends a decrypt request to all
+// the nodes taking part.
+func (a *Actor) ComputePubshares() error {
 
 	if !a.handler.startRes.Done() {
 		return xerrors.Errorf("setup() was not called")

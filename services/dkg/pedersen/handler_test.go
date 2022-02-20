@@ -48,19 +48,26 @@ func TestHandler_Stream(t *testing.T) {
 	receiver = fake.NewReceiver(
 		fake.NewRecvMsg(fake.NewAddress(0), types.NewDecryptRequest(electionIDHex)),
 	)
+
+	emptyPubsharesUnits := electionTypes.PubsharesUnits{
+		Pubshares: make([]electionTypes.PubsharesUnit, 0),
+		PubKeys:   make([][]byte, 0),
+		Indexes:   make([]int, 0),
+	}
+
 	fakeElection := electionTypes.Election{
-		Configuration:       electionTypes.Configuration{},
-		ElectionID:          electionIDHex,
-		AdminID:             "",
-		Status:              electionTypes.ShuffledBallots,
-		Pubkey:              nil,
-		BallotSize:          0,
-		Suffragia:           electionTypes.Suffragia{},
-		ShuffleInstances:    make([]electionTypes.ShuffleInstance, 1),
-		ShuffleThreshold:    0,
-		PubShareSubmissions: nil,
-		DecryptedBallots:    nil,
-		Roster:              fake.Authority{},
+		Configuration:    electionTypes.Configuration{},
+		ElectionID:       electionIDHex,
+		AdminID:          "",
+		Status:           electionTypes.ShuffledBallots,
+		Pubkey:           nil,
+		BallotSize:       0,
+		Suffragia:        electionTypes.Suffragia{},
+		ShuffleInstances: make([]electionTypes.ShuffleInstance, 1),
+		ShuffleThreshold: 0,
+		PubsharesUnits:   emptyPubsharesUnits,
+		DecryptedBallots: nil,
+		Roster:           fake.Authority{},
 	}
 
 	Elections := make(map[string]electionTypes.Election)
@@ -241,19 +248,25 @@ func TestState_MarshalJSON(t *testing.T) {
 func TestHandler_HandlerDecryptRequest(t *testing.T) {
 	electionIDHex := hex.EncodeToString([]byte("fakeElection"))
 
+	emptyPubsharesUnits := electionTypes.PubsharesUnits{
+		Pubshares: make([]electionTypes.PubsharesUnit, 0),
+		PubKeys:   make([][]byte, 0),
+		Indexes:   make([]int, 0),
+	}
+
 	fakeElection := electionTypes.Election{
-		Configuration:       electionTypes.Configuration{},
-		ElectionID:          electionIDHex,
-		AdminID:             "",
-		Status:              electionTypes.ShuffledBallots,
-		Pubkey:              nil,
-		BallotSize:          0,
-		Suffragia:           electionTypes.Suffragia{},
-		ShuffleInstances:    make([]electionTypes.ShuffleInstance, 1),
-		ShuffleThreshold:    1,
-		PubShareSubmissions: nil,
-		DecryptedBallots:    nil,
-		Roster:              fake.Authority{},
+		Configuration:    electionTypes.Configuration{},
+		ElectionID:       electionIDHex,
+		AdminID:          "",
+		Status:           electionTypes.ShuffledBallots,
+		Pubkey:           nil,
+		BallotSize:       0,
+		Suffragia:        electionTypes.Suffragia{},
+		ShuffleInstances: make([]electionTypes.ShuffleInstance, 1),
+		ShuffleThreshold: 1,
+		PubsharesUnits:   emptyPubsharesUnits,
+		DecryptedBallots: nil,
+		Roster:           fake.Authority{},
 	}
 
 	Elections := make(map[string]electionTypes.Election)
@@ -300,7 +313,7 @@ func TestHandler_HandlerDecryptRequest(t *testing.T) {
 	err = h.handleDecryptRequest(electionIDHex)
 	require.NoError(t, err)
 
-	// With PubShares to compute:
+	// With PubsharesUnit to compute:
 
 	// number of votes
 	k := 1

@@ -512,7 +512,7 @@ func TestPedersen_Scenario(t *testing.T) {
 	// every node should be able to request the public shares
 
 	//for _, actor := range actors {  TODO : Doesn't pass? :(
-	//	err := actor.RequestPubShares()
+	//	err := actor.ComputePubshares()
 	//	require.NoError(t, err)
 	//}
 }

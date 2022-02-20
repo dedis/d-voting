@@ -80,16 +80,16 @@ type BeginDecryptionResponse struct {
 	Message string
 }
 
-// DecryptBallotsRequest defines the HTTP request for decrypting the ballots
-type DecryptBallotsRequest struct {
+// CombineSharesRequest defines the HTTP request for decrypting the ballots
+type CombineSharesRequest struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 	UserID     string
 	Token      string
 }
 
-// DecryptBallotsResponse defines the HTTP response when decrypting the ballots
-type DecryptBallotsResponse struct {
+// CombineSharesResponse defines the HTTP response when decrypting the ballots
+type CombineSharesResponse struct {
 }
 
 // GetElectionResultRequest defines the HTTP request for getting the election

@@ -198,9 +198,9 @@ type RegisterPubShares struct {
 	ElectionID string
 	// Index is the index of the node making the submission
 	Index int
-	// PubShares are the public shares of the node submitting the transaction
+	// Pubshares are the public shares of the node submitting the transaction
 	// so that they can be used for decryption.
-	PubShares PubSharesSubmission
+	Pubshares PubsharesUnit
 	// Signature is the signature of the result of HashPubShares() with the
 	// private key corresponding to PublicKey
 	Signature []byte
@@ -305,7 +305,7 @@ func (rp RegisterPubShares) Fingerprint(writer io.Writer) error {
 		return xerrors.Errorf("failed to write pubShare index to fingerprint: %v", err)
 	}
 
-	err = rp.PubShares.Fingerprint(writer)
+	err = rp.Pubshares.Fingerprint(writer)
 	if err != nil {
 		return xerrors.Errorf("failed to fingerprint pubShares: %V", err)
 	}

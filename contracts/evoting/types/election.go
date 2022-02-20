@@ -2,7 +2,6 @@ package types
 
 import (
 	"encoding/base64"
-
 	"io"
 
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
@@ -78,9 +77,9 @@ type Election struct {
 	// to compute it based on the roster each time we need it.
 	ShuffleThreshold int
 
-	// PubShareSubmissions is an array containing all the submission of pubShares.
+	// PubsharesUnits is an array containing all the submission of pubShares.
 	// Each node submits its share to its personal index from the DKG service.
-	PubShareSubmissions []PubSharesSubmission
+	PubsharesUnits PubsharesUnits
 
 	DecryptedBallots []Ballot
 
@@ -321,15 +320,15 @@ func ciphervoteFromPairs(ks []kyber.Point, cs []kyber.Point) (Ciphervote, error)
 	return res, nil
 }
 
-// PubShare represents a public share.
-type PubShare kyber.Point
+// Pubshare represents a public share.
+type Pubshare kyber.Point
 
-// PubSharesSubmission holds all the PubShares produced by a given node,
+// PubsharesUnit holds all the PubsharesUnit produced by a given node,
 // 1 for each ElGamal pair
-type PubSharesSubmission [][]PubShare
+type PubsharesUnit [][]Pubshare
 
 // Fingerprint implements serde.Fingerprinter
-func (p PubSharesSubmission) Fingerprint(writer io.Writer) error {
+func (p PubsharesUnit) Fingerprint(writer io.Writer) error {
 	for _, ballotShares := range p {
 		for _, pubShare := range ballotShares {
 			_, err := pubShare.MarshalTo(writer)
@@ -340,4 +339,16 @@ func (p PubSharesSubmission) Fingerprint(writer io.Writer) error {
 	}
 
 	return nil
+}
+
+// PubsharesUnits contains the pubshares submitted in parallel with the necessary
+// data to identify the nodes who submitted them and their index.
+type PubsharesUnits struct {
+	// Pubshares are the pubshares submitted
+	Pubshares []PubsharesUnit
+	// PubKeys contains the pubKey of the nodes who made each corresponding
+	// PubsharesUnit
+	PubKeys [][]byte
+	// Indexes is the index of the nodes who made each corresponding PubsharesUnit
+	Indexes []int
 }

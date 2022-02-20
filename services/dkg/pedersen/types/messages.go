@@ -145,7 +145,7 @@ func (d Deal) Serialize(ctx serde.Context) ([]byte, error) {
 // DealerResponse is a response of a single dealer.
 type DealerResponse struct {
 	sessionID []byte
-	// Index of the verifier issuing this Response from the new set of
+	// Indexes of the verifier issuing this Response from the new set of
 	// nodes.
 	index     uint32
 	status    bool
@@ -186,7 +186,7 @@ func (dresp DealerResponse) GetSignature() []byte {
 //
 // - implements serde.Message
 type Response struct {
-	// Index of the Dealer this response is for.
+	// Indexes of the Dealer this response is for.
 	index    uint32
 	response DealerResponse
 }

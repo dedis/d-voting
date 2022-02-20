@@ -74,9 +74,9 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 
 		m = TransactionJSON{ShuffleBallots: &sb}
 	case types.RegisterPubShares:
-		pubShares := make([][][]byte, len(t.PubShares))
+		pubShares := make([][][]byte, len(t.Pubshares))
 
-		for i, ballotShares := range t.PubShares {
+		for i, ballotShares := range t.Pubshares {
 			pubShares[i] = make([][]byte, len(ballotShares))
 			for i2, share := range ballotShares {
 				pubShare, err := share.MarshalBinary()
@@ -236,12 +236,12 @@ type ShuffleBallotsJSON struct {
 type RegisterPubSharesJSON struct {
 	ElectionID string
 	Index      int
-	PubShares  PubSharesSubmissionJSON
+	PubShares  PubsharesUnitJSON
 	Signature  []byte
 	PublicKey  []byte
 }
 
-// DecryptBallotsJSON is the JSON representation of a DecryptBallots transaction
+// DecryptBallotsJSON is the JSON representation of a CombineShares transaction
 type DecryptBallotsJSON struct {
 	ElectionID       string
 	UserID           string
@@ -311,10 +311,10 @@ func decodeShuffleBallots(ctx serde.Context, m ShuffleBallotsJSON) (serde.Messag
 }
 
 func decodeRegisterPubShares(m RegisterPubSharesJSON) (serde.Message, error) {
-	pubShares := make([][]types.PubShare, len(m.PubShares))
+	pubShares := make([][]types.Pubshare, len(m.PubShares))
 
 	for i, ballotShares := range m.PubShares {
-		pubShares[i] = make([]types.PubShare, len(ballotShares))
+		pubShares[i] = make([]types.Pubshare, len(ballotShares))
 
 		for i2, share := range ballotShares {
 			pubShare := suite.Point()
@@ -330,7 +330,7 @@ func decodeRegisterPubShares(m RegisterPubSharesJSON) (serde.Message, error) {
 	return types.RegisterPubShares{
 		ElectionID: m.ElectionID,
 		Index:      m.Index,
-		PubShares:  pubShares,
+		Pubshares:  pubShares,
 		Signature:  m.Signature,
 		PublicKey:  m.PublicKey,
 	}, nil

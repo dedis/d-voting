@@ -50,7 +50,7 @@ func (electionFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, 
 			return nil, xerrors.Errorf("failed to serialize roster: %v", err)
 		}
 
-		pubSharesSubmissions, err := encodePubSharesSubmissions(m.PubShareSubmissions)
+		pubSharesSubmissions, err := encodePubsharesUnits(m.PubsharesUnits)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to encode submissions of pubShares: %v",
 				err)
@@ -128,18 +128,18 @@ func (electionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, err
 	}
 
 	return types.Election{
-		Configuration:       electionJSON.Configuration,
-		ElectionID:          electionJSON.ElectionID,
-		AdminID:             electionJSON.AdminID,
-		Status:              types.Status(electionJSON.Status),
-		Pubkey:              pubKey,
-		BallotSize:          electionJSON.BallotSize,
-		Suffragia:           suffragia,
-		ShuffleInstances:    shuffleInstances,
-		ShuffleThreshold:    electionJSON.ShuffleThreshold,
-		PubShareSubmissions: pubSharesSubmissions,
-		DecryptedBallots:    electionJSON.DecryptedBallots,
-		Roster:              roster,
+		Configuration:    electionJSON.Configuration,
+		ElectionID:       electionJSON.ElectionID,
+		AdminID:          electionJSON.AdminID,
+		Status:           types.Status(electionJSON.Status),
+		Pubkey:           pubKey,
+		BallotSize:       electionJSON.BallotSize,
+		Suffragia:        suffragia,
+		ShuffleInstances: shuffleInstances,
+		ShuffleThreshold: electionJSON.ShuffleThreshold,
+		PubsharesUnits:   pubSharesSubmissions,
+		DecryptedBallots: electionJSON.DecryptedBallots,
+		Roster:           roster,
 	}, nil
 }
 
@@ -169,7 +169,7 @@ type ElectionJSON struct {
 	// to compute it based on the roster each time we need it.
 	ShuffleThreshold int
 
-	PubSharesSubmissions []PubSharesSubmissionJSON
+	PubSharesSubmissions PubsharesUnitsJSON
 
 	DecryptedBallots []types.Ballot
 
@@ -343,63 +343,76 @@ func decodeShuffleInstance(ctx serde.Context,
 	return res, nil
 }
 
-type PubSharesSubmissionJSON [][][]byte
+// PubsharesUnitJSON is the JSON representation of a submission of pubShares by
+// one node.The first dimension is the pubshares marshalled into bytes.
+type PubsharesUnitJSON [][][]byte
 
-func encodePubSharesSubmissions(submissions []types.PubSharesSubmission) (
-	[]PubSharesSubmissionJSON, error) {
-
-	submissionsJSON := make([]PubSharesSubmissionJSON, len(submissions))
-
-	for i, submission := range submissions {
-		if submission != nil {
-			submissionsJSON[i] = make([][][]byte, len(submission))
-
-			for i2, ballotShares := range submission {
-				submissionsJSON[i][i2] = make([][]byte, len(ballotShares))
-
-				for i3, pubShare := range ballotShares {
-					pubShareMarshaled, err := pubShare.MarshalBinary()
-					if err != nil {
-						return nil, xerrors.Errorf("could not marshal public share: %v", err)
-					}
-
-					submissionsJSON[i][i2][i3] = pubShareMarshaled
-				}
-			}
-		} else {
-			submissionsJSON[i] = make([][][]byte, 0)
-		}
-	}
-
-	return submissionsJSON, nil
+// PubsharesUnitsJSON defines the JSON representation of the types.PubsharesUnits as
+// used in the election.
+type PubsharesUnitsJSON struct {
+	// PubsharesJSON contains all the pubShares submitted.
+	PubsharesJSON []PubsharesUnitJSON
+	PubKeys       [][]byte
+	Indexes       []int
 }
 
-func decodePubSharesSubmissions(submissionsJSON []PubSharesSubmissionJSON) (
-	[]types.PubSharesSubmission, error) {
+func encodePubsharesUnits(units types.PubsharesUnits) (
+	PubsharesUnitsJSON, error) {
+	var unitsJSON PubsharesUnitsJSON
 
-	submissions := make([]types.PubSharesSubmission, len(submissionsJSON))
+	submissionsJSON := make([]PubsharesUnitJSON, len(units.Pubshares))
 
-	for i, submissionJSON := range submissionsJSON {
-		if len(submissionJSON) != 0 {
-			submissions[i] = make([][]types.PubShare, len(submissionJSON))
+	for i, submission := range units.Pubshares {
+		submissionsJSON[i] = make([][][]byte, len(submission))
 
-			for i2, ballotSharesJSON := range submissionJSON {
-				submissions[i][i2] = make([]types.PubShare, len(ballotSharesJSON))
+		for i2, ballotShares := range submission {
+			submissionsJSON[i][i2] = make([][]byte, len(ballotShares))
 
-				for i3, pubShareJSON := range ballotSharesJSON {
-					pubShare := suite.Point()
-					err := pubShare.UnmarshalBinary(pubShareJSON)
-					if err != nil {
-						return nil, xerrors.Errorf("could not unmarshal public share: %v", err)
-					}
-
-					submissions[i][i2][i3] = pubShare
+			for i3, pubShare := range ballotShares {
+				pubShareMarshaled, err := pubShare.MarshalBinary()
+				if err != nil {
+					return unitsJSON, xerrors.Errorf("could not marshal public share: %v", err)
 				}
+
+				submissionsJSON[i][i2][i3] = pubShareMarshaled
 			}
-		} else {
-			submissions[i] = nil
 		}
 	}
 
-	return submissions, nil
+	unitsJSON.Indexes = units.Indexes
+	unitsJSON.PubKeys = units.PubKeys
+	unitsJSON.PubsharesJSON = submissionsJSON
+
+	return unitsJSON, nil
+}
+
+func decodePubSharesSubmissions(unitsJSON PubsharesUnitsJSON) (
+	types.PubsharesUnits, error) {
+	var units types.PubsharesUnits
+
+	submissions := make([]types.PubsharesUnit, len(unitsJSON.PubsharesJSON))
+
+	for i, submissionJSON := range unitsJSON.PubsharesJSON {
+		submissions[i] = make([][]types.Pubshare, len(submissionJSON))
+
+		for i2, ballotSharesJSON := range submissionJSON {
+			submissions[i][i2] = make([]types.Pubshare, len(ballotSharesJSON))
+
+			for i3, pubShareJSON := range ballotSharesJSON {
+				pubShare := suite.Point()
+				err := pubShare.UnmarshalBinary(pubShareJSON)
+				if err != nil {
+					return units, xerrors.Errorf("could not unmarshal public share: %v", err)
+				}
+
+				submissions[i][i2][i3] = pubShare
+			}
+		}
+	}
+
+	units.Indexes = unitsJSON.Indexes
+	units.PubKeys = unitsJSON.PubKeys
+	units.Pubshares = submissions
+
+	return units, nil
 }
