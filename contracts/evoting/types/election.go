@@ -341,14 +341,15 @@ func (p PubsharesUnit) Fingerprint(writer io.Writer) error {
 	return nil
 }
 
-// PubsharesUnits contains the pubshares submitted in parallel with the necessary
-// data to identify the nodes who submitted them and their index.
+// PubsharesUnits contains the pubshares submitted in parallel with the
+// necessary data to identify the nodes who submitted them and their index.
 type PubsharesUnits struct {
 	// Pubshares are the pubshares submitted
 	Pubshares []PubsharesUnit
 	// PubKeys contains the pubKey of the nodes who made each corresponding
 	// PubsharesUnit
 	PubKeys [][]byte
-	// Indexes is the index of the nodes who made each corresponding PubsharesUnit
+	// Indexes is the index of the nodes who made each corresponding
+	// PubsharesUnit
 	Indexes []int
 }
