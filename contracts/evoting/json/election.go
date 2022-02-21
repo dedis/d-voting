@@ -57,18 +57,18 @@ func (electionFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, 
 		}
 
 		electionJSON := ElectionJSON{
-			Configuration:        m.Configuration,
-			ElectionID:           m.ElectionID,
-			AdminID:              m.AdminID,
-			Status:               uint16(m.Status),
-			Pubkey:               pubkey,
-			BallotSize:           m.BallotSize,
-			Suffragia:            suffragia,
-			ShuffleInstances:     shuffleInstances,
-			ShuffleThreshold:     m.ShuffleThreshold,
-			PubSharesSubmissions: pubSharesSubmissions,
-			DecryptedBallots:     m.DecryptedBallots,
-			RosterBuf:            rosterBuf,
+			Configuration:    m.Configuration,
+			ElectionID:       m.ElectionID,
+			AdminID:          m.AdminID,
+			Status:           uint16(m.Status),
+			Pubkey:           pubkey,
+			BallotSize:       m.BallotSize,
+			Suffragia:        suffragia,
+			ShuffleInstances: shuffleInstances,
+			ShuffleThreshold: m.ShuffleThreshold,
+			PubsharesUnits:   pubSharesSubmissions,
+			DecryptedBallots: m.DecryptedBallots,
+			RosterBuf:        rosterBuf,
 		}
 
 		buff, err := ctx.Marshal(&electionJSON)
@@ -122,7 +122,7 @@ func (electionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, err
 		return nil, xerrors.Errorf("failed to decode roster: %v", err)
 	}
 
-	pubSharesSubmissions, err := decodePubSharesSubmissions(electionJSON.PubSharesSubmissions)
+	pubSharesSubmissions, err := decodePubSharesUnits(electionJSON.PubsharesUnits)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to decode pubShares submissions: %v", err)
 	}
@@ -169,7 +169,7 @@ type ElectionJSON struct {
 	// to compute it based on the roster each time we need it.
 	ShuffleThreshold int
 
-	PubSharesSubmissions PubsharesUnitsJSON
+	PubsharesUnits PubsharesUnitsJSON
 
 	DecryptedBallots []types.Ballot
 
@@ -386,8 +386,7 @@ func encodePubsharesUnits(units types.PubsharesUnits) (
 	return unitsJSON, nil
 }
 
-func decodePubSharesSubmissions(unitsJSON PubsharesUnitsJSON) (
-	types.PubsharesUnits, error) {
+func decodePubSharesUnits(unitsJSON PubsharesUnitsJSON) (types.PubsharesUnits, error) {
 	var units types.PubsharesUnits
 
 	submissions := make([]types.PubsharesUnit, len(unitsJSON.PubsharesJSON))
