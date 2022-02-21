@@ -560,7 +560,7 @@ func (h *votingProxy) CombineShares(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	decryptBallots := types.DecryptBallots{
+	decryptBallots := types.CombineShares{
 		ElectionID: req.ElectionID,
 		UserID:     req.UserID,
 	}
@@ -572,7 +572,7 @@ func (h *votingProxy) CombineShares(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdDecryptBallots, evoting.ElectionArg, data)
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCombineShares, evoting.ElectionArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return

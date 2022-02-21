@@ -140,13 +140,11 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to resolve db: %v", err)
 	}
 
-	pubSharesSigner, err := getNodeSigner(ctx)
+	signer, err := getSigner(ctx)
 	if err != nil {
 		return xerrors.Errorf("failed to get a signer for the pubShares: %v",
 			err)
 	}
-
-	keyPath := ctx.String("signer")
 
 	client, err := makeClient(inj)
 	if err != nil {
@@ -155,7 +153,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 
 	electionFac := etypes.NewElectionFactory(etypes.CiphervoteFactory{}, rosterFac)
 
-	dkg := pedersen.NewPedersen(no, srvc, p, electionFac, pubSharesSigner)
+	dkg := pedersen.NewPedersen(no, srvc, p, electionFac, signer)
 
 	// Use dkgMap to fill the actors map
 	err = db.View(func(tx kv.ReadableTx) error {
@@ -170,11 +168,6 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 			err = json.Unmarshal(handlerDataBuf, &handlerData)
 			if err != nil {
 				return err
-			}
-
-			signer, err := getSigner(keyPath)
-			if err != nil {
-				return xerrors.Errorf("failed to get signer: %v", err)
 			}
 
 			_, err = dkg.NewActor(electionIDBuf, p, signed.NewManager(signer, &client), handlerData)
@@ -203,8 +196,8 @@ func (controller) OnStop(node.Injector) error {
 	return nil
 }
 
-//getNodeSigner creates a signer with the node's private key
-func getNodeSigner(flags cli.Flags) (crypto.AggregateSigner, error) {
+//getSigner creates a signer with the node's private key
+func getSigner(flags cli.Flags) (crypto.AggregateSigner, error) {
 	fileLoader := loader.NewFileLoader(filepath.Join(flags.Path("config"), privateKeyFile))
 
 	signerData, err := fileLoader.LoadOrCreate(generator{newFn: blsSigner})

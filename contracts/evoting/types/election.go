@@ -323,7 +323,7 @@ func ciphervoteFromPairs(ks []kyber.Point, cs []kyber.Point) (Ciphervote, error)
 // Pubshare represents a public share.
 type Pubshare kyber.Point
 
-// PubsharesUnit holds all the PubsharesUnit produced by a given node,
+// PubsharesUnit holds all the public shares produced by a given node,
 // 1 for each ElGamal pair
 type PubsharesUnit [][]Pubshare
 
@@ -344,7 +344,7 @@ func (p PubsharesUnit) Fingerprint(writer io.Writer) error {
 // PubsharesUnits contains the pubshares submitted in parallel with the
 // necessary data to identify the nodes who submitted them and their index.
 type PubsharesUnits struct {
-	// Pubshares are the pubshares submitted
+	// Pubshares holds the nodes' public shares
 	Pubshares []PubsharesUnit
 	// PubKeys contains the pubKey of the nodes who made each corresponding
 	// PubsharesUnit

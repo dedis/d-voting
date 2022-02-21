@@ -9,9 +9,6 @@ import (
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/core/validation"
-	"go.dedis.ch/dela/crypto"
-	"go.dedis.ch/dela/crypto/bls"
-	"go.dedis.ch/dela/crypto/loader"
 	"io/ioutil"
 	"net/http"
 
@@ -62,9 +59,7 @@ func (a *initAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("DKG was already initialized for electionID %s", electionID)
 	}
 
-	keyPath := ctx.Flags.String("signer")
-
-	signer, err := getSigner(keyPath)
+	signer, err := getSigner(ctx.Flags)
 	if err != nil {
 		return xerrors.Errorf("failed to get signer: %v", err)
 	}
@@ -325,7 +320,7 @@ func ListenHandler(dkg dkg.DKG, ctx node.Context) func(http.ResponseWriter, *htt
 
 		//keyPath := ctx.Flags.String("signer")
 
-		signer, err := getNodeSigner(ctx.Flags)
+		signer, err := getSigner(ctx.Flags)
 		if err != nil {
 			http.Error(w,
 				fmt.Sprintf("failed to get signer for txmngr : %v", err),
@@ -458,20 +453,4 @@ func (c *client) GetNonce(id access.Identity) (uint64, error) {
 	}
 
 	return nonce, nil
-}
-
-func getSigner(filePath string) (crypto.Signer, error) {
-	l := loader.NewFileLoader(filePath)
-
-	signerData, err := l.Load()
-	if err != nil {
-		return nil, xerrors.Errorf("failed to load signer: %v", err)
-	}
-
-	signer, err := bls.NewSignerFromBytes(signerData)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to unmarshal signer: %v", err)
-	}
-
-	return signer, nil
 }

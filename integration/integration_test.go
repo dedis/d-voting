@@ -517,7 +517,7 @@ func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error
 		return xerrors.Errorf("cannot decrypt: not all pubShares submitted")
 	}
 
-	decryptBallots := types.DecryptBallots{
+	decryptBallots := types.CombineShares{
 		ElectionID: election.ElectionID,
 		UserID:     election.AdminID,
 	}
@@ -530,7 +530,7 @@ func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error
 	args := []txn.Arg{
 		{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
 		{Key: evoting.ElectionArg, Value: data},
-		{Key: evoting.CmdArg, Value: []byte(evoting.CmdDecryptBallots)},
+		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCombineShares)},
 	}
 
 	_, err = m.addAndWait(args...)

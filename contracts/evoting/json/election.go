@@ -50,7 +50,7 @@ func (electionFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, 
 			return nil, xerrors.Errorf("failed to serialize roster: %v", err)
 		}
 
-		pubSharesSubmissions, err := encodePubsharesUnits(m.PubsharesUnits)
+		pubsharesUnits, err := encodePubsharesUnits(m.PubsharesUnits)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to encode submissions of pubShares: %v",
 				err)
@@ -66,7 +66,7 @@ func (electionFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, 
 			Suffragia:        suffragia,
 			ShuffleInstances: shuffleInstances,
 			ShuffleThreshold: m.ShuffleThreshold,
-			PubsharesUnits:   pubSharesSubmissions,
+			PubsharesUnits:   pubsharesUnits,
 			DecryptedBallots: m.DecryptedBallots,
 			RosterBuf:        rosterBuf,
 		}

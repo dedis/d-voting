@@ -513,7 +513,7 @@ func TestPedersen_Scenario(t *testing.T) {
 
 	//for _, actor := range actors {  TODO : Doesn't pass? :(
 	//	err := actor.ComputePubshares()
-	//	require.NoError(t, err)
+	//	require.NoError(t, err.)
 	//}
 }
 

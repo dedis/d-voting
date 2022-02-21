@@ -445,8 +445,8 @@ func (h *Handler) handleDecryptRequest(electionID string) error {
 		return xerrors.Errorf("failed to sync manager: %v", err)
 	}
 
-	// loop until our transaction has been accepted, or enough nodes
-	// submitted their pubShares
+	// loop until our transaction has been accepted, or enough nodes submitted
+	// their pubShares
 	for {
 		election, err := h.getElection(electionID)
 		if err != nil {
@@ -770,7 +770,7 @@ func (s *state) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// watchTx checks the transaction to find one that match txID. Return if the
+// watchTx checks the transaction to find one that match txID. Returns if the
 // transaction has been accepted or not. Will also return false if/when the
 // events chan is closed, which is expected to happen.
 func watchTx(events <-chan ordering.Event, txID []byte) (bool, string) {

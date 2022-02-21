@@ -59,30 +59,30 @@ const (
 type Pedersen struct {
 	sync.RWMutex
 
-	mino            mino.Mino
-	factory         serde.Factory
-	service         ordering.Service
-	electionFac     serde.Factory
-	pool            pool.Pool
-	pubSharesSigner crypto.Signer
-	actors          map[string]dkg.Actor
+	mino        mino.Mino
+	factory     serde.Factory
+	service     ordering.Service
+	electionFac serde.Factory
+	pool        pool.Pool
+	signer      crypto.Signer
+	actors      map[string]dkg.Actor
 }
 
 // NewPedersen returns a new DKG Pedersen factory
 func NewPedersen(m mino.Mino, service ordering.Service, pool pool.Pool,
-	electionFac serde.Factory, pubSharesSigner crypto.Signer) *Pedersen {
+	electionFac serde.Factory, signer crypto.Signer) *Pedersen {
 
 	factory := types.NewMessageFactory(m.GetAddressFactory())
 	actors := make(map[string]dkg.Actor)
 
 	return &Pedersen{
-		mino:            m,
-		factory:         factory,
-		service:         service,
-		pool:            pool,
-		actors:          actors,
-		pubSharesSigner: pubSharesSigner,
-		electionFac:     electionFac,
+		mino:        m,
+		factory:     factory,
+		service:     service,
+		pool:        pool,
+		actors:      actors,
+		signer:      signer,
+		electionFac: electionFac,
 	}
 }
 
@@ -102,11 +102,6 @@ func (s *Pedersen) Listen(electionIDBuf []byte, txmngr txn.Manager) (dkg.Actor, 
 		return actor, xerrors.Errorf("actor already exists for electionID %s", electionID)
 	}
 
-	err := txmngr.Sync()
-	if err != nil {
-		return nil, xerrors.Errorf("failed to sync manager: %v", err)
-	}
-
 	return s.NewActor(electionIDBuf, s.pool, txmngr, NewHandlerData())
 }
 
@@ -122,7 +117,7 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, pool pool.Pool, txmngr txn.Man
 	ctx := jsonserde.NewContext()
 
 	// link the actor to an RPC by the election ID
-	h := NewHandler(s.mino.GetAddress(), s.service, pool, txmngr, s.pubSharesSigner,
+	h := NewHandler(s.mino.GetAddress(), s.service, pool, txmngr, s.signer,
 		handlerData, ctx, s.electionFac)
 
 	no := s.mino.WithSegment(electionID)

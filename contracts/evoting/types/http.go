@@ -69,6 +69,8 @@ type ShuffleBallotsResponse struct {
 	Message string
 }
 
+// BeginDecryptionRequest defines the HTTP request for beginning the decryption
+// process by asking the nodes to send their public shares.
 type BeginDecryptionRequest struct {
 	// ElectionID is hex-encoded
 	ElectionID string
@@ -76,6 +78,8 @@ type BeginDecryptionRequest struct {
 	Token      string
 }
 
+// BeginDecryptionResponse defines the HTTP response confirming the decryption
+// process began.
 type BeginDecryptionResponse struct {
 	Message string
 }

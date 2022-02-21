@@ -2,11 +2,8 @@ package controller
 
 import (
 	"encoding/hex"
-	"go.dedis.ch/dela/crypto/bls"
 	"golang.org/x/xerrors"
 	"io/ioutil"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/dedis/d-voting/internal/testing/fake"
@@ -33,28 +30,8 @@ func TestInitAction_Execute(t *testing.T) {
 	err := action.Execute(ctx)
 	require.EqualError(t, err, "failed to resolve DKG: couldn't find dependency for 'dkg.DKG'")
 
-	// Try without a signer
 	bp := fake.BadPedersen{Err: xerrors.Errorf("fake error")}
 	ctx.Injector.Inject(bp)
-	err = action.Execute(ctx)
-	require.EqualError(t, err, "failed to get signer: failed to load signer:"+
-		" while opening file: open : The system cannot find the file specified.")
-
-	// Create the signer
-	dir, err := ioutil.TempDir(os.TempDir(), "memcoin1")
-	require.NoError(t, err)
-	signerFilePath := filepath.Join(dir, privateKeyFile)
-	flags.strings["signer"] = signerFilePath
-
-	file, err := os.Create(signerFilePath)
-	require.NoError(t, err)
-	defer os.RemoveAll(signerFilePath)
-
-	signer, err := bls.NewSigner().MarshalBinary()
-	require.NoError(t, err)
-
-	_, err = file.Write(signer)
-	require.NoError(t, err)
 
 	// Try without ordering service
 	err = action.Execute(ctx)

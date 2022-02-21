@@ -194,6 +194,10 @@ func (sb ShuffleBallots) Serialize(ctx serde.Context) ([]byte, error) {
 	return data, nil
 }
 
+// RegisterPubShares defines the transaction used by a node to send its
+// pubshares on the chain.
+//
+// - implements serde.Message
 type RegisterPubShares struct {
 	ElectionID string
 	// Index is the index of the node making the submission
@@ -220,19 +224,18 @@ func (rp RegisterPubShares) Serialize(ctx serde.Context) ([]byte, error) {
 	return data, nil
 }
 
-// DecryptBallots ...
-// DecryptBallots defines the transaction to decrypt the ballots
+// CombineShares defines the transaction to decrypt the ballots by combining all
+// the public shares.
 //
 // - implements serde.Message
-type DecryptBallots struct {
+type CombineShares struct {
 	// ElectionID is hex-encoded
-	ElectionID       string
-	UserID           string
-	DecryptedBallots []Ballot
+	ElectionID string
+	UserID     string
 }
 
 // Serialize implements serde.Message
-func (db DecryptBallots) Serialize(ctx serde.Context) ([]byte, error) {
+func (db CombineShares) Serialize(ctx serde.Context) ([]byte, error) {
 	format := transactionFormats.Get(ctx.GetFormat())
 
 	data, err := format.Encode(ctx, db)
@@ -280,7 +283,7 @@ func RandomID() (string, error) {
 func (sb ShuffleBallots) Fingerprint(writer io.Writer) error {
 	_, err := writer.Write([]byte(sb.ElectionID))
 	if err != nil {
-		return xerrors.Errorf("failed to write election ID to fingerprint: %v", err)
+		return xerrors.Errorf("failed to write the election ID: %v", err)
 	}
 
 	for _, ballot := range sb.ShuffledBallots {
@@ -297,12 +300,12 @@ func (sb ShuffleBallots) Fingerprint(writer io.Writer) error {
 func (rp RegisterPubShares) Fingerprint(writer io.Writer) error {
 	_, err := writer.Write([]byte(rp.ElectionID))
 	if err != nil {
-		return xerrors.Errorf("failed to write election ID to fingerprint: %v", err)
+		return xerrors.Errorf("failed to write the election ID: %v", err)
 	}
 
 	_, err = writer.Write([]byte(strconv.Itoa(rp.Index)))
 	if err != nil {
-		return xerrors.Errorf("failed to write pubShare index to fingerprint: %v", err)
+		return xerrors.Errorf("failed to write the pubShare index: %v", err)
 	}
 
 	err = rp.Pubshares.Fingerprint(writer)

@@ -97,14 +97,13 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 		}
 
 		m = TransactionJSON{RegisterPubShares: &rp}
-	case types.DecryptBallots:
-		db := DecryptBallotsJSON{
-			ElectionID:       t.ElectionID,
-			UserID:           t.UserID,
-			DecryptedBallots: t.DecryptedBallots,
+	case types.CombineShares:
+		db := CombineSharesJSON{
+			ElectionID: t.ElectionID,
+			UserID:     t.UserID,
 		}
 
-		m = TransactionJSON{DecryptBallots: &db}
+		m = TransactionJSON{CombineShares: &db}
 	case types.CancelElection:
 		ce := CancelElectionJSON{
 			ElectionID: t.ElectionID,
@@ -169,11 +168,10 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 		}
 
 		return msg, nil
-	case m.DecryptBallots != nil:
-		return types.DecryptBallots{
-			ElectionID:       m.DecryptBallots.ElectionID,
-			UserID:           m.DecryptBallots.UserID,
-			DecryptedBallots: m.DecryptBallots.DecryptedBallots,
+	case m.CombineShares != nil:
+		return types.CombineShares{
+			ElectionID: m.CombineShares.ElectionID,
+			UserID:     m.CombineShares.UserID,
 		}, nil
 	case m.CancelElection != nil:
 		return types.CancelElection{
@@ -194,7 +192,7 @@ type TransactionJSON struct {
 	CloseElection     *CloseElectionJSON     `json:",omitempty"`
 	ShuffleBallots    *ShuffleBallotsJSON    `json:",omitempty"`
 	RegisterPubShares *RegisterPubSharesJSON `json:",omitempty"`
-	DecryptBallots    *DecryptBallotsJSON    `json:",omitempty"`
+	CombineShares     *CombineSharesJSON     `json:",omitempty"`
 	CancelElection    *CancelElectionJSON    `json:",omitempty"`
 }
 
@@ -241,11 +239,10 @@ type RegisterPubSharesJSON struct {
 	PublicKey  []byte
 }
 
-// DecryptBallotsJSON is the JSON representation of a CombineShares transaction
-type DecryptBallotsJSON struct {
-	ElectionID       string
-	UserID           string
-	DecryptedBallots []types.Ballot
+// CombineSharesJSON is the JSON representation of a CombineShares transaction
+type CombineSharesJSON struct {
+	ElectionID string
+	UserID     string
 }
 
 // CancelElectionJSON is the JSON representation of a CancelElection transaction
