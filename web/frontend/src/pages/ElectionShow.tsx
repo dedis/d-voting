@@ -72,9 +72,13 @@ const ElectionShow: FC = () => {
                 </div>
               </div>
             )}
+
             <Link to={ROUTE_ELECTION_INDEX}>
               <button className="back-btn">{t('back')}</button>
             </Link>
+            {/* <Link to={ROUTE_RESULT_INDEX}>
+              <button className="back-btn">{t('back')}</button>
+            </Link> */}
           </div>
         </div>
       ) : (

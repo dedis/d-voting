@@ -144,30 +144,6 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, role, isLogged }) => {
                   </NavLink>
                 )}
 
-                {isLogged && (
-                  <NavLink
-                    to={ROUTE_BALLOT_INDEX}
-                    className={(isActive) =>
-                      isActive
-                        ? 'bg-gray-900 text-white'
-                        : 'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
-                    }>
-                    {t('navBarVote')}
-                  </NavLink>
-                )}
-
-                {isLogged && (
-                  <NavLink
-                    to={ROUTE_RESULT_INDEX}
-                    className={(isActive) =>
-                      isActive
-                        ? 'bg-gray-900 text-white'
-                        : 'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
-                    }>
-                    {t('navBarResult')}
-                  </NavLink>
-                )}
-
                 <NavLink
                   to={ROUTE_ABOUT}
                   className={(isActive) =>
@@ -296,26 +272,6 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, role, isLogged }) => {
                 : 'text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium'
             }>
             {t('navBarStatus')}
-          </NavLink>
-
-          <NavLink
-            to={ROUTE_BALLOT_INDEX}
-            className={(isActive) =>
-              isActive
-                ? 'bg-gray-900 text-white px-3 py-2'
-                : 'text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium'
-            }>
-            {t('navBarVote')}
-          </NavLink>
-
-          <NavLink
-            to={ROUTE_RESULT_INDEX}
-            className={(isActive) =>
-              isActive
-                ? 'bg-gray-900 text-white px-3 py-2'
-                : 'text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium'
-            }>
-            {t('navBarResult')}
           </NavLink>
 
           <NavLink

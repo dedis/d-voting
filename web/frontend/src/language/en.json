@@ -2,8 +2,8 @@
   "common": {
     "Welcome to React": "Welcome to React and react-i18next",
     "navBarHome": "Home",
-    "navBarCreate": "Create an election",
-    "navBarStatus": "Election status",
+    "navBarStatus": "Elections",
+    "navBarCreate": "Create",
     "navBarVote": "Vote",
     "navBarResult": "Results",
     "navBarAbout": "About",

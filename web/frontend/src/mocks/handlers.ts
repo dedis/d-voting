@@ -1,6 +1,8 @@
 import { rest } from 'msw';
 
 import {
+  ENDPOINT_GET_TEQ_KEY,
+  ENDPOINT_LOGOUT,
   ENDPOINT_PERSONNAL_INFO,
   ENDPOINT_EVOTING_CREATE,
   ENDPOINT_EVOTING_GET_ALL,
@@ -23,19 +25,19 @@ export const handlers = [
     );
   }),
 
-  rest.get('/api/getTkKey', (req, res, ctx) => {
+  rest.get(ENDPOINT_GET_TEQ_KEY, (req, res, ctx) => {
     const url = '/';
     sessionStorage.setItem('is-authenticated', 'true');
 
     return res(ctx.status(200), ctx.json({ url: url }));
   }),
 
-  rest.post('/api/logout', (req, res, ctx) => {
+  rest.post(ENDPOINT_LOGOUT, (req, res, ctx) => {
     sessionStorage.setItem('is-authenticated', 'false');
     return res(ctx.status(200));
   }),
 
-  rest.post(ENDPOINT_EVOTING_GET_ALL, (req, res, ctx) => {
+  rest.get(ENDPOINT_EVOTING_GET_ALL, (req, res, ctx) => {
     return res(
       ctx.status(200),
       ctx.json({

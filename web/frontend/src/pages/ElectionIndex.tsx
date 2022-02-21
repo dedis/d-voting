@@ -22,8 +22,7 @@ const ElectionIndex: FC = () => {
   const { t } = useTranslation();
   const token = sessionStorage.getItem('token');
   const request = {
-    method: 'POST',
-    body: JSON.stringify({ Token: token }),
+    method: 'GET',
   };
   const [data, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, request);
 
