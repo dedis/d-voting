@@ -26,7 +26,7 @@ const Login: FC = () => {
   };
 
   return (
-    <div className="login-wrapper">
+    <div className="login-container">
       <div className="login-txt">{t('loginText')}</div>
       <button id="login-button" className="login-btn" onClick={handleClick}>
         {t('login')}

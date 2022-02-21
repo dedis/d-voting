@@ -13,6 +13,7 @@ import {
   ROUTE_BALLOT_INDEX,
   ROUTE_BALLOT_SHOW,
 } from './pages/Routes';
+import Login from './pages/Login';
 import Home from './pages/Home';
 import About from './pages/About';
 import Admin from './pages/Admin';
@@ -57,18 +58,27 @@ const App: FC = () => {
             data-testid="content"
             className="app-page mb-auto flex flex-row justify-center items-center w-full">
             <div>
-              <Routes>
-                <Route path={ROUTE_ADMIN} element={<Admin />} />
-                <Route path={ROUTE_ABOUT} element={<About />} />
-                <Route path={ROUTE_HOME} element={<Home isLogged={isLogged} />} />
-                <Route path={ROUTE_ELECTION_INDEX} element={<ElectionIndex />} />
-                <Route path={ROUTE_ELECTION_CREATE} element={<ElectionCreate />} />
-                <Route path={ROUTE_ELECTION_SHOW + '/:electionId'} element={<ElectionShow />} />
-                <Route path={ROUTE_RESULT_INDEX} element={<ResultIndex />} />
-                <Route path={ROUTE_RESULT_SHOW + '/:electionId'} element={<ResultShow />} />
-                <Route path={ROUTE_BALLOT_INDEX} element={<BallotIndex />} />
-                <Route path={ROUTE_BALLOT_SHOW + '/:electionId'} element={<BallotShow />} />
-              </Routes>
+              {isLogged ? (
+                <Routes>
+                  <Route path={ROUTE_ELECTION_CREATE} element={<ElectionCreate />} />
+                  <Route path={ROUTE_ELECTION_SHOW + '/:electionId'} element={<ElectionShow />} />
+                  <Route path={ROUTE_RESULT_INDEX} element={<ResultIndex />} />
+                  <Route path={ROUTE_RESULT_SHOW + '/:electionId'} element={<ResultShow />} />
+                  <Route path={ROUTE_BALLOT_INDEX} element={<BallotIndex />} />
+                  <Route path={ROUTE_BALLOT_SHOW + '/:electionId'} element={<BallotShow />} />
+                  <Route path={ROUTE_ADMIN} element={<Admin />} />
+                  <Route path={ROUTE_ABOUT} element={<About />} />
+                  <Route path={ROUTE_ELECTION_INDEX} element={<ElectionIndex />} />
+                  <Route path="*" element={<Home />} />
+                </Routes>
+              ) : (
+                <Routes>
+                  <Route path={ROUTE_ADMIN} element={<Admin />} />
+                  <Route path={ROUTE_ABOUT} element={<About />} />
+                  <Route path={ROUTE_ELECTION_INDEX} element={<ElectionIndex />} />
+                  <Route path="*" element={<Login />} />
+                </Routes>
+              )}
             </div>
           </div>
           <div>

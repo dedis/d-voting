@@ -5,16 +5,3 @@
   position: relative;
   scroll-behavior: smooth;
 }
-
-.login-container {
-  min-width: 58ch;
-  display: flex;
-  text-align: center;
-  flex-direction: column;
-  padding-top: 2%;
-  padding-left: 20%;
-  padding-right: 20%;
-  justify-content: center;
-  background-color: whitesmoke;
-  padding-bottom: 200px;
-}

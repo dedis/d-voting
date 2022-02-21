@@ -108,7 +108,18 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, role, isLogged }) => {
             </div>
             <div className="hidden sm:block sm:ml-6">
               <div className="flex space-x-4">
-                {(role === 'admin' || role === 'operator') && isLogged && (
+                <NavLink
+                  to={ROUTE_ELECTION_INDEX}
+                  title={t('navBarStatus')}
+                  className={(isActive) =>
+                    isActive
+                      ? 'bg-gray-900 text-white'
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
+                  }>
+                  {t('navBarStatus')}
+                </NavLink>
+
+                {isLogged && (role === 'admin' || role === 'operator') && (
                   <NavLink
                     title={t('navBarCreate')}
                     to={ROUTE_ELECTION_CREATE}
@@ -120,17 +131,6 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, role, isLogged }) => {
                     {t('navBarCreate')}
                   </NavLink>
                 )}
-
-                <NavLink
-                  to={ROUTE_ELECTION_INDEX}
-                  title={t('navBarCreate')}
-                  className={(isActive) =>
-                    isActive
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
-                  }>
-                  {t('navBarStatus')}
-                </NavLink>
 
                 {role === 'admin' && isLogged && (
                   <NavLink
@@ -156,15 +156,17 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, role, isLogged }) => {
                   </NavLink>
                 )}
 
-                <NavLink
-                  to={ROUTE_RESULT_INDEX}
-                  className={(isActive) =>
-                    isActive
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
-                  }>
-                  {t('navBarResult')}
-                </NavLink>
+                {isLogged && (
+                  <NavLink
+                    to={ROUTE_RESULT_INDEX}
+                    className={(isActive) =>
+                      isActive
+                        ? 'bg-gray-900 text-white'
+                        : 'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
+                    }>
+                    {t('navBarResult')}
+                  </NavLink>
+                )}
 
                 <NavLink
                   to={ROUTE_ABOUT}
