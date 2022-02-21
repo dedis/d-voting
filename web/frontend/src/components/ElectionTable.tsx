@@ -14,7 +14,8 @@ import { useTranslation } from 'react-i18next';
 
 import Action from './Action';
 import Status from './Status';
-import ElectionFields from '../utils/ElectionFields';
+import ElectionFields from './utils/ElectionFields';
+import { ROUTE_ELECTION_SHOW } from '../pages/Routes';
 
 type ElectionTableProps = {
   elections: string[];
@@ -72,7 +73,7 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
     elections.map((elec) => {
       let { title, id, status, setStatus } = ElectionFields(elec);
       let link = (
-        <Link className="election-link" to={{ pathname: `/elections/${id}` }}>
+        <Link className="election-link" to={{ pathname: `${ROUTE_ELECTION_SHOW}/${id}` }}>
           {title}
         </Link>
       );

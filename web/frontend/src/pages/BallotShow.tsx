@@ -5,13 +5,14 @@ import kyber from '@dedis/kyber';
 import PropTypes from 'prop-types';
 import { Buffer } from 'buffer';
 
-import useElection from '../utils/useElection';
-import usePostCall from '../utils/usePostCall';
-import { CAST_BALLOT_ENDPOINT } from '../utils/Endpoints';
-import Modal from '../modal/Modal';
-import { OPEN } from '../utils/StatusNumber';
-import { encryptVote } from './VoteEncrypt';
-import './Ballot.css';
+import { ROUTE_BALLOT_INDEX } from '../pages/Routes';
+import useElection from '../components/utils/useElection';
+import usePostCall from '../components/utils/usePostCall';
+import { ENDPOINT_EVOTING_CAST_BALLOT } from '../components/utils/Endpoints';
+import Modal from '../components/modal/Modal';
+import { OPEN } from '../components/utils/StatusNumber';
+import { encryptVote } from '../components/VoteEncrypt';
+import './BallotShow.css';
 
 const Ballot: FC = () => {
   var bytes: number[];
@@ -31,7 +32,7 @@ const Ballot: FC = () => {
   useEffect(() => {
     if (postRequest !== null) {
       setPostError('');
-      postData(CAST_BALLOT_ENDPOINT, postRequest, setShowModal);
+      postData(ENDPOINT_EVOTING_CAST_BALLOT, postRequest, setShowModal);
     }
   }, [postData, postRequest]);
 
@@ -145,7 +146,7 @@ const Ballot: FC = () => {
         <div>
           {' '}
           {status === OPEN ? ballotDisplay() : electionClosedDisplay()}
-          <Link to="/vote">
+          <Link to={ROUTE_BALLOT_INDEX}>
             <button className="back-btn">{t('back')}</button>
           </Link>
         </div>

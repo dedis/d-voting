@@ -3,8 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import ConfirmModal from '../modal/ConfirmModal';
+import { ROUTE_ELECTION_SHOW } from '../../pages/Routes';
 import usePostCall from './usePostCall';
-import { CLOSE_ENDPOINT, CANCEL_ENDPOINT, DECRYPT_ENDPOINT, SHUFFLE_ENDPOINT } from './Endpoints';
+import {
+  ENDPOINT_EVOTING_CLOSE,
+  ENDPOINT_EVOTING_CANCEL,
+  ENDPOINT_EVOTING_DECRYPT,
+  ENDPOINT_EVOTING_SHUFFLE,
+} from './Endpoints';
 import { OPEN, CLOSED, SHUFFLED_BALLOT, RESULT_AVAILABLE, CANCELED } from './StatusNumber';
 import { COLLECTIVE_AUTHORITY_MEMBERS } from './CollectiveAuthorityMembers';
 
@@ -74,7 +80,11 @@ const useChangeAction = (
     //check if close button was clicked and the user validated the confirmation window
     if (isClosing && userConfirmedClosing) {
       const close = async () => {
-        const closeSuccess = await postData(CLOSE_ENDPOINT, simplePostRequest, setIsClosing);
+        const closeSuccess = await postData(
+          ENDPOINT_EVOTING_CLOSE,
+          simplePostRequest,
+          setIsClosing
+        );
 
         if (closeSuccess) {
           setStatus(CLOSED);
@@ -99,7 +109,11 @@ const useChangeAction = (
   useEffect(() => {
     if (isCanceling && userConfirmedCanceling) {
       const cancel = async () => {
-        const cancelSuccess = await postData(CANCEL_ENDPOINT, simplePostRequest, setIsCanceling);
+        const cancelSuccess = await postData(
+          ENDPOINT_EVOTING_CANCEL,
+          simplePostRequest,
+          setIsCanceling
+        );
         if (cancelSuccess) {
           setStatus(CANCELED);
         } else {
@@ -132,7 +146,7 @@ const useChangeAction = (
 
   const handleShuffle = async () => {
     setIsShuffling(true);
-    const shuffleSuccess = await postData(SHUFFLE_ENDPOINT, shuffleRequest, setIsShuffling);
+    const shuffleSuccess = await postData(ENDPOINT_EVOTING_SHUFFLE, shuffleRequest, setIsShuffling);
     if (shuffleSuccess && postError === null) {
       setStatus(SHUFFLED_BALLOT);
     } else {
@@ -143,7 +157,11 @@ const useChangeAction = (
   };
 
   const handleDecrypt = async () => {
-    const decryptSucess = await postData(DECRYPT_ENDPOINT, simplePostRequest, setIsDecrypting);
+    const decryptSucess = await postData(
+      ENDPOINT_EVOTING_DECRYPT,
+      simplePostRequest,
+      setIsDecrypting
+    );
     if (decryptSucess && postError === null) {
       if (setResultAvailable !== null) {
         setResultAvailable(true);
@@ -200,7 +218,9 @@ const useChangeAction = (
       case RESULT_AVAILABLE:
         return (
           <span>
-            <Link className="election-link" to={{ pathname: `/elections/${electionID}` }}>
+            <Link
+              className="election-link"
+              to={{ pathname: `${ROUTE_ELECTION_SHOW}/${electionID}` }}>
               <button className="election-btn">{t('seeResult')}</button>
             </Link>
           </span>

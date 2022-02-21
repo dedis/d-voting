@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import { CREATE_ENDPOINT } from '../utils/Endpoints';
+import { ENDPOINT_EVOTING_CREATE } from './utils/Endpoints';
 
 type ElectionFormProps = {
   setShowModal(modal: any): void;
@@ -25,7 +25,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
       type: 'application/json',
       body: JSON.stringify(data),
     };
-    const res = await fetch(CREATE_ENDPOINT, req);
+    const res = await fetch(ENDPOINT_EVOTING_CREATE, req);
     if (res.status !== 200) {
       console.warn('failed to create election');
     }

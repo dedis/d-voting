@@ -3,15 +3,16 @@ import { useParams, Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import Action from './Action';
-import Result from './Result';
-import Status from './Status';
-import useElection from '../utils/useElection';
-import { RESULT_AVAILABLE } from '../utils/StatusNumber';
-import useGetResults from '../utils/useGetResults';
-import './ElectionDetails.css';
+import Action from '../components/Action';
+import Result from '../components/Result';
+import Status from '../components/Status';
+import useElection from '../components/utils/useElection';
+import { RESULT_AVAILABLE } from '../components/utils/StatusNumber';
+import useGetResults from '../components/utils/useGetResults';
+import { ROUTE_ELECTION_INDEX } from './Routes';
+import './ElectionShow.css';
 
-const ElectionDetails: FC = () => {
+const ElectionShow: FC = () => {
   const { t } = useTranslation();
   const { electionId } = useParams();
 
@@ -71,9 +72,13 @@ const ElectionDetails: FC = () => {
                 </div>
               </div>
             )}
-            <Link to="/elections">
+
+            <Link to={ROUTE_ELECTION_INDEX}>
               <button className="back-btn">{t('back')}</button>
             </Link>
+            {/* <Link to={ROUTE_RESULT_INDEX}>
+              <button className="back-btn">{t('back')}</button>
+            </Link> */}
           </div>
         </div>
       ) : (
@@ -83,8 +88,8 @@ const ElectionDetails: FC = () => {
   );
 };
 
-ElectionDetails.propTypes = {
+ElectionShow.propTypes = {
   location: PropTypes.any,
 };
 
-export default ElectionDetails;
+export default ElectionShow;

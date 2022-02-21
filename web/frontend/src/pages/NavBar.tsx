@@ -1,21 +1,29 @@
 import React, { FC, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { POST_LOGOUT } from '../components/utils/ExpressEndoints';
+import { ENDPOINT_LOGOUT } from '../components/utils/Endpoints';
 
+import {
+  ROUTE_HOME,
+  ROUTE_ABOUT,
+  ROUTE_ADMIN,
+  ROUTE_ELECTION_CREATE,
+  ROUTE_ELECTION_INDEX,
+  ROUTE_RESULT_INDEX,
+  ROUTE_BALLOT_INDEX,
+} from '../pages/Routes';
 import logoWhite from '../assets/logo-white.png';
 import { LanguageSelector } from '../language';
-import { default as ProfilePicture } from './ProfilePicture';
+import { default as ProfilePicture } from '../components/ProfilePicture';
 
 type NavBarProps = {
   lastname: string;
   firstname: string;
-  sciper: number;
   role: string;
   isLogged: boolean;
 };
 
-const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role, isLogged }) => {
+const NavBar: FC<NavBarProps> = ({ lastname, firstname, role, isLogged }) => {
   const { t } = useTranslation();
 
   // used for the profile button
@@ -35,7 +43,7 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role, isLogged }
 
     const opts = { method: 'POST' };
 
-    const res = await fetch(POST_LOGOUT, opts);
+    const res = await fetch(ENDPOINT_LOGOUT, opts);
     if (res.status !== 200) {
       console.warn('failed to logout');
     }
@@ -93,17 +101,28 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role, isLogged }
 
           <div className="flex-1 flex items-center justify-center sm:justify-start">
             <div className="flex-shrink-0 flex items-center">
-              <NavLink to="/">
+              <NavLink to={ROUTE_HOME}>
                 <img className="block lg:hidden h-6 w-auto" src={logoWhite} alt="Workflow" />
                 <img className="hidden lg:block h-6 w-auto" src={logoWhite} alt="Workflow" />
               </NavLink>
             </div>
             <div className="hidden sm:block sm:ml-6">
               <div className="flex space-x-4">
-                {(role === 'admin' || role === 'operator') && (
+                <NavLink
+                  to={ROUTE_ELECTION_INDEX}
+                  title={t('navBarStatus')}
+                  className={(isActive) =>
+                    isActive
+                      ? 'bg-gray-900 text-white'
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
+                  }>
+                  {t('navBarStatus')}
+                </NavLink>
+
+                {isLogged && (role === 'admin' || role === 'operator') && (
                   <NavLink
                     title={t('navBarCreate')}
-                    to="/create-election"
+                    to={ROUTE_ELECTION_CREATE}
                     className={(isActive) =>
                       isActive
                         ? 'bg-gray-900 text-white'
@@ -113,22 +132,9 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role, isLogged }
                   </NavLink>
                 )}
 
-                {(role === 'admin' || role === 'operator') && (
+                {role === 'admin' && isLogged && (
                   <NavLink
-                    to="/elections"
-                    title={t('navBarCreate')}
-                    className={(isActive) =>
-                      isActive
-                        ? 'bg-gray-900 text-white'
-                        : 'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
-                    }>
-                    {t('navBarStatus')}
-                  </NavLink>
-                )}
-
-                {role === 'admin' && (
-                  <NavLink
-                    to="/admin"
+                    to={ROUTE_ADMIN}
                     className={(isActive) =>
                       isActive
                         ? 'bg-gray-900 text-white'
@@ -139,27 +145,7 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role, isLogged }
                 )}
 
                 <NavLink
-                  to="/vote"
-                  className={(isActive) =>
-                    isActive
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
-                  }>
-                  {t('navBarVote')}
-                </NavLink>
-
-                <NavLink
-                  to="/results"
-                  className={(isActive) =>
-                    isActive
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
-                  }>
-                  {t('navBarResult')}
-                </NavLink>
-
-                <NavLink
-                  to="/about"
+                  to={ROUTE_ABOUT}
                   className={(isActive) =>
                     isActive
                       ? 'bg-gray-900 text-white'
@@ -267,7 +253,7 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role, isLogged }
       <div className="sm:hidden" style={menuToggle ? {} : { display: 'none' }} id="mobile-menu">
         <div className="px-2 pt-2 pb-3 space-y-1">
           <NavLink
-            to="/create-election"
+            to={ROUTE_ELECTION_CREATE}
             title={t('navBarCreate')}
             className={(isActive) =>
               isActive
@@ -278,7 +264,7 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role, isLogged }
           </NavLink>
 
           <NavLink
-            to="/elections"
+            to={ROUTE_ELECTION_INDEX}
             title={t('navBarCreate')}
             className={(isActive) =>
               isActive
@@ -289,27 +275,7 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, sciper, role, isLogged }
           </NavLink>
 
           <NavLink
-            to="/vote"
-            className={(isActive) =>
-              isActive
-                ? 'bg-gray-900 text-white px-3 py-2'
-                : 'text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium'
-            }>
-            {t('navBarVote')}
-          </NavLink>
-
-          <NavLink
-            to="/results"
-            className={(isActive) =>
-              isActive
-                ? 'bg-gray-900 text-white px-3 py-2'
-                : 'text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium'
-            }>
-            {t('navBarResult')}
-          </NavLink>
-
-          <NavLink
-            to="/about"
+            to={ROUTE_ABOUT}
             className={(isActive) =>
               isActive
                 ? 'bg-gray-900 text-white px-3 py-2'

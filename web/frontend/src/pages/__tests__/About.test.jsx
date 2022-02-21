@@ -1,6 +1,7 @@
 import React from 'react';
-import About from '../About';
 import renderer from 'react-test-renderer';
+
+import About from '../About';
 
 describe('About', () => {
   it('should render the About Component correctly in English', () => {

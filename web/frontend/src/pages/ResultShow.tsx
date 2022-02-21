@@ -3,15 +3,16 @@ import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import Result from './Result';
-import useElection from '../utils/useElection';
-import './ResultPage.css';
+import { ROUTE_RESULT_INDEX } from './Routes';
+import Result from '../components/Result';
+import useElection from '../components/utils/useElection';
+import './ResultShow.css';
 
-type ResultPageProps = {
+type ResultShowProps = {
   location?: any;
 };
 
-const ResultPage: FC<ResultPageProps> = (props) => {
+const ResultShow: FC<ResultShowProps> = (props) => {
   const { t } = useTranslation();
   //props.location.data = id of the election
   const token = sessionStorage.getItem('token');
@@ -29,15 +30,15 @@ const ResultPage: FC<ResultPageProps> = (props) => {
       ) : (
         <div className="error-retrieving">{t('errorRetrievingElection')}</div>
       )}
-      <Link to="/results">
+      <Link to={ROUTE_RESULT_INDEX}>
         <button className="back-btn">{t('back')}</button>
       </Link>
     </div>
   );
 };
 
-ResultPage.propTypes = {
+ResultShow.propTypes = {
   location: PropTypes.any,
 };
 
-export default ResultPage;
+export default ResultShow;

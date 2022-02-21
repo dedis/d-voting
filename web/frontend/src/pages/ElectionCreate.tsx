@@ -1,10 +1,10 @@
 import React, { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import ElectionForm from './ElectionForm';
-import Modal from '../modal/Modal';
+import ElectionForm from '../components/ElectionForm';
+import Modal from '../components/modal/Modal';
 
-const CreateElection: FC = () => {
+const ElectionCreate: FC = () => {
   const { t } = useTranslation();
   const [showModal, setShowModal] = useState(false);
   const [textModal, setTextModal] = useState('');
@@ -29,4 +29,4 @@ const CreateElection: FC = () => {
   );
 };
 
-export default CreateElection;
+export default ElectionCreate;

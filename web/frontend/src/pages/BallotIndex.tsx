@@ -1,11 +1,11 @@
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import SimpleTable from '../utils/SimpleTable';
-import { OPEN } from '../utils/StatusNumber';
-import './BallotsTable.css';
+import SimpleTable from '../components/utils/SimpleTable';
+import { OPEN } from '../components/utils/StatusNumber';
+import './BallotIndex.css';
 
-const BallotsTable: FC = () => {
+const BallotIndex: FC = () => {
   const { t } = useTranslation();
 
   return (
@@ -20,4 +20,4 @@ const BallotsTable: FC = () => {
   );
 };
 
-export default BallotsTable;
+export default BallotIndex;
