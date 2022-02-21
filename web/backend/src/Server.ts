@@ -64,7 +64,7 @@ const usersDB = lmdb.open({ path: 'dvoting-users' });
 /*
  * This is via this endpoint that the client request the tequila key, this key will then be used for redirection on the tequila server
  * */
-app.get('/api/getTkKey', (req, res) => {
+app.get('/api/get_teq_key', (req, res) => {
   const body = `urlaccess=${config.FRONT_END_URL}/api/control_key\nservice=Evoting\nrequest=name,firstname,email,uniqueid,allunits`;
   axios
     .post('http://tequila.epfl.ch/cgi-bin/tequila/createrequest', body)
@@ -132,7 +132,7 @@ app.get('/api/logout', (req, res) => {
  * As the user is logged on the app via this express but must also be logged in the react.
  * This endpoint serves to send to the client (actually to react) the information of the current user
  */
-app.get('/api/getpersonnalinfo', (req, res) => {
+app.get('/api/personnal_info', (req, res) => {
   if (req.session.userid) {
     res.json({
       sciper: req.session.userid,
@@ -155,7 +155,7 @@ app.get('/api/getpersonnalinfo', (req, res) => {
 /*
  * This call allow a user that is admin to get the list of the poeple that have a special role (not a voter)
  */
-app.get('/api/get_user_rights', (req, res) => {
+app.get('/api/user_rights', (req, res) => {
   const sciper = req.session.userid;
 
   if (!sciper) {
@@ -234,7 +234,7 @@ app.post('/api/remove_role', (req, res) => {
  * Once this is done the data are signed before the are sent to the DELA node
  * To make this work, react has to redirect to this backend all the request that needs to go the DELA nodes
  */
-app.post('/evoting/*', (req, res) => {
+app.post('/api/evoting/*', (req, res) => {
   // check session
   if (!req.session.userid) {
     res.status(400).send('Unauthorized');

@@ -1,6 +1,6 @@
 import useFetchCall from './useFetchCall';
 import useFillElectionFields from './useFillElectionFields';
-import { GET_ELECTION_ENDPOINT } from './Endpoints';
+import { ENDPOINT_EVOTING_GET_ELECTION } from './Endpoints';
 
 /* custom hook that fetches an election given its id and
 returns its different parameters*/
@@ -9,7 +9,7 @@ const useElection = (electionID, token) => {
     method: 'POST',
     body: JSON.stringify({ ElectionID: electionID, Token: token }),
   };
-  const [data, loading, error] = useFetchCall(GET_ELECTION_ENDPOINT, request);
+  const [data, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ELECTION, request);
   const {
     title,
     candidates,

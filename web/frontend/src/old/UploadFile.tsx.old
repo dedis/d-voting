@@ -2,7 +2,7 @@ import React, { FC, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import { CREATE_ENDPOINT } from '../utils/Endpoints';
+import { ENDPOINT_POST_EVOTING_CREATE } from '../utils/Endpoints';
 import usePostCall from '../utils/usePostCall';
 
 type UploadFileProps = {
@@ -57,7 +57,7 @@ const UploadFile: FC<UploadFileProps> = ({ setShowModal, setTextModal }) => {
       body: JSON.stringify(data),
     };
     setPostError(null);
-    postData(CREATE_ENDPOINT, postRequest, setIsSubmitting);
+    postData(ENDPOINT_POST_EVOTING_CREATE, postRequest, setIsSubmitting);
   };
 
   /*Check that the filename has indeed the extension .json

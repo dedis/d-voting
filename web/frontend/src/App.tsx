@@ -27,7 +27,7 @@ import BallotShow from './pages/BallotShow';
 import NavBar from './pages/NavBar';
 import Footer from './pages/Footer';
 
-import { GET_PERSONNAL_INFOS } from './components/utils/ExpressEndoints';
+import { ENDPOINT_PERSONNAL_INFO } from './components/utils/Endpoints';
 import './App.css';
 
 const App: FC = () => {
@@ -37,7 +37,7 @@ const App: FC = () => {
   const [role, setRole] = useState('');
 
   useEffect(() => {
-    fetch(GET_PERSONNAL_INFOS)
+    fetch(ENDPOINT_PERSONNAL_INFO)
       .then((res) => res.json())
       .then((result) => {
         setIsLogged(result.islogged);

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import ElectionTable from '../components/ElectionTable';
 import useFetchCall from '../components/utils/useFetchCall';
-import { GET_ALL_ELECTIONS_ENDPOINT } from '../components/utils/Endpoints';
+import { ENDPOINT_EVOTING_GET_ALL } from '../components/utils/Endpoints';
 import './Election.css';
 
 /*Assumption : for now an election is simply a json file with the following field
@@ -25,7 +25,7 @@ const ElectionIndex: FC = () => {
     method: 'POST',
     body: JSON.stringify({ Token: token }),
   };
-  const [data, loading, error] = useFetchCall(GET_ALL_ELECTIONS_ENDPOINT, request);
+  const [data, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, request);
 
   /*Show all the elections retrieved if any */
   const showElection = () => {

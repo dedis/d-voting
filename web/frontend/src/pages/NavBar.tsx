@@ -1,7 +1,7 @@
 import React, { FC, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { POST_LOGOUT } from '../components/utils/ExpressEndoints';
+import { ENDPOINT_LOGOUT } from '../components/utils/Endpoints';
 
 import {
   ROUTE_HOME,
@@ -43,7 +43,7 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, role, isLogged }) => {
 
     const opts = { method: 'POST' };
 
-    const res = await fetch(POST_LOGOUT, opts);
+    const res = await fetch(ENDPOINT_LOGOUT, opts);
     if (res.status !== 200) {
       console.warn('failed to logout');
     }

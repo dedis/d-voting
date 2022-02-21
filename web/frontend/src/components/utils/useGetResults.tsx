@@ -1,4 +1,4 @@
-import { GET_RESULT_ENDPOINT } from './Endpoints';
+import { ENDPOINT_EVOTING_RESULT } from './Endpoints';
 
 const useGetResults = () => {
   async function getResults(electionID, token, setError, setResult, setIsResultSet) {
@@ -7,7 +7,7 @@ const useGetResults = () => {
       body: JSON.stringify({ ElectionID: electionID, Token: token }),
     };
     try {
-      const response = await fetch(GET_RESULT_ENDPOINT, request);
+      const response = await fetch(ENDPOINT_EVOTING_RESULT, request);
 
       if (!response.ok) {
         throw Error(response.statusText);

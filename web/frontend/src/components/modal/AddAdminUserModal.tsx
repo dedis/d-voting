@@ -10,7 +10,7 @@ import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import PropTypes from 'prop-types';
 
-import { ADD_API_ROLE } from '../utils/ExpressEndoints';
+import { ENDPOINT_ADD_ROLE } from '../utils/Endpoints';
 
 const style = {
   position: 'absolute',
@@ -51,7 +51,7 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen }) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sciper: sciperValue, role: roleValue }),
     };
-    fetch(ADD_API_ROLE, requestOptions).then((data) => {
+    fetch(ENDPOINT_ADD_ROLE, requestOptions).then((data) => {
       if (data.status === 200) {
         alert('User added successfully');
         setOpen(false);

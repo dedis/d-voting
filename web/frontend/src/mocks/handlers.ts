@@ -1,10 +1,13 @@
 import { rest } from 'msw';
 
-import { CREATE_ENDPOINT, GET_ALL_ELECTIONS_ENDPOINT } from '../components/utils/Endpoints';
-import { GET_PERSONNAL_INFOS } from '../components/utils/ExpressEndoints';
+import {
+  ENDPOINT_PERSONNAL_INFO,
+  ENDPOINT_EVOTING_CREATE,
+  ENDPOINT_EVOTING_GET_ALL,
+} from '../components/utils/Endpoints';
 
 export const handlers = [
-  rest.get(GET_PERSONNAL_INFOS, (req, res, ctx) => {
+  rest.get(ENDPOINT_PERSONNAL_INFO, (req, res, ctx) => {
     let isLogged = sessionStorage.getItem('is-authenticated') === 'true';
     let userId = isLogged ? 561934 : 0;
 
@@ -32,7 +35,7 @@ export const handlers = [
     return res(ctx.status(200));
   }),
 
-  rest.post(GET_ALL_ELECTIONS_ENDPOINT, (req, res, ctx) => {
+  rest.post(ENDPOINT_EVOTING_GET_ALL, (req, res, ctx) => {
     return res(
       ctx.status(200),
       ctx.json({
@@ -50,7 +53,7 @@ export const handlers = [
     );
   }),
 
-  rest.post(CREATE_ENDPOINT, (req, res, ctx) => {
+  rest.post(ENDPOINT_EVOTING_CREATE, (req, res, ctx) => {
     return res(ctx.status(200));
   }),
 ];

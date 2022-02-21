@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Modal from '@mui/material/Modal';
-import { DELETE_API_ROLE } from '../utils/ExpressEndoints';
+import { ENDPOINT_REMOVE_ROLE } from '../utils/Endpoints';
 import Stack from '@mui/material/Stack';
 import PropTypes from 'prop-types';
 
@@ -34,7 +34,7 @@ const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({ open, setOpen, sc
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sciper: sciper }),
     };
-    fetch(DELETE_API_ROLE, requestOptions).then((data) => {
+    fetch(ENDPOINT_REMOVE_ROLE, requestOptions).then((data) => {
       if (data.status === 200) {
         alert('User removed successfully');
         setOpen(false);

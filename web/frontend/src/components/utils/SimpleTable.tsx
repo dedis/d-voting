@@ -12,7 +12,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import useFetchCall from './useFetchCall';
-import { GET_ALL_ELECTIONS_ENDPOINT } from './Endpoints';
+import { ENDPOINT_EVOTING_GET_ALL } from './Endpoints';
 
 type SimpleTableProps = {
   statusToKeep: number;
@@ -37,7 +37,7 @@ const SimpleTable: FC<SimpleTableProps> = ({
     method: 'POST',
     body: JSON.stringify({ Token: token }),
   };
-  const [fetchedData, loading, error] = useFetchCall(GET_ALL_ELECTIONS_ENDPOINT, fetchRequest);
+  const [fetchedData, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, fetchRequest);
   const StyledTableRow = withStyles((theme) => ({
     root: {
       '&:nth-of-type(odd)': {

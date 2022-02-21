@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Button from '@mui/material/Button';
 import { DataGrid } from '@mui/x-data-grid';
 
-import { GET_ADMIN_ROWS } from '../components/utils/ExpressEndoints';
+import { ENDPOINT_USER_RIGHTS } from '../components/utils/Endpoints';
 import AddAdminUserModal from '../components/modal/AddAdminUserModal';
 import RemoveAdminUserModal from '../components/modal/RemoveAdminUserModal';
 import './Admin.css';
@@ -21,7 +21,7 @@ const Admin = () => {
       return;
     }
 
-    fetch(GET_ADMIN_ROWS)
+    fetch(ENDPOINT_USER_RIGHTS)
       .then((resp) => {
         const jsonData = resp.json();
         jsonData.then((result) => {
