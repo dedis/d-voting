@@ -27,7 +27,7 @@ jobs:
 
       - name: Test all, except integration, with coverage
         run: |
-          go test -json -covermode=count -coverprofile=profile.cov $(go list ./... | grep -v /integration) > report.json
+          go test -json -covermode=count -coverprofile=profile.cov $(go list ./... | grep -v /integration) 2>&1 | tee report.json
 
       - name: Sonarcloud scan
         uses: sonarsource/sonarcloud-github-action@master
