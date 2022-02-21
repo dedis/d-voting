@@ -196,7 +196,7 @@ func (controller) OnStop(node.Injector) error {
 	return nil
 }
 
-//getSigner creates a signer with the node's private key
+// getSigner creates a signer with the node's private key
 func getSigner(flags cli.Flags) (crypto.AggregateSigner, error) {
 	fileLoader := loader.NewFileLoader(filepath.Join(flags.Path("config"), privateKeyFile))
 
