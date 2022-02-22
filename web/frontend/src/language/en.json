@@ -9,7 +9,7 @@
     "navBarAbout": "About",
     "homeTitle": "Welcome to our e-voting platform!",
     "homeText": "Use the navigation bar above to reach the the page you want.",
-    "loginText": "You need to login to access the content of the website.",
+    "loginText": "You need to login to access the content of {{from}}",
     "logout": "Logout",
     "elecName": "Election title",
     "namePlaceHolder": "Enter the name",
