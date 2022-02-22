@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import { ROUTE_RESULT_INDEX } from './Routes';
+import { ROUTE_RESULT_INDEX } from '../Routes';
 import Result from '../components/Result';
 import useElection from '../components/utils/useElection';
 import './ResultShow.css';

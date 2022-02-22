@@ -13,6 +13,8 @@ const Login: FC = () => {
 
   const [content, setContent] = useState('');
 
+  // The backend will provide the client the URL to make a Tequila
+  // authentication. We therefore redirect to this address.
   const handleClick = async () => {
     fetch(ENDPOINT_GET_TEQ_KEY)
       .then((resp) => {

@@ -5,7 +5,7 @@ import kyber from '@dedis/kyber';
 import PropTypes from 'prop-types';
 import { Buffer } from 'buffer';
 
-import { ROUTE_BALLOT_INDEX } from '../pages/Routes';
+import { ROUTE_BALLOT_INDEX } from '../Routes';
 import useElection from '../components/utils/useElection';
 import usePostCall from '../components/utils/usePostCall';
 import { ENDPOINT_EVOTING_CAST_BALLOT } from '../components/utils/Endpoints';

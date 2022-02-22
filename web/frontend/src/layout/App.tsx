@@ -1,4 +1,4 @@
-import React, { FC, Suspense, useEffect, useState } from 'react';
+import React, { FC, Suspense, useEffect, useState, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import {
@@ -13,52 +13,34 @@ import {
   ROUTE_BALLOT_INDEX,
   ROUTE_BALLOT_SHOW,
   ROUTE_LOGIN,
-} from './pages/Routes';
-import Login from './pages/Login';
-import LoginCallback from './pages/LoginCallback';
-import Home from './pages/Home';
-import About from './pages/About';
-import Admin from './pages/Admin';
-import ElectionIndex from './pages/ElectionIndex';
-import ElectionCreate from './pages/ElectionCreate';
-import ElectionShow from './pages/ElectionShow';
-import ResultIndex from './pages/ResultIndex';
-import ResultShow from './pages/ResultShow';
-import BallotIndex from './pages/BallotIndex';
-import BallotShow from './pages/BallotShow';
-import NavBar from './pages/NavBar';
-import Footer from './pages/Footer';
+} from '../Routes';
+import Login from '../pages/Login';
+import LoginCallback from '../pages/LoginCallback';
+import Home from '../pages/Home';
+import About from '../pages/About';
+import Admin from '../pages/Admin';
+import ElectionIndex from '../pages/ElectionIndex';
+import ElectionCreate from '../pages/ElectionCreate';
+import ElectionShow from '../pages/ElectionShow';
+import ResultIndex from '../pages/ResultIndex';
+import ResultShow from '../pages/ResultShow';
+import BallotIndex from '../pages/BallotIndex';
+import BallotShow from '../pages/BallotShow';
+import NavBar from './NavBar';
+import Footer from './Footer';
 
-import { ENDPOINT_PERSONNAL_INFO } from './components/utils/Endpoints';
 import './App.css';
-import { replace } from 'formik';
+import { AuthContext } from '..';
 
 const NotFound = () => <div>404 not found</div>;
 
 const App: FC = () => {
-  const [isLogged, setIsLogged] = useState(false);
-  const [lastname, setLastName] = useState('');
-  const [firstname, setFirstname] = useState('');
-  const [role, setRole] = useState('');
-
-  useEffect(() => {
-    const req = {
-      method: 'GET',
-    };
-    fetch(ENDPOINT_PERSONNAL_INFO, req)
-      .then((res) => res.json())
-      .then((result) => {
-        setIsLogged(result.islogged);
-        setLastName(result.lastname);
-        setFirstname(result.firstname);
-        setRole(result.role);
-      });
-  }, []);
-
   const RequireAuth = ({ children }) => {
     let location = useLocation();
 
-    if (!isLogged) {
+    const authCtx = useContext(AuthContext);
+
+    if (!authCtx.isLogged) {
       return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
@@ -70,7 +52,7 @@ const App: FC = () => {
       <Router>
         <div className="App flex flex-col h-screen justify-between">
           <div className="app-nav">
-            <NavBar firstname={firstname} lastname={lastname} role={role} isLogged={isLogged} />
+            <NavBar />
           </div>
           <div
             data-testid="content"

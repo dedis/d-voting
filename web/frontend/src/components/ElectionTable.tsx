@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import Action from './Action';
 import Status from './Status';
 import ElectionFields from './utils/ElectionFields';
-import { ROUTE_ELECTION_SHOW } from '../pages/Routes';
+import { ROUTE_ELECTION_SHOW } from '../Routes';
 
 type ElectionTableProps = {
   elections: string[];

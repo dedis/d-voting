@@ -1,4 +1,4 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useState, useContext } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ENDPOINT_LOGOUT } from '../components/utils/Endpoints';
@@ -10,20 +10,16 @@ import {
   ROUTE_ELECTION_CREATE,
   ROUTE_ELECTION_INDEX,
   ROUTE_LOGIN,
-} from '../pages/Routes';
+} from '../Routes';
 import logoWhite from '../assets/logo-white.png';
 import { LanguageSelector } from '../language';
 import { default as ProfilePicture } from '../components/ProfilePicture';
+import { AuthContext } from '..';
 
-type NavBarProps = {
-  lastname: string;
-  firstname: string;
-  role: string;
-  isLogged: boolean;
-};
-
-const NavBar: FC<NavBarProps> = ({ lastname, firstname, role, isLogged }) => {
+const NavBar: FC = () => {
   const { t } = useTranslation();
+
+  const authCtx = useContext(AuthContext);
 
   // used for the profile button
   const [profileToggle, setProfileToggle] = useState(false);
@@ -118,7 +114,7 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, role, isLogged }) => {
                   {t('navBarStatus')}
                 </NavLink>
 
-                {isLogged && (role === 'admin' || role === 'operator') && (
+                {authCtx.isLogged && (authCtx.role === 'admin' || authCtx.role === 'operator') && (
                   <NavLink
                     title={t('navBarCreate')}
                     to={ROUTE_ELECTION_CREATE}
@@ -131,7 +127,7 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, role, isLogged }) => {
                   </NavLink>
                 )}
 
-                {role === 'admin' && isLogged && (
+                {authCtx.role === 'admin' && authCtx.isLogged && (
                   <NavLink
                     to={ROUTE_ADMIN}
                     className={(isActive) =>
@@ -205,10 +201,10 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, role, isLogged }) => {
                 tabIndex={-1}>
                 {
                   <div>
-                    {isLogged ? (
+                    {authCtx.isLogged ? (
                       <div>
                         <p className="block px-4 py-2 text-sm text-gray-400">
-                          Logged as {firstname} {lastname}
+                          Logged as {authCtx.firstname} {authCtx.lastname}
                         </p>
                         <button
                           type="button"

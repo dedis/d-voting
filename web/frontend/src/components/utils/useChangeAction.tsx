@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import ConfirmModal from '../modal/ConfirmModal';
-import { ROUTE_ELECTION_SHOW } from '../../pages/Routes';
+import { ROUTE_ELECTION_SHOW } from '../../Routes';
 import usePostCall from './usePostCall';
 import {
   ENDPOINT_EVOTING_CLOSE,
