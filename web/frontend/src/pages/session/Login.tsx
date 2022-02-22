@@ -2,7 +2,7 @@ import React, { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 
-import { ENDPOINT_GET_TEQ_KEY } from '../components/utils/Endpoints';
+import { ENDPOINT_GET_TEQ_KEY } from '../../components/utils/Endpoints';
 import './Login.css';
 import { useLocation } from 'react-router-dom';
 

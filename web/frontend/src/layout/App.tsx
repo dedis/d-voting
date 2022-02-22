@@ -14,18 +14,17 @@ import {
   ROUTE_BALLOT_SHOW,
   ROUTE_LOGIN,
 } from '../Routes';
-import Login from '../pages/Login';
-import LoginCallback from '../pages/LoginCallback';
+import Login from '../pages/session/Login';
 import Home from '../pages/Home';
 import About from '../pages/About';
 import Admin from '../pages/Admin';
-import ElectionIndex from '../pages/ElectionIndex';
-import ElectionCreate from '../pages/ElectionCreate';
-import ElectionShow from '../pages/ElectionShow';
-import ResultIndex from '../pages/ResultIndex';
-import ResultShow from '../pages/ResultShow';
-import BallotIndex from '../pages/BallotIndex';
-import BallotShow from '../pages/BallotShow';
+import ElectionIndex from '../pages/election/Index';
+import ElectionCreate from '../pages/election/New';
+import ElectionShow from '../pages/election/Show';
+import ResultIndex from '../pages/result/Index';
+import ResultShow from '../pages/result/Show';
+import BallotIndex from '../pages/ballot/Index';
+import BallotShow from '../pages/ballot/Show';
 import NavBar from './NavBar';
 import Footer from './Footer';
 

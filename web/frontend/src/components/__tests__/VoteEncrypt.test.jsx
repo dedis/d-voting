@@ -1,4 +1,4 @@
-import { encryptVote } from '../VoteEncrypt';
+import { encryptVote } from '../../pages/ballot/components/VoteEncrypt';
 import kyber from '@dedis/kyber';
 global.TextEncoder = require('util').TextEncoder; //https://github.com/heineiuo/rippledb/issues/148w
 
