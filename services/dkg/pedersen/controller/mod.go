@@ -1,10 +1,17 @@
 package controller
 
 import (
+	"encoding"
 	"encoding/json"
+	"path/filepath"
+
+	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/core/txn/signed"
+	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/crypto/bls"
+	"go.dedis.ch/dela/crypto/loader"
 
 	"github.com/dedis/d-voting/contracts/evoting"
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/dkg/pedersen"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
@@ -16,10 +23,13 @@ import (
 	"go.dedis.ch/dela/cosi/threshold"
 	"go.dedis.ch/dela/mino"
 	"golang.org/x/xerrors"
+
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 )
 
 // BucketName is the name of the bucket in the database.
 const BucketName = "dkgmap"
+const privateKeyFile = "private.key"
 
 // evotingAccessKey is the access key used for the evoting contract.
 var evotingAccessKey = [32]byte{3}
@@ -98,6 +108,12 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to resolve *threshold.Threshold")
 	}
 
+	var p pool.Pool
+	err = inj.Resolve(&p)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve p.Pool: %v", err)
+	}
+
 	var rosterFac authority.Factory
 	err = inj.Resolve(&rosterFac)
 	if err != nil {
@@ -124,7 +140,20 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to resolve db: %v", err)
 	}
 
-	dkg := pedersen.NewPedersen(no, srvc, etypes.NewElectionFactory(etypes.CiphervoteFactory{}, rosterFac))
+	signer, err := getSigner(ctx)
+	if err != nil {
+		return xerrors.Errorf("failed to get a signer for the pubShares: %v",
+			err)
+	}
+
+	client, err := makeClient(inj)
+	if err != nil {
+		return xerrors.Errorf("failed to make client: %v", err)
+	}
+
+	electionFac := etypes.NewElectionFactory(etypes.CiphervoteFactory{}, rosterFac)
+
+	dkg := pedersen.NewPedersen(no, srvc, p, electionFac, signer)
 
 	// Use dkgMap to fill the actors map
 	err = db.View(func(tx kv.ReadableTx) error {
@@ -141,7 +170,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 				return err
 			}
 
-			_, err = dkg.NewActor(electionIDBuf, handlerData)
+			_, err = dkg.NewActor(electionIDBuf, p, signed.NewManager(signer, &client), handlerData)
 			if err != nil {
 				return err
 			}
@@ -165,4 +194,47 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 // OnStop implements node.Initializer.
 func (controller) OnStop(node.Injector) error {
 	return nil
+}
+
+// getSigner creates a signer with the node's private key
+func getSigner(flags cli.Flags) (crypto.AggregateSigner, error) {
+	fileLoader := loader.NewFileLoader(filepath.Join(flags.Path("config"), privateKeyFile))
+
+	signerData, err := fileLoader.LoadOrCreate(generator{newFn: blsSigner})
+	if err != nil {
+		return nil, xerrors.Errorf("while loading: %v", err)
+	}
+
+	signer, err := bls.NewSignerFromBytes(signerData)
+	if err != nil {
+		return nil, xerrors.Errorf("while unmarshaling: %v", err)
+	}
+
+	return signer, nil
+}
+
+// generator is an implementation to generate a private key.
+//
+// - implements loader.Generator
+type generator struct {
+	newFn func() encoding.BinaryMarshaler
+}
+
+// Generate implements loader.Generator. It returns the marshaled data of a
+// private key.
+func (g generator) Generate() ([]byte, error) {
+	signer := g.newFn()
+
+	data, err := signer.MarshalBinary()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to marshal signer: %v", err)
+	}
+
+	return data, nil
+}
+
+// blsSigner is a wrapper to use a signer with the primitives to use a BLS
+// signature
+func blsSigner() encoding.BinaryMarshaler {
+	return bls.NewSigner()
 }

@@ -8,7 +8,11 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"go.dedis.ch/dela"
 	"math/rand"
+	"strings"
+
+	"go.dedis.ch/kyber/v3/share"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/execution"
@@ -74,6 +78,12 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("configuration of election is incoherent or has duplicated IDs")
 	}
 
+	units := types.PubsharesUnits{
+		Pubshares: make([]types.PubsharesUnit, 0),
+		PubKeys:   make([][]byte, 0),
+		Indexes:   make([]int, 0),
+	}
+
 	election := types.Election{
 		ElectionID:    hex.EncodeToString(electionIDBuf),
 		Configuration: tx.Configuration,
@@ -82,6 +92,7 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 		// Pubkey is set by the opening command
 		BallotSize:       tx.Configuration.MaxBallotSize(),
 		Suffragia:        types.Suffragia{},
+		PubsharesUnits:   units,
 		ShuffleInstances: []types.ShuffleInstance{},
 		DecryptedBallots: []types.Ballot{},
 		// We set the participant in the e-voting once for all. If it happens
@@ -470,15 +481,122 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 	return nil
 }
 
-// decryptBallots implements commands. It performs the DECRYPT_BALLOTS command
-func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step) error {
+// registerPubshares implements commands. It performs the
+// REGISTER_PUB_SHARES command
+func (e evotingCommand) registerPubshares(snap store.Snapshot, step execution.Step) error {
+	msg, err := e.getTransaction(step.Current)
+	if err != nil {
+		return xerrors.Errorf(errGetTransaction, err)
+	}
+
+	tx, ok := msg.(types.RegisterPubShares)
+	if !ok {
+		return xerrors.Errorf(errWrongTx, msg)
+	}
+
+	election, electionID, err := e.getElection(tx.ElectionID, snap)
+	if err != nil {
+		return xerrors.Errorf(errGetElection, err)
+	}
+
+	if election.Status != types.ShuffledBallots {
+		return xerrors.Errorf("the ballots have not been shuffled")
+	}
+
+	err = isMemberOf(election.Roster, tx.PublicKey)
+	if err != nil {
+		return xerrors.Errorf("could not verify identity of node : %v", err)
+	}
+
+	signerPubKey, err := bls.NewPublicKey(tx.PublicKey)
+	if err != nil {
+		return xerrors.Errorf("could not recover public key from tx: %v", err)
+	}
+
+	// Check the node indeed signed the transaction:
+	txSignature := tx.Signature
+
+	signature, err := bls.NewSignatureFactory().SignatureOf(e.context, txSignature)
+	if err != nil {
+		return xerrors.Errorf("could node deserialize pubShare signature: %v", err)
+	}
+
+	h := sha256.New()
+
+	err = tx.Fingerprint(h)
+	if err != nil {
+		return xerrors.Errorf("failed to get fingerprint: %v", err)
+	}
+
+	hash := h.Sum(nil)
+
+	// Check the signature matches the pubshares using the node's public key
+	err = signerPubKey.Verify(hash, signature)
+	if err != nil {
+		return xerrors.Errorf("signature does not match the PubsharesUnit: %v ", err)
+	}
+
+	// coherence check on the length of the shares submitted
+	shuffledBallots := election.ShuffleInstances[len(election.ShuffleInstances)-1].
+		ShuffledBallots
+	if len(tx.Pubshares) != len(shuffledBallots) {
+		return xerrors.Errorf("unexpected size of pubshares submission: %d != %d",
+			len(tx.Pubshares), len(shuffledBallots))
+	}
+
+	for i, ballot := range shuffledBallots {
+		if len(ballot) != len(tx.Pubshares[i]) {
+			return xerrors.Errorf("unexpected size of pubshares submission: %d != %d",
+				len(tx.Pubshares[i]), len(ballot))
+		}
+	}
+
+	// Check the node hasn't made any other submissions
+	for _, key := range election.PubsharesUnits.PubKeys {
+		if bytes.Equal(key, tx.PublicKey) {
+			return xerrors.Errorf("'%x' already made a submission", key)
+		}
+	}
+
+	for _, index := range election.PubsharesUnits.Indexes {
+		if index == tx.Index {
+			return xerrors.Errorf("a submission has already been made for index %d", index)
+		}
+	}
+
+	// Add the pubshares to the election
+	election.PubsharesUnits.Pubshares = append(election.PubsharesUnits.Pubshares, tx.Pubshares)
+	election.PubsharesUnits.PubKeys = append(election.PubsharesUnits.PubKeys, tx.PublicKey)
+	election.PubsharesUnits.Indexes = append(election.PubsharesUnits.Indexes, tx.Index)
+
+	nbrSubmissions := len(election.PubsharesUnits.Pubshares)
+
+	if nbrSubmissions >= election.ShuffleThreshold {
+		election.Status = types.PubSharesSubmitted
+	}
+
+	electionBuf, err := election.Serialize(e.context)
+	if err != nil {
+		return xerrors.Errorf("failed to marshal Election: %v", err)
+	}
+
+	err = snap.Set(electionID, electionBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to set value: %v", err)
+	}
+
+	return nil
+}
+
+// combineShares implements commands. It performs the COMBINE_SHARES command
+func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) error {
 
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
 	}
 
-	tx, ok := msg.(types.DecryptBallots)
+	tx, ok := msg.(types.CombineShares)
 	if !ok {
 		return xerrors.Errorf(errWrongTx, msg)
 	}
@@ -492,12 +610,46 @@ func (e evotingCommand) decryptBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("only the admin can decrypt the ballots")
 	}
 
-	if election.Status != types.ShuffledBallots {
-		return xerrors.Errorf("the ballots are not shuffled, current status: %d", election.Status)
+	if election.Status != types.PubSharesSubmitted {
+		return xerrors.Errorf("the public shares have not been submitted,"+
+			" current status: %d", election.Status)
 	}
 
+	allPubShares := election.PubsharesUnits.Pubshares
+
+	shufflesSize := len(election.ShuffleInstances)
+
+	shuffledBallotsSize := len(election.ShuffleInstances[shufflesSize-1].ShuffledBallots)
+	ballotSize := len(election.ShuffleInstances[shufflesSize-1].ShuffledBallots[0])
+
+	decryptedBallots := make([]types.Ballot, shuffledBallotsSize)
+
+	for i := 0; i < shuffledBallotsSize; i++ {
+		// decryption of one ballot:
+		marshalledBallot := strings.Builder{}
+
+		for j := 0; j < ballotSize; j++ {
+			chunk, err := decrypt(i, j, allPubShares, election.PubsharesUnits.Indexes)
+			if err != nil {
+				return xerrors.Errorf("failed to decrypt (K, C): %v", err)
+			}
+
+			marshalledBallot.Write(chunk)
+		}
+
+		var ballot types.Ballot
+		err = ballot.Unmarshal(marshalledBallot.String(), election)
+
+		if err != nil {
+			dela.Logger.Warn().Msgf("Failed to unmarshal a ballot: %v", err)
+		}
+
+		decryptedBallots[i] = ballot
+	}
+
+	election.DecryptedBallots = decryptedBallots
+
 	election.Status = types.ResultAvailable
-	election.DecryptedBallots = tx.DecryptedBallots
 
 	electionBuf, err := election.Serialize(e.context)
 	if err != nil {
@@ -667,4 +819,34 @@ func (e evotingCommand) getTransaction(tx txn.Transaction) (serde.Message, error
 	}
 
 	return message, nil
+}
+
+// decrypt combines the public shares to reconstruct the secret
+// (i.e. encrypted ballots).
+func decrypt(ballot int, pair int, allPubShares []types.PubsharesUnit, indexes []int) (
+	[]byte, error) {
+	pubShares := make([]*share.PubShare, 0)
+
+	for i := 0; i < len(allPubShares); i++ {
+		if allPubShares[i] != nil { // can be nil since not all nodes need to submit
+			pubShare := allPubShares[i][ballot][pair]
+
+			pubShares = append(pubShares, &share.PubShare{
+				I: indexes[i],
+				V: pubShare,
+			})
+		}
+	}
+
+	res, err := share.RecoverCommit(suite, pubShares, len(pubShares), len(pubShares))
+	if err != nil {
+		return nil, xerrors.Errorf("failed to recover commit: %v", err)
+	}
+
+	decryptedMessage, err := res.Data()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get embedded data: %v", err)
+	}
+
+	return decryptedMessage, nil
 }

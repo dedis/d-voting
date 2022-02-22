@@ -57,14 +57,7 @@ type StartDone struct {
 }
 
 type DecryptRequest struct {
-	K          []byte
-	C          []byte
 	ElectionId string
-}
-
-type DecryptReply struct {
-	V []byte
-	I int64
 }
 
 type GetPeerPubKey struct{}
@@ -79,7 +72,6 @@ type Message struct {
 	Response          *Response          `json:",omitempty"`
 	StartDone         *StartDone         `json:",omitempty"`
 	DecryptRequest    *DecryptRequest    `json:",omitempty"`
-	DecryptReply      *DecryptReply      `json:",omitempty"`
 	GetPeerPubKey     *GetPeerPubKey     `json:",omitempty"`
 	GetPeerPubKeyResp *GetPeerPubKeyResp `json:",omitempty"`
 }
@@ -167,35 +159,11 @@ func (f msgFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, error) 
 
 		m = Message{StartDone: &ack}
 	case types.DecryptRequest:
-		k, err := in.GetK().MarshalBinary()
-		if err != nil {
-			return nil, xerrors.Errorf("couldn't marshal K: %v", err)
-		}
-
-		c, err := in.GetC().MarshalBinary()
-		if err != nil {
-			return nil, xerrors.Errorf("couldn't marshal C: %v", err)
-		}
-
 		req := DecryptRequest{
-			K:          k,
-			C:          c,
 			ElectionId: in.GetElectionId(),
 		}
 
 		m = Message{DecryptRequest: &req}
-	case types.DecryptReply:
-		v, err := in.GetV().MarshalBinary()
-		if err != nil {
-			return nil, xerrors.Errorf("couldn't marshal V: %v", err)
-		}
-
-		resp := DecryptReply{
-			V: v,
-			I: in.GetI(),
-		}
-
-		m = Message{DecryptReply: &resp}
 	case types.GetPeerPubKey:
 		m = Message{
 			GetPeerPubKey: &GetPeerPubKey{},
@@ -276,33 +244,9 @@ func (f msgFormat) Decode(ctx serde.Context, data []byte) (serde.Message, error)
 	}
 
 	if m.DecryptRequest != nil {
-		k := f.suite.Point()
-		err = k.UnmarshalBinary(m.DecryptRequest.K)
-		if err != nil {
-			return nil, xerrors.Errorf("couldn't unmarshal K: %v", err)
-		}
-
-		c := f.suite.Point()
-		err = c.UnmarshalBinary(m.DecryptRequest.C)
-		if err != nil {
-			return nil, xerrors.Errorf("couldn't unmarshal C: %v", err)
-		}
-
-		req := types.NewDecryptRequest(k, c, m.DecryptRequest.ElectionId)
+		req := types.NewDecryptRequest(m.DecryptRequest.ElectionId)
 
 		return req, nil
-	}
-
-	if m.DecryptReply != nil {
-		v := f.suite.Point()
-		err = v.UnmarshalBinary(m.DecryptReply.V)
-		if err != nil {
-			return nil, xerrors.Errorf("couldn't unmarshal V: %v", err)
-		}
-
-		resp := types.NewDecryptReply(m.DecryptReply.I, v)
-
-		return resp, nil
 	}
 
 	if m.GetPeerPubKey != nil {

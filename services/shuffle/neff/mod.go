@@ -200,7 +200,7 @@ func getElection(electionFac serde.Factory, ctx serde.Context,
 		return election, xerrors.Errorf("failed to get proof: %v", err)
 	}
 
-	if proof == nil {
+	if string(proof.GetValue()) == "" {
 		return election, xerrors.Errorf("election does not exist")
 	}
 

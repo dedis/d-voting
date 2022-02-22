@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/hex"
+	"golang.org/x/xerrors"
 	"io/ioutil"
 	"testing"
 
@@ -11,14 +12,15 @@ import (
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/store/kv"
-	"golang.org/x/xerrors"
 )
 
 func TestInitAction_Execute(t *testing.T) {
 
+	flags := fakeFlags{strings: make(map[string]string)}
+
 	ctx := node.Context{
 		Injector: node.NewInjector(),
-		Flags:    make(node.FlagSet),
+		Flags:    flags,
 		Out:      ioutil.Discard,
 	}
 
@@ -28,22 +30,46 @@ func TestInitAction_Execute(t *testing.T) {
 	err := action.Execute(ctx)
 	require.EqualError(t, err, "failed to resolve DKG: couldn't find dependency for 'dkg.DKG'")
 
-	// Try with a bogus DKG in the system
 	bp := fake.BadPedersen{Err: xerrors.Errorf("fake error")}
 	ctx.Injector.Inject(bp)
+
+	// Try without ordering service
+	err = action.Execute(ctx)
+	require.EqualError(t, err, "failed to make client: failed to resolve ordering.Service:"+
+		" couldn't find dependency for 'ordering.Service'")
+
+	// Try without validation service
+	service := fake.Service{}
+	ctx.Injector.Inject(&service)
+
+	err = action.Execute(ctx)
+	require.EqualError(t, err, "failed to make client: failed to resolve validation.Service: couldn't find dependency for 'validation.Service'")
+
+	// Try with a bogus DKG in the system
+	bp = fake.BadPedersen{Err: xerrors.Errorf("fake error")}
+	ctx.Injector.Inject(bp)
+
+	valService := fake.ValidationService{}
+	ctx.Injector.Inject(valService)
+
 	err = action.Execute(ctx)
 	require.EqualError(t, err, "failed to start the RPC: fake error")
 
 	ctx.Injector = node.NewInjector()
+	ctx.Injector.Inject(&service)
+	ctx.Injector.Inject(valService)
 
 	// Try with a DKG but no DKGMap in the system
 	p := fake.Pedersen{Actors: make(map[string]dkg.Actor)}
 	ctx.Injector.Inject(p)
+
 	err = action.Execute(ctx)
-	require.EqualError(t, err, "failed to update DKG store: failed to resolve db: "+
-		"couldn't find dependency for 'kv.DB'")
+	require.EqualError(t, err, "failed to update DKG store: "+
+		"failed to resolve db: couldn't find dependency for 'kv.DB'")
 
 	ctx.Injector = node.NewInjector()
+	ctx.Injector.Inject(&service)
+	ctx.Injector.Inject(valService)
 
 	// Try with a DKG and a DKGMap in the system
 	p.Actors = make(map[string]dkg.Actor)
@@ -85,7 +111,7 @@ func TestSetupAction_Execute(t *testing.T) {
 	electionIDBuf, err := hex.DecodeString(electionID)
 	require.NoError(t, err)
 
-	a, err := p.Listen(electionIDBuf)
+	a, err := p.Listen(electionIDBuf, fake.Manager{})
 	require.NoError(t, err)
 
 	inj.Inject(p)
@@ -158,4 +184,8 @@ type fakeFlags struct {
 
 func (f fakeFlags) String(name string) string {
 	return f.strings[name]
+}
+
+func (f fakeFlags) Path(name string) string {
+	return f.String(name)
 }
