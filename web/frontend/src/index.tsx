@@ -5,7 +5,7 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV !== 'production' && process.env.REACT_APP_NOMOCK !== 'on') {
   const { dvotingserver } = require('./mocks/dvotingserver');
   dvotingserver.start();
 }

@@ -14,6 +14,7 @@ import {
   ROUTE_BALLOT_SHOW,
 } from './pages/Routes';
 import Login from './pages/Login';
+import LoginCallback from './pages/LoginCallback';
 import Home from './pages/Home';
 import About from './pages/About';
 import Admin from './pages/Admin';
@@ -30,6 +31,8 @@ import Footer from './pages/Footer';
 import { ENDPOINT_PERSONNAL_INFO } from './components/utils/Endpoints';
 import './App.css';
 
+const NotFound = () => <div>404 not found</div>;
+
 const App: FC = () => {
   const [isLogged, setIsLogged] = useState(false);
   const [lastname, setLastName] = useState('');
@@ -37,7 +40,10 @@ const App: FC = () => {
   const [role, setRole] = useState('');
 
   useEffect(() => {
-    fetch(ENDPOINT_PERSONNAL_INFO)
+    const req = {
+      method: 'GET',
+    };
+    fetch(ENDPOINT_PERSONNAL_INFO, req)
       .then((res) => res.json())
       .then((result) => {
         setIsLogged(result.islogged);
@@ -69,14 +75,17 @@ const App: FC = () => {
                   <Route path={ROUTE_ADMIN} element={<Admin />} />
                   <Route path={ROUTE_ABOUT} element={<About />} />
                   <Route path={ROUTE_ELECTION_INDEX} element={<ElectionIndex />} />
-                  <Route path="*" element={<Home />} />
+                  <Route path="/" element={<Home />} />
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               ) : (
                 <Routes>
                   <Route path={ROUTE_ADMIN} element={<Admin />} />
                   <Route path={ROUTE_ABOUT} element={<About />} />
                   <Route path={ROUTE_ELECTION_INDEX} element={<ElectionIndex />} />
-                  <Route path="*" element={<Login />} />
+                  <Route path="/" element={<Login />} />
+                  <Route path="/login_callback" element={<LoginCallback />} />
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               )}
             </div>

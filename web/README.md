@@ -4,44 +4,53 @@ This folder contains a front-end for admin and user operations.
 
 ![screen](screenshot.png)
 
-It allows the user to create a new election, close/cancel it and also vote on on-going elections.
-All the elections and their operations are saved on smart contracts from dela.
- 
-There is currently no real authentication mechanism, simply a login button that
-gives an id and a token to a user. When a user cast a vote, his/her vote is
-encrypted using the dkg public key of the nodes running the dela system. The
-anonymity of a voter is not guaranteed, only the content of the vote meaning
-that it is possible to know who voted. It needs to have Dela nodes running every
-time you want to run the frontend web-application. The user interface uses
-[React](https://reactjs.org/), a javascript library. You can find the
-instruction about running a react-app in the app folder.
+It allows the user to create a new election, close/cancel it and also vote on
+on-going elections. All the elections and their operations are saved on smart
+contracts from dela.
  
 # Setup
 
-For the front-end to work, you need to have 3 dela nodes running on your
-computer. See instructions in `../README.md`.
+Have node.js installed. It has been tested with node version v17.5.0.
 
-First install dependencies (from ./app) with:
+The web client has two parts:
 
-```
+- **frontend**, which is the website served to the browser
+- **backend**, which performs the authentication and other services needed by the
+  frontend.
+
+By default, the frontend can run without using the backend. This is convenient
+for development. This is made possible with the use of https://mswjs.io/, a
+library that mocks requests by intercepting them. To run the frontend, go to the
+`frontend/` folder, install the dependencies, and run the app:
+
+```sh
+cd frontend
 npm install
-```
-
-Then you can launch the app (from ./app) with:
-
-```
 npm start
 ```
 
-# Dependencies
+If you want to use the backend, do the same operation in the `backend/` folder.
+Then, launch the frontend with:
 
-The project uses the following external libraries: 
-* [dedis/cothority](https://github.com/dedis/cothority/tree/main/external/js/kyber)
-  which is used for elliptic curve cryptography when encrypting a vote
-* [mui-org/material-ui](https://github.com/mui-org/material-ui)
-* [ReactTraining/react-router](https://github.com/ReactTraining/react-router)
+```sh
+REACT_APP_NOMOCK=on npm start
+```
 
 # Running the tests
 
-The unit tests can be found in src/components/_test_ folder. They can be run
+The unit tests can be found in `src/components/_test_` folder. They can be run
 with `npm run test`.
+
+# Automatic linting with VSCode
+
+Be sure to configure "format on save" with eslint. The following configuration
+can be placed in `.vscode/settings.json` at the root of the repos:
+
+```json
+{
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true
+    },
+    "eslint.validate": ["javascript"]
+}
+```
