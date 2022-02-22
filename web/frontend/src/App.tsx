@@ -1,5 +1,5 @@
 import React, { FC, Suspense, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import {
   ROUTE_HOME,
@@ -12,6 +12,7 @@ import {
   ROUTE_RESULT_SHOW,
   ROUTE_BALLOT_INDEX,
   ROUTE_BALLOT_SHOW,
+  ROUTE_LOGIN,
 } from './pages/Routes';
 import Login from './pages/Login';
 import LoginCallback from './pages/LoginCallback';
@@ -30,6 +31,7 @@ import Footer from './pages/Footer';
 
 import { ENDPOINT_PERSONNAL_INFO } from './components/utils/Endpoints';
 import './App.css';
+import { replace } from 'formik';
 
 const NotFound = () => <div>404 not found</div>;
 
@@ -53,6 +55,16 @@ const App: FC = () => {
       });
   }, []);
 
+  const RequireAuth = ({ children }) => {
+    let location = useLocation();
+
+    if (!isLogged) {
+      return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+
+    return children;
+  };
+
   return (
     <Suspense fallback="...loading app">
       <Router>
@@ -63,32 +75,34 @@ const App: FC = () => {
           <div
             data-testid="content"
             className="app-page mb-auto flex flex-row justify-center items-center w-full">
-            <div>
-              {isLogged ? (
-                <Routes>
-                  <Route path={ROUTE_ELECTION_CREATE} element={<ElectionCreate />} />
-                  <Route path={ROUTE_ELECTION_SHOW + '/:electionId'} element={<ElectionShow />} />
-                  <Route path={ROUTE_RESULT_INDEX} element={<ResultIndex />} />
-                  <Route path={ROUTE_RESULT_SHOW + '/:electionId'} element={<ResultShow />} />
-                  <Route path={ROUTE_BALLOT_INDEX} element={<BallotIndex />} />
-                  <Route path={ROUTE_BALLOT_SHOW + '/:electionId'} element={<BallotShow />} />
-                  <Route path={ROUTE_ADMIN} element={<Admin />} />
-                  <Route path={ROUTE_ABOUT} element={<About />} />
-                  <Route path={ROUTE_ELECTION_INDEX} element={<ElectionIndex />} />
-                  <Route path="/" element={<Home />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              ) : (
-                <Routes>
-                  <Route path={ROUTE_ADMIN} element={<Admin />} />
-                  <Route path={ROUTE_ABOUT} element={<About />} />
-                  <Route path={ROUTE_ELECTION_INDEX} element={<ElectionIndex />} />
-                  <Route path="/" element={<Login />} />
-                  <Route path="/login_callback" element={<LoginCallback />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              )}
-            </div>
+            <Routes>
+              <Route
+                path={ROUTE_ELECTION_CREATE}
+                element={
+                  <RequireAuth>
+                    <ElectionCreate />
+                  </RequireAuth>
+                }
+              />
+              <Route path={ROUTE_ELECTION_SHOW + '/:electionId'} element={<ElectionShow />} />
+              <Route path={ROUTE_RESULT_INDEX} element={<ResultIndex />} />
+              <Route path={ROUTE_RESULT_SHOW + '/:electionId'} element={<ResultShow />} />
+              <Route path={ROUTE_BALLOT_INDEX} element={<BallotIndex />} />
+              <Route path={ROUTE_BALLOT_SHOW + '/:electionId'} element={<BallotShow />} />
+              <Route
+                path={ROUTE_ADMIN}
+                element={
+                  <RequireAuth>
+                    <Admin />
+                  </RequireAuth>
+                }
+              />
+              <Route path={ROUTE_ABOUT} element={<About />} />
+              <Route path={ROUTE_ELECTION_INDEX} element={<ElectionIndex />} />
+              <Route path={ROUTE_LOGIN} element={<Login />} />
+              <Route path="/" element={<Home />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </div>
           <div>
             <Footer />

@@ -9,8 +9,7 @@ import {
   ROUTE_ADMIN,
   ROUTE_ELECTION_CREATE,
   ROUTE_ELECTION_INDEX,
-  ROUTE_RESULT_INDEX,
-  ROUTE_BALLOT_INDEX,
+  ROUTE_LOGIN,
 } from '../pages/Routes';
 import logoWhite from '../assets/logo-white.png';
 import { LanguageSelector } from '../language';
@@ -153,18 +152,6 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, role, isLogged }) => {
                   }>
                   {t('navBarAbout')}
                 </NavLink>
-
-                {isLogged ? (
-                  <button
-                    type="button"
-                    className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-                    onClick={handleLogout}
-                    onSubmit={onSubmitPreventDefault}>
-                    {t('logout')}
-                  </button>
-                ) : (
-                  ''
-                )}
               </div>
             </div>
           </div>
@@ -218,14 +205,24 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, role, isLogged }) => {
                 tabIndex={-1}>
                 {
                   <div>
-                    <a
-                      href="#top"
-                      className="block px-4 py-2 text-sm text-gray-700"
-                      role="menuitem"
-                      tabIndex={-1}
-                      id="user-menu-item-0">
-                      Logged as {firstname} {lastname}
-                    </a>
+                    {isLogged ? (
+                      <div>
+                        <p className="block px-4 py-2 text-sm text-gray-400">
+                          Logged as {firstname} {lastname}
+                        </p>
+                        <button
+                          type="button"
+                          className="block px-4 py-2 text-sm text-gray-700"
+                          onClick={handleLogout}
+                          onSubmit={onSubmitPreventDefault}>
+                          {t('logout')}
+                        </button>
+                      </div>
+                    ) : (
+                      <NavLink to={ROUTE_LOGIN} className={'block px-4 py-2 text-sm text-gray-700'}>
+                        Login
+                      </NavLink>
+                    )}
                     <a
                       href="#top"
                       className="block px-4 py-2 text-sm text-gray-700"
@@ -233,14 +230,6 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, role, isLogged }) => {
                       tabIndex={-1}
                       id="user-menu-item-1">
                       Settings
-                    </a>
-                    <a
-                      href="#top"
-                      className="block px-4 py-2 text-sm text-gray-700"
-                      role="menuitem"
-                      tabIndex={-1}
-                      id="user-menu-item-2">
-                      Sign out
                     </a>
                   </div>
                 }

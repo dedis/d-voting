@@ -4,11 +4,14 @@ import PropTypes from 'prop-types';
 
 import { ENDPOINT_GET_TEQ_KEY } from '../components/utils/Endpoints';
 import './Login.css';
+import { useLocation } from 'react-router-dom';
 
 const Login: FC = () => {
   const { t } = useTranslation();
 
   const [loginError] = useState();
+
+  const [content, setContent] = useState('');
 
   const handleClick = async () => {
     fetch(ENDPOINT_GET_TEQ_KEY)
@@ -25,9 +28,22 @@ const Login: FC = () => {
     return <div>{loginError === null ? <div></div> : t('errorServerDown')}</div>;
   };
 
+  const location = useLocation();
+
+  type LocationState = {
+    from: Location;
+  };
+
+  useEffect(() => {
+    const state = location.state as LocationState;
+    if (state !== null) {
+      setContent(t('loginText', { from: state.from.pathname }));
+    }
+  }, [location]);
+
   return (
     <div className="login-container">
-      <div className="login-txt">{t('loginText')}</div>
+      <div className="login-txt">{content}</div>
       <button id="login-button" className="login-btn" onClick={handleClick}>
         {t('login')}
       </button>
