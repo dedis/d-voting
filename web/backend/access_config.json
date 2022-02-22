@@ -1,10 +1,20 @@
 {
-  "everyone": ["/api/get_teq_key", "/api/control_key", "/api/personnal_info"],
-  "voter": ["/api/logout", "/api/personnal_info"],
-  "operator": ["/api/logout", "/api/personnal_info"],
+  "everyone": [
+    "/api/get_teq_key",
+    "/api/control_key",
+    "/api/personal_info"
+  ],
+  "voter": [
+    "/api/logout",
+    "/api/personal_info"
+  ],
+  "operator": [
+    "/api/logout",
+    "/api/personal_info"
+  ],
   "admin": [
     "/api/logout",
-    "/api/personnal_info",
+    "/api/personal_info",
     "/api/user_rights",
     "/api/add_role",
     "/api/remove_role"

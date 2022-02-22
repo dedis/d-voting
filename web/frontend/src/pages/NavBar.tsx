@@ -46,9 +46,9 @@ const NavBar: FC<NavBarProps> = ({ lastname, firstname, role, isLogged }) => {
     const res = await fetch(ENDPOINT_LOGOUT, opts);
     if (res.status !== 200) {
       console.warn('failed to logout');
+    } else {
+      window.location.href = '/';
     }
-
-    window.location.href = '/';
   };
 
   const onSubmitPreventDefault = (e) => {
