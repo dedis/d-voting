@@ -1,22 +1,10 @@
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import ElectionTable from '../components/ElectionTable';
-import useFetchCall from '../components/utils/useFetchCall';
-import { ENDPOINT_EVOTING_GET_ALL } from '../components/utils/Endpoints';
-import './Election.css';
-
-/*Assumption : for now an election is simply a json file with the following field
-    - electionName: string
-    - Format: []byte -> it stores the election questions 
-    - electionStatus : number
-    - collectivePublicKey :
-    - electionID : string
-*/
-/*Disclaimer : 
-Currently the Format parameter of an election is always a []string
-called Candidates
- */
+import ElectionTable from './components/ElectionTable';
+import useFetchCall from 'components/utils/useFetchCall';
+import { ENDPOINT_EVOTING_GET_ALL } from 'components/utils/Endpoints';
+import './Index.css';
 
 const ElectionIndex: FC = () => {
   const { t } = useTranslation();

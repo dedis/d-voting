@@ -1,16 +1,16 @@
 import React, { FC, useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import Action from '../components/Action';
-import Result from '../components/Result';
-import Status from '../components/Status';
-import useElection from '../components/utils/useElection';
-import { RESULT_AVAILABLE } from '../components/utils/StatusNumber';
-import useGetResults from '../components/utils/useGetResults';
-import { ROUTE_ELECTION_INDEX } from '../Routes';
-import './ElectionShow.css';
+import Action from './components/Action';
+import Result from '../result/components/Result';
+import Status from './components/Status';
+import useElection from 'components/utils/useElection';
+import { RESULT_AVAILABLE } from 'components/utils/StatusNumber';
+import useGetResults from 'components/utils/useGetResults';
+import { ROUTE_ELECTION_INDEX } from 'Routes';
+import './Show.css';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();

@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Button from '@mui/material/Button';
 import { DataGrid } from '@mui/x-data-grid';
 
-import { ENDPOINT_USER_RIGHTS } from '../components/utils/Endpoints';
-import AddAdminUserModal from '../components/modal/AddAdminUserModal';
-import RemoveAdminUserModal from '../components/modal/RemoveAdminUserModal';
+import { ENDPOINT_USER_RIGHTS } from 'components/utils/Endpoints';
+import AddAdminUserModal from 'components/modal/AddAdminUserModal';
+import RemoveAdminUserModal from 'components/modal/RemoveAdminUserModal';
 import './Admin.css';
 
 const Admin = () => {

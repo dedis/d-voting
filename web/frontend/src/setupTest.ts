@@ -4,7 +4,7 @@
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
 
-import { dvotingproxy } from './mocks/dvotingproxy';
+import { dvotingproxy } from 'mocks/dvotingproxy';
 
 import Enzyme from 'enzyme';
 import Adapter from '@wojtekmaj/enzyme-adapter-react-17';

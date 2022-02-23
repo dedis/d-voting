@@ -1,31 +1,29 @@
-import React, { FC, Suspense, useEffect, useState, createContext, useContext } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import React, { Suspense, useContext } from 'react';
+import { Navigate, Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
 
 import {
-  ROUTE_HOME,
   ROUTE_ABOUT,
   ROUTE_ADMIN,
+  ROUTE_BALLOT_INDEX,
+  ROUTE_BALLOT_SHOW,
   ROUTE_ELECTION_CREATE,
   ROUTE_ELECTION_INDEX,
   ROUTE_ELECTION_SHOW,
+  ROUTE_LOGIN,
   ROUTE_RESULT_INDEX,
   ROUTE_RESULT_SHOW,
-  ROUTE_BALLOT_INDEX,
-  ROUTE_BALLOT_SHOW,
-  ROUTE_LOGIN,
 } from '../Routes';
-import Login from '../pages/Login';
-import LoginCallback from '../pages/LoginCallback';
+import Login from '../pages/session/Login';
 import Home from '../pages/Home';
 import About from '../pages/About';
 import Admin from '../pages/Admin';
-import ElectionIndex from '../pages/ElectionIndex';
-import ElectionCreate from '../pages/ElectionCreate';
-import ElectionShow from '../pages/ElectionShow';
-import ResultIndex from '../pages/ResultIndex';
-import ResultShow from '../pages/ResultShow';
-import BallotIndex from '../pages/BallotIndex';
-import BallotShow from '../pages/BallotShow';
+import ElectionIndex from '../pages/election/Index';
+import ElectionCreate from '../pages/election/New';
+import ElectionShow from '../pages/election/Show';
+import ResultIndex from '../pages/result/Index';
+import ResultShow from '../pages/result/Show';
+import BallotIndex from '../pages/ballot/Index';
+import BallotShow from '../pages/ballot/Show';
 import NavBar from './NavBar';
 import Footer from './Footer';
 
@@ -34,7 +32,7 @@ import { AuthContext } from '..';
 
 const NotFound = () => <div>404 not found</div>;
 
-const App: FC = () => {
+const App = () => {
   const RequireAuth = ({ children }) => {
     let location = useLocation();
 

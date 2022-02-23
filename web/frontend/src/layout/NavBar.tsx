@@ -1,14 +1,14 @@
-import React, { FC, useState, useContext } from 'react';
+import React, { FC, useContext, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ENDPOINT_LOGOUT } from '../components/utils/Endpoints';
 
 import {
-  ROUTE_HOME,
   ROUTE_ABOUT,
   ROUTE_ADMIN,
   ROUTE_ELECTION_CREATE,
   ROUTE_ELECTION_INDEX,
+  ROUTE_HOME,
   ROUTE_LOGIN,
 } from '../Routes';
 import logoWhite from '../assets/logo-white.png';
