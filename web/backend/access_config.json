@@ -1,17 +1,7 @@
 {
-  "everyone": [
-    "/api/get_teq_key",
-    "/api/control_key",
-    "/api/personal_info"
-  ],
-  "voter": [
-    "/api/logout",
-    "/api/personal_info"
-  ],
-  "operator": [
-    "/api/logout",
-    "/api/personal_info"
-  ],
+  "everyone": ["/api/get_teq_key", "/api/control_key", "/api/personal_info"],
+  "voter": ["/api/logout", "/api/personal_info"],
+  "operator": ["/api/logout", "/api/personal_info"],
   "admin": [
     "/api/logout",
     "/api/personal_info",

@@ -1,0 +1,32 @@
+name: Web backend lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Web backend Lint
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./web/backend
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+          node-version: '17.x'
+
+    - name: Instal dependencies
+      run: npm install
+
+    - name: Adds config file
+      run: mv config.json.template config.json
+
+    - name: run eslint
+      run: npm run eslint
+
+    - name: run prettier-check
+      run: npm run prettier-check
