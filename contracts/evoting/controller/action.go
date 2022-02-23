@@ -659,11 +659,58 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("Number of shuffled ballots : " + strconv.Itoa(len(election.ShuffleInstances)))
 	dela.Logger.Info().Msg("Number of encrypted ballots : " + strconv.Itoa(len(election.Suffragia.Ciphervotes)))
 
+	// ###################################### REQUEST PUBLIC SHARES ############
+
+	fmt.Fprintln(ctx.Out, "request public shares")
+
+	beginDecryptionRequest := types.BeginDecryptionRequest{
+		ElectionID: electionID,
+		UserID:     "adminId",
+		Token:      token,
+	}
+
+	js, err = json.Marshal(beginDecryptionRequest)
+	if err != nil {
+		return xerrors.Errorf("failed to set marshall types.SimpleElection: %v", err)
+	}
+
+	resp, err = http.Post(proxyAddr1+beginDecryptionEndpoint, contentType, bytes.NewBuffer(js))
+	if err != nil {
+		return xerrors.Errorf("failed to request beginning of decryption on the server: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
+
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		return xerrors.Errorf("failed to read body of the response: %v", err)
+	}
+
+	dela.Logger.Info().Msg("Response body : " + string(body))
+	resp.Body.Close()
+
+	time.Sleep(10 * time.Second)
+
+	election, err = getElection(serdecontext, electionFac, electionID, service)
+	if err != nil {
+		return xerrors.Errorf(getElectionErr, err)
+	}
+
+	validSubmissions := len(election.PubsharesUnits.Pubshares)
+
+	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
+	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
+	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
+	dela.Logger.Info().Msg("Number of Pubshare units submitted: " + strconv.Itoa(validSubmissions))
+
 	// ###################################### DECRYPT BALLOTS ##################
 
 	fmt.Fprintln(ctx.Out, "decrypt ballots")
 
-	decryptBallotsRequest := types.DecryptBallotsRequest{
+	decryptBallotsRequest := types.CombineSharesRequest{
 		ElectionID: electionID,
 		UserID:     "adminId",
 		Token:      token,

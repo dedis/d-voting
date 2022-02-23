@@ -89,7 +89,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		time.Sleep(time.Second * 1)
 
 		// ##### SETUP DKG #####
-		actor, err := initDkg(nodes, electionID)
+		actor, err := initDkg(nodes, electionID, m.m)
 		require.NoError(t, err)
 
 		// ##### OPEN ELECTION #####
@@ -124,14 +124,24 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		err = sActor.Shuffle(electionID)
 		require.NoError(t, err)
 
-		// ##### DECRYPT BALLOTS #####
 		time.Sleep(time.Second * 1)
+
+		// ##### SUBMIT PUBLIC SHARES #####
+		t.Logf("submitting public shares")
+
+		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
+		require.NoError(t, err)
+		err = actor.ComputePubshares()
+		require.NoError(t, err)
+
+		// ##### DECRYPT BALLOTS #####
+		time.Sleep(time.Millisecond * 2500 * time.Duration(numNodes))
 
 		t.Logf("decrypting")
 
 		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
+		t.Logf("PubsharesUnit: %v", election.PubsharesUnits)
 		require.NoError(t, err)
-
 		err = decryptBallots(m, actor, election)
 		require.NoError(t, err)
 
@@ -459,7 +469,7 @@ func closeElection(m txManager, electionID []byte, admin string) error {
 	return nil
 }
 
-func initDkg(nodes []dVotingCosiDela, electionID []byte) (dkg.Actor, error) {
+func initDkg(nodes []dVotingCosiDela, electionID []byte, m txn.Manager) (dkg.Actor, error) {
 	var actor dkg.Actor
 	var err error
 
@@ -467,7 +477,7 @@ func initDkg(nodes []dVotingCosiDela, electionID []byte) (dkg.Actor, error) {
 		d := node.(dVotingNode).GetDkg()
 
 		// put Listen in a goroutine to optimize for speed
-		actor, err = d.Listen(electionID)
+		actor, err = d.Listen(electionID, m)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to GetDkg: %v", err)
 		}
@@ -503,41 +513,13 @@ func initShuffle(nodes []dVotingCosiDela) (shuffle.Actor, error) {
 }
 
 func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error {
-	if election.Status != types.ShuffledBallots {
-		return xerrors.Errorf("cannot decrypt: shuffle is not finished")
+	if election.Status != types.PubSharesSubmitted {
+		return xerrors.Errorf("cannot decrypt: not all pubShares submitted")
 	}
 
-	X, Y := types.CiphervotesToPairs(election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots)
-
-	decryptedBallots := make([]types.Ballot, 0, len(election.ShuffleInstances))
-	wrongBallots := 0
-
-	for i := 0; i < len(X[0]); i++ {
-		// decryption of one ballot:
-		marshalledBallot := strings.Builder{}
-		for j := 0; j < len(X); j++ {
-			chunk, err := actor.Decrypt(X[j][i], Y[j][i])
-			if err != nil {
-				return xerrors.Errorf("failed to decrypt (K,C): %v", err)
-			}
-
-			marshalledBallot.Write(chunk)
-		}
-
-		var ballot types.Ballot
-
-		err := ballot.Unmarshal(marshalledBallot.String(), election)
-		if err != nil {
-			wrongBallots++
-		}
-
-		decryptedBallots = append(decryptedBallots, ballot)
-	}
-
-	decryptBallots := types.DecryptBallots{
-		ElectionID:       election.ElectionID,
-		UserID:           election.AdminID,
-		DecryptedBallots: decryptedBallots,
+	decryptBallots := types.CombineShares{
+		ElectionID: election.ElectionID,
+		UserID:     election.AdminID,
 	}
 
 	data, err := decryptBallots.Serialize(serdecontext)
@@ -548,7 +530,7 @@ func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error
 	args := []txn.Arg{
 		{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
 		{Key: evoting.ElectionArg, Value: data},
-		{Key: evoting.CmdArg, Value: []byte(evoting.CmdDecryptBallots)},
+		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCombineShares)},
 	}
 
 	_, err = m.addAndWait(args...)

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
@@ -444,13 +443,13 @@ func (h *votingProxy) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// DecryptBallots decrypts the shuffled ballots in an election.
-func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
-	req := &types.DecryptBallotsRequest{}
+// BeginDecryption starts the decryption process by gather the pubShares
+func (h *votingProxy) BeginDecryption(w http.ResponseWriter, r *http.Request) {
+	req := &types.BeginDecryptionRequest{}
 
 	err := json.NewDecoder(r.Body).Decode(req)
 	if err != nil {
-		http.Error(w, "failed to decode DecryptBallotsRequest: "+err.Error(),
+		http.Error(w, "failed to decode BeginDecryptionRequest: "+err.Error(),
 			http.StatusBadRequest)
 		return
 	}
@@ -494,66 +493,92 @@ func (h *votingProxy) DecryptBallots(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no shuffled instances", http.StatusInternalServerError)
 		return
 	}
-	wrongBallots := 0
 
 	actor, exists := h.dkg.GetActor(electionIDBuf)
 	if !exists {
-		http.Error(w, "failed to get actor:"+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to get actor: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	lastShuffled := election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots
-	numVotes := len(lastShuffled)
-	seqSize := len(lastShuffled[0])
-
-	decryptedBallots := make([]types.Ballot, 0, numVotes)
-
-	for j := 0; j < numVotes; j++ {
-
-		// decryption of one ballot:
-		marshalledBallot := strings.Builder{}
-
-		for i := 0; i < seqSize; i++ {
-
-			chunk, err := actor.Decrypt(lastShuffled[j][i].K, lastShuffled[j][i].C)
-			if err != nil {
-				http.Error(w, "failed to decrypt (K, C): "+err.Error(),
-					http.StatusInternalServerError)
-				return
-			}
-			marshalledBallot.Write(chunk)
-		}
-
-		var ballot types.Ballot
-		err = ballot.Unmarshal(marshalledBallot.String(), election)
-		if err != nil {
-			// TODO do we ever send back through http if it's not an error ?
-			wrongBallots++
-		}
-
-		decryptedBallots = append(decryptedBallots, ballot)
-	}
-
-	decryptBallots := types.DecryptBallots{
-		ElectionID:       req.ElectionID,
-		UserID:           req.UserID,
-		DecryptedBallots: decryptedBallots,
-	}
-
-	data, err := decryptBallots.Serialize(h.context)
+	err = actor.ComputePubshares()
 	if err != nil {
-		http.Error(w, "failed to marshal DecryptBallots: "+err.Error(),
+		http.Error(w, "failed to request the public shares: "+err.Error(),
 			http.StatusInternalServerError)
 		return
 	}
 
-	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdDecryptBallots, evoting.ElectionArg, data)
+	response := types.BeginDecryptionResponse{
+		Message: "Decryption process started. Gathering public shares...",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
+			http.StatusInternalServerError)
+		return
+	}
+
+}
+
+// CombineShares decrypts the shuffled ballots in an election.
+func (h *votingProxy) CombineShares(w http.ResponseWriter, r *http.Request) {
+	req := &types.CombineSharesRequest{}
+
+	err := json.NewDecoder(r.Body).Decode(req)
+	if err != nil {
+		http.Error(w, "failed to decode CombineSharesRequest: "+err.Error(),
+			http.StatusBadRequest)
+		return
+	}
+
+	elecMD, err := h.getElectionsMetadata()
+	if err != nil {
+		http.Error(w, "failed to get election metadata", http.StatusNotFound)
+		return
+	}
+
+	if !contains(elecMD.ElectionsIDs, req.ElectionID) {
+		http.Error(w, "The election does not exist", http.StatusNotFound)
+		return
+	}
+
+	election, err := getElection(h.context, h.electionFac, req.ElectionID, h.orderingSvc)
+	if err != nil {
+		http.Error(w, "failed to get election: "+err.Error(),
+			http.StatusInternalServerError)
+		return
+	}
+	if election.Status != types.PubSharesSubmitted {
+		http.Error(w, "the submission of public shares must be over!",
+			http.StatusUnauthorized)
+		return
+	}
+
+	if election.AdminID != req.UserID {
+		http.Error(w, "only the admin can decrypt the ballots!", http.StatusUnauthorized)
+		return
+	}
+
+	decryptBallots := types.CombineShares{
+		ElectionID: req.ElectionID,
+		UserID:     req.UserID,
+	}
+
+	data, err := decryptBallots.Serialize(h.context)
+	if err != nil {
+		http.Error(w, "failed to marshal decryptBallots: "+err.Error(),
+			http.StatusInternalServerError)
+		return
+	}
+
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCombineShares, evoting.ElectionArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	response := types.DecryptBallotsResponse{}
+	response := types.CombineSharesResponse{}
 
 	w.Header().Set("Content-Type", "application/json")
 

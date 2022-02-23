@@ -69,16 +69,31 @@ type ShuffleBallotsResponse struct {
 	Message string
 }
 
-// DecryptBallotsRequest defines the HTTP request for decrypting the ballots
-type DecryptBallotsRequest struct {
+// BeginDecryptionRequest defines the HTTP request for beginning the decryption
+// process by asking the nodes to send their public shares.
+type BeginDecryptionRequest struct {
 	// ElectionID is hex-encoded
 	ElectionID string
 	UserID     string
 	Token      string
 }
 
-// DecryptBallotsResponse defines the HTTP response when decrypting the ballots
-type DecryptBallotsResponse struct {
+// BeginDecryptionResponse defines the HTTP response confirming the decryption
+// process began.
+type BeginDecryptionResponse struct {
+	Message string
+}
+
+// CombineSharesRequest defines the HTTP request for decrypting the ballots
+type CombineSharesRequest struct {
+	// ElectionID is hex-encoded
+	ElectionID string
+	UserID     string
+	Token      string
+}
+
+// CombineSharesResponse defines the HTTP response when decrypting the ballots
+type CombineSharesResponse struct {
 }
 
 // GetElectionResultRequest defines the HTTP request for getting the election

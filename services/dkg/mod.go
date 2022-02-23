@@ -1,6 +1,7 @@
 package dkg
 
 import (
+	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/kyber/v3"
 )
 
@@ -8,7 +9,7 @@ import (
 type DKG interface {
 	// Listen starts the RPC. This function should be called on each node that
 	// wishes to participate in a DKG. electionID is NOT hex-encoded.
-	Listen(electionID []byte) (Actor, error)
+	Listen(electionID []byte, txmngr txn.Manager) (Actor, error)
 
 	// GetActor allows to retrieve the Actor corresponding to a given
 	// electionID. electionID is NOT hex-encoded.
@@ -31,7 +32,10 @@ type Actor interface {
 	GetPublicKey() (kyber.Point, error)
 
 	Encrypt(message []byte) (K, C kyber.Point, remainder []byte, err error)
-	Decrypt(K, C kyber.Point) ([]byte, error)
+
+	// ComputePubshares sends a decryption request to all nodes. Nodes will then
+	// publish their public shares on the smart contract.
+	ComputePubshares() error
 
 	// MarshalJSON returns a JSON-encoded bytestring containing all the actor
 	// data that is meant to be persistent.

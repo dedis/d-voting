@@ -68,7 +68,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	time.Sleep(time.Millisecond * 1000)
 
 	// ##### SETUP DKG #####
-	actor, err := initDkg(nodes, electionID)
+	actor, err := initDkg(nodes, electionID, m.m)
 	require.NoError(b, err)
 
 	// ##### OPEN ELECTION #####

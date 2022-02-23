@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/base64"
+	"io"
 
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
@@ -18,6 +19,7 @@ type ID string
 type Status uint16
 
 const (
+	// DecryptedBallots = 4
 	// Initial is when the election has just been created
 	Initial Status = 0
 	// Open is when the election is open, i.e. it fetched the public key
@@ -26,6 +28,8 @@ const (
 	Closed Status = 2
 	// ShuffledBallots is when the ballots have been shuffled
 	ShuffledBallots Status = 3
+	// PubSharesSubmitted is when we have enough shares to decrypt the ballots
+	PubSharesSubmitted Status = 4
 	// ResultAvailable is when the ballots have been decrypted
 	ResultAvailable Status = 5
 	// Canceled is when the election has been cancel
@@ -72,6 +76,10 @@ type Election struct {
 	// ShuffleThreshold is set based on the roster. We save it so we do not have
 	// to compute it based on the roster each time we need it.
 	ShuffleThreshold int
+
+	// PubsharesUnits is an array containing all the submission of pubShares.
+	// Each node submits its share to its personal index from the DKG service.
+	PubsharesUnits PubsharesUnits
 
 	DecryptedBallots []Ballot
 
@@ -238,24 +246,9 @@ func (c *Configuration) IsValid() bool {
 	return true
 }
 
-// PublicBulletinBoard maintains a list of encrypted ballots with the associated
-// user ID.
-type PublicBulletinBoard struct {
-	UserIDs []string
-	Ballots []Ciphervote
-}
-
-// CastVote adds a new vote and its associated user or updates a user's vote.
-func (p *PublicBulletinBoard) CastVote(userID string, ciphervote Ciphervote) {
-	for i, u := range p.UserIDs {
-		if u == userID {
-			p.Ballots[i] = ciphervote
-			return
-		}
-	}
-
-	p.UserIDs = append(p.UserIDs, userID)
-	p.Ballots = append(p.Ballots, ciphervote.Copy())
+type Suffragia struct {
+	UserIDs     []string
+	Ciphervotes []Ciphervote
 }
 
 // CastVote adds a new vote and its associated user or updates a user's vote.
@@ -269,37 +262,6 @@ func (s *Suffragia) CastVote(userID string, ciphervote Ciphervote) {
 
 	s.UserIDs = append(s.UserIDs, userID)
 	s.Ciphervotes = append(s.Ciphervotes, ciphervote.Copy())
-}
-
-// GetBallotFromUser returns the ballot associated to a user. Returns nil if
-// user is not found.
-func (p *PublicBulletinBoard) GetBallotFromUser(userID string) (Ciphervote, bool) {
-	for i, u := range p.UserIDs {
-		if u == userID {
-			return p.Ballots[i].Copy(), true
-		}
-	}
-
-	return Ciphervote{}, false
-}
-
-// DeleteUser removes a user and its associated votes if found.
-func (p *PublicBulletinBoard) DeleteUser(userID string) bool {
-	for i, u := range p.UserIDs {
-		if u == userID {
-			p.UserIDs = append(p.UserIDs[:i], p.UserIDs[i+1:]...)
-			p.Ballots = append(p.Ballots[:i], p.Ballots[i+1:]...)
-			return true
-		}
-	}
-
-	return false
-}
-
-// Suffragia defines the association between users and their (encrypted) votes.
-type Suffragia struct {
-	UserIDs     []string
-	Ciphervotes []Ciphervote
 }
 
 // CiphervotesFromPairs transforms two parallel lists of EGPoints to a list of
@@ -356,4 +318,38 @@ func ciphervoteFromPairs(ks []kyber.Point, cs []kyber.Point) (Ciphervote, error)
 	}
 
 	return res, nil
+}
+
+// Pubshare represents a public share.
+type Pubshare kyber.Point
+
+// PubsharesUnit holds all the public shares produced by a given node,
+// 1 for each ElGamal pair
+type PubsharesUnit [][]Pubshare
+
+// Fingerprint implements serde.Fingerprinter
+func (p PubsharesUnit) Fingerprint(writer io.Writer) error {
+	for _, ballotShares := range p {
+		for _, pubShare := range ballotShares {
+			_, err := pubShare.MarshalTo(writer)
+			if err != nil {
+				return xerrors.Errorf("failed to Marshal V: %v", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// PubsharesUnits contains the pubshares submitted in parallel with the
+// necessary data to identify the nodes who submitted them and their index.
+type PubsharesUnits struct {
+	// Pubshares holds the nodes' public shares
+	Pubshares []PubsharesUnit
+	// PubKeys contains the pubKey of the nodes who made each corresponding
+	// PubsharesUnit
+	PubKeys [][]byte
+	// Indexes is the index of the nodes who made each corresponding
+	// PubsharesUnit
+	Indexes []int
 }

@@ -82,38 +82,14 @@ func TestMessageFormat_StartDone_Encode(t *testing.T) {
 }
 
 func TestMessageFormat_DecryptRequest_Encode(t *testing.T) {
-	req := types.NewDecryptRequest(suite.Point(), suite.Point(), "electionId")
+	req := types.NewDecryptRequest("electionId")
 
 	format := newMsgFormat()
 	ctx := serde.NewContext(fake.ContextEngine{})
 
 	data, err := format.Encode(ctx, req)
 	require.NoError(t, err)
-	require.Regexp(t, `{(("DecryptRequest":{"K":"[^"]+","C":"[^"]+","ElectionId":"electionId"}|"\w+":null),?)+}`, string(data))
-
-	req.K = badPoint{}
-	_, err = format.Encode(ctx, req)
-	require.EqualError(t, err, fake.Err("couldn't marshal K"))
-
-	req.K = suite.Point()
-	req.C = badPoint{}
-	_, err = format.Encode(ctx, req)
-	require.EqualError(t, err, fake.Err("couldn't marshal C"))
-}
-
-func TestMessageFormat_DecryptReply_Encode(t *testing.T) {
-	resp := types.NewDecryptReply(5, suite.Point())
-
-	format := newMsgFormat()
-	ctx := serde.NewContext(fake.ContextEngine{})
-
-	data, err := format.Encode(ctx, resp)
-	require.NoError(t, err)
-	require.Regexp(t, `{(("DecryptReply":{"V":"[^"]+","I":5}|"\w+":null),?)+}`, string(data))
-
-	resp.V = badPoint{}
-	_, err = format.Encode(ctx, resp)
-	require.EqualError(t, err, fake.Err("couldn't marshal V"))
+	require.Regexp(t, `{(("ElectionId":"electionId"}|"\w+":null),?)+}`, string(data))
 }
 
 func TestMessageFormat_Decode(t *testing.T) {
@@ -165,31 +141,10 @@ func TestMessageFormat_Decode(t *testing.T) {
 		"couldn't unmarshal public key: invalid Ed25519 curve point")
 
 	// Decode decryption request messages.
-	data = []byte(fmt.Sprintf(`{"DecryptRequest":{"K":"%s","C":"%s"}}`, testPoint, testPoint))
+	data = []byte(`{"DecryptRequest":{}}`)
 	req, err := format.Decode(ctx, data)
 	require.NoError(t, err)
 	require.IsType(t, types.DecryptRequest{}, req)
-
-	data = []byte(fmt.Sprintf(`{"DecryptRequest":{"K":[],"C":"%s"}}`, testPoint))
-	_, err = format.Decode(ctx, data)
-	require.EqualError(t, err,
-		"couldn't unmarshal K: invalid Ed25519 curve point")
-
-	data = []byte(fmt.Sprintf(`{"DecryptRequest":{"K":"%s","C":[]}}`, testPoint))
-	_, err = format.Decode(ctx, data)
-	require.EqualError(t, err,
-		"couldn't unmarshal C: invalid Ed25519 curve point")
-
-	// Decode decryption reply messages.
-	data = []byte(fmt.Sprintf(`{"DecryptReply":{"I":4,"V":"%s"}}`, testPoint))
-	resp, err = format.Decode(ctx, data)
-	require.NoError(t, err)
-	require.IsType(t, types.DecryptReply{}, resp)
-
-	data = []byte(`{"DecryptReply":{"V":[]}}`)
-	_, err = format.Decode(ctx, data)
-	require.EqualError(t, err,
-		"couldn't unmarshal V: invalid Ed25519 curve point")
 
 	_, err = format.Decode(fake.NewBadContext(), []byte(`{}`))
 	require.EqualError(t, err, fake.Err("couldn't deserialize message"))

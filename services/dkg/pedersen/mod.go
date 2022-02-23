@@ -5,6 +5,10 @@ import (
 	"sync"
 	"time"
 
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/crypto"
+
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
 
@@ -20,7 +24,6 @@ import (
 	"go.dedis.ch/dela/serde"
 	jsonserde "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/random"
 	"golang.org/x/net/context"
@@ -60,12 +63,14 @@ type Pedersen struct {
 	factory     serde.Factory
 	service     ordering.Service
 	electionFac serde.Factory
+	pool        pool.Pool
+	signer      crypto.Signer
 	actors      map[string]dkg.Actor
 }
 
 // NewPedersen returns a new DKG Pedersen factory
-func NewPedersen(m mino.Mino, service ordering.Service,
-	electionFac serde.Factory) *Pedersen {
+func NewPedersen(m mino.Mino, service ordering.Service, pool pool.Pool,
+	electionFac serde.Factory, signer crypto.Signer) *Pedersen {
 
 	factory := types.NewMessageFactory(m.GetAddressFactory())
 	actors := make(map[string]dkg.Actor)
@@ -74,14 +79,16 @@ func NewPedersen(m mino.Mino, service ordering.Service,
 		mino:        m,
 		factory:     factory,
 		service:     service,
-		electionFac: electionFac,
+		pool:        pool,
 		actors:      actors,
+		signer:      signer,
+		electionFac: electionFac,
 	}
 }
 
 // Listen implements dkg.DKG. It must be called on each node that participates
 // in the DKG.
-func (s *Pedersen) Listen(electionIDBuf []byte) (dkg.Actor, error) {
+func (s *Pedersen) Listen(electionIDBuf []byte, txmngr txn.Manager) (dkg.Actor, error) {
 
 	electionID := hex.EncodeToString(electionIDBuf)
 
@@ -95,12 +102,14 @@ func (s *Pedersen) Listen(electionIDBuf []byte) (dkg.Actor, error) {
 		return actor, xerrors.Errorf("actor already exists for electionID %s", electionID)
 	}
 
-	return s.NewActor(electionIDBuf, NewHandlerData())
+	return s.NewActor(electionIDBuf, s.pool, txmngr, NewHandlerData())
 }
 
 // NewActor initializes a dkg.Actor with an RPC specific to the election with
 // the given keypair
-func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.Actor, error) {
+func (s *Pedersen) NewActor(electionIDBuf []byte, pool pool.Pool, txmngr txn.Manager,
+	handlerData HandlerData) (dkg.Actor,
+	error) {
 
 	// hex-encoded string
 	electionID := hex.EncodeToString(electionIDBuf)
@@ -108,7 +117,9 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, handlerData HandlerData) (dkg.
 	ctx := jsonserde.NewContext()
 
 	// link the actor to an RPC by the election ID
-	h := NewHandler(s.mino.GetAddress(), s.service, handlerData, ctx, s.electionFac)
+	h := NewHandler(s.mino.GetAddress(), s.service, pool, txmngr, s.signer,
+		handlerData, ctx, s.electionFac)
+
 	no := s.mino.WithSegment(electionID)
 	rpc := mino.MustCreateRPC(no, RPC, h, s.factory)
 
@@ -290,12 +301,12 @@ func (a *Actor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte,
 	return K, C, remainder, nil
 }
 
-// Decrypt implements dkg.Actor. It gets the private shares of the nodes and
-// decrypts the message.
-func (a *Actor) Decrypt(K, C kyber.Point) ([]byte, error) {
+// ComputePubshares implements dkg.Actor. It sends a decrypt request to all
+// the nodes taking part.
+func (a *Actor) ComputePubshares() error {
 
 	if !a.handler.startRes.Done() {
-		return nil, xerrors.Errorf("setup() was not called")
+		return xerrors.Errorf("setup() was not called")
 	}
 
 	players := mino.NewAddresses(a.handler.startRes.GetParticipants()...)
@@ -304,9 +315,9 @@ func (a *Actor) Decrypt(K, C kyber.Point) ([]byte, error) {
 	defer cancel()
 	ctx = context.WithValue(ctx, tracing.ProtocolKey, protocolNameDecrypt)
 
-	sender, receiver, err := a.rpc.Stream(ctx, players)
+	sender, _, err := a.rpc.Stream(ctx, players)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to create stream: %v", err)
+		return xerrors.Errorf("failed to create stream: %v", err)
 	}
 
 	iterator := players.AddressIterator()
@@ -315,44 +326,14 @@ func (a *Actor) Decrypt(K, C kyber.Point) ([]byte, error) {
 		addrs = append(addrs, iterator.GetNext())
 	}
 
-	message := types.NewDecryptRequest(K, C, a.electionID)
+	message := types.NewDecryptRequest(a.electionID)
 
 	err = <-sender.Send(message, addrs...)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to send decrypt request: %v", err)
+		return xerrors.Errorf("failed to send decrypt request: %v", err)
 	}
 
-	pubShares := make([]*share.PubShare, len(addrs))
-
-	for i := 0; i < len(addrs); i++ {
-		_, message, err := receiver.Recv(ctx)
-		if err != nil {
-			return []byte{}, xerrors.Errorf("stream stopped unexpectedly: %v", err)
-		}
-
-		decryptReply, ok := message.(types.DecryptReply)
-		if !ok {
-			return []byte{}, xerrors.Errorf("got unexpected reply, expected "+
-				"%T but got: %T", decryptReply, message)
-		}
-
-		pubShares[i] = &share.PubShare{
-			I: int(decryptReply.I),
-			V: decryptReply.V,
-		}
-	}
-
-	res, err := share.RecoverCommit(suite, pubShares, len(addrs), len(addrs))
-	if err != nil {
-		return []byte{}, xerrors.Errorf("failed to recover commit: %v", err)
-	}
-
-	decryptedMessage, err := res.Data()
-	if err != nil {
-		return []byte{}, xerrors.Errorf("failed to get embedded data: %v", err)
-	}
-
-	return decryptedMessage, nil
+	return nil
 }
 
 // MarshalJSON implements dkg.Actor. It exports the data relevant to an Actor
@@ -384,17 +365,12 @@ func (a Actor) getElection() (etypes.Election, error) {
 		return election, xerrors.Errorf("failed to decode electionIDHex: %v", err)
 	}
 
-	proof, err := a.service.GetProof(electionID)
-	if err != nil {
-		return election, xerrors.Errorf("failed to get proof: %v", err)
+	proof, exists := electionExists(a.service, electionID)
+	if !exists {
+		return election, xerrors.Errorf("election does not exist: %v", err)
 	}
 
-	electionBuff := proof.GetValue()
-	if len(electionBuff) == 0 {
-		return election, xerrors.Errorf("election does not exist")
-	}
-
-	message, err := a.electionFac.Deserialize(a.context, electionBuff)
+	message, err := a.electionFac.Deserialize(a.context, proof.GetValue())
 	if err != nil {
 		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
 	}

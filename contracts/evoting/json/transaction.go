@@ -2,7 +2,6 @@ package json
 
 import (
 	"encoding/json"
-
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/serde"
 	"golang.org/x/xerrors"
@@ -74,14 +73,37 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 		}
 
 		m = TransactionJSON{ShuffleBallots: &sb}
-	case types.DecryptBallots:
-		db := DecryptBallotsJSON{
-			ElectionID:       t.ElectionID,
-			UserID:           t.UserID,
-			DecryptedBallots: t.DecryptedBallots,
+	case types.RegisterPubShares:
+		pubShares := make([][][]byte, len(t.Pubshares))
+
+		for i, ballotShares := range t.Pubshares {
+			pubShares[i] = make([][]byte, len(ballotShares))
+			for i2, share := range ballotShares {
+				pubShare, err := share.MarshalBinary()
+				if err != nil {
+					return nil, xerrors.Errorf("failed to marshal pubShare: %v", err)
+				}
+
+				pubShares[i][i2] = pubShare
+			}
 		}
 
-		m = TransactionJSON{DecryptBallots: &db}
+		rp := RegisterPubSharesJSON{
+			ElectionID: t.ElectionID,
+			Index:      t.Index,
+			PubShares:  pubShares,
+			Signature:  t.Signature,
+			PublicKey:  t.PublicKey,
+		}
+
+		m = TransactionJSON{RegisterPubShares: &rp}
+	case types.CombineShares:
+		db := CombineSharesJSON{
+			ElectionID: t.ElectionID,
+			UserID:     t.UserID,
+		}
+
+		m = TransactionJSON{CombineShares: &db}
 	case types.CancelElection:
 		ce := CancelElectionJSON{
 			ElectionID: t.ElectionID,
@@ -139,11 +161,17 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 		}
 
 		return msg, nil
-	case m.DecryptBallots != nil:
-		return types.DecryptBallots{
-			ElectionID:       m.DecryptBallots.ElectionID,
-			UserID:           m.DecryptBallots.UserID,
-			DecryptedBallots: m.DecryptBallots.DecryptedBallots,
+	case m.RegisterPubShares != nil:
+		msg, err := decodeRegisterPubShares(*m.RegisterPubShares)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to decode register pubShares: %v", err)
+		}
+
+		return msg, nil
+	case m.CombineShares != nil:
+		return types.CombineShares{
+			ElectionID: m.CombineShares.ElectionID,
+			UserID:     m.CombineShares.UserID,
 		}, nil
 	case m.CancelElection != nil:
 		return types.CancelElection{
@@ -158,13 +186,14 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 // TransactionJSON is the JSON message that wraps the different kinds of
 // transactions.
 type TransactionJSON struct {
-	CreateElection *CreateElectionJSON `json:",omitempty"`
-	OpenElection   *OpenElectionJSON   `json:",omitempty"`
-	CastVote       *CastVoteJSON       `json:",omitempty"`
-	CloseElection  *CloseElectionJSON  `json:",omitempty"`
-	ShuffleBallots *ShuffleBallotsJSON `json:",omitempty"`
-	DecryptBallots *DecryptBallotsJSON `json:",omitempty"`
-	CancelElection *CancelElectionJSON `json:",omitempty"`
+	CreateElection    *CreateElectionJSON    `json:",omitempty"`
+	OpenElection      *OpenElectionJSON      `json:",omitempty"`
+	CastVote          *CastVoteJSON          `json:",omitempty"`
+	CloseElection     *CloseElectionJSON     `json:",omitempty"`
+	ShuffleBallots    *ShuffleBallotsJSON    `json:",omitempty"`
+	RegisterPubShares *RegisterPubSharesJSON `json:",omitempty"`
+	CombineShares     *CombineSharesJSON     `json:",omitempty"`
+	CancelElection    *CancelElectionJSON    `json:",omitempty"`
 }
 
 // CreateElectionJSON is the JSON representation of a CreateElection transaction
@@ -202,11 +231,18 @@ type ShuffleBallotsJSON struct {
 	PublicKey    []byte
 }
 
-// DecryptBallotsJSON is the JSON representation of a DecryptBallots transaction
-type DecryptBallotsJSON struct {
-	ElectionID       string
-	UserID           string
-	DecryptedBallots []types.Ballot
+type RegisterPubSharesJSON struct {
+	ElectionID string
+	Index      int
+	PubShares  PubsharesUnitJSON
+	Signature  []byte
+	PublicKey  []byte
+}
+
+// CombineSharesJSON is the JSON representation of a CombineShares transaction
+type CombineSharesJSON struct {
+	ElectionID string
+	UserID     string
 }
 
 // CancelElectionJSON is the JSON representation of a CancelElection transaction
@@ -268,5 +304,31 @@ func decodeShuffleBallots(ctx serde.Context, m ShuffleBallotsJSON) (serde.Messag
 		Proof:           m.Proof,
 		Signature:       m.Signature,
 		PublicKey:       m.PublicKey,
+	}, nil
+}
+
+func decodeRegisterPubShares(m RegisterPubSharesJSON) (serde.Message, error) {
+	pubShares := make([][]types.Pubshare, len(m.PubShares))
+
+	for i, ballotShares := range m.PubShares {
+		pubShares[i] = make([]types.Pubshare, len(ballotShares))
+
+		for i2, share := range ballotShares {
+			pubShare := suite.Point()
+			err := pubShare.UnmarshalBinary(share)
+			if err != nil {
+				return nil, xerrors.Errorf("could not unmarshal pubShare: %v", err)
+			}
+
+			pubShares[i][i2] = pubShare
+		}
+	}
+
+	return types.RegisterPubShares{
+		ElectionID: m.ElectionID,
+		Index:      m.Index,
+		Pubshares:  pubShares,
+		Signature:  m.Signature,
+		PublicKey:  m.PublicKey,
 	}, nil
 }

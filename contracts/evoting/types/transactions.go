@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"io"
+	"strconv"
 
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/registry"
@@ -193,18 +194,48 @@ func (sb ShuffleBallots) Serialize(ctx serde.Context) ([]byte, error) {
 	return data, nil
 }
 
-// DecryptBallots defines the transaction to decrypt the ballots
+// RegisterPubShares defines the transaction used by a node to send its
+// pubshares on the chain.
 //
 // - implements serde.Message
-type DecryptBallots struct {
-	// ElectionID is hex-encoded
-	ElectionID       string
-	UserID           string
-	DecryptedBallots []Ballot
+type RegisterPubShares struct {
+	ElectionID string
+	// Index is the index of the node making the submission
+	Index int
+	// Pubshares are the public shares of the node submitting the transaction
+	// so that they can be used for decryption.
+	Pubshares PubsharesUnit
+	// Signature is the signature of the result of HashPubShares() with the
+	// private key corresponding to PublicKey
+	Signature []byte
+	// PublicKey is the public key of the signer
+	PublicKey []byte
 }
 
 // Serialize implements serde.Message
-func (db DecryptBallots) Serialize(ctx serde.Context) ([]byte, error) {
+func (rp RegisterPubShares) Serialize(ctx serde.Context) ([]byte, error) {
+	format := transactionFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, rp)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to encode register pubShares: %v", err)
+	}
+
+	return data, nil
+}
+
+// CombineShares defines the transaction to decrypt the ballots by combining all
+// the public shares.
+//
+// - implements serde.Message
+type CombineShares struct {
+	// ElectionID is hex-encoded
+	ElectionID string
+	UserID     string
+}
+
+// Serialize implements serde.Message
+func (db CombineShares) Serialize(ctx serde.Context) ([]byte, error) {
 	format := transactionFormats.Get(ctx.GetFormat())
 
 	data, err := format.Encode(ctx, db)
@@ -250,13 +281,36 @@ func RandomID() (string, error) {
 // Fingerprint implements serde.Fingerprinter. If creates a fingerprint only
 // based on the electionID and the shuffled ballots.
 func (sb ShuffleBallots) Fingerprint(writer io.Writer) error {
-	writer.Write([]byte(sb.ElectionID))
+	_, err := writer.Write([]byte(sb.ElectionID))
+	if err != nil {
+		return xerrors.Errorf("failed to write the election ID: %v", err)
+	}
 
 	for _, ballot := range sb.ShuffledBallots {
 		err := ballot.FingerPrint(writer)
 		if err != nil {
 			return xerrors.Errorf("failed to fingerprint shuffled ballot: %v", err)
 		}
+	}
+
+	return nil
+}
+
+// Fingerprint implements serde.Fingerprinter
+func (rp RegisterPubShares) Fingerprint(writer io.Writer) error {
+	_, err := writer.Write([]byte(rp.ElectionID))
+	if err != nil {
+		return xerrors.Errorf("failed to write the election ID: %v", err)
+	}
+
+	_, err = writer.Write([]byte(strconv.Itoa(rp.Index)))
+	if err != nil {
+		return xerrors.Errorf("failed to write the pubShare index: %v", err)
+	}
+
+	err = rp.Pubshares.Fingerprint(writer)
+	if err != nil {
+		return xerrors.Errorf("failed to fingerprint pubShares: %V", err)
 	}
 
 	return nil

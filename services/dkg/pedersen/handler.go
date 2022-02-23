@@ -1,11 +1,20 @@
 package pedersen
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"sync"
 	"time"
+
+	"github.com/dedis/d-voting/contracts/evoting"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/crypto"
+	jsondela "go.dedis.ch/dela/serde/json"
 
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
@@ -33,9 +42,12 @@ type Handler struct {
 	mino.UnsupportedHandler
 	sync.RWMutex
 
-	me      mino.Address
-	service ordering.Service
-	dkg     *pedersen.DistKeyGenerator
+	me              mino.Address
+	service         ordering.Service
+	dkg             *pedersen.DistKeyGenerator
+	pool            pool.Pool
+	txmnger         txn.Manager
+	pubSharesSigner crypto.Signer
 
 	// These are persistent, see HandlerData
 	startRes  *state
@@ -48,7 +60,8 @@ type Handler struct {
 }
 
 // NewHandler creates a new handler
-func NewHandler(me mino.Address, service ordering.Service, handlerData HandlerData,
+func NewHandler(me mino.Address, service ordering.Service, pool pool.Pool,
+	txnmngr txn.Manager, pubSharesSigner crypto.Signer, handlerData HandlerData,
 	context serde.Context, electionFac serde.Factory) *Handler {
 
 	privKey := handlerData.PrivKey
@@ -57,8 +70,11 @@ func NewHandler(me mino.Address, service ordering.Service, handlerData HandlerDa
 	privShare := handlerData.PrivShare
 
 	return &Handler{
-		me:      me,
-		service: service,
+		me:              me,
+		service:         service,
+		pool:            pool,
+		txmnger:         txnmngr,
+		pubSharesSigner: pubSharesSigner,
 
 		startRes:  startRes,
 		privShare: privShare,
@@ -125,38 +141,15 @@ mainSwitch:
 		goto mainSwitch
 
 	case types.DecryptRequest:
+
 		if !h.startRes.Done() {
 			return xerrors.Errorf("you must first initialize DKG. Did you " +
 				"call setup() first?")
 		}
 
-		isShuffled, err := h.checkIsShuffled(msg.K, msg.C, msg.GetElectionId())
+		err = h.handleDecryptRequest(msg.GetElectionId())
 		if err != nil {
-			return xerrors.Errorf("failed to check if the ciphertext has been shuffled: %v", err)
-		}
-
-		if !isShuffled {
-			return xerrors.Errorf("the ciphertext has not been shuffled")
-		}
-
-		h.RLock()
-		S := suite.Point().Mul(h.privShare.V, msg.K)
-		h.RUnlock()
-
-		partial := suite.Point().Sub(msg.C, S)
-
-		h.RLock()
-		decryptReply := types.NewDecryptReply(
-			int64(h.privShare.I),
-			partial,
-		)
-		h.RUnlock()
-
-		errs := out.Send(decryptReply, from)
-		err = <-errs
-		if err != nil {
-			return xerrors.Errorf("got an error while sending the decrypt "+
-				"reply: %v", err)
+			return xerrors.Errorf("could not send pubShares: %v", err)
 		}
 
 	case types.GetPeerPubKey:
@@ -190,8 +183,8 @@ func (h *Handler) start(start types.Start, receivedDeals []types.Deal,
 	}
 
 	// create the DKG
-	threshold := threshold.ByzantineThreshold(len(start.GetPublicKeys()))
-	d, err := pedersen.NewDistKeyGenerator(suite, h.privKey, start.GetPublicKeys(), threshold)
+	thrshold := threshold.ByzantineThreshold(len(start.GetPublicKeys()))
+	d, err := pedersen.NewDistKeyGenerator(suite, h.privKey, start.GetPublicKeys(), thrshold)
 	if err != nil {
 		return xerrors.Errorf("failed to create new DKG: %v", err)
 	}
@@ -417,44 +410,117 @@ func (h *Handler) handleDeal(msg types.Deal, from mino.Address, addrs []mino.Add
 	return nil
 }
 
-// checkIsShuffled allows to check if the ciphertext to decrypt has been
-// previously shuffled
-func (h *Handler) checkIsShuffled(K kyber.Point, C kyber.Point, electionID string) (bool, error) {
-	electionIDBuf, err := hex.DecodeString(electionID)
+// handleDecryptRequest computes the public shares of an election and sends them
+// to the chain to allow decryption to proceed.
+func (h *Handler) handleDecryptRequest(electionID string) error {
+	shuffleInstances, err := h.getShuffleIfValid(electionID)
 	if err != nil {
-		return false, xerrors.Errorf("failed to decode electionID: %v", err)
+		return xerrors.Errorf("failed to check if the shuffle is over: %v", err)
 	}
 
-	proof, exists := electionExists(h.service, electionIDBuf)
-	if !exists {
-		return false, xerrors.Errorf("election does not exist: %v", err)
+	numberOfShuffles := len(shuffleInstances)
+	numberOfBallots := len(shuffleInstances[numberOfShuffles-1].ShuffledBallots)
+	publicShares := make([][]etypes.Pubshare, numberOfBallots)
+
+	h.RLock()
+
+	for i, ballot := range shuffleInstances[numberOfShuffles-1].ShuffledBallots {
+		ballotShares := make([]etypes.Pubshare, len(ballot))
+
+		for j, ciphertext := range ballot {
+			S := suite.Point().Mul(h.privShare.V, ciphertext.K)
+
+			partialVal := suite.Point().Sub(ciphertext.C, S)
+
+			ballotShares[j] = partialVal
+		}
+
+		publicShares[i] = ballotShares
 	}
 
-	message, err := h.electionFac.Deserialize(h.context, proof.GetValue())
+	h.RUnlock()
+
+	err = h.txmnger.Sync()
 	if err != nil {
-		return false, xerrors.Errorf("failed to deserialize election: %v", err)
+		return xerrors.Errorf("failed to sync manager: %v", err)
 	}
 
-	election, ok := message.(etypes.Election)
-	if !ok {
-		return false, xerrors.Errorf("wrong election type: %T", election)
+	// loop until our transaction has been accepted, or enough nodes submitted
+	// their pubShares
+	for {
+		election, err := h.getElection(electionID)
+		if err != nil {
+			return xerrors.Errorf("could not get the election: %v", err)
+		}
+
+		//TODO: Works with current "shuffleThreshold", but the shuffle threshold
+		// should be smaller in theory ? (1/3 + 1 vs 2/3 + 1 ? )
+		nbrSubmissions := len(election.PubsharesUnits.Pubshares)
+
+		if nbrSubmissions >= election.ShuffleThreshold {
+			dela.Logger.Info().Msgf("decryption possible with shares from %d nodes",
+				nbrSubmissions)
+			return nil
+		}
+
+		tx, err := makeTx(h.context, &election, publicShares, h.privShare.I,
+			h.txmnger, h.pubSharesSigner)
+
+		if err != nil {
+			return xerrors.Errorf("failed to make tx: %v", err)
+		}
+
+		//TODO: Define in term of size of election ? (same in shuffle)
+		watchTimeout := time.Second * 5
+		watchCtx, cancel := context.WithTimeout(context.Background(), watchTimeout)
+		defer cancel()
+
+		events := h.service.Watch(watchCtx)
+
+		err = h.pool.Add(tx)
+		if err != nil {
+			return xerrors.Errorf("failed to add transaction to the pool: %v", err)
+		}
+
+		accepted, msg := watchTx(events, tx.GetID())
+
+		if !accepted {
+			err = h.txmnger.Sync()
+			if err != nil {
+				return xerrors.Errorf("failed to sync manager: %v", err)
+			}
+		}
+
+		if accepted {
+			dela.Logger.Info().Msgf("our pubShares have been accepted on the chain, "+
+				"total # of submissions = %d, "+
+				"index: %v", len(election.PubsharesUnits.Pubshares), h.privShare.I)
+			return nil
+		}
+
+		dela.Logger.Info().Msgf("submission of pubShares denied: %v", msg)
+
+		cancel()
+	}
+}
+
+// getShuffleIfValid allows checking if enough shuffles have been made on the
+// ballots.
+func (h *Handler) getShuffleIfValid(electionID string) ([]etypes.ShuffleInstance, error) {
+	election, err := h.getElection(electionID)
+	if err != nil {
+		return nil, xerrors.Errorf("could not get the election: %v", err)
 	}
 
 	if len(election.ShuffleInstances) == 0 {
-		return false, xerrors.New("election has no shuffles")
+		return nil, xerrors.New("election has no shuffles")
 	}
 
-	for _, ct := range election.ShuffleInstances[election.ShuffleThreshold-1].ShuffledBallots {
-		for _, egpair := range ct {
-
-			if egpair.K.Equal(K) && egpair.C.Equal(C) {
-				return true, nil
-			}
-		}
+	if election.Status != etypes.ShuffledBallots {
+		return nil, xerrors.New("ballots have not been shuffled")
 	}
 
-	return false, nil
-
+	return election.ShuffleInstances, nil
 }
 
 // MarshalJSON returns a JSON-encoded bytestring containing all the data in the
@@ -702,4 +768,127 @@ func (s *state) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
+}
+
+// watchTx checks the transaction to find one that match txID. Returns if the
+// transaction has been accepted or not. Will also return false if/when the
+// events chan is closed, which is expected to happen.
+func watchTx(events <-chan ordering.Event, txID []byte) (bool, string) {
+	for event := range events {
+		for _, res := range event.Transactions {
+			if !bytes.Equal(res.GetTransaction().GetID(), txID) {
+				continue
+			}
+
+			dela.Logger.Info().Hex("id", txID).Msg("transaction included in the block")
+
+			accepted, msg := res.GetStatus()
+			if accepted {
+				return true, ""
+			}
+
+			return false, msg
+		}
+	}
+
+	return false, "watch timeout"
+}
+
+func makeTx(ctx serde.Context, election *etypes.Election, pubShares etypes.PubsharesUnit,
+	index int,
+	manager txn.Manager,
+	pubSharesSigner crypto.Signer) (txn.Transaction, error) {
+
+	pubShareTx := etypes.RegisterPubShares{
+		ElectionID: election.ElectionID,
+		Pubshares:  pubShares,
+		Index:      index,
+	}
+
+	h := sha256.New()
+
+	err := pubShareTx.Fingerprint(h)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get fingerprint: %v", err)
+	}
+
+	hash := h.Sum(nil)
+
+	// Sign the pubShares :
+	signature, err := pubSharesSigner.Sign(hash)
+	if err != nil {
+		return nil, xerrors.Errorf("could not sign the pubShares : %v", err)
+	}
+
+	pubKey, err := pubSharesSigner.GetPublicKey().MarshalBinary()
+	if err != nil {
+		return nil, xerrors.Errorf("could not marshal signer's public key: %v", err)
+	}
+
+	encodedSignature, err := signature.Serialize(jsondela.NewContext())
+	if err != nil {
+		return nil, xerrors.Errorf("Could not encode signature as []byte : %v ", err)
+	}
+
+	// Complete transaction:
+	pubShareTx.Signature = encodedSignature
+	pubShareTx.PublicKey = pubKey
+
+	data, err := pubShareTx.Serialize(ctx)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to serialize register pubShares: %v", err)
+	}
+
+	args := make([]txn.Arg, 3)
+	args[0] = txn.Arg{
+		Key:   native.ContractArg,
+		Value: []byte(evoting.ContractName),
+	}
+	args[1] = txn.Arg{
+		Key:   evoting.CmdArg,
+		Value: []byte(evoting.CmdRegisterPubShares),
+	}
+	args[2] = txn.Arg{
+		Key:   evoting.ElectionArg,
+		Value: data,
+	}
+
+	tx, err := manager.Make(args...)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to use manager: %v", err.Error())
+	}
+
+	return tx, nil
+}
+
+// getElection gets the election from the service
+func (h *Handler) getElection(electionIDHex string) (etypes.Election, error) {
+	var election etypes.Election
+
+	electionID, err := hex.DecodeString(electionIDHex)
+	if err != nil {
+		return election, xerrors.Errorf("failed to decode electionIDHex: %v", err)
+	}
+
+	proof, exists := electionExists(h.service, electionID)
+	if !exists {
+		return election, xerrors.Errorf("election does not exist: %v", err)
+	}
+
+	message, err := h.electionFac.Deserialize(h.context, proof.GetValue())
+	if err != nil {
+		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
+	}
+
+	election, ok := message.(etypes.Election)
+	if !ok {
+		return election, xerrors.Errorf("wrong message type: %T", message)
+	}
+
+	if electionIDHex != election.ElectionID {
+		return election, xerrors.Errorf("electionID do not match: %q != %q",
+			electionIDHex, election.ElectionID)
+	}
+
+	return election, nil
 }

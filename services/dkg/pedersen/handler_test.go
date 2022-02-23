@@ -1,6 +1,12 @@
 package pedersen
 
 import (
+	"encoding/hex"
+	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
+	"go.dedis.ch/dela/core/access"
+	"go.dedis.ch/dela/core/txn/signed"
+	"go.dedis.ch/dela/serde/json"
+	"strconv"
 	"testing"
 
 	"github.com/dedis/d-voting/internal/testing/fake"
@@ -14,7 +20,7 @@ import (
 )
 
 func TestHandler_Stream(t *testing.T) {
-	h := Handler{startRes: &state{}, service: fake.Service{}}
+	h := Handler{startRes: &state{}, service: &fake.Service{}}
 	receiver := fake.NewBadReceiver()
 	err := h.Stream(fake.Sender{}, receiver)
 	require.EqualError(t, err, fake.Err("failed to receive"))
@@ -24,21 +30,73 @@ func TestHandler_Stream(t *testing.T) {
 		fake.NewRecvMsg(fake.NewAddress(0), types.DecryptRequest{}),
 	)
 	err = h.Stream(fake.Sender{}, receiver)
-	require.EqualError(t, err, "you must first initialize DKG. Did you call setup() first?")
+	require.EqualError(t, err, "you must first initialize DKG."+
+		" Did you call setup() first?")
 
 	h.startRes.distKey = suite.Point()
 	h.startRes.participants = []mino.Address{fake.NewAddress(0)}
 	h.privShare = &share.PriShare{I: 0, V: suite.Scalar()}
 	receiver = fake.NewReceiver(
-		fake.NewRecvMsg(fake.NewAddress(0), types.DecryptRequest{C: suite.Point()}),
+		fake.NewRecvMsg(fake.NewAddress(0), types.DecryptRequest{}),
 	)
 	err = h.Stream(fake.NewBadSender(), receiver)
-	require.EqualError(t, err, "failed to check if the ciphertext has been shuffled: election does not exist: <nil>")
+	require.EqualError(t, err, "could not send pubShares: failed to check"+
+		" if the shuffle is over: could not get the election: election does not exist: <nil>")
+
+	electionIDHex := hex.EncodeToString([]byte("election"))
+
+	receiver = fake.NewReceiver(
+		fake.NewRecvMsg(fake.NewAddress(0), types.NewDecryptRequest(electionIDHex)),
+	)
+
+	units := electionTypes.PubsharesUnits{
+		Pubshares: make([]electionTypes.PubsharesUnit, 0),
+		PubKeys:   make([][]byte, 0),
+		Indexes:   make([]int, 0),
+	}
+
+	election := electionTypes.Election{
+		Configuration:    electionTypes.Configuration{},
+		ElectionID:       electionIDHex,
+		AdminID:          "",
+		Status:           electionTypes.ShuffledBallots,
+		Pubkey:           nil,
+		BallotSize:       0,
+		Suffragia:        electionTypes.Suffragia{},
+		ShuffleInstances: make([]electionTypes.ShuffleInstance, 1),
+		ShuffleThreshold: 0,
+		PubsharesUnits:   units,
+		DecryptedBallots: nil,
+		Roster:           fake.Authority{},
+	}
+
+	Elections := make(map[string]electionTypes.Election)
+	Elections[electionIDHex] = election
+
+	h.electionFac = electionTypes.NewElectionFactory(electionTypes.CiphervoteFactory{}, fake.RosterFac{})
+
+	h.service = &fake.Service{
+		Err:       nil,
+		Elections: Elections,
+		Pool:      nil,
+		Status:    false,
+		Channel:   nil,
+		Context:   json.NewContext(),
+	}
+
+	h.context = json.NewContext()
+	h.pubSharesSigner = fake.NewSigner()
+	h.txmnger = fake.Manager{}
+
+	err = h.Stream(fake.NewBadSender(), receiver)
+	require.NoError(t, err) // Threshold = 0 => no submission required
+
 	receiver = fake.NewReceiver(
 		fake.NewRecvMsg(fake.NewAddress(0), fake.Message{}),
 	)
 	err = h.Stream(fake.Sender{}, receiver)
-	require.EqualError(t, err, "expected Start message, decrypt request or Deal as first message, got: fake.Message")
+	require.EqualError(t, err, "expected Start message, decrypt request or"+
+		" Deal as first message, got: fake.Message")
 }
 
 func TestHandler_Start(t *testing.T) {
@@ -187,6 +245,102 @@ func TestState_MarshalJSON(t *testing.T) {
 	requireStatesEqual(t, s1, s2)
 }
 
+func TestHandler_HandlerDecryptRequest(t *testing.T) {
+	electionIDHex := hex.EncodeToString([]byte("election"))
+
+	units := electionTypes.PubsharesUnits{
+		Pubshares: make([]electionTypes.PubsharesUnit, 0),
+		PubKeys:   make([][]byte, 0),
+		Indexes:   make([]int, 0),
+	}
+
+	election := electionTypes.Election{
+		Configuration:    electionTypes.Configuration{},
+		ElectionID:       electionIDHex,
+		AdminID:          "",
+		Status:           electionTypes.ShuffledBallots,
+		Pubkey:           nil,
+		BallotSize:       0,
+		Suffragia:        electionTypes.Suffragia{},
+		ShuffleInstances: make([]electionTypes.ShuffleInstance, 1),
+		ShuffleThreshold: 1,
+		PubsharesUnits:   units,
+		DecryptedBallots: nil,
+		Roster:           fake.Authority{},
+	}
+
+	Elections := make(map[string]electionTypes.Election)
+	Elections[electionIDHex] = election
+
+	h := Handler{}
+
+	h.privShare = &share.PriShare{I: 0, V: suite.Scalar()}
+
+	h.electionFac = electionTypes.NewElectionFactory(electionTypes.CiphervoteFactory{}, fake.RosterFac{})
+
+	service := fake.Service{
+		Err:       nil,
+		Elections: Elections,
+		Pool:      nil,
+		Status:    false,
+		Channel:   nil,
+		Context:   json.NewContext(),
+	}
+
+	h.context = json.NewContext()
+	h.pubSharesSigner = fake.NewSigner()
+
+	pool := fake.Pool{
+		Err:         nil,
+		Transaction: fake.Transaction{},
+		Service:     &service,
+	}
+	service.Pool = &pool
+
+	h.service = &service
+	h.pool = &pool
+
+	// Bad manager:
+	h.txmnger = fake.Manager{}
+
+	err := h.handleDecryptRequest(electionIDHex)
+	require.EqualError(t, err, fake.Err("failed to make tx: failed to use manager"))
+
+	h.txmnger = signed.NewManager(fake.NewSigner(), fakeClient{})
+
+	// All good:
+
+	err = h.handleDecryptRequest(electionIDHex)
+	require.NoError(t, err)
+
+	// With PubsharesUnit to compute:
+
+	// number of votes
+	k := 1
+
+	message := "Hello world"
+
+	Ks, Cs, _ := fakeKCPoints(k, message, suite.Point())
+
+	for i := 0; i < k; i++ {
+		ballot := electionTypes.Ciphervote{electionTypes.EGPair{
+			K: Ks[i],
+			C: Cs[i],
+		}}
+		election.Suffragia.CastVote("dummyUser"+strconv.Itoa(i), ballot)
+	}
+
+	shuffledBallots := election.Suffragia.Ciphervotes
+	shuffleInstance := electionTypes.ShuffleInstance{ShuffledBallots: shuffledBallots}
+	election.ShuffleInstances = append(election.ShuffleInstances, shuffleInstance)
+
+	Elections[electionIDHex] = election
+
+	err = h.handleDecryptRequest(electionIDHex)
+	require.NoError(t, err)
+
+}
+
 // Utility functions
 
 func getCertified(t *testing.T) *pedersen.DistKeyGenerator {
@@ -261,4 +415,10 @@ func requireStatesEqual(t *testing.T, s1, s2 *state) {
 		require.True(t, DistKey2.Equal(DistKey1))
 	}
 	require.Equal(t, s2.GetParticipants(), s1.GetParticipants())
+}
+
+type fakeClient struct{}
+
+func (fakeClient) GetNonce(access.Identity) (uint64, error) {
+	return 0, nil
 }
