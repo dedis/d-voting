@@ -7,6 +7,7 @@
     "start": "ts-node src/Server.ts",
     "dev": "./node_modules/.bin/nodemon",
     "eslint": "./node_modules/.bin/eslint .",
+    "eslint-fix": "./node_modules/.bin/eslint . --fix",
     "prettier": "./node_modules/.bin/prettier --write .",
     "prettier-check": "./node_modules/.bin/prettier --check .",
     "test": "echo \"Error: no test specified\" && exit 1"
