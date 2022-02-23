@@ -1,18 +1,17 @@
-import React, { FC, Suspense, useEffect, useState, createContext, useContext } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import React, { Suspense, useContext } from 'react';
+import { Navigate, Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
 
 import {
-  ROUTE_HOME,
   ROUTE_ABOUT,
   ROUTE_ADMIN,
+  ROUTE_BALLOT_INDEX,
+  ROUTE_BALLOT_SHOW,
   ROUTE_ELECTION_CREATE,
   ROUTE_ELECTION_INDEX,
   ROUTE_ELECTION_SHOW,
+  ROUTE_LOGIN,
   ROUTE_RESULT_INDEX,
   ROUTE_RESULT_SHOW,
-  ROUTE_BALLOT_INDEX,
-  ROUTE_BALLOT_SHOW,
-  ROUTE_LOGIN,
 } from '../Routes';
 import Login from '../pages/session/Login';
 import Home from '../pages/Home';
@@ -33,7 +32,7 @@ import { AuthContext } from '..';
 
 const NotFound = () => <div>404 not found</div>;
 
-const App: FC = () => {
+const App = () => {
   const RequireAuth = ({ children }) => {
     let location = useLocation();
 

@@ -2,8 +2,8 @@ import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import ElectionTable from './components/ElectionTable';
-import useFetchCall from '../../components/utils/useFetchCall';
-import { ENDPOINT_EVOTING_GET_ALL } from '../../components/utils/Endpoints';
+import useFetchCall from 'components/utils/useFetchCall';
+import { ENDPOINT_EVOTING_GET_ALL } from 'components/utils/Endpoints';
 import './Index.css';
 
 const ElectionIndex: FC = () => {

@@ -1,16 +1,16 @@
-import React, { FC, useState, useEffect } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams, Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import kyber from '@dedis/kyber';
 import PropTypes from 'prop-types';
 import { Buffer } from 'buffer';
 
 import { ROUTE_BALLOT_INDEX } from '../../Routes';
-import useElection from '../../components/utils/useElection';
-import usePostCall from '../../components/utils/usePostCall';
-import { ENDPOINT_EVOTING_CAST_BALLOT } from '../../components/utils/Endpoints';
-import Modal from '../../components/modal/Modal';
-import { OPEN } from '../../components/utils/StatusNumber';
+import useElection from 'components/utils/useElection';
+import usePostCall from 'components/utils/usePostCall';
+import { ENDPOINT_EVOTING_CAST_BALLOT } from 'components/utils/Endpoints';
+import Modal from 'components/modal/Modal';
+import { OPEN } from 'components/utils/StatusNumber';
 import { encryptVote } from './components/VoteEncrypt';
 import './Show.css';
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 /*custom hook that given an election object returns its fields*/
 const useFillElectionFields = (electionData) => {

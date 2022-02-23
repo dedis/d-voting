@@ -1,8 +1,8 @@
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import SimpleTable from '../../components/utils/SimpleTable';
-import { OPEN } from '../../components/utils/StatusNumber';
+import SimpleTable from 'components/utils/SimpleTable';
+import { OPEN } from 'components/utils/StatusNumber';
 import './Index.css';
 
 const BallotIndex: FC = () => {

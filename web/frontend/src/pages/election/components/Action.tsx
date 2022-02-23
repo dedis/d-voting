@@ -2,8 +2,8 @@ import React, { FC, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import useChangeAction from '../../../components/utils/useChangeAction';
-import Modal from '../../../components/modal/Modal';
+import useChangeAction from 'components/utils/useChangeAction';
+import Modal from 'components/modal/Modal';
 import './Status.css';
 
 type ActionProps = {

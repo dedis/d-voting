@@ -1,17 +1,10 @@
-import React, {
-  createContext,
-  FC,
-  FunctionComponent,
-  ReactElement,
-  useEffect,
-  useState,
-} from 'react';
+import React, { FC, ReactElement, createContext, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { ENDPOINT_PERSONNAL_INFO } from './components/utils/Endpoints';
+import { ENDPOINT_PERSONNAL_INFO } from 'components/utils/Endpoints';
 
-import './index.css';
-import App from './layout/App';
-import reportWebVitals from './reportWebVitals';
+import 'index.css';
+import App from 'layout/App';
+import reportWebVitals from 'reportWebVitals';
 
 // Be default we load the mock messages when not in production. This is handy
 // because it removes the need to have a backend server.

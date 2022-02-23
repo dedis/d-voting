@@ -7,9 +7,10 @@
     "build": "HTTPS=true react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "eslint": "./node_modules/.bin/eslint .",
-    "prettier": "./node_modules/.bin/prettier --write .",
-    "prettier-check": "./node_modules/.bin/prettier --check ."
+    "eslint": "./node_modules/.bin/eslint src/",
+    "eslint-fix": "./node_modules/.bin/eslint src/ --fix",
+    "prettier": "./node_modules/.bin/prettier --write src/",
+    "prettier-check": "./node_modules/.bin/prettier --check src/"
   },
   "dependencies": {
     "@dedis/kyber": "^3.4.4",
@@ -59,6 +60,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.28.0",
     "eslint-plugin-react-hooks": "^4.3.0",
+    "eslint-plugin-unused-imports": "^2.0.0",
     "http-proxy-middleware": "^2.0.3",
     "msw": "^0.36.8",
     "postcss": "^8.4.6",
