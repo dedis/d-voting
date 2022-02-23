@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 /*custom hook to fetch data from an endpoint */
 const useFetchCall = (endpoint, request) => {

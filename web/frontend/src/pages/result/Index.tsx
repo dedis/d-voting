@@ -1,9 +1,9 @@
 import React, { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { ROUTE_RESULT_SHOW } from './Routes';
-import SimpleTable from '../components/utils/SimpleTable';
-import { RESULT_AVAILABLE } from '../components/utils/StatusNumber';
+import { ROUTE_RESULT_SHOW } from 'Routes';
+import SimpleTable from 'components/utils/SimpleTable';
+import { RESULT_AVAILABLE } from 'components/utils/StatusNumber';
 
 const ResultIndex: FC = () => {
   const { t } = useTranslation();

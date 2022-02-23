@@ -10,7 +10,7 @@ import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import PropTypes from 'prop-types';
 
-import { ENDPOINT_ADD_ROLE } from '../utils/Endpoints';
+import { ENDPOINT_ADD_ROLE } from 'components/utils/Endpoints';
 
 const style = {
   position: 'absolute',

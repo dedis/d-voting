@@ -1,11 +1,11 @@
 import { rest } from 'msw';
 
 import {
+  ENDPOINT_EVOTING_CREATE,
+  ENDPOINT_EVOTING_GET_ALL,
   ENDPOINT_GET_TEQ_KEY,
   ENDPOINT_LOGOUT,
   ENDPOINT_PERSONNAL_INFO,
-  ENDPOINT_EVOTING_CREATE,
-  ENDPOINT_EVOTING_GET_ALL,
 } from '../components/utils/Endpoints';
 
 export const handlers = [

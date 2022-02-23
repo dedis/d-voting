@@ -3,7 +3,7 @@ import Enzyme, { mount, render } from 'enzyme';
 import Adapter from '@wojtekmaj/enzyme-adapter-react-17';
 import { act } from 'react-dom/test-utils';
 Enzyme.configure({ adapter: new Adapter() });
-import Action from '../Action';
+import Action from '../../pages/election/components/Action';
 import ElectionStatus from '../ElectionStatus';
 import { MemoryRouter } from 'react-router-dom';
 

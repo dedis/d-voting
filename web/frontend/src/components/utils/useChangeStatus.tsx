@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { OPEN, CLOSED, SHUFFLED_BALLOT, RESULT_AVAILABLE, CANCELED } from './StatusNumber';
+import { CANCELED, CLOSED, OPEN, RESULT_AVAILABLE, SHUFFLED_BALLOT } from './StatusNumber';
 
 /*Custom hook that can display the status of an election and enable changes of status (closing, cancelling,...)*/
 const useChangeStatus = (status: number) => {

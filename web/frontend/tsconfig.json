@@ -19,10 +19,15 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    "baseUrl": "./src",
+    "rootDir": "./src",
+    "paths": {
+      "*": [
+        "*"
+      ]
+    },
   },
-  "include": [
-    "src"
-  ],
+  "include": ["src"],
   "exclude": [
     "node_modules",
     "jest.config.js",

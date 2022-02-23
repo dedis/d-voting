@@ -1,8 +1,8 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 
-import { ENDPOINT_GET_TEQ_KEY } from '../components/utils/Endpoints';
+import { ENDPOINT_GET_TEQ_KEY } from 'components/utils/Endpoints';
 import './Login.css';
 import { useLocation } from 'react-router-dom';
 
@@ -13,6 +13,8 @@ const Login: FC = () => {
 
   const [content, setContent] = useState('');
 
+  // The backend will provide the client the URL to make a Tequila
+  // authentication. We therefore redirect to this address.
   const handleClick = async () => {
     fetch(ENDPOINT_GET_TEQ_KEY)
       .then((resp) => {
