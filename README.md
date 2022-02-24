@@ -2,9 +2,64 @@
 
 <img width="300px" src="docs/assets/logo-white-bg.png"/>
 
-| Tests  | Quality |
-| ------ | ------- |
-| [![Go Test](https://github.com/dedis/d-voting/actions/workflows/go_test.yml/badge.svg)](https://github.com/dedis/d-voting/actions/workflows/go_test.yml) [![Go Integration tests](https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml/badge.svg)](https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml) [![Go memcoin test](https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml/badge.svg)](https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml) | [![Coverage Status](https://coveralls.io/repos/github/dedis/d-voting/badge.svg?branch=main)](https://coveralls.io/github/dedis/d-voting?branch=main) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=dedis_d-voting&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=dedis_d-voting) |
+<table class="tg">
+<tbody>
+  <tr>
+    <th class="tg-amwm" colspan="2">Global</th>
+  </tr>
+  <tr>
+    <td class="tg-baqh" colspan="2">
+        <a href="https://sonarcloud.io/summary/new_code?id=dedis_d-voting">
+            <img src="https://sonarcloud.io/api/project_badges/measure?project=dedis_d-voting&metric=alert_status">
+        </a>
+    </td>
+  </tr>
+  <tr>
+    <th class="tg-amwm" colspan="2">Blockchain</th>
+  </tr>
+  <tr>
+    <td class="tg-baqh">Tests</td>
+    <td class="tg-baqh">Quality</td>
+  </tr>
+  <tr>
+    <td class="tg-baqh">
+        <a href="https://github.com/dedis/d-voting/actions/workflows/go_test.yml">
+            <img src="https://github.com/dedis/d-voting/actions/workflows/go_test.yml/badge.svg">
+        </a>
+        <a href="https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml">
+            <img src="https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml/badge.svg">
+        </a>
+        <a href="https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml">
+            <img src="https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml/badge.svg">
+        </a>
+    </td>
+    <td class="tg-baqh">
+        <a href="https://coveralls.io/github/dedis/d-voting?branch=main">
+            <img src="https://coveralls.io/repos/github/dedis/d-voting/badge.svg?branch=main">
+        </a>
+    </td>
+  </tr>
+  <tr>
+    <th class="tg-amwm" colspan="2">Web client</th>
+  </tr>
+  <tr>
+    <td class="tg-baqh">Frontend</td>
+    <td class="tg-baqh">Backend</td>
+  </tr>
+  <tr>
+    <td class="tg-baqh">
+        <a href="https://github.com/dedis/d-voting/actions/workflows/web_frontend_lint.yml">
+            <img src="https://github.com/dedis/d-voting/actions/workflows/web_frontend_lint.yml/badge.svg">
+        </a>
+    </td>
+    <td class="tg-baqh">
+        <a href="https://github.com/dedis/d-voting/actions/workflows/web_backend_lint.yml">
+            <img src="https://github.com/dedis/d-voting/actions/workflows/web_backend_lint.yml/badge.svg">
+        </a>
+    </td>
+  </tr>
+</tbody>
+</table>
 
 </div>
 
