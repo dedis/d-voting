@@ -81,14 +81,11 @@ smart contract->global state:StoreElection(shuffledBallots, ...)
 smart contract->global state:(if enough shuffling)\nStoreElection(status, ...)
 
 == Terminate ==
+admin->DKGRegistry: ComputePubshares()
 
-admin->smart contract:DecryptFragmentBallots
-smart contract->DKGRegistry:Decrypt(electionID)
+DKGRegistry->smart contract: SubmitPushares (pubshare)
+smart contract->global state: StoreElection(pubshare, ...)
 
-DKGRegistry->smart contract:SubmitPubShare(pubShare)
-
-smart contract->global state:StoreElection(pubShare, ...)
-
-admin->smart contract:Decrypt ballots
-smart contract->global state:StoreElection(decryptedBallots, ...)
+admin->smart contract: CombinePubShares
+smart contract->global state: StoreElection(decryptedBallots, ...)
 </details>
