@@ -2,5 +2,5 @@
 
 set -e
 
-gcc -o tests tests.c crypto.c -lsodium
+gcc -o tests tests.c read_ballots.c crypto.c -lsodium
 ./tests
