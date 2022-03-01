@@ -10,6 +10,7 @@ Run with `./run_tests.sh`.
 #include "crypto.h"
 #include "crypto_tests.h"
 #include "read_ballots.h"
+#include <string.h>
 
 // print the hexadecimal representation of a buffer
 void print_hex(const unsigned char *p, const int size)
@@ -21,10 +22,10 @@ void print_hex(const unsigned char *p, const int size)
     printf("\n");
 }
 
-// outputs -1 if the two scalars are identical, otherwise 0
+// outputs -1 if the two scalars are not identical, otherwise 0
 int compare_scalar(unsigned char *s1, unsigned char *s2)
 {
-    for (int i = 0; i < crypto_core_ed25519_SCALARBYTES; i++)
+    for (int i = 0; i < scalar_size; i++)
     {
         if (s1[i] != s2[i])
         {
@@ -35,10 +36,10 @@ int compare_scalar(unsigned char *s1, unsigned char *s2)
     return 0;
 }
 
-// outputs -1 if the two points are identical, otherwise 0
+// outputs -1 if the two points are not identical, otherwise 0
 int compare_point(unsigned char *s1, unsigned char *s2)
 {
-    for (int i = 0; i < crypto_core_ed25519_BYTES; i++)
+    for (int i = 0; i < point_size; i++)
     {
         if (s1[i] != s2[i])
         {
@@ -58,18 +59,16 @@ void test_recover_commit()
 
     char expected_hex[] = "92babdad0b09e3a4b86ddd1ef1c1ccdbbc35006768b0fecefdc96eb7dffddffb";
 
-    unsigned char expected[crypto_core_ed25519_BYTES] = {0};
+    unsigned char expected[point_size];
 
-    unsigned char input[crypto_core_ed25519_BYTES * 3] = {0};
+    unsigned char input[point_size * 3];
 
-    const size_t psize = crypto_core_ed25519_BYTES;
+    sodium_hex2bin(&input[point_size * 0], point_size, p1_hex, point_size * 2, NULL, NULL, NULL);
+    sodium_hex2bin(&input[point_size * 1], point_size, p2_hex, point_size * 2, NULL, NULL, NULL);
+    sodium_hex2bin(&input[point_size * 2], point_size, p3_hex, point_size * 2, NULL, NULL, NULL);
+    sodium_hex2bin(expected, point_size, expected_hex, point_size * 2, NULL, NULL, NULL);
 
-    sodium_hex2bin(&input[psize * 0], psize, p1_hex, psize * 2, NULL, NULL, NULL);
-    sodium_hex2bin(&input[psize * 1], psize, p2_hex, psize * 2, NULL, NULL, NULL);
-    sodium_hex2bin(&input[psize * 2], psize, p3_hex, psize * 2, NULL, NULL, NULL);
-    sodium_hex2bin(expected, psize, expected_hex, psize * 2, NULL, NULL, NULL);
-
-    unsigned char output[crypto_core_ed25519_BYTES] = {0};
+    unsigned char output[point_size];
 
     recover_commit(output, input, 3);
 
@@ -83,29 +82,11 @@ void test_recover_commit()
     }
 }
 
-// tests the scalar_zero function
-void test_scalar_zero()
-{
-    unsigned char s[crypto_core_ed25519_SCALARBYTES] = {1, 2, 3, 4, 5};
-    unsigned char expected[crypto_core_ed25519_SCALARBYTES] = {0};
-
-    scalar_zero(s);
-
-    if (compare_scalar(expected, s) != 0)
-    {
-        printf("FAILED: test_scalar_zero\n");
-    }
-    else
-    {
-        printf("OK: test_scalar_zero\n");
-    }
-}
-
 // tests the scalar_one function
 void test_scalar_one()
 {
-    unsigned char s[crypto_core_ed25519_SCALARBYTES] = {1, 2, 3, 4, 5};
-    unsigned char expected[crypto_core_ed25519_SCALARBYTES] = {1};
+    unsigned char s[scalar_size] = {1, 2, 3, 4, 5};
+    unsigned char expected[scalar_size] = {1};
 
     scalar_one(s);
 
@@ -127,17 +108,15 @@ void test_scalar_divide()
 
     char expected_hex[] = "eb1e0a0bd1e1ac34d7a9203255b26d314c64874c3eda33a5d02a0a3721a80200";
 
-    unsigned char s1[crypto_core_ed25519_SCALARBYTES] = {0};
-    unsigned char s2[crypto_core_ed25519_SCALARBYTES] = {0};
-    unsigned char expected[crypto_core_ed25519_SCALARBYTES] = {0};
+    unsigned char s1[scalar_size];
+    unsigned char s2[scalar_size];
+    unsigned char expected[scalar_size];
 
-    unsigned char output[crypto_core_ed25519_SCALARBYTES] = {0};
+    unsigned char output[scalar_size];
 
-    const size_t psize = crypto_core_ed25519_SCALARBYTES;
-
-    sodium_hex2bin(s1, psize, s1_hex, psize * 2, NULL, NULL, NULL);
-    sodium_hex2bin(s2, psize, s2_hex, psize * 2, NULL, NULL, NULL);
-    sodium_hex2bin(expected, psize, expected_hex, psize * 2, NULL, NULL, NULL);
+    sodium_hex2bin(s1, point_size, s1_hex, point_size * 2, NULL, NULL, NULL);
+    sodium_hex2bin(s2, point_size, s2_hex, point_size * 2, NULL, NULL, NULL);
+    sodium_hex2bin(expected, point_size, expected_hex, point_size * 2, NULL, NULL, NULL);
 
     scalar_divide(output, s1, s2);
 
@@ -154,8 +133,8 @@ void test_scalar_divide()
 // tests the scalar_int function
 void test_scalar_int()
 {
-    unsigned char s[crypto_core_ed25519_SCALARBYTES] = {1, 2, 3, 4, 5};
-    unsigned char expected[crypto_core_ed25519_SCALARBYTES] = {44, 1};
+    unsigned char s[scalar_size] = {1, 2, 3, 4, 5};
+    unsigned char expected[scalar_size] = {44, 1};
 
     scalar_int(300, s);
 
@@ -169,6 +148,7 @@ void test_scalar_int()
     }
 }
 
+// callback used to test the read_ballot function
 void read_ballot_test_callback(unsigned char *out, unsigned char *in, int n, void *f_data)
 {
     assert(n == 3);
@@ -182,36 +162,34 @@ void read_ballot_test_callback(unsigned char *out, unsigned char *in, int n, voi
     char p5_hex[] = "8025b9aa3acd3a88173e1d2e134a18824d8600a31c689288da56af530722fccf";
     char p6_hex[] = "e09875368cd7c965548a269963c8cd3157ce3103297252661476adf23000ff7d";
 
-    unsigned char p1[crypto_core_ed25519_BYTES] = {0};
-    unsigned char p2[crypto_core_ed25519_BYTES] = {0};
-    unsigned char p3[crypto_core_ed25519_BYTES] = {0};
-    unsigned char p4[crypto_core_ed25519_BYTES] = {0};
-    unsigned char p5[crypto_core_ed25519_BYTES] = {0};
-    unsigned char p6[crypto_core_ed25519_BYTES] = {0};
+    unsigned char p1[point_size];
+    unsigned char p2[point_size];
+    unsigned char p3[point_size];
+    unsigned char p4[point_size];
+    unsigned char p5[point_size];
+    unsigned char p6[point_size];
 
-    const size_t psize = crypto_core_ed25519_BYTES;
-
-    sodium_hex2bin(p1, psize, p1_hex, psize * 2, NULL, NULL, NULL);
-    sodium_hex2bin(p2, psize, p2_hex, psize * 2, NULL, NULL, NULL);
-    sodium_hex2bin(p3, psize, p3_hex, psize * 2, NULL, NULL, NULL);
-    sodium_hex2bin(p4, psize, p4_hex, psize * 2, NULL, NULL, NULL);
-    sodium_hex2bin(p5, psize, p5_hex, psize * 2, NULL, NULL, NULL);
-    sodium_hex2bin(p6, psize, p6_hex, psize * 2, NULL, NULL, NULL);
+    sodium_hex2bin(p1, point_size, p1_hex, point_size * 2, NULL, NULL, NULL);
+    sodium_hex2bin(p2, point_size, p2_hex, point_size * 2, NULL, NULL, NULL);
+    sodium_hex2bin(p3, point_size, p3_hex, point_size * 2, NULL, NULL, NULL);
+    sodium_hex2bin(p4, point_size, p4_hex, point_size * 2, NULL, NULL, NULL);
+    sodium_hex2bin(p5, point_size, p5_hex, point_size * 2, NULL, NULL, NULL);
+    sodium_hex2bin(p6, point_size, p6_hex, point_size * 2, NULL, NULL, NULL);
 
     switch (*i)
     {
     case 0:
-        assert(compare_point(p1, &in[psize * 0]) == 0);
-        assert(compare_point(p2, &in[psize * 1]) == 0);
-        assert(compare_point(p3, &in[psize * 2]) == 0);
+        assert(compare_point(p1, &in[point_size * 0]) == 0);
+        assert(compare_point(p2, &in[point_size * 1]) == 0);
+        assert(compare_point(p3, &in[point_size * 2]) == 0);
 
         out[0] = 10;
 
         break;
     case 1:
-        assert(compare_point(p4, &in[psize * 0]) == 0);
-        assert(compare_point(p5, &in[psize * 1]) == 0);
-        assert(compare_point(p6, &in[psize * 2]) == 0);
+        assert(compare_point(p4, &in[point_size * 0]) == 0);
+        assert(compare_point(p5, &in[point_size * 1]) == 0);
+        assert(compare_point(p6, &in[point_size * 2]) == 0);
 
         out[0] = 20;
 
@@ -228,7 +206,8 @@ void read_ballot_test_callback(unsigned char *out, unsigned char *in, int n, voi
 
 void test_read_ballot_simple()
 {
-    // vote_1.bin contains the following points (spaces are meaningless):
+    // ./ballots/ballot_1.bin contains the following points (spaces are
+    // meaningless):
     //
     //   p1 p2 p3    p4 p5 p6
     //
@@ -249,7 +228,7 @@ void test_read_ballot_simple()
     const int numChunks = 2;
     unsigned char output[32 * numChunks];
 
-    read_ballot(output, "vote_1.bin", 3, 2, read_ballot_test_callback, &counter);
+    read_ballot(output, "./ballots/ballot_1.bin", 3, 2, read_ballot_test_callback, &counter);
 
     assert(output[0] == 10);
     assert(output[32] == 20);
@@ -264,23 +243,22 @@ void read_ballot_real_callback(unsigned char *out, unsigned char *in, int n, voi
     recover_commit(out, in, n);
 }
 
+// test the read_ballot function with a realistic callback
 void test_read_ballot_real()
 {
     char expected_1_hex[] = "e8a3f31322a30be2f0eed3cb887a39bb3e47a2188b20b9eefe2cb72d9753a45b";
     char expected_2_hex[] = "59e42bc01de0a6a42a336c317b58bf9ef7d61bd6553462992798ce8707302899";
 
-    unsigned char expected_p1[crypto_core_ed25519_BYTES] = {0};
-    unsigned char expected_p2[crypto_core_ed25519_BYTES] = {0};
+    unsigned char expected_p1[point_size];
+    unsigned char expected_p2[point_size];
 
-    const size_t psize = crypto_core_ed25519_BYTES;
-
-    sodium_hex2bin(expected_p1, psize, expected_1_hex, psize * 2, NULL, NULL, NULL);
-    sodium_hex2bin(expected_p2, psize, expected_2_hex, psize * 2, NULL, NULL, NULL);
+    sodium_hex2bin(expected_p1, point_size, expected_1_hex, point_size * 2, NULL, NULL, NULL);
+    sodium_hex2bin(expected_p2, point_size, expected_2_hex, point_size * 2, NULL, NULL, NULL);
 
     const int numChunks = 2;
     unsigned char output[32 * numChunks];
 
-    read_ballot(output, "vote_1.bin", 3, 2, read_ballot_real_callback, NULL);
+    read_ballot(output, "./ballots/ballot_1.bin", 3, 2, read_ballot_real_callback, NULL);
 
     if (compare_scalar(expected_p1, output) != 0)
     {
@@ -301,30 +279,191 @@ void test_read_ballot_real()
     }
 }
 
-void read_ballots_test_ballback(const char *filepath)
+// callback used to test the read_ballots function
+void read_ballots_test_ballback(const char *filepath, void *f_data)
 {
-    printf("res: %s\n", filepath);
+    const char *expected_1 = "./ballots/ballot_1.bin";
+    const char *expected_2 = "./ballots/ballot_2.bin";
+
+    int *i = (int *)f_data;
+
+    switch (*i)
+    {
+    case 0:
+        if (strcmp(expected_1, filepath) != 0)
+        {
+            printf("FAILED (%d): test_read_ballots: %s\n", *i, filepath);
+            return;
+        }
+        break;
+    case 1:
+        if (strcmp(expected_2, filepath) != 0)
+        {
+            printf("FAILED (%d): test_read_ballots: %s\n", *i, filepath);
+            return;
+        }
+        break;
+    default:
+        printf("FAILED: test_read_ballots: %s\n", filepath);
+        break;
+    }
+
+    printf("OK: test_read_ballots (%i)\n", *i);
+
+    (*(int *)f_data) = *i + 1;
 }
 
-void test_read_ballots()
+// test the read_ballots function
+void test_read_ballots_simple()
 {
-    read_ballots("./ballots", "ballot", read_ballots_test_ballback);
+    int counter = 0;
+    read_ballots("./ballots/", "ballot", read_ballots_test_ballback, &counter);
 }
 
-// entry point, launch the tests
+struct RdBallotsCB
+{
+    char numNodes;
+    char numChunks;
+    char *outputFolder;
+};
+
+// implements a realistic callback for the read_ballots function. We store in
+// f_data the number of nodes and number of chunks.
+void read_ballots_real_callback(const char *filepath, void *f_data)
+{
+    struct RdBallotsCB *data = (struct RdBallotsCB *)f_data;
+
+    unsigned char output[32 * data->numChunks];
+    read_ballot(output, filepath, data->numNodes, data->numChunks,
+                read_ballot_real_callback, NULL);
+
+    FILE *fptr;
+
+    char str[256];
+    strcpy(str, filepath);
+    strcat(str, ".decrypted");
+
+    fptr = fopen(str, "w");
+
+    if (fptr == NULL)
+    {
+        printf("ERROR: failed to create output file");
+        return;
+    }
+
+    fwrite(output, sizeof(char), 32 * data->numChunks, fptr);
+
+    fclose(fptr);
+}
+
+void test_read_ballots_real()
+{
+    const char numChunks = 2;
+    const char numNodes = 3;
+
+    struct RdBallotsCB data;
+    data.numChunks = numChunks;
+    data.numNodes = numNodes;
+
+    read_ballots("./ballots/", "ballot", read_ballots_real_callback, &data);
+
+    // We are expecting the folder "./ballots/" to contain
+    // "ballot_1.bin.decrypted" and "ballot_2.bin.decrypted".
+
+    const char *expected_file_1 = "./ballots/ballot_1.bin.decrypted";
+    const char *expected_file_2 = "./ballots/ballot_2.bin.decrypted";
+
+    char expected_decrypted_ballot_1_hex[] = "e8a3f31322a30be2f0eed3cb887a39bb3e47a2188b20b9eefe2cb72d9753a45b59e42bc01de0a6a42a336c317b58bf9ef7d61bd6553462992798ce8707302899";
+    char expected_decrypted_ballot_2_hex[] = "56f0e8319982a5c37457fd11cc85e13d923cc52267ead3a10ca0c8b09b933d863fbe7e2f27858a801ad0d3de80923080ba342b0ee6f073d67212ba5666ac8d12";
+
+    unsigned char expected_ballot_1_chunk_1[point_size];
+    unsigned char expected_ballot_1_chunk_2[point_size];
+    unsigned char expected_ballot_2_chunk_1[point_size];
+    unsigned char expected_ballot_2_chunk_2[point_size];
+
+    sodium_hex2bin(expected_ballot_1_chunk_1, point_size, expected_decrypted_ballot_1_hex, point_size * 2, NULL, NULL, NULL);
+    sodium_hex2bin(expected_ballot_1_chunk_2, point_size, &expected_decrypted_ballot_1_hex[point_size * 2], point_size * 2, NULL, NULL, NULL);
+    sodium_hex2bin(expected_ballot_2_chunk_1, point_size, expected_decrypted_ballot_2_hex, point_size * 2, NULL, NULL, NULL);
+    sodium_hex2bin(expected_ballot_2_chunk_2, point_size, &expected_decrypted_ballot_2_hex[point_size * 2], point_size * 2, NULL, NULL, NULL);
+
+    FILE *fp;
+    unsigned char buff[32 * numChunks];
+
+    // Check ballot 1
+
+    fp = fopen(expected_file_1, "rt");
+    if (fp == NULL)
+    {
+        printf("Error opening file %s\n", expected_file_1);
+        return;
+    }
+
+    fread(buff, sizeof(char), 32 * numChunks, (FILE *)fp);
+
+    if (compare_point(expected_ballot_1_chunk_1, buff) != 0)
+    {
+        printf("FAILED: read_ballots_real: b1c1\n");
+    }
+    else
+    {
+        printf("OK: read_ballots_real: b1c1\n");
+    }
+
+    if (compare_point(expected_ballot_1_chunk_2, &buff[32]) != 0)
+    {
+        printf("FAILED: read_ballots_real: b1c2\n");
+    }
+    else
+    {
+        printf("OK: read_ballots_real: b1c2\n");
+    }
+
+    // Check ballot 2
+
+    fp = fopen(expected_file_2, "rt");
+    if (fp == NULL)
+    {
+        printf("Error opening file %s\n", expected_file_2);
+        return;
+    }
+
+    fread(buff, sizeof(char), 32 * numChunks, (FILE *)fp);
+
+    if (compare_point(expected_ballot_2_chunk_1, buff) != 0)
+    {
+        printf("FAILED: read_ballots_real: b2c1\n");
+    }
+    else
+    {
+        printf("OK: read_ballots_real: b2c1\n");
+    }
+
+    if (compare_point(expected_ballot_2_chunk_2, &buff[32]) != 0)
+    {
+        printf("FAILED: read_ballots_real: b2c2\n");
+    }
+    else
+    {
+        printf("OK: read_ballots_real: b2c2\n");
+    }
+
+    fclose(fp);
+}
+
+// entry point, launches the tests
 int main(int argc, char *argv[])
 {
     printf("Tests:\n------\n");
 
     test_recover_commit();
-    test_scalar_zero();
     test_scalar_one();
     test_scalar_int();
     test_scalar_divide();
 
     test_read_ballot_simple();
     test_read_ballot_real();
-    test_read_ballots();
+    test_read_ballots_simple();
+    test_read_ballots_real();
 
     printf("------\n");
 }

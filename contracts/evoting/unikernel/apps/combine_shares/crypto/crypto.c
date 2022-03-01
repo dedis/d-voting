@@ -6,11 +6,13 @@ are already sorted and cleaned.
 
 #include <sodium.h>
 #include <stdio.h>
+#include "crypto.h"
+#include <string.h>
 
 // prints a point as bytes
 void print_point(const unsigned char *p)
 {
-    for (int i = 0; i < crypto_core_ed25519_BYTES; i++)
+    for (int i = 0; i < point_size; i++)
     {
         printf("%u ", p[i]);
     }
@@ -20,33 +22,24 @@ void print_point(const unsigned char *p)
 // prints a scalar as bytes
 void print_scalar(const unsigned char *s)
 {
-    for (int i = 0; i < crypto_core_ed25519_SCALARBYTES; i++)
+    for (int i = 0; i < scalar_size; i++)
     {
         printf("%u ", s[i]);
     }
     printf("\n");
 }
 
-// sets a scalar to 0
-void scalar_zero(unsigned char *s)
-{
-    for (int i = 0; i < crypto_core_ed25519_SCALARBYTES; i++)
-    {
-        s[i] = 0;
-    }
-}
-
 // sets a scalar to 1
 void scalar_one(unsigned char *s)
 {
-    scalar_zero(s);
+    memset(s, 0, scalar_size);
     s[0] = 1;
 }
 
 // sets a scalar to the specified int
 void scalar_int(int n, unsigned char *s)
 {
-    scalar_zero(s);
+    memset(s, 0, scalar_size);
     s[3] = (n >> 24) & 0xFF;
     s[2] = (n >> 16) & 0xFF;
     s[1] = (n >> 8) & 0xFF;
@@ -56,7 +49,7 @@ void scalar_int(int n, unsigned char *s)
 // perform x/y and stores the result to z
 void scalar_divide(unsigned char *z, unsigned char *x, unsigned char *y)
 {
-    unsigned char inv[crypto_core_ed25519_SCALARBYTES] = {0};
+    unsigned char inv[scalar_size];
     crypto_core_ed25519_scalar_invert(inv, y);
     crypto_core_ed25519_scalar_mul(z, x, inv);
 }
@@ -67,22 +60,19 @@ void scalar_divide(unsigned char *z, unsigned char *x, unsigned char *y)
 void recover_commit(unsigned char *output, unsigned char *points, int n)
 {
     // set the output to the neutral element
-    for (int i = 0; i < crypto_core_ed25519_BYTES; i++)
-    {
-        output[i] = 0;
-    }
+    memset(output, 0, point_size);
     output[0] = 1;
 
-    unsigned char Tmp[crypto_core_ed25519_BYTES] = {0};
+    unsigned char Tmp[point_size];
 
-    unsigned char tmp[crypto_core_ed25519_SCALARBYTES] = {0};
+    unsigned char tmp[scalar_size];
 
-    unsigned char num[crypto_core_ed25519_SCALARBYTES] = {0};
-    unsigned char denum[crypto_core_ed25519_SCALARBYTES] = {0};
+    unsigned char num[scalar_size];
+    unsigned char denum[scalar_size];
 
     // placeholders to contain the scalar indexes
-    unsigned char indexI[crypto_core_ed25519_SCALARBYTES] = {0};
-    unsigned char indexJ[crypto_core_ed25519_SCALARBYTES] = {0};
+    unsigned char indexI[scalar_size];
+    unsigned char indexJ[scalar_size];
 
     for (int i = 0; i < n; i++)
     {
@@ -107,7 +97,13 @@ void recover_commit(unsigned char *output, unsigned char *points, int n)
         }
 
         scalar_divide(num, num, denum);
-        crypto_scalarmult_ed25519_noclamp(Tmp, num, &points[crypto_core_ed25519_BYTES * i]);
+
+        int res = crypto_scalarmult_ed25519_noclamp(Tmp, num, &points[point_size * i]);
+        if (res != 0)
+        {
+            printf("ERROR: crypto_scalarmult_ed25519_noclamp failed: %d\n", res);
+        }
+
         crypto_core_ed25519_add(output, output, Tmp);
     }
 }

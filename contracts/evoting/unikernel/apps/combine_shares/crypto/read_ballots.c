@@ -43,8 +43,9 @@ void read_ballot(unsigned char *output, const char *filepath, const char numNode
 }
 
 // this function reads all files from the directory matching the prefix and
-// calls the provided callback.
-void read_ballots(const char *folder, const char *prefix, read_ballots_cb f)
+// calls the provided callback. The callback has the full filepath and the
+// f_data that can be used to stored data across callback calls.
+void read_ballots(const char *folder, const char *prefix, read_ballots_cb f, void *f_data)
 {
     DIR *d;
     struct dirent *dir;
@@ -56,9 +57,9 @@ void read_ballots(const char *folder, const char *prefix, read_ballots_cb f)
             if (strncmp(prefix, dir->d_name, strlen(prefix)) == 0)
             {
                 char str[256];
-                strcat(str, folder);
-                strcpy(str, dir->d_name);
-                f(str);
+                strcpy(str, folder);
+                strcat(str, dir->d_name);
+                f(str, f_data);
             }
         }
         closedir(d);
