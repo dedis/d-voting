@@ -450,6 +450,17 @@ void test_read_ballots_real()
     fclose(fp);
 }
 
+// Demonstration of how to combine shares
+void combine_shares(char *folder, const char numChunks, const char numNodes)
+{
+
+    struct RdBallotsCB data;
+    data.numChunks = numChunks;
+    data.numNodes = numNodes;
+
+    read_ballots(folder, "ballot", read_ballots_real_callback, &data);
+}
+
 // entry point, launches the tests
 int main(int argc, char *argv[])
 {
@@ -466,4 +477,6 @@ int main(int argc, char *argv[])
     test_read_ballots_real();
 
     printf("------\n");
+
+    // combine_shares("/Users/nkocher/GitHub/d-voting/contracts/evoting/tmp/", 2, 10);
 }

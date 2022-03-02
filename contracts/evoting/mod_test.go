@@ -4,6 +4,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -25,6 +28,8 @@ import (
 	sjson "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/proof"
+	"go.dedis.ch/kyber/v3/share"
+	kdkg "go.dedis.ch/kyber/v3/share/dkg/pedersen"
 	"go.dedis.ch/kyber/v3/util/random"
 )
 
@@ -1026,7 +1031,140 @@ func TestCommand_DecryptBallots(t *testing.T) {
 
 	require.Equal(t, types.Ballot{}, election.DecryptedBallots[0])
 	require.Equal(t, types.ResultAvailable, election.Status)
+}
 
+func Test_ExportPubshares(t *testing.T) {
+	n := 10
+
+	nodes, publicKey := computeDKG(t, n)
+
+	folder, err := ioutil.TempDir("", "")
+	require.NoError(t, err)
+
+	defer os.RemoveAll(folder)
+
+	// Encrypt secret and compute public shares. We manually encrypt two ballots
+	// that are two chunks long each.
+
+	ballot0 := []byte("This message is 55 bytes long, which requires 2 chunks.")
+
+	b0K0, b0C0, remainder := elGamalEncrypt(suite, publicKey, ballot0[:29])
+	require.Equal(t, 0, len(remainder))
+
+	b0K1, b0C1, remainder := elGamalEncrypt(suite, publicKey, ballot0[29:])
+	require.Equal(t, 0, len(remainder))
+
+	ballot1 := []byte("This is another ballot, which also requires 2 chunks.")
+
+	b1K0, b1C0, remainder := elGamalEncrypt(suite, publicKey, ballot1[:29])
+	require.Equal(t, 0, len(remainder))
+
+	b1K1, b1C1, remainder := elGamalEncrypt(suite, publicKey, ballot1[29:])
+	require.Equal(t, 0, len(remainder))
+
+	// initialize the pubshares slice according to the number of nodes, ballots,
+	// and chunks per ballot.
+	pubshares := make([]types.PubsharesUnit, n) // number of nodes
+	for i := range pubshares {
+		pubshares[i] = make(types.PubsharesUnit, 2) // number of ballots
+		for j := range pubshares[i] {
+			pubshares[i][j] = make([]types.Pubshare, 2) // chunks per ballot
+		}
+	}
+
+	// initialize the indexes slice. All shares are in oder from the nodes'
+	// indexes.
+	indexes := make([]int, n)
+	for i := range indexes {
+		indexes[i] = i
+	}
+
+	// compute and store the pubshares for each node/ballot/chunk
+	for i, node := range nodes {
+		// > node i, ballot 0, chunk 0
+		S := suite.Point().Mul(node.secretShare.V, b0K0)
+		v := suite.Point().Sub(b0C0, S)
+		pubshares[i][0][0] = v
+
+		// > node i, ballot 0, chunk 1
+		S = suite.Point().Mul(node.secretShare.V, b0K1)
+		v = suite.Point().Sub(b0C1, S)
+		pubshares[i][0][1] = v
+
+		// > node i, ballot 1, chunk 0
+		S = suite.Point().Mul(node.secretShare.V, b1K0)
+		v = suite.Point().Sub(b1C0, S)
+		pubshares[i][1][0] = v
+
+		// > node i, ballot 1, chunk 1
+		S = suite.Point().Mul(node.secretShare.V, b1K1)
+		v = suite.Point().Sub(b1C1, S)
+		pubshares[i][1][1] = v
+	}
+
+	units := types.PubsharesUnits{
+		Pubshares: pubshares,
+		Indexes:   indexes,
+	}
+
+	err = exportPubshares(folder, units, 2, 2, n)
+	require.NoError(t, err)
+
+	// We are expecting two files, one for each ballot. A file contains the
+	// pubshares, in order, of chunks.
+
+	file0, err := os.ReadFile(filepath.Join(folder, "ballot_0"))
+	require.NoError(t, err)
+
+	file1, err := os.ReadFile(filepath.Join(folder, "ballot_1"))
+	require.NoError(t, err)
+
+	// size is <kyber point size> * <number of nodes> * <number of chunks>
+	require.Len(t, file0, 32*n*2)
+	require.Len(t, file1, 32*n*2)
+
+	point := suite.Point()
+
+	// > check file of ballot 0
+	for i := 0; i < n; i++ {
+		// > ballot 0, node i, chunk 0
+		err = point.UnmarshalBinary(file0[i*32 : i*32+32])
+		require.NoError(t, err)
+		require.True(t, point.Equal(pubshares[i][0][0]))
+
+		// > ballot 0, node i, chunk 1
+		base := 32 * n
+		err = point.UnmarshalBinary(file0[base+32*i : base+32*i+32])
+		require.NoError(t, err)
+		require.True(t, point.Equal(pubshares[i][0][1]))
+	}
+
+	// > check file of ballot 1
+	for i := 0; i < n; i++ {
+		// > ballot 1, node i, chunk 0
+		err = point.UnmarshalBinary(file1[i*32 : i*32+32])
+		require.NoError(t, err)
+		require.True(t, point.Equal(pubshares[i][1][0]))
+
+		// > ballot 1, node i, chunk 1
+		base := 32 * n
+		err = point.UnmarshalBinary(file1[base+32*i : base+32*i+32])
+		require.NoError(t, err)
+		require.True(t, point.Equal(pubshares[i][1][1]))
+	}
+}
+
+func Test_ImportBallots(t *testing.T) {
+	expected0 := "This message is 55 bytes long, which requires 2 chunks."
+	expected1 := "This is another ballot, which also requires 2 chunks."
+
+	res, err := importBallots("test_data", 2)
+	require.NoError(t, err)
+
+	require.Len(t, res, 2)
+
+	require.Equal(t, expected0, string(res[0]))
+	require.Equal(t, expected1, string(res[1]))
 }
 
 func TestCommand_CancelElection(t *testing.T) {
@@ -1396,4 +1534,113 @@ func (f fakeAuthority) PublicKeyIterator() crypto.PublicKeyIterator {
 
 func (f fakeAuthority) Len() int {
 	return 0
+}
+
+// DKG
+
+type node struct {
+	dkg         *kdkg.DistKeyGenerator
+	pubKey      kyber.Point
+	privKey     kyber.Scalar
+	deals       []*kdkg.Deal
+	resps       []*kdkg.Response
+	secretShare *share.PriShare
+}
+
+// computeDKG sets up nodes and runs the DKG protocol. Returns the DKG nodes and
+// the public key
+func computeDKG(t *testing.T, n int) ([]*node, kyber.Point) {
+
+	nodes := make([]*node, n)
+	pubKeys := make([]kyber.Point, n)
+
+	// 1. Init the nodes
+	for i := 0; i < n; i++ {
+		privKey := suite.Scalar().Pick(suite.RandomStream())
+		pubKey := suite.Point().Mul(privKey, nil)
+		pubKeys[i] = pubKey
+		nodes[i] = &node{
+			pubKey:  pubKey,
+			privKey: privKey,
+			deals:   make([]*kdkg.Deal, 0),
+			resps:   make([]*kdkg.Response, 0),
+		}
+	}
+
+	// 2. Create the DKGs on each node
+	for i, node := range nodes {
+		dkg, err := kdkg.NewDistKeyGenerator(suite, nodes[i].privKey, pubKeys, n)
+		require.NoError(t, err)
+		node.dkg = dkg
+	}
+
+	// 3. Each node sends its Deals to the other nodes
+	for _, node := range nodes {
+		deals, err := node.dkg.Deals()
+		require.NoError(t, err)
+		for i, deal := range deals {
+			nodes[i].deals = append(nodes[i].deals, deal)
+		}
+	}
+
+	// 4. Process the Deals on each node and send the responses to the other
+	// nodes
+	for i, node := range nodes {
+		for _, deal := range node.deals {
+			resp, err := node.dkg.ProcessDeal(deal)
+			require.NoError(t, err)
+			for j, otherNode := range nodes {
+				if j == i {
+					continue
+				}
+				otherNode.resps = append(otherNode.resps, resp)
+			}
+		}
+	}
+
+	// 5. Process the responses on each node
+	for _, node := range nodes {
+		for _, resp := range node.resps {
+			_, err := node.dkg.ProcessResponse(resp)
+			require.NoError(t, err)
+		}
+	}
+
+	// 6. Check and print the qualified shares
+	for _, node := range nodes {
+		require.True(t, node.dkg.Certified())
+		require.Equal(t, n, len(node.dkg.QualifiedShares()))
+		require.Equal(t, n, len(node.dkg.QUAL()))
+	}
+
+	// 7. Get the secret shares and public key
+	shares := make([]*share.PriShare, n)
+	var publicKey kyber.Point
+	for i, node := range nodes {
+		distrKey, err := node.dkg.DistKeyShare()
+		require.NoError(t, err)
+		shares[i] = distrKey.PriShare()
+		publicKey = distrKey.Public()
+		node.secretShare = distrKey.PriShare()
+	}
+
+	return nodes, publicKey
+}
+
+func elGamalEncrypt(group kyber.Group, pubkey kyber.Point, message []byte) (
+	K, C kyber.Point, remainder []byte) {
+
+	// Embed the message (or as much of it as will fit) into a curve point.
+	M := group.Point().Embed(message, random.New())
+	max := group.Point().EmbedLen()
+	if max > len(message) {
+		max = len(message)
+	}
+	remainder = message[max:]
+	// ElGamal-encrypt the point to produce ciphertext (K,C).
+	k := group.Scalar().Pick(random.New()) // ephemeral private key
+	K = group.Point().Mul(k, nil)          // ephemeral DH public key
+	S := group.Point().Mul(k, pubkey)      // ephemeral DH shared secret
+	C = S.Add(S, M)                        // message blinded with secret
+	return
 }

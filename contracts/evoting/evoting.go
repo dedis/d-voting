@@ -8,9 +8,14 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"go.dedis.ch/dela"
+	"fmt"
+	"io/ioutil"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"strings"
+
+	"go.dedis.ch/dela"
 
 	"go.dedis.ch/kyber/v3/share"
 
@@ -849,4 +854,105 @@ func decrypt(ballot int, pair int, allPubShares []types.PubsharesUnit, indexes [
 	}
 
 	return decryptedMessage, nil
+}
+
+// exportPubshares saves each ballot in a file. A file contains the pubshares,
+// in order, of chunks. Each ballot will be saved as a "ballot_i" file.
+func exportPubshares(folder string, units types.PubsharesUnits, numBallots,
+	numChunks, numShares int) error {
+
+	err := os.MkdirAll(folder, os.ModePerm)
+	if err != nil {
+		return xerrors.Errorf("failed to make dir: %v", err)
+	}
+
+	// First we must sort the units by their node's indexes. This index is
+	// provided by the DKG protocol.
+	sortedUnits := make([]types.PubsharesUnit, len(units.Pubshares))
+
+	for i, dkgIndex := range units.Indexes {
+		sortedUnits[dkgIndex] = units.Pubshares[i]
+	}
+
+	for ballotIndex := 0; ballotIndex < numBallots; ballotIndex++ {
+		filepath := filepath.Join(folder, fmt.Sprintf("ballot_%d", ballotIndex))
+		file, err := os.Create(filepath)
+		if err != nil {
+			return xerrors.Errorf("failed to create ballot file: %v", err)
+		}
+
+		for chunkIndex := 0; chunkIndex < numChunks; chunkIndex++ {
+			for shareIndex := range sortedUnits {
+				p := sortedUnits[shareIndex][ballotIndex][chunkIndex]
+
+				_, err := p.MarshalTo(file)
+				if err != nil {
+					return xerrors.Errorf("failed to marshal to file: %v", err)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// importBallots parses all decrypted ballot files from a folder and returns a
+// slice of decrypted results. Parses files that ends with ".decrypted". The
+// decrypted file must contain chunks in order. A chunk is a kyber.Point that
+// embeds the chunk's content.
+func importBallots(folder string, numChunks int) ([][]byte, error) {
+	result := [][]byte{}
+
+	files, err := ioutil.ReadDir(folder)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to read dir: %v", err)
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		if !strings.HasSuffix(file.Name(), ".decrypted") {
+			continue
+		}
+
+		// a kyber.Point is 32 bytes long.
+		expectedSize := 32 * numChunks
+
+		if file.Size() != int64(32*numChunks) {
+			return nil, xerrors.Errorf("unexpected file size: %d != %d",
+				file.Size(), expectedSize)
+		}
+
+		buf, err := os.ReadFile(filepath.Join(folder, file.Name()))
+		if err != nil {
+			return nil, xerrors.Errorf("failed to read file: %v", err)
+		}
+
+		point := suite.Point()
+		decrypted := bytes.Buffer{}
+
+		for i := 0; i < numChunks; i++ {
+			err = point.UnmarshalBinary(buf[32*i : 32*i+32])
+			if err != nil {
+				return nil, xerrors.Errorf("failed to unmarshal point: %v", err)
+			}
+
+			data, err := point.Data()
+			if err != nil {
+				return nil, xerrors.Errorf("failed to read data: %v", err)
+			}
+
+			decrypted.Write(data)
+		}
+
+		result = append(result, decrypted.Bytes())
+	}
+
+	if err != nil {
+		return nil, xerrors.Errorf("failed to parse files: %v", err)
+	}
+
+	return result, nil
 }

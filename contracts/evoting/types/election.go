@@ -323,8 +323,9 @@ func ciphervoteFromPairs(ks []kyber.Point, cs []kyber.Point) (Ciphervote, error)
 // Pubshare represents a public share.
 type Pubshare kyber.Point
 
-// PubsharesUnit holds all the public shares produced by a given node,
-// 1 for each ElGamal pair
+// PubsharesUnit holds all the public shares produced by a given node, 1 for
+// each ElGamal pair. First dimension is the number of ballots, the second one
+// is the number of chunks of a ballot.
 type PubsharesUnit [][]Pubshare
 
 // Fingerprint implements serde.Fingerprinter
