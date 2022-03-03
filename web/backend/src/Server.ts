@@ -65,7 +65,7 @@ const usersDB = lmdb.open({ path: 'dvoting-users' });
  * This is via this endpoint that the client request the tequila key, this key will then be used for redirection on the tequila server
  * */
 app.get('/api/get_teq_key', (req, res) => {
-  const body = `urlaccess=${config.FRONT_END_URL}/login_callback\nservice=Evoting\nrequest=name,firstname,email,uniqueid,allunits`;
+  const body = `urlaccess=${config.FRONT_END_URL}/api/control_key\nservice=Evoting\nrequest=name,firstname,email,uniqueid,allunits`;
   axios
     .post('http://tequila.epfl.ch/cgi-bin/tequila/createrequest', body)
     .then((response) => {
@@ -111,7 +111,7 @@ app.get('/api/control_key', (req, res) => {
       req.session.lastname = user.lastname;
       req.session.firstname = user.firstname;
       req.session.role = user.role;
-      res.status(200).send('ok');
+      res.redirect('/');
     })
     .catch((error) => {
       res.status(500).send('Login did not work');
