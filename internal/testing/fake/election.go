@@ -2,12 +2,21 @@ package fake
 
 import (
 	"encoding/base64"
+	"encoding/binary"
+	"io/ioutil"
+	"net"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/random"
+	"golang.org/x/xerrors"
 )
 
 var suite = suites.MustFind("Ed25519")
@@ -113,4 +122,134 @@ var BasicConfiguration = types.Configuration{
 
 func encodeID(ID string) types.ID {
 	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
+}
+
+// NewConn returns a new fake connection
+func NewConn(network, address string, timeout time.Duration) (net.Conn, error) {
+	return &Conn{}, nil
+}
+
+// Conn simulates a connection that would be done with the Unikernel
+//
+// - implements net.Conn
+type Conn struct {
+}
+
+func (f *Conn) Read(b []byte) (n int, err error) {
+	n = copy(b, []byte("OK"))
+
+	return n, nil
+}
+
+// Write implements net.Conn. It does what the Unikernel is expected to do
+func (f *Conn) Write(b []byte) (n int, err error) {
+
+	if len(b) < 4+4+1 {
+		return 0, xerrors.Errorf("not enough bytes")
+	}
+
+	numChunks := binary.LittleEndian.Uint32(b[:4])
+	numNodes := binary.LittleEndian.Uint32(b[4:8])
+
+	folder := string(b[8:])
+
+	err = combineShares(folder, int(numChunks), int(numNodes))
+	if err != nil {
+		return 0, xerrors.Errorf("failed to combine shares: %v", err)
+	}
+
+	return len(b), nil
+}
+
+// combineShares implements what the Unikernel is expected to do
+func combineShares(folder string, numChunks, numNodes int) error {
+	files, err := ioutil.ReadDir(folder)
+	if err != nil {
+		return xerrors.Errorf("failed to read dir: %v", err)
+	}
+
+	expectedSize := 32 * numChunks * numNodes
+
+	for _, file := range files {
+		decrypted, err := os.Create(filepath.Join(folder, file.Name()+".decrypted"))
+		if err != nil {
+			return xerrors.Errorf("failed to create decrypted: %v", err)
+		}
+
+		if file.IsDir() {
+			continue
+		}
+
+		if !strings.HasPrefix(file.Name(), "ballot_") {
+			continue
+		}
+
+		if file.Size() != int64(expectedSize) {
+			return xerrors.Errorf("unexpected file size: %d != %d: %s",
+				file.Size(), expectedSize, filepath.Join(folder, file.Name()))
+		}
+
+		buf, err := os.ReadFile(filepath.Join(folder, file.Name()))
+		if err != nil {
+			return xerrors.Errorf("failed to read file: %v", err)
+		}
+
+		for c := 0; c < int(numChunks); c++ {
+			pubshares := make([]*share.PubShare, numNodes)
+
+			for n := 0; n < int(numNodes); n++ {
+				base := (32 * c * int(numNodes)) + 32*n
+
+				v := suite.Point()
+
+				err = v.UnmarshalBinary(buf[base : base+32])
+				if err != nil {
+					return xerrors.Errorf("failed to unmarshal point: %v", err)
+				}
+
+				pubshares[n] = &share.PubShare{
+					I: n,
+					V: v,
+				}
+			}
+
+			res, err := share.RecoverCommit(suite, pubshares, int(numNodes), int(numNodes))
+			if err != nil {
+				return xerrors.Errorf("failed to recover commit: %v", err)
+			}
+
+			_, err = res.MarshalTo(decrypted)
+			if err != nil {
+				return xerrors.Errorf("failed to marshal to file: %v", err)
+			}
+		}
+
+		decrypted.Close()
+	}
+
+	return nil
+}
+
+func (f *Conn) Close() error {
+	panic("not implemented") // TODO: Implement
+}
+
+func (f *Conn) LocalAddr() net.Addr {
+	panic("not implemented") // TODO: Implement
+}
+
+func (f *Conn) RemoteAddr() net.Addr {
+	panic("not implemented") // TODO: Implement
+}
+
+func (f *Conn) SetDeadline(t time.Time) error {
+	panic("not implemented") // TODO: Implement
+}
+
+func (f *Conn) SetReadDeadline(t time.Time) error {
+	return nil
+}
+
+func (f *Conn) SetWriteDeadline(t time.Time) error {
+	return nil
 }

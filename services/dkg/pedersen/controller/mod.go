@@ -12,6 +12,7 @@ import (
 	"go.dedis.ch/dela/crypto/loader"
 
 	"github.com/dedis/d-voting/contracts/evoting"
+	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg/pedersen"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
@@ -185,7 +186,8 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 	inj.Inject(dkg)
 
 	rosterKey := [32]byte{}
-	c := evoting.NewContract(evotingAccessKey[:], rosterKey[:], access, dkg, rosterFac)
+	c := evoting.NewContract(evotingAccessKey[:], rosterKey[:], access, dkg,
+		rosterFac, filepath.Join(ctx.Path("config"), "mnt"), fake.NewConn)
 	evoting.RegisterContract(exec, c)
 
 	return nil

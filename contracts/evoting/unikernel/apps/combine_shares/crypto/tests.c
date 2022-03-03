@@ -149,7 +149,7 @@ void test_scalar_int()
 }
 
 // callback used to test the read_ballot function
-void read_ballot_test_callback(unsigned char *out, unsigned char *in, int n, void *f_data)
+void read_ballot_test_callback(unsigned char *out, unsigned char *in, unsigned int n, void *f_data)
 {
     assert(n == 3);
 
@@ -238,7 +238,7 @@ void test_read_ballot_simple()
 
 // this function wraps the recover_commit function to be used as callback to the
 // read_ballot function.
-void read_ballot_real_callback(unsigned char *out, unsigned char *in, int n, void *f_data)
+void read_ballot_real_callback(unsigned char *out, unsigned char *in, unsigned int n, void *f_data)
 {
     recover_commit(out, in, n);
 }
@@ -322,8 +322,8 @@ void test_read_ballots_simple()
 
 struct RdBallotsCB
 {
-    char numNodes;
-    char numChunks;
+    unsigned int numNodes;
+    unsigned int numChunks;
     char *outputFolder;
 };
 
@@ -358,8 +358,8 @@ void read_ballots_real_callback(const char *filepath, void *f_data)
 
 void test_read_ballots_real()
 {
-    const char numChunks = 2;
-    const char numNodes = 3;
+    const unsigned int numChunks = 2;
+    const unsigned int numNodes = 3;
 
     struct RdBallotsCB data;
     data.numChunks = numChunks;
@@ -451,7 +451,7 @@ void test_read_ballots_real()
 }
 
 // Demonstration of how to combine shares
-void combine_shares(char *folder, const char numChunks, const char numNodes)
+void combine_shares(char *folder, const unsigned int numChunks, const unsigned int numNodes)
 {
 
     struct RdBallotsCB data;

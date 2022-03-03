@@ -11,13 +11,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"go.dedis.ch/dela"
-
-	"go.dedis.ch/kyber/v3/share"
+	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/execution"
@@ -50,6 +48,10 @@ type evotingCommand struct {
 }
 
 type prover func(suite proof.Suite, protocolName string, verifier proof.Verifier, proof []byte) error
+
+// DialerFactory defines the function used by the smart contract to get a
+// dialer.
+type DialerFactory func(network, address string, timeout time.Duration) (net.Conn, error)
 
 // createElection implements commands. It performs the CREATE_ELECTION command
 func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step) error {
@@ -576,7 +578,9 @@ func (e evotingCommand) registerPubshares(snap store.Snapshot, step execution.St
 
 	nbrSubmissions := len(election.PubsharesUnits.Pubshares)
 
-	if nbrSubmissions >= election.ShuffleThreshold {
+	// For the Unikernel we must have as many shares as nodes. This is because
+	// we are not storing the indexes of each node.
+	if nbrSubmissions >= election.Roster.Len() {
 		election.Status = types.PubSharesSubmitted
 	}
 
@@ -620,40 +624,113 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 			" current status: %d", election.Status)
 	}
 
-	allPubShares := election.PubsharesUnits.Pubshares
+	nbrSubmissions := len(election.PubsharesUnits.Pubshares)
 
-	shufflesSize := len(election.ShuffleInstances)
+	numBallots := len(election.PubsharesUnits.Pubshares[0])
+	numChunks := len(election.PubsharesUnits.Pubshares[0][0])
 
-	shuffledBallotsSize := len(election.ShuffleInstances[shufflesSize-1].ShuffledBallots)
-	ballotSize := len(election.ShuffleInstances[shufflesSize-1].ShuffledBallots[0])
-
-	decryptedBallots := make([]types.Ballot, shuffledBallotsSize)
-
-	for i := 0; i < shuffledBallotsSize; i++ {
-		// decryption of one ballot:
-		marshalledBallot := strings.Builder{}
-
-		for j := 0; j < ballotSize; j++ {
-			chunk, err := decrypt(i, j, allPubShares, election.PubsharesUnits.Indexes)
-			if err != nil {
-				return xerrors.Errorf("failed to decrypt (K, C): %v", err)
-			}
-
-			marshalledBallot.Write(chunk)
-		}
-
-		var ballot types.Ballot
-		err = ballot.Unmarshal(marshalledBallot.String(), election)
-
-		if err != nil {
-			dela.Logger.Warn().Msgf("Failed to unmarshal a ballot: %v", err)
-		}
-
-		decryptedBallots[i] = ballot
+	err = os.MkdirAll(e.exportFolder, os.ModePerm)
+	if err != nil {
+		return xerrors.Errorf("failed to create dir: %v", err)
 	}
 
-	election.DecryptedBallots = decryptedBallots
+	tmp, err := ioutil.TempDir(e.exportFolder, "decrypted-ballots")
+	if err != nil {
+		return xerrors.Errorf("failed to create temp dir: %v", err)
+	}
 
+	err = exportPubshares(tmp, election.PubsharesUnits, numBallots, numChunks)
+	if err != nil {
+		return xerrors.Errorf("failed to export pubshares: %v", err)
+	}
+
+	const dialTimeout = time.Second * 60
+	const writeTimeout = time.Second * 60
+	const readTimeout = time.Second * 60
+
+	conn, err := e.dialer("tcp", "127.0.0.1:1234", dialTimeout)
+	if err != nil {
+		return xerrors.Errorf("failed to dial TCP: %v", err)
+	}
+
+	if numChunks > 1<<32 {
+		return xerrors.Errorf("numChunks can't be encoded to 32 bytes")
+	}
+
+	if nbrSubmissions > 1<<32 {
+		return xerrors.Errorf("nbrSubmissions can't be encoded to 32 bytes")
+	}
+
+	fmt.Printf("Info: numChunks: %d, nbrSubmissions: %d, RosterLen: %d\n", numChunks, nbrSubmissions, election.Roster.Len())
+
+	buf := bytes.Buffer{}
+
+	nc := make([]byte, 4)
+	binary.LittleEndian.PutUint32(nc, uint32(numChunks))
+
+	nn := make([]byte, 4)
+	binary.LittleEndian.PutUint32(nn, uint32(nbrSubmissions))
+
+	// Datagram sent to the Unikernel
+	//
+	//   ┌─────────────────────────────────────────── ─ ─ ─┐
+	//   │                    256 bytes                    │
+	//   ├─────────────┬─────────────┬─────────────── ─ ─ ─┤
+	//   │   4 bytes   │   4 bytes   │   248 bytes         │
+	//   ├─────────────┼─────────────┼─────────────── ─ ─ ─┤
+	//   │  NumChunks  │  NumNodes   │  Folder path        │
+	//   └─────────────┴─────────────┴─────────────── ─ ─ ─┘
+
+	buf.Write(nc)
+	buf.Write(nn)
+
+	if len(tmp) > 248 {
+		return xerrors.Errorf("folder path too big: %d", len(tmp))
+	}
+
+	buf.Write([]byte(tmp))
+
+	conn.SetWriteDeadline(time.Now().Add(writeTimeout))
+
+	_, err = buf.WriteTo(conn)
+	if err != nil {
+		return xerrors.Errorf("failed to write to unikernel: %v", err)
+	}
+
+	readRes := make([]byte, 256)
+
+	conn.SetReadDeadline(time.Now().Add(readTimeout))
+
+	n, err := conn.Read(readRes)
+	if err != nil {
+		return xerrors.Errorf("failed to read response from unikernel: %v", err)
+	}
+
+	readRes = readRes[:n]
+
+	if strings.HasPrefix(string(readRes), "ERROR") {
+		return xerrors.Errorf("an error ocurred in the unikernel: %s", readRes)
+	}
+
+	rawBallots, err := importBallots(tmp, numChunks)
+	if err != nil {
+		return xerrors.Errorf("failed to import ballots: %v", err)
+	}
+
+	ballots := make([]types.Ballot, len(rawBallots))
+
+	for i, rawBallot := range rawBallots {
+		var ballot types.Ballot
+
+		err = ballot.Unmarshal(string(rawBallot), election)
+		if err != nil {
+			return xerrors.Errorf("failed to unmarshal ballot: %v", err)
+		}
+
+		ballots[i] = ballot
+	}
+
+	election.DecryptedBallots = ballots
 	election.Status = types.ResultAvailable
 
 	electionBuf, err := election.Serialize(e.context)
@@ -826,40 +903,9 @@ func (e evotingCommand) getTransaction(tx txn.Transaction) (serde.Message, error
 	return message, nil
 }
 
-// decrypt combines the public shares to reconstruct the secret
-// (i.e. encrypted ballots).
-func decrypt(ballot int, pair int, allPubShares []types.PubsharesUnit, indexes []int) (
-	[]byte, error) {
-	pubShares := make([]*share.PubShare, 0)
-
-	for i := 0; i < len(allPubShares); i++ {
-		if allPubShares[i] != nil { // can be nil since not all nodes need to submit
-			pubShare := allPubShares[i][ballot][pair]
-
-			pubShares = append(pubShares, &share.PubShare{
-				I: indexes[i],
-				V: pubShare,
-			})
-		}
-	}
-
-	res, err := share.RecoverCommit(suite, pubShares, len(pubShares), len(pubShares))
-	if err != nil {
-		return nil, xerrors.Errorf("failed to recover commit: %v", err)
-	}
-
-	decryptedMessage, err := res.Data()
-	if err != nil {
-		return nil, xerrors.Errorf("failed to get embedded data: %v", err)
-	}
-
-	return decryptedMessage, nil
-}
-
 // exportPubshares saves each ballot in a file. A file contains the pubshares,
 // in order, of chunks. Each ballot will be saved as a "ballot_i" file.
-func exportPubshares(folder string, units types.PubsharesUnits, numBallots,
-	numChunks, numShares int) error {
+func exportPubshares(folder string, units types.PubsharesUnits, numBallots, numChunks int) error {
 
 	err := os.MkdirAll(folder, os.ModePerm)
 	if err != nil {
@@ -873,6 +919,8 @@ func exportPubshares(folder string, units types.PubsharesUnits, numBallots,
 	for i, dkgIndex := range units.Indexes {
 		sortedUnits[dkgIndex] = units.Pubshares[i]
 	}
+
+	fmt.Println("numBallots:", numBallots, "numChunks:", numChunks, "num pbshares:", len(units.Pubshares), "path:", folder)
 
 	for ballotIndex := 0; ballotIndex < numBallots; ballotIndex++ {
 		filepath := filepath.Join(folder, fmt.Sprintf("ballot_%d", ballotIndex))
@@ -920,7 +968,7 @@ func importBallots(folder string, numChunks int) ([][]byte, error) {
 		// a kyber.Point is 32 bytes long.
 		expectedSize := 32 * numChunks
 
-		if file.Size() != int64(32*numChunks) {
+		if file.Size() != int64(expectedSize) {
 			return nil, xerrors.Errorf("unexpected file size: %d != %d",
 				file.Size(), expectedSize)
 		}

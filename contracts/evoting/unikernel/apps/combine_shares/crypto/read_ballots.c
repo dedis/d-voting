@@ -19,8 +19,8 @@
 // The function saves the result to the output. The output must be of size
 // `32 * numChunks`.
 //
-void read_ballot(unsigned char *output, const char *filepath, const char numNodes,
-                 const char numChunks, read_ballot_cb f, void *f_data)
+void read_ballot(unsigned char *output, const char *filepath, const unsigned int numNodes,
+                 const unsigned int numChunks, read_ballot_cb f, void *f_data)
 {
     FILE *fp;
     unsigned char buff[32 * numNodes];

@@ -464,7 +464,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		"text:" + encodeID("ee") + ":amE=\n\n") //encoding of "ja
 
 	b3 := string("select:" + encodeID("bb") + ":0,0,0,1\n" +
-		"text:" + encodeID("ee") + "b3Vp\n\n") //encoding of "oui"
+		"text:" + encodeID("ee") + ":b3Vp\n\n") //encoding of "oui"
 
 	var dkg dkg.DKG
 	err = ctx.Injector.Resolve(&dkg)

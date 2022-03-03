@@ -2,12 +2,13 @@ package pedersen
 
 import (
 	"encoding/hex"
+	"strconv"
+	"testing"
+
 	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/serde/json"
-	"strconv"
-	"testing"
 
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
@@ -44,10 +45,6 @@ func TestHandler_Stream(t *testing.T) {
 		" if the shuffle is over: could not get the election: election does not exist: <nil>")
 
 	electionIDHex := hex.EncodeToString([]byte("election"))
-
-	receiver = fake.NewReceiver(
-		fake.NewRecvMsg(fake.NewAddress(0), types.NewDecryptRequest(electionIDHex)),
-	)
 
 	units := electionTypes.PubsharesUnits{
 		Pubshares: make([]electionTypes.PubsharesUnit, 0),
@@ -87,9 +84,6 @@ func TestHandler_Stream(t *testing.T) {
 	h.context = json.NewContext()
 	h.pubSharesSigner = fake.NewSigner()
 	h.txmnger = fake.Manager{}
-
-	err = h.Stream(fake.NewBadSender(), receiver)
-	require.NoError(t, err) // Threshold = 0 => no submission required
 
 	receiver = fake.NewReceiver(
 		fake.NewRecvMsg(fake.NewAddress(0), fake.Message{}),

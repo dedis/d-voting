@@ -1,14 +1,21 @@
 package evoting
 
 import (
+	"bytes"
 	"crypto/sha256"
+	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
@@ -31,6 +38,7 @@ import (
 	"go.dedis.ch/kyber/v3/share"
 	kdkg "go.dedis.ch/kyber/v3/share/dkg/pedersen"
 	"go.dedis.ch/kyber/v3/util/random"
+	"golang.org/x/xerrors"
 )
 
 var dummyElectionIDBuff = []byte("dummyID")
@@ -73,14 +81,14 @@ func TestExecute(t *testing.T) {
 	service := fakeAccess{err: fake.GetError()}
 	rosterFac := fakeAuthorityFactory{}
 
-	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
+	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac, "", nil)
 
 	err := contract.Execute(fakeStore{}, makeStep(t))
 	require.EqualError(t, err, "identity not authorized: fake.PublicKey ("+fake.GetError().Error()+")")
 
 	service = fakeAccess{}
 
-	contract = NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
+	contract = NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac, "", nil)
 	err = contract.Execute(fakeStore{}, makeStep(t))
 	require.EqualError(t, err, "\"evoting:command\" not found in tx arg")
 
@@ -137,7 +145,7 @@ func TestCommand_CreateElection(t *testing.T) {
 	service := fakeAccess{err: fake.GetError()}
 	rosterFac := fakeAuthorityFactory{}
 
-	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
+	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac, "", nil)
 
 	cmd := evotingCommand{
 		Contract: &contract,
@@ -943,6 +951,13 @@ func TestCommand_DecryptBallots(t *testing.T) {
 
 	dummyElection, contract := initElectionAndContract()
 
+	tmpDir, err := ioutil.TempDir("", "")
+	require.NoError(t, err)
+
+	defer os.RemoveAll(tmpDir)
+
+	contract.exportFolder = tmpDir
+
 	electionBuf, err := dummyElection.Serialize(ctx)
 	require.NoError(t, err)
 
@@ -984,15 +999,52 @@ func TestCommand_DecryptBallots(t *testing.T) {
 
 	dummyElection.Status = types.PubSharesSubmitted
 
-	// Avoid panic (will always be the case in practice):
-	dummyElection.ShuffleInstances = make([]types.ShuffleInstance, 1)
-	dummyElection.ShuffleInstances[0] = types.ShuffleInstance{
-		ShuffledBallots:   make([]types.Ciphervote, 1),
-		ShuffleProofs:     nil,
-		ShufflerPublicKey: nil,
+	dummyElection.Configuration = fake.BasicConfiguration
+
+	numNodes := 10
+
+	nodes, pk := computeDKG(t, numNodes)
+
+	ballot1 := fmt.Sprintf("select:%s:0,0,1,0\ntext:%s:eWVz\n\n", encodeID("bb"), encodeID("ee"))
+	ballot2 := fmt.Sprintf("select:%s:1,1,0,0\ntext:%s:amE=\n\n", encodeID("bb"), encodeID("ee"))
+
+	cipherVote1, err := marshallBallot(strings.NewReader(ballot1), pk, 2)
+	require.NoError(t, err)
+
+	cipherVote2, err := marshallBallot(strings.NewReader(ballot2), pk, 2)
+	require.NoError(t, err)
+
+	pubSharesBallot1 := getShares(nodes, cipherVote1)
+	pubSharesBallot2 := getShares(nodes, cipherVote2)
+
+	pubshares := make([]types.PubsharesUnit, numNodes)
+	indexes := make([]int, numNodes)
+
+	for i := range nodes {
+		pubshare := make(types.PubsharesUnit, 2) // number of votes
+
+		// first ballot
+		pubshare[0] = []types.Pubshare{
+			pubSharesBallot1[i][0], // first chunk
+			pubSharesBallot1[i][1], // second chunk
+		}
+
+		// second ballot
+		pubshare[1] = []types.Pubshare{
+			pubSharesBallot2[i][0], // first chunk
+			pubSharesBallot2[i][1], // second chunk
+		}
+
+		pubshares[i] = pubshare
+		indexes[i] = i // all nodes are in order
 	}
 
-	dummyElection.ShuffleInstances[0].ShuffledBallots[0] = types.Ciphervote{}
+	dummyElection.PubsharesUnits = types.PubsharesUnits{
+		Pubshares: pubshares,
+		Indexes:   indexes,
+	}
+
+	dummyElection.BallotSize = dummyElection.Configuration.MaxBallotSize()
 
 	electionBuf, err = dummyElection.Serialize(ctx)
 	require.NoError(t, err)
@@ -1000,24 +1052,14 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	err = snap.Set(dummyElectionIDBuff, electionBuf)
 	require.NoError(t, err)
 
-	// Nothing to decrypt
-	err = cmd.combineShares(snap, makeStep(t, ElectionArg, string(data)))
-	require.NoError(t, err)
-
-	dummyElection.ShuffleInstances[0].ShuffledBallots[0] = make([]types.EGPair, 1)
-	dummyElection.ShuffleInstances[0].ShuffledBallots[0][0] = types.EGPair{
-		K: suite.Point(),
-		C: suite.Point(),
+	cmd.dialer = func(network, address string, timeout time.Duration) (net.Conn, error) {
+		return &fake.Conn{}, nil
 	}
 
-	electionBuf, err = dummyElection.Serialize(ctx)
-	require.NoError(t, err)
-
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
-	require.NoError(t, err)
-
-	// Decrypt empty ballot
 	err = cmd.combineShares(snap, makeStep(t, ElectionArg, string(data)))
+	require.NoError(t, err)
+
+	_, err = dummyElection.Serialize(ctx)
 	require.NoError(t, err)
 
 	res, err := snap.Get(dummyElectionIDBuff)
@@ -1029,8 +1071,33 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	election, ok := message.(types.Election)
 	require.True(t, ok)
 
-	require.Equal(t, types.Ballot{}, election.DecryptedBallots[0])
+	require.Len(t, election.DecryptedBallots, 2)
 	require.Equal(t, types.ResultAvailable, election.Status)
+
+	expectedBallot1 := types.Ballot{
+		SelectResultIDs: []types.ID{"YmI="},
+		SelectResult:    [][]bool{{false, false, true, false}},
+
+		RankResultIDs: []types.ID{},
+		RankResult:    [][]int8{},
+
+		TextResultIDs: []types.ID{"ZWU="},
+		TextResult:    [][]string{{"yes"}},
+	}
+
+	expectedBallot2 := types.Ballot{
+		SelectResultIDs: []types.ID{"YmI="},
+		SelectResult:    [][]bool{{true, true, false, false}},
+
+		RankResultIDs: []types.ID{},
+		RankResult:    [][]int8{},
+
+		TextResultIDs: []types.ID{"ZWU="},
+		TextResult:    [][]string{{"ja"}},
+	}
+
+	require.True(t, election.DecryptedBallots[0].Equal(expectedBallot1))
+	require.True(t, election.DecryptedBallots[1].Equal(expectedBallot2))
 }
 
 func Test_ExportPubshares(t *testing.T) {
@@ -1107,7 +1174,7 @@ func Test_ExportPubshares(t *testing.T) {
 		Indexes:   indexes,
 	}
 
-	err = exportPubshares(folder, units, 2, 2, n)
+	err = exportPubshares(folder, units, 2, 2)
 	require.NoError(t, err)
 
 	// We are expecting two files, one for each ballot. A file contains the
@@ -1234,6 +1301,66 @@ func TestRegisterContract(t *testing.T) {
 	RegisterContract(native.NewExecution(), Contract{})
 }
 
+func Test_Unikernel_combine(t *testing.T) {
+	// Comment to run the test using a real Unikernel. Be sure to have a
+	// Unikernel running.
+	t.Skip()
+
+	unikenelAddr := "127.0.0.1:12345"
+
+	folderPath := []byte("/Users/nkocher/GitHub/d-voting/contracts/evoting/test_data/")
+
+	const dialTimeout = time.Second * 60
+	const writeTimeout = time.Second * 60
+	const readTimeout = time.Second * 60
+
+	conn, err := net.DialTimeout("tcp", unikenelAddr, dialTimeout)
+	if err != nil {
+		require.NoError(t, err)
+	}
+
+	numChunks := 2
+	nbrSubmissions := 10
+
+	buf := bytes.Buffer{}
+
+	nc := make([]byte, 4)
+	binary.LittleEndian.PutUint32(nc, uint32(numChunks))
+
+	nn := make([]byte, 4)
+	binary.LittleEndian.PutUint32(nn, uint32(nbrSubmissions))
+
+	buf.Write(nc)
+	buf.Write(nn)
+
+	buf.Write(folderPath)
+
+	conn.SetWriteDeadline(time.Now().Add(writeTimeout))
+
+	_, err = buf.WriteTo(conn)
+	require.NoError(t, err)
+
+	readRes := make([]byte, 256)
+
+	conn.SetReadDeadline(time.Now().Add(readTimeout))
+
+	n, err := conn.Read(readRes)
+	require.NoError(t, err)
+
+	readRes = readRes[:n]
+
+	fmt.Println("readRes:", string(readRes))
+
+	rawBallots, err := importBallots(string(folderPath), numChunks)
+	require.NoError(t, err)
+
+	for _, r := range rawBallots {
+		fmt.Printf("r: %v\n", string(r))
+	}
+
+	fmt.Println("rawBallots:", rawBallots)
+}
+
 // -----------------------------------------------------------------------------
 // Utility functions
 
@@ -1262,7 +1389,7 @@ func initElectionAndContract() (types.Election, Contract) {
 	service := fakeAccess{err: fake.GetError()}
 	rosterFac := fakeAuthorityFactory{}
 
-	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
+	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac, "", nil)
 
 	return dummyElection, contract
 }
@@ -1627,6 +1754,24 @@ func computeDKG(t *testing.T, n int) ([]*node, kyber.Point) {
 	return nodes, publicKey
 }
 
+// getShares returns the public shares of each node. The first dimension is the
+// number of nodes, and the second the number of chunks in the ballot.
+func getShares(nodes []*node, vote types.Ciphervote) [][]kyber.Point {
+	res := make([][]kyber.Point, len(nodes))
+
+	for i, node := range nodes {
+		res[i] = make([]kyber.Point, len(vote))
+
+		for j, chunk := range vote {
+			S := suite.Point().Mul(node.secretShare.V, chunk.K)
+			v := suite.Point().Sub(chunk.C, S)
+			res[i][j] = v
+		}
+	}
+
+	return res
+}
+
 func elGamalEncrypt(group kyber.Group, pubkey kyber.Point, message []byte) (
 	K, C kyber.Point, remainder []byte) {
 
@@ -1643,4 +1788,34 @@ func elGamalEncrypt(group kyber.Group, pubkey kyber.Point, message []byte) (
 	S := group.Point().Mul(k, pubkey)      // ephemeral DH shared secret
 	C = S.Add(S, M)                        // message blinded with secret
 	return
+}
+
+func encodeID(ID string) types.ID {
+	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
+}
+
+// marshallBallot converts a ballot into a cipherVote
+func marshallBallot(vote io.Reader, pk kyber.Point, chunks int) (types.Ciphervote, error) {
+	var ballot = make([]types.EGPair, chunks)
+
+	buf := make([]byte, 29)
+
+	for i := 0; i < chunks; i++ {
+		var K, C kyber.Point
+		var err error
+
+		n, err := vote.Read(buf)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to read: %v", err)
+		}
+
+		K, C, _ = elGamalEncrypt(suite, pk, buf[:n])
+
+		ballot[i] = types.EGPair{
+			K: K,
+			C: C,
+		}
+	}
+
+	return ballot, nil
 }

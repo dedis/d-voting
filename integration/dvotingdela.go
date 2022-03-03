@@ -15,6 +15,7 @@ import (
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/dkg/pedersen"
 	"github.com/dedis/d-voting/services/shuffle"
@@ -250,7 +251,7 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 
 	rosterKey := [32]byte{}
 	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:],
-		accessService, dkg, rosterFac))
+		accessService, dkg, rosterFac, filepath.Join(path, "mnt"), fake.NewConn))
 
 	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, electionFac, signer)
 

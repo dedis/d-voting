@@ -113,11 +113,15 @@ type Contract struct {
 	electionFac    serde.Factory
 	rosterFac      authority.Factory
 	transactionFac serde.Factory
+
+	dialer       DialerFactory
+	exportFolder string
 }
 
 // NewContract creates a new Value contract
 func NewContract(accessKey, rosterKey []byte, srvc access.Service,
-	pedersen dkg.DKG, rosterFac authority.Factory) Contract {
+	pedersen dkg.DKG, rosterFac authority.Factory, exportFolder string,
+	dialer DialerFactory) Contract {
 
 	ctx := json.NewContext()
 
@@ -137,6 +141,9 @@ func NewContract(accessKey, rosterKey []byte, srvc access.Service,
 		electionFac:    electionFac,
 		rosterFac:      rosterFac,
 		transactionFac: transactionFac,
+
+		dialer:       dialer,
+		exportFolder: exportFolder,
 	}
 
 	contract.cmd = evotingCommand{Contract: &contract, prover: proof.HashVerify}
