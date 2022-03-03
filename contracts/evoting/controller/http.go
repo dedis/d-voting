@@ -32,7 +32,7 @@ const (
 	closeElectionEndpoint       = "/evoting/close"
 	shuffleBallotsEndpoint      = "/evoting/shuffle"
 	beginDecryptionEndpoint     = "/evoting/beginDecryption"
-	decryptBallotsEndpoint      = "/evoting/decrypt"
+	combineSharesEndpoint       = "/evoting/combineShares"
 	getElectionResultEndpoint   = "/evoting/result"
 	cancelElectionEndpoint      = "/evoting/cancel"
 )
@@ -89,7 +89,7 @@ func registerVotingProxy(proxy proxy.Proxy, signer crypto.Signer,
 	proxy.RegisterHandler(closeElectionEndpoint, h.CloseElection)
 	proxy.RegisterHandler(shuffleBallotsEndpoint, h.ShuffleBallots)
 	proxy.RegisterHandler(beginDecryptionEndpoint, h.BeginDecryption)
-	proxy.RegisterHandler(decryptBallotsEndpoint, h.CombineShares)
+	proxy.RegisterHandler(combineSharesEndpoint, h.CombineShares)
 	proxy.RegisterHandler(getElectionResultEndpoint, h.ElectionResult)
 	proxy.RegisterHandler(cancelElectionEndpoint, h.CancelElection)
 }
