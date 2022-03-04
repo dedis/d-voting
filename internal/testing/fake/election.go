@@ -231,19 +231,19 @@ func combineShares(folder string, numChunks, numNodes int) error {
 }
 
 func (f *Conn) Close() error {
-	panic("not implemented") // TODO: Implement
+	panic("not implemented")
 }
 
 func (f *Conn) LocalAddr() net.Addr {
-	panic("not implemented") // TODO: Implement
+	panic("not implemented")
 }
 
 func (f *Conn) RemoteAddr() net.Addr {
-	panic("not implemented") // TODO: Implement
+	panic("not implemented")
 }
 
 func (f *Conn) SetDeadline(t time.Time) error {
-	panic("not implemented") // TODO: Implement
+	panic("not implemented")
 }
 
 func (f *Conn) SetReadDeadline(t time.Time) error {

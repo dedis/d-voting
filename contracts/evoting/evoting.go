@@ -38,6 +38,14 @@ const (
 	errWrongTx            = "wrong type of transaction: %T"
 )
 
+// parameters for the Unikernel connection
+const (
+	unikernelAddr = "127.0.0.1:1234"
+	dialTimeout   = time.Second * 60
+	writeTimeout  = time.Second * 60
+	readTimeout   = time.Second * 60
+)
+
 // evotingCommand implements the commands of the Evoting contract.
 //
 // - implements commands
@@ -579,7 +587,8 @@ func (e evotingCommand) registerPubshares(snap store.Snapshot, step execution.St
 	nbrSubmissions := len(election.PubsharesUnits.Pubshares)
 
 	// For the Unikernel we must have as many shares as nodes. This is because
-	// we are not storing the indexes of each node.
+	// we are not storing the indexes of each node and the Unikernel is expected
+	// all shares in order of indexes.
 	if nbrSubmissions >= election.Roster.Len() {
 		election.Status = types.PubSharesSubmitted
 	}
@@ -624,7 +633,7 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 			" current status: %d", election.Status)
 	}
 
-	nbrSubmissions := len(election.PubsharesUnits.Pubshares)
+	numNodes := len(election.PubsharesUnits.Pubshares)
 
 	numBallots := len(election.PubsharesUnits.Pubshares[0])
 	numChunks := len(election.PubsharesUnits.Pubshares[0][0])
@@ -644,11 +653,7 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 		return xerrors.Errorf("failed to export pubshares: %v", err)
 	}
 
-	const dialTimeout = time.Second * 60
-	const writeTimeout = time.Second * 60
-	const readTimeout = time.Second * 60
-
-	conn, err := e.dialer("tcp", "127.0.0.1:1234", dialTimeout)
+	conn, err := e.dialer("tcp", unikernelAddr, dialTimeout)
 	if err != nil {
 		return xerrors.Errorf("failed to dial TCP: %v", err)
 	}
@@ -657,11 +662,9 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 		return xerrors.Errorf("numChunks can't be encoded to 32 bytes")
 	}
 
-	if nbrSubmissions > 1<<32 {
-		return xerrors.Errorf("nbrSubmissions can't be encoded to 32 bytes")
+	if numNodes > 1<<32 {
+		return xerrors.Errorf("numNodes can't be encoded to 32 bytes")
 	}
-
-	fmt.Printf("Info: numChunks: %d, nbrSubmissions: %d, RosterLen: %d\n", numChunks, nbrSubmissions, election.Roster.Len())
 
 	buf := bytes.Buffer{}
 
@@ -669,7 +672,7 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 	binary.LittleEndian.PutUint32(nc, uint32(numChunks))
 
 	nn := make([]byte, 4)
-	binary.LittleEndian.PutUint32(nn, uint32(nbrSubmissions))
+	binary.LittleEndian.PutUint32(nn, uint32(numNodes))
 
 	// Datagram sent to the Unikernel
 	//
@@ -681,12 +684,12 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 	//   │  NumChunks  │  NumNodes   │  Folder path        │
 	//   └─────────────┴─────────────┴─────────────── ─ ─ ─┘
 
-	buf.Write(nc)
-	buf.Write(nn)
-
 	if len(tmp) > 248 {
 		return xerrors.Errorf("folder path too big: %d", len(tmp))
 	}
+
+	buf.Write(nc)
+	buf.Write(nn)
 
 	buf.Write([]byte(tmp))
 
@@ -930,8 +933,8 @@ func exportPubshares(folder string, units types.PubsharesUnits, numBallots, numC
 		}
 
 		for chunkIndex := 0; chunkIndex < numChunks; chunkIndex++ {
-			for shareIndex := range sortedUnits {
-				p := sortedUnits[shareIndex][ballotIndex][chunkIndex]
+			for nodeIdex := range sortedUnits {
+				p := sortedUnits[nodeIdex][ballotIndex][chunkIndex]
 
 				_, err := p.MarshalTo(file)
 				if err != nil {

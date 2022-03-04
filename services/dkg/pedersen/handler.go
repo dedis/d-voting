@@ -455,13 +455,6 @@ func (h *Handler) handleDecryptRequest(electionID string) error {
 
 		//TODO: Works with current "shuffleThreshold", but the shuffle threshold
 		// should be smaller in theory ? (1/3 + 1 vs 2/3 + 1 ? )
-		// nbrSubmissions := len(election.PubsharesUnits.Pubshares)
-
-		// if nbrSubmissions >= election.ShuffleThreshold {
-		// 	dela.Logger.Info().Msgf("decryption possible with shares from %d nodes",
-		// 		nbrSubmissions)
-		// 	return nil
-		// }
 
 		tx, err := makeTx(h.context, &election, publicShares, h.privShare.I,
 			h.txmnger, h.pubSharesSigner)

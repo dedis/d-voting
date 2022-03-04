@@ -1303,7 +1303,7 @@ func TestRegisterContract(t *testing.T) {
 
 func Test_Unikernel_combine(t *testing.T) {
 	// Comment to run the test using a real Unikernel. Be sure to have a
-	// Unikernel running.
+	// Unikernel running and update the absolute path containing the test_data.
 	t.Skip()
 
 	unikenelAddr := "127.0.0.1:12345"
