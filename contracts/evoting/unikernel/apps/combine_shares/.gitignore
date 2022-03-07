@@ -1,0 +1,4 @@
+/build
+/.config
+/.config.old
+crypto/tests
