@@ -69,7 +69,6 @@ https://github.com/unikraft/lib-libsodium/pull/4.
 
 For the other libraries, please make sure that each repository is on the `staging` branch. 
 
-
 ## Configure
 
 Configure the build by running in `contracts/evoting/unikernel/apps/combine_shares`:
@@ -110,7 +109,7 @@ the image by using the `run` script (you require `sudo` privileges):
 ./run
 ```
 
-```
+```output
 [...]
 Booting from ROM...
 1: Set IPv4 address 172.44.0.2 mask 255.255.255.0 gw 172.44.0.1

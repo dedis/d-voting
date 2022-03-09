@@ -7,3 +7,4 @@ web/app/node_modules
 
 memcoin
 packaging/deb
+packaging/dist

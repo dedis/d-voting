@@ -1,14 +1,10 @@
 #!/bin/sh
 
 # fix permissions
-chown root:root /opt/dedis
-chmod 755 /opt/dedis
+chown -R root:root /opt/dedis
+chmod -R 755 /opt/dedis
 
-chown root:root /lib/systemd/system
-
-# Load new UDEV rules
-udevadm control --reload-rules
-udevadm trigger
+chown -R root:root /lib/systemd/system
 
 SERVICE=dvoting.service
 

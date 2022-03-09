@@ -4,7 +4,7 @@ set -xe
 # cleanup previous installations
 rm -rf deb
 
-# create install dir
+# create binaries dir
 INSTALL_DIR="deb/opt/dedis/dvoting/bin"
 mkdir -p $INSTALL_DIR
 
@@ -28,11 +28,15 @@ mkdir -p deb/var/opt/dedis/dvoting
 find deb ! -perm -a+r -exec chmod a+r {} \;
 
 # get version from the git
-VERSION=$(git describe)
+VERSION=$(git describe --abbrev=0)
 if [[ -z "${ITERATION}" ]]
 then
   ITERATION="0"
 fi
+
+# fpm needs an existing output directory
+OUTPUT_DIR="dist"
+mkdir -p $OUTPUT_DIR
 
 fpm \
     --force -t deb -a all -s dir -C deb -n dedis-dvoting -v ${VERSION} \
@@ -41,7 +45,6 @@ fpm \
     --deb-group dvoting \
     --depends qemu-kvm \
     --depends libvirt-daemon-system \
-    --depends libvirt-clients \
     --depends bridge-utils \
     --depends virtinst \
     --depends virt-manager \
@@ -51,8 +54,7 @@ fpm \
     --after-remove pkg/after-remove.sh \
     --url https://dedis.github.com/dedis/dvoting \
     --description 'D-Voting package for Unicore' \
-    --package dist \
-    .
+    --package dist .
 
 # cleanup
 rm -rf ./deb
