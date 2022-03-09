@@ -6,15 +6,15 @@ rm -rf deb
 
 # create install dir
 INSTALL_DIR="deb/opt/dedis/dvoting/bin"
-mkdir -p $(INSTALL_DIR)
+mkdir -p $INSTALL_DIR
 
 # copy binaries to deb/opt/dedis/dvoting/bin
 UKAPP_DIR="../contracts/evoting/unikernel/apps/combine_shares"
-cp $(UKAPP_DIR)/run $(INSTALL_DIR)
-cp $(UKAPP_DIR)/build/combine_shares_kvm-x86_64 $(INSTALL_DIR)
+cp $UKAPP_DIR/run $INSTALL_DIR
+cp $UKAPP_DIR/build/combine_shares_kvm-x86_64 $INSTALL_DIR
 
 DVOTING_CLI_DIR="../cli/memcoin"
-cp $(DVOTING_CLI_DIR)/memcoin $(INSTALL_DIR)
+cp $DVOTING_CLI_DIR/memcoin $INSTALL_DIR
 
 # add config files
 cp -a pkg/etc deb
