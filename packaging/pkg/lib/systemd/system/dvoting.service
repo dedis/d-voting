@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 User=d-voting
-ExecStart=/opt/dedis/d-voting/bin/run
+ExecStart=/opt/dedis/dvoting/bin/run
 ExecReload=/bin/kill -HUP $MAINPID
 KillMode=process
 Restart=always

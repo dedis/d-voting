@@ -9,7 +9,7 @@ vm_ip="172.44.0.2"
 
 echo "Creating bridge $bridge_iface with IP address $bridge_ip ..."
 sudo brctl addbr "$bridge_iface" || true
-sudo ifconfig "$bridge_iface" "$bridge_ip"
+sudo ip "$bridge_iface" "$bridge_ip"
 
 echo "Starting KVM image connected to bridge interface $bridge_iface ..."
 "$qemu_script" -k "$kvm_image" -e "$fs_mount" -b "$bridge_iface" -m 4096 -a "netdev.ipv4_addr=172.44.0.2 netdev.ipv4_gw_addr=172.44.0.1 netdev.ipv4_subnet_mask=255.255.255.0 -- 1024"

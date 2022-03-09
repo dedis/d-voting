@@ -11,6 +11,7 @@ mkdir -p $INSTALL_DIR
 # copy binaries to deb/opt/dedis/dvoting/bin
 UKAPP_DIR="../contracts/evoting/unikernel/apps/combine_shares"
 cp $UKAPP_DIR/run $INSTALL_DIR
+cp $UKAPP_DIR/qemu-guest $INSTALL_DIR
 cp $UKAPP_DIR/build/combine_shares_kvm-x86_64 $INSTALL_DIR
 
 DVOTING_CLI_DIR="../cli/memcoin"
@@ -48,6 +49,8 @@ fpm \
     --depends bridge-utils \
     --depends virtinst \
     --depends virt-manager \
+    --depends socat \
+    --depends uuid-runtime \
     --before-install pkg/before-install.sh \
     --after-install pkg/after-install.sh \
     --before-remove pkg/before-remove.sh \

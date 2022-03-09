@@ -505,14 +505,14 @@ while getopts :hnN:b:V:f:G:d:q:S:I:e:k:i:a:c:m:v:lrs:p:HxCDG:g:PT:WQ:M:t: OPT; d
 		cat > ${TEMP}/ifup${NICID}.sh <<EOF
 #!/bin/sh
 dev=\$1
-ifconfig \$1 0.0.0.0 promisc up
+ip \$1 0.0.0.0 promisc up
 brctl addif ${OPTARG} \${dev}
 EOF
 		cat > ${TEMP}/ifdown${NICID}.sh <<EOF
 #!/bin/sh
 dev=\$1
 brctl delif ${OPTARG} \${dev}
-ifconfig \$1 down
+ip \$1 down
 EOF
 		chmod +x ${TEMP}/ifup${NICID}.sh
 		chmod +x ${TEMP}/ifdown${NICID}.sh
@@ -527,22 +527,22 @@ EOF
 		cat > ${TEMP}/ifup${NICID}.sh <<EOF
 #!/bin/sh -e
 dev=\$1
-ifconfig ${OPTARG} 0.0.0.0 promisc up
-ifconfig \${dev} 0.0.0.0 promisc up
+ip ${OPTARG} 0.0.0.0 promisc up
+ip \${dev} 0.0.0.0 promisc up
 brctl addbr swire-${OPTARG}
 brctl addif swire-${OPTARG} ${OPTARG}
 brctl addif swire-${OPTARG} \${dev}
-ifconfig swire-${OPTARG} 0.0.0.0 up
+ip swire-${OPTARG} 0.0.0.0 up
 EOF
 		cat > ${TEMP}/ifdown${NICID}.sh <<EOF
 #!/bin/sh
 dev=\$1
-ifconfig swire-${OPTARG} down
+ip swire-${OPTARG} down
 brctl delif swire-${OPTARG} \${dev}
 brctl delif swire-${OPTARG} ${OPTARG}
 brctl delbr swire-${OPTARG}
-ifconfig \$1 down
-ifconfig \$1 down
+ip \$1 down
+ip \$1 down
 EOF
 		chmod +x ${TEMP}/ifup${NICID}.sh
 		chmod +x ${TEMP}/ifdown${NICID}.sh
