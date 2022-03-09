@@ -4,16 +4,17 @@ set -xe
 # cleanup previous installations
 rm -rf deb
 
-mkdir -p deb/opt/dedis/dvoting     # install dir
+# create install dir
+INSTALL_DIR="deb/opt/dedis/dvoting/bin"
+mkdir -p $(INSTALL_DIR)
 
-# get version from the virtual environment
-VERSION=$(python setup.py --version)
-if [[ -z "${ITERATION}" ]]
-then
-  ITERATION="0"
-fi
+# copy binaries to deb/opt/dedis/dvoting/bin
+UKAPP_DIR="../contracts/evoting/unikernel/apps/combine_shares"
+cp $(UKAPP_DIR)/run $(INSTALL_DIR)
+cp $(UKAPP_DIR)/build/combine_shares_kvm-x86_64 $(INSTALL_DIR)
 
-# ... ideally, you'd just copy your binary to deb/opt/dedis/dvoting/bin ....
+DVOTING_CLI_DIR="../cli/memcoin"
+cp $(DVOTING_CLI_DIR)/memcoin $(INSTALL_DIR)
 
 # add config files
 cp -a pkg/etc deb
@@ -25,6 +26,13 @@ mkdir -p deb/var/opt/dedis/dvoting
 
 # adjust permissions
 find deb ! -perm -a+r -exec chmod a+r {} \;
+
+# get version from the git
+VERSION=$(git describe)
+if [[ -z "${ITERATION}" ]]
+then
+  ITERATION="0"
+fi
 
 fpm \
     --force -t deb -a all -s dir -C deb -n dedis-dvoting -v ${VERSION} \

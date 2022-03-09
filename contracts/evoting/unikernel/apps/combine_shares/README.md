@@ -39,7 +39,7 @@ unikernel
  ┗ unikraft
 ```
 
-Please run the following command, which will clone the submodules in the above
+Please run the following command, which will clone the submodules in the above 
 illustrated paths:
 
 ```sh
@@ -64,9 +64,10 @@ Here is the list of the required repositories that you also need as submodules:
 * [newlib](https://github.com/unikraft/lib-newlib)
 * [Unikraft](https://github.com/unikraft/unikraft)
 
-For the libsodium library make sure the following change is included:
+For the libsodium library, the submodule still points to the source of the following PR:
 https://github.com/unikraft/lib-libsodium/pull/4.
-Please make sure that each repository is on the `staging` branch. 
+
+For the other libraries, please make sure that each repository is on the `staging` branch. 
 
 
 ## Configure
@@ -97,7 +98,7 @@ make
 ```
 
 The resulting image is in the `build/` subfolder, usually named
-`build/app-smart-contract-config_kvm-x86_64`.
+`build/combine_shares_kvm-x86_64`.
 
 ## Run
 
