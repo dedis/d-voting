@@ -174,7 +174,7 @@ serves those metrics with:
 ./memcoin --config /tmp/node1 metrics start --addr 127.0.0.1:9100 --path /metrics
 ```
 
-Build info can be added to the binary with the `ldflags`, at build time.. Infos
+Build info can be added to the binary with the `ldflags`, at build time. Infos
 are stored on variables in the root `mod.go`. For example:
 
 ```sh
@@ -184,3 +184,4 @@ timeFlag="github.com/dedis/d-voting.BuildTime=`date +'%d/%m/%y_%H:%M'`"
 go build -ldflags="-X $versionFlag -X $timeFlag" ./cli/memcoin
 ```
 
+Note that `make build` will do that for you.

@@ -7,10 +7,7 @@ set -o errexit
 
 command -v tmux >/dev/null 2>&1 || { echo >&2 "tmux is not on your PATH!"; exit 1; }
 
-versionFlag="github.com/dedis/d-voting.Version=`git describe --tags`"
-timeFlag="github.com/dedis/d-voting.BuildTime=`date +'%d/%m/%y_%H:%M'`"
-
-go build -ldflags="-X $versionFlag -X $timeFlag" ./cli/memcoin
+make build
 
 # Launch session
 s="d-voting-test"

@@ -1,3 +1,6 @@
+versionFlag="github.com/dedis/d-voting.Version=$(shell git describe --tags)"
+timeFlag="github.com/dedis/d-voting.BuildTime=$(shell date +'%d/%m/%y_%H:%M')"
+
 lint:
 	# Coding style static check.
 	@go get -v honnef.co/go/tools/cmd/staticcheck
@@ -17,3 +20,6 @@ check: lint vet
 
 test_integration:
 	go test ./integration
+
+build:
+	go build -ldflags="-X $(versionFlag) -X $(timeFlag)" ./cli/memcoin

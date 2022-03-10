@@ -19,10 +19,10 @@ type controller struct{}
 func (m controller) SetCommands(builder node.Builder) {
 
 	cmd := builder.SetCommand("metrics")
-	cmd.SetDescription("interact with the DKG service")
+	cmd.SetDescription("handle Prometheus functions")
 
 	sub := cmd.SetSubCommand("start")
-	sub.SetDescription("start an http server to server Prometheus metrics")
+	sub.SetDescription("start an http server to serve Prometheus metrics")
 	sub.SetFlags(
 		cli.StringFlag{
 			Name:     "addr",
