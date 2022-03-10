@@ -20,10 +20,10 @@ cp $DVOTING_CLI_DIR/memcoin $INSTALL_DIR
 # add config files
 cp -a pkg/etc deb
 cp -a pkg/lib deb
+cp -a pkg/var deb
 
 # add folders
 mkdir -p deb/var/log/dedis/dvoting
-mkdir -p deb/var/opt/dedis/dvoting
 
 # adjust permissions
 find deb ! -perm -a+r -exec chmod a+r {} \;
@@ -44,13 +44,15 @@ fpm \
     --iteration ${ITERATION} \
     --deb-user dvoting \
     --deb-group dvoting \
+    --depends bridge-utils \
+    --depends fuse \
     --depends qemu-kvm \
     --depends libvirt-daemon-system \
-    --depends bridge-utils \
-    --depends virtinst \
-    --depends virt-manager \
+    --depends net-tools \
     --depends socat \
     --depends uuid-runtime \
+    --depends virtinst \
+    --depends virt-manager \
     --before-install pkg/before-install.sh \
     --after-install pkg/after-install.sh \
     --before-remove pkg/before-remove.sh \

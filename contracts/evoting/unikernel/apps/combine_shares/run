@@ -1,11 +1,9 @@
 #!/bin/bash
 
-fs_mount="mnt/"
-kvm_image="./combine_shares_kvm-x86_64"
-qemu_script="./qemu-guest"
-bridge_iface="uk0"
-bridge_ip="172.44.0.1"
-vm_ip="172.44.0.2"
+paths=$1
+
+source ${paths}
+source ${network_config}
 
 echo "Creating bridge $bridge_iface with IP address $bridge_ip ..."
 sudo brctl addbr "$bridge_iface" || true

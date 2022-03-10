@@ -1,10 +1,14 @@
 #!/bin/sh
 
 # fix permissions
-chown -R root:root /opt/dedis
-chmod -R 755 /opt/dedis
+# dvoting:dedis will be applied automatically on sub dirs
+chown root:root /opt/dedis
 
-chown -R root:root /lib/systemd/system
+# allow ls in sub dirs
+chmod 755 /opt/dedis
+
+# not recursive for nows
+chown root:root /lib/systemd/system
 
 SERVICE=dvoting.service
 

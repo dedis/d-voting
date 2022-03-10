@@ -9,19 +9,27 @@ functionality provided by [libsodium](https://github.com/jedisct1/libsodium).
 
 ## Requirements
 
+- To build the kernel:
+
 ```sh
-sudo apt-get install git
-sudo apt-get install make
-sudo apt-get install gcc
-sudo apt-get install libncurses-dev
-sudo apt-get install flex
-sudo apt-get install bison
-sudo apt-get install unzip
-sudo apt-get install socat
-sudo apt-get install uuid-runtime
-sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils \
-    virtinst virt-manager
-sudo apt install net-tools
+sudo apt install bison build-essentials flex git libncurses-dev unzip
+```
+
+- To run the kernel in a debian VM, the following packages must be installed
+in the VM:
+
+```sh
+sudo apt install \
+  bridge-utils \
+  fuse \
+  libvirt-clients \
+  libvirt-daemon-system \
+  qemu-kvm \
+  net-tools \
+  socat \
+  uuid-runtime \
+  virtinst \
+  virt-manager
 ```
 
 ## Setup
@@ -106,7 +114,7 @@ software bridge allowing outside network access to the server application. Start
 the image by using the `run` script (you require `sudo` privileges):
 
 ```sh
-./run
+./run unikernel_paths
 ```
 
 ```output

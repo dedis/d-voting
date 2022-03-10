@@ -1,0 +1,4 @@
+export fs_mount="mnt/"
+export kvm_image="./combine_shares_kvm-x86_64"
+export qemu_script="./qemu-guest"
+export network_config="./unikernel_network"
