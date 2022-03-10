@@ -3,11 +3,11 @@ Description=D-Voting Service
 After=network.target
 
 [Service]
-User=dvoting
+User=root
 ExecStart=/opt/dedis/dvoting/bin/run /etc/dedis/dvoting/unikernel_paths
 ExecReload=/bin/kill -HUP $MAINPID
 KillMode=process
-Restart=never
+Restart=no
 
 [Install]
 WantedBy=multi-user.target
