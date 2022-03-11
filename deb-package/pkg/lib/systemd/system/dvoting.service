@@ -1,6 +1,7 @@
 [Unit]
 Description=D-Voting Node Service
 After=network.target
+Requires=unikernel.service
 
 [Service]
 User=dvoting

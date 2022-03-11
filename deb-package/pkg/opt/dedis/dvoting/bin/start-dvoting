@@ -1,1 +1,7 @@
 #!/bin/bash
+
+export LLVL=info
+/opt/dedis/dvoting/bin/memcoin \
+  --config /var/opt/dedis/dvoting/unikernel/data/dvoting-node \
+  start \
+  --port 9000
