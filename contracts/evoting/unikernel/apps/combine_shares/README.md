@@ -114,7 +114,7 @@ software bridge allowing outside network access to the server application. Start
 the image by using the `run` script (you require `sudo` privileges):
 
 ```sh
-./run unikernel_paths
+./start-unikernel unikernel_paths
 ```
 
 ```output

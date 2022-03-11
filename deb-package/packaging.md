@@ -28,6 +28,6 @@ make
 - Create .deb package:
 
 ```sh
-cd packaging
+cd deb-package
 ./build-deb.sh
 ```

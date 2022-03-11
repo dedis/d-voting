@@ -1,0 +1,14 @@
+[Unit]
+Description=Unikernel Service for D-Voting
+After=network.target
+
+[Service]
+User=root
+ExecStart=/opt/dedis/dvoting/bin/start-unikernel /etc/dedis/dvoting/unikernel_paths
+ExecStop=/bin/kill -2 $MAINPID
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

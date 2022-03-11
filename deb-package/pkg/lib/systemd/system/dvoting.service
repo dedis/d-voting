@@ -1,0 +1,14 @@
+[Unit]
+Description=D-Voting Node Service
+After=network.target
+
+[Service]
+User=dvoting
+ExecStart=/opt/dedis/dvoting/bin/start-dvoting
+ExecStop=/bin/kill -2 $MAINPID
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
