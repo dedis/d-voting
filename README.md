@@ -106,6 +106,12 @@ cd cli/memcoin
 go install
 ```
 
+Additionally, you can build the memcoin binary with:
+
+```sh
+go build ./cli/memcoin
+```
+
 # Run the nodes
 
 In three different terminal sessions, from the root folder:
@@ -158,3 +164,24 @@ LLVL=info memcoin --config /tmp/node1 e-voting scenarioTest
 # Use the frontend
 
 See README in `web/`.
+
+# Metrics
+
+A d-Voting node exposes Prometheus metrics. You can start an HTTP server that
+serves those metrics with:
+
+```sh
+./memcoin --config /tmp/node1 metrics start --addr 127.0.0.1:9100 --path /metrics
+```
+
+Build info can be added to the binary with the `ldflags`, at build time. Infos
+are stored on variables in the root `mod.go`. For example:
+
+```sh
+versionFlag="github.com/dedis/d-voting.Version=`git describe --tags`"
+timeFlag="github.com/dedis/d-voting.BuildTime=`date +'%d/%m/%y_%H:%M'`"
+
+go build -ldflags="-X $versionFlag -X $timeFlag" ./cli/memcoin
+```
+
+Note that `make build` will do that for you.
