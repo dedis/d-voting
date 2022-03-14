@@ -32,7 +32,7 @@ void read_ballot(unsigned char *output, const char *filepath, const unsigned int
         return;
     }
 
-    for (int i = 0; i < numChunks; i++)
+    for (unsigned int i = 0; i < numChunks; i++)
     {
         fread(buff, sizeof(char), 32 * numNodes, (FILE *)fp);
 

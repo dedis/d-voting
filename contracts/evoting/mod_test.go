@@ -1306,9 +1306,9 @@ func Test_Unikernel_combine(t *testing.T) {
 	// Unikernel running and update the absolute path containing the test_data.
 	t.Skip()
 
-	unikenelAddr := "127.0.0.1:12345"
+	unikenelAddr := "192.168.232.132:1024"
 
-	folderPath := []byte("/Users/nkocher/GitHub/d-voting/contracts/evoting/test_data/")
+	folderPath := []byte("/test_data2/")
 
 	const dialTimeout = time.Second * 60
 	const writeTimeout = time.Second * 60
