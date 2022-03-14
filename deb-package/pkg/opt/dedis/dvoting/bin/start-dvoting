@@ -1,7 +1,11 @@
 #!/bin/bash
 
+sleep 5
+
 export LLVL=info
 /opt/dedis/dvoting/bin/memcoin \
-  --config /var/opt/dedis/dvoting/unikernel/data/dvoting-node \
+  --config /var/opt/dedis/dvoting/data/node \
   start \
   --port 9000
+
+pgrep memcoin > /run/dvoting.pid

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+paths=$1
+
+source ${paths}
+source ${network_config}
+
+echo "Creating bridge ${bridge_iface} with IP address ${uk_gw} ..."
+sudo brctl addbr "${bridge_iface}" || true
+sudo ifconfig "${bridge_iface}" "${uk_gw}"

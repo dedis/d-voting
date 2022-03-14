@@ -1,14 +1,20 @@
 [Unit]
-Description=Unikernel Service for D-Voting
+Description=Unikernel Service
 After=network.target
+Before=dvoting.service
 
 [Service]
 User=root
+Type=forking
+PIDFile=/run/unikernel.pid
+ExecStartPre=/opt/dedis/dvoting/bin/create-bridge /etc/dedis/dvoting/unikernel_paths
 ExecStart=/opt/dedis/dvoting/bin/start-unikernel /etc/dedis/dvoting/unikernel_paths
-ExecStop=/bin/kill -2 $MAINPID
-ExecReload=/bin/kill -HUP $MAINPID
+ExecReload=/bin/kill --signal HUP $MAINPID
+ExecStop=/bin/kill --signal QUIT $MAINPID
+#ExecStop=/bin/echo "Stopppingggg unikernel PID# ${PIDFile}"
 KillMode=process
-Restart=always
+Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

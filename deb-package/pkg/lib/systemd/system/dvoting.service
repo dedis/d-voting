@@ -5,11 +5,16 @@ Requires=unikernel.service
 
 [Service]
 User=dvoting
+Type=forking
+PIDFile=/var/dvoting.pid
 ExecStart=/opt/dedis/dvoting/bin/start-dvoting
-ExecStop=/bin/kill -2 $MAINPID
-ExecReload=/bin/kill -HUP $MAINPID
+#ExecStart=echo "Starting fake DVoting"
+ExecStop=/bin/kill --signal INT $MAINPID
+#ExecStop=echo "Stopping fake DVoting"
+#ExecReload=/bin/kill --signal HUP $MAINPID
 KillMode=process
-Restart=always
+Restart=no
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

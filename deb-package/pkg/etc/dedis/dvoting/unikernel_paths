@@ -1,4 +1,4 @@
-export fs_mount="/var/opt/dedis/dvoting/unikernel/data"
+export fs_mount="/var/opt/dedis/dvoting/data"
 export kvm_image="/opt/dedis/dvoting/bin/combine_shares_kvm-x86_64"
 export qemu_script="/opt/dedis/dvoting/bin/qemu-guest"
 export network_config="/etc/dedis/dvoting/unikernel_network"

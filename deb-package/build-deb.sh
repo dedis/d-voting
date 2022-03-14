@@ -10,6 +10,7 @@ mkdir -p $INSTALL_DIR
 
 # copy binaries to deb/opt/dedis/dvoting/bin
 UKAPP_DIR="../contracts/evoting/unikernel/apps/combine_shares"
+cp $UKAPP_DIR/create-bridge $INSTALL_DIR
 cp $UKAPP_DIR/start-unikernel $INSTALL_DIR
 cp $UKAPP_DIR/qemu-guest $INSTALL_DIR
 cp $UKAPP_DIR/build/combine_shares_kvm-x86_64 $INSTALL_DIR
@@ -50,6 +51,7 @@ fpm \
     --depends qemu-kvm \
     --depends libvirt-daemon-system \
     --depends net-tools \
+    --depends sgabios \
     --depends socat \
     --depends uuid-runtime \
     --depends virtinst \

@@ -26,6 +26,7 @@ sudo apt install \
   libvirt-daemon-system \
   qemu-kvm \
   net-tools \
+  sgabios \
   socat \
   uuid-runtime \
   virtinst \
