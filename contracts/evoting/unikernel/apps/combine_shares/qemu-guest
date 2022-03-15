@@ -480,7 +480,9 @@ usage()
 	echo "  $0 -c 2 -m 2048 -b virbr0 -b virbr1 -q root.qcow2 -d /dev/sdb -d /dev/sdc"
 }
 
-while getopts :hnN:b:V:f:N:G:d:q:S:I:e:k:i:a:c:m:v:lrs:p:HxCDG:g:PT:WQ:M:t: OPT; do
+#TODO: revise getops
+
+while getopts :hnN:b:V:f:G:d:q:S:I:e:k:i:a:c:m:v:lrs:p:HxCDUG:g:PT:WQ:M:t: OPT; do
         case ${OPT} in
 	v)
 		OPT_VIDEOVNC=0

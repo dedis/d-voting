@@ -5,14 +5,18 @@ Before=dvoting.service
 
 [Service]
 User=root
-Type=forking
-PIDFile=/run/unikernel.pid
-ExecStartPre=/opt/dedis/dvoting/bin/create-bridge /etc/dedis/dvoting/unikernel_paths
-ExecStart=/opt/dedis/dvoting/bin/start-unikernel /etc/dedis/dvoting/unikernel_paths
-ExecReload=/bin/kill --signal HUP $MAINPID
+
+StandardInput=tty
+StandardOutput=tty
+TTYPath=/dev/tty10
+
+ExecStartPre=/bin/bash -c "/opt/dedis/dvoting/bin/create-bridge /etc/dedis/dvoting/unikernel_paths"
+ExecStart=/bin/bash -c "/opt/dedis/dvoting/bin/start-unikernel /etc/dedis/dvoting/unikernel_paths"
+
 ExecStop=/bin/kill --signal QUIT $MAINPID
-#ExecStop=/bin/echo "Stopppingggg unikernel PID# ${PIDFile}"
-KillMode=process
+
+ExecReload=/bin/kill --signal HUP $MAINPID
+
 Restart=on-failure
 RestartSec=5
 

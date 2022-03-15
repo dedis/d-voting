@@ -7,5 +7,3 @@ export LLVL=info
   --config /var/opt/dedis/dvoting/data/node \
   start \
   --port 9000
-
-pgrep memcoin > /run/dvoting.pid
