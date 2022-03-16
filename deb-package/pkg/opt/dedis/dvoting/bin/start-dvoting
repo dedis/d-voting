@@ -2,8 +2,9 @@
 
 sleep 5
 
-export LLVL=info
-/opt/dedis/dvoting/bin/memcoin \
-  --config /var/opt/dedis/dvoting/data/node \
-  start \
-  --port 9000
+paths=$1
+
+source ${paths}
+
+
+LLVL=info ${dela_bin} --config ${dela_data} start --port ${dela_port}

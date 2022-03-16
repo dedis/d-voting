@@ -6,7 +6,7 @@ Requires=unikernel.service
 [Service]
 User=dvoting
 
-ExecStart=/bin/bash -c "/opt/dedis/dvoting/bin/start-dvoting"
+ExecStart=/bin/bash -c "/opt/dedis/dvoting/bin/start-dvoting /etc/dedis/dvoting/config.env"
 
 ExecStop=/bin/kill --signal QUIT $MAINPID
 

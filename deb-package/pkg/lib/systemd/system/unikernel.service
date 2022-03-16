@@ -10,8 +10,8 @@ StandardInput=tty
 StandardOutput=tty
 TTYPath=/dev/tty10
 
-ExecStartPre=/bin/bash -c "/opt/dedis/dvoting/bin/create-bridge /etc/dedis/dvoting/unikernel_paths"
-ExecStart=/bin/bash -c "/opt/dedis/dvoting/bin/start-unikernel /etc/dedis/dvoting/unikernel_paths"
+ExecStartPre=/bin/bash -c "/opt/dedis/dvoting/bin/create-bridge /etc/dedis/dvoting/config.env"
+ExecStart=/bin/bash -c "/opt/dedis/dvoting/bin/start-unikernel /etc/dedis/dvoting/config.env"
 
 ExecStop=/bin/kill --signal QUIT $MAINPID
 
