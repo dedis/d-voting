@@ -135,7 +135,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		require.NoError(t, err)
 
 		// ##### DECRYPT BALLOTS #####
-		time.Sleep(time.Millisecond * 10000 * time.Duration(numNodes))
+		time.Sleep(time.Millisecond * 5000 * time.Duration(numNodes))
 
 		t.Logf("decrypting")
 

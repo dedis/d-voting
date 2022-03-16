@@ -721,7 +721,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(proxyAddr1+decryptBallotsEndpoint, contentType, bytes.NewBuffer(js))
+	resp, err = http.Post(proxyAddr1+combineSharesEndpoint, contentType, bytes.NewBuffer(js))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}

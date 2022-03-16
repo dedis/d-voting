@@ -37,6 +37,7 @@ import (
 
 	cosipbft "github.com/dedis/d-voting/cli/cosipbftcontroller"
 	evoting "github.com/dedis/d-voting/contracts/evoting/controller"
+	metrics "github.com/dedis/d-voting/metrics/controller"
 	"go.dedis.ch/dela/cli/node"
 	access "go.dedis.ch/dela/contracts/access/controller"
 	db "go.dedis.ch/dela/core/store/kv/controller"
@@ -83,6 +84,7 @@ func runWithCfg(args []string, cfg config) error {
 		shuffle.NewController(),
 		evoting.NewController(),
 		gapi.NewController(),
+		metrics.NewController(),
 	)
 
 	app := builder.Build()

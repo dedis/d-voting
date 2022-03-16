@@ -27,10 +27,13 @@ SC5:Close
 SC6:Shuffle
     │
     ▼
-SC7:Decrypt
+SC7:BeginDecryption
     │
     ▼
-SC8:GetResult
+SC8:CombineShares
+    │
+    ▼
+SC9:GetResult
 
 ```
 
@@ -173,13 +176,39 @@ Return:
 }
 ```
 
-# SC7: Election decrypt
+# SC7: Election begin decryption
 
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/decrypt` |
-| Method | `POST`             |
-| Input  | `application/json` |
+|        |                            |
+| -      | -                          |
+| URL    | `/evoting/beginDecryption` |
+| Method | `POST`                     |
+| Input  | `application/json`         |
+
+```json
+{
+    "ElectionID": "",
+    "UserID": "",
+    "Token": ""
+}
+```
+
+Return:
+
+`200 OK` `application/json`
+
+```json
+{
+    "Message": ""
+}
+```
+
+# SC8: Election combine shares
+
+|        |                          |
+| -      | -                        |
+| URL    | `/evoting/combineShares` |
+| Method | `POST`                   |
+| Input  | `application/json`       |
 
 ```json
 {
@@ -197,7 +226,7 @@ Return:
 {}
 ```
 
-# SC8: Election get result
+# SC9: Election get result
 
 |        |                    |
 | -      | -                  |
