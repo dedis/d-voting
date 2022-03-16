@@ -358,10 +358,10 @@ fi
 ##
 QEMU_BASE_ARGS=()
 QEMU_ARGS=()
-SOCK_MONITOR="/run/unikernel_monitor.socket"
-SOCK_SERIAL="/run/unikernel_serial.socket"
-PIDFILE="/run/unikernel.pid"
-TEMP="/tmp/unikernel-$$"
+SOCK_MONITOR="/run/$( basename "$0" )-$$_monitor.socket"
+SOCK_SERIAL="/run/$( basename "$0" )-$$_serial.socket"
+PIDFILE="/run/$( basename "$0" )-$$_qemu.pid"
+TEMP="/tmp/$( basename "$0" )-$$"
 
 ARG_MACHINETYPE="x86pc"
 ARG_MEM=64
@@ -479,8 +479,6 @@ usage()
 	echo "  # 3 virtual disks: the first one uses a qcow2; the second and the third ones use a physical device"
 	echo "  $0 -c 2 -m 2048 -b virbr0 -b virbr1 -q root.qcow2 -d /dev/sdb -d /dev/sdc"
 }
-
-#TODO: revise getops
 
 while getopts :hnN:b:V:f:G:d:q:S:I:e:k:i:a:c:m:v:lrs:p:HxCDUG:g:PT:WQ:M:t: OPT; do
         case ${OPT} in
