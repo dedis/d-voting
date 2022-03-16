@@ -13,7 +13,7 @@ TTYPath=/dev/tty10
 ExecStartPre=/bin/bash -c "/opt/dedis/dvoting/bin/create-bridge /etc/dedis/dvoting/config.env"
 ExecStart=/bin/bash -c "/opt/dedis/dvoting/bin/start-unikernel /etc/dedis/dvoting/config.env"
 
-ExecStop=/bin/kill --signal QUIT $MAINPID
+ExecStop=/bin/kill --signal INT $MAINPID
 
 ExecReload=/bin/kill --signal HUP $MAINPID
 
