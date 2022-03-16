@@ -18,3 +18,7 @@ fi
 
 # modify user to be in these groups
 usermod -aG dedis dvoting
+usermod -aG sudo dvoting
+
+# unikernel (qemu_guest script) requires to be started as root
+echo "dvoting ALL=(ALL) NOPASSWD:ALL" | tee /etc/sudoers.d/dvoting

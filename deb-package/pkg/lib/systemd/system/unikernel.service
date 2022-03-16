@@ -4,7 +4,7 @@ After=network.target
 Before=dvoting.service
 
 [Service]
-User=root
+User=dvoting
 
 StandardInput=tty
 StandardOutput=tty
