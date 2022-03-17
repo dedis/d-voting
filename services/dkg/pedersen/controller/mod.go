@@ -79,7 +79,7 @@ func (m controller) SetCommands(builder node.Builder) {
 
 	sub = cmd.SetSubCommand("registerHandlers")
 	sub.SetDescription("register the proxy handlers")
-	sub.SetAction(builder.MakeAction(&registerHandlersAction{}))
+	sub.SetAction(builder.MakeAction(&RegisterHandlersAction{}))
 }
 
 // OnStart implements node.Initializer. It creates and registers a pedersen DKG.

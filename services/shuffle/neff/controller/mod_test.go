@@ -24,7 +24,7 @@ func TestController_SetCommands(t *testing.T) {
 	require.Equal(t, "init", call.Get(2, 0))
 	require.Len(t, call.Get(3, 0), 1)
 	require.Equal(t, "initialize the SHUFFLE protocol", call.Get(4, 0))
-	require.IsType(t, &initAction{}, call.Get(5, 0))
+	require.IsType(t, &InitAction{}, call.Get(5, 0))
 	require.Nil(t, call.Get(6, 0))
 
 }

@@ -68,23 +68,26 @@ echo "${GREEN}[4/7]${NC} grant access on the chain"
     --args access:identity --args $(crypto bls signer read --path /tmp/node3/private.key --format BASE64_PUBKEY)\
     --args access:command --args GRANT
 
-echo "${GREEN}[5/7]${NC} init shuffle"
-./memcoin --config /tmp/node1 shuffle init --signer /tmp/node1/private.key
-./memcoin --config /tmp/node2 shuffle init --signer /tmp/node2/private.key
-./memcoin --config /tmp/node3 shuffle init --signer /tmp/node3/private.key
+# The following is not needed anymore thanks to the "postinstall" functionality.
+# See #65.
 
-echo "${GREEN}[6/7]${NC} starting http proxy"
-./memcoin --config /tmp/node1 proxy start --clientaddr 127.0.0.1:8081
-./memcoin --config /tmp/node1 e-voting registerHandlers --signer private.key
-./memcoin --config /tmp/node1 dkg registerHandlers
+# echo "${GREEN}[5/7]${NC} init shuffle"
+# ./memcoin --config /tmp/node1 shuffle init --signer /tmp/node1/private.key
+# ./memcoin --config /tmp/node2 shuffle init --signer /tmp/node2/private.key
+# ./memcoin --config /tmp/node3 shuffle init --signer /tmp/node3/private.key
 
-./memcoin --config /tmp/node2 proxy start --clientaddr 127.0.0.1:8082
-./memcoin --config /tmp/node2 e-voting registerHandlers --signer private.key
-./memcoin --config /tmp/node2 dkg registerHandlers
+# echo "${GREEN}[6/7]${NC} starting http proxy"
+# ./memcoin --config /tmp/node1 proxy start --clientaddr 127.0.0.1:8081
+# ./memcoin --config /tmp/node1 e-voting registerHandlers --signer private.key
+# ./memcoin --config /tmp/node1 dkg registerHandlers
 
-./memcoin --config /tmp/node3 proxy start --clientaddr 127.0.0.1:8083
-./memcoin --config /tmp/node3 e-voting registerHandlers --signer private.key
-./memcoin --config /tmp/node3 dkg registerHandlers
+# ./memcoin --config /tmp/node2 proxy start --clientaddr 127.0.0.1:8082
+# ./memcoin --config /tmp/node2 e-voting registerHandlers --signer private.key
+# ./memcoin --config /tmp/node2 dkg registerHandlers
+
+# ./memcoin --config /tmp/node3 proxy start --clientaddr 127.0.0.1:8083
+# ./memcoin --config /tmp/node3 e-voting registerHandlers --signer private.key
+# ./memcoin --config /tmp/node3 dkg registerHandlers
 
 # If an election is created with ID "deadbeef" then one must set up DKG
 # on each node before the election can proceed:

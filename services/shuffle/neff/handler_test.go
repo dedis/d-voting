@@ -2,9 +2,10 @@ package neff
 
 import (
 	"encoding/hex"
-	"go.dedis.ch/dela/serde/json"
 	"strconv"
 	"testing"
+
+	"go.dedis.ch/dela/serde/json"
 
 	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"go.dedis.ch/kyber/v3"
@@ -165,17 +166,6 @@ func TestHandler_StartShuffle(t *testing.T) {
 	manager := signed.NewManager(fake.NewSigner(), fakeClient{})
 
 	handler.txmngr = manager
-
-	// Bad pool :
-
-	service = updateService(election, dummyID)
-	badPool := fake.Pool{Err: fakeErr,
-		Service: &service}
-	handler.p = &badPool
-	handler.service = &service
-
-	err = handler.handleStartShuffle(dummyID)
-	require.EqualError(t, err, "failed to add transaction to the pool: fake error")
 
 	// Valid, basic scenario : (all errors fixed)
 	fakePool := fake.Pool{Service: &service}

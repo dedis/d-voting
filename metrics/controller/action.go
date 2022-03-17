@@ -21,14 +21,15 @@ const (
 	waitRetry    = time.Second * 2
 )
 
-type startAction struct{}
+// StartAction defines the action to start the Prometheus server
+type StartAction struct{}
 
 // Execute implements node.ActionTemplate. It registers the Prometheus handler.
-func (a startAction) Execute(ctx node.Context) error {
+func (a StartAction) Execute(ctx node.Context) error {
 	listenAddr := ctx.Flags.String("addr")
 	path := ctx.Flags.String("path")
 
-	fmt.Fprintf(ctx.Out, "starting metric server on %s %s", listenAddr, path)
+	fmt.Fprintf(ctx.Out, "starting metric server on %s %s\n", listenAddr, path)
 
 	// We'll go with the default Prometheus registerer
 	reg := prometheus.DefaultRegisterer
@@ -37,7 +38,7 @@ func (a startAction) Execute(ctx node.Context) error {
 	for _, c := range dela.PromCollectors {
 		err := reg.Register(c)
 		if err != nil {
-			fmt.Fprintf(ctx.Out, "ERROR: failed to register: %v", err)
+			fmt.Fprintf(ctx.Out, "ERROR: failed to register: %v\n", err)
 		}
 	}
 
@@ -45,7 +46,7 @@ func (a startAction) Execute(ctx node.Context) error {
 	for _, c := range dvoting.PromCollectors {
 		err := reg.Register(c)
 		if err != nil {
-			fmt.Fprintf(ctx.Out, "ERROR: failed to register: %v", err)
+			fmt.Fprintf(ctx.Out, "ERROR: failed to register: %v\n", err)
 		}
 	}
 
@@ -53,7 +54,7 @@ func (a startAction) Execute(ctx node.Context) error {
 	srv := newMetricSrv(listenAddr)
 
 	srv.mux.Handle(path, promhttp.Handler())
-	fmt.Fprintf(ctx.Out, "registered prometheus service on %q", path)
+	fmt.Fprintf(ctx.Out, "registered prometheus service on %q\n", path)
 
 	// start the server and wait a bit to check for potential errors
 	errc := make(chan error, 1)
@@ -75,7 +76,7 @@ func (a startAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to start metric server")
 	}
 
-	fmt.Fprintf(ctx.Out, "server started at %s", srvAddr)
+	dela.Logger.Info().Msgf("prometheus server started at %s", srvAddr)
 
 	// inject the server so we can stop it later
 	ctx.Injector.Inject(&srv)
