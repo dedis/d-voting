@@ -12,8 +12,7 @@ sudo gem install fpm
 - Build memcoin:
 
 ```sh
-cd cli/memcoin
-go build
+make build
 ```
 
 - Build unikernel. See [how to build unikernel](../contracts/evoting/unikernel/apps/combine_shares/README.md):

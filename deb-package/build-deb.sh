@@ -15,7 +15,7 @@ cp $UKAPP_DIR/start-unikernel $INSTALL_DIR
 cp $UKAPP_DIR/qemu-guest $INSTALL_DIR
 cp $UKAPP_DIR/build/combine_shares_kvm-x86_64 $INSTALL_DIR
 
-DVOTING_CLI_DIR="../cli/memcoin"
+DVOTING_CLI_DIR=".."
 cp $DVOTING_CLI_DIR/memcoin $INSTALL_DIR
 
 # add config files
