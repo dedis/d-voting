@@ -9,12 +9,6 @@ sudo apt install rubygems build-essentials
 sudo gem install fpm
 ```
 
-- Build memcoin:
-
-```sh
-make build
-```
-
 - Build unikernel. See [how to build unikernel](../contracts/evoting/unikernel/apps/combine_shares/README.md):
 
 ```sh
@@ -27,6 +21,5 @@ make
 - Create .deb package:
 
 ```sh
-cd deb-package
-./build-deb.sh
+make deb
 ```
