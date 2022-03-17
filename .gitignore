@@ -6,5 +6,5 @@ web/app/node_modules
 .idea
 
 memcoin
-packaging/deb
-packaging/dist
+deb-package/deb
+deb-package/dist
