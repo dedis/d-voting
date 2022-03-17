@@ -6,5 +6,4 @@ paths=$1
 
 source ${paths}
 
-
-LLVL=info ${dela_bin} --config ${dela_data} start --port ${dela_port}
+LLVL=info ${dela_bin} --config ${dela_data} start --postinstall --promaddr ${prometheus_addr} --proxyaddr ${proxy_addr} --port ${dela_port}
