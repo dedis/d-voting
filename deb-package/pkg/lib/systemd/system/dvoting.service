@@ -6,7 +6,7 @@ Requires=unikernel.service
 [Service]
 User=dvoting
 
-ExecStartPre=/bin/bash -c "rm /var/opt/dedis/dvoting/data/dela/daemon.sock"
+ExecStartPre=/bin/bash -c "rm -f /var/opt/dedis/dvoting/data/dela/daemon.sock"
 ExecStart=/bin/bash -c "/opt/dedis/dvoting/bin/start-dvoting /etc/dedis/dvoting/config.env"
 
 Restart=on-failure
