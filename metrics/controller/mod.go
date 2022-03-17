@@ -37,7 +37,7 @@ func (m controller) SetCommands(builder node.Builder) {
 			Value:    "/metrics",
 		},
 	)
-	sub.SetAction(builder.MakeAction(&startAction{}))
+	sub.SetAction(builder.MakeAction(&StartAction{}))
 }
 
 // OnStart implements node.Initializer. It creates and registers a pedersen DKG.

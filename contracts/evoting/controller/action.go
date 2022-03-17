@@ -53,14 +53,14 @@ var getManager = func(signer crypto.Signer, s signed.Client) txn.Manager {
 	return signed.NewManager(signer, s)
 }
 
-// initHttpServer is an action to initialize the shuffle protocol
+// RegisterAction is an action to register the HTTP handlers
 //
 // - implements node.ActionTemplate
-type registerAction struct{}
+type RegisterAction struct{}
 
 // Execute implements node.ActionTemplate. It registers the handlers using the
 // default proxy from the the injector.
-func (a *registerAction) Execute(ctx node.Context) error {
+func (a *RegisterAction) Execute(ctx node.Context) error {
 	signerFilePath := ctx.Flags.String("signer")
 
 	signer, err := getSigner(signerFilePath)
@@ -142,6 +142,8 @@ func (a *registerAction) Execute(ctx node.Context) error {
 	registerVotingProxy(proxy, signer, client, dkg, shuffleActor,
 		orderingSvc, p, m, serdecontext, electionFac, ciphervoteFac)
 
+	dela.Logger.Info().Msg("d-voting proxy handlers registered")
+
 	return nil
 }
 
@@ -176,7 +178,7 @@ func getSigner(filePath string) (crypto.Signer, error) {
 
 	signerData, err := l.Load()
 	if err != nil {
-		return nil, xerrors.Errorf("Failed to load signer: %v", err)
+		return nil, xerrors.Errorf("Failed to load signer from %q: %v", filePath, err)
 	}
 
 	signer, err := bls.NewSignerFromBytes(signerData)
@@ -199,6 +201,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	proxyAddr1 := ctx.Flags.String("proxy-addr1")
 	proxyAddr2 := ctx.Flags.String("proxy-addr2")
 	proxyAddr3 := ctx.Flags.String("proxy-addr3")
+
+	fmt.Println("Welcome in the scenario test")
 
 	var rosterFac authority.Factory
 	err := ctx.Injector.Resolve(&rosterFac)
