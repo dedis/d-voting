@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding"
 	"encoding/json"
+	"net"
 	"path/filepath"
 
 	"go.dedis.ch/dela/core/txn/pool"
@@ -47,6 +48,21 @@ type controller struct{}
 
 // Build implements node.Initializer.
 func (m controller) SetCommands(builder node.Builder) {
+
+	builder.SetStartFlags(
+		cli.StringFlag{
+			Name:     "unikerneladdr",
+			Usage:    "address of the Unikernel",
+			Value:    "127.0.0.1:1234",
+			Required: false,
+		},
+		cli.StringFlag{
+			Name:     "unikernelfolder",
+			Usage:    "absolute path of the shared folder. If set, then will also use a real TCP connection insted of faking the Unikernel.",
+			Value:    "",
+			Required: false,
+		},
+	)
 
 	electionIDFlag := cli.StringFlag{
 		Name:     "electionID",
@@ -185,9 +201,17 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 
 	inj.Inject(dkg)
 
+	dialer := net.DialTimeout
+	unikernelFolder := ctx.String("unikernelfolder")
+
+	if unikernelFolder == "" {
+		unikernelFolder = filepath.Join(ctx.Path("config"), "mnt")
+		dialer = fake.NewConn
+	}
+
 	rosterKey := [32]byte{}
 	c := evoting.NewContract(evotingAccessKey[:], rosterKey[:], access, dkg,
-		rosterFac, filepath.Join(ctx.Path("config"), "mnt"), fake.NewConn)
+		rosterFac, unikernelFolder, dialer, ctx.String("unikerneladdr"))
 	evoting.RegisterContract(exec, c)
 
 	return nil
