@@ -36,6 +36,7 @@ import (
 	shuffle "github.com/dedis/d-voting/services/shuffle/neff/controller"
 
 	cosipbft "github.com/dedis/d-voting/cli/cosipbftcontroller"
+	mino "github.com/dedis/d-voting/cli/minocontroller"
 	"github.com/dedis/d-voting/cli/postinstall"
 	evoting "github.com/dedis/d-voting/contracts/evoting/controller"
 	metrics "github.com/dedis/d-voting/metrics/controller"
@@ -44,7 +45,6 @@ import (
 	db "go.dedis.ch/dela/core/store/kv/controller"
 	pool "go.dedis.ch/dela/core/txn/pool/controller"
 	signed "go.dedis.ch/dela/core/txn/signed/controller"
-	mino "go.dedis.ch/dela/mino/minogrpc/controller"
 	proxy "go.dedis.ch/dela/mino/proxy/http/controller"
 
 	_ "github.com/dedis/d-voting/services/shuffle/neff/json"

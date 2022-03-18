@@ -184,4 +184,8 @@ timeFlag="github.com/dedis/d-voting.BuildTime=`date +'%d/%m/%y_%H:%M'`"
 go build -ldflags="-X $versionFlag -X $timeFlag" ./cli/memcoin
 ```
 
-Note that `make build` will do that for you.
+Note that `make build` will do that for you. You can also cross-compile with:
+
+```sh
+GOOS=linux GOARCH=amd64 make build
+```

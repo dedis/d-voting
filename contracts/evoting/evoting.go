@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
+	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/execution"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
@@ -40,10 +41,9 @@ const (
 
 // parameters for the Unikernel connection
 const (
-	unikernelAddr = "127.0.0.1:1234"
-	dialTimeout   = time.Second * 60
-	writeTimeout  = time.Second * 60
-	readTimeout   = time.Second * 60
+	dialTimeout  = time.Second * 60
+	writeTimeout = time.Second * 60
+	readTimeout  = time.Second * 60
 )
 
 // evotingCommand implements the commands of the Evoting contract.
@@ -643,17 +643,20 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 		return xerrors.Errorf("failed to create dir: %v", err)
 	}
 
-	tmp, err := ioutil.TempDir(e.exportFolder, "decrypted-ballots")
-	if err != nil {
-		return xerrors.Errorf("failed to create temp dir: %v", err)
-	}
+	// we must pass to the Unikernel the RELATIVE folder path from the one
+	// mounted, i.e. e.exportFolder. This folder MUST be uniq for each
+	// transaction.
+	txIDHex := hex.EncodeToString(step.Current.GetID())
+	tmp := fmt.Sprintf("decrypted-ballots-%s-%s-%d/", tx.ElectionID[:4], txIDHex[:4], time.Now().UnixNano())
 
-	err = exportPubshares(tmp, election.PubsharesUnits, numBallots, numChunks)
+	dela.Logger.Info().Msgf("using the following folder: %s", tmp)
+
+	err = exportPubshares(filepath.Join(e.exportFolder, tmp), election.PubsharesUnits, numBallots, numChunks)
 	if err != nil {
 		return xerrors.Errorf("failed to export pubshares: %v", err)
 	}
 
-	conn, err := e.dialer("tcp", unikernelAddr, dialTimeout)
+	conn, err := e.dialer("tcp", e.unikernelAddr, dialTimeout)
 	if err != nil {
 		return xerrors.Errorf("failed to dial TCP: %v", err)
 	}
@@ -715,7 +718,7 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 		return xerrors.Errorf("an error ocurred in the unikernel: %s", readRes)
 	}
 
-	rawBallots, err := importBallots(tmp, numChunks)
+	rawBallots, err := importBallots(filepath.Join(e.exportFolder, tmp), numChunks)
 	if err != nil {
 		return xerrors.Errorf("failed to import ballots: %v", err)
 	}
@@ -942,6 +945,8 @@ func exportPubshares(folder string, units types.PubsharesUnits, numBallots, numC
 				}
 			}
 		}
+
+		file.Close()
 	}
 
 	return nil

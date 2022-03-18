@@ -12,7 +12,7 @@ functionality provided by [libsodium](https://github.com/jedisct1/libsodium).
 - To build the kernel:
 
 ```sh
-sudo apt install bison build-essentials flex git libncurses-dev unzip
+sudo apt install bison build-essential flex git libncurses-dev unzip
 ```
 
 - To run the kernel in a debian VM, the following packages must be installed
