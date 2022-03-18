@@ -81,14 +81,14 @@ func TestExecute(t *testing.T) {
 	service := fakeAccess{err: fake.GetError()}
 	rosterFac := fakeAuthorityFactory{}
 
-	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac, "", nil)
+	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac, "", nil, "")
 
 	err := contract.Execute(fakeStore{}, makeStep(t))
 	require.EqualError(t, err, "identity not authorized: fake.PublicKey ("+fake.GetError().Error()+")")
 
 	service = fakeAccess{}
 
-	contract = NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac, "", nil)
+	contract = NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac, "", nil, "")
 	err = contract.Execute(fakeStore{}, makeStep(t))
 	require.EqualError(t, err, "\"evoting:command\" not found in tx arg")
 
@@ -145,7 +145,7 @@ func TestCommand_CreateElection(t *testing.T) {
 	service := fakeAccess{err: fake.GetError()}
 	rosterFac := fakeAuthorityFactory{}
 
-	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac, "", nil)
+	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac, "", nil, "")
 
 	cmd := evotingCommand{
 		Contract: &contract,
@@ -1053,7 +1053,7 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	require.NoError(t, err)
 
 	cmd.dialer = func(network, address string, timeout time.Duration) (net.Conn, error) {
-		return &fake.Conn{}, nil
+		return &fake.Conn{Path: tmpDir}, nil
 	}
 
 	err = cmd.combineShares(snap, makeStep(t, ElectionArg, string(data)))
@@ -1389,7 +1389,7 @@ func initElectionAndContract() (types.Election, Contract) {
 	service := fakeAccess{err: fake.GetError()}
 	rosterFac := fakeAuthorityFactory{}
 
-	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac, "", nil)
+	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac, "", nil, "")
 
 	return dummyElection, contract
 }
