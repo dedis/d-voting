@@ -41,3 +41,5 @@ else
 fi
 
 systemctl start ${SERVICE}
+
+ln -s /opt/dedis/dvoting/bin/memcoin /usr/bin/memcoin
