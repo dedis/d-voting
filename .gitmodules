@@ -9,4 +9,4 @@
 	url = https://github.com/unikraft/lib-newlib
 [submodule "contracts/evoting/unikernel/libs/libsodium"]
 	path = contracts/evoting/unikernel/libs/libsodium
-	url = git@github.com:cs-pub-ro/lib-libsodium.git
+	url = https://github.com/cs-pub-ro/lib-libsodium
