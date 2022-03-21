@@ -651,7 +651,9 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 
 	dela.Logger.Info().Msgf("using the following folder: %s", tmp)
 
-	err = exportPubshares(filepath.Join(e.exportFolder, tmp), election.PubsharesUnits, numBallots, numChunks)
+	absPath := filepath.Join(e.exportFolder, tmp)
+
+	err = exportPubshares(absPath, election.PubsharesUnits, numBallots, numChunks)
 	if err != nil {
 		return xerrors.Errorf("failed to export pubshares: %v", err)
 	}
@@ -718,7 +720,7 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 		return xerrors.Errorf("an error ocurred in the unikernel: %s", readRes)
 	}
 
-	rawBallots, err := importBallots(filepath.Join(e.exportFolder, tmp), numChunks)
+	rawBallots, err := importBallots(absPath, numChunks)
 	if err != nil {
 		return xerrors.Errorf("failed to import ballots: %v", err)
 	}
