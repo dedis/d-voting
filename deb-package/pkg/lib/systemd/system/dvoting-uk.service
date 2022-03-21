@@ -10,12 +10,10 @@ StandardOutput=tty
 # starting unikernel via qemu requires a free tty (tty1 didn't work)
 TTYPath=/dev/tty10
 
-ExecStartPre=/bin/bash -c "/opt/dedis/dvoting/bin/create-bridge /etc/dedis/dvoting/config.env"
-ExecStart=/bin/bash -c "/opt/dedis/dvoting/bin/start-unikernel /etc/dedis/dvoting/config.env"
+ExecStartPre=/opt/dedis/dvoting/bin/create-bridge /etc/dedis/dvoting/config.env
+ExecStart=/opt/dedis/dvoting/bin/start-unikernel /etc/dedis/dvoting/config.env
 
-ExecStop=/bin/kill --signal INT $MAINPID
-
-ExecReload=/bin/kill --signal HUP $MAINPID
+KillSignal=SIGINT
 
 Restart=on-failure
 RestartSec=5

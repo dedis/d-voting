@@ -6,8 +6,8 @@ Requires=dvoting-uk.service
 [Service]
 User=dvoting
 
-ExecStartPre=/bin/bash -c "rm -f /var/opt/dedis/dvoting/data/dela/daemon.sock"
-ExecStart=/bin/bash -c "/opt/dedis/dvoting/bin/start-dvoting /etc/dedis/dvoting/config.env"
+ExecStartPre=/bin/rm -f /var/opt/dedis/dvoting/data/dela/daemon.sockcd
+ExecStart=/opt/dedis/dvoting/bin/start-dvoting /etc/dedis/dvoting/config.env
 
 Restart=on-failure
 RestartSec=5

@@ -5,5 +5,6 @@ sleep 5
 paths=$1
 
 source ${paths}
+source ${network_config}
 
-LLVL=info ${dela_bin} --config ${dela_data} start --unikerneladdr "172.44.0.2:1024" --unikernelfolder ${fs_mount} --externalip --postinstall --promaddr ${prometheus_addr} --proxyaddr ${proxy_addr} --port ${dela_port}
+LLVL=info ${dela_bin} --config ${dela_data} start --unikerneladdr ${uk_ip}":"${uk_port} --unikernelfolder ${fs_mount} --externalip --postinstall --promaddr ${prometheus_addr} --proxyaddr ${proxy_addr} --port ${dela_port}
