@@ -9,5 +9,5 @@ fi
 
 if [ -x "/usr/bin/deb-systemd-helper" ]; then
     deb-systemd-helper purge dvoting.service >/dev/null
-    deb-systemd-helper purge unikernel.service >/dev/null
+    deb-systemd-helper purge dvoting-uk.service >/dev/null
 fi

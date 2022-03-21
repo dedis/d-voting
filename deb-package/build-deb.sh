@@ -47,6 +47,7 @@ fpm \
     --iteration ${ITERATION} \
     --deb-user dvoting \
     --deb-group dvoting \
+    --depends bash \
     --depends bridge-utils \
     --depends fuse \
     --depends qemu-kvm \

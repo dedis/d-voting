@@ -1,13 +1,13 @@
 [Unit]
 Description=Unikernel Service
 After=network.target
-Before=dvoting.service
 
 [Service]
-User=dvoting
+User=root
 
 StandardInput=tty
 StandardOutput=tty
+# starting unikernel via qemu requires a free tty (tty1 didn't work)
 TTYPath=/dev/tty10
 
 ExecStartPre=/bin/bash -c "/opt/dedis/dvoting/bin/create-bridge /etc/dedis/dvoting/config.env"

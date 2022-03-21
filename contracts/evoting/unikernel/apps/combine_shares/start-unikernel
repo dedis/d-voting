@@ -6,4 +6,4 @@ source ${paths}
 source ${network_config}
 
 echo "Starting KVM image connected to bridge interface ${bridge_iface} ..."
-"${qemu_script}" -k "${kvm_image}" -e "${fs_mount}" -b "${bridge_iface}" -m 1024 -a "netdev.ipv4_addr=${uk_ip} netdev.ipv4_gw_addr=${uk_gw} netdev.ipv4_subnet_mask=255.255.255.0 -- ${uk_port}"
+"${qemu_script}" -k "${kvm_image}" -e "${fs_mount}" -b "${bridge_iface}" -m ${qemu_ram} -a "netdev.ipv4_addr=${uk_ip} netdev.ipv4_gw_addr=${uk_gw} netdev.ipv4_subnet_mask=255.255.255.0 -- ${uk_port}"
