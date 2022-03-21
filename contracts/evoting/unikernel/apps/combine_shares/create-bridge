@@ -1,9 +1,8 @@
 #!/bin/bash
 
-paths=$1
-
-source ${paths}
+source ../config/config.env
 source ${network_config}
+
 
 echo "Creating bridge ${bridge_iface} with IP address ${uk_gw} ..."
 sudo brctl addbr "${bridge_iface}" || true

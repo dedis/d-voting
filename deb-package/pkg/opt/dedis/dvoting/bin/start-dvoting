@@ -2,9 +2,7 @@
 
 sleep 5
 
-paths=$1
-
-source ${paths}
+source ../config/config.env
 source ${network_config}
 
 LLVL=info ${dela_bin} --config ${dela_data} start --unikerneladdr ${uk_ip}":"${uk_port} --unikernelfolder ${fs_mount} --externalip --postinstall --promaddr ${prometheus_addr} --proxyaddr ${proxy_addr} --port ${dela_port}
