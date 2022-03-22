@@ -49,8 +49,8 @@ The resulting .deb can be found in the `dist/` folder.
 Get the token and certificate (24h * 30 = 720):
 
 ```sh
-sudo /opt/dedis/dvoting/bin/memcoin --config /var/opt/dedis/dvoting/data/dela\
-    minogrpc token --expiration 720h
+sudo memcoin --config /var/opt/dedis/dvoting/data/dela minogrpc token \
+    --expiration 720h
 ```
 
 This result, which looks like as follow, will be given to node's operators:
@@ -67,15 +67,14 @@ that the certificates are stored in the DB, which means that this operation must
 be re-done in case the DB is reset.
 
 ```sh
-sudo /opt/dedis/dvoting/bin/memcoin --config /var/opt/dedis/dvoting/data/dela\
-    minogrpc join --address <EPFL NODE ADDRESS> --token <TOKEN> --cert-hash <CERT HASH>
+sudo memcoin --config /var/opt/dedis/dvoting/data/dela minogrpc join \
+    --address <EPFL NODE ADDRESS> --token <TOKEN> --cert-hash <CERT HASH>
 ```
 
 Get the node's address and public key:
 
 ```sh
-sudo /opt/dedis/dvoting/bin/memcoin --config /var/opt/dedis/dvoting/data/dela\
-    ordering export
+sudo memcoin --config /var/opt/dedis/dvoting/data/dela ordering export
 ```
 
 This will yield a base64 encoded string `<ADDRESS>:<PUB KEY>`.
@@ -89,8 +88,7 @@ It will have to be provided to EPFL.
 Do not forget to include ourself, the EPFL node!
 
 ```sh
-sudo /opt/dedis/dvoting/bin/memcoin --config /var/opt/dedis/dvoting/data/dela\
-    ordering setup \
+sudo memcoin --config /var/opt/dedis/dvoting/data/dela ordering setup \
     --member <RESULT FROM ordering export>\
     --member <...>
     ...
@@ -100,8 +98,7 @@ sudo /opt/dedis/dvoting/bin/memcoin --config /var/opt/dedis/dvoting/data/dela\
 
 ```sh
 PK=<> # taken from the "ordering export", the part after ":"
-sudo /opt/dedis/dvoting/bin/memcoin --config /var/opt/dedis/dvoting/data/dela\
-    pool add\
+sudo memcoin --config /var/opt/dedis/dvoting/data/dela pool add \
     --key /home/user/master_key.key\
     --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access\
     --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000\
@@ -116,8 +113,7 @@ You should also grant access to the master key.
 ### Test
 
 ```sh
-sudo /opt/dedis/dvoting/bin/memcoin --config /var/opt/dedis/dvoting/data/dela \
-    e-voting scenarioTest \
+sudo memcoin --config /var/opt/dedis/dvoting/data/dela e-voting scenarioTest \
     --proxy-addr1 "http://192.168.232.133:9080" \
     --proxy-addr2 "http://192.168.232.134:9080" \
     --proxy-addr3 "http://192.168.232.135:9080"
