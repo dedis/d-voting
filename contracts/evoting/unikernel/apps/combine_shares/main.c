@@ -204,6 +204,8 @@ int main(int argc, char *argv[])
 		get_peer_address(client, addrname, 128);
 		printf("Received connection from %s\n", addrname);
 
+		memset(blockchain_input, 0, sizeof(blockchain_input));
+
 		/* Read command filename. */
 		n = read(client, &blockchain_input, 256);
 		if (n < 0)
