@@ -1,0 +1,22 @@
+[Unit]
+Description=Unikernel Service
+After=network.target
+
+[Service]
+User=root
+
+StandardInput=tty
+StandardOutput=tty
+# starting unikernel via qemu requires a free tty (tty1 didn't work)
+TTYPath=/dev/tty10
+
+ExecStartPre=/opt/dedis/dvoting/bin/create-bridge
+ExecStart=/opt/dedis/dvoting/bin/start-unikernel
+
+KillSignal=SIGINT
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

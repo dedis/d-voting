@@ -133,6 +133,7 @@ func NewConn(network, address string, timeout time.Duration) (net.Conn, error) {
 //
 // - implements net.Conn
 type Conn struct {
+	Path string
 }
 
 func (f *Conn) Read(b []byte) (n int, err error) {
@@ -153,7 +154,7 @@ func (f *Conn) Write(b []byte) (n int, err error) {
 
 	folder := string(b[8:])
 
-	err = combineShares(folder, int(numChunks), int(numNodes))
+	err = combineShares(filepath.Join(f.Path, folder), int(numChunks), int(numNodes))
 	if err != nil {
 		return 0, xerrors.Errorf("failed to combine shares: %v", err)
 	}

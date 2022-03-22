@@ -1,0 +1,16 @@
+[Unit]
+Description=D-Voting Node Service
+After=network.target dvoting-uk.service
+Requires=dvoting-uk.service
+
+[Service]
+User=dvoting
+
+ExecStartPre=/bin/rm -f /var/opt/dedis/dvoting/data/dela/daemon.sockcd
+ExecStart=/opt/dedis/dvoting/bin/start-dvoting
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -432,7 +432,7 @@ usage()
 	echo "  -x                         Run guest in background, a socket is created for the serial output"
 	echo "  -P                         Create the guest in paused state"
 	echo "  -t [TYPE]                  Set guest type: x86pc, x86q35, arm64v"
-	echo "  -G [NAME]                  Set name of guest to NAME"
+	echo "  -U [NAME]                  Set name of guest to NAME"
 	echo "  -g [PORT]                  Run a GDB server for the guest at port PORT (e.g., 1234)"
 	echo "                             Note: QEMU process stays alive on guest shutdown/reset"
 	echo "  -T [LOGFILE]               Enable tracing of CPU events (fine-grained results with -W)"
@@ -480,7 +480,7 @@ usage()
 	echo "  $0 -c 2 -m 2048 -b virbr0 -b virbr1 -q root.qcow2 -d /dev/sdb -d /dev/sdc"
 }
 
-while getopts :hnN:b:V:f:G:d:q:S:I:e:k:i:a:c:m:v:lrs:p:HxCDG:g:PT:WQ:M:t: OPT; do
+while getopts :hnN:b:V:f:G:d:q:S:I:e:k:i:a:c:m:v:lrs:p:HxCDUG:g:PT:WQ:M:t: OPT; do
         case ${OPT} in
 	v)
 		OPT_VIDEOVNC=0
@@ -666,7 +666,7 @@ EOF
 	C)
 		OPT_CTRLC=1
 		;;
-	G)
+	U)
 		ARG_GUESTNAME="${OPTARG}"
 		;;
 	Q)

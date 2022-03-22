@@ -1,0 +1,12 @@
+[submodule "contracts/evoting/unikernel/unikraft"]
+	path = contracts/evoting/unikernel/unikraft
+	url = https://github.com/unikraft/unikraft
+[submodule "contracts/evoting/unikernel/libs/lwip"]
+	path = contracts/evoting/unikernel/libs/lwip
+	url = https://github.com/unikraft/lib-lwip
+[submodule "contracts/evoting/unikernel/libs/newlib"]
+	path = contracts/evoting/unikernel/libs/newlib
+	url = https://github.com/unikraft/lib-newlib
+[submodule "contracts/evoting/unikernel/libs/libsodium"]
+	path = contracts/evoting/unikernel/libs/libsodium
+	url = https://github.com/cs-pub-ro/lib-libsodium
