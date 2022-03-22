@@ -12,7 +12,8 @@ const BallotIndex: FC = () => {
     <div>
       <SimpleTable
         statusToKeep={OPEN}
-        pathLink="vote"
+        //pathLink="vote"
+        pathLink="ballot/show"
         textWhenData={t('voteAllowed')}
         textWhenNoData={t('noVote')}
       />

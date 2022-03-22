@@ -1,6 +1,6 @@
 import React, { FC, ReactElement, createContext, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { ENDPOINT_PERSONNAL_INFO } from 'components/utils/Endpoints';
+import { ENDPOINT_PERSONAL_INFO } from 'components/utils/Endpoints';
 
 import 'index.css';
 import App from 'layout/App';
@@ -42,7 +42,7 @@ const AppContainer = () => {
     const req = {
       method: 'GET',
     };
-    fetch(ENDPOINT_PERSONNAL_INFO, req)
+    fetch(ENDPOINT_PERSONAL_INFO, req)
       .then((res) => res.json())
       .then((result) => {
         setAuth({

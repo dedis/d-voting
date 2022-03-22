@@ -1,6 +1,6 @@
 // information accessed through the middleware
 export const ENDPOINT_GET_TEQ_KEY = '/api/get_teq_key';
-export const ENDPOINT_PERSONNAL_INFO = '/api/personal_info';
+export const ENDPOINT_PERSONAL_INFO = '/api/personal_info';
 export const ENDPOINT_LOGOUT = '/api/logout';
 export const ENDPOINT_USER_RIGHTS = '/api/user_rights';
 export const ENDPOINT_ADD_ROLE = '/api/add_role';

@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import Action from './components/Action';
-import Result from '../result/components/Result';
 import Status from './components/Status';
 import useElection from 'components/utils/useElection';
 import { RESULT_AVAILABLE } from 'components/utils/StatusNumber';
@@ -19,8 +18,8 @@ const ElectionShow: FC = () => {
   const token = sessionStorage.getItem('token');
   const {
     loading,
-    title,
-    candidates,
+    electionTitle,
+    //candidates,
     electionID,
     status,
     result,
@@ -43,11 +42,11 @@ const ElectionShow: FC = () => {
     <div className="election-details-box">
       {!loading ? (
         <div>
-          <h1>{title}</h1>
+          <h1>{electionTitle}</h1>
           <div className="election-details-wrapper">
             {isResultSet ? (
               <div className="election-wrapper-child">
-                <Result resultData={result} candidates={candidates} />
+                {/* TODO: <Result resultData={result} candidates={candidates} />*/}
               </div>
             ) : (
               <div className="election-wrapper-child">
@@ -64,11 +63,11 @@ const ElectionShow: FC = () => {
                 </span>
                 <div className="election-candidates">
                   {t('candidates')}
-                  {candidates.map((cand) => (
+                  {/* TODO: candidates.map((cand) => (
                     <li key={cand} className="election-candidate">
                       {cand}
                     </li>
-                  ))}
+                  ))*/}
                 </div>
               </div>
             )}

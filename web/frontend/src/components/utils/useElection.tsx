@@ -11,8 +11,8 @@ const useElection = (electionID, token) => {
   };
   const [data, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ELECTION, request);
   const {
-    title,
-    candidates,
+    electionTitle,
+    configuration,
     status,
     pubKey,
     result,
@@ -23,8 +23,8 @@ const useElection = (electionID, token) => {
   } = useFillElectionFields(data);
   return {
     loading,
-    title,
-    candidates,
+    electionTitle,
+    configuration,
     electionID,
     status,
     pubKey,
