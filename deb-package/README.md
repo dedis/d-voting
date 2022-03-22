@@ -62,13 +62,13 @@ This result, which looks like as follow, will be given to node's operators:
 ### Participants (node's operators)
 
 Join the network. This operation will make the node share its certificate to the
-EPFL node, which, in turn, will share its know certificates to the node. Note
+MASTER node, which, in turn, will share its known certificates to the node. Note
 that the certificates are stored in the DB, which means that this operation must
 be re-done in case the DB is reset.
 
 ```sh
 sudo memcoin --config /var/opt/dedis/dvoting/data/dela minogrpc join \
-    --address <EPFL NODE ADDRESS> --token <TOKEN> --cert-hash <CERT HASH>
+    --address <MASTER NODE ADDRESS> --token <TOKEN> --cert-hash <CERT HASH>
 ```
 
 Get the node's address and public key:
@@ -99,12 +99,12 @@ sudo memcoin --config /var/opt/dedis/dvoting/data/dela ordering setup \
 ```sh
 PK=<> # taken from the "ordering export", the part after ":"
 sudo memcoin --config /var/opt/dedis/dvoting/data/dela pool add \
-    --key /home/user/master_key.key\
-    --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access\
-    --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000\
-    --args access:grant_contract --args go.dedis.ch/dela.Evoting\
-    --args access:grant_command --args all\
-    --args access:identity --args $PK\
+    --key /home/user/master_key.key \
+    --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access \
+    --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 \
+    --args access:grant_contract --args go.dedis.ch/dela.Evoting \
+    --args access:grant_command --args all \
+    --args access:identity --args $PK \
     --args access:command --args GRANT
 ```
 
