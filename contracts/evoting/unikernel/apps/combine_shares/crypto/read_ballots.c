@@ -47,6 +47,8 @@ void read_ballot(unsigned char *output, const char *filepath, const unsigned int
 // f_data that can be used to stored data across callback calls.
 void read_ballots(const char *folder, const char *prefix, read_ballots_cb f, void *f_data)
 {
+    printf("Read ballots from: %s\n", folder);
+
     DIR *d;
     struct dirent *dir;
     d = opendir(folder);
