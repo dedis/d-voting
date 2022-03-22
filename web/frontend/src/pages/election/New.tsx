@@ -22,9 +22,9 @@ const ElectionCreate: FC = () => {
       </h1>
       <p className="py-5">{t('create')}</p>
 
-      <div className="election-form flex flex-row justify-center items-start">
-        <ElectionForm setShowModal={setShowModal} setTextModal={setTextModal} />
-      </div>
+      {/* <div className="election-form flex flex-row justify-center items-start"> */}
+      <ElectionForm setShowModal={setShowModal} setTextModal={setTextModal} />
+      {/* </div> */}
     </div>
   );
 };
