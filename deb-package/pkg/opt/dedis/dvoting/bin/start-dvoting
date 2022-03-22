@@ -2,7 +2,8 @@
 
 sleep 5
 
-source ../config/config.env
-source ${network_config}
+source /opt/dedis/dvoting/config/config.env
+source /etc/dedis/dvoting/network.env
 
+echo "Starting ${dela_bin} on port ${dela_port} using folder ${dela_data} ..."
 LLVL=info ${dela_bin} --config ${dela_data} start --unikerneladdr ${uk_ip}":"${uk_port} --unikernelfolder ${fs_mount} --externalip --postinstall --promaddr ${prometheus_addr} --proxyaddr ${proxy_addr} --port ${dela_port}

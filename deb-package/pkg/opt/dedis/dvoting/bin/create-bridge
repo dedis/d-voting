@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ../config/network.env
+source /etc/dedis/dvoting/network.env
 
 echo "Creating bridge ${bridge_iface} with IP address ${uk_gw} ..."
 sudo brctl addbr "${bridge_iface}" || true
