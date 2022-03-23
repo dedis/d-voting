@@ -229,9 +229,10 @@ github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9de
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
+go.dedis.ch/dela v0.0.0-20211018150429-1fdbe35cd189 h1:DQ7qRaTKjHXgSt1IttLMiQJkSs2QTcFA/qjWUP2zcmU=
 go.dedis.ch/dela v0.0.0-20211018150429-1fdbe35cd189/go.mod h1:GVQ2MumgCcAkor2MmfRCoqTBsFjaaqt7HfJpQLhMGok=
-go.dedis.ch/dela v0.0.0-20220314000944-e6fcb387be1c h1:hmZAJQ3vpDkZvwn8gkz78boUA8zMnrmD68cLvm4tiTs=
-go.dedis.ch/dela v0.0.0-20220314000944-e6fcb387be1c/go.mod h1:r+9YxnSP/4xr5/RtgFXYlRQwfm5X/ySxTkTj2if0R/k=
+go.dedis.ch/dela v0.0.0-20220323154142-09e1dea38ec7 h1:RgZlTINsC6skFRDxiT+1JspgI1NdwDX2DFBmamudSOU=
+go.dedis.ch/dela v0.0.0-20220323154142-09e1dea38ec7/go.mod h1:r+9YxnSP/4xr5/RtgFXYlRQwfm5X/ySxTkTj2if0R/k=
 go.dedis.ch/dela-apps v0.0.0-20211019120455-a0db752a0ba0 h1:gPrJd+7QUuADpfToMKr80maGnjGPeB7ft7iNrkAtwGY=
 go.dedis.ch/dela-apps v0.0.0-20211019120455-a0db752a0ba0/go.mod h1:MoJSdm3LXkNtiKEK3eiBKgqFhory4v8sBr7ldFP/vFc=
 go.dedis.ch/fixbuf v1.0.3 h1:hGcV9Cd/znUxlusJ64eAlExS+5cJDIyTyEG+otu5wQs=
