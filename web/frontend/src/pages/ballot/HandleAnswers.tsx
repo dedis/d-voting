@@ -32,13 +32,15 @@ const getIndices = (
   let questionIndex: number;
   switch (type) {
     case RANK:
-      questionIndex = answers.RankAnswers.findIndex((r: RankAnswer) => r.ID === question.ID);
+      questionIndex = answers.RankAnswers.findIndex((rank: RankAnswer) => rank.ID === question.ID);
       break;
     case SELECT:
-      questionIndex = answers.SelectAnswers.findIndex((s: SelectAnswer) => s.ID === question.ID);
+      questionIndex = answers.SelectAnswers.findIndex(
+        (select: SelectAnswer) => select.ID === question.ID
+      );
       break;
     case TEXT:
-      questionIndex = answers.TextAnswers.findIndex((t: TextAnswer) => t.ID === question.ID);
+      questionIndex = answers.TextAnswers.findIndex((text: TextAnswer) => text.ID === question.ID);
   }
   let choiceIndex = question.Choices.findIndex((c: string) => c === choice);
   let errorIndex = answers.Errors.findIndex((e: Error) => e.ID === question.ID);
