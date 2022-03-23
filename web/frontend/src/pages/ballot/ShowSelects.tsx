@@ -1,11 +1,12 @@
-import { Error, SelectAnswer } from 'components/utils/useConfiguration';
+import { Select } from 'components/utils/types';
+import { Answers, SELECT } from 'components/utils/useConfiguration';
 import { t } from 'i18next';
-import { getIndexes } from './HandleAnswers';
+import { getIndices } from './HandleAnswers';
 
-const selectHintDisplay = (question: any) => {
+const selectHintDisplay = (question: Select) => {
   let hint = '';
-  let max = question.Content.MaxN;
-  let min = question.Content.MinN;
+  let max = question.MaxN;
+  let min = question.MinN;
   if (max === min) {
     hint = t('select') + min;
     hint += max > 1 ? t('pluralAnswers') : t('singularAnswer');
@@ -18,45 +19,40 @@ const selectHintDisplay = (question: any) => {
 
 const handleChecks = (
   e: React.ChangeEvent<HTMLInputElement>,
-  question: any,
+  question: Select,
   choice: string,
-  selectStates: SelectAnswer[],
-  setSelectStates: React.Dispatch<React.SetStateAction<SelectAnswer[]>>,
-  answerErrors: Error[],
-  setAnswerErrors: React.Dispatch<React.SetStateAction<Error[]>>
+  answers: Answers,
+  setAnswers: React.Dispatch<React.SetStateAction<Answers>>
 ) => {
-  let { questionIndex, choiceIndex, errorIndex } = getIndexes(
+  let { questionIndex, choiceIndex, errorIndex, newAnswers } = getIndices(
     question,
     choice,
-    selectStates,
-    answerErrors
+    answers,
+    SELECT
   );
-  let error = Array.from(answerErrors);
-  let newAnswer = Array.from(selectStates);
-  if (question.MaxN === 1) {
-    newAnswer[questionIndex].Answers.fill(false);
-  }
-  newAnswer[questionIndex].Answers[choiceIndex] = e.target.checked;
-  setSelectStates(newAnswer);
 
-  let numAnswer = selectStates[questionIndex].Answers.filter((c) => c === true).length;
-  if (numAnswer < question.MaxN + 1 && numAnswer >= question.MinN) {
-    error[errorIndex].Message = '';
-  } else if (numAnswer >= question.MaxN + 1) {
-    error[errorIndex].Message = t('maxSelectError') + question.MaxN + t('pluralAnswers');
+  if (question.MaxN === 1) {
+    newAnswers.SelectAnswers[questionIndex].Answers.fill(false);
   }
-  console.log('selectChecks: ' + JSON.stringify(selectStates));
-  setAnswerErrors(error);
+  newAnswers.SelectAnswers[questionIndex].Answers[choiceIndex] = e.target.checked;
+
+  let numAnswer = newAnswers.SelectAnswers[questionIndex].Answers.filter((c) => c === true).length;
+  if (numAnswer < question.MaxN + 1 && numAnswer >= question.MinN) {
+    newAnswers.Errors[errorIndex].Message = '';
+  } else if (numAnswer >= question.MaxN + 1) {
+    newAnswers.Errors[errorIndex].Message =
+      t('maxSelectError') + question.MaxN + t('pluralAnswers');
+  }
+  console.log('selectChecks: ' + JSON.stringify(answers));
+  setAnswers(newAnswers);
 };
 
 const selectDisplay = (
   isChecked: boolean,
   choice: string,
-  question: any,
-  selectStates: SelectAnswer[],
-  setSelectStates: React.Dispatch<React.SetStateAction<SelectAnswer[]>>,
-  answerErrors: Error[],
-  setAnswerErrors: React.Dispatch<React.SetStateAction<Error[]>>
+  question: Select,
+  answers: Answers,
+  setAnswers: React.Dispatch<React.SetStateAction<Answers>>
 ) => {
   return (
     <div>
@@ -67,17 +63,7 @@ const selectDisplay = (
         key={choice}
         value={choice}
         checked={isChecked}
-        onChange={(e) =>
-          handleChecks(
-            e,
-            question,
-            choice,
-            selectStates,
-            setSelectStates,
-            answerErrors,
-            setAnswerErrors
-          )
-        }
+        onChange={(e) => handleChecks(e, question, choice, answers, setAnswers)}
       />
       <label htmlFor={choice} className="pl-2 text-gray-700 cursor-pointer">
         {choice}

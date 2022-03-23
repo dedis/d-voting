@@ -15,10 +15,13 @@ import Modal from 'components/modal/Modal';
 import { OPEN } from 'components/utils/StatusNumber';
 import { encryptVote } from './components/VoteEncrypt';
 import useConfiguration, {
+  Error,
   Question,
   RANK,
+  RankAnswer,
   ROOT_ID,
   SELECT,
+  SelectAnswer,
   SUBJECT,
   TEXT,
 } from 'components/utils/useConfiguration';
@@ -26,24 +29,14 @@ import { ballotIsValid } from './HandleAnswers';
 import { selectDisplay, selectHintDisplay } from './ShowSelects';
 import { handleOnDragEnd, rankDisplay } from './ShowRanks';
 import { textDisplay, textHintDisplay } from './ShowTexts';
-import { ID } from 'components/utils/types';
+import { ID, Rank, Select, Text } from 'components/utils/types';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
   const { electionId } = useParams();
   const token = sessionStorage.getItem('token');
   const { loading, configuration, electionID, status, pubKey } = useElection(electionId, token);
-  const {
-    sortedQuestions,
-    selectStates,
-    setSelectStates,
-    rankStates,
-    setRankStates,
-    textStates,
-    setTextStates,
-    answerErrors,
-    setAnswerErrors,
-  } = useConfiguration(configuration);
+  const { sortedQuestions, answers, setAnswers } = useConfiguration(configuration);
   const [userErrors, setUserErrors] = useState('');
   const edCurve = kyber.curve.newCurve('edwards25519');
   const [postRequest, setPostRequest] = useState(null);
@@ -104,7 +97,7 @@ const Ballot: FC = () => {
   };
 
   const handleClick = () => {
-    if (ballotIsValid(sortedQuestions, selectStates, textStates, answerErrors, setAnswerErrors)) {
+    if (ballotIsValid(sortedQuestions, answers, setAnswers)) {
       setUserErrors('');
       sendBallot();
     } else {
@@ -125,19 +118,19 @@ const Ballot: FC = () => {
             <div>
               {question.Type === SELECT ? (
                 <div>
-                  {selectHintDisplay(question)}
+                  {selectHintDisplay(question.Content as Select)}
                   <div className="pl-8">
                     {Array.from(
-                      selectStates.find((s) => s.ID === question.Content.ID).Answers.entries()
+                      answers.SelectAnswers.find(
+                        (s: SelectAnswer) => s.ID === question.Content.ID
+                      ).Answers.entries()
                     ).map(([choiceIndex, isChecked]) =>
                       selectDisplay(
                         isChecked,
-                        question.Content.Choices[choiceIndex],
-                        question.Content,
-                        selectStates,
-                        setSelectStates,
-                        answerErrors,
-                        setAnswerErrors
+                        (question.Content as Select).Choices[choiceIndex],
+                        question.Content as Select,
+                        answers,
+                        setAnswers
                       )
                     )}
                   </div>
@@ -151,16 +144,16 @@ const Ballot: FC = () => {
                         {...provided.droppableProps}
                         ref={provided.innerRef}>
                         {Array.from(
-                          rankStates.find((s) => s.ID === question.Content.ID).Answers.entries()
+                          answers.RankAnswers.find(
+                            (r: RankAnswer) => r.ID === question.Content.ID
+                          ).Answers.entries()
                         ).map(([rankIndex, choiceIndex]) =>
                           rankDisplay(
                             rankIndex,
-                            question.Content.Choices[choiceIndex],
-                            question.Content,
-                            rankStates,
-                            setRankStates,
-                            answerErrors,
-                            setAnswerErrors
+                            (question.Content as Rank).Choices[choiceIndex],
+                            question.Content as Rank,
+                            answers,
+                            setAnswers
                           )
                         )}
                         {provided.placeholder}
@@ -170,17 +163,10 @@ const Ballot: FC = () => {
                 </div>
               ) : question.Type === TEXT ? (
                 <div>
-                  {textHintDisplay(question)}
+                  {textHintDisplay(question.Content as Text)}
                   <div className="pl-8">
-                    {question.Content.Choices.map((choice) =>
-                      textDisplay(
-                        choice,
-                        question.Content,
-                        textStates,
-                        setTextStates,
-                        answerErrors,
-                        setAnswerErrors
-                      )
+                    {(question.Content as Text).Choices.map((choice) =>
+                      textDisplay(choice, question.Content as Text, answers, setAnswers)
                     )}
                   </div>
                 </div>
@@ -191,7 +177,7 @@ const Ballot: FC = () => {
                 subjectTree(sorted, question.Content.ID)
               ) : (
                 <div className="text-red-600 text-sm py-2 pl-2">
-                  {answerErrors.find((e) => e.ID === question.Content.ID).Message}
+                  {answers.Errors.find((e: Error) => e.ID === question.Content.ID).Message}
                 </div>
               )}
             </div>
@@ -199,93 +185,11 @@ const Ballot: FC = () => {
         ))}
       </div>
     );
-
-    /*return (
-      <div>
-        {questions.map((question) => (
-          <div className="pl-6">
-            <h3 className="text-lg text-gray-600">{question.Content.Title}</h3>
-            <div className="pl-8">
-              {question.Type === SELECT ? (
-                <div>
-                  {selectHintDisplay(question)}
-                  {Array.from(
-                    selectStates.find((s) => s.ID === question.Content.ID).Answers.entries()
-                  ).map(([choiceIndex, isChecked]) =>
-                    selectDisplay(
-                      isChecked,
-                      question.Content.Choices[choiceIndex],
-                      question.Content,
-                      selectStates,
-                      setSelectStates,
-                      answerErrors,
-                      setAnswerErrors
-                    )
-                  )}
-                </div>
-              ) : question.Type === RANK ? (
-                <div className="mt-5">
-                  <Droppable droppableId={String(question.Content.ID)}>
-                    {(provided) => (
-                      <ul
-                        className={question.Content.ID}
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}>
-                        {Array.from(
-                          rankStates.find((s) => s.ID === question.Content.ID).Answers.entries()
-                        ).map(([rankIndex, choiceIndex]) =>
-                          rankDisplay(
-                            rankIndex,
-                            question.Content.Choices[choiceIndex],
-                            question.Content,
-                            rankStates,
-                            setRankStates,
-                            answerErrors,
-                            setAnswerErrors
-                          )
-                        )}
-                        {provided.placeholder}
-                      </ul>
-                    )}
-                  </Droppable>
-                </div>
-              ) : question.Type === TEXT ? (
-                <div>
-                  {textHintDisplay(question)}
-                  {question.Content.Choices.map((choice) =>
-                    textDisplay(
-                      choice,
-                      question.Content,
-                      textStates,
-                      setTextStates,
-                      answerErrors,
-                      setAnswerErrors
-                    )
-                  )}
-                </div>
-              ) : null}
-            </div>
-            <div>
-              {question.Type === SUBJECT ? (
-                subjectTree(sorted, question.Content.ID)
-              ) : (
-                <div className="text-red-600 text-sm py-2 pl-2">
-                  {answerErrors.find((e) => e.ID === question.Content.ID).Message}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    );*/
   };
 
   const ballotDisplay = () => {
     return (
-      <DragDropContext
-        onDragEnd={(e) =>
-          handleOnDragEnd(e, rankStates, setRankStates, answerErrors, setAnswerErrors)
-        }>
+      <DragDropContext onDragEnd={(e) => handleOnDragEnd(e, answers, setAnswers)}>
         <div>
           <h3 className="font-bold uppercase pt-4 pb-8 text-2xl text-center text-gray-600">
             {configuration.MainTitle}

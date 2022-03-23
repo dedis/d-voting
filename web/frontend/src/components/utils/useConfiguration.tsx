@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ID } from './types';
+import { ID, Rank, Select, Subject, Text } from './types';
 
 export const RANK = 'rank';
 export const SELECT = 'select';
@@ -11,7 +11,7 @@ export interface Question {
   Order: number;
   ParentID: ID;
   Type: string;
-  Content: any;
+  Content: Select | Subject | Rank | Text;
 }
 
 export interface SelectAnswer {
@@ -34,15 +34,19 @@ export interface Error {
   Message: string;
 }
 
+export interface Answers {
+  SelectAnswers: SelectAnswer[];
+  RankAnswers: RankAnswer[];
+  TextAnswers: TextAnswer[];
+  Errors: Error[];
+}
+
 function initConfiguration(
   question: any,
   parentId: ID,
   sortedQuestions: Array<Question>,
   currentOrder: number,
-  selectList: SelectAnswer[],
-  rankList: RankAnswer[],
-  textList: TextAnswer[],
-  errors: Error[]
+  answerList
 ) {
   sortedQuestions.push({
     Order: currentOrder,
@@ -56,16 +60,8 @@ function initConfiguration(
     for (const subject of question.Subjects) {
       let order = question.Order.findIndex((id: ID) => id === subject.ID) + 1;
       numberOfQuestion +=
-        initConfiguration(
-          subject,
-          question.ID,
-          sortedQuestions,
-          currentOrder + order,
-          selectList,
-          rankList,
-          textList,
-          errors
-        ) + 1;
+        initConfiguration(subject, question.ID, sortedQuestions, currentOrder + order, answerList) +
+        1;
     }
   }
   if (question.Selects) {
@@ -78,11 +74,11 @@ function initConfiguration(
         Content: select,
       });
       numberOfQuestion += 1;
-      selectList.push({
+      answerList.SelectAnswers.push({
         ID: select.ID,
         Answers: new Array<boolean>(select.Choices.length).fill(false),
       });
-      errors.push({
+      answerList.Errors.push({
         ID: select.ID,
         Message: '',
       });
@@ -98,11 +94,11 @@ function initConfiguration(
         Content: rank,
       });
       numberOfQuestion += 1;
-      rankList.push({
+      answerList.RankAnswers.push({
         ID: rank.ID,
         Answers: Array.from(Array(rank.Choices.length).keys()),
       });
-      errors.push({
+      answerList.Errors.push({
         ID: rank.ID,
         Message: '',
       });
@@ -118,11 +114,11 @@ function initConfiguration(
         Content: text,
       });
       numberOfQuestion += 1;
-      textList.push({
+      answerList.TextAnswers.push({
         ID: text.ID,
         Answers: new Array<string>(text.Choices.length).fill(''),
       });
-      errors.push({
+      answerList.Errors.push({
         ID: text.ID,
         Message: '',
       });
@@ -134,52 +130,34 @@ function initConfiguration(
 
 const useConfiguration = (configuration) => {
   const [sortedQuestions, setSortedQuestions] = useState(Array<Question>());
-  const [selectStates, setSelectStates] = useState(Array<SelectAnswer>());
-  const [rankStates, setRankStates] = useState(Array<RankAnswer>());
-  const [textStates, setTextStates] = useState(Array<TextAnswer>());
-  const [answerErrors, setAnswerErrors] = useState(Array<Error>());
+  const [answers, setAnswers]: [Answers, React.Dispatch<React.SetStateAction<Answers>>] =
+    useState(null);
   useEffect(() => {
     if (configuration !== null) {
       let order: number = 0;
       let questionList = Array<Question>();
-      let selectList = Array<SelectAnswer>();
-      let rankList = Array<RankAnswer>();
-      let textList = Array<TextAnswer>();
-      let errors = Array<Error>();
+      let answerList: Answers = {
+        SelectAnswers: new Array<SelectAnswer>(),
+        RankAnswers: new Array<RankAnswer>(),
+        TextAnswers: new Array<TextAnswer>(),
+        Errors: new Array<Error>(),
+      };
 
       for (const subject of configuration.Scaffold) {
-        order += initConfiguration(
-          subject,
-          ROOT_ID,
-          questionList,
-          order,
-          selectList,
-          rankList,
-          textList,
-          errors
-        );
+        order += initConfiguration(subject, ROOT_ID, questionList, order, answerList);
       }
       questionList.sort((q1, q2) => {
         return q1.Order - q2.Order;
       });
       setSortedQuestions(questionList);
-      setSelectStates(selectList);
-      setRankStates(rankList);
-      setTextStates(textList);
-      setAnswerErrors(errors);
+      setAnswers(answerList);
     }
   }, [configuration]);
 
   return {
     sortedQuestions,
-    selectStates,
-    setSelectStates,
-    rankStates,
-    setRankStates,
-    textStates,
-    setTextStates,
-    answerErrors,
-    setAnswerErrors,
+    answers,
+    setAnswers,
   };
 };
 

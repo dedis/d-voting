@@ -1,11 +1,12 @@
-import { Error, TextAnswer } from 'components/utils/useConfiguration';
+import { Text } from 'components/utils/types';
+import { Answers, TEXT } from 'components/utils/useConfiguration';
 import { t } from 'i18next';
-import { getIndexes } from './HandleAnswers';
+import { getIndices } from './HandleAnswers';
 
-const textHintDisplay = (question: any) => {
+const textHintDisplay = (content: Text) => {
   let hint = '';
-  let min = question.Content.MinN;
-  let max = question.Content.MaxN;
+  let min = content.MinN;
+  let max = content.MaxN;
 
   if (min !== max) {
     hint = t('minText') + min;
@@ -18,44 +19,38 @@ const textHintDisplay = (question: any) => {
 
 const handleTextInput = (
   e: React.ChangeEvent<HTMLInputElement>,
-  question: any,
+  question: Text,
   choice: string,
-  textStates: TextAnswer[],
-  setTextStates: React.Dispatch<React.SetStateAction<TextAnswer[]>>,
-  answerErrors: Error[],
-  setAnswerErrors: React.Dispatch<React.SetStateAction<Error[]>>
+  answers: Answers,
+  setAnswers: React.Dispatch<React.SetStateAction<Answers>>
 ) => {
-  let { questionIndex, choiceIndex, errorIndex } = getIndexes(
+  let { questionIndex, choiceIndex, errorIndex, newAnswers } = getIndices(
     question,
     choice,
-    textStates,
-    answerErrors
+    answers,
+    TEXT
   );
-  let error = Array.from(answerErrors);
-  let text = Array.from(textStates);
-  text[questionIndex].Answers[choiceIndex] = e.target.value.trim();
-  setTextStates(text);
-  error[errorIndex].Message = '';
+
+  newAnswers.TextAnswers[questionIndex].Answers[choiceIndex] = e.target.value.trim();
+  newAnswers.Errors[errorIndex].Message = '';
 
   if (question.Regex) {
     let regexp = new RegExp(question.Regex);
-    for (const answer of text[questionIndex].Answers) {
+    for (const answer of newAnswers.TextAnswers[questionIndex].Answers) {
       if (!regexp.test(answer) && answer !== '') {
-        error[errorIndex].Message = t('regexpCheck') + question.Regex;
+        newAnswers.Errors[errorIndex].Message = t('regexpCheck') + question.Regex;
       }
     }
   }
-  setAnswerErrors(error);
-  console.log('textStates: ' + JSON.stringify(textStates));
+  setAnswers(newAnswers);
+  console.log('textStates: ' + JSON.stringify(answers));
 };
 
 const textDisplay = (
   choice: string,
-  question: any,
-  textStates: TextAnswer[],
-  setTextStates: React.Dispatch<React.SetStateAction<TextAnswer[]>>,
-  answerErrors: Error[],
-  setAnswerErrors: React.Dispatch<React.SetStateAction<Error[]>>
+  question: Text,
+  answers: Answers,
+  setAnswers: React.Dispatch<React.SetStateAction<Answers>>
 ) => {
   return (
     <div>
@@ -65,17 +60,7 @@ const textDisplay = (
         type="text"
         key={choice}
         className="mt-1 sm:text-sm border rounded-md w-1/2"
-        onChange={(e) =>
-          handleTextInput(
-            e,
-            question,
-            choice,
-            textStates,
-            setTextStates,
-            answerErrors,
-            setAnswerErrors
-          )
-        }
+        onChange={(e) => handleTextInput(e, question, choice, answers, setAnswers)}
       />
     </div>
   );

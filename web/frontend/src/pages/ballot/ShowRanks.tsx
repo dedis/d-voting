@@ -1,72 +1,63 @@
-import { getIndexes } from './HandleAnswers';
+import { buildAnswer, getIndices } from './HandleAnswers';
 import { Draggable, DropResult } from 'react-beautiful-dnd';
-import { Error, RankAnswer } from 'components/utils/useConfiguration';
+import { Answers, Error, RANK, RankAnswer } from 'components/utils/useConfiguration';
 import { t } from 'i18next';
+import { Rank } from 'components/utils/types';
 
 const reorderRank = (
   sourceIndex: number,
   destinationIndex: number,
   questionIndex: number,
-  rankStates: RankAnswer[],
-  setRankStates: React.Dispatch<React.SetStateAction<RankAnswer[]>>
+  answers: Answers,
+  setAnswers: React.Dispatch<React.SetStateAction<Answers>>
 ) => {
-  const items: Array<RankAnswer> = Array.from(rankStates);
-  const [reorderedItem] = items[questionIndex].Answers.splice(sourceIndex, 1);
-  items[questionIndex].Answers.splice(destinationIndex, 0, reorderedItem);
-  setRankStates(items);
+  const [reorderedItem] = answers.RankAnswers[questionIndex].Answers.splice(sourceIndex, 1);
+  answers.RankAnswers[questionIndex].Answers.splice(destinationIndex, 0, reorderedItem);
+  setAnswers(answers);
 };
 
 const handleOnDragEnd = (
   result: DropResult,
-  rankStates: RankAnswer[],
-  setRankStates: React.Dispatch<React.SetStateAction<RankAnswer[]>>,
-  answerErrors: Error[],
-  setAnswerErrors: React.Dispatch<React.SetStateAction<Error[]>>
+  answers: Answers,
+  setAnswers: React.Dispatch<React.SetStateAction<Answers>>
 ) => {
   if (!result.destination) {
     return;
   }
-  let questionIndex = rankStates.findIndex((s) => s.ID === result.destination.droppableId);
-  let errorIndex = answerErrors.findIndex((e) => e.ID === result.destination.droppableId);
-  let error = Array.from(answerErrors);
-  error[errorIndex].Message = '';
-  setAnswerErrors(error);
-  reorderRank(
-    result.source.index,
-    result.destination.index,
-    questionIndex,
-    rankStates,
-    setRankStates
+  let questionIndex = answers.RankAnswers.findIndex(
+    (r: RankAnswer) => r.ID === result.destination.droppableId
   );
-  console.log('rankState: ' + JSON.stringify(rankStates));
+  let errorIndex = answers.Errors.findIndex((e: Error) => e.ID === result.destination.droppableId);
+  let newAnswers = buildAnswer(answers);
+
+  newAnswers.Errors[errorIndex].Message = '';
+  reorderRank(result.source.index, result.destination.index, questionIndex, newAnswers, setAnswers);
+  console.log('rankState: ' + JSON.stringify(answers));
 };
 
 const handleRankInput = (
   e: React.ChangeEvent<HTMLInputElement>,
-  question: any,
+  question: Rank,
   choice: string,
   rankIndex: number,
-  rankStates: RankAnswer[],
-  setRankStates: React.Dispatch<React.SetStateAction<RankAnswer[]>>,
-  answerErrors: Error[],
-  setAnswerErrors: React.Dispatch<React.SetStateAction<Error[]>>
+  answers: Answers,
+  setAnswers: React.Dispatch<React.SetStateAction<Answers>>
 ) => {
-  let { questionIndex, errorIndex } = getIndexes(question, choice, rankStates, answerErrors);
-  let error = Array.from(answerErrors);
-  error[errorIndex].Message = '';
+  let { questionIndex, errorIndex, newAnswers } = getIndices(question, choice, answers, RANK);
+
+  newAnswers.Errors[errorIndex].Message = '';
   let destinationIndex = +e.target.value;
   if (e.target.value !== '') {
     if (destinationIndex > question.MaxN || destinationIndex <= 0) {
-      error[errorIndex].Message = t('rankRange') + question.MaxN;
+      newAnswers.Errors[errorIndex].Message = t('rankRange') + question.MaxN;
+      setAnswers(newAnswers);
     } else {
-      reorderRank(rankIndex, destinationIndex - 1, questionIndex, rankStates, setRankStates);
+      reorderRank(rankIndex, destinationIndex - 1, questionIndex, newAnswers, setAnswers);
     }
   }
   e.target.value = '';
-  setAnswerErrors(error);
 
-  console.log('rankStates: ' + JSON.stringify(rankStates));
-  setAnswerErrors(error);
+  console.log('rankStates: ' + JSON.stringify(newAnswers));
 };
 
 const RankList = () => {
@@ -96,11 +87,9 @@ const RankList = () => {
 const rankDisplay = (
   rankIndex: number,
   choice: string,
-  question: any,
-  rankStates: RankAnswer[],
-  setRankStates: React.Dispatch<React.SetStateAction<RankAnswer[]>>,
-  answerErrors: Error[],
-  setAnswerErrors: React.Dispatch<React.SetStateAction<Error[]>>
+  question: Rank,
+  answers: Answers,
+  setAnswers: React.Dispatch<React.SetStateAction<Answers>>
 ) => {
   return (
     <Draggable key={choice} draggableId={choice} index={rankIndex}>
@@ -117,18 +106,7 @@ const rankDisplay = (
               placeholder={(rankIndex + 1).toString()}
               size={question.MaxN / 10 + 1}
               className="flex-none mx-3 rounded text-center"
-              onChange={(e) =>
-                handleRankInput(
-                  e,
-                  question,
-                  choice,
-                  rankIndex,
-                  rankStates,
-                  setRankStates,
-                  answerErrors,
-                  setAnswerErrors
-                )
-              }
+              onChange={(e) => handleRankInput(e, question, choice, rankIndex, answers, setAnswers)}
             />
             <div className="flex-auto">{choice}</div>
             <RankList />
