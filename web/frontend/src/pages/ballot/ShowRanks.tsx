@@ -108,7 +108,7 @@ const rankDisplay = (
               className="flex-none mx-3 rounded text-center"
               onChange={(e) => handleRankInput(e, question, choice, rankIndex, answers, setAnswers)}
             />
-            <div className="flex-auto">{choice}</div>
+            <div className="flex-auto text-gray-600">{choice}</div>
             <RankList />
           </div>
         </li>

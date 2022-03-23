@@ -196,7 +196,7 @@ const Ballot: FC = () => {
   const ballotDisplay = () => {
     return (
       <DragDropContext onDragEnd={(e) => handleOnDragEnd(e, answers, setAnswers)}>
-        <div className="shadow-lg rounded-md my-4 py-4">
+        <div className="shadow-lg rounded-md my-4 py-8">
           <h3 className="font-bold uppercase py-4 text-2xl text-center text-gray-600">
             {configuration.MainTitle}
           </h3>
@@ -206,7 +206,7 @@ const Ballot: FC = () => {
             <div className="flex mx-8">
               <button
                 type="button"
-                className="flex inline-flex mt-2 mb-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
+                className="flex inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
                 onClick={handleClick}>
                 <CloudUploadIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
                 {t('castVote')}

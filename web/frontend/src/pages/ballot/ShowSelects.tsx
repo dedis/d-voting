@@ -65,7 +65,7 @@ const selectDisplay = (
         checked={isChecked}
         onChange={(e) => handleChecks(e, question, choice, answers, setAnswers)}
       />
-      <label htmlFor={choice} className="pl-2 text-gray-700 cursor-pointer">
+      <label htmlFor={choice} className="pl-2 text-gray-600 cursor-pointer">
         {choice}
       </label>
     </div>

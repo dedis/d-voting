@@ -54,7 +54,9 @@ const textDisplay = (
 ) => {
   return (
     <div>
-      <label htmlFor={choice}>{choice + ': '}</label>
+      <label htmlFor={choice} className="text-gray-600">
+        {choice + ': '}
+      </label>
       <input
         id={choice}
         type="text"
