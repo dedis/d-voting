@@ -43,7 +43,6 @@ const handleChecks = (
     newAnswers.Errors[errorIndex].Message =
       t('maxSelectError') + question.MaxN + t('pluralAnswers');
   }
-  console.log('selectChecks: ' + JSON.stringify(answers));
   setAnswers(newAnswers);
 };
 

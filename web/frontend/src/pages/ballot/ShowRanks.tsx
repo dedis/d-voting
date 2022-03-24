@@ -32,7 +32,6 @@ const handleOnDragEnd = (
 
   newAnswers.Errors[errorIndex].Message = '';
   reorderRank(result.source.index, result.destination.index, questionIndex, newAnswers, setAnswers);
-  console.log('rankState: ' + JSON.stringify(answers));
 };
 
 const handleRankInput = (
@@ -56,8 +55,6 @@ const handleRankInput = (
     }
   }
   e.target.value = '';
-
-  console.log('rankStates: ' + JSON.stringify(newAnswers));
 };
 
 const RankList = () => {

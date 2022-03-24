@@ -43,7 +43,6 @@ const handleTextInput = (
     }
   }
   setAnswers(newAnswers);
-  console.log('textStates: ' + JSON.stringify(answers));
 };
 
 const textDisplay = (

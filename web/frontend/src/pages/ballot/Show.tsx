@@ -30,6 +30,7 @@ import { selectDisplay, selectHintDisplay } from './ShowSelects';
 import { handleOnDragEnd, rankDisplay } from './ShowRanks';
 import { textDisplay, textHintDisplay } from './ShowTexts';
 import { ID, Rank, Select, Text } from 'components/utils/types';
+import voteEncode from './components/VoteEncode';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
@@ -84,8 +85,7 @@ const Ballot: FC = () => {
   };
 
   const sendBallot = async () => {
-    // TODO: encode ballot: encodeBallot(selectStates, rankStates, textStates);
-    let encodedAnswers = ['deadbeef'];
+    let encodedAnswers = voteEncode(answers);
     const [K, C] = encryptVote(encodedAnswers, Buffer.from(hexToBytes(pubKey).buffer), edCurve);
     //sending the ballot to evoting server
     let ballot = createBallot(K, C);

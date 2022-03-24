@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import SimpleTable from 'components/utils/SimpleTable';
 import { OPEN } from 'components/utils/StatusNumber';
 import './Index.css';
+import { ROUTE_BALLOT_SHOW } from 'Routes';
 
 const BallotIndex: FC = () => {
   const { t } = useTranslation();
@@ -12,8 +13,7 @@ const BallotIndex: FC = () => {
     <div>
       <SimpleTable
         statusToKeep={OPEN}
-        //pathLink="vote"
-        pathLink="ballot/show"
+        pathLink={ROUTE_BALLOT_SHOW}
         textWhenData={t('voteAllowed')}
         textWhenNoData={t('noVote')}
       />

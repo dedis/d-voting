@@ -102,8 +102,8 @@ export const handlers = [
         ElectionID: body.ElectionID,
         UserID: mockUserID,
         Ballot: {
-          K: 'KOALA',
-          C: 'CHARLIE',
+          K: 'KValue',
+          C: 'CValue',
         },
         Token: body.Token,
       })
