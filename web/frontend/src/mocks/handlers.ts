@@ -32,7 +32,7 @@ var mockElections = [
     ElectionID: uid(),
     Title: 'Title Election 1',
     Status: 1,
-    Pubkey: 'MIICXQIBAAK',
+    Pubkey: 'XL4V6EMIICW',
     Result: [],
     Format: mockElection1,
   },

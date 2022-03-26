@@ -11,6 +11,7 @@ import AddButton from './AddButton';
 import SubjectComponent from './SubjectComponent';
 
 import { getObjSubject } from './utils/getObjectType';
+import UploadFile from './UploadFile';
 
 type ElectionFormProps = {
   setShowModal(modal: any): void;
@@ -72,7 +73,8 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
         if (curr.ID === parentID) {
           switch (type) {
             case 'ADD':
-              curr[target].push(obj);
+              if (curr[target]) curr[target].push(obj);
+              else curr[target] = [obj];
               curr.Order.push(obj.ID);
               break;
             case 'UPDATE':
@@ -105,7 +107,11 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
         if (curr.hasOwnProperty('Scaffold')) {
           curr.Scaffold.forEach((child) => stack.push([child, curr]));
         } else {
-          curr.Subjects.forEach((child) => stack.push([child, curr]));
+          if (curr.Subjects) {
+            curr.Subjects.forEach((child) => stack.push([child, curr]));
+          } else {
+            curr.Subjects = [];
+          }
         }
       }
       setSchema(modifiedSchema);
@@ -119,8 +125,14 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
   };
 
   return (
-    <>
+    <div className="w-screen px-4 md:px-0 md:w-auto">
       <div className="flex flex-col shadow-lg rounded-md">
+        <UploadFile setSchema={setSchema} setShowModal={setShowModal} setTextModal={setTextModal} />
+        <div className="hidden sm:block">
+          <div className="py-3 px-4">
+            <div className="border-t border-gray-200" />
+          </div>
+        </div>
         <input
           value={MainTitle}
           onChange={onMainTitleChange}
@@ -135,6 +147,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
             schema={schema}
             subject={subject}
             updateSchema={updateSchema}
+            nestedLevel={0}
           />
         ))}
         <div>
@@ -148,7 +161,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
         <CloudUploadIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
         {t('createElection')}
       </button>
-    </>
+    </div>
   );
 };
 

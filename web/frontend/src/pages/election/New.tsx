@@ -10,7 +10,7 @@ const ElectionCreate: FC = () => {
   const [textModal, setTextModal] = useState('');
 
   return (
-    <div className="create-election-wrapper">
+    <div className="mx-4">
       <Modal
         showModal={showModal}
         setShowModal={setShowModal}

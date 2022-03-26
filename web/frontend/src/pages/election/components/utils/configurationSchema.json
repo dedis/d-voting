@@ -1,0 +1,97 @@
+{
+  "$id": "configurationSchema",
+  "type": "object",
+  "properties": {
+    "MainTitle": { "type": "string" },
+    "Scaffold": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ID": { "type": "string" },
+          "Title": { "type": "string" },
+          "Order": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "Subjects": {
+            "type": "array",
+            "items": { "$ref": "#/properties/Scaffold/items" }
+          },
+          "Selects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ID": { "type": "string" },
+                "Title": { "type": "string" },
+                "Order": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "MaxN": { "type": "number" },
+                "MinN": { "type": "number" },
+                "Choices": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              },
+              "required": ["ID", "Title", "MaxN", "MinN", "Choices"],
+              "additionalProperties": false
+            }
+          },
+          "Ranks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ID": { "type": "string" },
+                "Title": { "type": "string" },
+                "Order": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "MaxN": { "type": "number" },
+                "MinN": { "type": "number" },
+                "Choices": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              },
+              "required": ["ID", "Title", "MaxN", "MinN", "Choices"],
+              "additionalProperties": false
+            }
+          },
+          "Texts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ID": { "type": "string" },
+                "Title": { "type": "string" },
+                "Order": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "MaxN": { "type": "number" },
+                "MinN": { "type": "number" },
+                "Regex": { "type": "string" },
+                "MaxLength": { "type": "number" },
+                "Choices": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              },
+              "required": ["ID", "Title", "MaxN", "MinN", "MaxLength", "Choices"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["ID", "Title", "Order"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["MainTitle", "Scaffold"],
+  "additionalProperties": false
+}

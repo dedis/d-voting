@@ -31,7 +31,7 @@ const QuestionComponent: FC<QuestionComponentProps> = ({ obj, parentID, updateSc
     Text: getObjText(ID),
   };
   const [values, [handleChange, addChoice, deleteChoice, clearChoices, updateChoice]] =
-    useQuestionForm(initTypeObject[type]);
+    useQuestionForm(obj.Title === '' ? initTypeObject[type] : obj);
 
   const { Title, MaxN, MinN, Choices, Regex, MaxLength } = values;
 
