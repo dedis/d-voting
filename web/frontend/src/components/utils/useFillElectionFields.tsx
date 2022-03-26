@@ -6,6 +6,7 @@ const useFillElectionFields = (electionData) => {
   const [id, setId] = useState(null);
   const [status, setStatus] = useState(null);
   const [pubKey, setPubKey] = useState('');
+  const [ballotSize, setBallotSize] = useState(0);
   const [result, setResult] = useState(null);
   const [isResultSet, setIsResultSet] = useState(false);
 
@@ -16,6 +17,7 @@ const useFillElectionFields = (electionData) => {
       setId(electionData.ElectionID);
       setStatus(electionData.Status);
       setPubKey(electionData.Pubkey);
+      setBallotSize(electionData.BallotSize);
       setResult(electionData.Result);
       if (electionData.Result.length > 0) {
         setIsResultSet(true);
@@ -29,6 +31,7 @@ const useFillElectionFields = (electionData) => {
     id,
     status,
     pubKey,
+    ballotSize,
     result,
     setResult,
     setStatus,

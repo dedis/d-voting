@@ -46,7 +46,7 @@ function initConfiguration(
   parentId: ID,
   sortedQuestions: Array<Question>,
   currentOrder: number,
-  answerList
+  answerList: Answers
 ) {
   sortedQuestions.push({
     Order: currentOrder,

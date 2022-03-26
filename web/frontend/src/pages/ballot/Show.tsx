@@ -30,13 +30,16 @@ import { selectDisplay, selectHintDisplay } from './ShowSelects';
 import { handleOnDragEnd, rankDisplay } from './ShowRanks';
 import { textDisplay, textHintDisplay } from './ShowTexts';
 import { ID, Rank, Select, Text } from 'components/utils/types';
-import voteEncode from './components/VoteEncode';
+import { voteEncode } from './components/VoteEncode';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
   const { electionId } = useParams();
   const token = sessionStorage.getItem('token');
-  const { loading, configuration, electionID, status, pubKey } = useElection(electionId, token);
+  const { loading, configuration, electionID, status, pubKey, ballotSize } = useElection(
+    electionId,
+    token
+  );
   const { sortedQuestions, answers, setAnswers } = useConfiguration(configuration);
   const [userErrors, setUserErrors] = useState('');
   const edCurve = kyber.curve.newCurve('edwards25519');
@@ -74,8 +77,9 @@ const Ballot: FC = () => {
     return new Uint8Array(bytes);
   };
 
-  const createBallot = (K: Buffer, C: Buffer) => {
-    let vote = JSON.stringify({ K: Array.from(K), C: Array.from(C) });
+  const createBallot = (KCPairs: Array<Buffer[]>) => {
+    let vote = '';
+    KCPairs.forEach(([K, C]) => (vote += JSON.stringify({ K: Array.from(K), C: Array.from(C) })));
     return {
       ElectionID: electionID,
       UserId: sessionStorage.getItem('id'),
@@ -85,10 +89,15 @@ const Ballot: FC = () => {
   };
 
   const sendBallot = async () => {
-    let encodedAnswers = voteEncode(answers);
-    const [K, C] = encryptVote(encodedAnswers, Buffer.from(hexToBytes(pubKey).buffer), edCurve);
+    let ballotChunks = voteEncode(answers, ballotSize);
+    let KCPairs = Array<Buffer[]>();
+    ballotChunks.forEach((chunk) =>
+      KCPairs.push(encryptVote(chunk, Buffer.from(hexToBytes(pubKey).buffer), edCurve))
+    );
+
+    KCPairs.forEach(([K, C]) => console.log('K: ' + K + ' C: ' + C));
     //sending the ballot to evoting server
-    let ballot = createBallot(K, C);
+    let ballot = createBallot(KCPairs);
     let newRequest = {
       method: 'POST',
       body: JSON.stringify(ballot),

@@ -19,7 +19,6 @@ const ElectionShow: FC = () => {
   const {
     loading,
     electionTitle,
-    //candidates,
     electionID,
     status,
     result,
