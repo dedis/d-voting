@@ -4,7 +4,7 @@ import { Answers, Error, RANK, RankAnswer } from 'components/utils/useConfigurat
 import { t } from 'i18next';
 import { Rank } from 'components/utils/types';
 
-const reorderRank = (
+const reorderRankAnswers = (
   sourceIndex: number,
   destinationIndex: number,
   questionIndex: number,
@@ -31,7 +31,13 @@ const handleOnDragEnd = (
   let newAnswers = buildAnswer(answers);
 
   newAnswers.Errors[errorIndex].Message = '';
-  reorderRank(result.source.index, result.destination.index, questionIndex, newAnswers, setAnswers);
+  reorderRankAnswers(
+    result.source.index,
+    result.destination.index,
+    questionIndex,
+    newAnswers,
+    setAnswers
+  );
 };
 
 const handleRankInput = (
@@ -51,7 +57,7 @@ const handleRankInput = (
       newAnswers.Errors[errorIndex].Message = t('rankRange') + question.MaxN;
       setAnswers(newAnswers);
     } else {
-      reorderRank(rankIndex, destinationIndex - 1, questionIndex, newAnswers, setAnswers);
+      reorderRankAnswers(rankIndex, destinationIndex - 1, questionIndex, newAnswers, setAnswers);
     }
   }
   e.target.value = '';

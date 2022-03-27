@@ -96,7 +96,6 @@ export const handlers = [
 
   rest.post(ENDPOINT_EVOTING_CAST_BALLOT, (req, res, ctx) => {
     const body: GetElectionBody = JSON.parse(req.body.toString());
-    console.log(body);
 
     return res(
       ctx.status(200),

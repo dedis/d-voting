@@ -14,7 +14,11 @@ export function voteEncode(answers: Answers, ballotSize: number) {
 
   answers.RankAnswers.forEach((rank) => {
     encodedBallot += 'rank:' + rank.ID + ':';
-    rank.Answers.forEach((answer) => (encodedBallot += answer + ',')); // is this the right format ?
+    let position = Array<number>(rank.Answers.length);
+    for (let i = 0; i < rank.Answers.length; i++) {
+      position[rank.Answers[i]] = i;
+    }
+    position.forEach((pos) => (encodedBallot += pos + ','));
     encodedBallot = encodedBallot.slice(0, -1);
     encodedBallot += '\n';
   });
@@ -33,7 +37,6 @@ export function voteEncode(answers: Answers, ballotSize: number) {
     const padding = new ShortUniqueId({ length: ballotSize - byteSize });
     encodedBallot += padding();
   }
-  console.log('encodedBallot:' + encodedBallot);
 
   var ballotChunks = Array<string>();
   for (let i = 0; i < ballotSize; i += 29) {

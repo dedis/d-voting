@@ -77,9 +77,9 @@ const Ballot: FC = () => {
     return new Uint8Array(bytes);
   };
 
-  const createBallot = (KCPairs: Array<Buffer[]>) => {
+  const createBallot = (EGPairs: Array<Buffer[]>) => {
     let vote = '';
-    KCPairs.forEach(([K, C]) => (vote += JSON.stringify({ K: Array.from(K), C: Array.from(C) })));
+    EGPairs.forEach(([K, C]) => (vote += JSON.stringify({ K: Array.from(K), C: Array.from(C) })));
     return {
       ElectionID: electionID,
       UserId: sessionStorage.getItem('id'),
@@ -90,14 +90,12 @@ const Ballot: FC = () => {
 
   const sendBallot = async () => {
     let ballotChunks = voteEncode(answers, ballotSize);
-    let KCPairs = Array<Buffer[]>();
+    let EGPairs = Array<Buffer[]>();
     ballotChunks.forEach((chunk) =>
-      KCPairs.push(encryptVote(chunk, Buffer.from(hexToBytes(pubKey).buffer), edCurve))
+      EGPairs.push(encryptVote(chunk, Buffer.from(hexToBytes(pubKey).buffer), edCurve))
     );
-
-    KCPairs.forEach(([K, C]) => console.log('K: ' + K + ' C: ' + C));
     //sending the ballot to evoting server
-    let ballot = createBallot(KCPairs);
+    let ballot = createBallot(EGPairs);
     let newRequest = {
       method: 'POST',
       body: JSON.stringify(ballot),
@@ -258,7 +256,6 @@ const Ballot: FC = () => {
     </div>
   );
 };
-/*<div className="mx-4 my-4 px-8 py-4 shadow-lg rounded-md">*/
 
 Ballot.propTypes = {
   location: PropTypes.any,
