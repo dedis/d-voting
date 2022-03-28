@@ -129,6 +129,7 @@ type GetElectionInfoResponse struct {
 	Pubkey        string
 	Result        []Ballot
 	Format        string
+	BallotSize    int
 }
 
 // GetAllElectionsInfoRequest defines the HTTP request for getting all elections
