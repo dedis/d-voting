@@ -78,12 +78,12 @@ const Ballot: FC = () => {
   };
 
   const createBallot = (EGPairs: Array<Buffer[]>) => {
-    let vote = '';
-    EGPairs.forEach(([K, C]) => (vote += JSON.stringify({ K: Array.from(K), C: Array.from(C) })));
+    let vote = [];
+    EGPairs.forEach(([K, C]) => vote.push({ K: Array.from(K), C: Array.from(C) }));
     return {
       ElectionID: electionID,
       UserId: sessionStorage.getItem('id'),
-      Ballot: Buffer.from(vote),
+      Ballot: vote,
       Token: token,
     };
   };
