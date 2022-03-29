@@ -2,32 +2,13 @@ import React, { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 
-import { ENDPOINT_GET_TEQ_KEY } from 'components/utils/Endpoints';
-import './Login.css';
 import { useLocation } from 'react-router-dom';
+import handleLogin from './HandleLogin';
 
 const Login: FC = () => {
   const { t } = useTranslation();
-  const [loginError] = useState();
+  const [loginError, setLoginError] = useState(null);
   const [content, setContent] = useState('');
-
-  // The backend will provide the client the URL to make a Tequila
-  // authentication. We therefore redirect to this address.
-  const handleClick = async () => {
-    fetch(ENDPOINT_GET_TEQ_KEY)
-      .then((resp) => {
-        const jsonData = resp.json();
-        jsonData.then((result) => {
-          window.location = result.url;
-        });
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-
-    return <div>{loginError === null ? <div></div> : t('errorServerDown')}</div>;
-  };
-
   const location = useLocation();
 
   type LocationState = {
@@ -38,17 +19,16 @@ const Login: FC = () => {
     const state = location.state as LocationState;
     if (state !== null) {
       setContent(t('loginText', { from: state.from.pathname }));
-      console.log('content: ' + content);
     }
   }, [location]);
 
   return (
     <div>
-      {content != '' ? <div className="login-txt">{content}</div> : null}
+      <div className="flex py-8">{content}</div>
       <button
         id="login-button"
-        className={'block px-4 py-2 text-sm text-gray-700'}
-        onClick={handleClick}>
+        className="flex"
+        onClick={() => handleLogin(loginError, setLoginError)}>
         {t('login')}
       </button>
     </div>

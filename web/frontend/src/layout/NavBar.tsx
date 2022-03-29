@@ -14,12 +14,13 @@ import logoWhite from '../assets/logo-white.png';
 import { LanguageSelector } from '../language';
 import { default as ProfilePicture } from '../components/ProfilePicture';
 import { AuthContext } from '..';
-import Login from 'pages/session/Login';
+import handleLogin from 'pages/session/HandleLogin';
 
 const NavBar: FC = () => {
   const { t } = useTranslation();
 
   const authCtx = useContext(AuthContext);
+  const [loginError, setLoginError] = useState(null);
 
   // used for the profile button
   const [profileToggle, setProfileToggle] = useState(false);
@@ -215,7 +216,14 @@ const NavBar: FC = () => {
                         </button>
                       </div>
                     ) : (
-                      <Login />
+                      <div>
+                        <button
+                          id="login-button"
+                          className="block px-4 py-2 text-sm text-gray-700'"
+                          onClick={() => handleLogin(loginError, setLoginError)}>
+                          {t('login')}
+                        </button>
+                      </div>
                     )}
                     <a
                       href="#top"
