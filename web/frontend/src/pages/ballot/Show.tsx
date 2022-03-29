@@ -213,7 +213,7 @@ const Ballot: FC = () => {
             <div className="flex mx-8">
               <button
                 type="button"
-                className="flex inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
                 onClick={handleClick}>
                 <CloudUploadIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
                 {t('castVote')}
@@ -232,7 +232,7 @@ const Ballot: FC = () => {
         <Link to={ROUTE_BALLOT_INDEX}>
           <button
             type="button"
-            className="flex inline-flex mt-2 mb-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600">
+            className="inline-flex mt-2 mb-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600">
             {t('back')}
           </button>
         </Link>

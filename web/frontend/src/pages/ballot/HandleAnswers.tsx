@@ -59,9 +59,10 @@ const ballotIsValid = (sortedQuestion: Question[], answers, setAnswers) => {
     let selectQuestion = sortedQuestion.find((s) => s.Content.ID === select.ID).Content as Select;
     let errorIndex = newAnswers.Errors.findIndex((e) => e.ID === select.ID);
     if (numAnswer < selectQuestion.MinN) {
-      newAnswers.Errors[errorIndex].Message = t('minSelectError') + selectQuestion.MinN;
-      newAnswers.Errors[errorIndex].Message +=
-        selectQuestion.MinN > 1 ? t('pluralAnswers') : t('singularAnswer');
+      newAnswers.Errors[errorIndex].Message =
+        selectQuestion.MinN > 1
+          ? t('minSelectError', { min: selectQuestion.MinN, singularPlural: t('pluralAnswers') })
+          : t('minSelectError', { min: selectQuestion.MinN, singularPlural: t('singularAnswer') });
       isValid = false;
     }
 
@@ -84,9 +85,10 @@ const ballotIsValid = (sortedQuestion: Question[], answers, setAnswers) => {
     let numAnswer = text.Answers.filter((answer) => answer !== '').length;
     let errorIndex = newAnswers.Errors.findIndex((e) => e.ID === text.ID);
     if (numAnswer < textQuestion.MinN) {
-      newAnswers.Errors[errorIndex].Message = t('minTextError') + textQuestion.MinN;
-      newAnswers.Errors[errorIndex].Message +=
-        textQuestion.MinN > 1 ? t('pluralAnswers') : t('singularAnswer');
+      newAnswers.Errors[errorIndex].Message =
+        textQuestion.MinN > 1
+          ? t('minTextError', { minText: textQuestion.MinN, singularPlural: t('pluralAnswers') })
+          : t('minTextError', { minText: textQuestion.MinN, singularPlural: t('singularAnswer') });
       isValid = false;
     }
   }

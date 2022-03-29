@@ -1,8 +1,8 @@
 import { buildAnswer, getIndices } from './HandleAnswers';
 import { Draggable, DropResult } from 'react-beautiful-dnd';
 import { Answers, Error, RANK, RankAnswer } from 'components/utils/useConfiguration';
-import { t } from 'i18next';
 import { Rank } from 'components/utils/types';
+import { t } from 'i18next';
 
 const reorderRankAnswers = (
   sourceIndex: number,
@@ -54,7 +54,7 @@ const handleRankInput = (
   let destinationIndex = +e.target.value;
   if (e.target.value !== '') {
     if (destinationIndex > question.MaxN || destinationIndex <= 0) {
-      newAnswers.Errors[errorIndex].Message = t('rankRange') + question.MaxN;
+      newAnswers.Errors[errorIndex].Message = t('rankRange', { max: question.MaxN });
       setAnswers(newAnswers);
     } else {
       reorderRankAnswers(rankIndex, destinationIndex - 1, questionIndex, newAnswers, setAnswers);

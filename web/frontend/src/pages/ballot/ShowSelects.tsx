@@ -8,10 +8,12 @@ const selectHintDisplay = (question: Select) => {
   let max = question.MaxN;
   let min = question.MinN;
   if (max === min) {
-    hint = t('select') + min;
-    hint += max > 1 ? t('pluralAnswers') : t('singularAnswer');
+    hint =
+      max > 1
+        ? t('select', { minSelect: min, singularPlural: t('pluralAnswers') })
+        : t('select', { minSelect: min, singularPlural: t('singularAnswer') });
   } else {
-    hint = t('selectBetween') + min + t('selectAnd') + max + t('pluralAnswers');
+    hint = t('selectBetween', { minSelect: min, maxSelect: max });
   }
 
   return <div className="text-sm pl-2 pb-2 text-gray-400">{hint}</div>;
@@ -40,8 +42,7 @@ const handleChecks = (
   if (numAnswer < question.MaxN + 1 && numAnswer >= question.MinN) {
     newAnswers.Errors[errorIndex].Message = '';
   } else if (numAnswer >= question.MaxN + 1) {
-    newAnswers.Errors[errorIndex].Message =
-      t('maxSelectError') + question.MaxN + t('pluralAnswers');
+    newAnswers.Errors[errorIndex].Message = t('maxSelectError', { max: question.MaxN });
   }
   setAnswers(newAnswers);
 };

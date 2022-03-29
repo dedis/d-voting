@@ -9,11 +9,16 @@ const textHintDisplay = (content: Text) => {
   let max = content.MaxN;
 
   if (min !== max) {
-    hint = t('minText') + min;
+    hint =
+      min > 1
+        ? t('minText', { minText: min, singularPlural: t('pluralAnswers') })
+        : t('minText', { minText: min, singularPlural: t('singularAnswer') });
   } else {
-    hint = t('fillText') + min;
+    hint =
+      min > 1
+        ? t('fillText', { minText: min, singularPlural: t('pluralAnswers') })
+        : t('fillText', { minText: min, singularPlural: t('singularAnswer') });
   }
-  hint += min > 1 ? t('pluralAnswers') : t('singularAnswer');
   return <div className="text-sm pl-2 pb-2 text-gray-400">{hint}</div>;
 };
 
@@ -38,7 +43,7 @@ const handleTextInput = (
     let regexp = new RegExp(question.Regex);
     for (const answer of newAnswers.TextAnswers[questionIndex].Answers) {
       if (!regexp.test(answer) && answer !== '') {
-        newAnswers.Errors[errorIndex].Message = t('regexpCheck') + question.Regex;
+        newAnswers.Errors[errorIndex].Message = t('regexpCheck', { regexp: question.Regex });
       }
     }
   }
