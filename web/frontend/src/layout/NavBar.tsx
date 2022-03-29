@@ -9,12 +9,12 @@ import {
   ROUTE_ELECTION_CREATE,
   ROUTE_ELECTION_INDEX,
   ROUTE_HOME,
-  ROUTE_LOGIN,
 } from '../Routes';
 import logoWhite from '../assets/logo-white.png';
 import { LanguageSelector } from '../language';
 import { default as ProfilePicture } from '../components/ProfilePicture';
 import { AuthContext } from '..';
+import Login from 'pages/session/Login';
 
 const NavBar: FC = () => {
   const { t } = useTranslation();
@@ -215,9 +215,7 @@ const NavBar: FC = () => {
                         </button>
                       </div>
                     ) : (
-                      <NavLink to={ROUTE_LOGIN} className={'block px-4 py-2 text-sm text-gray-700'}>
-                        Login
-                      </NavLink>
+                      <Login />
                     )}
                     <a
                       href="#top"

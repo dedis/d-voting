@@ -29,7 +29,7 @@ const LoginCallback: FC = () => {
 
   return (
     <div>
-      <p>We are proceeding with the authentication. You should be redirected...</p>
+      <p>{t('loginCallback')}</p>
     </div>
   );
 };

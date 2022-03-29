@@ -8,9 +8,7 @@ import { useLocation } from 'react-router-dom';
 
 const Login: FC = () => {
   const { t } = useTranslation();
-
   const [loginError] = useState();
-
   const [content, setContent] = useState('');
 
   // The backend will provide the client the URL to make a Tequila
@@ -40,13 +38,17 @@ const Login: FC = () => {
     const state = location.state as LocationState;
     if (state !== null) {
       setContent(t('loginText', { from: state.from.pathname }));
+      console.log('content: ' + content);
     }
   }, [location]);
 
   return (
-    <div className="login-container">
-      <div className="login-txt">{content}</div>
-      <button id="login-button" className="login-btn" onClick={handleClick}>
+    <div>
+      {content != '' ? <div className="login-txt">{content}</div> : null}
+      <button
+        id="login-button"
+        className={'block px-4 py-2 text-sm text-gray-700'}
+        onClick={handleClick}>
         {t('login')}
       </button>
     </div>
