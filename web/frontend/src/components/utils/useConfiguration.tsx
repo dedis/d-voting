@@ -1,123 +1,126 @@
+import { renderRank, renderSelect, renderSubject, renderText } from 'pages/ballot/QuestionDisplay';
 import { useEffect, useState } from 'react';
-import { ID, Rank, Select, Subject, Text } from './types';
+import {
+  Answers,
+  Configuration,
+  Error,
+  ID,
+  Question,
+  RANK,
+  ROOT_ID,
+  RankAnswer,
+  SELECT,
+  SUBJECT,
+  SelectAnswer,
+  Subject,
+  TEXT,
+  TextAnswer,
+} from 'types/configuration';
 
-export const RANK = 'rank';
-export const SELECT = 'select';
-export const SUBJECT = 'subject';
-export const TEXT = 'text';
-export const ROOT_ID: ID = '0';
-
-export interface Question {
-  Order: number;
-  ParentID: ID;
-  Type: string;
-  Content: Select | Subject | Rank | Text;
-}
-
-export interface SelectAnswer {
-  ID: ID;
-  Answers: boolean[];
-}
-
-export interface RankAnswer {
-  ID: ID;
-  Answers: number[];
-}
-
-export interface TextAnswer {
-  ID: ID;
-  Answers: string[];
-}
-
-export interface Error {
-  ID: ID;
-  Message: string;
-}
-
-export interface Answers {
-  SelectAnswers: SelectAnswer[];
-  RankAnswers: RankAnswer[];
-  TextAnswers: TextAnswer[];
-  Errors: Error[];
-}
-
-function initConfiguration(
-  question: any,
+// Flattens and re-orders the questions (as the first object encountered in a
+// Subject might not be the first that needs to be displayed according to the Order).
+// Adds a ParentID for later rendering and initializes the Answers.
+function flattenSubject(
+  subject: Subject,
   parentId: ID,
   sortedQuestions: Array<Question>,
-  currentOrder: number,
+  outerOrder: number,
   answerList: Answers
 ) {
   sortedQuestions.push({
-    Order: currentOrder,
+    Order: outerOrder,
     ParentID: parentId,
     Type: SUBJECT,
-    Content: question,
+    Content: subject,
+    render: renderSubject,
   });
 
+  // The number of Question inside of a top-level Subjects (i.e a with ParentID = ROOT_ID)
   let numberOfQuestion = 1;
-  if (question.Subjects) {
-    for (const subject of question.Subjects) {
-      let order = question.Order.findIndex((id: ID) => id === subject.ID) + 1;
+
+  if (subject.Subjects) {
+    for (const subSubject of subject.Subjects) {
+      let insideOrder = subject.Order.findIndex((id: ID) => id === subSubject.ID) + 1;
+
       numberOfQuestion +=
-        initConfiguration(subject, question.ID, sortedQuestions, currentOrder + order, answerList) +
-        1;
+        flattenSubject(
+          subSubject,
+          subject.ID,
+          sortedQuestions,
+          outerOrder + insideOrder,
+          answerList
+        ) + 1;
     }
   }
-  if (question.Selects) {
-    for (const select of question.Selects) {
-      let order = question.Order.findIndex((id: ID) => id === select.ID) + 1;
+
+  if (subject.Selects) {
+    for (const select of subject.Selects) {
+      let insideOrder = subject.Order.findIndex((id: ID) => id === select.ID) + 1;
+      numberOfQuestion += 1;
+
       sortedQuestions.push({
-        Order: currentOrder + order,
-        ParentID: question.ID,
+        Order: outerOrder + insideOrder,
+        ParentID: subject.ID,
         Type: SELECT,
         Content: select,
+        render: renderSelect,
       });
-      numberOfQuestion += 1;
+
       answerList.SelectAnswers.push({
         ID: select.ID,
         Answers: new Array<boolean>(select.Choices.length).fill(false),
       });
+
       answerList.Errors.push({
         ID: select.ID,
         Message: '',
       });
     }
   }
-  if (question.Ranks) {
-    for (const rank of question.Ranks) {
-      let order = question.Order.findIndex((id: ID) => id === rank.ID) + 1;
+
+  if (subject.Ranks) {
+    for (const rank of subject.Ranks) {
+      let insideOrder = subject.Order.findIndex((id: ID) => id === rank.ID) + 1;
+      numberOfQuestion += 1;
+
       sortedQuestions.push({
-        Order: currentOrder + order,
-        ParentID: question.ID,
+        Order: outerOrder + insideOrder,
+        ParentID: subject.ID,
         Type: RANK,
         Content: rank,
+        render: renderRank,
       });
-      numberOfQuestion += 1;
+
       answerList.RankAnswers.push({
         ID: rank.ID,
         Answers: Array.from(Array(rank.Choices.length).keys()),
       });
+
       answerList.Errors.push({
         ID: rank.ID,
         Message: '',
       });
     }
   }
-  if (question.Texts) {
-    for (const text of question.Texts) {
-      let order = question.Order.findIndex((id: ID) => id === text.ID) + 1;
+
+  if (subject.Texts) {
+    for (const text of subject.Texts) {
+      let insideOrder = subject.Order.findIndex((id: ID) => id === text.ID) + 1;
+      numberOfQuestion += 1;
+
       sortedQuestions.push({
-        Order: currentOrder + order,
-        ParentID: question.ID,
+        Order: outerOrder + insideOrder,
+        ParentID: subject.ID,
         Type: TEXT,
         Content: text,
+        render: renderText,
       });
-      numberOfQuestion += 1;
+
       answerList.TextAnswers.push({
         ID: text.ID,
         Answers: new Array<string>(text.Choices.length).fill(''),
       });
+
       answerList.Errors.push({
         ID: text.ID,
         Message: '',
@@ -128,10 +131,13 @@ function initConfiguration(
   return numberOfQuestion;
 }
 
-const useConfiguration = (configuration) => {
+// On Configuration changes, iterate over the top-level Subjects of the Configuration
+// to sort the questions and initialize the corresponding Answers.
+const useConfiguration = (configuration: Configuration) => {
   const [sortedQuestions, setSortedQuestions] = useState(Array<Question>());
   const [answers, setAnswers]: [Answers, React.Dispatch<React.SetStateAction<Answers>>] =
     useState(null);
+
   useEffect(() => {
     if (configuration !== null) {
       let order: number = 0;
@@ -144,7 +150,7 @@ const useConfiguration = (configuration) => {
       };
 
       for (const subject of configuration.Scaffold) {
-        order += initConfiguration(subject, ROOT_ID, questionList, order, answerList);
+        order += flattenSubject(subject, ROOT_ID, questionList, order, answerList);
       }
       questionList.sort((q1, q2) => {
         return q1.Order - q2.Order;

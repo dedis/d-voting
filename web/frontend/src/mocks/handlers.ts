@@ -102,11 +102,32 @@ export const handlers = [
       ctx.json({
         ElectionID: body.ElectionID,
         UserID: mockUserID,
-        Ballot: {
-          K: 'KValue',
-          C: 'CValue',
-        },
-        Token: body.Token,
+        Ballot: [
+          {
+            K: 'KValue',
+            C: 'CValue',
+          },
+          {
+            K: 'KValue',
+            C: 'CValue',
+          },
+          {
+            K: 'KValue',
+            C: 'CValue',
+          },
+          {
+            K: 'KValue',
+            C: 'CValue',
+          },
+          {
+            K: 'KValue',
+            C: 'CValue',
+          },
+          {
+            K: 'KValue',
+            C: 'CValue',
+          },
+        ],
       })
     );
   }),

@@ -1,19 +1,19 @@
-import { Answers } from 'components/utils/useConfiguration';
 import { Buffer } from 'buffer';
 import ShortUniqueId from 'short-unique-id';
+import { Answers, RANK, SELECT, TEXT } from 'types/configuration';
 
 export function voteEncode(answers: Answers, ballotSize: number) {
   var encodedBallot = '';
 
   answers.SelectAnswers.forEach((select) => {
-    encodedBallot += 'select:' + select.ID + ':';
+    encodedBallot += SELECT + ':' + select.ID + ':';
     select.Answers.forEach((answer) => (encodedBallot += answer ? '1,' : '0,'));
     encodedBallot = encodedBallot.slice(0, -1);
     encodedBallot += '\n';
   });
 
   answers.RankAnswers.forEach((rank) => {
-    encodedBallot += 'rank:' + rank.ID + ':';
+    encodedBallot += RANK + ':' + rank.ID + ':';
     let position = Array<number>(rank.Answers.length);
     for (let i = 0; i < rank.Answers.length; i++) {
       position[rank.Answers[i]] = i;
@@ -24,7 +24,7 @@ export function voteEncode(answers: Answers, ballotSize: number) {
   });
 
   answers.TextAnswers.forEach((text) => {
-    encodedBallot += 'text:' + text.ID + ':';
+    encodedBallot += TEXT + ':' + text.ID + ':';
     text.Answers.forEach((answer) => (encodedBallot += 'base64("' + answer + '"),'));
     encodedBallot = encodedBallot.slice(0, -1);
     encodedBallot += '\n';

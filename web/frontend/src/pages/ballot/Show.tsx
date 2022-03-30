@@ -1,11 +1,11 @@
-import React, { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { CloudUploadIcon } from '@heroicons/react/outline';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import kyber from '@dedis/kyber';
 import PropTypes from 'prop-types';
 import { Buffer } from 'buffer';
-import { DragDropContext, Droppable } from 'react-beautiful-dnd';
+import { DragDropContext } from 'react-beautiful-dnd';
 
 import { ROUTE_BALLOT_INDEX } from '../../Routes';
 import useElection from 'components/utils/useElection';
@@ -14,23 +14,11 @@ import { ENDPOINT_EVOTING_CAST_BALLOT } from 'components/utils/Endpoints';
 import Modal from 'components/modal/Modal';
 import { OPEN } from 'components/utils/StatusNumber';
 import { encryptVote } from './components/VoteEncrypt';
-import useConfiguration, {
-  Error,
-  Question,
-  RANK,
-  ROOT_ID,
-  RankAnswer,
-  SELECT,
-  SUBJECT,
-  SelectAnswer,
-  TEXT,
-} from 'components/utils/useConfiguration';
-import { ballotIsValid } from './HandleAnswers';
-import { selectDisplay, selectHintDisplay } from './ShowSelects';
-import { handleOnDragEnd, rankDisplay } from './ShowRanks';
-import { textDisplay, textHintDisplay } from './ShowTexts';
-import { ID, Rank, Select, Text } from 'components/utils/types';
+import { ballotIsValid } from './components/HandleAnswers';
+import { handleOnDragEnd } from './components/RankDisplay';
 import { voteEncode } from './components/VoteEncode';
+import useConfiguration from 'components/utils/useConfiguration';
+import { Error, ID, Question, ROOT_ID, SUBJECT } from 'types/configuration';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
@@ -117,74 +105,14 @@ const Ballot: FC = () => {
     if (!questions.length) {
       return null;
     }
+
     return (
       <div>
         {questions.map((question) => (
           <div className="px-8">
-            <div>
-              {question.Type === SUBJECT ? (
-                <h3 className="font-bold text-lg text-gray-600">{question.Content.Title}</h3>
-              ) : (
-                <h3 className="text-lg text-gray-600">{question.Content.Title}</h3>
-              )}
-            </div>
-            <div>
-              {question.Type === SELECT ? (
-                <div>
-                  {selectHintDisplay(question.Content as Select)}
-                  <div className="pl-8">
-                    {Array.from(
-                      answers.SelectAnswers.find(
-                        (s: SelectAnswer) => s.ID === question.Content.ID
-                      ).Answers.entries()
-                    ).map(([choiceIndex, isChecked]) =>
-                      selectDisplay(
-                        isChecked,
-                        (question.Content as Select).Choices[choiceIndex],
-                        question.Content as Select,
-                        answers,
-                        setAnswers
-                      )
-                    )}
-                  </div>
-                </div>
-              ) : question.Type === RANK ? (
-                <div className="mt-5 pl-8">
-                  <Droppable droppableId={String(question.Content.ID)}>
-                    {(provided) => (
-                      <ul
-                        className={question.Content.ID}
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}>
-                        {Array.from(
-                          answers.RankAnswers.find(
-                            (r: RankAnswer) => r.ID === question.Content.ID
-                          ).Answers.entries()
-                        ).map(([rankIndex, choiceIndex]) =>
-                          rankDisplay(
-                            rankIndex,
-                            (question.Content as Rank).Choices[choiceIndex],
-                            question.Content as Rank,
-                            answers,
-                            setAnswers
-                          )
-                        )}
-                        {provided.placeholder}
-                      </ul>
-                    )}
-                  </Droppable>
-                </div>
-              ) : question.Type === TEXT ? (
-                <div>
-                  {textHintDisplay(question.Content as Text)}
-                  <div className="pl-8">
-                    {(question.Content as Text).Choices.map((choice) =>
-                      textDisplay(choice, question.Content as Text, answers, setAnswers)
-                    )}
-                  </div>
-                </div>
-              ) : null}
-            </div>
+            {question.Type === SUBJECT
+              ? question.render(question)
+              : question.render(question, answers, setAnswers)}
             <div>
               {question.Type === SUBJECT ? (
                 subjectTree(sorted, question.Content.ID)
@@ -209,7 +137,7 @@ const Ballot: FC = () => {
           </h3>
           <div>
             {subjectTree(sortedQuestions, ROOT_ID)}
-            <div className="mx-8 text-red-600 text-sm py-2">{userErrors}</div>
+            <div className="mx-8 text-red-600 text-sm pt-3 pb-5">{userErrors}</div>
             <div className="flex mx-8">
               <button
                 type="button"

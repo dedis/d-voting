@@ -1,20 +1,20 @@
-import { buildAnswer, getIndices } from './HandleAnswers';
 import { Draggable, DropResult } from 'react-beautiful-dnd';
-import { Answers, Error, RANK, RankAnswer } from 'components/utils/useConfiguration';
-import { Rank } from 'components/utils/types';
-import { t } from 'i18next';
+import { Answers, Error, RANK, RankAnswer, RankQuestion } from 'types/configuration';
+import { FC } from 'react';
+import { useTranslation } from 'react-i18next';
+import { buildAnswer, getIndices } from './HandleAnswers';
 
-const reorderRankAnswers = (
+function reorderRankAnswers(
   sourceIndex: number,
   destinationIndex: number,
   questionIndex: number,
   answers: Answers,
   setAnswers: React.Dispatch<React.SetStateAction<Answers>>
-) => {
+) {
   const [reorderedItem] = answers.RankAnswers[questionIndex].Answers.splice(sourceIndex, 1);
   answers.RankAnswers[questionIndex].Answers.splice(destinationIndex, 0, reorderedItem);
   setAnswers(answers);
-};
+}
 
 const handleOnDragEnd = (
   result: DropResult,
@@ -24,6 +24,7 @@ const handleOnDragEnd = (
   if (!result.destination) {
     return;
   }
+
   let questionIndex = answers.RankAnswers.findIndex(
     (r: RankAnswer) => r.ID === result.destination.droppableId
   );
@@ -40,30 +41,7 @@ const handleOnDragEnd = (
   );
 };
 
-const handleRankInput = (
-  e: React.ChangeEvent<HTMLInputElement>,
-  question: Rank,
-  choice: string,
-  rankIndex: number,
-  answers: Answers,
-  setAnswers: React.Dispatch<React.SetStateAction<Answers>>
-) => {
-  let { questionIndex, errorIndex, newAnswers } = getIndices(question, choice, answers, RANK);
-
-  newAnswers.Errors[errorIndex].Message = '';
-  let destinationIndex = +e.target.value;
-  if (e.target.value !== '') {
-    if (destinationIndex > question.MaxN || destinationIndex <= 0) {
-      newAnswers.Errors[errorIndex].Message = t('rankRange', { max: question.MaxN });
-      setAnswers(newAnswers);
-    } else {
-      reorderRankAnswers(rankIndex, destinationIndex - 1, questionIndex, newAnswers, setAnswers);
-    }
-  }
-  e.target.value = '';
-};
-
-const RankList = () => {
+const RankListIcon = () => {
   return (
     <svg
       className="flex-none mx-3"
@@ -87,13 +65,43 @@ const RankList = () => {
   );
 };
 
-const rankDisplay = (
-  rankIndex: number,
-  choice: string,
-  question: Rank,
-  answers: Answers,
-  setAnswers: React.Dispatch<React.SetStateAction<Answers>>
-) => {
+type RankDisplayProps = {
+  rankIndex: number;
+  choice: string;
+  question: RankQuestion;
+  answers: Answers;
+  setAnswers: React.Dispatch<React.SetStateAction<Answers>>;
+};
+
+const RankDisplay: FC<RankDisplayProps> = ({
+  rankIndex,
+  choice,
+  question,
+  answers,
+  setAnswers,
+}) => {
+  const { t } = useTranslation();
+
+  const handleRankInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let { questionIndex, errorIndex, newAnswers } = getIndices(question, choice, answers, RANK);
+
+    newAnswers.Errors[errorIndex].Message = '';
+    let destinationIndex = +e.target.value;
+
+    if (e.target.value !== '') {
+      if (destinationIndex > question.MaxN || destinationIndex <= 0) {
+        newAnswers.Errors[errorIndex].Message = t('rankRange', { max: question.MaxN });
+        setAnswers(newAnswers);
+      } else {
+        reorderRankAnswers(rankIndex, destinationIndex - 1, questionIndex, newAnswers, setAnswers);
+      }
+    } else {
+      newAnswers.Errors[errorIndex].Message = '';
+    }
+
+    e.target.value = '';
+  };
+
   return (
     <Draggable key={choice} draggableId={choice} index={rankIndex}>
       {(provided) => (
@@ -109,10 +117,10 @@ const rankDisplay = (
               placeholder={(rankIndex + 1).toString()}
               size={question.MaxN / 10 + 1}
               className="flex-none mx-3 rounded text-center"
-              onChange={(e) => handleRankInput(e, question, choice, rankIndex, answers, setAnswers)}
+              onChange={handleRankInput}
             />
             <div className="flex-auto text-gray-600">{choice}</div>
-            <RankList />
+            <RankListIcon />
           </div>
         </li>
       )}
@@ -120,4 +128,4 @@ const rankDisplay = (
   );
 };
 
-export { handleOnDragEnd, rankDisplay };
+export { handleOnDragEnd, RankDisplay };
