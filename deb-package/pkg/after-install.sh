@@ -31,3 +31,4 @@ enable_service ${DVOTING_SERVICE}
 systemctl start ${DVOTING_SERVICE}
 
 ln -s /opt/dedis/dvoting/bin/memcoin /usr/bin/memcoin
+ln -s /opt/prometheus/node_exporter /usr/bin/node_exporter

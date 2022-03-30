@@ -16,6 +16,15 @@ cp $UKAPP_DIR/build/combine_shares_kvm-x86_64 $INSTALL_DIR
 DVOTING_CLI_DIR=".."
 cp $DVOTING_CLI_DIR/memcoin $INSTALL_DIR
 
+# Prometheus Node Exporter
+NE_DIR=/opt/prometheus
+NE_VERSION="1.3.1"
+mkdir -p ${NE_DIR}
+source pkg/var/opt/dedis/node_exporter.env
+wget https://github.com/prometheus/node_exporter/releases/download/v${NE_VERSION}/node_exporter-${NE_VERSION}.linux-amd64.tar.gz
+tar xfz node_exporter-${NE_VERSION}.linux-amd64.tar.gz -C ${NE_DIR}
+mv ${NE_DIR}/node_exporter-${NE_VERSION}.linux-amd64 ${NE_DIR}/node_exporter
+
 # add config files
 cp -a pkg/etc deb
 cp -a pkg/lib deb
