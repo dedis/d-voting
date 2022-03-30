@@ -9,6 +9,7 @@ import {
   ROUTE_ELECTION_CREATE,
   ROUTE_ELECTION_INDEX,
   ROUTE_ELECTION_SHOW,
+  ROUTE_LOGGED,
   ROUTE_LOGIN,
   ROUTE_RESULT_INDEX,
   ROUTE_RESULT_SHOW,
@@ -29,6 +30,7 @@ import Footer from './Footer';
 
 import './App.css';
 import { AuthContext } from '..';
+import Logged from 'pages/session/Logged';
 
 const NotFound = () => <div>404 not found</div>;
 
@@ -80,6 +82,7 @@ const App = () => {
               <Route path={ROUTE_ABOUT} element={<About />} />
               <Route path={ROUTE_ELECTION_INDEX} element={<ElectionIndex />} />
               <Route path={ROUTE_LOGIN} element={<Login />} />
+              <Route path={ROUTE_LOGGED} element={<Logged />} />
               <Route path="/" element={<Home />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

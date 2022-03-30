@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 
 import { useLocation } from 'react-router-dom';
-import handleLogin from './HandleLogin';
+import { ENDPOINT_GET_TEQ_KEY } from 'components/utils/Endpoints';
 
 const Login: FC = () => {
   const { t } = useTranslation();
@@ -22,13 +22,24 @@ const Login: FC = () => {
     }
   }, [location]);
 
+  const handleLogin = async () => {
+    fetch(ENDPOINT_GET_TEQ_KEY)
+      .then((resp) => {
+        const jsonData = resp.json();
+        jsonData.then((result) => {
+          window.location = result.url;
+        });
+      })
+      .catch((error) => {
+        setLoginError(error);
+        console.log(error);
+      });
+  };
+
   return (
     <div>
       <div className="flex py-8">{content}</div>
-      <button
-        id="login-button"
-        className="flex"
-        onClick={() => handleLogin(loginError, setLoginError)}>
+      <button id="login-button" className="flex" onClick={handleLogin}>
         {t('login')}
       </button>
     </div>

@@ -111,7 +111,7 @@ app.get('/api/control_key', (req, res) => {
       req.session.lastname = user.lastname;
       req.session.firstname = user.firstname;
       req.session.role = user.role;
-      res.redirect('/');
+      res.redirect('/logged');
     })
     .catch((error) => {
       res.status(500).send('Login did not work');

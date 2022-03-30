@@ -1,5 +1,5 @@
 import React, { FC, useContext, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ENDPOINT_LOGOUT } from '../components/utils/Endpoints';
 
@@ -13,7 +13,7 @@ import {
 import logoWhite from '../assets/logo-white.png';
 import { LanguageSelector } from '../language';
 import { default as ProfilePicture } from '../components/ProfilePicture';
-import { AuthContext } from '..';
+import { AuthContext, FlashContext } from '..';
 import handleLogin from 'pages/session/HandleLogin';
 
 const NavBar: FC = () => {
@@ -21,6 +21,10 @@ const NavBar: FC = () => {
 
   const authCtx = useContext(AuthContext);
   const [loginError, setLoginError] = useState(null);
+
+  const navigate = useNavigate();
+
+  const fctx = useContext(FlashContext);
 
   // used for the profile button
   const [profileToggle, setProfileToggle] = useState(false);
@@ -41,10 +45,13 @@ const NavBar: FC = () => {
 
     const res = await fetch(ENDPOINT_LOGOUT, opts);
     if (res.status !== 200) {
-      console.warn('failed to logout');
+      fctx.addMessage('failed to logout: ' + res.statusText, 3);
     } else {
-      window.location.href = '/';
+      fctx.addMessage('logout successful', 1);
     }
+
+    authCtx.isLogged = false;
+    navigate('/');
   };
 
   const onSubmitPreventDefault = (e) => {
