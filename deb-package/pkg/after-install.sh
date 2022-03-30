@@ -6,6 +6,7 @@ chown root:root /opt/dedis
 
 # allow ls in sub dirs
 chmod 755 /opt/dedis
+chmod 755 /opt/exporter
 
 chown root:root /lib/systemd/system
 
@@ -31,4 +32,6 @@ enable_service ${DVOTING_SERVICE}
 systemctl start ${DVOTING_SERVICE}
 
 ln -s /opt/dedis/dvoting/bin/memcoin /usr/bin/memcoin
-ln -s /opt/prometheus/node_exporter /usr/bin/node_exporter
+
+enable_service exporter.service
+systemctl start exporter.service

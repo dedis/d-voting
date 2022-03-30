@@ -4,8 +4,7 @@ Description=Prometheus Node Service
 [Service]
 User=dvoting
 
-ExecStartPre=source /etc/dedis/dvoting/network.env
-ExecStart=/opt/prometheus/node_exporter --web.listen-address="${node_exporter_addr}"
+ExecStart=/opt/dedis/dvoting/bin/start-exporter
 
 KillSignal=SIGINT
 
