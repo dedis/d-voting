@@ -65,13 +65,13 @@ const SelectDisplay: FC<SelectDisplayProps> = ({
 
     setAnswers(newAnswers);
   };
+
   return (
     <div>
       <input
         id={choice}
         className="h-4 w-4 mt-1 mr-2 cursor-pointer accent-indigo-500"
         type="checkbox"
-        key={choice}
         value={choice}
         checked={isChecked}
         onChange={handleChecks}

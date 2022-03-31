@@ -95,11 +95,6 @@ function flattenSubject(
         ID: rank.ID,
         Answers: Array.from(Array(rank.Choices.length).keys()),
       });
-
-      answerList.Errors.push({
-        ID: rank.ID,
-        Message: '',
-      });
     }
   }
 

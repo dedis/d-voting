@@ -1,5 +1,6 @@
 import {
   Answers,
+  Error,
   Question,
   RankAnswer,
   RankQuestion,
@@ -9,19 +10,15 @@ import {
   TextQuestion,
 } from 'types/configuration';
 import { RankDisplay } from './components/RankDisplay';
-import { Droppable } from 'react-beautiful-dnd';
 import { TextDisplay, TextHintDisplay } from './components/TextDisplay';
 import { SelectDisplay, SelectHintDisplay } from './components/SelectDisplay';
+import { Droppable } from 'react-beautiful-dnd';
 
 export type HintDisplayProps = {
   questionContent: RankQuestion | TextQuestion | SelectQuestion | Subject;
 };
 
-export function renderRank(
-  question: Question,
-  answers: Answers,
-  setAnswers: React.Dispatch<React.SetStateAction<Answers>>
-) {
+export function renderRank(question: Question, answers: Answers) {
   let rank = question.Content as RankQuestion;
 
   return (
@@ -30,19 +27,14 @@ export function renderRank(
       <div className="mt-5 pl-8">
         <Droppable droppableId={String(rank.ID)}>
           {(provided) => (
-            <ul
-              className={question.Content.ID}
-              {...provided.droppableProps}
-              ref={provided.innerRef}>
+            <ul className={rank.ID} {...provided.droppableProps} ref={provided.innerRef}>
               {Array.from(
                 answers.RankAnswers.find((r: RankAnswer) => r.ID === rank.ID).Answers.entries()
               ).map(([rankIndex, choiceIndex]) => (
                 <RankDisplay
                   rankIndex={rankIndex}
                   choice={rank.Choices[choiceIndex]}
-                  question={rank}
-                  answers={answers}
-                  setAnswers={setAnswers}
+                  key={rank.Choices[choiceIndex]}
                 />
               ))}
               {provided.placeholder}
@@ -65,10 +57,19 @@ export function renderText(
     <div>
       <h3 className="text-lg text-gray-600">{text.Title}</h3>
       <TextHintDisplay questionContent={text} />
-      <div className="pl-8">
+      <div className="pl-8 mt-2">
         {text.Choices.map((choice) => (
-          <TextDisplay choice={choice} question={text} answers={answers} setAnswers={setAnswers} />
+          <TextDisplay
+            choice={choice}
+            question={text}
+            answers={answers}
+            setAnswers={setAnswers}
+            key={choice}
+          />
         ))}
+      </div>
+      <div className="text-red-600 text-sm py-2 pl-2">
+        {answers.Errors.find((e: Error) => e.ID === text.ID).Message}
       </div>
     </div>
   );
@@ -95,8 +96,12 @@ export function renderSelect(
             question={select}
             answers={answers}
             setAnswers={setAnswers}
+            key={select.Choices[choiceIndex]}
           />
         ))}
+      </div>
+      <div className="text-red-600 text-sm py-2 pl-2">
+        {answers.Errors.find((e: Error) => e.ID === select.ID).Message}
       </div>
     </div>
   );

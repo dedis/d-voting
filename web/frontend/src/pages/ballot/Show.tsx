@@ -5,7 +5,6 @@ import { Link, useParams } from 'react-router-dom';
 import kyber from '@dedis/kyber';
 import PropTypes from 'prop-types';
 import { Buffer } from 'buffer';
-import { DragDropContext } from 'react-beautiful-dnd';
 
 import { ROUTE_BALLOT_INDEX } from '../../Routes';
 import useElection from 'components/utils/useElection';
@@ -18,7 +17,8 @@ import { ballotIsValid } from './components/HandleAnswers';
 import { handleOnDragEnd } from './components/RankDisplay';
 import { voteEncode } from './components/VoteEncode';
 import useConfiguration from 'components/utils/useConfiguration';
-import { Error, ID, Question, ROOT_ID, SUBJECT } from 'types/configuration';
+import { ID, Question, RANK, ROOT_ID, SELECT, SUBJECT, TEXT } from 'types/configuration';
+import { DragDropContext } from 'react-beautiful-dnd';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
@@ -109,19 +109,12 @@ const Ballot: FC = () => {
     return (
       <div>
         {questions.map((question) => (
-          <div className="px-8">
-            {question.Type === SUBJECT
-              ? question.render(question)
-              : question.render(question, answers, setAnswers)}
-            <div>
-              {question.Type === SUBJECT ? (
-                subjectTree(sorted, question.Content.ID)
-              ) : (
-                <div className="text-red-600 text-sm py-2 pl-2">
-                  {answers.Errors.find((e: Error) => e.ID === question.Content.ID).Message}
-                </div>
-              )}
-            </div>
+          <div key={question.Content.ID} className="px-8">
+            {question.Type === SUBJECT ? question.render(question) : null}
+            {question.Type === RANK ? question.render(question, answers) : null}
+            {question.Type === TEXT ? question.render(question, answers, setAnswers) : null}
+            {question.Type === SELECT ? question.render(question, answers, setAnswers) : null}
+            <div>{question.Type === SUBJECT ? subjectTree(sorted, question.Content.ID) : null}</div>
           </div>
         ))}
       </div>

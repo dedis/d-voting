@@ -62,11 +62,11 @@ export function ballotIsValid(
   let isValid = true;
   let newAnswers = buildAnswer(answers);
 
-  for (const select of answers.SelectAnswers) {
-    let numAnswer = select.Answers.filter((answer) => answer === true).length;
-    let selectQuestion = sortedQuestion.find((s) => s.Content.ID === select.ID)
+  for (const selectAnswer of answers.SelectAnswers) {
+    let numAnswer = selectAnswer.Answers.filter((answer) => answer === true).length;
+    let selectQuestion = sortedQuestion.find((s) => s.Content.ID === selectAnswer.ID)
       .Content as SelectQuestion;
-    let errorIndex = newAnswers.Errors.findIndex((e) => e.ID === select.ID);
+    let errorIndex = newAnswers.Errors.findIndex((e) => e.ID === selectAnswer.ID);
 
     if (numAnswer < selectQuestion.MinN) {
       newAnswers.Errors[errorIndex].Message =
@@ -81,24 +81,34 @@ export function ballotIsValid(
     }
   }
 
-  for (const text of answers.TextAnswers) {
-    let textQuestion = sortedQuestion.find((s: any) => s.Content.ID === text.ID)
+  for (const textAnswer of answers.TextAnswers) {
+    let textQuestion = sortedQuestion.find((s: any) => s.Content.ID === textAnswer.ID)
       .Content as TextQuestion;
+    let errorIndex = newAnswers.Errors.findIndex((e) => e.ID === textAnswer.ID);
 
-    if (textQuestion.Regex) {
+    for (const answer of textAnswer.Answers) {
+      if (answer.length > textQuestion.MaxLength) {
+        newAnswers.Errors[errorIndex].Message += t('maxTextChars', {
+          maxLength: textQuestion.MaxLength,
+        });
+        isValid = false;
+      }
+    }
+
+    if (textQuestion.Regex && isValid) {
       let regexp = new RegExp(textQuestion.Regex);
-      for (const answer of text.Answers) {
+      for (const answer of textAnswer.Answers) {
         if (!regexp.test(answer) && answer !== '') {
           isValid = false;
+          newAnswers.Errors[errorIndex].Message += t('regexpCheck', { regexp: textQuestion.Regex });
         }
       }
     }
 
-    let numAnswer = text.Answers.filter((answer) => answer !== '').length;
-    let errorIndex = newAnswers.Errors.findIndex((e) => e.ID === text.ID);
+    let numAnswer = textAnswer.Answers.filter((answer) => answer !== '').length;
 
     if (numAnswer < textQuestion.MinN) {
-      newAnswers.Errors[errorIndex].Message =
+      newAnswers.Errors[errorIndex].Message +=
         textQuestion.MinN > 1
           ? t('minTextError', { minText: textQuestion.MinN, singularPlural: t('pluralAnswers') })
           : t('minTextError', { minText: textQuestion.MinN, singularPlural: t('singularAnswer') });

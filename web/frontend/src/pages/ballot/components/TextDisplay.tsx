@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Answers, TEXT, TextQuestion } from 'types/configuration';
 import { getIndices } from './HandleAnswers';
@@ -35,6 +35,8 @@ type TextDisplayProps = {
 
 const TextDisplay: FC<TextDisplayProps> = ({ choice, question, answers, setAnswers }) => {
   const { t } = useTranslation();
+  const [charCount, setCharCount] = useState(0);
+
   const handleTextInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { questionIndex, choiceIndex, errorIndex, newAnswers } = getIndices(
       question,
@@ -57,18 +59,40 @@ const TextDisplay: FC<TextDisplayProps> = ({ choice, question, answers, setAnswe
     setAnswers(newAnswers);
   };
 
+  useEffect(() => {
+    const { questionIndex, choiceIndex } = getIndices(question, choice, answers, TEXT);
+    setCharCount(answers.TextAnswers[questionIndex].Answers[choiceIndex].length);
+  }, [answers]);
+
+  const charCountDisplay = () => {
+    return (
+      <div className="justify-center text-sm">
+        {charCount > question.MaxLength ? (
+          <p className="text-red-500">
+            {charCount} / {question.MaxLength}
+          </p>
+        ) : (
+          <p className="text-gray-400">
+            {charCount} / {question.MaxLength}
+          </p>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div>
-      <label htmlFor={choice} className="text-gray-600">
+    <div className="flex mb-2 items-center">
+      <label htmlFor={choice} className="text-gray-600 text-md">
         {choice + ': '}
       </label>
       <input
         id={choice}
         type="text"
         key={choice}
-        className="mt-1 sm:text-sm border rounded-md w-1/2"
+        className="mx-2 sm:text-md border rounded-md w-3/5 text-gray-600"
         onChange={handleTextInput}
       />
+      {charCountDisplay()}
     </div>
   );
 };

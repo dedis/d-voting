@@ -1,8 +1,7 @@
-import { Draggable, DropResult } from 'react-beautiful-dnd';
-import { Answers, Error, RANK, RankAnswer, RankQuestion } from 'types/configuration';
+import { Answers, RankAnswer } from 'types/configuration';
 import { FC } from 'react';
-import { useTranslation } from 'react-i18next';
-import { buildAnswer, getIndices } from './HandleAnswers';
+import { buildAnswer } from './HandleAnswers';
+import { Draggable, DropResult } from 'react-beautiful-dnd';
 
 function reorderRankAnswers(
   sourceIndex: number,
@@ -28,10 +27,8 @@ const handleOnDragEnd = (
   let questionIndex = answers.RankAnswers.findIndex(
     (r: RankAnswer) => r.ID === result.destination.droppableId
   );
-  let errorIndex = answers.Errors.findIndex((e: Error) => e.ID === result.destination.droppableId);
   let newAnswers = buildAnswer(answers);
 
-  newAnswers.Errors[errorIndex].Message = '';
   reorderRankAnswers(
     result.source.index,
     result.destination.index,
@@ -68,40 +65,9 @@ const RankListIcon = () => {
 type RankDisplayProps = {
   rankIndex: number;
   choice: string;
-  question: RankQuestion;
-  answers: Answers;
-  setAnswers: React.Dispatch<React.SetStateAction<Answers>>;
 };
 
-const RankDisplay: FC<RankDisplayProps> = ({
-  rankIndex,
-  choice,
-  question,
-  answers,
-  setAnswers,
-}) => {
-  const { t } = useTranslation();
-
-  const handleRankInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let { questionIndex, errorIndex, newAnswers } = getIndices(question, choice, answers, RANK);
-
-    newAnswers.Errors[errorIndex].Message = '';
-    let destinationIndex = +e.target.value;
-
-    if (e.target.value !== '') {
-      if (destinationIndex > question.MaxN || destinationIndex <= 0) {
-        newAnswers.Errors[errorIndex].Message = t('rankRange', { max: question.MaxN });
-        setAnswers(newAnswers);
-      } else {
-        reorderRankAnswers(rankIndex, destinationIndex - 1, questionIndex, newAnswers, setAnswers);
-      }
-    } else {
-      newAnswers.Errors[errorIndex].Message = '';
-    }
-
-    e.target.value = '';
-  };
-
+const RankDisplay: FC<RankDisplayProps> = ({ rankIndex, choice }) => {
   return (
     <Draggable key={choice} draggableId={choice} index={rankIndex}>
       {(provided) => (
@@ -112,13 +78,7 @@ const RankDisplay: FC<RankDisplayProps> = ({
           {...provided.dragHandleProps}
           className="block items-center mb-2 w-2/3 bg-white rounded-lg border border-gray-200 shadow-md hover:bg-gray-100">
           <div className="flex py-4 justify-between items-center text-sm text-gray-900">
-            <input
-              type="text"
-              placeholder={(rankIndex + 1).toString()}
-              size={question.MaxN / 10 + 1}
-              className="flex-none mx-3 rounded text-center"
-              onChange={handleRankInput}
-            />
+            <p className="flex-none mx-5 rounded text-center text-gray-400">{rankIndex + 1}</p>
             <div className="flex-auto text-gray-600">{choice}</div>
             <RankListIcon />
           </div>
