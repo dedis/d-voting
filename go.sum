@@ -243,8 +243,6 @@ github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9de
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 go.dedis.ch/dela v0.0.0-20211018150429-1fdbe35cd189/go.mod h1:GVQ2MumgCcAkor2MmfRCoqTBsFjaaqt7HfJpQLhMGok=
-go.dedis.ch/dela v0.0.0-20220323154142-09e1dea38ec7 h1:RgZlTINsC6skFRDxiT+1JspgI1NdwDX2DFBmamudSOU=
-go.dedis.ch/dela v0.0.0-20220323154142-09e1dea38ec7/go.mod h1:r+9YxnSP/4xr5/RtgFXYlRQwfm5X/ySxTkTj2if0R/k=
 go.dedis.ch/dela v0.0.0-20220323172319-20a841138815 h1:vnisq8n8OkYhUDyEi2CL1bANRdZ7DCq+7pr5kQ0zNqo=
 go.dedis.ch/dela v0.0.0-20220323172319-20a841138815/go.mod h1:Rg2wuj6MuMYVXx3P2feTFJjOk8E81s6xxxyJ7o5oJ90=
 go.dedis.ch/dela-apps v0.0.0-20211019120455-a0db752a0ba0 h1:gPrJd+7QUuADpfToMKr80maGnjGPeB7ft7iNrkAtwGY=
@@ -524,10 +522,10 @@ google.golang.org/grpc v1.28.0/go.mod h1:rpkK4SK4GF4Ach/+MFLZUBavHOvF2JJB5uozKKa
 google.golang.org/grpc v1.29.1/go.mod h1:itym6AZVZYACWQqET3MqgPpjcuV5QH3BxFS3IjizoKk=
 google.golang.org/grpc v1.30.0/go.mod h1:N36X2cJ7JwdamYAgDz+s+rVMFjt3numwzf/HckM8pak=
 google.golang.org/grpc v1.31.0/go.mod h1:N36X2cJ7JwdamYAgDz+s+rVMFjt3numwzf/HckM8pak=
-google.golang.org/grpc v1.31.1 h1:SfXqXS5hkufcdZ/mHtYCh53P2b+92WQq/DZcKLgsFRs=
 google.golang.org/grpc v1.31.1/go.mod h1:N36X2cJ7JwdamYAgDz+s+rVMFjt3numwzf/HckM8pak=
 google.golang.org/grpc v1.33.1/go.mod h1:fr5YgcSWrqhRRxogOsw7RzIpsmvOZ6IcH4kBYTpR3n0=
 google.golang.org/grpc v1.36.0/go.mod h1:qjiiYl8FncCW8feJPdyg3v6XW24KsRHe+dy9BAGRRjU=
+google.golang.org/grpc v1.45.0 h1:NEpgUqV3Z+ZjkqMsxMg11IaDrXY4RY6CQukSGK0uI1M=
 google.golang.org/grpc v1.45.0/go.mod h1:lN7owxKUQEqMfSyQikvvk5tf/6zMPsrK+ONuO11+0rQ=
 google.golang.org/protobuf v0.0.0-20200109180630-ec00e32a8dfd/go.mod h1:DFci5gLYBciE7Vtevhsrf46CRTquxDuWsQurQQe4oz8=
 google.golang.org/protobuf v0.0.0-20200221191635-4d8936d0db64/go.mod h1:kwYJMbMJ01Woi6D6+Kah6886xMZcty6N08ah7+eCXa0=
