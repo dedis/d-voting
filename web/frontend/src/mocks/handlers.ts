@@ -1,5 +1,6 @@
 import { rest } from 'msw';
 import { mockElection1, mockElection2 } from './mockData';
+import { ROUTE_LOGGED } from 'Routes';
 
 import {
   ENDPOINT_EVOTING_CAST_BALLOT,
@@ -56,7 +57,7 @@ export const handlers = [
   }),
 
   rest.get(ENDPOINT_GET_TEQ_KEY, (req, res, ctx) => {
-    const url = '/';
+    const url = ROUTE_LOGGED;
     sessionStorage.setItem('is-authenticated', 'true');
 
     return res(ctx.status(200), ctx.json({ url: url }));

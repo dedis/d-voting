@@ -9,7 +9,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.7.0
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
-	go.dedis.ch/dela v0.0.0-20220314000944-e6fcb387be1c
+	go.dedis.ch/dela v0.0.0-20220323172319-20a841138815
 	go.dedis.ch/dela-apps v0.0.0-20211019120455-a0db752a0ba0
 	go.dedis.ch/kyber/v3 v3.1.0-alpha
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e

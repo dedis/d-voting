@@ -1,10 +1,12 @@
-import React, { FC } from 'react';
+import { FlashContext } from 'index';
+import React, { FC, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import './Home.css';
 
 const Home: FC = () => {
   const { t } = useTranslation();
+  const fctx = useContext(FlashContext);
 
   return (
     <div className="home">
