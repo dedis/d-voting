@@ -1,24 +1,33 @@
-import { Configuration } from 'components/utils/types';
+import { Configuration } from 'types/configuration';
 import { useDropzone } from 'react-dropzone';
+import configurationSchema from '../../../schema/configurationValidation';
+
 import Ajv from 'ajv';
 
-import configurationSchema from './utils/configurationSchema.json';
+import configurationJSONSchema from '../../../schema/election_conf.json';
 
 const ajv = new Ajv({
-  schemas: [configurationSchema],
+  schemas: [configurationJSONSchema],
 });
 
-const UploadFile = ({ setSchema, setShowModal, setTextModal }) => {
-  const validate = ajv.getSchema('configurationSchema');
+const UploadFile = ({ setConf, setShowModal, setTextModal }) => {
+  const validateJSONSchema = ajv.getSchema('configurationSchema');
 
   const handleDrop = (file) => {
     if (file && file.type === 'application/json') {
       var reader = new FileReader();
-      reader.onload = function (param) {
+      reader.onload = async function (param) {
         const result: Configuration = JSON.parse(param.target.result.toString());
-        if (validate(result)) setSchema(result);
-        else {
-          setTextModal('Incorrect election configuration');
+        if (validateJSONSchema(result)) {
+          try {
+            const validConf: Configuration = await configurationSchema.validate(result);
+            setConf(validConf);
+          } catch (err) {
+            setTextModal('Incorrect election configuration : ' + err.errors.join(','));
+            setShowModal(true);
+          }
+        } else {
+          setTextModal('Invalid schema JSON file');
           setShowModal(true);
         }
       };

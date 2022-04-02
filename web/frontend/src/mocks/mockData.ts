@@ -1,4 +1,4 @@
-import { Configuration } from '../components/utils/types';
+import { Configuration } from '../types/configuration';
 
 const mockElection1: Configuration = {
   MainTitle: 'Please give your opinion',

@@ -2,7 +2,6 @@ import { ChangeEvent, useEffect, useState } from 'react';
 
 const useQuestionForm = (initState: any) => {
   const [state, setState] = useState<any>(initState);
-
   const { MinN, Choices } = state;
 
   const handleChange: (e: ChangeEvent<HTMLInputElement>) => void = (e) => {

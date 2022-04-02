@@ -1,11 +1,11 @@
 import ShortUniqueId from 'short-unique-id';
-import { ID, Rank, Select, Subject, Text } from '../../../../components/utils/types';
+import { ID, Rank, Select, Subject, Text } from '../../../../types/configuration';
 
 const uid: Function = new ShortUniqueId({ length: 8 });
 
-const getObjSubject: () => Subject = () => {
+const newSubject: (SubjectID?: ID) => Subject = (SubjectID) => {
   return {
-    ID: uid(),
+    ID: SubjectID ? SubjectID : uid(),
     Title: '',
     Order: [],
     Subjects: [],
@@ -15,7 +15,7 @@ const getObjSubject: () => Subject = () => {
   };
 };
 
-const getObjRank: (RankID?: ID) => Rank = (RankID) => {
+const newRank: (RankID?: ID) => Rank = (RankID) => {
   return {
     ID: RankID ? RankID : uid(),
     Title: '',
@@ -25,7 +25,7 @@ const getObjRank: (RankID?: ID) => Rank = (RankID) => {
   };
 };
 
-const getObjSelect: (SelectID?: ID) => Select = (SelectID) => {
+const newSelect: (SelectID?: ID) => Select = (SelectID) => {
   return {
     ID: SelectID ? SelectID : uid(),
     Title: '',
@@ -35,7 +35,7 @@ const getObjSelect: (SelectID?: ID) => Select = (SelectID) => {
   };
 };
 
-const getObjText: (TextID?: ID) => Text = (TextID) => {
+const newText: (TextID?: ID) => Text = (TextID) => {
   return {
     ID: TextID ? TextID : uid(),
     Title: '',
@@ -47,4 +47,4 @@ const getObjText: (TextID?: ID) => Text = (TextID) => {
   };
 };
 
-export { getObjSubject, getObjRank, getObjSelect, getObjText };
+export { newSubject, newRank, newSelect, newText };

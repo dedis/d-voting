@@ -20,6 +20,7 @@
     "add": "Add",
     "delete": "Delete",
     "createElec": "Create election",
+    "clearElec": "Clear election",
     "upload": "Choose a json file from your computer:",
     "notJson": "The file needs to have the .json extension.",
     "noFile": "No file found",

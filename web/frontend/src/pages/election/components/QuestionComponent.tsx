@@ -1,34 +1,35 @@
-import { FC, useEffect } from 'react';
+import { FC, useEffect, useRef } from 'react';
 
 import { MinusSmIcon, PlusSmIcon, XIcon } from '@heroicons/react/outline';
 import { Disclosure } from '@headlessui/react';
 import { ChevronUpIcon } from '@heroicons/react/solid';
 
-import { getObjRank, getObjSelect, getObjText } from './utils/getObjectType';
+import { newRank, newSelect, newText } from './utils/getObjectType';
 import useQuestionForm from './utils/useQuestionForm';
 
 import PropTypes from 'prop-types';
-import { Rank, Select, Subject, Text } from 'components/utils/types';
+import { Rank, Select, Text } from 'types/configuration';
 
 type QuestionComponentProps = {
   obj: Rank | Select | Text;
-  parentID: string;
-  updateSchema(
-    parentID: string,
-    obj: Subject | Rank | Select | Text,
-    type: 'ADD' | 'UPDATE' | 'DELETE',
-    target: string
-  ): void;
-  type: string;
+  notifyParent(obj: Rank | Select | Text): void;
+  removeQuestion: () => void;
+  type: 'RANK' | 'TEXT' | 'SELECT';
 };
 
-const QuestionComponent: FC<QuestionComponentProps> = ({ obj, parentID, updateSchema, type }) => {
+const QuestionComponent: FC<QuestionComponentProps> = ({
+  obj,
+  notifyParent,
+  removeQuestion,
+  type,
+}) => {
   const { ID } = obj;
+  const isQuestionMounted = useRef<Boolean>(false);
 
-  const initTypeObject: { Rank: Rank; Select: Select; Text: Text } = {
-    Rank: getObjRank(ID),
-    Select: getObjSelect(ID),
-    Text: getObjText(ID),
+  const initTypeObject: { RANK: Rank; SELECT: Select; TEXT: Text } = {
+    RANK: newRank(ID),
+    SELECT: newSelect(ID),
+    TEXT: newText(ID),
   };
   const [values, [handleChange, addChoice, deleteChoice, clearChoices, updateChoice]] =
     useQuestionForm(obj.Title === '' ? initTypeObject[type] : obj);
@@ -36,7 +37,12 @@ const QuestionComponent: FC<QuestionComponentProps> = ({ obj, parentID, updateSc
   const { Title, MaxN, MinN, Choices, Regex, MaxLength } = values;
 
   useEffect(() => {
-    updateSchema(parentID, values, 'UPDATE', `${type}s`);
+    if (!isQuestionMounted.current) {
+      isQuestionMounted.current = true;
+      return;
+    }
+    notifyParent(values);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [values]);
 
   return (
@@ -52,7 +58,7 @@ const QuestionComponent: FC<QuestionComponentProps> = ({ obj, parentID, updateSc
             </Disclosure.Button>
             <button
               className="flex justify-between w-15 px-4 py-2 text-sm font-semibold text-left text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus-visible:ring focus-visible:ring-grey-500 focus-visible:ring-opacity-75"
-              onClick={() => updateSchema(parentID, obj, 'DELETE', `${type}s`)}>
+              onClick={removeQuestion}>
               <XIcon className="w-5 h-5 text-red-500" aria-hidden="true" />
             </button>
           </div>
@@ -88,7 +94,7 @@ const QuestionComponent: FC<QuestionComponentProps> = ({ obj, parentID, updateSc
                 placeholder="Enter the MinN"
                 className="my-1 w-60 ml-1 border rounded-md"
               />
-              {type === 'Text' && (
+              {type === 'TEXT' && (
                 <>
                   <label className="block text-md font-medium text-gray-500">MaxLength</label>
                   <input
@@ -102,7 +108,7 @@ const QuestionComponent: FC<QuestionComponentProps> = ({ obj, parentID, updateSc
                   />
                 </>
               )}
-              {type === 'Text' && (
+              {type === 'TEXT' && (
                 <>
                   <label className="block text-md font-medium text-gray-500">Regex</label>
                   <input
@@ -157,9 +163,8 @@ const QuestionComponent: FC<QuestionComponentProps> = ({ obj, parentID, updateSc
 
 QuestionComponent.propTypes = {
   obj: PropTypes.any.isRequired,
-  parentID: PropTypes.string.isRequired,
-  updateSchema: PropTypes.func.isRequired,
-  type: PropTypes.string.isRequired,
+  notifyParent: PropTypes.func.isRequired,
+  removeQuestion: PropTypes.func.isRequired,
+  type: PropTypes.oneOf(['RANK', 'TEXT', 'SELECT']),
 };
-
 export default QuestionComponent;

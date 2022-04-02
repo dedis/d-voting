@@ -11,21 +11,10 @@ import {
   ENDPOINT_PERSONNAL_INFO,
 } from '../components/utils/Endpoints';
 
-import { Configuration } from '../components/utils/types';
+import { Configuration } from '../types/configuration';
+import { CreateElectionBody, GetElectionBody } from '../types/frontendRequestBody';
 
 const uid = new ShortUniqueId({ length: 8 });
-
-interface GetElectionBody {
-  ElectionID: string;
-  Token: string;
-}
-
-interface CreateElectionBody {
-  Title: string;
-  AdminID: string;
-  Token: string;
-  Format: Configuration;
-}
 
 var mockElections = [
   {
