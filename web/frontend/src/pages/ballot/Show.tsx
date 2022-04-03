@@ -10,7 +10,6 @@ import { ROUTE_BALLOT_INDEX } from '../../Routes';
 import useElection from 'components/utils/useElection';
 import usePostCall from 'components/utils/usePostCall';
 import { ENDPOINT_EVOTING_CAST_BALLOT } from 'components/utils/Endpoints';
-import Modal from 'components/modal/Modal';
 import { OPEN } from 'components/utils/StatusNumber';
 import { encryptVote } from './components/VoteEncrypt';
 import { ballotIsValid } from './components/HandleAnswers';
@@ -19,6 +18,7 @@ import { voteEncode } from './components/VoteEncode';
 import useConfiguration from 'components/utils/useConfiguration';
 import { ID, Question, RANK, ROOT_ID, SELECT, SUBJECT, TEXT } from 'types/configuration';
 import { DragDropContext } from 'react-beautiful-dnd';
+import BallotCast from './BallotCast';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
@@ -33,29 +33,14 @@ const Ballot: FC = () => {
   const edCurve = kyber.curve.newCurve('edwards25519');
   const [postRequest, setPostRequest] = useState(null);
   const [postError, setPostError] = useState('');
+  const [showFlash, setShowFlash] = useState(false);
   const { postData } = usePostCall(setPostError);
-  const [showModal, setShowModal] = useState(false);
-  const [modalText, setModalText] = useState(t('voteSuccess') as string);
 
   useEffect(() => {
     if (postRequest !== null) {
-      setPostError(null);
-      postData(ENDPOINT_EVOTING_CAST_BALLOT, postRequest, setShowModal);
-      setPostRequest(null);
+      postData(ENDPOINT_EVOTING_CAST_BALLOT, postRequest, setShowFlash);
     }
-  }, [postData, postRequest]);
-
-  useEffect(() => {
-    if (postError !== null) {
-      if (postError.includes('ECONNREFUSED')) {
-        setModalText(t('errorServerDown'));
-      } else {
-        setModalText(t('voteFailure'));
-      }
-    } else {
-      setModalText(t('voteSuccess'));
-    }
-  }, [postError, t]);
+  }, [postRequest]);
 
   const hexToBytes = (hex: string) => {
     let bytes: number[] = [];
@@ -72,7 +57,6 @@ const Ballot: FC = () => {
       ElectionID: electionID,
       UserId: sessionStorage.getItem('id'),
       Ballot: vote,
-      Token: token,
     };
   };
 
@@ -163,12 +147,7 @@ const Ballot: FC = () => {
 
   return (
     <div>
-      <Modal
-        showModal={showModal}
-        setShowModal={setShowModal}
-        textModal={modalText}
-        buttonRightText={t('close')}
-      />
+      <BallotCast postError={postError} showFlash={showFlash} />
       {loading ? (
         <p className="loading">{t('loading')}</p>
       ) : (

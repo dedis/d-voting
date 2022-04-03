@@ -31,6 +31,7 @@ type SelectDisplayProps = {
   setAnswers: React.Dispatch<React.SetStateAction<Answers>>;
 };
 
+// Component that renders and checks the input of a Choice for a SelectQuestion
 const SelectDisplay: FC<SelectDisplayProps> = ({
   isChecked,
   choice,

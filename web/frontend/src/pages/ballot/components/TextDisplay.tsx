@@ -33,6 +33,7 @@ type TextDisplayProps = {
   setAnswers: React.Dispatch<React.SetStateAction<Answers>>;
 };
 
+// Component that renders and checks the input of a Choice for a TextQuestion
 const TextDisplay: FC<TextDisplayProps> = ({ choice, question, answers, setAnswers }) => {
   const { t } = useTranslation();
   const [charCount, setCharCount] = useState(0);

@@ -67,6 +67,7 @@ type RankDisplayProps = {
   choice: string;
 };
 
+// Component that renders a Choice for a RankQuestion
 const RankDisplay: FC<RankDisplayProps> = ({ rankIndex, choice }) => {
   return (
     <Draggable key={choice} draggableId={choice} index={rankIndex}>

@@ -1,7 +1,7 @@
 # Encoding of a ballot
 
 
-Here is described a common enconding for ballots, which is needed
+Here is described a common encoding for ballots, which is needed
 to make sure that all ballots can be encoded in a unique way (up to the
 ordering of questions).
 
@@ -48,7 +48,7 @@ A possible encoding of an answer would be (by string concatenation):
 
 ## Size of the ballot
 
-In order to maintain complete voter anonimity and untraceability of ballots throughout the 
+In order to maintain complete voter anonymity and untraceability of ballots throughout the 
 election process, it is important that all encrypted ballots have the same size. To this aim, 
 the election has an attribute called "BallotSize" (multiple of 29) which is the size 
 that all ballots should have before they're encrypted. Smaller ballots should therefore be 
@@ -57,11 +57,11 @@ we use an empty line (\n\n). For a ballot size of 116, our ballot from the previ
 would then become:
 
 ```
-"select:3fb2:false,false,false,true,false\n" +
+"select:3fb2:0,0,0,1,0\n" +
 
 "rank:19c7:0,1,2\n" + 
 
 "text:cd13:base64("Noémien"),base64("Pierluca")\n\n" +
 
-"olspoa1029ruxeqX129i0"
+" ndtTx5uxmvnllH1T7NgLOREguUWbN"
 ```
