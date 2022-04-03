@@ -8,19 +8,90 @@ const selectsSchema = yup.object({
   Title: yup.lazy(() => titleSchema),
   MaxN: yup
     .number()
-    .min(yup.ref('MinN'), 'Max should be greater than min in selects')
-    .integer()
+    .test({
+      name: 'compare-max-min',
+      message: 'Max/Min comparison failed',
+      test() {
+        const { path, parent } = this;
+        const { MaxN, MinN, Choices, ID } = parent;
+
+        if (!Number.isInteger(MaxN)) {
+          return this.createError({
+            path,
+            message: `Max should be an integer in selects, in object ID: ${ID}`,
+          });
+        }
+
+        if (MaxN < 1) {
+          return this.createError({
+            path,
+            message: `Max should be higher or equal to 1 in selects, in object ID: ${ID}`,
+          });
+        }
+
+        if (MaxN < MinN) {
+          return this.createError({
+            path,
+            message: `Max should be higher or equal than min in selects, in object ID: ${ID}`,
+          });
+        }
+
+        if (MaxN >= Choices.length) {
+          return this.createError({
+            path,
+            message: `MaxN should be less or equal to Choices length in selects, in object ID: ${ID}`,
+          });
+        }
+        return true;
+      },
+    })
     .required(),
   MinN: yup
     .number()
     .max(yup.ref('MaxN'), `Min should be smaller than max in selects`)
-    .min(0)
-    .integer()
+    .test({
+      name: 'compare-min-max',
+      message: 'Max/Min comparison failed',
+      test() {
+        const { path, parent } = this;
+        const { MinN, ID } = parent;
+
+        if (!Number.isInteger(MinN)) {
+          return this.createError({
+            path,
+            message: `Min should be an integer in selects, in object ID: ${ID}`,
+          });
+        }
+
+        if (MinN < 1) {
+          return this.createError({
+            path,
+            message: `Min should be higher or equal to 1 in selects, in object ID: ${ID}`,
+          });
+        }
+        return true;
+      },
+    })
     .required(),
   Choices: yup
     .array()
     .of(yup.string())
-    .min(yup.ref('MinN'), 'Choices array should be at least of length MinN for selects')
+    .test({
+      name: 'compare-choices-min-max',
+      message: 'Choice length comparison failed',
+      test() {
+        const { path, parent } = this;
+        const { MaxN, Choices, ID } = parent;
+
+        if (Choices.length < MaxN) {
+          return this.createError({
+            path,
+            message: `Choices array length should be at least equal to Max in selects, in object ID: ${ID}`,
+          });
+        }
+        return true;
+      },
+    })
     .required(),
 });
 
@@ -29,41 +100,202 @@ const ranksSchema = yup.object({
   Title: yup.lazy(() => titleSchema),
   MaxN: yup
     .number()
-    .max(yup.ref('MinN'), 'Max and Min Should be equal in ranks')
-    .min(yup.ref('MinN'), 'Max and Min Should be equal in ranks')
-    .integer()
+    .test({
+      name: 'compare-max-min',
+      message: 'Max/Min comparison failed',
+      test() {
+        const { path, parent } = this;
+        const { MinN, MaxN, ID } = parent;
+
+        if (!Number.isInteger(MaxN)) {
+          return this.createError({
+            path,
+            message: `Max should be an integer in ranks, in object ID: ${ID}`,
+          });
+        }
+
+        if (MaxN < 2) {
+          return this.createError({
+            path,
+            message: `Max should be higher or equal to 2 in ranks, in object ID: ${ID}`,
+          });
+        }
+
+        if (MaxN !== MinN) {
+          return this.createError({
+            path,
+            message: `Max and Min Should be equal in ranks, in object ID: ${ID}`,
+          });
+        }
+        return true;
+      },
+    })
     .required(),
   MinN: yup
     .number()
-    .max(yup.ref('MaxN'), 'Max and Min Should be equal in ranks')
-    .min(yup.ref('MaxN'), 'Max and Min Should be equal in ranks')
-    .integer()
+    .test({
+      name: 'compare-min-max',
+      message: 'Min/Max comparison failed',
+      test() {
+        const { path, parent } = this;
+        const { MinN, MaxN, ID } = parent;
+
+        if (!Number.isInteger(MinN)) {
+          return this.createError({
+            path,
+            message: `Min should be an integer in ranks, in object ID: ${ID}`,
+          });
+        }
+
+        if (MinN < 2) {
+          return this.createError({
+            path,
+            message: `Min should be higher or equal to 2 in ranks, in object ID: ${ID}`,
+          });
+        }
+
+        if (MinN !== MaxN) {
+          return this.createError({
+            path,
+            message: `Min and Max Should be equal in ranks, in object ID: ${ID}`,
+          });
+        }
+        return true;
+      },
+    })
     .required(),
   Choices: yup
     .array()
     .of(yup.string())
-    .min(yup.ref('MinN'), 'Choices array should be at least of length MinN for ranks')
-    .max(yup.ref('MaxN'), 'Choices array length cannot be higher than MaxN for ranks')
+    .test({
+      name: 'compare-choices-min-max',
+      message: 'Choice length comparison failed',
+      test() {
+        const { path, parent } = this;
+        const { MinN, MaxN, Choices, ID } = parent;
+
+        if (Choices.length !== MaxN || Choices.length !== MinN) {
+          return this.createError({
+            path,
+            message: `Choices array length should be equal to MaxN and MinN in ranks, in object ID: ${ID}`,
+          });
+        }
+        return true;
+      },
+    })
     .required(),
 });
 
 const textsSchema = yup.object({
   ID: yup.lazy(() => idSchema),
   Title: yup.lazy(() => titleSchema),
-  MaxN: yup.number().min(yup.ref('MinN'), 'Max should be greater than min').integer().required(),
+  MaxN: yup
+    .number()
+    .test({
+      name: 'compare-max-min',
+      message: 'Min/Max comparison failed',
+      test() {
+        const { path, parent } = this;
+        const { MinN, MaxN, ID } = parent;
+
+        if (!Number.isInteger(MaxN)) {
+          return this.createError({
+            path,
+            message: `Max should be an integer in texts, in object ID: ${ID}`,
+          });
+        }
+
+        if (MaxN < 1) {
+          return this.createError({
+            path,
+            message: `Max should be higher or equal to 1 in texts, in object ID: ${ID}`,
+          });
+        }
+
+        if (MaxN < MinN) {
+          return this.createError({
+            path,
+            message: `Max should be greater than Min in texts, in object ID: ${ID}`,
+          });
+        }
+        return true;
+      },
+    })
+    .required(),
   MinN: yup
     .number()
-    .max(yup.ref('MaxN'), 'Min should be smaller than max in texts')
-    .min(0)
-    .integer()
+    .test({
+      name: 'compare-min-max',
+      message: 'Min/Max comparison failed',
+      test() {
+        const { path, parent } = this;
+        const { MinN, MaxN, ID } = parent;
+        if (!Number.isInteger(MinN)) {
+          return this.createError({
+            path,
+            message: `Min should be an integer in texts, in object ID: ${ID}`,
+          });
+        }
+        if (MinN < 1) {
+          return this.createError({
+            path,
+            message: `Min should be higher or equal to 1 in texts, in object ID: ${ID}`,
+          });
+        }
+        if (MinN > MaxN) {
+          return this.createError({
+            path,
+            message: `Min should be smaller than Max in texts, in object ID: ${ID}`,
+          });
+        }
+        return true;
+      },
+    })
     .required(),
-  MaxLength: yup.number().min(1).required(),
+  MaxLength: yup
+    .number()
+    .test({
+      name: 'compare-maxlength',
+      message: 'MaxLength value failed',
+      test() {
+        const { path, parent } = this;
+        const { MaxLength, ID } = parent;
+        if (!Number.isInteger(MaxLength)) {
+          return this.createError({
+            path,
+            message: `MaxLength should be an integer in texts, in object ID: ${ID}`,
+          });
+        }
+        if (MaxLength < 0) {
+          return this.createError({
+            path,
+            message: `MaxLength should be at least equal to 1 in texts, in object ID: ${ID}`,
+          });
+        }
+        return true;
+      },
+    })
+    .required(),
   Regex: yup.string(),
   Choices: yup
     .array()
     .of(yup.string())
-    .min(yup.ref('MinN'), 'Choices array should be at least of length MinN for texts')
-    .max(yup.ref('MaxN'), 'Choices array length cannot be higher than MaxN for texts')
+    .test({
+      name: 'compare-choices-min-max',
+      message: 'Choice length comparison failed',
+      test() {
+        const { path, parent } = this;
+        const { MaxN, Choices, ID } = parent;
+
+        if (Choices.length !== MaxN) {
+          return this.createError({
+            path,
+            message: `Choices array length should be equal to MaxN in texts, in object ID: ${ID}`,
+          });
+        }
+        return true;
+      },
+    })
     .required(),
 });
 
@@ -77,7 +309,8 @@ const subjectSchema = yup.object({
       name: 'Testing Order',
       message: 'Error Order array is not coherent with the Subject object',
       test() {
-        const { Order, Subjects, Ranks, Selects, Texts } = this.parent;
+        const { path, parent } = this;
+        const { Order, Subjects, Ranks, Selects, Texts } = parent;
         const onlyUnique = (value, index, self) => self.indexOf(value) === index;
 
         // If we don't have unique IDs the array is not consistent with the Subject
@@ -109,9 +342,11 @@ const subjectSchema = yup.object({
           // If we found all the IDs of our Order in the arrays the test passes
           // meaning that there is exactly one ID for each question type inside the Order array
           if (filteredOrder.length === 0) return true;
-          else return false;
         }
-        return false;
+        return this.createError({
+          path,
+          message: `Error Order array is not coherent with the Subject in object ID: ${parent.ID}`,
+        });
       },
     })
     .required(),

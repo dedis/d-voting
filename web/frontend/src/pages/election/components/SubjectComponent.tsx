@@ -243,6 +243,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
         placeholder="Enter the Subject Title"
         className="ml-2 mt-2 mb-2 border rounded-md text-md w-60"
       />
+      <div className="ml-2">ID: {subject.ID}</div>
       {components.map((component) => component)}
 
       <div className="flex hidden justify-between overflow-x-auto sm:flex sm:pr-2">

@@ -62,8 +62,9 @@ const QuestionComponent: FC<QuestionComponentProps> = ({
               <XIcon className="w-5 h-5 text-red-500" aria-hidden="true" />
             </button>
           </div>
-          <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-gray-500">
+          <Disclosure.Panel className="px-3 pt-4 pb-2 text-sm text-gray-500">
             <div className="flex flex-col">
+              <label className="block text-md mt font-medium text-gray-500">ID: {ID}</label>
               <label className="block text-md mt font-medium text-gray-500">Title</label>
               <input
                 value={Title}
