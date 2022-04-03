@@ -80,7 +80,10 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
   };
 
   const removeSubject = (subjectID: ID) => () => {
-    setConf({ ...conf, Scaffold: Scaffold.filter((subject) => subject.ID !== subjectID) });
+    setConf({
+      ...conf,
+      Scaffold: Scaffold.filter((subject) => subject.ID !== subjectID),
+    });
   };
 
   return (

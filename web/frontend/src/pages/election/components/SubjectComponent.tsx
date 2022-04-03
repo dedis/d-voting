@@ -102,7 +102,11 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
 
   const localRemoveSubject = (subjID: ID) => () => {
     const newSubjects = [...Subjects];
-    setSubject({ ...subject, Subjects: newSubjects.filter((subj) => subj.ID !== subjID) });
+    setSubject({
+      ...subject,
+      Subjects: newSubjects.filter((subj) => subj.ID !== subjID),
+      Order: Order.filter((id) => id !== subjID),
+    });
   };
 
   const removeChildQuestion = (targetID: ID, type: 'RANK' | 'TEXT' | 'SELECT') => () => {
