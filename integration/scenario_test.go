@@ -2,15 +2,19 @@ package integration
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
@@ -47,10 +51,12 @@ func getScenarioTest() func(*testing.T) {
 
 		const contentType = "application/json"
 
-		t.Parallel()
+		// t.Parallel()
 		proxyAddr1 := "http://localhost:8081"
 		proxyAddr2 := "http://localhost:8082"
 		proxyAddr3 := "http://localhost:8083"
+
+		proxyArray := [3]string{proxyAddr1, proxyAddr2, proxyAddr3}
 
 		// ###################################### CREATE SIMPLE ELECTION ######
 		create_election_js := `{"Configuration":{"MainTitle":"electionTitle","Scaffold":[{"ID":"YWE=","Title":"subject1","Order":null,"Subjects":null,"Selects":[{"ID":"YmI=","Title":"Select your favorite snacks","MaxN":3,"MinN":0,"Choices":["snickers","mars","vodka","babibel"]}],"Ranks":[],"Texts":null},{"ID":"ZGQ=","Title":"subject2","Order":null,"Subjects":null,"Selects":null,"Ranks":null,"Texts":[{"ID":"ZWU=","Title":"dissertation","MaxN":1,"MinN":1,"MaxLength":3,"Regex":"","Choices":["write yes in your language"]}]}]},"AdminID":"adminId"}`
@@ -112,8 +118,10 @@ func getScenarioTest() func(*testing.T) {
 
 		// ##################################### OPEN ELECTION #####################
 
-		t.Log("Open election")
-		resp, err = http.Post(proxyAddr1+"/evoting/open", contentType, bytes.NewBuffer([]byte(electionID)))
+		randomproxy := proxyArray[rand.Intn(len(proxyArray))]
+		t.Logf("Open election send to proxy %v", randomproxy)
+
+		resp, err = http.Post(randomproxy+"/evoting/open", contentType, bytes.NewBuffer([]byte(electionID)))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
@@ -159,6 +167,8 @@ func getScenarioTest() func(*testing.T) {
 			"text:" + encodeID("ee") + "b3Vp\n\n") //encoding of "oui"
 
 		// Ballot 1
+		t.Logf("1st ballot in str is: %v", b1)
+
 		ballot1, err := marshallBallot_manual(b1, pubKey, Chunksperballot)
 		t.Logf("1st ballot is: %v", ballot1)
 
@@ -175,12 +185,13 @@ func getScenarioTest() func(*testing.T) {
 			Token:      "token",
 		}
 
-		t.Logf("cast first ballot")
+		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
+		t.Logf("cast first ballot to proxy %v", randomproxy)
 		js_vote, err := json.Marshal(castVoteRequest)
 		require.NoError(t, err, "failed to marshal castVoteRequest: %v", err)
 
 		t.Logf("vote is: %v", castVoteRequest)
-		resp, err = http.Post(proxyAddr1+castVoteEndpoint, contentType, bytes.NewBuffer(js_vote))
+		resp, err = http.Post(randomproxy+castVoteEndpoint, contentType, bytes.NewBuffer(js_vote))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected status: %s", resp.Status)
 		body, err = io.ReadAll(resp.Body)
@@ -207,7 +218,8 @@ func getScenarioTest() func(*testing.T) {
 		js_vote, err = json.Marshal(castVoteRequest)
 		require.NoError(t, err, "failed to marshal castVoteRequest: %v", err)
 
-		resp, err = http.Post(proxyAddr1+castVoteEndpoint, contentType, bytes.NewBuffer(js_vote))
+		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
+		resp, err = http.Post(randomproxy+castVoteEndpoint, contentType, bytes.NewBuffer(js_vote))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 		body, err = io.ReadAll(resp.Body)
@@ -234,7 +246,9 @@ func getScenarioTest() func(*testing.T) {
 		js_vote, err = json.Marshal(castVoteRequest)
 		require.NoError(t, err, "failed to marshal castVoteRequest: %v", err)
 
-		resp, err = http.Post(proxyAddr1+castVoteEndpoint, contentType, bytes.NewBuffer(js_vote))
+		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
+
+		resp, err = http.Post(randomproxy+castVoteEndpoint, contentType, bytes.NewBuffer(js_vote))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 		body, err = io.ReadAll(resp.Body)
@@ -245,7 +259,9 @@ func getScenarioTest() func(*testing.T) {
 
 		// ############################# CLOSE ELECTION FOR REAL ###################
 
-		t.Log("Close election (for real)")
+		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
+
+		t.Logf("Close election (for real) send to proxy %v", randomproxy)
 
 		closeElectionRequest := types.CloseElectionRequest{
 			ElectionID: electionID,
@@ -255,7 +271,8 @@ func getScenarioTest() func(*testing.T) {
 
 		js, err := json.Marshal(closeElectionRequest)
 		require.NoError(t, err, "failed to set marshall types.CloseElectionRequest : %v", err)
-		resp, err = http.Post(proxyAddr1+closeElectionEndpoint, contentType, bytes.NewBuffer(js))
+
+		resp, err = http.Post(randomproxy+closeElectionEndpoint, contentType, bytes.NewBuffer(js))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
@@ -268,7 +285,7 @@ func getScenarioTest() func(*testing.T) {
 		t.Log("Get election info")
 		create_info_js = fmt.Sprintf(`{"ElectionID":"%v","Token":"token"}`, electionID)
 
-		resp, err = http.Post(proxyAddr1+getElectionInfoEndpoint, contentType, bytes.NewBuffer([]byte(create_info_js)))
+		resp, err = http.Post(randomproxy+getElectionInfoEndpoint, contentType, bytes.NewBuffer([]byte(create_info_js)))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
@@ -296,7 +313,9 @@ func getScenarioTest() func(*testing.T) {
 		js, err = json.Marshal(shuffleBallotsRequest)
 		require.NoError(t, err, "failed to set marshall types.SimpleElection : %v", err)
 
-		resp, err = http.Post(proxyAddr1+shuffleBallotsEndpoint, contentType, bytes.NewBuffer(js))
+		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
+
+		resp, err = http.Post(randomproxy+shuffleBallotsEndpoint, contentType, bytes.NewBuffer(js))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
@@ -311,7 +330,9 @@ func getScenarioTest() func(*testing.T) {
 		t.Log("Get election info")
 		create_info_js = fmt.Sprintf(`{"ElectionID":"%v","Token":"token"}`, electionID)
 
-		resp, err = http.Post(proxyAddr1+getElectionInfoEndpoint, contentType, bytes.NewBuffer([]byte(create_info_js)))
+		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
+
+		resp, err = http.Post(randomproxy+getElectionInfoEndpoint, contentType, bytes.NewBuffer([]byte(create_info_js)))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
@@ -339,7 +360,9 @@ func getScenarioTest() func(*testing.T) {
 		js, err = json.Marshal(beginDecryptionRequest)
 		require.NoError(t, err, "failed to set marshall types.SimpleElection : %v", err)
 
-		resp, err = http.Post(proxyAddr1+beginDecryptionEndpoint, contentType, bytes.NewBuffer(js))
+		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
+
+		resp, err = http.Post(randomproxy+beginDecryptionEndpoint, contentType, bytes.NewBuffer(js))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
@@ -354,7 +377,9 @@ func getScenarioTest() func(*testing.T) {
 		t.Log("Get election info")
 		create_info_js = fmt.Sprintf(`{"ElectionID":"%v","Token":"token"}`, electionID)
 
-		resp, err = http.Post(proxyAddr1+getElectionInfoEndpoint, contentType, bytes.NewBuffer([]byte(create_info_js)))
+		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
+
+		resp, err = http.Post(randomproxy+getElectionInfoEndpoint, contentType, bytes.NewBuffer([]byte(create_info_js)))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
@@ -382,7 +407,9 @@ func getScenarioTest() func(*testing.T) {
 		js, err = json.Marshal(decryptBallotsRequest)
 		require.NoError(t, err, "failed to set marshall types.CombineSharesRequest : %v", err)
 
-		resp, err = http.Post(proxyAddr1+combineSharesEndpoint, contentType, bytes.NewBuffer(js))
+		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
+
+		resp, err = http.Post(randomproxy+combineSharesEndpoint, contentType, bytes.NewBuffer(js))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
@@ -397,7 +424,9 @@ func getScenarioTest() func(*testing.T) {
 		t.Log("Get election info")
 		create_info_js = fmt.Sprintf(`{"ElectionID":"%v","Token":"token"}`, electionID)
 
-		resp, err = http.Post(proxyAddr1+getElectionInfoEndpoint, contentType, bytes.NewBuffer([]byte(create_info_js)))
+		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
+
+		resp, err = http.Post(randomproxy+getElectionInfoEndpoint, contentType, bytes.NewBuffer([]byte(create_info_js)))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
@@ -424,7 +453,9 @@ func getScenarioTest() func(*testing.T) {
 		js, err = json.Marshal(getElectionResultRequest)
 		require.NoError(t, err, "failed to set marshall types.GetElectionResultRequest : %v", err)
 
-		resp, err = http.Post(proxyAddr1+getElectionResultEndpoint, contentType, bytes.NewBuffer(js))
+		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
+
+		resp, err = http.Post(randomproxy+getElectionResultEndpoint, contentType, bytes.NewBuffer(js))
 
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
@@ -435,25 +466,22 @@ func getScenarioTest() func(*testing.T) {
 		t.Log("Response body: " + string(body))
 		resp.Body.Close()
 
-		time.Sleep(10 * time.Second)
+		var sendback_ballots []types.Ballot
+		_ = json.Unmarshal(body, sendback_ballots)
+		t.Logf("Response body unmarshalled is %v", sendback_ballots)
+		return
+		// ###################################### VALIDATE ELECTION RESULT ##############
 
-		t.Log("Get election info")
-		create_info_js = fmt.Sprintf(`{"ElectionID":"%v","Token":"token"}`, electionID)
+		fake_configuration := fake.BasicConfiguration
+		t.Logf("configuration is: %v", fake_configuration)
 
-		resp, err = http.Post(proxyAddr1+getElectionInfoEndpoint, contentType, bytes.NewBuffer([]byte(create_info_js)))
-		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
+		b1_marshal, err := Unmarshal_Ballot_Manual(b1, fake_configuration)
+		// b2_marshal, err := Unmarshal_Ballot_Manual(b2, fake_configuration)
+		// b3_marshal, err := Unmarshal_Ballot_Manual(b3, fake_configuration)
 
-		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
+		t.Logf("1st ballot in marshalled object is: %v", b1_marshal)
+		return
 
-		body, err = io.ReadAll(resp.Body)
-		require.NoError(t, err, "failed to read the body of the response: %v", err)
-
-		t.Log("response body:", string(body))
-		resp.Body.Close()
-		err = json.Unmarshal(body, &objmap)
-		require.NoError(t, err, "failed to parsethe body of the response from js: %v", err)
-		electionStatus = int(objmap["Status"].(float64))
-		t.Logf("Status of the election : %v", electionStatus)
 	}
 }
 
@@ -555,4 +583,193 @@ type CiphervoteJSON []EGPairJSON
 type EGPairJSON struct {
 	K []byte
 	C []byte
+}
+
+// Unmarshal decodes the given string according to the format described in
+// "state of smart contract.md"
+func Unmarshal_Ballot_Manual(marshalledBallot string, configuration types.Configuration) (types.Ballot, error) {
+	invalidate := func(b types.Ballot) {
+		b.RankResultIDs = nil
+		b.RankResult = nil
+		b.TextResultIDs = nil
+		b.TextResult = nil
+		b.SelectResultIDs = nil
+		b.SelectResult = nil
+	}
+
+	var b types.Ballot
+	BallotSize := configuration.MaxBallotSize()
+	if len(marshalledBallot) > BallotSize {
+		invalidate(b)
+		return b, fmt.Errorf("ballot has an unexpected size %d, expected <= %d",
+			len(marshalledBallot), BallotSize)
+	}
+
+	lines := strings.Split(marshalledBallot, "\n")
+
+	b.SelectResultIDs = make([]types.ID, 0)
+	b.SelectResult = make([][]bool, 0)
+
+	b.RankResultIDs = make([]types.ID, 0)
+	b.RankResult = make([][]int8, 0)
+
+	b.TextResultIDs = make([]types.ID, 0)
+	b.TextResult = make([][]string, 0)
+
+	//TODO: Loads of code duplication, can be re-thought
+	for _, line := range lines {
+		if line == "" {
+			// empty line, the valid part of the ballot is over
+			break
+		}
+
+		question := strings.Split(line, ":")
+
+		if len(question) != 3 {
+			invalidate(b)
+			return b, xerrors.Errorf("a line in the ballot has length != 3: %s", line)
+		}
+
+		_, err := base64.StdEncoding.DecodeString(question[1])
+		if err != nil {
+			return b, xerrors.Errorf("could not decode question ID: %v", err)
+		}
+		questionID := question[1]
+
+		q := configuration.GetQuestion(types.ID(questionID))
+
+		if q == nil {
+			invalidate(b)
+			return b, fmt.Errorf("wrong question ID: the question doesn't exist")
+		}
+
+		switch question[0] {
+
+		case "select":
+			selections := strings.Split(question[2], ",")
+
+			if len(selections) != q.GetChoicesLength() {
+				invalidate(b)
+				return b, fmt.Errorf("question %s has a wrong number of answers: expected %d got %d"+
+					"", questionID, q.GetChoicesLength(), len(selections))
+			}
+
+			b.SelectResultIDs = append(b.SelectResultIDs, types.ID(questionID))
+			b.SelectResult = append(b.SelectResult, make([]bool, 0))
+
+			index := len(b.SelectResult) - 1
+			var selected uint = 0
+
+			for _, selection := range selections {
+				s, err := strconv.ParseBool(selection)
+
+				if err != nil {
+					invalidate(b)
+					return b, fmt.Errorf("could not parse selection value for Q.%s: %v",
+						questionID, err)
+				}
+
+				if s {
+					selected++
+				}
+
+				b.SelectResult[index] = append(b.SelectResult[index], s)
+			}
+
+			if selected > q.GetMaxN() {
+				invalidate(b)
+				return b, fmt.Errorf("question %s has too many selected answers", questionID)
+			} else if selected < q.GetMinN() {
+				invalidate(b)
+				return b, fmt.Errorf("question %s has not enough selected answers", questionID)
+			}
+
+		case "rank":
+			ranks := strings.Split(question[2], ",")
+
+			if len(ranks) != q.GetChoicesLength() {
+				invalidate(b)
+				return b, fmt.Errorf("question %s has a wrong number of answers: expected %d got %d"+
+					"", questionID, q.GetChoicesLength(), len(ranks))
+			}
+
+			b.RankResultIDs = append(b.RankResultIDs, types.ID(questionID))
+			b.RankResult = append(b.RankResult, make([]int8, 0))
+
+			index := len(b.RankResult) - 1
+			var selected uint = 0
+			for _, rank := range ranks {
+				if len(rank) > 0 {
+					selected++
+
+					r, err := strconv.ParseInt(rank, 10, 8)
+					if err != nil {
+						invalidate(b)
+						return b, fmt.Errorf("could not parse rank value for Q.%s : %v",
+							questionID, err)
+					}
+
+					if r < 0 || uint(r) >= q.GetMaxN() {
+						invalidate(b)
+						return b, fmt.Errorf("invalid rank not in range [0, MaxN[")
+					}
+
+					b.RankResult[index] = append(b.RankResult[index], int8(r))
+				} else {
+					b.RankResult[index] = append(b.RankResult[index], int8(-1))
+				}
+			}
+
+			if selected > q.GetMaxN() {
+				invalidate(b)
+				return b, fmt.Errorf("question %s has too many selected answers", questionID)
+			} else if selected < q.GetMinN() {
+				invalidate(b)
+				return b, fmt.Errorf("question %s has not enough selected answers", questionID)
+			}
+
+		case "text":
+			texts := strings.Split(question[2], ",")
+
+			if len(texts) != q.GetChoicesLength() {
+				invalidate(b)
+				return b, fmt.Errorf("question %s has a wrong number of answers: expected %d got %d"+
+					"", questionID, q.GetChoicesLength(), len(texts))
+			}
+
+			b.TextResultIDs = append(b.TextResultIDs, types.ID(questionID))
+			b.TextResult = append(b.TextResult, make([]string, 0))
+
+			index := len(b.TextResult) - 1
+			var selected uint = 0
+
+			for _, text := range texts {
+				if len(text) > 0 {
+					selected++
+				}
+
+				t, err := base64.StdEncoding.DecodeString(text)
+				if err != nil {
+					return b, fmt.Errorf("could not decode text for Q. %s: %v", questionID, err)
+				}
+
+				b.TextResult[index] = append(b.TextResult[index], string(t))
+			}
+
+			if selected > q.GetMaxN() {
+				invalidate(b)
+				return b, fmt.Errorf("question %s has too many selected answers", questionID)
+			} else if selected < q.GetMinN() {
+				invalidate(b)
+				return b, fmt.Errorf("question %s has not enough selected answers", questionID)
+			}
+
+		default:
+			invalidate(b)
+			return b, fmt.Errorf("question type is unknown")
+		}
+
+	}
+
+	return b, nil
 }
