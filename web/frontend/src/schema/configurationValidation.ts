@@ -89,6 +89,12 @@ const selectsSchema = yup.object({
             message: `Choices array length should be at least equal to Max in selects, in object ID: ${ID}`,
           });
         }
+        if (Choices.includes('')) {
+          return this.createError({
+            path,
+            message: `Choices array should not contain empty strings in selects, in object ID: ${ID}`,
+          });
+        }
         return true;
       },
     })
@@ -178,6 +184,12 @@ const ranksSchema = yup.object({
           return this.createError({
             path,
             message: `Choices array length should be equal to MaxN and MinN in ranks, in object ID: ${ID}`,
+          });
+        }
+        if (Choices.includes('')) {
+          return this.createError({
+            path,
+            message: `Choices array should not contain empty strings in ranks, in object ID: ${ID}`,
           });
         }
         return true;
@@ -291,6 +303,12 @@ const textsSchema = yup.object({
           return this.createError({
             path,
             message: `Choices array length should be equal to MaxN in texts, in object ID: ${ID}`,
+          });
+        }
+        if (Choices.includes('')) {
+          return this.createError({
+            path,
+            message: `Choices array should not contain empty strings in texts, in object ID: ${ID}`,
           });
         }
         return true;
