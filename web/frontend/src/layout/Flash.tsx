@@ -1,16 +1,24 @@
-import { FlashContext } from 'index';
+import { FlashContext, FlashLevel } from 'index';
 import { useContext } from 'react';
 
 const Flash = () => {
   const fctx = useContext(FlashContext);
 
+  const flashContainer = (level: number) => {
+    switch (level) {
+      case FlashLevel.Info:
+        return 'flex items-center text-white text-sm font-bold px-4 py-3 bg-indigo-500';
+      case FlashLevel.Warning:
+        return 'flex items-center text-white text-sm font-bold px-4 py-3 bg-orange-500';
+      case FlashLevel.Error:
+        return 'flex items-center text-white text-sm font-bold px-4 py-3 bg-red-500';
+    }
+  };
+
   return (
     <div>
       {fctx.getMessages().map((msg, i) => (
-        <div
-          key={i.toString()}
-          className="flex items-center bg-blue-500 text-white text-sm font-bold px-4 py-3"
-          role="alert">
+        <div key={i.toString()} className={flashContainer(msg.getLevel())} role="alert">
           <svg
             className="fill-current w-4 h-4 mr-2"
             xmlns="http://www.w3.org/2000/svg"
