@@ -75,7 +75,7 @@ func getScenarioTest() func(*testing.T) {
 		require.NoError(t, err, "failed to parse the body of the response from js: %v", err)
 		electionID := objmap["ElectionID"].(string)
 		t.Logf("ID of the election : " + electionID)
-		return
+
 		// ##################################### SETUP DKG #########################
 
 		t.Log("Init DKG")
@@ -134,11 +134,16 @@ func getScenarioTest() func(*testing.T) {
 		t.Log("response body:", string(body))
 		resp.Body.Close()
 		err = json.Unmarshal(body, &objmap)
-		require.NoError(t, err, "failed to parsethe body of the response from js: %v", err)
+		require.NoError(t, err, "failed to parse body of the response from js: %v", err)
 		electionpubkey := objmap["Pubkey"].(string)
-		electionStatus := objmap["Status"].(string)
+		electionStatus := int(objmap["Status"].(float64))
+		BallotSize := int(objmap["BallotSize"].(float64))
+		Chunksperballot := ChunksPerBallot_manuel(BallotSize)
 		t.Logf("Publickey of the election : " + electionpubkey)
-		t.Logf("Status of the election : " + electionStatus)
+		t.Logf("Status of the election : %v", electionStatus)
+		t.Logf("BallotSize of the election : %v", BallotSize)
+		t.Logf("Chunksperballot of the election : %v", Chunksperballot)
+
 		// ##################################### CAST BALLOTS ######################
 
 		t.Log("cast ballots")
@@ -154,12 +159,14 @@ func getScenarioTest() func(*testing.T) {
 			"text:" + encodeID("ee") + "b3Vp\n\n") //encoding of "oui"
 
 		// Ballot 1
-		// chunk 255 by default
-		ballot1, err := marshallBallot_manual(b1, pubKey, 255)
+		ballot1, err := marshallBallot_manual(b1, pubKey, Chunksperballot)
+		t.Logf("1st ballot is: %v", ballot1)
+
 		require.NoError(t, err, "failed to encrypt ballot : %v", err)
 
-		data1, err := json.Marshal(ballot1)
+		data1, err := Encode_ciphervote(ballot1)
 		require.NoError(t, err, "failed to marshall ballot : %v", err)
+		t.Logf("1st marshalled ballot is: %v", data1)
 
 		castVoteRequest := types.CastVoteRequest{
 			ElectionID: electionID,
@@ -170,19 +177,23 @@ func getScenarioTest() func(*testing.T) {
 
 		t.Logf("cast first ballot")
 		js_vote, err := json.Marshal(castVoteRequest)
+		require.NoError(t, err, "failed to marshal castVoteRequest: %v", err)
+
+		t.Logf("vote is: %v", castVoteRequest)
 		resp, err = http.Post(proxyAddr1+castVoteEndpoint, contentType, bytes.NewBuffer(js_vote))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
-		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
+		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected status: %s", resp.Status)
 		body, err = io.ReadAll(resp.Body)
+		require.NoError(t, err, "failed to read the response of castVoteRequest: %v", err)
+
 		resp.Body.Close()
 		t.Log("Response body: " + string(body))
 
 		// Ballot 2
-		// chunk 255 by default
-		ballot2, err := marshallBallot_manual(b2, pubKey, 255)
+		ballot2, err := marshallBallot_manual(b2, pubKey, Chunksperballot)
 		require.NoError(t, err, "failed to encrypt ballot : %v", err)
 
-		data2, err := json.Marshal(ballot2)
+		data2, err := Encode_ciphervote(ballot2)
 		require.NoError(t, err, "failed to marshall ballot : %v", err)
 
 		castVoteRequest = types.CastVoteRequest{
@@ -193,20 +204,23 @@ func getScenarioTest() func(*testing.T) {
 		}
 
 		t.Logf("cast second ballot")
-		js_vote, _ = json.Marshal(castVoteRequest)
+		js_vote, err = json.Marshal(castVoteRequest)
+		require.NoError(t, err, "failed to marshal castVoteRequest: %v", err)
+
 		resp, err = http.Post(proxyAddr1+castVoteEndpoint, contentType, bytes.NewBuffer(js_vote))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
-		body, _ = io.ReadAll(resp.Body)
+		body, err = io.ReadAll(resp.Body)
+		require.NoError(t, err, "failed to read the response of castVoteRequest: %v", err)
+
 		resp.Body.Close()
 		t.Log("Response body: " + string(body))
 
 		// Ballot 3
-		// chunk 255 by default
-		ballot3, err := marshallBallot_manual(b3, pubKey, 255)
+		ballot3, err := marshallBallot_manual(b3, pubKey, Chunksperballot)
 		require.NoError(t, err, "failed to encrypt ballot : %v", err)
 
-		data3, err := json.Marshal(ballot3)
+		data3, err := Encode_ciphervote(ballot3)
 		require.NoError(t, err, "failed to marshall ballot : %v", err)
 
 		castVoteRequest = types.CastVoteRequest{
@@ -218,10 +232,14 @@ func getScenarioTest() func(*testing.T) {
 
 		t.Logf("cast third ballot")
 		js_vote, err = json.Marshal(castVoteRequest)
+		require.NoError(t, err, "failed to marshal castVoteRequest: %v", err)
+
 		resp, err = http.Post(proxyAddr1+castVoteEndpoint, contentType, bytes.NewBuffer(js_vote))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 		body, err = io.ReadAll(resp.Body)
+		require.NoError(t, err, "failed to read the response of castVoteRequest: %v", err)
+
 		resp.Body.Close()
 		t.Log("Response body: " + string(body))
 
@@ -262,8 +280,8 @@ func getScenarioTest() func(*testing.T) {
 		resp.Body.Close()
 		err = json.Unmarshal(body, &objmap)
 		require.NoError(t, err, "failed to parsethe body of the response from js: %v", err)
-		electionStatus = objmap["Status"].(string)
-		t.Logf("Status of the election : " + electionStatus)
+		electionStatus = int(objmap["Status"].(float64))
+		t.Logf("Status of the election : %v", electionStatus)
 
 		// ###################################### SHUFFLE BALLOTS ##################
 
@@ -305,8 +323,8 @@ func getScenarioTest() func(*testing.T) {
 		resp.Body.Close()
 		err = json.Unmarshal(body, &objmap)
 		require.NoError(t, err, "failed to parsethe body of the response from js: %v", err)
-		electionStatus = objmap["Status"].(string)
-		t.Logf("Status of the election : " + electionStatus)
+		electionStatus = int(objmap["Status"].(float64))
+		t.Logf("Status of the election : %v", electionStatus)
 
 		// ###################################### REQUEST PUBLIC SHARES ############
 
@@ -348,8 +366,8 @@ func getScenarioTest() func(*testing.T) {
 		resp.Body.Close()
 		err = json.Unmarshal(body, &objmap)
 		require.NoError(t, err, "failed to parsethe body of the response from js: %v", err)
-		electionStatus = objmap["Status"].(string)
-		t.Logf("Status of the election : " + electionStatus)
+		electionStatus = int(objmap["Status"].(float64))
+		t.Logf("Status of the election : %v", electionStatus)
 
 		// ###################################### DECRYPT BALLOTS ##################
 
@@ -391,8 +409,8 @@ func getScenarioTest() func(*testing.T) {
 		resp.Body.Close()
 		err = json.Unmarshal(body, &objmap)
 		require.NoError(t, err, "failed to parsethe body of the response from js: %v", err)
-		electionStatus = objmap["Status"].(string)
-		t.Logf("Status of the election : " + electionStatus)
+		electionStatus = int(objmap["Status"].(float64))
+		t.Logf("Status of the election : %v", electionStatus)
 
 		// ###################################### GET ELECTION RESULT ##############
 
@@ -434,17 +452,18 @@ func getScenarioTest() func(*testing.T) {
 		resp.Body.Close()
 		err = json.Unmarshal(body, &objmap)
 		require.NoError(t, err, "failed to parsethe body of the response from js: %v", err)
-		electionStatus = objmap["Status"].(string)
-		t.Logf("Status of the election : " + electionStatus)
+		electionStatus = int(objmap["Status"].(float64))
+		t.Logf("Status of the election : %v", electionStatus)
 	}
 }
 
 // -----------------------------------------------------------------------------
 // Utility functions
 func marshallBallot_manual(voteStr string, pubkey kyber.Point, chunks int) (types.Ciphervote, error) {
-	// chunk by default 1
+
 	var ballot = make(types.Ciphervote, chunks)
 	vote := strings.NewReader(voteStr)
+	fmt.Printf("votestr is: %v", voteStr)
 
 	buf := make([]byte, 29)
 
@@ -489,4 +508,51 @@ func Encrypt_manual(message []byte, pubkey kyber.Point) (K, C kyber.Point, remai
 	C = S.Add(S, M)                        // message blinded with secret
 
 	return K, C, remainder, nil
+}
+
+func ChunksPerBallot_manuel(BallotSize int) int {
+	if BallotSize%29 == 0 {
+		return BallotSize / 29
+	}
+
+	return BallotSize/29 + 1
+}
+
+// Encode implements serde.FormatEngine
+func Encode_ciphervote(ciphervote types.Ciphervote) ([]byte, error) {
+
+	m := make(CiphervoteJSON, len(ciphervote))
+
+	for i, egpair := range ciphervote {
+		k, err := egpair.K.MarshalBinary()
+		if err != nil {
+			return nil, xerrors.Errorf("failed to marshal k: %v", err)
+		}
+
+		c, err := egpair.C.MarshalBinary()
+		if err != nil {
+			return nil, xerrors.Errorf("failed to marshal c: %v", err)
+		}
+
+		m[i] = EGPairJSON{
+			K: k,
+			C: c,
+		}
+	}
+
+	data, err := json.Marshal(m)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to marshal cipher vote json: %v", err)
+	}
+
+	return data, nil
+}
+
+// CiphervoteJSON is the JSON representation of a ciphervote
+type CiphervoteJSON []EGPairJSON
+
+// EGPairJSON is the JSON representation of an ElGamal pair
+type EGPairJSON struct {
+	K []byte
+	C []byte
 }
