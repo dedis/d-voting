@@ -258,9 +258,9 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	
 	
-	testjsn := makeSignedMessage(js)
+	signReq := makeSignedMessage(js)
 
-	fmt.Fprintln(ctx.Out, "CreateElection : signature", string(testjsn) )
+	fmt.Fprintln(ctx.Out, "CreateElection : signature", string(signReq) )
 
 	if err != nil {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
@@ -268,7 +268,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "create election js:", string(js))
 
-	resp, err := http.Post(proxyAddr1+createElectionEndpoint, contentType, bytes.NewBuffer(testjsn))
+	resp, err := http.Post(proxyAddr1+createElectionEndpoint, contentType, bytes.NewBuffer(signReq))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -387,12 +387,12 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	fmt.Fprintf(ctx.Out, "Open election")
 
 	
-	testjsn = makeSignedMessage([]byte(electionID))
+	signReq = makeSignedMessage([]byte(electionID))
 
 
-	fmt.Fprintln(ctx.Out, "Open election : signature", string(testjsn) )
+	fmt.Fprintln(ctx.Out, "Open election : signature", string(signReq) )
 
-	resp, err = http.Post(proxyAddr1+"/evoting/open", contentType, bytes.NewBuffer(testjsn))
+	resp, err = http.Post(proxyAddr1+"/evoting/open", contentType, bytes.NewBuffer(signReq))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -420,9 +420,9 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	testjsn = makeSignedMessage(js)
+	signReq = makeSignedMessage(js)
 
-	resp, err = http.Post(proxyAddr1+getElectionInfoEndpoint, contentType, bytes.NewBuffer(testjsn))
+	resp, err = http.Post(proxyAddr1+getElectionInfoEndpoint, contentType, bytes.NewBuffer(signReq))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -468,10 +468,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 	
-	testjsn = makeSignedMessage(js)
+	signReq = makeSignedMessage(js)
 
 
-	resp, err = http.Post(proxyAddr1+closeElectionEndpoint, contentType, bytes.NewBuffer(testjsn))
+	resp, err = http.Post(proxyAddr1+closeElectionEndpoint, contentType, bytes.NewBuffer(signReq))
 	if err != nil {
 		return xerrors.Errorf("failed to retrieve the decryption from the server: %v", err)
 	}
@@ -636,10 +636,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	
-	testjsn = makeSignedMessage(js)
+	signReq = makeSignedMessage(js)
 
 
-	resp, err = http.Post(proxyAddr1+closeElectionEndpoint, contentType, bytes.NewBuffer(testjsn))
+	resp, err = http.Post(proxyAddr1+closeElectionEndpoint, contentType, bytes.NewBuffer(signReq))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -682,12 +682,12 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	
-	testjsn = makeSignedMessage(js)
+	signReq = makeSignedMessage(js)
 
 
 
 
-	resp, err = http.Post(proxyAddr1+shuffleBallotsEndpoint, contentType, bytes.NewBuffer(testjsn))
+	resp, err = http.Post(proxyAddr1+shuffleBallotsEndpoint, contentType, bytes.NewBuffer(signReq))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -734,10 +734,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	
-	testjsn = makeSignedMessage(js)
+	signReq = makeSignedMessage(js)
 
 
-	resp, err = http.Post(proxyAddr1+beginDecryptionEndpoint, contentType, bytes.NewBuffer(testjsn))
+	resp, err = http.Post(proxyAddr1+beginDecryptionEndpoint, contentType, bytes.NewBuffer(signReq))
 	if err != nil {
 		return xerrors.Errorf("failed to request beginning of decryption on the server: %v", err)
 	}
@@ -784,10 +784,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	testjsn = makeSignedMessage(js)
+	signReq = makeSignedMessage(js)
 
 
-	resp, err = http.Post(proxyAddr1+combineSharesEndpoint, contentType, bytes.NewBuffer(testjsn))
+	resp, err = http.Post(proxyAddr1+combineSharesEndpoint, contentType, bytes.NewBuffer(signReq))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -831,9 +831,9 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 	
-	testjsn = makeSignedMessage(js)
+	signReq = makeSignedMessage(js)
 
-	resp, err = http.Post(proxyAddr1+getElectionResultEndpoint, contentType, bytes.NewBuffer(testjsn))
+	resp, err = http.Post(proxyAddr1+getElectionResultEndpoint, contentType, bytes.NewBuffer(signReq))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -914,10 +914,10 @@ func castVote(castVoteRequest types.CastVoteRequest, proxyAddr string) (string, 
 		return "", xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 	
-	testjsn := makeSignedMessage(js)
+	signReq := makeSignedMessage(js)
 
 
-	resp, err := http.Post(proxyAddr+castVoteEndpoint, contentType, bytes.NewBuffer(testjsn))
+	resp, err := http.Post(proxyAddr+castVoteEndpoint, contentType, bytes.NewBuffer(signReq))
 	if err != nil {
 		return "", xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -963,7 +963,7 @@ func makeSignedMessage(js []byte) []byte{
 		Payload:encoded_request,
 		Signature:s,
 	}
-	testjsn,_ :=json.Marshal(sign)
-	return testjsn
+	signReq,_ :=json.Marshal(sign)
+	return signReq
 
 }
