@@ -88,7 +88,7 @@ export function ballotIsValid(
 
     for (const answer of textAnswer.Answers) {
       if (answer.length > textQuestion.MaxLength) {
-        newAnswers.Errors[errorIndex].Message += t('maxTextChars', {
+        newAnswers.Errors[errorIndex].Message = t('maxTextChars', {
           maxLength: textQuestion.MaxLength,
         });
         isValid = false;
@@ -100,7 +100,7 @@ export function ballotIsValid(
       for (const answer of textAnswer.Answers) {
         if (!regexp.test(answer) && answer !== '') {
           isValid = false;
-          newAnswers.Errors[errorIndex].Message += t('regexpCheck', { regexp: textQuestion.Regex });
+          newAnswers.Errors[errorIndex].Message = t('regexpCheck', { regexp: textQuestion.Regex });
         }
       }
     }
@@ -108,7 +108,7 @@ export function ballotIsValid(
     let numAnswer = textAnswer.Answers.filter((answer) => answer !== '').length;
 
     if (numAnswer < textQuestion.MinN) {
-      newAnswers.Errors[errorIndex].Message +=
+      newAnswers.Errors[errorIndex].Message =
         textQuestion.MinN > 1
           ? t('minTextError', { minText: textQuestion.MinN, singularPlural: t('pluralAnswers') })
           : t('minTextError', { minText: textQuestion.MinN, singularPlural: t('singularAnswer') });

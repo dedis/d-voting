@@ -39,7 +39,7 @@ export interface SelectQuestion {
 export interface Subject {
   ID: ID;
   Title: string;
-  // Order defines the order of the different question, which all have a uniq
+  // Order defines the order of the different question, which all have a unique
   // identifier. This is purely for display purpose.
   Order: Array<ID>;
   Subjects?: Array<Subject>;
