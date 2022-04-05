@@ -90,7 +90,8 @@ const TextDisplay: FC<TextDisplayProps> = ({ choice, question, answers, setAnswe
         id={choice}
         type="text"
         key={choice}
-        className="mx-2 sm:text-md border rounded-md w-3/5 text-gray-600"
+        className="mx-2 sm:text-md border rounded-md text-gray-600"
+        size={question.MaxLength}
         onChange={handleTextInput}
       />
       {charCountDisplay()}

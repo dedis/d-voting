@@ -85,7 +85,7 @@ const mockElection2: Configuration = {
         {
           Title: 'Who were the two best TAs ?',
           ID: (0xcd13).toString(),
-          MaxLength: 20,
+          MaxLength: 40,
           MaxN: 2,
           MinN: 2,
           Choices: ['TA1', 'TA2'],
@@ -121,7 +121,10 @@ const mockElection2: Configuration = {
           ID: (0xbeef).toString(),
           MaxN: 2,
           MinN: 1,
-          Choices: ['IN', 'SC'],
+          Choices: [
+            'INNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN',
+            'SC',
+          ],
         },
       ],
     },

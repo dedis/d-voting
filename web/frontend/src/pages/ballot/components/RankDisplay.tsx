@@ -77,10 +77,12 @@ const RankDisplay: FC<RankDisplayProps> = ({ rankIndex, choice }) => {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className="block items-center mb-2 w-2/3 bg-white rounded-lg border border-gray-200 shadow-md hover:bg-gray-100">
-          <div className="flex py-4 justify-between items-center text-sm text-gray-900">
+          className="mb-2 rounded-lg border bg-white border-gray-200 shadow-md hover:bg-gray-100">
+          <div className="flex justify-between py-4 text-sm text-gray-900">
             <p className="flex-none mx-5 rounded text-center text-gray-400">{rankIndex + 1}</p>
-            <div className="flex-auto text-gray-600">{choice}</div>
+            <div className="flex-auto w-80 overflow-y-auto break-words pr-4 text-gray-600">
+              {choice}
+            </div>
             <RankListIcon />
           </div>
         </li>

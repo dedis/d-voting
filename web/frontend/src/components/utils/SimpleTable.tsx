@@ -1,13 +1,5 @@
 import React, { FC } from 'react';
 import { Link } from 'react-router-dom';
-import Paper from '@material-ui/core/Paper';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import { withStyles } from '@material-ui/core/styles';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
@@ -21,10 +13,10 @@ type SimpleTableProps = {
   textWhenNoData: string;
 };
 
-/*functional component that fetches all the elections, only keeps the elections
-whose status = statusToKeep and display them in a table with a single title
-column. It adds a link to '/pathLink/:id' when the title is clicked 
-If table is empty, it display textWhenNoData instead*/
+// Functional component that fetches all the elections, only keeps the elections
+// whose status = statusToKeep and display them in a table with a single title
+// column. It adds a link to '/pathLink/:id' when the title is clicked
+// If table is empty, it display textWhenNoData instead
 const SimpleTable: FC<SimpleTableProps> = ({
   statusToKeep,
   pathLink,
@@ -38,13 +30,6 @@ const SimpleTable: FC<SimpleTableProps> = ({
     body: JSON.stringify({ Token: token }),
   };
   const [fetchedData, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, fetchRequest);
-  const StyledTableRow = withStyles((theme) => ({
-    root: {
-      '&:nth-of-type(odd)': {
-        backgroundColor: theme.palette.action.hover,
-      },
-    },
-  }))(TableRow);
 
   const ballotsToDisplay = (elections) => {
     let dataToDisplay = [];
@@ -59,36 +44,39 @@ const SimpleTable: FC<SimpleTableProps> = ({
   const displayBallotTable = (data) => {
     if (data.length > 0) {
       return (
-        <div>
-          <div className="vote-allowed">{textWhenData}</div>
-          <Paper>
-            <TableContainer>
-              <Table stickyHeader aria-label="sticky table">
-                <TableHead className="table-header">
-                  <TableRow className="row-head">
-                    <TableCell key={'Title'}>{t('elecName')}</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {data.map((row) => {
-                    return (
-                      <StyledTableRow key={row}>
-                        <TableCell key={row[1]}>
-                          <Link
-                            className="election-link"
-                            to={{
-                              pathname: `${pathLink}/${row[1]}`,
-                            }}>
-                            {row[0]}
-                          </Link>
-                        </TableCell>
-                      </StyledTableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
+        <div className="flex flex-col content-center items-center">
+          <div className="vote-allowed mx-4 mt-8 mb-4">{textWhenData}</div>
+          <div className="w-5/6 relative overflow-x-auto shadow-md sm:rounded-lg">
+            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+              <thead className="text-xs text-gray-500 uppercase bg-gray-200">
+                <tr>
+                  <th scope="col" className="px-6 py-3">
+                    {t('elecName')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((row) => {
+                  return (
+                    <Link
+                      className="block text-gray-500"
+                      to={{
+                        pathname: `${pathLink}/${row[1]}`,
+                      }}>
+                      <tr className="block bg-white border-b  hover:bg-gray-50 " key={row}>
+                        <th
+                          scope="row"
+                          className="px-6 py-4 font-medium text-gray-500  whitespace-nowrap"
+                          key={row[1]}>
+                          {row[0]}
+                        </th>
+                      </tr>
+                    </Link>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       );
     } else {
@@ -101,7 +89,7 @@ const SimpleTable: FC<SimpleTableProps> = ({
   };
 
   return (
-    <div className="cast-ballot">
+    <div>
       {!loading ? (
         showBallots(fetchedData.AllElectionsInfo)
       ) : error === null ? (

@@ -18,7 +18,8 @@ import { voteEncode } from './components/VoteEncode';
 import useConfiguration from 'components/utils/useConfiguration';
 import { ID, Question, RANK, ROOT_ID, SELECT, SUBJECT, TEXT } from 'types/configuration';
 import { DragDropContext } from 'react-beautiful-dnd';
-import BallotCast from './BallotCast';
+//import BallotCast from './BallotCast';
+import ModalNav from 'components/modal/RedirectToModal';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
@@ -33,14 +34,29 @@ const Ballot: FC = () => {
   const edCurve = kyber.curve.newCurve('edwards25519');
   const [postRequest, setPostRequest] = useState(null);
   const [postError, setPostError] = useState('');
-  const [showFlash, setShowFlash] = useState(false);
+  //const [showFlash, setShowFlash] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalText, setModalText] = useState(t('voteSuccess') as string);
   const { postData } = usePostCall(setPostError);
 
   useEffect(() => {
     if (postRequest !== null) {
-      postData(ENDPOINT_EVOTING_CAST_BALLOT, postRequest, setShowFlash);
+      //postData(ENDPOINT_EVOTING_CAST_BALLOT, postRequest, setShowFlash);
+      postData(ENDPOINT_EVOTING_CAST_BALLOT, postRequest, setShowModal);
     }
   }, [postRequest]);
+
+  useEffect(() => {
+    if (postError !== null) {
+      if (postError.includes('ECONNREFUSED')) {
+        setModalText(t('errorServerDown'));
+      } else {
+        setModalText(t('voteFailure'));
+      }
+    } else {
+      setModalText(t('voteSuccess'));
+    }
+  }, [postError, t]);
 
   const hexToBytes = (hex: string) => {
     let bytes: number[] = [];
@@ -91,9 +107,9 @@ const Ballot: FC = () => {
     }
 
     return (
-      <div>
+      <div className="sm:px-8 pl-2">
         {questions.map((question) => (
-          <div key={question.Content.ID} className="px-8">
+          <div key={question.Content.ID}>
             {question.Type === SUBJECT ? question.render(question) : null}
             {question.Type === RANK ? question.render(question, answers) : null}
             {question.Type === TEXT ? question.render(question, answers, setAnswers) : null}
@@ -108,14 +124,14 @@ const Ballot: FC = () => {
   const ballotDisplay = () => {
     return (
       <DragDropContext onDragEnd={(e) => handleOnDragEnd(e, answers, setAnswers)}>
-        <div className="shadow-lg rounded-md my-4 py-8">
+        <div className="shadow-lg rounded-md my-0 sm:my-4 py-8 w-full">
           <h3 className="font-bold uppercase py-4 text-2xl text-center text-gray-600">
             {configuration.MainTitle}
           </h3>
           <div>
             {subjectTree(sortedQuestions, ROOT_ID)}
-            <div className="mx-8 text-red-600 text-sm pt-3 pb-5">{userErrors}</div>
-            <div className="flex mx-8">
+            <div className="sm:mx-8 mx-4 text-red-600 text-sm pt-3 pb-5">{userErrors}</div>
+            <div className="flex sm:mx-8 mx-4">
               <button
                 type="button"
                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
@@ -147,7 +163,15 @@ const Ballot: FC = () => {
 
   return (
     <div>
-      <BallotCast postError={postError} showFlash={showFlash} />
+      <ModalNav
+        showModal={showModal}
+        setShowModal={setShowModal}
+        modalTitle={'Vote successful'}
+        textModal={modalText}
+        buttonRightText={t('close')}
+        navigateDestination={'/'}
+      />
+      {/*<BallotCast postError={postError} showFlash={showFlash} />*/}
       {loading ? (
         <p className="loading">{t('loading')}</p>
       ) : (
