@@ -14,8 +14,13 @@ const SelectHintDisplay: FC<HintDisplayProps> = ({ questionContent }) => {
   if (max === min) {
     hint =
       max > 1
-        ? t('select', { minSelect: min, singularPlural: t('pluralAnswers') })
-        : t('select', { minSelect: min, singularPlural: t('singularAnswer') });
+        ? t('selectMin', { minSelect: min, singularPlural: t('pluralAnswers') })
+        : t('selectMin', { minSelect: min, singularPlural: t('singularAnswer') });
+  } else if (min === 0) {
+    hint =
+      max > 1
+        ? t('selectMax', { maxSelect: max, singularPlural: t('pluralAnswers') })
+        : t('selectMax', { maxSelect: max, singularPlural: t('singularAnswer') });
   } else {
     hint = t('selectBetween', { minSelect: min, maxSelect: max });
   }

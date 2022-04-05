@@ -103,7 +103,7 @@ const mockElection2: Configuration = {
           Title: 'Select your ingredients',
           ID: (0xa319).toString(),
           MaxN: 3,
-          MinN: 2,
+          MinN: 0,
           Choices: ['tomato', 'salad', 'onion', 'falafel'],
         },
       ],
