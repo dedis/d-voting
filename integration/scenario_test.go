@@ -8,6 +8,7 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -51,7 +52,7 @@ func getScenarioTest() func(*testing.T) {
 
 		const contentType = "application/json"
 
-		// t.Parallel()
+		t.Parallel()
 		proxyAddr1 := "http://localhost:8081"
 		proxyAddr2 := "http://localhost:8082"
 		proxyAddr3 := "http://localhost:8083"
@@ -165,6 +166,30 @@ func getScenarioTest() func(*testing.T) {
 
 		b3 := string("select:" + encodeID("bb") + ":0,0,0,1\n" +
 			"text:" + encodeID("ee") + "b3Vp\n\n") //encoding of "oui"
+
+		var votesfrontend [3]map[string]interface{}
+
+		fake_configuration := fake.BasicConfiguration
+		t.Logf("configuration is: %v", fake_configuration)
+
+		b1_marshal, _ := Unmarshal_Ballot_Manual(b1, fake_configuration)
+		ballot_byte, _ := json.Marshal(b1_marshal)
+		// var temp_obj map[string]interface{}
+		_ = json.Unmarshal(ballot_byte, &votesfrontend[0])
+		// t.Logf("b1_marshal is: %v", temp_obj)
+
+		b2_marshal, _ := Unmarshal_Ballot_Manual(b2, fake_configuration)
+		ballot_byte, _ = json.Marshal(b2_marshal)
+		_ = json.Unmarshal(ballot_byte, &votesfrontend[1])
+		// t.Logf("b2_marshal is: %v", temp_obj)
+		// votesfrontend[1] = temp_obj
+
+		b3_marshal, _ := Unmarshal_Ballot_Manual(b3, fake_configuration)
+		ballot_byte, _ = json.Marshal(b3_marshal)
+		_ = json.Unmarshal(ballot_byte, &votesfrontend[2])
+		// t.Logf("b1_marshal is: %v", temp_obj)
+		// votesfrontend[2] = temp_obj
+		t.Logf("b123_marshal is: %v", votesfrontend)
 
 		// Ballot 1
 		t.Logf("1st ballot in str is: %v", b1)
@@ -466,20 +491,50 @@ func getScenarioTest() func(*testing.T) {
 		t.Log("Response body: " + string(body))
 		resp.Body.Close()
 
-		var sendback_ballots []types.Ballot
-		_ = json.Unmarshal(body, sendback_ballots)
-		t.Logf("Response body unmarshalled is %v", sendback_ballots)
-		return
 		// ###################################### VALIDATE ELECTION RESULT ##############
 
-		fake_configuration := fake.BasicConfiguration
-		t.Logf("configuration is: %v", fake_configuration)
+		// body1 := `{"Result":[{"SelectResultIDs":["YmI="],"SelectResult":[[false,false,true,false]],"RankResultIDs":[],"RankResult":[],"TextResultIDs":["ZWU="],"TextResult":[["yes"]]},{"SelectResultIDs":["YmI="],"SelectResult":[[true,true,false,false]],"RankResultIDs":[],"RankResult":[],"TextResultIDs":["ZWU="],"TextResult":[["ja"]]},{"SelectResultIDs":null,"SelectResult":null,"RankResultIDs":null,"RankResult":null,"TextResultIDs":null,"TextResult":null}]}`
 
-		b1_marshal, err := Unmarshal_Ballot_Manual(b1, fake_configuration)
-		// b2_marshal, err := Unmarshal_Ballot_Manual(b2, fake_configuration)
-		// b3_marshal, err := Unmarshal_Ballot_Manual(b3, fake_configuration)
+		// var objmap1 map[string]interface{}
+		// _ = json.Unmarshal([]byte(body1), &objmap1)
+		// tmp_ballots := (objmap1["Result"]).([]interface{})
+		// tmp_map := tmp_ballots[0].(map[string]interface{})
 
-		t.Logf("1st ballot in marshalled object is: %v", b1_marshal)
+		// require.Equal(t, temp_obj, tmp_map)
+		// return
+
+		err = json.Unmarshal(body, &objmap)
+		require.NoError(t, err, "failed to parsethe body of the response from js: %v", err)
+
+		tmp_ballots := (objmap["Result"]).([]interface{})
+		var tmp_comp map[string]interface{}
+		var tmp_count bool
+		for _, ballot_intem := range tmp_ballots {
+			tmp_comp = ballot_intem.(map[string]interface{})
+			tmp_count = false
+			for _, vote_front := range votesfrontend {
+				t.Logf("vote_front: %v", vote_front)
+				t.Logf("tmp_comp: %v", tmp_comp)
+
+				tmp_count = reflect.DeepEqual(tmp_comp, vote_front)
+				t.Logf("tmp_count: %v", tmp_count)
+
+				if tmp_count {
+					break
+				}
+			}
+		}
+		require.True(t, tmp_count, "front end votes are different from decrypted votes")
+
+		// // tmp_ballots := (objmap["Result"]).([]types.Ballot)
+
+		// t.Logf("Response body tmp_ballots is %v", tmp_ballots[0])
+		// b_test, _ := tmp_ballots[0]["RankResult"]
+		// t.Logf("Response body tmp_ballots RankResult is %v", b_test)
+
+		// // var sendback_ballots types.Ballot
+		// // _ = json.Unmarshal(b_test, sendback_ballots)
+		// // t.Logf("Response body unmarshalled is %v", sendback_ballots)
 		return
 
 	}
