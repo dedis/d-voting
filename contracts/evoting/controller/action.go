@@ -12,8 +12,13 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
+	"crypto/sha256"
 	"go.dedis.ch/kyber/v3"
+	//"go.dedis.ch/kyber/v3/util/encoding"
+	"go.dedis.ch/kyber/v3/sign/schnorr"
+
+
+
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
@@ -38,6 +43,8 @@ import (
 	sjson "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
+	"go.dedis.ch/kyber/v3/util/key"
+
 )
 
 const token = "token"
@@ -45,7 +52,12 @@ const inclusionTimeout = 2 * time.Second
 const contentType = "application/json"
 const getElectionErr = "failed to get election: %v"
 
+
+
 var suite = suites.MustFind("Ed25519")
+
+var kp = key.NewKeyPair(suite)
+
 
 // getManager is the function called when we need a transaction manager. It
 // allows us to use a different manager for the tests.
@@ -221,6 +233,13 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	// ###################################### CREATE SIMPLE ELECTION ######
 
+	
+	
+
+	fmt.Fprintln(ctx.Out, "Public_key_sign",kp.Public)
+	fmt.Fprintln(ctx.Out, "Private_key_sign",kp.Private)
+
+
 	fmt.Fprintln(ctx.Out, "Create election")
 
 	// Define the configuration
@@ -231,14 +250,25 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		AdminID:       "adminId",
 	}
 
+
+
+
+
 	js, err := json.Marshal(createSimpleElectionRequest)
+
+	
+	
+	testjsn := makeSignedMessage(js)
+
+	fmt.Fprintln(ctx.Out, "CreateElection : signature", string(testjsn) )
+
 	if err != nil {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
 	fmt.Fprintln(ctx.Out, "create election js:", string(js))
 
-	resp, err := http.Post(proxyAddr1+createElectionEndpoint, contentType, bytes.NewBuffer(js))
+	resp, err := http.Post(proxyAddr1+createElectionEndpoint, contentType, bytes.NewBuffer(testjsn))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -356,7 +386,13 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintf(ctx.Out, "Open election")
 
-	resp, err = http.Post(proxyAddr1+"/evoting/open", contentType, bytes.NewBuffer([]byte(electionID)))
+	
+	testjsn = makeSignedMessage([]byte(electionID))
+
+
+	fmt.Fprintln(ctx.Out, "Open election : signature", string(testjsn) )
+
+	resp, err = http.Post(proxyAddr1+"/evoting/open", contentType, bytes.NewBuffer(testjsn))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -370,17 +406,23 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "Get election info")
 
+
+
 	getElectionInfoRequest := types.GetElectionInfoRequest{
 		ElectionID: electionID,
 		Token:      token,
 	}
 
 	js, err = json.Marshal(getElectionInfoRequest)
+
+
 	if err != nil {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(proxyAddr1+getElectionInfoEndpoint, contentType, bytes.NewBuffer(js))
+	testjsn = makeSignedMessage(js)
+
+	resp, err = http.Post(proxyAddr1+getElectionInfoEndpoint, contentType, bytes.NewBuffer(testjsn))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -425,8 +467,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	if err != nil {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
+	
+	testjsn = makeSignedMessage(js)
 
-	resp, err = http.Post(proxyAddr1+closeElectionEndpoint, contentType, bytes.NewBuffer(js))
+
+	resp, err = http.Post(proxyAddr1+closeElectionEndpoint, contentType, bytes.NewBuffer(testjsn))
 	if err != nil {
 		return xerrors.Errorf("failed to retrieve the decryption from the server: %v", err)
 	}
@@ -590,7 +635,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(proxyAddr1+closeElectionEndpoint, contentType, bytes.NewBuffer(js))
+	
+	testjsn = makeSignedMessage(js)
+
+
+	resp, err = http.Post(proxyAddr1+closeElectionEndpoint, contentType, bytes.NewBuffer(testjsn))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -632,7 +681,13 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(proxyAddr1+shuffleBallotsEndpoint, contentType, bytes.NewBuffer(js))
+	
+	testjsn = makeSignedMessage(js)
+
+
+
+
+	resp, err = http.Post(proxyAddr1+shuffleBallotsEndpoint, contentType, bytes.NewBuffer(testjsn))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -678,7 +733,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection: %v", err)
 	}
 
-	resp, err = http.Post(proxyAddr1+beginDecryptionEndpoint, contentType, bytes.NewBuffer(js))
+	
+	testjsn = makeSignedMessage(js)
+
+
+	resp, err = http.Post(proxyAddr1+beginDecryptionEndpoint, contentType, bytes.NewBuffer(testjsn))
 	if err != nil {
 		return xerrors.Errorf("failed to request beginning of decryption on the server: %v", err)
 	}
@@ -725,7 +784,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	resp, err = http.Post(proxyAddr1+combineSharesEndpoint, contentType, bytes.NewBuffer(js))
+	testjsn = makeSignedMessage(js)
+
+
+	resp, err = http.Post(proxyAddr1+combineSharesEndpoint, contentType, bytes.NewBuffer(testjsn))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -768,8 +830,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	if err != nil {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
+	
+	testjsn = makeSignedMessage(js)
 
-	resp, err = http.Post(proxyAddr1+getElectionResultEndpoint, contentType, bytes.NewBuffer(js))
+	resp, err = http.Post(proxyAddr1+getElectionResultEndpoint, contentType, bytes.NewBuffer(testjsn))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -844,12 +908,16 @@ func marshallBallot(voteStr string, actor dkg.Actor, chunks int) (types.Ciphervo
 }
 
 func castVote(castVoteRequest types.CastVoteRequest, proxyAddr string) (string, error) {
+
 	js, err := json.Marshal(castVoteRequest)
 	if err != nil {
 		return "", xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
+	
+	testjsn := makeSignedMessage(js)
 
-	resp, err := http.Post(proxyAddr+castVoteEndpoint, contentType, bytes.NewBuffer(js))
+
+	resp, err := http.Post(proxyAddr+castVoteEndpoint, contentType, bytes.NewBuffer(testjsn))
 	if err != nil {
 		return "", xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -877,4 +945,25 @@ func contains(s []string, str string) bool {
 	}
 
 	return false
+}
+
+func makeSignedMessage(js []byte) []byte{
+	// Encode base64url
+	encoded_request := base64.URLEncoding.EncodeToString(js)
+ 
+	// compute sha256
+	hash := sha256.New()
+	hash.Write([]byte(encoded_request))
+	md := hash.Sum(nil)
+
+	s, _ := schnorr.Sign(suite, kp.Private, md)
+
+	//Define sign resquest 
+	sign := types.SignRequest{
+		Payload:encoded_request,
+		Signature:s,
+	}
+	testjsn,_ :=json.Marshal(sign)
+	return testjsn
+
 }

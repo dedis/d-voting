@@ -11,6 +11,13 @@ type LoginResponse struct {
 	UserID string
 	Token  string
 }
+// Define a signed request
+type SignRequest struct{
+	Payload string
+	Signature []byte
+}
+
+
 
 // CreateElectionRequest defines the HTTP request for creating an election
 type CreateElectionRequest struct {
