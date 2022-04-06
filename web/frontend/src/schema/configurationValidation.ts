@@ -63,10 +63,10 @@ const selectsSchema = yup.object({
           });
         }
 
-        if (MinN < 1) {
+        if (MinN < 0) {
           return this.createError({
             path,
-            message: `Min should be higher or equal to 1 in selects, in object ID: ${ID}`,
+            message: `Min should be higher or equal to 0 in selects, in object ID: ${ID}`,
           });
         }
         return true;
@@ -328,7 +328,7 @@ const subjectSchema = yup.object({
       message: 'Error Order array is not coherent with the Subject object',
       test() {
         const { path, parent } = this;
-        const { Order, Subjects, Ranks, Selects, Texts } = parent;
+        const { Order, Subjects, Ranks, Selects, Texts, ID } = parent;
         const onlyUnique = (value, index, self) => self.indexOf(value) === index;
 
         // If we don't have unique IDs the array is not consistent with the Subject
@@ -338,33 +338,42 @@ const subjectSchema = yup.object({
         const ranksID = Ranks.filter(onlyUnique).map((rank) => rank.ID);
         const selectsID = Selects.filter(onlyUnique).map((select) => select.ID);
         const textsID = Texts.filter(onlyUnique).map((text) => text.ID);
-        const allTypesID = [...subjectsID, ...ranksID, ...selectsID, ...textsID].filter(onlyUnique);
+        const allTypesUniqueID = [...subjectsID, ...ranksID, ...selectsID, ...textsID].filter(
+          onlyUnique
+        );
 
         // Verify that the length of the Order array is exactly the length of the sum of the
-        // Subjects, Ranks, Selects and Texts arrays even when duplicates are removed
-        if (
-          Subjects.length + Ranks.length + Selects.length + Texts.length === Order.length &&
-          allTypesID.length === Order.length
-        ) {
-          let filteredOrder = [...Order];
-          for (const id of Order) {
-            // If we find the ID in any of the arrays we remove it from our filteredOrder array
-            if (
-              Subjects.find((subject) => subject.ID === id) ||
-              Ranks.find((rank) => rank.ID === id) ||
-              Selects.find((select) => select.ID === id) ||
-              Texts.find((text) => text.ID === id)
-            )
-              filteredOrder = filteredOrder.filter((order) => order !== id);
-          }
-          // If we found all the IDs of our Order in the arrays the test passes
-          // meaning that there is exactly one ID for each question type inside the Order array
-          if (filteredOrder.length === 0) return true;
+        // Subjects, Ranks, Selects and Texts arrays.
+        if (Subjects.length + Ranks.length + Selects.length + Texts.length !== Order.length) {
+          return this.createError({
+            path,
+            message: `Order array length is incoherent with the other fields, in object ID: ${ID}`,
+          });
         }
-        return this.createError({
-          path,
-          message: `Error Order array is not coherent with the Subject in object ID: ${parent.ID}`,
-        });
+
+        // Verify that we only have unique IDs in the Order array
+        if (allTypesUniqueID.length !== Order.length) {
+          return this.createError({
+            path,
+            message: `Order array has duplicate IDs, in object ID: ${ID}`,
+          });
+        }
+
+        // check if the ID corresponds to any subjects or question object, otherwise return an error
+        for (const id of Order) {
+          if (
+            !Subjects.find((subject) => subject.ID === id) &&
+            !Ranks.find((rank) => rank.ID === id) &&
+            !Selects.find((select) => select.ID === id) &&
+            !Texts.find((text) => text.ID === id)
+          ) {
+            return this.createError({
+              path,
+              message: `The ID: ${id} doesn't match any of the subjects or question object, in object ID: ${ID}`,
+            });
+          }
+        }
+        return true;
       },
     })
     .required(),

@@ -1,5 +1,4 @@
 import { rest } from 'msw';
-import { mockElection1, mockElection2 } from './mockData';
 import ShortUniqueId from 'short-unique-id';
 
 import {
@@ -11,7 +10,6 @@ import {
   ENDPOINT_PERSONNAL_INFO,
 } from '../components/utils/Endpoints';
 
-import { Configuration } from '../types/configuration';
 import { CreateElectionBody, GetElectionBody } from '../types/frontendRequestBody';
 
 const uid = new ShortUniqueId({ length: 8 });
@@ -23,7 +21,7 @@ var mockElections = [
     Status: 1,
     Pubkey: 'XL4V6EMIICW',
     Result: [],
-    Format: mockElection1,
+    Format: { MainTitle: 'Election 1', Scaffold: [] },
   },
   {
     ElectionID: uid(),
@@ -31,7 +29,7 @@ var mockElections = [
     Status: 1,
     Pubkey: 'XL4V6EMIICW',
     Result: [],
-    Format: mockElection2,
+    Format: { MainTitle: 'Election 2', Scaffold: [] },
   },
 ];
 
@@ -85,8 +83,7 @@ export const handlers = [
   rest.post(ENDPOINT_EVOTING_CREATE, (req, res, ctx) => {
     const body: CreateElectionBody = JSON.parse(req.body.toString());
 
-    const createElection = (format: Configuration) => {
-      console.log(format);
+    const createElection = (format: any) => {
       const newElection = {
         ElectionID: uid(),
         Title: format.MainTitle,

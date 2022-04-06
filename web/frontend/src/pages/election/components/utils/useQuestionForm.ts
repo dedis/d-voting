@@ -1,68 +1,67 @@
-import { ChangeEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Rank, Select, Text } from 'types/configuration';
 
-const useQuestionForm = (initState: any) => {
-  const [state, setState] = useState<any>(initState);
+// form hook that handles the form state for all types of questions
+const useQuestionForm = (initState: Rank | Select | Text) => {
+  const [state, setState] = useState<Rank | Select | Text>(initState);
   const { MinN, Choices } = state;
 
-  const handleChange: (e: ChangeEvent<HTMLInputElement>) => void = (e) => {
-    e.persist();
-    setState({ ...state, [e.target.name]: e.target.value });
-  };
-
+  // updates the choices length array when minN is greater than the current choices length
   useEffect(() => {
-    if (Number(MinN) > 0 && Choices.length < Number(MinN)) {
+    if (MinN > 0 && Choices.length < MinN) {
       setState({
         ...state,
-        Choices: [...Choices, ...new Array(Number(MinN) - Choices.length).fill('')],
+        Choices: [...Choices, ...new Array(MinN - Choices.length).fill('')],
       });
     }
   }, [MinN, Choices, state]);
 
+  // depending on the type of question, the form state is updated accordingly
+  const handleChange = (e) => {
+    e.persist();
+    switch (e.target.type) {
+      case 'number':
+        setState({ ...state, [e.target.name]: Number(e.target.value) });
+        break;
+      case 'text':
+        setState({ ...state, [e.target.name]: e.target.value });
+        break;
+      default:
+        break;
+    }
+  };
+
+  // updates the choices array when the user adds a new choice
   const addChoice: () => void = () => {
     setState({ ...state, Choices: [...state.Choices, ''] });
   };
 
-  const deleteChoice: (index: number) => (e: ChangeEvent<HTMLInputElement>) => void =
-    (index) => (e) => {
-      e.persist();
-      if (state.Choices.length > Number(state.MinN)) {
-        setState({
-          ...state,
-          Choices: state.Choices.filter((item: string, idx: number) => idx !== index),
-        });
-      }
-    };
-
-  const updateChoice: (index: number) => (e: ChangeEvent<HTMLInputElement>) => void =
-    (index) => (e) => {
-      e.persist();
-      setState({
-        ...state,
-        Choices: state.Choices.map((item: string, idx: number) => {
-          if (idx === index) {
-            return e.target.value;
-          }
-          return item;
-        }),
-      });
-    };
-
-  const clearChoices: (e: ChangeEvent<HTMLInputElement>) => void = (e) => {
+  // remove a choice from the choices array
+  const deleteChoice = (index) => (e) => {
     e.persist();
-    if (Number(state.MinN) > 0) {
+    if (state.Choices.length > MinN) {
       setState({
         ...state,
-        Choices: [...new Array(Number(state.MinN)).fill('')],
-      });
-    } else {
-      setState({
-        ...state,
-        Choices: [],
+        Choices: state.Choices.filter((item: string, idx: number) => idx !== index),
       });
     }
   };
 
-  return [state, [handleChange, addChoice, deleteChoice, clearChoices, updateChoice]];
+  // update the choice at the given index
+  const updateChoice = (index) => (e) => {
+    e.persist();
+    setState({
+      ...state,
+      Choices: state.Choices.map((item: string, idx: number) => {
+        if (idx === index) {
+          return e.target.value;
+        }
+        return item;
+      }),
+    });
+  };
+
+  return { state, handleChange, addChoice, deleteChoice, updateChoice };
 };
 
 export default useQuestionForm;

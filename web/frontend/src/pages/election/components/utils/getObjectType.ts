@@ -1,49 +1,53 @@
 import ShortUniqueId from 'short-unique-id';
-import { ID, Rank, Select, Subject, Text } from '../../../../types/configuration';
+import { Rank, Select, Subject, Text } from '../../../../types/configuration';
 
 const uid: Function = new ShortUniqueId({ length: 8 });
 
-const newSubject: (SubjectID?: ID) => Subject = (SubjectID) => {
+const newSubject: () => Subject = () => {
   return {
-    ID: SubjectID ? SubjectID : uid(),
+    ID: uid(),
     Title: '',
     Order: [],
     Subjects: [],
     Ranks: [],
     Selects: [],
     Texts: [],
+    Type: 'SUBJECT',
   };
 };
 
-const newRank: (RankID?: ID) => Rank = (RankID) => {
+const newRank: () => Rank = () => {
   return {
-    ID: RankID ? RankID : uid(),
+    ID: uid(),
     Title: '',
     MaxN: 0,
     MinN: 0,
     Choices: [],
+    Type: 'RANK',
   };
 };
 
-const newSelect: (SelectID?: ID) => Select = (SelectID) => {
+const newSelect: () => Select = () => {
   return {
-    ID: SelectID ? SelectID : uid(),
+    ID: uid(),
     Title: '',
     MaxN: 0,
     MinN: 0,
     Choices: [],
+    Type: 'SELECT',
   };
 };
 
-const newText: (TextID?: ID) => Text = (TextID) => {
+const newText: () => Text = () => {
   return {
-    ID: TextID ? TextID : uid(),
+    ID: uid(),
     Title: '',
     MaxN: 0,
     MinN: 0,
     MaxLength: 50,
     Regex: '',
     Choices: [],
+    Type: 'TEXT',
   };
 };
 

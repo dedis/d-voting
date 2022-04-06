@@ -1,6 +1,4 @@
-import { Configuration } from '../types/configuration';
-
-const mockElection1: Configuration = {
+const mockElection1: any = {
   MainTitle: 'Please give your opinion',
   Scaffold: [
     {
@@ -63,7 +61,7 @@ const mockElection1: Configuration = {
   ],
 };
 
-const mockElection2: Configuration = {
+const mockElection2: any = {
   MainTitle: 'Please give your opinion',
   Scaffold: [
     {

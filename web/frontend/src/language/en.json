@@ -18,6 +18,7 @@
     "nothingToAdd": "There is nothing to add.",
     "duplicateCandidate": "This candidate has already been added.",
     "add": "Add",
+    "exportElecJSON": "Export as JSON",
     "delete": "Delete",
     "createElec": "Create election",
     "clearElec": "Clear election",
