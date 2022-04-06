@@ -1,4 +1,3 @@
-import { Configuration } from 'types/configuration';
 import { useDropzone } from 'react-dropzone';
 import configurationSchema from '../../../schema/configurationValidation';
 
@@ -6,6 +5,7 @@ import Ajv from 'ajv';
 
 import configurationJSONSchema from '../../../schema/election_conf.json';
 import { marshallConfig } from './utils/JSONparser';
+import { Configuration } from 'types/configuration';
 
 const ajv = new Ajv({
   schemas: [configurationJSONSchema],
@@ -18,12 +18,12 @@ const UploadFile = ({ setConf, setShowModal, setTextModal }) => {
     if (file && file.type === 'application/json') {
       var reader = new FileReader();
       reader.onload = async function (param) {
-        const result: Configuration = JSON.parse(param.target.result.toString());
+        const result: any = JSON.parse(param.target.result.toString());
         if (validateJSONSchema(result)) {
           try {
-            const validConf: Configuration = await configurationSchema.validate(result);
+            const validConf: any = await configurationSchema.validate(result);
             // marshall the configuration to add the Types on the objects
-            const marshallConfigResult = marshallConfig(validConf);
+            const marshallConfigResult: Configuration = marshallConfig(validConf);
             setConf(marshallConfigResult);
           } catch (err) {
             setTextModal('Incorrect election configuration : ' + err.errors.join(','));

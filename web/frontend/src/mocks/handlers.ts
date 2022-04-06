@@ -1,4 +1,5 @@
 import { rest } from 'msw';
+import { marshallConfig } from 'pages/election/components/utils/JSONparser';
 import ShortUniqueId from 'short-unique-id';
 
 import {
@@ -11,6 +12,7 @@ import {
 } from '../components/utils/Endpoints';
 
 import { CreateElectionBody, GetElectionBody } from '../types/frontendRequestBody';
+import { mockElection1, mockElection2 } from './mockData';
 
 const uid = new ShortUniqueId({ length: 8 });
 
@@ -21,7 +23,7 @@ var mockElections = [
     Status: 1,
     Pubkey: 'XL4V6EMIICW',
     Result: [],
-    Format: { MainTitle: 'Election 1', Scaffold: [] },
+    Format: marshallConfig(mockElection1),
   },
   {
     ElectionID: uid(),
@@ -29,7 +31,7 @@ var mockElections = [
     Status: 1,
     Pubkey: 'XL4V6EMIICW',
     Result: [],
-    Format: { MainTitle: 'Election 2', Scaffold: [] },
+    Format: marshallConfig(mockElection2),
   },
 ];
 

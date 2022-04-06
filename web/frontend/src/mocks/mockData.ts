@@ -10,6 +10,8 @@ const mockElection1: any = {
           Title: "Let's talk about the food",
           ID: (0xff31).toString(),
           Order: [(0xa319).toString(), (0x19c7).toString()],
+          Subjects: [],
+          Texts: [],
           Selects: [
             {
               Title: 'Select your ingredients',
@@ -30,7 +32,7 @@ const mockElection1: any = {
           ],
         },
       ],
-
+      Ranks: [],
       Selects: [
         {
           Title: 'How did you find the provided material, from 1 (bad) to 5 (excellent) ?',
@@ -68,7 +70,8 @@ const mockElection2: any = {
       ID: (0xa2ab).toString(),
       Title: 'Rate the course',
       Order: [(0x3fb2).toString(), (0xcd13).toString(), (0x1234).toString()],
-
+      Subjects: [],
+      Ranks: [],
       Selects: [
         {
           Title: 'How did you find the provided material, from 1 (bad) to 5 (excellent) ?',
@@ -78,7 +81,6 @@ const mockElection2: any = {
           Choices: ['1', '2', '3', '4', '5'],
         },
       ],
-
       Texts: [
         {
           Title: 'Who were the two best TAs ?',
@@ -95,7 +97,7 @@ const mockElection2: any = {
       ID: (0x1234).toString(),
       Title: 'Tough choices',
       Order: [(0xa319).toString(), (0xcafe).toString(), (0xbeef).toString()],
-
+      Subjects: [],
       Selects: [
         {
           Title: 'Select your ingredients',
@@ -105,7 +107,7 @@ const mockElection2: any = {
           Choices: ['tomato', 'salad', 'onion', 'falafel'],
         },
       ],
-
+      Texts: [],
       Ranks: [
         {
           Title: 'Which cafeteria serves the best coffee ?',
