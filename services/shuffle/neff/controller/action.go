@@ -11,15 +11,15 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// initAction is an action to initialize the shuffle protocol
+// InitAction is an action to initialize the shuffle protocol
 //
 // - implements node.ActionTemplate
-type initAction struct {
+type InitAction struct {
 }
 
 // Execute implements node.ActionTemplate. It creates an actor from
 // the neffShuffle instance
-func (a *initAction) Execute(ctx node.Context) error {
+func (a *InitAction) Execute(ctx node.Context) error {
 	var neffShuffle shuffle.Shuffle
 
 	err := ctx.Injector.Resolve(&neffShuffle)

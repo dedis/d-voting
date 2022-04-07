@@ -5,12 +5,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/core/validation"
-	"io/ioutil"
-	"net/http"
 
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/dkg/pedersen"
@@ -267,15 +268,15 @@ func (a *getPublicKeyAction) Execute(ctx node.Context) error {
 	return nil
 }
 
-// registerHandlersAction is an action that registers the proxy handlers
+// RegisterHandlersAction is an action that registers the proxy handlers
 //
 // - implements node.ActionTemplate
-type registerHandlersAction struct {
+type RegisterHandlersAction struct {
 }
 
 // Execute implements node.ActionTemplate. It registers the proxy
 // handlers to set up elections
-func (a *registerHandlersAction) Execute(ctx node.Context) error {
+func (a *RegisterHandlersAction) Execute(ctx node.Context) error {
 	var proxy proxy.Proxy
 	err := ctx.Injector.Resolve(&proxy)
 	if err != nil {

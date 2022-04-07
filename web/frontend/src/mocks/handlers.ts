@@ -1,6 +1,7 @@
 import { rest } from 'msw';
 import { marshallConfig } from 'types/JSONparser';
 import ShortUniqueId from 'short-unique-id';
+import { ROUTE_LOGGED } from 'Routes';
 
 import {
   ENDPOINT_EVOTING_CREATE,
@@ -53,7 +54,7 @@ export const handlers = [
   }),
 
   rest.get(ENDPOINT_GET_TEQ_KEY, (req, res, ctx) => {
-    const url = '/';
+    const url = ROUTE_LOGGED;
     sessionStorage.setItem('is-authenticated', 'true');
 
     return res(ctx.status(200), ctx.json({ url: url }));

@@ -30,16 +30,16 @@ jobs:
         run: crypto bls signer new --save private.key
 
       - name: Install memcoin
-        run: go install ./cli/memcoin
+        run: make build
 
       - name: Start 3 nodes
         run: |
-          memcoin --config /tmp/node1 start --port 2001 &
-          memcoin --config /tmp/node2 start --port 2002 &
-          memcoin --config /tmp/node3 start --port 2003 &
+          ./memcoin --config /tmp/node1 start --port 2001 &
+          ./memcoin --config /tmp/node2 start --port 2002 &
+          ./memcoin --config /tmp/node3 start --port 2003 &
 
       - name: Run the setup
         run: ./setup.sh
 
       - name: Run the scenario test
-        run: memcoin --config /tmp/node1 e-voting scenarioTest
+        run: ./memcoin --config /tmp/node1 e-voting scenarioTest

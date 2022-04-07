@@ -138,6 +138,8 @@ func (a *Actor) Shuffle(electionID []byte) error {
 		}
 	}
 
+	dela.Logger.Info().Msgf("sending start shuffle to: %v", addrs)
+
 	message := types.NewStartShuffle(electionIDHex, addrs)
 
 	errs := sender.Send(message, addrs...)

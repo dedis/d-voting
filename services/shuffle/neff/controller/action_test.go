@@ -15,7 +15,7 @@ func TestInitAction_Execute(t *testing.T) {
 		Out:      ioutil.Discard,
 	}
 
-	action := initAction{}
+	action := InitAction{}
 
 	err := action.Execute(ctx)
 	require.EqualError(t, err, "failed to resolve shuffle: couldn't find "+
