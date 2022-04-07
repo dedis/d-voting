@@ -1206,9 +1206,13 @@ func TestCommand_CombineSharesCanLogToDela(t *testing.T) {
 	err = cmd.combineShares(snap, makeStep(t, ElectionArg, string(data)))
 	require.NoError(t, err)
 
-	require.Contains(t, logBuffer.String(), "Data to Unikernel:")
-	require.Contains(t, logBuffer.String(), "Data from Unikernel:")
-
+	logBuffers := strings.Split(logBuffer.String(), "INF")
+	require.Len(t, logBuffers, 4)
+	require.Contains(t, logBuffers[1], "using the following folder:")
+	require.Contains(t, logBuffers[2], "Data to Unikernel:")
+	require.Contains(t, logBuffers[3], "Data from Unikernel:")
+	require.Len(t, logBuffers[2], 157)
+	require.Len(t, logBuffers[3], 31)
 }
 
 func Test_ExportPubshares(t *testing.T) {
