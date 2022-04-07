@@ -1,38 +1,22 @@
-import { Configuration } from 'types/configuration';
-
-const mockElection1: Configuration = {
+const mockElection1 = {
   MainTitle: 'Please give your opinion',
   Scaffold: [
     {
       ID: (0xa2ab).toString(),
       Title: 'Rate the course',
       Order: [(0x3fb2).toString(), (0x41e2).toString(), (0xcd13).toString(), (0xff31).toString()],
-      Subjects: [
+      Ranks: [],
+      Texts: [
         {
-          Title: "Let's talk about the food",
-          ID: (0xff31).toString(),
-          Order: [(0xa319).toString(), (0x19c7).toString()],
-          Selects: [
-            {
-              Title: 'Select your ingredients',
-              ID: (0xa319).toString(),
-              MaxN: 2,
-              MinN: 1,
-              Choices: ['tomato', 'salad', 'onion'],
-            },
-          ],
-          Ranks: [
-            {
-              Title: 'Rank the cafeteria',
-              ID: (0x19c7).toString(),
-              MaxN: 3,
-              MinN: 3,
-              Choices: ['BC', 'SV', 'Parmentier'],
-            },
-          ],
+          Title: 'Who were the two best TAs ?',
+          ID: (0xcd13).toString(),
+          MaxLength: 20,
+          Regex: '',
+          MaxN: 2,
+          MinN: 1,
+          Choices: ['TA1', 'TA2'],
         },
       ],
-
       Selects: [
         {
           Title: 'How did you find the provided material, from 1 (bad) to 5 (excellent) ?',
@@ -49,27 +33,44 @@ const mockElection1: Configuration = {
           Choices: ['bad', 'normal', 'good'],
         },
       ],
-      Texts: [
+      Subjects: [
         {
-          Title: 'Who were the two best TAs ?',
-          ID: (0xcd13).toString(),
-          MaxLength: 20,
-          MaxN: 2,
-          MinN: 1,
-          Choices: ['TA1', 'TA2'],
+          Title: "Let's talk about the food",
+          ID: (0xff31).toString(),
+          Order: [(0xa319).toString(), (0x19c7).toString()],
+          Ranks: [
+            {
+              Title: 'Rank the cafeteria',
+              ID: (0x19c7).toString(),
+              MaxN: 3,
+              MinN: 3,
+              Choices: ['BC', 'SV', 'Parmentier'],
+            },
+          ],
+          Texts: [],
+          Selects: [
+            {
+              Title: 'Select your ingredients',
+              ID: (0xa319).toString(),
+              MaxN: 2,
+              MinN: 1,
+              Choices: ['tomato', 'salad', 'onion'],
+            },
+          ],
+          Subjects: [],
         },
       ],
     },
   ],
 };
 
-const mockElection2: Configuration = {
+const mockElection2 = {
   MainTitle: 'Please give your opinion',
   Scaffold: [
     {
       ID: (0xa2ab).toString(),
       Title: 'Rate the course',
-      Order: [(0x3fb2).toString(), (0xcd13).toString(), (0x1234).toString()],
+      Order: [(0x3fb2).toString(), (0xcd13).toString()],
 
       Selects: [
         {
@@ -92,6 +93,9 @@ const mockElection2: Configuration = {
           Regex: '^[A-Z][a-z]+$',
         },
       ],
+
+      Ranks: [],
+      Subjects: [],
     },
     {
       ID: (0x1234).toString(),
@@ -127,6 +131,8 @@ const mockElection2: Configuration = {
           ],
         },
       ],
+      Texts: [],
+      Subjects: [],
     },
   ],
 };

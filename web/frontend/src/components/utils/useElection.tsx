@@ -12,10 +12,11 @@ const useElection = (electionID, token) => {
   const [data, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ELECTION, request);
   const {
     electionTitle,
-    configuration,
+    configObj,
     status,
     pubKey,
     ballotSize,
+    chunksPerBallot,
     result,
     setResult,
     setStatus,
@@ -25,11 +26,12 @@ const useElection = (electionID, token) => {
   return {
     loading,
     electionTitle,
-    configuration,
+    configObj,
     electionID,
     status,
     pubKey,
     ballotSize,
+    chunksPerBallot,
     result,
     setResult,
     setStatus,

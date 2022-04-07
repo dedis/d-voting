@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import useFetchCall from './useFetchCall';
-import { ENDPOINT_EVOTING_GET_ALL } from './Endpoints';
+import useFetchCall from '../../../components/utils/useFetchCall';
+import { ENDPOINT_EVOTING_GET_ALL } from '../../../components/utils/Endpoints';
 
 type SimpleTableProps = {
   statusToKeep: number;
@@ -58,20 +58,20 @@ const SimpleTable: FC<SimpleTableProps> = ({
               <tbody>
                 {data.map((row) => {
                   return (
-                    <Link
-                      className="block text-gray-500"
-                      to={{
-                        pathname: `${pathLink}/${row[1]}`,
-                      }}>
-                      <tr className="block bg-white border-b  hover:bg-gray-50 " key={row}>
-                        <th
-                          scope="row"
-                          className="px-6 py-4 font-medium text-gray-500  whitespace-nowrap"
-                          key={row[1]}>
+                    <tr className="block bg-white border-b  hover:bg-gray-50 " key={row}>
+                      <th
+                        scope="row"
+                        className="px-6 py-4 font-medium text-gray-500  whitespace-nowrap"
+                        key={row[1]}>
+                        <Link
+                          className="block text-gray-500"
+                          to={{
+                            pathname: `${pathLink}/${row[1]}`,
+                          }}>
                           {row[0]}
-                        </th>
-                      </tr>
-                    </Link>
+                        </Link>
+                      </th>
+                    </tr>
                   );
                 })}
               </tbody>

@@ -25,8 +25,9 @@ var mockElections = [
     Status: 1,
     Pubkey: 'XL4V6EMIICW',
     BallotSize: 174,
+    ChunksPerBallot: 6,
     Result: [],
-    Format: mockElection1,
+    Configuration: mockElection1,
   },
   {
     ElectionID: 'election ID2',
@@ -34,8 +35,9 @@ var mockElections = [
     Status: 1,
     Pubkey: 'XL4V6EMIICW',
     BallotSize: 174,
+    ChunksPerBallot: 6,
     Result: [],
-    Format: mockElection2,
+    Configuration: mockElection2,
   },
 ];
 

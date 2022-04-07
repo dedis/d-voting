@@ -1,119 +1,114 @@
 import { t } from 'i18next';
 import {
   Answers,
-  Error,
-  Question,
+  Configuration,
   RANK,
-  RankAnswer,
-  RankQuestion,
   SELECT,
-  SelectAnswer,
+  SUBJECT,
   SelectQuestion,
+  Subject,
   TEXT,
-  TextAnswer,
   TextQuestion,
+  answersFrom,
 } from 'types/configuration';
 
-export function buildAnswer(answers: Answers) {
-  let newAnswers: Answers = {
-    SelectAnswers: Array.from(answers.SelectAnswers),
-    RankAnswers: Array.from(answers.RankAnswers),
-    TextAnswers: Array.from(answers.TextAnswers),
-    Errors: Array.from(answers.Errors),
-  };
-
-  return newAnswers;
-}
-
-export function getIndices(
-  question: SelectQuestion | RankQuestion | TextQuestion,
-  choice: string,
-  answers: Answers,
-  type: string
+function isSelectAnswerValid(
+  selectQuestion: SelectQuestion,
+  isValid: boolean,
+  newAnswers: Answers
 ) {
-  let questionIndex: number;
+  const numAnswer = newAnswers.SelectAnswers.get(selectQuestion.ID).filter(
+    (answer) => answer === true
+  ).length;
 
-  switch (type) {
-    case RANK:
-      questionIndex = answers.RankAnswers.findIndex((rank: RankAnswer) => rank.ID === question.ID);
-      break;
-    case SELECT:
-      questionIndex = answers.SelectAnswers.findIndex(
-        (select: SelectAnswer) => select.ID === question.ID
-      );
-      break;
-    case TEXT:
-      questionIndex = answers.TextAnswers.findIndex((text: TextAnswer) => text.ID === question.ID);
+  let selectError = newAnswers.Errors.get(selectQuestion.ID);
+
+  if (numAnswer < selectQuestion.MinN) {
+    selectError =
+      selectQuestion.MinN > 1
+        ? t('minSelectError', { min: selectQuestion.MinN, singularPlural: t('pluralAnswers') })
+        : t('minSelectError', { min: selectQuestion.MinN, singularPlural: t('singularAnswer') });
+
+    isValid = false;
   }
 
-  let choiceIndex = question.Choices.findIndex((c: string) => c === choice);
-  let errorIndex = answers.Errors.findIndex((e: Error) => e.ID === question.ID);
+  if (numAnswer > selectQuestion.MaxN) {
+    isValid = false;
+  }
 
-  let newAnswers: Answers = buildAnswer(answers);
+  newAnswers.Errors.set(selectQuestion.ID, selectError);
 
-  return { questionIndex, choiceIndex, errorIndex, newAnswers };
+  return isValid;
+}
+
+function isTextAnswerValid(textQuestion: TextQuestion, isValid: boolean, newAnswers: Answers) {
+  const textAnswer = newAnswers.TextAnswers.get(textQuestion.ID);
+  const numAnswer = textAnswer.filter((answer) => answer !== '').length;
+  let textError = newAnswers.Errors.get(textQuestion.ID);
+
+  for (const answer of textAnswer) {
+    if (answer.length > textQuestion.MaxLength) {
+      textError = t('maxTextChars', {
+        maxLength: textQuestion.MaxLength,
+      });
+
+      isValid = false;
+    }
+
+    let regexp = new RegExp(textQuestion.Regex);
+
+    if (!regexp.test(answer) && answer !== '') {
+      textError = t('regexpCheck', { regexp: textQuestion.Regex });
+      isValid = false;
+    }
+  }
+
+  if (numAnswer < textQuestion.MinN) {
+    textError =
+      textQuestion.MinN > 1
+        ? t('minTextError', { minText: textQuestion.MinN, singularPlural: t('pluralAnswers') })
+        : t('minTextError', { minText: textQuestion.MinN, singularPlural: t('singularAnswer') });
+
+    isValid = false;
+  }
+
+  newAnswers.Errors.set(textQuestion.ID, textError);
+
+  return isValid;
+}
+
+function isSubjectValid(subject: Subject, isValid: boolean, newAnswers: Answers) {
+  let elementIsValid = true;
+  for (const element of Array.from(subject.Elements.values())) {
+    switch (element.Type) {
+      case RANK:
+        // TODO: when implementing the new ranks
+        break;
+      case SELECT:
+        elementIsValid = isSelectAnswerValid(element as SelectQuestion, isValid, newAnswers);
+        break;
+      case TEXT:
+        elementIsValid = isTextAnswerValid(element as TextQuestion, isValid, newAnswers);
+        break;
+      case SUBJECT:
+        elementIsValid = isSubjectValid(element as Subject, isValid, newAnswers);
+    }
+    isValid = isValid && elementIsValid;
+  }
+  return isValid;
 }
 
 export function ballotIsValid(
-  sortedQuestion: Question[],
+  configuration: Configuration,
   answers: Answers,
   setAnswers: React.Dispatch<React.SetStateAction<Answers>>
 ) {
   let isValid = true;
-  let newAnswers = buildAnswer(answers);
-
-  for (const selectAnswer of answers.SelectAnswers) {
-    let numAnswer = selectAnswer.Answers.filter((answer) => answer === true).length;
-    let selectQuestion = sortedQuestion.find((s) => s.Content.ID === selectAnswer.ID)
-      .Content as SelectQuestion;
-    let errorIndex = newAnswers.Errors.findIndex((e) => e.ID === selectAnswer.ID);
-
-    if (numAnswer < selectQuestion.MinN) {
-      newAnswers.Errors[errorIndex].Message =
-        selectQuestion.MinN > 1
-          ? t('minSelectError', { min: selectQuestion.MinN, singularPlural: t('pluralAnswers') })
-          : t('minSelectError', { min: selectQuestion.MinN, singularPlural: t('singularAnswer') });
-      isValid = false;
-    }
-
-    if (numAnswer > selectQuestion.MaxN) {
-      isValid = false;
-    }
-  }
-
-  for (const textAnswer of answers.TextAnswers) {
-    let textQuestion = sortedQuestion.find((s: any) => s.Content.ID === textAnswer.ID)
-      .Content as TextQuestion;
-    let errorIndex = newAnswers.Errors.findIndex((e) => e.ID === textAnswer.ID);
-
-    for (const answer of textAnswer.Answers) {
-      if (answer.length > textQuestion.MaxLength) {
-        newAnswers.Errors[errorIndex].Message = t('maxTextChars', {
-          maxLength: textQuestion.MaxLength,
-        });
-        isValid = false;
-      }
-    }
-
-    if (textQuestion.Regex && isValid) {
-      let regexp = new RegExp(textQuestion.Regex);
-      for (const answer of textAnswer.Answers) {
-        if (!regexp.test(answer) && answer !== '') {
-          isValid = false;
-          newAnswers.Errors[errorIndex].Message = t('regexpCheck', { regexp: textQuestion.Regex });
-        }
-      }
-    }
-
-    let numAnswer = textAnswer.Answers.filter((answer) => answer !== '').length;
-
-    if (numAnswer < textQuestion.MinN) {
-      newAnswers.Errors[errorIndex].Message =
-        textQuestion.MinN > 1
-          ? t('minTextError', { minText: textQuestion.MinN, singularPlural: t('pluralAnswers') })
-          : t('minTextError', { minText: textQuestion.MinN, singularPlural: t('singularAnswer') });
-      isValid = false;
-    }
+  let newAnswers = answersFrom(answers);
+  let subjectIsValid = true;
+  for (const subject of configuration.Scaffold) {
+    subjectIsValid = isSubjectValid(subject as Subject, isValid, newAnswers);
+    isValid = isValid && subjectIsValid;
   }
   setAnswers(newAnswers);
 

@@ -12,36 +12,44 @@ import usePostCall from 'components/utils/usePostCall';
 import { ENDPOINT_EVOTING_CAST_BALLOT } from 'components/utils/Endpoints';
 import { OPEN } from 'components/utils/StatusNumber';
 import { encryptVote } from './components/VoteEncrypt';
-import { ballotIsValid } from './components/HandleAnswers';
-import { handleOnDragEnd } from './components/RankDisplay';
 import { voteEncode } from './components/VoteEncode';
 import useConfiguration from 'components/utils/useConfiguration';
-import { ID, Question, RANK, ROOT_ID, SELECT, SUBJECT, TEXT } from 'types/configuration';
+import {
+  ID,
+  RANK,
+  RankQuestion,
+  SELECT,
+  SUBJECT,
+  SelectQuestion,
+  Subject,
+  SubjectElement,
+  TEXT,
+  TextQuestion,
+} from 'types/configuration';
 import { DragDropContext } from 'react-beautiful-dnd';
-//import BallotCast from './BallotCast';
-import ModalNav from 'components/modal/RedirectToModal';
+import RedirectToModal from 'components/modal/RedirectToModal';
+import Select from './components/Select';
+import Rank, { handleOnDragEnd } from './components/Rank';
+import Text from './components/Text';
+import { ballotIsValid } from './components/HandleAnswers';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
   const { electionId } = useParams();
   const token = sessionStorage.getItem('token');
-  const { loading, configuration, electionID, status, pubKey, ballotSize } = useElection(
-    electionId,
-    token
-  );
-  const { sortedQuestions, answers, setAnswers } = useConfiguration(configuration);
+  const { loading, configObj, electionID, status, pubKey, ballotSize, chunksPerBallot } =
+    useElection(electionId, token);
+  const { configuration, answers, setAnswers } = useConfiguration(configObj);
   const [userErrors, setUserErrors] = useState('');
   const edCurve = kyber.curve.newCurve('edwards25519');
   const [postRequest, setPostRequest] = useState(null);
   const [postError, setPostError] = useState('');
-  //const [showFlash, setShowFlash] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalText, setModalText] = useState(t('voteSuccess') as string);
   const { postData } = usePostCall(setPostError);
 
   useEffect(() => {
     if (postRequest !== null) {
-      //postData(ENDPOINT_EVOTING_CAST_BALLOT, postRequest, setShowFlash);
       postData(ENDPOINT_EVOTING_CAST_BALLOT, postRequest, setShowModal);
     }
   }, [postRequest]);
@@ -77,7 +85,7 @@ const Ballot: FC = () => {
   };
 
   const sendBallot = async () => {
-    let ballotChunks = voteEncode(answers, ballotSize);
+    let ballotChunks = voteEncode(answers, ballotSize, chunksPerBallot);
     let EGPairs = Array<Buffer[]>();
     ballotChunks.forEach((chunk) =>
       EGPairs.push(encryptVote(chunk, Buffer.from(hexToBytes(pubKey).buffer), edCurve))
@@ -92,7 +100,7 @@ const Ballot: FC = () => {
   };
 
   const handleClick = () => {
-    if (ballotIsValid(sortedQuestions, answers, setAnswers)) {
+    if (ballotIsValid(configuration, answers, setAnswers)) {
       setUserErrors('');
       sendBallot();
     } else {
@@ -100,21 +108,37 @@ const Ballot: FC = () => {
     }
   };
 
-  const subjectTree = (sorted: Question[], parentId: ID) => {
-    const questions = sorted.filter((question) => question.ParentID === parentId);
-    if (!questions.length) {
-      return null;
-    }
+  const SubjectElementDisplay = (element: SubjectElement) => {
+    return (
+      <div>
+        {element.Type === RANK ? <Rank rank={element as RankQuestion} answers={answers} /> : null}
+        {element.Type === SELECT ? (
+          <Select select={element as SelectQuestion} answers={answers} setAnswers={setAnswers} />
+        ) : null}
+        {element.Type === TEXT ? (
+          <Text text={element as TextQuestion} answers={answers} setAnswers={setAnswers} />
+        ) : null}
+      </div>
+    );
+  };
+
+  const SubjectTree = (subjectElement: SubjectElement) => {
+    let subject = subjectElement as Subject;
 
     return (
-      <div className="sm:px-8 pl-2">
-        {questions.map((question) => (
-          <div key={question.Content.ID}>
-            {question.Type === SUBJECT ? question.render(question) : null}
-            {question.Type === RANK ? question.render(question, answers) : null}
-            {question.Type === TEXT ? question.render(question, answers, setAnswers) : null}
-            {question.Type === SELECT ? question.render(question, answers, setAnswers) : null}
-            <div>{question.Type === SUBJECT ? subjectTree(sorted, question.Content.ID) : null}</div>
+      <div className="sm:px-8 pl-2" key={subject.ID}>
+        {subject.Order.map((id: ID) => (
+          <div key={id}>
+            {subject.Elements.get(id).Type === SUBJECT ? (
+              <div>
+                <h3 className="text-lg font-bold text-gray-600">
+                  {subject.Elements.get(id).Title}
+                </h3>
+                {SubjectTree(subject.Elements.get(id))}
+              </div>
+            ) : (
+              SubjectElementDisplay(subject.Elements.get(id))
+            )}
           </div>
         ))}
       </div>
@@ -123,13 +147,13 @@ const Ballot: FC = () => {
 
   const ballotDisplay = () => {
     return (
-      <DragDropContext onDragEnd={(e) => handleOnDragEnd(e, answers, setAnswers)}>
+      <DragDropContext onDragEnd={(dropRes) => handleOnDragEnd(dropRes, answers, setAnswers)}>
         <div className="shadow-lg rounded-md my-0 sm:my-4 py-8 w-full">
           <h3 className="font-bold uppercase py-4 text-2xl text-center text-gray-600">
             {configuration.MainTitle}
           </h3>
           <div>
-            {subjectTree(sortedQuestions, ROOT_ID)}
+            {configuration.Scaffold.map((subject: SubjectElement) => SubjectTree(subject))}
             <div className="sm:mx-8 mx-4 text-red-600 text-sm pt-3 pb-5">{userErrors}</div>
             <div className="flex sm:mx-8 mx-4">
               <button
@@ -163,15 +187,14 @@ const Ballot: FC = () => {
 
   return (
     <div>
-      <ModalNav
+      <RedirectToModal
         showModal={showModal}
         setShowModal={setShowModal}
-        modalTitle={'Vote successful'}
-        textModal={modalText}
+        title={'Vote successful'}
         buttonRightText={t('close')}
-        navigateDestination={'/'}
-      />
-      {/*<BallotCast postError={postError} showFlash={showFlash} />*/}
+        navigateDestination={'/'}>
+        {modalText}
+      </RedirectToModal>
       {loading ? (
         <p className="loading">{t('loading')}</p>
       ) : (
