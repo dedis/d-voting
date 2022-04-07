@@ -1,5 +1,5 @@
 import { rest } from 'msw';
-import { marshallConfig } from 'pages/election/components/utils/JSONparser';
+import { marshallConfig } from 'types/JSONparser';
 import ShortUniqueId from 'short-unique-id';
 
 import {

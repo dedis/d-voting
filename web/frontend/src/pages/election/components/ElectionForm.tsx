@@ -11,8 +11,8 @@ import UploadFile from './UploadFile';
 
 import configurationSchema from '../../../schema/configurationValidation';
 import { Configuration, ID, Subject } from '../../../types/configuration';
-import { newSubject } from './utils/getObjectType';
-import { unmarshallConfig } from './utils/JSONparser';
+import { newSubject } from '../../../types/getObjectType';
+import { unmarshallConfig } from '../../../types/JSONparser';
 
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.

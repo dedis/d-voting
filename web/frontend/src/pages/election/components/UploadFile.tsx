@@ -4,7 +4,7 @@ import configurationSchema from '../../../schema/configurationValidation';
 import Ajv from 'ajv';
 
 import configurationJSONSchema from '../../../schema/election_conf.json';
-import { marshallConfig } from './utils/JSONparser';
+import { marshallConfig } from '../../../types/JSONparser';
 import { Configuration } from 'types/configuration';
 
 const ajv = new Ajv({
@@ -15,27 +15,33 @@ const UploadFile = ({ setConf, setShowModal, setTextModal }) => {
   const validateJSONSchema = ajv.getSchema('configurationSchema');
 
   const handleDrop = (file) => {
-    if (file && file.type === 'application/json') {
-      var reader = new FileReader();
-      reader.onload = async function (param) {
-        const result: any = JSON.parse(param.target.result.toString());
-        if (validateJSONSchema(result)) {
-          try {
-            const validConf: any = await configurationSchema.validate(result);
-            // marshall the configuration to add the Types on the objects
-            const marshallConfigResult: Configuration = marshallConfig(validConf);
-            setConf(marshallConfigResult);
-          } catch (err) {
-            setTextModal('Incorrect election configuration : ' + err.errors.join(','));
-            setShowModal(true);
-          }
-        } else {
-          setTextModal('Invalid schema JSON file');
-          setShowModal(true);
-        }
-      };
-      reader.readAsText(file);
+    if (!file || file.type !== 'application/json') {
+      return;
     }
+
+    var reader = new FileReader();
+
+    reader.onload = async function (param) {
+      const result: any = JSON.parse(param.target.result.toString());
+
+      if (!validateJSONSchema(result)) {
+        setTextModal('Invalid schema JSON file');
+        setShowModal(true);
+        return;
+      }
+
+      try {
+        const validConf: any = await configurationSchema.validate(result);
+        // marshall the configuration to add the Types on the objects
+        const marshallConfigResult: Configuration = marshallConfig(validConf);
+        setConf(marshallConfigResult);
+      } catch (err) {
+        setTextModal('Incorrect election configuration : ' + err.errors.join(','));
+        setShowModal(true);
+      }
+    };
+
+    reader.readAsText(file);
   };
 
   const { getRootProps, getInputProps } = useDropzone({

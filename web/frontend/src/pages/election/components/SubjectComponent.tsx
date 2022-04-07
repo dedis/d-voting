@@ -2,7 +2,7 @@ import { FC, ReactElement, useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import { ID, Rank, Select, Subject, Text } from '../../../types/configuration';
-import { newRank, newSelect, newSubject, newText } from './utils/getObjectType';
+import { newRank, newSelect, newSubject, newText } from '../../../types/getObjectType';
 
 import AddButton from './AddButton';
 import Question from './Question';

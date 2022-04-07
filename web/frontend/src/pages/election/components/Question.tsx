@@ -15,6 +15,8 @@ type QuestionProps = {
   removeQuestion: () => void;
 };
 
+const MAX_MINN = 20;
+
 const Question: FC<QuestionProps> = ({ question, notifyParent, removeQuestion }) => {
   const { ID, Type } = question;
   const isQuestionMounted = useRef<Boolean>(false);
@@ -116,7 +118,7 @@ const Question: FC<QuestionProps> = ({ question, notifyParent, removeQuestion })
                 value={MinN}
                 onChange={handleChange}
                 name="MinN"
-                max={MaxN}
+                max={MaxN < MAX_MINN ? MaxN : MAX_MINN}
                 min="0"
                 type="number"
                 placeholder="Enter the MinN"

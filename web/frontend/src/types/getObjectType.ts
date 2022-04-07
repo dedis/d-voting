@@ -1,5 +1,5 @@
 import ShortUniqueId from 'short-unique-id';
-import { Rank, Select, Subject, Text } from '../../../../types/configuration';
+import { Rank, Select, Subject, Text } from './configuration';
 
 const uid: Function = new ShortUniqueId({ length: 8 });
 

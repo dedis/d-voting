@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Rank, Select, Text } from 'types/configuration';
 
+const MAX_MINN = 20;
+
 // form hook that handles the form state for all types of questions
 const useQuestionForm = (initState: Rank | Select | Text) => {
   const [state, setState] = useState<Rank | Select | Text>(initState);
@@ -8,7 +10,7 @@ const useQuestionForm = (initState: Rank | Select | Text) => {
 
   // updates the choices length array when minN is greater than the current choices length
   useEffect(() => {
-    if (MinN > 0 && Choices.length < MinN) {
+    if (MinN > 0 && MinN < MAX_MINN && Choices.length < MinN) {
       setState({
         ...state,
         Choices: [...Choices, ...new Array(MinN - Choices.length).fill('')],
