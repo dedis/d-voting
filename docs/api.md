@@ -33,24 +33,34 @@ SC7:BeginDecryption
 SC8:CombineShares
     │
     ▼
-SC9:GetResult
+SC2:ElectionGetInfo
 
+```
+
+In case of error:
+
+`500 ERROR` `application/json`
+
+```json
+{
+  "Title": "",
+  "Code": "<uint>",
+  "Message": "",
+  "Args": {}
+}
 ```
 
 # SC1: Election create
 
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/create`  |
-| Method | `POST`             |
-| Input  | `application/json` |
+|        |                      |
+| ------ | -------------------- |
+| URL    | `/evoting/elections` |
+| Method | `POST`               |
+| Input  | `application/json`   |
 
 ```json
 {
-    "Title": "",
-    "AdminID": "",
-    "Token": "",
-    "Format": ""
+  "Configuration": ""
 }
 ```
 
@@ -60,240 +70,210 @@ Return:
 
 ```json
 {
-    "ElectionID": "<hex encoded>"
+  "ElectionID": "<hex encoded>"
 }
 ```
 
 # SC2: Election get info
 
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/info`    |
-| Method | `POST`             |
-| Input  | `application/json` |
+|        |                                   |
+| ------ | --------------------------------- |
+| URL    | `/evoting/elections/{ElectionID}` |
+| Method | `GET`                             |
+| Input  |                                   |
+
+Return:
+
+`200 OK` `application/json`
 
 ```json
 {
-    "ElectionID": "",
-    "Token": ""
+  "ElectionID": "<hex encoded>",
+  "Status": "",
+  "Pubkey": "<hex encoded>",
+  "Result": [
+    {
+      "SelectResultIDs": ["<string>"],
+      "SelectResult": [["<bool>"]],
+      "RankResultIDs": ["<string>"],
+      "RankResult": [["<int8>"]],
+      "TextResultIDs": ["<string>"],
+      "TextResult": [["<string>"]]
+    }
+  ],
+  "ChunksPerBallot": "",
+  "BallotSize": "",
+  "Configuration": {<Configuration>}
 }
 ```
 
 # SC3: Election open
 
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/open`    |
-| Method | `POST`             |
-| Input  | `application/json` |
+|        |                                   |
+| ------ | --------------------------------- |
+| URL    | `/evoting/elections/{ElectionID}` |
+| Method | `PUT`                             |
+| Input  | `application/json`                |
 
 ```json
- "<hex encoded electionID>"
+{
+  "Action": "open"
+}
 ```
 
 Return:
 
-`200 OK` `application/json`
+`200 OK` `text/plain`
 
-```json
-<empty>
+```
+
 ```
 
 # SC4: Election cast vote
 
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/cast`    |
-| Method | `POST`             |
-| Input  | `application/json` |
+|        |                                        |
+| ------ | -------------------------------------- |
+| URL    | `/evoting/elections/{ElectionID}/vote` |
+| Method | `POST`                                 |
+| Input  | `application/json`                     |
 
 ```json
 {
-    "ElectionID": "",
-    "UserID": "",
-    "Ballot": {
-        "K": "",
-        "C": ""
-    },
-    "Token": ""
+  "UserID": "",
+  "Ballot": [
+    {
+      "K": "<bin>",
+      "C": "<bin>"
+    }
+  ]
 }
 ```
 
 Return:
 
-`200 OK` `application/json`
+`200 OK` `text/plain`
 
-```json
-{}
+```
+
 ```
 
 # SC5: Election close
 
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/close`   |
-| Method | `POST`             |
-| Input  | `application/json` |
+|        |                                   |
+| ------ | --------------------------------- |
+| URL    | `/evoting/elections/{ElectionID}` |
+| Method | `PUT`                             |
+| Input  | `application/json`                |
 
 ```json
 {
-    "ElectionID": "",
-    "UserID": ""
+  "Action": "close"
 }
 ```
 
 Return:
 
-`200 OK` `application/json`
+`200 OK` `text/plain`
 
-```json
-{}
+```
+
 ```
 
 # SC6: Election shuffle
 
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/shuffle` |
-| Method | `POST`             |
-| Input  | `application/json` |
+|        |                                   |
+| ------ | --------------------------------- |
+| URL    | `/evoting/elections/{ElectionID}` |
+| Method | `PUT`                             |
+| Input  | `application/json`                |
 
 ```json
 {
-    "ElectionID": "",
-    "UserID": "",
-    "Token": ""
+  "Action": "shuffle"
 }
 ```
 
 Return:
 
-`200 OK` `application/json`
+`200 OK` `text/plain`
 
-```json
-{
-    "Message": ""
-}
+```
+
 ```
 
 # SC7: Election begin decryption
 
-|        |                            |
-| -      | -                          |
-| URL    | `/evoting/beginDecryption` |
-| Method | `POST`                     |
-| Input  | `application/json`         |
+|        |                                   |
+| ------ | --------------------------------- |
+| URL    | `/evoting/elections/{ElectionID}` |
+| Method | `PUT`                             |
+| Input  | `application/json`                |
 
 ```json
 {
-    "ElectionID": "",
-    "UserID": "",
-    "Token": ""
+  "Action": "beginDecryption"
 }
 ```
 
 Return:
 
-`200 OK` `application/json`
+`200 OK` `text/plain`
 
-```json
-{
-    "Message": ""
-}
+```
+
 ```
 
 # SC8: Election combine shares
 
-|        |                          |
-| -      | -                        |
-| URL    | `/evoting/combineShares` |
-| Method | `POST`                   |
-| Input  | `application/json`       |
+|        |                                   |
+| ------ | --------------------------------- |
+| URL    | `/evoting/elections/{ElectionID}` |
+| Method | `PUT`                             |
+| Input  | `application/json`                |
 
 ```json
 {
-    "ElectionID": "",
-    "UserID": "",
-    "Token": ""
+  "Action": "combineShares"
 }
 ```
 
 Return:
 
-`200 OK` `application/json`
+`200 OK` `text/plain`
 
-```json
-{}
 ```
 
-# SC9: Election get result
-
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/result`  |
-| Method | `POST`             |
-| Input  | `application/json` |
-
-```json
-{
-    "ElectionID": "",
-    "Token": ""
-}
-```
-
-Return:
-
-`200 OK` `application/json`
-
-```json
-{
-    "Result": [
-        {
-            "Vote": ""
-        }
-    ]
-}
 ```
 
 # SC?: Election cancel
 
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/cancel`  |
-| Method | `POST`             |
-| Input  | `application/json` |
+|        |                                   |
+| ------ | --------------------------------- |
+| URL    | `/evoting/elections/{ElectionID}` |
+| Method | `PUT`                             |
+| Input  | `application/json`                |
 
 ```json
 {
-    "ElectionID": "",
-    "UserID": "",
-    "Token": ""
+  "Action": "cancel"
 }
 ```
 
 Return:
 
-`200 OK` `application/json`
+`200 OK` `text/plain`
 
-```json
-{
-    "Message": ""
-}
+```
+
 ```
 
 # SC?: Election get all infos
 
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/all`     |
-| Method | `POST`             |
-| Input  | `application/json` |
-
-```json
-{
-    "Token": ""
-}
-```
+|        |                      |
+| ------ | -------------------- |
+| URL    | `/evoting/elections` |
+| Method | `GET`                |
+| Input  |                      |
 
 Return:
 
@@ -301,25 +281,21 @@ Return:
 
 ```json
 {
-    "AllElectionsInfos": [
-        {
-            "ElectionID": "",
-            "Title": "",
-            "Status": "",
-            "Pubkey": "",
-            "Result": [
-                "Vote": ""
-            ],
-            "Format": ""
-        }
-    ]
+  "Elections": [
+    {
+      "ElectionID": "<hex encoded>",
+      "Title": "",
+      "Status": "",
+      "Pubkey": "<hex encoded>"
+    }
+  ]
 }
 ```
 
 # DK1: DKG init
 
 |        |                     |
-| -      | -                   |
+| ------ | ------------------- |
 | URL    | `/evoting/dkg/init` |
 | Method | `POST`              |
 | Input  | `application/json`  |
@@ -339,7 +315,7 @@ Return:
 # DK2: DKG setup
 
 |        |                      |
-| -      | -                    |
+| ------ | -------------------- |
 | URL    | `/evoting/dkg/setup` |
 | Method | `POST`               |
 | Input  | `application/json`   |
