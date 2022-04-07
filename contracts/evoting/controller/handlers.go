@@ -251,12 +251,13 @@ func (h *votingProxy) ElectionInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := types.GetElectionInfoResponse{
-		ElectionID:    string(election.ElectionID),
-		Configuration: election.Configuration,
-		Status:        uint16(election.Status),
-		Pubkey:        hex.EncodeToString(pubkeyBuf),
-		Result:        election.DecryptedBallots,
-		BallotSize:    election.BallotSize,
+		ElectionID:      string(election.ElectionID),
+		Configuration:   election.Configuration,
+		Status:          uint16(election.Status),
+		Pubkey:          hex.EncodeToString(pubkeyBuf),
+		Result:          election.DecryptedBallots,
+		BallotSize:      election.BallotSize,
+		Chunksperballot: election.ChunksPerBallot(),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -307,6 +308,7 @@ func (h *votingProxy) AllElectionInfo(w http.ResponseWriter, r *http.Request) {
 			Status:        uint16(election.Status),
 			Pubkey:        hex.EncodeToString(pubkeyBuf),
 			Result:        election.DecryptedBallots,
+			BallotSize:    election.BallotSize,
 		}
 
 		allElectionsInfo[i] = info

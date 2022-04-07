@@ -123,13 +123,14 @@ type GetElectionInfoRequest struct {
 // info
 type GetElectionInfoResponse struct {
 	// ElectionID is hex-encoded
-	ElectionID    string
-	Configuration Configuration
-	Status        uint16
-	Pubkey        string
-	Result        []Ballot
-	Format        string
-	BallotSize    int
+	ElectionID      string
+	Configuration   Configuration
+	Status          uint16
+	Pubkey          string
+	Result          []Ballot
+	Format          string
+	BallotSize      int
+	Chunksperballot int
 }
 
 // GetAllElectionsInfoRequest defines the HTTP request for getting all elections
