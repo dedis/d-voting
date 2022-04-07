@@ -71,6 +71,8 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
     }
   }
 
+  // exports the data to a JSON file, unmarshall the configuration state object
+  // before exporting it
   const exportData = async () => {
     try {
       await configurationSchema.validate(conf);
@@ -81,7 +83,9 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
       setShowModal(true);
       return;
     }
-    const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(JSON.stringify(conf))}`;
+    const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(
+      JSON.stringify(unmarshallConfig(conf))
+    )}`;
     const link = document.createElement('a');
     link.href = jsonString;
     link.download = 'election_configuration.json';

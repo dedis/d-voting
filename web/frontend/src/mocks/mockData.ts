@@ -56,6 +56,7 @@ const mockElection1: any = {
           MaxLength: 20,
           MaxN: 2,
           MinN: 1,
+          Regex: '',
           Choices: ['TA1', 'TA2'],
         },
       ],

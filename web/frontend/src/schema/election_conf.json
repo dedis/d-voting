@@ -25,10 +25,6 @@
               "properties": {
                 "ID": { "type": "string" },
                 "Title": { "type": "string" },
-                "Order": {
-                  "type": "array",
-                  "items": { "type": "string" }
-                },
                 "MaxN": { "type": "number" },
                 "MinN": { "type": "number" },
                 "Choices": {
@@ -47,10 +43,6 @@
               "properties": {
                 "ID": { "type": "string" },
                 "Title": { "type": "string" },
-                "Order": {
-                  "type": "array",
-                  "items": { "type": "string" }
-                },
                 "MaxN": { "type": "number" },
                 "MinN": { "type": "number" },
                 "Choices": {
@@ -69,10 +61,6 @@
               "properties": {
                 "ID": { "type": "string" },
                 "Title": { "type": "string" },
-                "Order": {
-                  "type": "array",
-                  "items": { "type": "string" }
-                },
                 "MaxN": { "type": "number" },
                 "MinN": { "type": "number" },
                 "Regex": { "type": "string" },
@@ -82,7 +70,7 @@
                   "items": { "type": "string" }
                 }
               },
-              "required": ["ID", "Title", "MaxN", "MinN", "MaxLength", "Choices"],
+              "required": ["ID", "Title", "MaxN", "MinN", "Regex", "MaxLength", "Choices"],
               "additionalProperties": false
             }
           }

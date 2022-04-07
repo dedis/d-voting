@@ -3,7 +3,6 @@ import { Configuration, Rank, Select, Subject, Text } from 'types/configuration'
 const marshallText: (text: any) => Text = (text) => {
   return {
     ...text,
-    Regex: text.Regex ? text.Regex : '',
     Type: 'TEXT',
   };
 };

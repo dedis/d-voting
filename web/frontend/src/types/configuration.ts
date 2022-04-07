@@ -13,7 +13,7 @@ interface Question {
 interface Text extends Question {
   Type: 'TEXT';
   MaxLength: number;
-  Regex?: string;
+  Regex: string;
 }
 
 // Select describes a "select" question, which requires the user to select one

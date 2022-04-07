@@ -288,7 +288,7 @@ const textsSchema = yup.object({
       },
     })
     .required(),
-  Regex: yup.string(),
+  Regex: yup.string().min(0),
   Choices: yup
     .array()
     .of(yup.string())
