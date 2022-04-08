@@ -10,7 +10,7 @@ const ElectionCreate: FC = () => {
   const [textModal, setTextModal] = useState('');
 
   return (
-    <div className="create-election-wrapper">
+    <div className="mx-4">
       <Modal
         showModal={showModal}
         setShowModal={setShowModal}
@@ -22,9 +22,7 @@ const ElectionCreate: FC = () => {
       </h1>
       <p className="py-5">{t('create')}</p>
 
-      <div className="election-form flex flex-row justify-center items-start">
-        <ElectionForm setShowModal={setShowModal} setTextModal={setTextModal} />
-      </div>
+      <ElectionForm setShowModal={setShowModal} setTextModal={setTextModal} />
     </div>
   );
 };
