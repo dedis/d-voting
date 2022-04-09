@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import useFetchCall from '../../../components/utils/useFetchCall';
 import { ENDPOINT_EVOTING_GET_ALL } from '../../../components/utils/Endpoints';
+import { GetAllElections, LightElectionInfo } from 'types/frontendRequestBody';
 
 type SimpleTableProps = {
   statusToKeep: number;
@@ -31,17 +32,17 @@ const SimpleTable: FC<SimpleTableProps> = ({
   };
   const [fetchedData, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, fetchRequest);
 
-  const ballotsToDisplay = (elections) => {
+  const ballotsToDisplay = (elections: GetAllElections) => {
     let dataToDisplay = [];
-    elections.forEach((elec) => {
-      if (elec.Status === statusToKeep) {
-        dataToDisplay.push([elec.Title, elec.ElectionID]);
+    elections.forEach((election) => {
+      if (election.Status === statusToKeep) {
+        dataToDisplay.push(election);
       }
     });
     return dataToDisplay;
   };
 
-  const displayBallotTable = (data) => {
+  const displayBallotTable = (data: LightElectionInfo[]) => {
     if (data.length > 0) {
       return (
         <div className="flex flex-col content-center items-center">
@@ -56,19 +57,20 @@ const SimpleTable: FC<SimpleTableProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {data.map((row) => {
+                {data.map((election) => {
                   return (
-                    <tr className="block bg-white border-b  hover:bg-gray-50 " key={row}>
+                    <tr
+                      className="block bg-white border-b  hover:bg-gray-50 "
+                      key={election.ElectionID}>
                       <th
                         scope="row"
-                        className="px-6 py-4 font-medium text-gray-500  whitespace-nowrap"
-                        key={row[1]}>
+                        className="px-6 py-4 font-medium text-gray-500  whitespace-nowrap">
                         <Link
                           className="block text-gray-500"
                           to={{
-                            pathname: `${pathLink}/${row[1]}`,
+                            pathname: `${pathLink}/${election.ElectionID}`,
                           }}>
-                          {row[0]}
+                          {election.Title}
                         </Link>
                       </th>
                     </tr>

@@ -13,7 +13,11 @@ import {
   ENDPOINT_PERSONAL_INFO,
 } from '../components/utils/Endpoints';
 
-import { CreateElectionBody, GetElectionBody } from '../types/frontendRequestBody';
+import {
+  CreateElectionBody,
+  CreateElectionCastVote,
+  GetElectionBody,
+} from '../types/frontendRequestBody';
 import { mockElection1, mockElection2 } from './mockData';
 
 const uid = new ShortUniqueId({ length: 8 });
@@ -27,6 +31,8 @@ var mockElections = [
     Pubkey: 'XL4V6EMIICW',
     Result: [],
     Format: unmarshalConfig(mockElection1),
+    BallotSize: 174,
+    ChunksPerBallot: 6,
   },
   {
     ElectionID: uid(),
@@ -35,6 +41,8 @@ var mockElections = [
     Pubkey: 'XL4V6EMIICW',
     Result: [],
     Format: unmarshalConfig(mockElection2),
+    BallotSize: 174,
+    ChunksPerBallot: 6,
   },
 ];
 
@@ -105,6 +113,8 @@ export const handlers = [
         Pubkey: 'DEAEV6EMII',
         Result: [],
         Format: format,
+        BallotSize: 290,
+        ChunksPerBallot: 10,
       };
       mockElections.push(newElection);
       return newElection.ElectionID;
@@ -119,39 +129,13 @@ export const handlers = [
   }),
 
   rest.post(ENDPOINT_EVOTING_CAST_BALLOT, (req, res, ctx) => {
-    const body: GetElectionBody = JSON.parse(req.body.toString());
+    const body: CreateElectionCastVote = JSON.parse(req.body.toString());
 
     return res(
       ctx.status(200),
       ctx.json({
-        ElectionID: body.ElectionID,
-        UserID: mockUserID,
-        Ballot: [
-          {
-            K: 'KValue',
-            C: 'CValue',
-          },
-          {
-            K: 'KValue',
-            C: 'CValue',
-          },
-          {
-            K: 'KValue',
-            C: 'CValue',
-          },
-          {
-            K: 'KValue',
-            C: 'CValue',
-          },
-          {
-            K: 'KValue',
-            C: 'CValue',
-          },
-          {
-            K: 'KValue',
-            C: 'CValue',
-          },
-        ],
+        UserID: body.UserID,
+        Ballot: body.Ballot,
       })
     );
   }),

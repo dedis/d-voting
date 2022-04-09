@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Answers, Configuration, ID, Subject, SubjectElement } from 'types/configuration';
+import { Answers, Configuration, ID, Subject } from 'types/configuration';
 import { subjectFromJSON } from 'types/JSONparser';
 
 // Take a JSON object and unmarshal it into a Configuration

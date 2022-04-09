@@ -4,8 +4,8 @@ import {
   RANK,
   RankQuestion,
   SELECT,
-  SelectQuestion,
   SUBJECT,
+  SelectQuestion,
   Subject,
   TEXT,
   TextQuestion,
@@ -62,14 +62,15 @@ const newText: () => TextQuestion = () => {
   };
 };
 
-// Create a deep copy of an answer
+// Create a deep copy of the answers
 const answersFrom = (answers: Answers) => {
-  return {
+  let newAnswers: Answers = {
     SelectAnswers: new Map(answers.SelectAnswers),
     RankAnswers: new Map(answers.RankAnswers),
     TextAnswers: new Map(answers.TextAnswers),
     Errors: new Map(answers.Errors),
   };
+  return newAnswers;
 };
 
 export { newSubject, newRank, newSelect, newText, answersFrom };
