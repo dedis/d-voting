@@ -11,7 +11,7 @@ import UploadFile from './UploadFile';
 
 import configurationSchema from '../../../schema/configurationValidation';
 import { Configuration, ID, Subject } from '../../../types/configuration';
-import { newSubject } from '../../../types/getObjectType';
+import { emptyConfiguration, newSubject } from '../../../types/getObjectType';
 import { marshalConfig } from '../../../types/JSONparser';
 
 // notifyParent must be used by the child to tell the parent if the subject's
@@ -29,7 +29,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
   // conf is the configuration object containing MainTitle and Scaffold which
   // contains an array of subject.
   const { t } = useTranslation();
-  const emptyConf: Configuration = { MainTitle: '', Scaffold: [] };
+  const emptyConf: Configuration = emptyConfiguration();
   const [conf, setConf] = useState<Configuration>(emptyConf);
   const { MainTitle, Scaffold } = conf;
 

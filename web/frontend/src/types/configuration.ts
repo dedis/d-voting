@@ -38,10 +38,6 @@ interface SelectQuestion extends SubjectElement {
 interface Subject extends SubjectElement {
   Order: Array<ID>;
   Elements: Map<ID, SubjectElement>;
-  Subjects: Subject[];
-  Selects: SelectQuestion[];
-  Ranks: RankQuestion[];
-  Texts: TextQuestion[];
 }
 
 // Configuration contains the configuration of a new poll.

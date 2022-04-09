@@ -6,9 +6,10 @@ import {
   RANK,
   RankQuestion,
   SELECT,
-  SelectQuestion,
   SUBJECT,
+  SelectQuestion,
   Subject,
+  SubjectElement,
   TEXT,
   TextQuestion,
 } from '../../../types/configuration';
@@ -37,7 +38,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
   const isSubjectMounted = useRef<Boolean>(false);
   const [components, setComponents] = useState<ReactElement[]>([]);
 
-  const { Title, Subjects, Ranks, Selects, Texts, Order } = subject;
+  const { Title, Order, Elements } = subject;
 
   // When a property changes, we notify the parent with the new subject object
   useEffect(() => {
@@ -51,104 +52,65 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
   }, [subject]);
 
   const localNotifyParent = (subj: Subject) => {
-    const newSubjects = [...Subjects];
-    newSubjects[newSubjects.findIndex((s) => s.ID === subj.ID)] = subj;
-    setSubject({ ...subject, Subjects: newSubjects, Title });
+    const newElements = new Map(Elements);
+    newElements.set(subj.ID, subj);
+    setSubject({ ...subject, Elements: newElements, Title });
   };
 
-  const notifySubject = (question: RankQuestion | SelectQuestion | TextQuestion) => {
+  const notifySubject = (question: SubjectElement) => {
+    const newElements = new Map(Elements);
+
     switch (question.Type) {
       case RANK:
         const r = question as RankQuestion;
-        const newRanks = [...Ranks];
-        newRanks[newRanks.findIndex((rank) => rank.ID === r.ID)] = r;
-        setSubject({ ...subject, Ranks: newRanks });
+        newElements.set(r.ID, r);
         break;
       case SELECT:
         const s = question as SelectQuestion;
-        const newSelects = [...Selects];
-        newSelects[newSelects.findIndex((select) => select.ID === s.ID)] = s;
-        setSubject({ ...subject, Selects: newSelects });
+        newElements.set(s.ID, s);
         break;
       case TEXT:
         const t = question as TextQuestion;
-        const newTexts = [...Texts];
-        newTexts[newTexts.findIndex((text) => text.ID === t.ID)] = t;
-        setSubject({ ...subject, Texts: newTexts });
+        newElements.set(t.ID, t);
         break;
       default:
         break;
     }
+
+    setSubject({ ...subject, Elements: newElements });
   };
 
   const addSubject = () => {
-    const newSubjects = [...Subjects];
+    const newElements = new Map(Elements);
     const newSubj = newSubject();
-    newSubjects.push(newSubj);
-    setSubject({ ...subject, Subjects: newSubjects, Order: [...Order, newSubj.ID] });
+    newElements.set(newSubj.ID, newSubj);
+    setSubject({ ...subject, Elements: newElements, Order: [...Order, newSubj.ID] });
   };
 
-  const addQuestion = (question: RankQuestion | SelectQuestion | TextQuestion) => {
-    switch (question.Type) {
-      case RANK:
-        const r = question as RankQuestion;
-        const newRanks = [...Ranks];
-        newRanks.push(r);
-        setSubject({ ...subject, Ranks: newRanks, Order: [...Order, r.ID] });
-        break;
-      case TEXT:
-        const t = question as TextQuestion;
-        const newTexts = [...Texts];
-        newTexts.push(t);
-        setSubject({ ...subject, Texts: newTexts, Order: [...Order, t.ID] });
-        break;
-      case SELECT:
-        const s = question as SelectQuestion;
-        const newSelects = [...Selects];
-        newSelects.push(s);
-        setSubject({ ...subject, Selects: newSelects, Order: [...Order, s.ID] });
-        break;
-      default:
-        break;
-    }
+  const addQuestion = (question: SubjectElement) => {
+    const newElements = new Map(Elements);
+    newElements.set(question.ID, question);
+    setSubject({ ...subject, Elements: newElements, Order: [...Order, question.ID] });
   };
 
   const localRemoveSubject = (subjID: ID) => () => {
-    const newSubjects = [...Subjects];
+    const newElements = new Map(Elements);
+    newElements.delete(subjID);
     setSubject({
       ...subject,
-      Subjects: newSubjects.filter((subj) => subj.ID !== subjID),
+      Elements: newElements,
       Order: Order.filter((id) => id !== subjID),
     });
   };
 
-  const removeChildQuestion = (question: RankQuestion | SelectQuestion | TextQuestion) => () => {
-    const targetID = question.ID;
-    switch (question.Type) {
-      case RANK:
-        setSubject({
-          ...subject,
-          Ranks: Ranks.filter((rank) => rank.ID !== targetID),
-          Order: Order.filter((id) => id !== targetID),
-        });
-        break;
-      case TEXT:
-        setSubject({
-          ...subject,
-          Texts: Texts.filter((text) => text.ID !== targetID),
-          Order: Order.filter((id) => id !== targetID),
-        });
-        break;
-      case SELECT:
-        setSubject({
-          ...subject,
-          Selects: Selects.filter((select) => select.ID !== targetID),
-          Order: Order.filter((id) => id !== targetID),
-        });
-        break;
-      default:
-        break;
-    }
+  const removeChildQuestion = (question: SubjectElement) => () => {
+    const newElements = new Map(Elements);
+    newElements.delete(question.ID);
+    setSubject({
+      ...subject,
+      Elements: newElements,
+      Order: Order.filter((id) => id !== question.ID),
+    });
   };
 
   // Sorts the questions components & sub-subjects according to their Order into
@@ -157,17 +119,11 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
     // findQuestion return the react element based on the question/subject ID.
     // Returns undefined if the question/subject ID is unknown.
     const findQuestion = (id: ID): ReactElement => {
-      const all: (Subject | TextQuestion | SelectQuestion | RankQuestion)[] = [
-        ...Subjects,
-        ...Texts,
-        ...Selects,
-        ...Ranks,
-      ];
-      const found = all.find((el) => el.ID === id);
-
-      if (found === undefined) {
+      if (!Elements.has(id)) {
         return undefined;
       }
+
+      const found = Elements.get(id);
 
       switch (found.Type) {
         case TEXT:
@@ -217,7 +173,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
     setComponents(Order.map((id) => findQuestion(id)));
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [Title, Subjects, Ranks, Selects, Texts, Order, nestedLevel]);
+  }, [Title, Elements, Order, nestedLevel]);
 
   return (
     <div className="ml-4 mb-4 mr-2 shadow-lg rounded-md">

@@ -7,7 +7,13 @@ import { ChevronUpIcon } from '@heroicons/react/solid';
 import useQuestionForm from './utils/useQuestionForm';
 
 import PropTypes from 'prop-types';
-import { RankQuestion, SelectQuestion, TEXT, TextQuestion } from 'types/configuration';
+import {
+  RankQuestion,
+  SelectQuestion,
+  SubjectElement,
+  TEXT,
+  TextQuestion,
+} from 'types/configuration';
 
 type QuestionProps = {
   question: RankQuestion | SelectQuestion | TextQuestion;
@@ -41,7 +47,7 @@ const Question: FC<QuestionProps> = ({ question, notifyParent, removeQuestion })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [values]);
 
-  const showExtraFields = (quest: RankQuestion | SelectQuestion | TextQuestion) => {
+  const showExtraFields = (quest: SubjectElement) => {
     switch (quest.Type) {
       case TEXT:
         const t = question as TextQuestion;

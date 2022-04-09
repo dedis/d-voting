@@ -41,7 +41,7 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
 
     newAnswers.Errors.set(text.ID, '');
 
-    if (text.Regex != '') {
+    if (text.Regex !== '') {
       const regexp = new RegExp(text.Regex);
       for (const answer of textAnswers) {
         if (!regexp.test(answer) && answer !== '') {
