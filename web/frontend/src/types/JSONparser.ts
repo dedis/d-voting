@@ -39,22 +39,22 @@ const unmarshalSubject = (subjectObj: any): Subject => {
   const elements = new Map<ID, SubjectElement>();
 
   for (const subSubjectObj of subjectObj.Subjects) {
-    let subSubject = unmarshalSubject(subSubjectObj);
+    const subSubject = unmarshalSubject(subSubjectObj);
     elements.set(subSubject.ID, subSubject);
   }
 
   for (const rankObj of subjectObj.Ranks) {
-    let rank = unmarshalRank(rankObj);
+    const rank = unmarshalRank(rankObj);
     elements.set(rank.ID, rank);
   }
 
   for (const textObj of subjectObj.Texts) {
-    let text = unmarshalText(textObj);
+    const text = unmarshalText(textObj);
     elements.set(text.ID, text);
   }
 
   for (const selectObj of subjectObj.Selects) {
-    let select = unmarshalSelect(selectObj);
+    const select = unmarshalSelect(selectObj);
     elements.set(select.ID, select);
   }
 
@@ -71,26 +71,26 @@ const unmarshalSubjectAndCreateAnswers = (subjectObj: any, answerMap: Answers): 
   const elements = new Map<ID, SubjectElement>();
 
   for (const subSubjectObj of subjectObj.Subjects) {
-    let subSubject = unmarshalSubjectAndCreateAnswers(subSubjectObj, answerMap);
+    const subSubject = unmarshalSubjectAndCreateAnswers(subSubjectObj, answerMap);
     elements.set(subSubject.ID, subSubject);
   }
 
   for (const rankObj of subjectObj.Ranks) {
-    let rank = unmarshalRank(rankObj);
+    const rank = unmarshalRank(rankObj);
     elements.set(rank.ID, rank);
     answerMap.RankAnswers.set(rank.ID, Array.from(Array(rank.Choices.length).keys()));
     answerMap.Errors.set(rank.ID, '');
   }
 
   for (const selectObj of subjectObj.Selects) {
-    let select = unmarshalSelect(selectObj);
+    const select = unmarshalSelect(selectObj);
     elements.set(select.ID, select);
     answerMap.SelectAnswers.set(select.ID, new Array<boolean>(select.Choices.length).fill(false));
     answerMap.Errors.set(select.ID, '');
   }
 
   for (const textObj of subjectObj.Texts) {
-    let text = unmarshalText(textObj);
+    const text = unmarshalText(textObj);
     elements.set(text.ID, text);
     answerMap.TextAnswers.set(text.ID, new Array<string>(text.Choices.length).fill(''));
     answerMap.Errors.set(text.ID, '');
@@ -114,8 +114,8 @@ const unmarshalConfig = (json: any): Configuration => {
 const unmarshalConfigAndCreateAnswers = (
   configObj: any
 ): { newConfiguration: Configuration; newAnswers: Answers } => {
-  let scaffold = new Array<Subject>();
-  let newAnswers: Answers = {
+  const scaffold = new Array<Subject>();
+  const newAnswers: Answers = {
     SelectAnswers: new Map<ID, boolean[]>(),
     RankAnswers: new Map<ID, number[]>(),
     TextAnswers: new Map<ID, string[]>(),
@@ -127,7 +127,7 @@ const unmarshalConfigAndCreateAnswers = (
     scaffold.push(subject);
   }
 
-  let newConfiguration = { ...configObj, Scaffold: scaffold };
+  const newConfiguration = { ...configObj, Scaffold: scaffold };
 
   return { newConfiguration, newAnswers };
 };

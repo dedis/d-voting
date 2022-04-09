@@ -83,10 +83,10 @@ const toArraysOfSubjectElement = (
   textQuestion: TextQuestion[];
   subjects: Subject[];
 } => {
-  let rankQuestion: RankQuestion[] = new Array<RankQuestion>();
-  let selectQuestion: SelectQuestion[] = new Array<SelectQuestion>();
-  let textQuestion: TextQuestion[] = new Array<TextQuestion>();
-  let subjects: Subject[] = new Array<Subject>();
+  const rankQuestion: RankQuestion[] = new Array<RankQuestion>();
+  const selectQuestion: SelectQuestion[] = new Array<SelectQuestion>();
+  const textQuestion: TextQuestion[] = new Array<TextQuestion>();
+  const subjects: Subject[] = new Array<Subject>();
 
   elements.forEach((element) => {
     switch (element.Type) {

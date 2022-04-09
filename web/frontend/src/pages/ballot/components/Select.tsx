@@ -13,16 +13,16 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers }) => {
   const { t } = useTranslation();
 
   const handleChecks = (e: React.ChangeEvent<HTMLInputElement>, choiceIndex: number) => {
-    let newAnswers = answersFrom(answers);
+    const newAnswers = answersFrom(answers);
     let selectAnswers = newAnswers.SelectAnswers.get(select.ID);
 
     if (select.MaxN === 1) {
       selectAnswers = new Array<boolean>(select.Choices.length).fill(false);
     }
-    // TODO check that this does update the mapping
+
     selectAnswers[choiceIndex] = e.target.checked;
     newAnswers.SelectAnswers.set(select.ID, selectAnswers);
-    let numAnswer = selectAnswers.filter((check: boolean) => check === true).length;
+    const numAnswer = selectAnswers.filter((check: boolean) => check === true).length;
 
     if (numAnswer >= select.MinN && numAnswer < select.MaxN + 1) {
       newAnswers.Errors.set(select.ID, '');
@@ -35,8 +35,8 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers }) => {
 
   const hintDisplay = () => {
     let hint = '';
-    let max = select.MaxN;
-    let min = select.MinN;
+    const max = select.MaxN;
+    const min = select.MinN;
 
     if (max === min) {
       hint =

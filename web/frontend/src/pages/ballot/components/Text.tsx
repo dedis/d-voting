@@ -15,8 +15,8 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
 
   const hintDisplay = () => {
     let hint = '';
-    let min = text.MinN;
-    let max = text.MaxN;
+    const min = text.MinN;
+    const max = text.MaxN;
 
     if (min !== max) {
       hint =
@@ -33,9 +33,9 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
   };
 
   const handleTextInput = (e: React.ChangeEvent<HTMLInputElement>, choiceIndex: number) => {
-    let newAnswers = answersFrom(answers);
+    const newAnswers = answersFrom(answers);
 
-    let textAnswers = newAnswers.TextAnswers.get(text.ID);
+    const textAnswers = newAnswers.TextAnswers.get(text.ID);
     textAnswers[choiceIndex] = e.target.value.trim();
     newAnswers.TextAnswers.set(text.ID, textAnswers);
 
@@ -70,7 +70,7 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
   };
 
   useEffect(() => {
-    let newCount = new Array<number>();
+    const newCount = new Array<number>();
     answers.TextAnswers.get(text.ID).map((answer) => newCount.push(answer.length));
     setCharCounts(newCount);
   }, [answers]);
@@ -98,12 +98,7 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
       <h3 className="text-lg text-gray-600">{text.Title}</h3>
       {hintDisplay()}
       <div className="sm:pl-8 mt-2 pl-6">
-        {text.Choices.map((choice) =>
-          choiceDisplay(
-            choice,
-            text.Choices.findIndex((c: string) => c === choice)
-          )
-        )}
+        {text.Choices.map((choice, index) => choiceDisplay(choice, index))}
       </div>
       <div className="text-red-600 text-sm py-2 sm:pl-2 pl-1">{answers.Errors.get(text.ID)}</div>
     </div>

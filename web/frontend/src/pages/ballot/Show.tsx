@@ -67,7 +67,7 @@ const Ballot: FC = () => {
   }, [postError, t]);
 
   const hexToBytes = (hex: string) => {
-    let bytes: number[] = [];
+    const bytes: number[] = [];
     for (let c = 0; c < hex.length; c += 2) {
       bytes.push(parseInt(hex.substr(c, 2), 16));
     }
@@ -75,7 +75,7 @@ const Ballot: FC = () => {
   };
 
   const createBallot = (EGPairs: Array<Buffer[]>) => {
-    let vote = [];
+    const vote = [];
     EGPairs.forEach(([K, C]) => vote.push({ K: Array.from(K), C: Array.from(C) }));
     return {
       ElectionID: electionID,
@@ -85,14 +85,14 @@ const Ballot: FC = () => {
   };
 
   const sendBallot = async () => {
-    let ballotChunks = voteEncode(answers, ballotSize, chunksPerBallot);
-    let EGPairs = Array<Buffer[]>();
+    const ballotChunks = voteEncode(answers, ballotSize, chunksPerBallot);
+    const EGPairs = Array<Buffer[]>();
     ballotChunks.forEach((chunk) =>
       EGPairs.push(encryptVote(chunk, Buffer.from(hexToBytes(pubKey).buffer), edCurve))
     );
     //sending the ballot to evoting server
-    let ballot = createBallot(EGPairs);
-    let newRequest = {
+    const ballot = createBallot(EGPairs);
+    const newRequest = {
       method: 'POST',
       body: JSON.stringify(ballot),
     };
@@ -123,7 +123,7 @@ const Ballot: FC = () => {
   };
 
   const SubjectTree = (subjectElement: SubjectElement) => {
-    let subject = subjectElement as Subject;
+    const subject = subjectElement as Subject;
 
     return (
       <div className="sm:px-8 pl-2" key={subject.ID}>
