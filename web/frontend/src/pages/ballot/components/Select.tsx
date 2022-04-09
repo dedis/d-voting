@@ -1,6 +1,7 @@
 import { FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Answers, SelectQuestion, answersFrom } from 'types/configuration';
+import { Answers, SelectQuestion } from 'types/configuration';
+import { answersFrom } from 'types/getObjectType';
 
 type SelectProps = {
   select: SelectQuestion;

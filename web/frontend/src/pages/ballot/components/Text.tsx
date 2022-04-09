@@ -1,6 +1,7 @@
 import { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Answers, TextQuestion, answersFrom } from 'types/configuration';
+import { Answers, TextQuestion } from 'types/configuration';
+import { answersFrom } from 'types/getObjectType';
 
 type TextProps = {
   text: TextQuestion;

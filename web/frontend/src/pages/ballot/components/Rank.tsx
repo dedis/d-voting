@@ -1,6 +1,7 @@
 import { FC } from 'react';
 import { Draggable, DropResult, Droppable } from 'react-beautiful-dnd';
-import { Answers, ID, RankQuestion, answersFrom } from 'types/configuration';
+import { Answers, ID, RankQuestion } from 'types/configuration';
+import { answersFrom } from 'types/getObjectType';
 
 export const handleOnDragEnd = (
   result: DropResult,

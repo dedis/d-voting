@@ -9,8 +9,8 @@ import {
   Subject,
   TEXT,
   TextQuestion,
-  answersFrom,
 } from 'types/configuration';
+import { answersFrom } from 'types/getObjectType';
 
 function isSelectAnswerValid(
   selectQuestion: SelectQuestion,

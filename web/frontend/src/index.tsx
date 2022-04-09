@@ -36,6 +36,12 @@ export interface FlashState {
   addMessage(msg: string, level: number): void;
 }
 
+export const enum FlashLevel {
+  Info = 1,
+  Warning,
+  Error,
+}
+
 // FlashMessage defines the structure of a flash.
 class FlashMessage {
   text: string;

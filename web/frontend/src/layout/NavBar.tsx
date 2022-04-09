@@ -14,7 +14,7 @@ import {
 import logoWhite from '../assets/logo-white.png';
 import { LanguageSelector } from '../language';
 import { default as ProfilePicture } from '../components/ProfilePicture';
-import { AuthContext, FlashContext } from '..';
+import { AuthContext, FlashContext, FlashLevel } from '..';
 import handleLogin from 'pages/session/HandleLogin';
 
 const NavBar: FC = () => {
@@ -46,9 +46,9 @@ const NavBar: FC = () => {
 
     const res = await fetch(ENDPOINT_LOGOUT, opts);
     if (res.status !== 200) {
-      fctx.addMessage('failed to logout: ' + res.statusText, 3);
+      fctx.addMessage(t('logOutError', { error: res.statusText }), FlashLevel.Error);
     } else {
-      fctx.addMessage('logout successful', 1);
+      fctx.addMessage(t('logOutSuccessful'), FlashLevel.Info);
     }
 
     authCtx.isLogged = false;

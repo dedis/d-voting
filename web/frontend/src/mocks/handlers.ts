@@ -1,9 +1,11 @@
 import { rest } from 'msw';
-import { mockElection1, mockElection2 } from './mockData';
+import { unmarshalConfig } from 'types/JSONparser';
+import ShortUniqueId from 'short-unique-id';
 import { ROUTE_LOGGED } from 'Routes';
 
 import {
   ENDPOINT_EVOTING_CAST_BALLOT,
+  ENDPOINT_EVOTING_CREATE,
   ENDPOINT_EVOTING_GET_ALL,
   ENDPOINT_EVOTING_GET_ELECTION,
   ENDPOINT_GET_TEQ_KEY,
@@ -11,33 +13,28 @@ import {
   ENDPOINT_PERSONAL_INFO,
 } from '../components/utils/Endpoints';
 
-var mockUserID = 561934;
+import { CreateElectionBody, GetElectionBody } from '../types/frontendRequestBody';
+import { mockElection1, mockElection2 } from './mockData';
 
-interface GetElectionBody {
-  ElectionID: string;
-  Token: string;
-}
+const uid = new ShortUniqueId({ length: 8 });
+const mockUserID = 561934;
 
 var mockElections = [
   {
-    ElectionID: 'election ID1',
+    ElectionID: uid(),
     Title: 'Title Election 1',
     Status: 1,
     Pubkey: 'XL4V6EMIICW',
-    BallotSize: 174,
-    ChunksPerBallot: 6,
     Result: [],
-    Configuration: mockElection1,
+    Format: unmarshalConfig(mockElection1),
   },
   {
-    ElectionID: 'election ID2',
+    ElectionID: uid(),
     Title: 'Title Election 2',
     Status: 1,
     Pubkey: 'XL4V6EMIICW',
-    BallotSize: 174,
-    ChunksPerBallot: 6,
     Result: [],
-    Configuration: mockElection2,
+    Format: unmarshalConfig(mockElection2),
   },
 ];
 
@@ -94,6 +91,30 @@ export const handlers = [
     return res(
       ctx.status(200),
       ctx.json(mockElections.find((election) => election.ElectionID === body.ElectionID))
+    );
+  }),
+
+  rest.post(ENDPOINT_EVOTING_CREATE, (req, res, ctx) => {
+    const body: CreateElectionBody = JSON.parse(req.body.toString());
+
+    const createElection = (format: any) => {
+      const newElection = {
+        ElectionID: uid(),
+        Title: format.MainTitle,
+        Status: 1,
+        Pubkey: 'DEAEV6EMII',
+        Result: [],
+        Format: format,
+      };
+      mockElections.push(newElection);
+      return newElection.ElectionID;
+    };
+
+    return res(
+      ctx.status(200),
+      ctx.json({
+        ElectionID: createElection(body.Format),
+      })
     );
   }),
 
