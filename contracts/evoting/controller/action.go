@@ -245,14 +245,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		AdminID:       "adminId",
 	}
 
-
-
-
-
 	js, err := json.Marshal(createSimpleElectionRequest)
+	if err != nil {
+		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
+	}
 
-	
-	
 	signReq , err := makeSignedMessage(js)
 	if err != nil {
 		return xerrors.Errorf("failed to sign the request : %v", err)
