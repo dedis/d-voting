@@ -8,10 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"encoding/base64"
-
-
-
-
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	uuid "github.com/satori/go.uuid"
@@ -19,8 +15,6 @@ import (
 	"go.dedis.ch/dela/serde"
 	"golang.org/x/xerrors"
 	"go.dedis.ch/kyber/v3/sign/schnorr"
-
-
 )
 
 
@@ -47,19 +41,15 @@ func (h *votingProxy) Login(w http.ResponseWriter, r *http.Request) {
 
 // CreateElection allows creating an election.
 func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
-	
-	decoded_request := handleSignReq(w,r)
-
-
+	decodedRequest := handleSignReq(w,r)
 	req := &types.CreateElectionRequest{}
 
-	err := json.Unmarshal(decoded_request,req)
+	err := json.Unmarshal(decodedRequest,req)
 	if err != nil {
 		http.Error(w, "failed to decode CreateElectionRequest: "+err.Error(),
 			http.StatusBadRequest)
 		return
 	}
-
 
 	createElection := types.CreateElection{
 		Configuration: req.Configuration,
@@ -100,11 +90,10 @@ func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
 // the DKG actor.
 // Body: hex-encoded electionID
 func (h *votingProxy) OpenElection(w http.ResponseWriter, r *http.Request) {
-	
-	decoded_request := handleSignReq(w,r)
+	decodedRequest := handleSignReq(w,r)
 
 	// hex-encoded string
-	electionID := string(decoded_request)
+	electionID := string(decodedRequest)
 
 	// sanity check that it is a hex-encoded string
 	_, err := hex.DecodeString(electionID)
@@ -135,15 +124,10 @@ func (h *votingProxy) OpenElection(w http.ResponseWriter, r *http.Request) {
 
 // CastVote is used to cast a vote in an election.
 func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
-	
 	req := &types.CastVoteRequest{}
+	decodedRequest := handleSignReq(w,r)
 
-
-	decoded_request := handleSignReq(w,r)
-
-
-	err := json.Unmarshal(decoded_request,req)
-
+	err := json.Unmarshal(decodedRequest,req)
 	if err != nil {
 		http.Error(w, "failed to decode CastVoteRequest: "+err.Error(),
 			http.StatusBadRequest)
@@ -213,11 +197,9 @@ func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
 // ElectionIDs returns a list of all election IDs.
 func (h *votingProxy) ElectionIDs(w http.ResponseWriter, r *http.Request) {
 	req := &types.GetAllElectionsIDsRequest{}
+	decodedRequest := handleSignReq(w,r)
 
-	decoded_request := handleSignReq(w,r)
-
-	err := json.Unmarshal(decoded_request,req)
-
+	err := json.Unmarshal(decodedRequest,req)
 	if err != nil {
 		http.Error(w, "failed to decode GetElectionInfoRequest: "+err.Error(),
 			http.StatusBadRequest)
@@ -243,20 +225,15 @@ func (h *votingProxy) ElectionIDs(w http.ResponseWriter, r *http.Request) {
 
 // ElectionInfo returns the information for a given election.
 func (h *votingProxy) ElectionInfo(w http.ResponseWriter, r *http.Request) {
-	
 	req := &types.GetElectionInfoRequest{}
+	decodedRequest := handleSignReq(w,r)
 
-	decoded_request := handleSignReq(w,r)
-
-
-	err := json.Unmarshal(decoded_request,req)
-
+	err := json.Unmarshal(decodedRequest,req)
 	if err != nil {
 		http.Error(w, "failed to decode GetElectionInfoRequest: "+err.Error(),
 			http.StatusBadRequest)
 		return
 	}
-
 
 	election, err := getElection(h.context, h.electionFac, req.ElectionID, h.orderingSvc)
 	if err != nil {
@@ -296,10 +273,10 @@ func (h *votingProxy) ElectionInfo(w http.ResponseWriter, r *http.Request) {
 
 // AllElectionInfo returns the information for all elections.
 func (h *votingProxy) AllElectionInfo(w http.ResponseWriter, r *http.Request) {
-	decoded_request := handleSignReq(w,r)
+	decodedRequest := handleSignReq(w,r)
 	req := &types.GetAllElectionsInfoRequest{}
-	err := json.Unmarshal(decoded_request,req)
 
+	err := json.Unmarshal(decodedRequest,req)
 	if err != nil {
 		http.Error(w, "failed to decode GetAllElectionsInfoRequest: "+err.Error(),
 			http.StatusBadRequest)
@@ -351,13 +328,10 @@ func (h *votingProxy) AllElectionInfo(w http.ResponseWriter, r *http.Request) {
 
 // CloseElection closes an election.
 func (h *votingProxy) CloseElection(w http.ResponseWriter, r *http.Request) {
-
 	req := &types.CloseElectionRequest{}
+	decodedRequest := handleSignReq(w,r)
 
-	decoded_request := handleSignReq(w,r)
-
-	err := json.Unmarshal(decoded_request,req)
-
+	err := json.Unmarshal(decodedRequest,req)
 	if err != nil {
 		http.Error(w, "failed to decode CloseElectionRequest: "+err.Error(),
 			http.StatusBadRequest)
@@ -406,13 +380,10 @@ func (h *votingProxy) CloseElection(w http.ResponseWriter, r *http.Request) {
 
 // ShuffleBallots shuffles the ballots in an election.
 func (h *votingProxy) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
-
 	req := &types.ShuffleBallotsRequest{}
+	decodedRequest := handleSignReq(w,r)
 
-	decoded_request := handleSignReq(w,r)
-
-	err := json.Unmarshal(decoded_request,req)
-
+	err := json.Unmarshal(decodedRequest,req)
 	if err != nil {
 		http.Error(w, "failed to decode ShuffleBallotsRequest: "+err.Error(),
 			http.StatusBadRequest)
@@ -480,19 +451,16 @@ func (h *votingProxy) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
 
 // BeginDecryption starts the decryption process by gather the pubShares
 func (h *votingProxy) BeginDecryption(w http.ResponseWriter, r *http.Request) {
-
-	decoded_request := handleSignReq(w,r)
-
+	decodedRequest := handleSignReq(w,r)
 	req := &types.BeginDecryptionRequest{}
 	
-	err :=json.Unmarshal(decoded_request,req)
+	err :=json.Unmarshal(decodedRequest,req)
 	if err != nil {
 		http.Error(w, "failed to decode BeginDecryptionRequest: "+err.Error(),
 			http.StatusBadRequest)
 		return
 	}
 	
-
 	elecMD, err := h.getElectionsMetadata()
 	if err != nil {
 		http.Error(w, "failed to get election metadata", http.StatusNotFound)
@@ -563,11 +531,9 @@ func (h *votingProxy) BeginDecryption(w http.ResponseWriter, r *http.Request) {
 // CombineShares decrypts the shuffled ballots in an election.
 func (h *votingProxy) CombineShares(w http.ResponseWriter, r *http.Request) {
 	req := &types.CombineSharesRequest{}
+	decodedRequest := handleSignReq(w,r)
 
-	decoded_request := handleSignReq(w,r)
-
-	err := json.Unmarshal(decoded_request,req)
-
+	err := json.Unmarshal(decodedRequest,req)
 	if err != nil {
 		http.Error(w, "failed to decode CombineSharesRequest: "+err.Error(),
 			http.StatusBadRequest)
@@ -634,11 +600,10 @@ func (h *votingProxy) CombineShares(w http.ResponseWriter, r *http.Request) {
 
 // ElectionResult calculates and returns the results of the election.
 func (h *votingProxy) ElectionResult(w http.ResponseWriter, r *http.Request) {
-	decoded_request := handleSignReq(w,r)
+	decodedRequest := handleSignReq(w,r)
 	req := &types.GetElectionResultRequest{}
-	err := json.Unmarshal(decoded_request,req)
 
-
+	err := json.Unmarshal(decodedRequest,req)
 	if err != nil {
 		http.Error(w, "failed to decode GetElectionResultRequest: "+err.Error(),
 			http.StatusBadRequest)
@@ -683,10 +648,10 @@ func (h *votingProxy) ElectionResult(w http.ResponseWriter, r *http.Request) {
 
 // CancelElection cancels an election.
 func (h *votingProxy) CancelElection(w http.ResponseWriter, r *http.Request) {
-	decoded_request := handleSignReq(w,r)
+	decodedRequest := handleSignReq(w,r)
 	req := new(types.CancelElectionRequest)
-	err := json.Unmarshal(decoded_request,req)
 
+	err := json.Unmarshal(decodedRequest,req)
 	if err != nil {
 		http.Error(w, "failed to decode CancelElectionRequest: "+err.Error(),
 			http.StatusBadRequest)
@@ -807,7 +772,7 @@ func getElection(ctx serde.Context, electionFac serde.Factory, electionIDHex str
 }
 
 
-func check_signature(buff string, signature []byte) error{
+func checkSignature(buff string, signature []byte) error{
 	hash256 := sha256.New()
 	hash256.Write([]byte(buff))
 	md := hash256.Sum(nil)
@@ -816,11 +781,9 @@ func check_signature(buff string, signature []byte) error{
 }
 
 func handleSignReq(w http.ResponseWriter, r *http.Request) []byte{
-
 	signreq := &types.SignRequest{}
+
 	err := json.NewDecoder(r.Body).Decode(signreq)
-	
-	
 	if err != nil {
 		http.Error(w, "failed to decode the request: "+err.Error(),
 			http.StatusBadRequest)
@@ -830,18 +793,19 @@ func handleSignReq(w http.ResponseWriter, r *http.Request) []byte{
 	buff := signreq.Payload
 	signature := signreq.Signature
 
-
-	err = check_signature(buff,signature)
-
+	err = checkSignature(buff, signature)
 	if err != nil {
 		http.Error(w, "wrong signature: "+err.Error(),
 			http.StatusBadRequest)
 		return []byte("")
 	}
 
-	
-
 	// convert from base64url
-	decoded_request, _ := base64.URLEncoding.DecodeString(buff)
-	return decoded_request
+	decodedRequest, err := base64.URLEncoding.DecodeString(buff)
+	if err != nil {
+		http.Error(w, "failed to from base64url"+err.Error(),
+			http.StatusBadRequest)
+		return []byte("")
+	}
+	return decodedRequest
 }

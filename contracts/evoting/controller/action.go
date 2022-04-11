@@ -14,12 +14,7 @@ import (
 	"time"
 	"crypto/sha256"
 	"go.dedis.ch/kyber/v3"
-	//"go.dedis.ch/kyber/v3/util/encoding"
 	"go.dedis.ch/kyber/v3/sign/schnorr"
-
-
-
-
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
@@ -258,7 +253,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	
 	
-	signReq := makeSignedMessage(js)
+	signReq , err := makeSignedMessage(js)
+	if err != nil {
+		return xerrors.Errorf("failed to sign the request : %v", err)
+	}
 
 	fmt.Fprintln(ctx.Out, "CreateElection : signature", string(signReq) )
 
@@ -387,8 +385,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	fmt.Fprintf(ctx.Out, "Open election")
 
 	
-	signReq = makeSignedMessage([]byte(electionID))
-
+	
+	signReq , err = makeSignedMessage([]byte(electionID))
+	if err != nil {
+		return xerrors.Errorf("failed to sign the request : %v", err)
+	}
 
 	fmt.Fprintln(ctx.Out, "Open election : signature", string(signReq) )
 
@@ -420,7 +421,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	signReq = makeSignedMessage(js)
+	signReq , err = makeSignedMessage(js)
+	if err != nil {
+		return xerrors.Errorf("failed to sign the request : %v", err)
+	}
 
 	resp, err = http.Post(proxyAddr1+getElectionInfoEndpoint, contentType, bytes.NewBuffer(signReq))
 	if err != nil {
@@ -468,7 +472,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 	
-	signReq = makeSignedMessage(js)
+	signReq , err = makeSignedMessage(js)
+	if err != nil {
+		return xerrors.Errorf("failed to sign the request : %v", err)
+	}
 
 
 	resp, err = http.Post(proxyAddr1+closeElectionEndpoint, contentType, bytes.NewBuffer(signReq))
@@ -636,8 +643,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	
-	signReq = makeSignedMessage(js)
-
+	signReq , err = makeSignedMessage(js)
+	if err != nil {
+		return  xerrors.Errorf("failed to sign the request : %v", err)
+	}
 
 	resp, err = http.Post(proxyAddr1+closeElectionEndpoint, contentType, bytes.NewBuffer(signReq))
 	if err != nil {
@@ -682,7 +691,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	
-	signReq = makeSignedMessage(js)
+	signReq , err = makeSignedMessage(js)
+	if err != nil {
+		return  xerrors.Errorf("failed to sign the request : %v", err)
+	}
 
 
 
@@ -734,7 +746,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	
-	signReq = makeSignedMessage(js)
+	signReq , err = makeSignedMessage(js)
+	if err != nil {
+		return xerrors.Errorf("failed to sign the request : %v", err)
+	}
 
 
 	resp, err = http.Post(proxyAddr1+beginDecryptionEndpoint, contentType, bytes.NewBuffer(signReq))
@@ -784,7 +799,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 
-	signReq = makeSignedMessage(js)
+	signReq , err = makeSignedMessage(js)
+	if err != nil {
+		return xerrors.Errorf("failed to sign the request : %v", err)
+	}
 
 
 	resp, err = http.Post(proxyAddr1+combineSharesEndpoint, contentType, bytes.NewBuffer(signReq))
@@ -831,7 +849,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 	
-	signReq = makeSignedMessage(js)
+	signReq , err = makeSignedMessage(js)
+	if err != nil {
+		return  xerrors.Errorf("failed to sign the request : %v", err)
+	}
 
 	resp, err = http.Post(proxyAddr1+getElectionResultEndpoint, contentType, bytes.NewBuffer(signReq))
 	if err != nil {
@@ -914,8 +935,10 @@ func castVote(castVoteRequest types.CastVoteRequest, proxyAddr string) (string, 
 		return "", xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
 	}
 	
-	signReq := makeSignedMessage(js)
-
+	signReq , err := makeSignedMessage(js)
+	if err != nil {
+		return "", xerrors.Errorf("failed to sign the request : %v", err)
+	}
 
 	resp, err := http.Post(proxyAddr+castVoteEndpoint, contentType, bytes.NewBuffer(signReq))
 	if err != nil {
@@ -947,23 +970,29 @@ func contains(s []string, str string) bool {
 	return false
 }
 
-func makeSignedMessage(js []byte) []byte{
+func makeSignedMessage(js []byte) ([]byte,error){
 	// Encode base64url
-	encoded_request := base64.URLEncoding.EncodeToString(js)
+	encodedRequest := base64.URLEncoding.EncodeToString(js)
  
 	// compute sha256
 	hash := sha256.New()
-	hash.Write([]byte(encoded_request))
+	hash.Write([]byte(encodedRequest))
 	md := hash.Sum(nil)
 
-	s, _ := schnorr.Sign(suite, kp.Private, md)
+	s, err := schnorr.Sign(suite, kp.Private, md)
+	if err != nil{
+		return []byte(""), xerrors.Errorf("failed to sign the request: %v", err)
+	}
 
 	//Define sign resquest 
 	sign := types.SignRequest{
-		Payload:encoded_request,
+		Payload:encodedRequest,
 		Signature:s,
 	}
-	signReq,_ :=json.Marshal(sign)
-	return signReq
+	signReq, err := json.Marshal(sign)
+	if err != nil{
+		return []byte(""), xerrors.Errorf("failed to Marshal the signature: %v", err)
+	}
+	return signReq, nil
 
 }

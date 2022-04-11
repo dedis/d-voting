@@ -17,8 +17,6 @@ type SignRequest struct{
 	Signature []byte
 }
 
-
-
 // CreateElectionRequest defines the HTTP request for creating an election
 type CreateElectionRequest struct {
 	Configuration Configuration
