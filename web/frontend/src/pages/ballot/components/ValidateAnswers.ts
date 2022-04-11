@@ -1,18 +1,9 @@
 import { t } from 'i18next';
-import {
-  Answers,
-  Configuration,
-  RANK,
-  SELECT,
-  SUBJECT,
-  SelectQuestion,
-  Subject,
-  TEXT,
-  TextQuestion,
-} from 'types/configuration';
+import { RANK, SELECT, SUBJECT, TEXT } from 'types/configuration';
+import * as types from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
 
-function isSelectAnswerValid(selectQuestion: SelectQuestion, newAnswers: Answers) {
+function selectAnswerIsValid(selectQuestion: types.SelectQuestion, newAnswers: types.Answers) {
   const numAnswer = newAnswers.SelectAnswers.get(selectQuestion.ID).filter(
     (answer) => answer === true
   ).length;
@@ -38,7 +29,7 @@ function isSelectAnswerValid(selectQuestion: SelectQuestion, newAnswers: Answers
   return isValid;
 }
 
-function isTextAnswerValid(textQuestion: TextQuestion, newAnswers: Answers) {
+function textAnswerIsValid(textQuestion: types.TextQuestion, newAnswers: types.Answers) {
   const textAnswer = newAnswers.TextAnswers.get(textQuestion.ID);
   const numAnswer = textAnswer.filter((answer) => answer !== '').length;
   let textError = newAnswers.Errors.get(textQuestion.ID);
@@ -75,7 +66,7 @@ function isTextAnswerValid(textQuestion: TextQuestion, newAnswers: Answers) {
   return isValid;
 }
 
-function isSubjectValid(subject: Subject, newAnswers: Answers) {
+function subjectIsValid(subject: types.Subject, newAnswers: types.Answers) {
   let elementIsValid = true;
   let isValid = true;
 
@@ -85,13 +76,13 @@ function isSubjectValid(subject: Subject, newAnswers: Answers) {
         // TODO: when implementing the new ranks
         break;
       case SELECT:
-        elementIsValid = isSelectAnswerValid(element as SelectQuestion, newAnswers);
+        elementIsValid = selectAnswerIsValid(element as types.SelectQuestion, newAnswers);
         break;
       case TEXT:
-        elementIsValid = isTextAnswerValid(element as TextQuestion, newAnswers);
+        elementIsValid = textAnswerIsValid(element as types.TextQuestion, newAnswers);
         break;
       case SUBJECT:
-        elementIsValid = isSubjectValid(element as Subject, newAnswers);
+        elementIsValid = subjectIsValid(element as types.Subject, newAnswers);
     }
     isValid = isValid && elementIsValid;
   });
@@ -100,16 +91,16 @@ function isSubjectValid(subject: Subject, newAnswers: Answers) {
 }
 
 export function ballotIsValid(
-  configuration: Configuration,
-  answers: Answers,
-  setAnswers: React.Dispatch<React.SetStateAction<Answers>>
+  configuration: types.Configuration,
+  answers: types.Answers,
+  setAnswers: React.Dispatch<React.SetStateAction<types.Answers>>
 ) {
   let isValid = true;
   let newAnswers = answersFrom(answers);
-  let subjectIsValid = true;
+  let subjIsValid = true;
   for (const subject of configuration.Scaffold) {
-    subjectIsValid = isSubjectValid(subject, newAnswers);
-    isValid = isValid && subjectIsValid;
+    subjIsValid = subjectIsValid(subject, newAnswers);
+    isValid = isValid && subjIsValid;
   }
   setAnswers(newAnswers);
 

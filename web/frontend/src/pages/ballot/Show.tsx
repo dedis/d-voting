@@ -14,24 +14,14 @@ import { OPEN } from 'components/utils/StatusNumber';
 import { encryptVote } from './components/VoteEncrypt';
 import { voteEncode } from './components/VoteEncode';
 import useConfiguration from 'components/utils/useConfiguration';
-import {
-  ID,
-  RANK,
-  RankQuestion,
-  SELECT,
-  SUBJECT,
-  SelectQuestion,
-  Subject,
-  SubjectElement,
-  TEXT,
-  TextQuestion,
-} from 'types/configuration';
+import * as types from 'types/configuration';
+import { ID, RANK, SELECT, SUBJECT, TEXT } from 'types/configuration';
 import { DragDropContext } from 'react-beautiful-dnd';
 import RedirectToModal from 'components/modal/RedirectToModal';
 import Select from './components/Select';
 import Rank, { handleOnDragEnd } from './components/Rank';
 import Text from './components/Text';
-import { ballotIsValid } from './components/HandleAnswers';
+import { ballotIsValid } from './components/ValidateAnswers';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
@@ -100,31 +90,34 @@ const Ballot: FC = () => {
   };
 
   const handleClick = () => {
-    if (ballotIsValid(configuration, answers, setAnswers)) {
-      setUserErrors('');
-      sendBallot();
-    } else {
+    if (!ballotIsValid(configuration, answers, setAnswers)) {
       setUserErrors(t('incompleteBallot'));
+      return;
     }
+
+    setUserErrors('');
+    sendBallot();
   };
 
-  const SubjectElementDisplay = (element: SubjectElement) => {
+  const SubjectElementDisplay = (element: types.SubjectElement) => {
     return (
       <div>
-        {element.Type === RANK ? <Rank rank={element as RankQuestion} answers={answers} /> : null}
-        {element.Type === SELECT ? (
-          <Select select={element as SelectQuestion} answers={answers} setAnswers={setAnswers} />
-        ) : null}
-        {element.Type === TEXT ? (
-          <Text text={element as TextQuestion} answers={answers} setAnswers={setAnswers} />
-        ) : null}
+        {element.Type === RANK && <Rank rank={element as types.RankQuestion} answers={answers} />}
+        {element.Type === SELECT && (
+          <Select
+            select={element as types.SelectQuestion}
+            answers={answers}
+            setAnswers={setAnswers}
+          />
+        )}
+        {element.Type === TEXT && (
+          <Text text={element as types.TextQuestion} answers={answers} setAnswers={setAnswers} />
+        )}
       </div>
     );
   };
 
-  const SubjectTree = (subjectElement: SubjectElement) => {
-    const subject = subjectElement as Subject;
-
+  const SubjectTree = (subject: types.Subject) => {
     return (
       <div className="sm:px-8 pl-2" key={subject.ID}>
         {subject.Order.map((id: ID) => (
@@ -134,7 +127,7 @@ const Ballot: FC = () => {
                 <h3 className="text-lg font-bold text-gray-600">
                   {subject.Elements.get(id).Title}
                 </h3>
-                {SubjectTree(subject.Elements.get(id))}
+                {SubjectTree(subject.Elements.get(id) as types.Subject)}
               </div>
             ) : (
               SubjectElementDisplay(subject.Elements.get(id))
@@ -153,7 +146,7 @@ const Ballot: FC = () => {
             {configuration.MainTitle}
           </h3>
           <div>
-            {configuration.Scaffold.map((subject: SubjectElement) => SubjectTree(subject))}
+            {configuration.Scaffold.map((subject: types.Subject) => SubjectTree(subject))}
             <div className="sm:mx-8 mx-4 text-red-600 text-sm pt-3 pb-5">{userErrors}</div>
             <div className="flex sm:mx-8 mx-4">
               <button

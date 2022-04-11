@@ -1,42 +1,30 @@
-import {
-  Answers,
-  Configuration,
-  ID,
-  RANK,
-  RankQuestion,
-  SELECT,
-  SUBJECT,
-  SelectQuestion,
-  Subject,
-  SubjectElement,
-  TEXT,
-  TextQuestion,
-} from 'types/configuration';
+import { ID, RANK, SELECT, SUBJECT, TEXT } from 'types/configuration';
+import * as types from 'types/configuration';
 import { toArraysOfSubjectElement } from './getObjectType';
 
-const unmarshalText = (text: any): TextQuestion => {
+const unmarshalText = (text: any): types.TextQuestion => {
   return {
     ...text,
     Type: TEXT,
   };
 };
 
-const unmarshalRank = (rank: any): RankQuestion => {
+const unmarshalRank = (rank: any): types.RankQuestion => {
   return {
     ...rank,
     Type: RANK,
   };
 };
 
-const unmarshalSelect = (select: any): SelectQuestion => {
+const unmarshalSelect = (select: any): types.SelectQuestion => {
   return {
     ...select,
     Type: SELECT,
   };
 };
 
-const unmarshalSubject = (subjectObj: any): Subject => {
-  const elements = new Map<ID, SubjectElement>();
+const unmarshalSubject = (subjectObj: any): types.Subject => {
+  const elements = new Map<ID, types.SubjectElement>();
 
   for (const subSubjectObj of subjectObj.Subjects) {
     const subSubject = unmarshalSubject(subSubjectObj);
@@ -65,10 +53,13 @@ const unmarshalSubject = (subjectObj: any): Subject => {
   };
 };
 
-// Create a subject form a JSON object and initializes the Answers at
+// Create a subject from a JSON object and initializes the Answers at
 // the same time (so as to go only once through the whole Scaffold)
-const unmarshalSubjectAndCreateAnswers = (subjectObj: any, answerMap: Answers): Subject => {
-  const elements = new Map<ID, SubjectElement>();
+const unmarshalSubjectAndCreateAnswers = (
+  subjectObj: any,
+  answerMap: types.Answers
+): types.Subject => {
+  const elements = new Map<ID, types.SubjectElement>();
 
   for (const subSubjectObj of subjectObj.Subjects) {
     const subSubject = unmarshalSubjectAndCreateAnswers(subSubjectObj, answerMap);
@@ -103,7 +94,7 @@ const unmarshalSubjectAndCreateAnswers = (subjectObj: any, answerMap: Answers): 
   };
 };
 
-const unmarshalConfig = (json: any): Configuration => {
+const unmarshalConfig = (json: any): types.Configuration => {
   const conf = { MainTitle: json.MainTitle, Scaffold: [] };
   for (const subject of json.Scaffold) {
     conf.Scaffold.push(unmarshalSubject(subject));
@@ -113,9 +104,9 @@ const unmarshalConfig = (json: any): Configuration => {
 
 const unmarshalConfigAndCreateAnswers = (
   configObj: any
-): { newConfiguration: Configuration; newAnswers: Answers } => {
-  const scaffold = new Array<Subject>();
-  const newAnswers: Answers = {
+): { newConfiguration: types.Configuration; newAnswers: types.Answers } => {
+  const scaffold = new Array<types.Subject>();
+  const newAnswers: types.Answers = {
     SelectAnswers: new Map<ID, boolean[]>(),
     RankAnswers: new Map<ID, number[]>(),
     TextAnswers: new Map<ID, string[]>(),
@@ -132,25 +123,25 @@ const unmarshalConfigAndCreateAnswers = (
   return { newConfiguration, newAnswers };
 };
 
-const marshalText = (text: TextQuestion): any => {
+const marshalText = (text: types.TextQuestion): any => {
   const newText: any = { ...text };
   delete newText.Type;
   return newText;
 };
 
-const marshalRank = (rank: RankQuestion): any => {
+const marshalRank = (rank: types.RankQuestion): any => {
   const newRank: any = { ...rank };
   delete newRank.Type;
   return newRank;
 };
 
-const marshalSelect = (select: SelectQuestion): any => {
+const marshalSelect = (select: types.SelectQuestion): any => {
   const newSelect: any = { ...select };
   delete newSelect.Type;
   return newSelect;
 };
 
-const marshalSubject = (subject: Subject): any => {
+const marshalSubject = (subject: types.Subject): any => {
   const newSubject: any = { ...subject };
   const { rankQuestion, selectQuestion, textQuestion, subjects } = toArraysOfSubjectElement(
     subject.Elements
@@ -171,7 +162,7 @@ const marshalSubject = (subject: Subject): any => {
   return newSubject;
 };
 
-const marshalConfig = (configuration: Configuration): any => {
+const marshalConfig = (configuration: types.Configuration): any => {
   const conf = { MainTitle: configuration.MainTitle, Scaffold: [] };
   for (const subject of configuration.Scaffold) {
     conf.Scaffold.push(marshalSubject(subject));
