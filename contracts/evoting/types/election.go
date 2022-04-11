@@ -58,9 +58,8 @@ type Election struct {
 	// the election
 	ElectionID string
 
-	AdminID string
-	Status  Status
-	Pubkey  kyber.Point
+	Status Status
+	Pubkey kyber.Point
 
 	// BallotSize represents the total size in bytes of one ballot. It is used
 	// to pad smaller ballots such that all  ballots cast have the same size

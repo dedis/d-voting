@@ -1,6 +1,8 @@
 package types
 
 import (
+	"encoding/json"
+
 	"go.dedis.ch/kyber/v3/suites"
 )
 
@@ -32,16 +34,18 @@ type CreateElectionResponse struct {
 
 // CastVoteRequest defines the HTTP request for casting a vote
 type CastVoteRequest struct {
-	// ElectionID is hex-encoded
-	ElectionID string
-	UserID     string
-	// Marshalled representation of Ciphervote
-	Ballot []byte
-	Token  string
+	UserID string
+	// Marshalled representation of Ciphervote. It contains []{K:,C:}
+	Ballot json.RawMessage
 }
 
 // CastVoteResponse degines the HTTP response when casting a vote
 type CastVoteResponse struct {
+}
+
+// UpdateElectionRequest defines the HTTP request for updating an election
+type UpdateElectionRequest struct {
+	Action string
 }
 
 // CloseElectionRequest degines the HTTP request for closing an election
@@ -170,4 +174,12 @@ type CancelElectionRequest struct {
 
 // CancelElectionResponse defines the HTTP response when canceling an election
 type CancelElectionResponse struct {
+}
+
+// HTTPError defines the standard error format
+type HTTPError struct {
+	Title   string
+	Code    uint
+	Message string
+	Args    map[string]interface{}
 }

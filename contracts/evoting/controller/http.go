@@ -3,12 +3,14 @@ package controller
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
 	"sync"
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/shuffle"
+	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
@@ -22,12 +24,9 @@ import (
 )
 
 const (
-	loginEndpoint               = "/evoting/login"
-	createElectionEndpoint      = "/evoting/create"
 	openElectionEndpoint        = "/evoting/open"
 	castVoteEndpoint            = "/evoting/cast"
 	getAllElectionsIdsEndpoint  = "/evoting/allids"
-	getElectionInfoEndpoint     = "/evoting/info"
 	getAllElectionsInfoEndpoint = "/evoting/all"
 	closeElectionEndpoint       = "/evoting/close"
 	shuffleBallotsEndpoint      = "/evoting/shuffle"
@@ -79,12 +78,7 @@ func registerVotingProxy(proxy proxy.Proxy, signer crypto.Signer,
 		ciphervoteFac: ciphervoteFac,
 	}
 
-	proxy.RegisterHandler(loginEndpoint, h.Login)
-	proxy.RegisterHandler(createElectionEndpoint, h.CreateElection)
-	proxy.RegisterHandler(openElectionEndpoint, h.OpenElection)
-	proxy.RegisterHandler(castVoteEndpoint, h.CastVote)
 	proxy.RegisterHandler(getAllElectionsIdsEndpoint, h.ElectionIDs)
-	proxy.RegisterHandler(getElectionInfoEndpoint, h.ElectionInfo)
 	proxy.RegisterHandler(getAllElectionsInfoEndpoint, h.AllElectionInfo)
 	proxy.RegisterHandler(closeElectionEndpoint, h.CloseElection)
 	proxy.RegisterHandler(shuffleBallotsEndpoint, h.ShuffleBallots)
@@ -92,6 +86,19 @@ func registerVotingProxy(proxy proxy.Proxy, signer crypto.Signer,
 	proxy.RegisterHandler(combineSharesEndpoint, h.CombineShares)
 	proxy.RegisterHandler(getElectionResultEndpoint, h.ElectionResult)
 	proxy.RegisterHandler(cancelElectionEndpoint, h.CancelElection)
+
+	electionRouter := mux.NewRouter()
+
+	electionRouter.HandleFunc("/evoting/elections", h.CreateElection).Methods("POST")
+	electionRouter.HandleFunc("/evoting/elections/{electionID}", h.ElectionInfo).Methods("GET")
+	electionRouter.HandleFunc("/evoting/elections/{electionID}", h.UpdateElection).Methods("PUT")
+	electionRouter.HandleFunc("/evoting/elections/{electionID}/vote", h.CastVote).Methods("POST")
+
+	electionRouter.NotFoundHandler = http.HandlerFunc(notFoundHandler)
+	electionRouter.MethodNotAllowedHandler = http.HandlerFunc(notAllowedHandler)
+
+	proxy.RegisterHandler("/evoting/elections/", electionRouter.ServeHTTP)
+	proxy.RegisterHandler("/evoting/elections", electionRouter.ServeHTTP)
 }
 
 // waitForTxnID blocks until `ID` is included or `events` is closed.

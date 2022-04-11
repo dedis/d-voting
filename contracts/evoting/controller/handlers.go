@@ -6,34 +6,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gorilla/mux"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/serde"
 	"golang.org/x/xerrors"
 )
-
-// Login responds with the user token.
-func (h *votingProxy) Login(w http.ResponseWriter, r *http.Request) {
-	userID := uuid.NewV4()
-	userToken := token
-
-	response := types.LoginResponse{
-		UserID: userID.String(),
-		Token:  userToken,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(response)
-	if err != nil {
-		http.Error(w, "failed to write response: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
 
 // CreateElection allows creating an election.
 func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
@@ -84,26 +65,9 @@ func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
 // OpenElection allows opening an election, which sets the public key based on
 // the DKG actor.
 // Body: hex-encoded electionID
-func (h *votingProxy) OpenElection(w http.ResponseWriter, r *http.Request) {
-	// hex-encoded string as byte array
-	buff, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "failed to read body: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// hex-encoded string
-	electionID := string(buff)
-
-	// sanity check that it is a hex-encoded string
-	_, err = hex.DecodeString(electionID)
-	if err != nil {
-		http.Error(w, "failed to decode electionID: "+electionID, http.StatusBadRequest)
-		return
-	}
-
+func (h *votingProxy) OpenElection(elecID string, w http.ResponseWriter, r *http.Request) {
 	openElection := types.OpenElection{
-		ElectionID: electionID,
+		ElectionID: elecID,
 	}
 
 	data, err := openElection.Serialize(h.context)
@@ -118,12 +82,19 @@ func (h *votingProxy) OpenElection(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
 }
 
 // CastVote is used to cast a vote in an election.
 func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	if vars == nil || vars["electionID"] == "" {
+		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
+		return
+	}
+
+	electionID := vars["electionID"]
+
 	req := &types.CastVoteRequest{}
 
 	err := json.NewDecoder(r.Body).Decode(req)
@@ -133,20 +104,15 @@ func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Token != token {
-		http.Error(w, "invalid token", http.StatusUnauthorized)
-		return
-	}
-
 	elecMD, err := h.getElectionsMetadata()
 	if err != nil {
 		http.Error(w, "failed to get election metadata", http.StatusNotFound)
 		return
 	}
 
-	fmt.Println("election metadata:", elecMD, req.ElectionID)
+	fmt.Println("election metadata:", elecMD, electionID)
 
-	if !elecMD.ElectionsIDs.Contains(req.ElectionID) {
+	if !elecMD.ElectionsIDs.Contains(electionID) {
 		http.Error(w, "the election does not exist", http.StatusNotFound)
 		return
 	}
@@ -164,7 +130,7 @@ func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	castVote := types.CastVote{
-		ElectionID: req.ElectionID,
+		ElectionID: electionID,
 		UserID:     req.UserID,
 		Ballot:     ciphervote,
 	}
@@ -190,6 +156,43 @@ func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
 			http.StatusInternalServerError)
 		return
+	}
+}
+
+// CastVote is used to cast a vote in an election.
+func (h *votingProxy) UpdateElection(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	if vars == nil || vars["electionID"] == "" {
+		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
+		return
+	}
+
+	electionID := vars["electionID"]
+
+	elecMD, err := h.getElectionsMetadata()
+	if err != nil {
+		http.Error(w, "failed to get election metadata", http.StatusNotFound)
+		return
+	}
+
+	if !elecMD.ElectionsIDs.Contains(electionID) {
+		http.Error(w, "the election does not exist", http.StatusNotFound)
+		return
+	}
+
+	req := &types.UpdateElectionRequest{}
+
+	err = json.NewDecoder(r.Body).Decode(req)
+	if err != nil {
+		http.Error(w, "failed to decode UpdateElectionRequest: "+err.Error(),
+			http.StatusBadRequest)
+		return
+	}
+
+	switch req.Action {
+	case "open":
+		h.OpenElection(electionID, w, r)
 	}
 }
 
@@ -223,16 +226,16 @@ func (h *votingProxy) ElectionIDs(w http.ResponseWriter, r *http.Request) {
 
 // ElectionInfo returns the information for a given election.
 func (h *votingProxy) ElectionInfo(w http.ResponseWriter, r *http.Request) {
-	req := &types.GetElectionInfoRequest{}
+	vars := mux.Vars(r)
 
-	err := json.NewDecoder(r.Body).Decode(req)
-	if err != nil {
-		http.Error(w, "failed to decode GetElectionInfoRequest: "+err.Error(),
-			http.StatusBadRequest)
+	if vars == nil || vars["electionID"] == "" {
+		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
 		return
 	}
 
-	election, err := getElection(h.context, h.electionFac, req.ElectionID, h.orderingSvc)
+	electionID := vars["electionID"]
+
+	election, err := getElection(h.context, h.electionFac, electionID, h.orderingSvc)
 	if err != nil {
 		http.Error(w, xerrors.Errorf(getElectionErr, err).Error(),
 			http.StatusInternalServerError)
@@ -411,11 +414,6 @@ func (h *votingProxy) ShuffleBallots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if election.AdminID != req.UserID {
-		http.Error(w, "only the admin can shuffle the ballots !", http.StatusUnauthorized)
-		return
-	}
-
 	electionIDBuff, err := hex.DecodeString(req.ElectionID)
 	if err != nil {
 		http.Error(w, "failed to decode electionID: "+err.Error(),
@@ -484,11 +482,6 @@ func (h *votingProxy) BeginDecryption(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if election.AdminID != req.UserID {
-		http.Error(w, "only the admin can decrypt the ballots!", http.StatusUnauthorized)
-		return
-	}
-
 	if len(election.ShuffleInstances) == 0 {
 		http.Error(w, "no shuffled instances", http.StatusInternalServerError)
 		return
@@ -552,11 +545,6 @@ func (h *votingProxy) CombineShares(w http.ResponseWriter, r *http.Request) {
 	if election.Status != types.PubSharesSubmitted {
 		http.Error(w, "the submission of public shares must be over!",
 			http.StatusUnauthorized)
-		return
-	}
-
-	if election.AdminID != req.UserID {
-		http.Error(w, "only the admin can decrypt the ballots!", http.StatusUnauthorized)
 		return
 	}
 
@@ -759,4 +747,42 @@ func getElection(ctx serde.Context, electionFac serde.Factory, electionIDHex str
 	}
 
 	return election, nil
+}
+
+func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+	err := types.HTTPError{
+		Title:   "Not found",
+		Code:    http.StatusNotFound,
+		Message: "The requested endpoint was not found",
+		Args: map[string]interface{}{
+			"url":    r.URL.String(),
+			"method": r.Method,
+		},
+	}
+
+	buf, _ := json.MarshalIndent(&err, "", "  ")
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(http.StatusNotFound)
+	fmt.Fprintln(w, string(buf))
+}
+
+func notAllowedHandler(w http.ResponseWriter, r *http.Request) {
+	err := types.HTTPError{
+		Title:   "Not allowed",
+		Code:    http.StatusMethodNotAllowed,
+		Message: "The requested endpoint was not allowed",
+		Args: map[string]interface{}{
+			"url":    r.URL.String(),
+			"method": r.Method,
+		},
+	}
+
+	buf, _ := json.MarshalIndent(&err, "", "  ")
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(http.StatusMethodNotAllowed)
+	fmt.Fprintln(w, string(buf))
 }

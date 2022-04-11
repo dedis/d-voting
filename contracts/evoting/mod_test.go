@@ -166,7 +166,6 @@ func TestCommand_CreateElection(t *testing.T) {
 	election, ok := message.(types.Election)
 	require.True(t, ok)
 
-	require.Equal(t, createElection.AdminID, election.AdminID)
 	require.Equal(t, types.Initial, election.Status)
 }
 
@@ -1104,11 +1103,9 @@ func initElectionAndContract() (types.Election, Contract) {
 		actor: fakeDkgActor{},
 		err:   nil,
 	}
-	adminID := hex.EncodeToString([]byte("dummyAdminID"))
 
 	dummyElection := types.Election{
 		ElectionID:       fakeElectionID,
-		AdminID:          adminID,
 		Status:           0,
 		Pubkey:           nil,
 		Suffragia:        types.Suffragia{},
