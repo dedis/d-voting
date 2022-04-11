@@ -1,6 +1,6 @@
 # API documentation
 
-*Documentation Last Review: 11.04.2022*
+_Documentation Last Review: 11.04.2022_
 
 ## Regular workflow:
 
@@ -73,7 +73,7 @@ In case of error:
 
 ```json
 {
-  "Configuration": ""
+  "Configuration": {<Configuration>}
 }
 ```
 
