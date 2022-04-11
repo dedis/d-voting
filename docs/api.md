@@ -1,36 +1,49 @@
 # API documentation
 
-Regular workflow:
+*Documentation Last Review: 11.04.2022*
+
+## Regular workflow:
+
+The election workflow involves 3 actors:
+
+- Smart contract
+- DKG service
+- Neff shuffle service
+
+Services are side components that augment the smart contract functionalities.
+Services are accessed via the `evoting/services/<dkg>|<neff>/*` endpoint, and
+the smart contract via `/evoting/elections/*`.
 
 ```
 Smart contract   DKG       Neff shuffle
 --------------   ---       ------------
-    ▼             │          │
-SC1:Create        │          │
-    │             │          │
-    │             ▼          ▼
-    │          DK1:Init   NS1:Init
+    │             │        NS1:Init (on startup)
+    ▼             │
+SC1:Create        │
+    │             │
+    │             ▼
+    │          DK1:Init
     │             │
     │             ▼
     │          DK2:Setup
+    │             │
+    ▼             │
+SC3:Open          │
+    │             │
+    ▼             │
+SC4:Cast          │
+    │             │
+    ▼             │
+SC5:Close         │
+    │             │
+    ▼             │
+SC6:Shuffle       │
+    │             │
+    │             ▼
+    │         DK3:BeginDecryption
     │
     ▼
-SC3:Open
-    │
-    ▼
-SC4:Cast
-    │
-    ▼
-SC5:Close
-    │
-    ▼
-SC6:Shuffle
-    │
-    ▼
-SC7:BeginDecryption
-    │
-    ▼
-SC8:CombineShares
+SC7:CombineShares
     │
     ▼
 SC2:ElectionGetInfo
@@ -223,7 +236,7 @@ Return:
 
 ```
 
-# SC8: Election combine shares
+# SC7: Election combine shares
 
 |        |                                   |
 | ------ | --------------------------------- |
@@ -294,40 +307,66 @@ Return:
 
 # DK1: DKG init
 
-|        |                     |
-| ------ | ------------------- |
-| URL    | `/evoting/dkg/init` |
-| Method | `POST`              |
-| Input  | `application/json`  |
+|        |                                |
+| ------ | ------------------------------ |
+| URL    | `/evoting/services/dkg/actors` |
+| Method | `POST`                         |
+| Input  | `application/json`             |
 
 ```json
-"<hex encoded electionID>"
+{
+  "ElectionID": "<hex encoded>"
+}
 ```
 
 Return:
 
-`200 OK` `application/json`
+`200 OK` `text/plain`
 
-```json
-<empty>
+```
+
 ```
 
 # DK2: DKG setup
 
-|        |                      |
-| ------ | -------------------- |
-| URL    | `/evoting/dkg/setup` |
-| Method | `POST`               |
-| Input  | `application/json`   |
+|        |                                             |
+| ------ | ------------------------------------------- |
+| URL    | `/evoting/services/dkg/actors/{ElectionID}` |
+| Method | `PUT`                                       |
+| Input  | `application/json`                          |
 
 ```json
-"<hex encoded electionID>"
+{
+  "Action": "setup"
+}
 ```
 
 Return:
 
-`200 OK` `application/json`
+`200 OK` `text/plain`
+
+```
+
+```
+
+# DK3: DKG BeginDecryption
+
+|        |                                             |
+| ------ | ------------------------------------------- |
+| URL    | `/evoting/services/dkg/actors/{ElectionID}` |
+| Method | `PUT`                                       |
+| Input  | `application/json`                          |
 
 ```json
-"<hex encoded dkg pub key>"
+{
+  "Action": "beginDecryption"
+}
+```
+
+Return:
+
+`200 OK` `text/plain`
+
+```
+
 ```
