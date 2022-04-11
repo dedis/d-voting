@@ -1,18 +1,8 @@
 import { FC, ReactElement, useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 
-import {
-  ID,
-  RANK,
-  RankQuestion,
-  SELECT,
-  SUBJECT,
-  SelectQuestion,
-  Subject,
-  SubjectElement,
-  TEXT,
-  TextQuestion,
-} from '../../../types/configuration';
+import * as types from '../../../types/configuration';
+import { RANK, SELECT, SUBJECT, TEXT } from '../../../types/configuration';
 import { newRank, newSelect, newSubject, newText } from '../../../types/getObjectType';
 
 import AddButton from './AddButton';
@@ -22,9 +12,9 @@ import DeleteButton from './DeleteButton';
 const MAX_NESTED_SUBJECT = 2;
 
 type SubjectComponentProps = {
-  notifyParent: (subject: Subject) => void;
+  notifyParent: (subject: types.Subject) => void;
   removeSubject: () => void;
-  subjectObject: Subject;
+  subjectObject: types.Subject;
   nestedLevel: number;
 };
 
@@ -34,7 +24,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
   subjectObject,
   nestedLevel,
 }) => {
-  const [subject, setSubject] = useState<Subject>(subjectObject);
+  const [subject, setSubject] = useState<types.Subject>(subjectObject);
   const isSubjectMounted = useRef<Boolean>(false);
   const [components, setComponents] = useState<ReactElement[]>([]);
 
@@ -51,33 +41,18 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subject]);
 
-  const localNotifyParent = (subj: Subject) => {
+  const localNotifyParent = (subj: types.Subject) => {
     const newElements = new Map(Elements);
     newElements.set(subj.ID, subj);
     setSubject({ ...subject, Elements: newElements, Title });
   };
 
-  const notifySubject = (question: SubjectElement) => {
-    const newElements = new Map(Elements);
-
-    switch (question.Type) {
-      case RANK:
-        const r = question as RankQuestion;
-        newElements.set(r.ID, r);
-        break;
-      case SELECT:
-        const s = question as SelectQuestion;
-        newElements.set(s.ID, s);
-        break;
-      case TEXT:
-        const t = question as TextQuestion;
-        newElements.set(t.ID, t);
-        break;
-      default:
-        break;
+  const notifySubject = (question: types.SubjectElement) => {
+    if (question.Type !== SUBJECT) {
+      const newElements = new Map(Elements);
+      newElements.set(question.ID, question);
+      setSubject({ ...subject, Elements: newElements });
     }
-
-    setSubject({ ...subject, Elements: newElements });
   };
 
   const addSubject = () => {
@@ -87,13 +62,13 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
     setSubject({ ...subject, Elements: newElements, Order: [...Order, newSubj.ID] });
   };
 
-  const addQuestion = (question: SubjectElement) => {
+  const addQuestion = (question: types.SubjectElement) => {
     const newElements = new Map(Elements);
     newElements.set(question.ID, question);
     setSubject({ ...subject, Elements: newElements, Order: [...Order, question.ID] });
   };
 
-  const localRemoveSubject = (subjID: ID) => () => {
+  const localRemoveSubject = (subjID: types.ID) => () => {
     const newElements = new Map(Elements);
     newElements.delete(subjID);
     setSubject({
@@ -103,7 +78,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
     });
   };
 
-  const removeChildQuestion = (question: SubjectElement) => () => {
+  const removeChildQuestion = (question: types.SubjectElement) => () => {
     const newElements = new Map(Elements);
     newElements.delete(question.ID);
     setSubject({
@@ -118,7 +93,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
   useEffect(() => {
     // findQuestion return the react element based on the question/subject ID.
     // Returns undefined if the question/subject ID is unknown.
-    const findQuestion = (id: ID): ReactElement => {
+    const findQuestion = (id: types.ID): ReactElement => {
       if (!Elements.has(id)) {
         return undefined;
       }
@@ -127,7 +102,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
 
       switch (found.Type) {
         case TEXT:
-          const text = found as TextQuestion;
+          const text = found as types.TextQuestion;
           return (
             <Question
               key={`text${text.ID}`}
@@ -137,7 +112,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
             />
           );
         case SUBJECT:
-          const sub = found as Subject;
+          const sub = found as types.Subject;
           return (
             <SubjectComponent
               notifyParent={localNotifyParent}
@@ -148,7 +123,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
             />
           );
         case RANK:
-          const rank = found as RankQuestion;
+          const rank = found as types.RankQuestion;
           return (
             <Question
               key={`rank${rank.ID}`}
@@ -158,7 +133,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
             />
           );
         case SELECT:
-          const select = found as SelectQuestion;
+          const select = found as types.SelectQuestion;
           return (
             <Question
               key={`select${select.ID}`}

@@ -3,7 +3,6 @@ import { Answers, Configuration } from 'types/configuration';
 import { emptyConfiguration } from 'types/getObjectType';
 import { unmarshalConfigAndCreateAnswers } from 'types/JSONparser';
 
-// Take a JSON object and unmarshal it into a Configuration
 // Returns a Configuration and the initialized Answers
 const useConfiguration = (configObj: any) => {
   const [configuration, setConfiguration]: [

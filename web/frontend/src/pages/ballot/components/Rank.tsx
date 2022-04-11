@@ -12,9 +12,9 @@ export const handleOnDragEnd = (
     return;
   }
 
-  let rankID = result.destination.droppableId as ID;
-  let newAnswers = answersFrom(answers);
-  let rankAnswer = newAnswers.RankAnswers.get(rankID);
+  const rankID = result.destination.droppableId as ID;
+  const newAnswers = answersFrom(answers);
+  const rankAnswer = newAnswers.RankAnswers.get(rankID);
 
   const [reorderedItem] = rankAnswer.splice(result.source.index, 1);
   rankAnswer.splice(result.destination.index, 0, reorderedItem);

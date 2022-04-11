@@ -1,26 +1,14 @@
 import ShortUniqueId from 'short-unique-id';
-import {
-  Answers,
-  Configuration,
-  ID,
-  RANK,
-  RankQuestion,
-  SELECT,
-  SUBJECT,
-  SelectQuestion,
-  Subject,
-  SubjectElement,
-  TEXT,
-  TextQuestion,
-} from './configuration';
+import * as types from './configuration';
+import { ID, RANK, SELECT, SUBJECT, TEXT } from './configuration';
 
 const uid: Function = new ShortUniqueId({ length: 8 });
 
-const emptyConfiguration = (): Configuration => {
+const emptyConfiguration = (): types.Configuration => {
   return { MainTitle: '', Scaffold: [] };
 };
 
-const newSubject = (): Subject => {
+const newSubject = (): types.Subject => {
   return {
     ID: uid(),
     Title: '',
@@ -30,7 +18,7 @@ const newSubject = (): Subject => {
   };
 };
 
-const newRank = (): RankQuestion => {
+const newRank = (): types.RankQuestion => {
   return {
     ID: uid(),
     Title: '',
@@ -41,7 +29,7 @@ const newRank = (): RankQuestion => {
   };
 };
 
-const newSelect = (): SelectQuestion => {
+const newSelect = (): types.SelectQuestion => {
   return {
     ID: uid(),
     Title: '',
@@ -52,7 +40,7 @@ const newSelect = (): SelectQuestion => {
   };
 };
 
-const newText = (): TextQuestion => {
+const newText = (): types.TextQuestion => {
   return {
     ID: uid(),
     Title: '',
@@ -66,7 +54,7 @@ const newText = (): TextQuestion => {
 };
 
 // Create a deep copy of the answers
-const answersFrom = (answers: Answers): Answers => {
+const answersFrom = (answers: types.Answers): types.Answers => {
   return {
     SelectAnswers: new Map(answers.SelectAnswers),
     RankAnswers: new Map(answers.RankAnswers),
@@ -76,31 +64,31 @@ const answersFrom = (answers: Answers): Answers => {
 };
 
 const toArraysOfSubjectElement = (
-  elements: Map<ID, SubjectElement>
+  elements: Map<ID, types.SubjectElement>
 ): {
-  rankQuestion: RankQuestion[];
-  selectQuestion: SelectQuestion[];
-  textQuestion: TextQuestion[];
-  subjects: Subject[];
+  rankQuestion: types.RankQuestion[];
+  selectQuestion: types.SelectQuestion[];
+  textQuestion: types.TextQuestion[];
+  subjects: types.Subject[];
 } => {
-  let rankQuestion: RankQuestion[] = new Array<RankQuestion>();
-  let selectQuestion: SelectQuestion[] = new Array<SelectQuestion>();
-  let textQuestion: TextQuestion[] = new Array<TextQuestion>();
-  let subjects: Subject[] = new Array<Subject>();
+  const rankQuestion: types.RankQuestion[] = [];
+  const selectQuestion: types.SelectQuestion[] = [];
+  const textQuestion: types.TextQuestion[] = [];
+  const subjects: types.Subject[] = [];
 
   elements.forEach((element) => {
     switch (element.Type) {
       case RANK:
-        rankQuestion.push(element as RankQuestion);
+        rankQuestion.push(element as types.RankQuestion);
         break;
       case SELECT:
-        selectQuestion.push(element as SelectQuestion);
+        selectQuestion.push(element as types.SelectQuestion);
         break;
       case TEXT:
-        textQuestion.push(element as TextQuestion);
+        textQuestion.push(element as types.TextQuestion);
         break;
       case SUBJECT:
-        subjects.push(element as Subject);
+        subjects.push(element as types.Subject);
         break;
     }
   });
