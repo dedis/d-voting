@@ -6,6 +6,7 @@ import { ENDPOINT_LOGOUT } from '../components/utils/Endpoints';
 import {
   ROUTE_ABOUT,
   ROUTE_ADMIN,
+  ROUTE_BALLOT_INDEX,
   ROUTE_ELECTION_CREATE,
   ROUTE_ELECTION_INDEX,
   ROUTE_HOME,
@@ -121,6 +122,19 @@ const NavBar: FC = () => {
                   }>
                   {t('navBarStatus')}
                 </NavLink>
+
+                {authCtx.isLogged && (authCtx.role === 'admin' || authCtx.role === 'operator') && (
+                  <NavLink
+                    title={t('navBarVote')}
+                    to={ROUTE_BALLOT_INDEX}
+                    className={(isActive) =>
+                      isActive
+                        ? 'bg-gray-900 text-white'
+                        : 'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
+                    }>
+                    {t('navBarVote')}
+                  </NavLink>
+                )}
 
                 {authCtx.isLogged && (authCtx.role === 'admin' || authCtx.role === 'operator') && (
                   <NavLink

@@ -4,7 +4,7 @@ import configurationSchema from '../../../schema/configurationValidation';
 import Ajv from 'ajv';
 
 import configurationJSONSchema from '../../../schema/election_conf.json';
-import { marshallConfig } from '../../../types/JSONparser';
+import { unmarshalConfig } from '../../../types/JSONparser';
 import { Configuration } from 'types/configuration';
 
 const ajv = new Ajv({
@@ -32,9 +32,9 @@ const UploadFile = ({ setConf, setShowModal, setTextModal }) => {
 
       try {
         const validConf: any = await configurationSchema.validate(result);
-        // marshall the configuration to add the Types on the objects
-        const marshallConfigResult: Configuration = marshallConfig(validConf);
-        setConf(marshallConfigResult);
+        // unmarshal the configuration to add the Types on the objects
+        const unmarshalConfigResult: Configuration = unmarshalConfig(validConf);
+        setConf(unmarshalConfigResult);
       } catch (err) {
         setTextModal('Incorrect election configuration : ' + err.errors.join(','));
         setShowModal(true);

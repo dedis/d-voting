@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Rank, Select, Text } from 'types/configuration';
+import { RankQuestion, SelectQuestion, TextQuestion } from 'types/configuration';
 
 const MAX_MINN = 20;
 
 // form hook that handles the form state for all types of questions
-const useQuestionForm = (initState: Rank | Select | Text) => {
-  const [state, setState] = useState<Rank | Select | Text>(initState);
+const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion) => {
+  const [state, setState] = useState<RankQuestion | SelectQuestion | TextQuestion>(initState);
   const { MinN, Choices } = state;
 
   // updates the choices length array when minN is greater than the current choices length

@@ -1,91 +1,173 @@
-import { Configuration, Rank, Select, Subject, Text } from 'types/configuration';
+import { ID, RANK, SELECT, SUBJECT, TEXT } from 'types/configuration';
+import * as types from 'types/configuration';
+import { toArraysOfSubjectElement } from './getObjectType';
 
-const marshallText: (text: any) => Text = (text) => {
+const unmarshalText = (text: any): types.TextQuestion => {
   return {
     ...text,
-    Type: 'TEXT',
+    Type: TEXT,
   };
 };
 
-const marshallRank: (rank: any) => Rank = (rank) => {
+const unmarshalRank = (rank: any): types.RankQuestion => {
   return {
     ...rank,
-    Type: 'RANK',
+    Type: RANK,
   };
 };
 
-const marshallSelect: (select: any) => Select = (select) => {
+const unmarshalSelect = (select: any): types.SelectQuestion => {
   return {
     ...select,
-    Type: 'SELECT',
+    Type: SELECT,
   };
 };
 
-const marshallSubject: (subject: any) => Subject = (subject) => {
-  const Subjects = subject.Subjects.length
-    ? subject.Subjects.map((subj: any) => marshallSubject(subj))
-    : [];
-  const Ranks = subject.Ranks.length ? subject.Ranks.map((rank: any) => marshallRank(rank)) : [];
-  const Selects = subject.Selects.length
-    ? subject.Selects.map((rank: any) => marshallSelect(rank))
-    : [];
-  const Texts = subject.Texts.length ? subject.Texts.map((text: any) => marshallText(text)) : [];
+const unmarshalSubject = (subjectObj: any): types.Subject => {
+  const elements = new Map<ID, types.SubjectElement>();
+
+  for (const subSubjectObj of subjectObj.Subjects) {
+    const subSubject = unmarshalSubject(subSubjectObj);
+    elements.set(subSubject.ID, subSubject);
+  }
+
+  for (const rankObj of subjectObj.Ranks) {
+    const rank = unmarshalRank(rankObj);
+    elements.set(rank.ID, rank);
+  }
+
+  for (const textObj of subjectObj.Texts) {
+    const text = unmarshalText(textObj);
+    elements.set(text.ID, text);
+  }
+
+  for (const selectObj of subjectObj.Selects) {
+    const select = unmarshalSelect(selectObj);
+    elements.set(select.ID, select);
+  }
+
   return {
-    ...subject,
-    Subjects,
-    Ranks,
-    Selects,
-    Texts,
-    Type: 'SUBJECT',
+    ...subjectObj,
+    Type: SUBJECT,
+    Elements: elements,
   };
 };
 
-const marshallConfig: (json: any) => Configuration = (json) => {
+// Create a subject from a JSON object and initializes the Answers at
+// the same time (so as to go only once through the whole Scaffold)
+const unmarshalSubjectAndCreateAnswers = (
+  subjectObj: any,
+  answerMap: types.Answers
+): types.Subject => {
+  const elements = new Map<ID, types.SubjectElement>();
+
+  for (const subSubjectObj of subjectObj.Subjects) {
+    const subSubject = unmarshalSubjectAndCreateAnswers(subSubjectObj, answerMap);
+    elements.set(subSubject.ID, subSubject);
+  }
+
+  for (const rankObj of subjectObj.Ranks) {
+    const rank = unmarshalRank(rankObj);
+    elements.set(rank.ID, rank);
+    answerMap.RankAnswers.set(rank.ID, Array.from(Array(rank.Choices.length).keys()));
+    answerMap.Errors.set(rank.ID, '');
+  }
+
+  for (const selectObj of subjectObj.Selects) {
+    const select = unmarshalSelect(selectObj);
+    elements.set(select.ID, select);
+    answerMap.SelectAnswers.set(select.ID, new Array<boolean>(select.Choices.length).fill(false));
+    answerMap.Errors.set(select.ID, '');
+  }
+
+  for (const textObj of subjectObj.Texts) {
+    const text = unmarshalText(textObj);
+    elements.set(text.ID, text);
+    answerMap.TextAnswers.set(text.ID, new Array<string>(text.Choices.length).fill(''));
+    answerMap.Errors.set(text.ID, '');
+  }
+
+  return {
+    ...subjectObj,
+    Type: SUBJECT,
+    Elements: elements,
+  };
+};
+
+const unmarshalConfig = (json: any): types.Configuration => {
   const conf = { MainTitle: json.MainTitle, Scaffold: [] };
   for (const subject of json.Scaffold) {
-    conf.Scaffold.push(marshallSubject(subject));
+    conf.Scaffold.push(unmarshalSubject(subject));
   }
   return conf;
 };
 
-const unmarshallText: (text: Text) => any = (text) => {
+const unmarshalConfigAndCreateAnswers = (
+  configObj: any
+): { newConfiguration: types.Configuration; newAnswers: types.Answers } => {
+  const scaffold = new Array<types.Subject>();
+  const newAnswers: types.Answers = {
+    SelectAnswers: new Map<ID, boolean[]>(),
+    RankAnswers: new Map<ID, number[]>(),
+    TextAnswers: new Map<ID, string[]>(),
+    Errors: new Map<ID, string>(),
+  };
+
+  for (const subjectObj of configObj.Scaffold) {
+    let subject = unmarshalSubjectAndCreateAnswers(subjectObj, newAnswers);
+    scaffold.push(subject);
+  }
+
+  const newConfiguration = { ...configObj, Scaffold: scaffold };
+
+  return { newConfiguration, newAnswers };
+};
+
+const marshalText = (text: types.TextQuestion): any => {
   const newText: any = { ...text };
   delete newText.Type;
   return newText;
 };
 
-const unmarshallRank: (rank: Rank) => any = (rank) => {
+const marshalRank = (rank: types.RankQuestion): any => {
   const newRank: any = { ...rank };
   delete newRank.Type;
   return newRank;
 };
 
-const unmarshallSelect: (select: Select) => any = (select) => {
+const marshalSelect = (select: types.SelectQuestion): any => {
   const newSelect: any = { ...select };
   delete newSelect.Type;
   return newSelect;
 };
 
-const unmarshallSubject: (subject: Subject) => any = (subject) => {
+const marshalSubject = (subject: types.Subject): any => {
   const newSubject: any = { ...subject };
+  const { rankQuestion, selectQuestion, textQuestion, subjects } = toArraysOfSubjectElement(
+    subject.Elements
+  );
   delete newSubject.Type;
-  newSubject.Subjects = subject.Subjects.length
-    ? subject.Subjects.map((subj) => unmarshallSubject(subj))
-    : [];
-  newSubject.Ranks = subject.Ranks.length ? subject.Ranks.map((rank) => unmarshallRank(rank)) : [];
-  newSubject.Selects = subject.Selects.length
-    ? subject.Selects.map((rank) => unmarshallSelect(rank))
-    : [];
-  newSubject.Texts = subject.Texts.length ? subject.Texts.map((text) => unmarshallText(text)) : [];
+  delete newSubject.Elements;
+
+  newSubject.Ranks = new Array<any>();
+  newSubject.Selects = new Array<any>();
+  newSubject.Texts = new Array<any>();
+  newSubject.Subjects = new Array<any>();
+
+  rankQuestion.forEach((rank) => newSubject.Ranks.push(marshalRank(rank)));
+  selectQuestion.forEach((select) => newSubject.Selects.push(marshalSelect(select)));
+  textQuestion.forEach((text) => newSubject.Texts.push(marshalText(text)));
+  subjects.forEach((subj) => newSubject.Subjects.push(marshalSubject(subj)));
+
   return newSubject;
 };
 
-const unmarshallConfig: (configuration: Configuration) => any = (configuration) => {
+const marshalConfig = (configuration: types.Configuration): any => {
   const conf = { MainTitle: configuration.MainTitle, Scaffold: [] };
   for (const subject of configuration.Scaffold) {
-    conf.Scaffold.push(unmarshallSubject(subject));
+    conf.Scaffold.push(marshalSubject(subject));
   }
   return conf;
 };
 
-export { marshallConfig, unmarshallConfig };
+export { marshalConfig, unmarshalConfig, unmarshalConfigAndCreateAnswers };

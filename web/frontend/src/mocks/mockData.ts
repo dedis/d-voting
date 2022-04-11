@@ -70,9 +70,8 @@ const mockElection2: any = {
     {
       ID: (0xa2ab).toString(),
       Title: 'Rate the course',
-      Order: [(0x3fb2).toString(), (0xcd13).toString(), (0x1234).toString()],
-      Subjects: [],
-      Ranks: [],
+      Order: [(0x3fb2).toString(), (0xcd13).toString()],
+
       Selects: [
         {
           Title: 'How did you find the provided material, from 1 (bad) to 5 (excellent) ?',
@@ -86,29 +85,31 @@ const mockElection2: any = {
         {
           Title: 'Who were the two best TAs ?',
           ID: (0xcd13).toString(),
-          MaxLength: 20,
+          MaxLength: 40,
           MaxN: 2,
           MinN: 2,
           Choices: ['TA1', 'TA2'],
           Regex: '^[A-Z][a-z]+$',
         },
       ],
+
+      Ranks: [],
+      Subjects: [],
     },
     {
       ID: (0x1234).toString(),
       Title: 'Tough choices',
       Order: [(0xa319).toString(), (0xcafe).toString(), (0xbeef).toString()],
-      Subjects: [],
       Selects: [
         {
           Title: 'Select your ingredients',
           ID: (0xa319).toString(),
           MaxN: 3,
-          MinN: 2,
+          MinN: 0,
           Choices: ['tomato', 'salad', 'onion', 'falafel'],
         },
       ],
-      Texts: [],
+
       Ranks: [
         {
           Title: 'Which cafeteria serves the best coffee ?',
@@ -122,9 +123,14 @@ const mockElection2: any = {
           ID: (0xbeef).toString(),
           MaxN: 2,
           MinN: 1,
-          Choices: ['IN', 'SC'],
+          Choices: [
+            'INNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN',
+            'SC',
+          ],
         },
       ],
+      Texts: [],
+      Subjects: [],
     },
   ],
 };

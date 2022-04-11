@@ -11,8 +11,8 @@ import UploadFile from './UploadFile';
 
 import configurationSchema from '../../../schema/configurationValidation';
 import { Configuration, ID, Subject } from '../../../types/configuration';
-import { newSubject } from '../../../types/getObjectType';
-import { unmarshallConfig } from '../../../types/JSONparser';
+import { emptyConfiguration, newSubject } from '../../../types/getObjectType';
+import { marshalConfig } from '../../../types/JSONparser';
 
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
@@ -26,16 +26,16 @@ type ElectionFormProps = {
 };
 
 const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => {
-  // conf is the configuration object containing Maintitle and Scaffold which
+  // conf is the configuration object containing MainTitle and Scaffold which
   // contains an array of subject.
   const { t } = useTranslation();
-  const emptyConf: Configuration = { MainTitle: '', Scaffold: [] };
+  const emptyConf: Configuration = emptyConfiguration();
   const [conf, setConf] = useState<Configuration>(emptyConf);
   const { MainTitle, Scaffold } = conf;
 
   async function createHandler() {
     const data = {
-      Format: unmarshallConfig(conf),
+      Format: marshalConfig(conf),
     };
     const req = {
       method: 'POST',
@@ -71,7 +71,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
     }
   }
 
-  // exports the data to a JSON file, unmarshall the configuration state object
+  // exports the data to a JSON file, marshall the configuration state object
   // before exporting it
   const exportData = async () => {
     try {
@@ -84,7 +84,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
       return;
     }
     const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(
-      JSON.stringify(unmarshallConfig(conf))
+      JSON.stringify(marshalConfig(conf))
     )}`;
     const link = document.createElement('a');
     link.href = jsonString;

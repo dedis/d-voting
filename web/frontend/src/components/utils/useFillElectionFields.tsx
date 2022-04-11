@@ -1,22 +1,25 @@
 import { useEffect, useState } from 'react';
 
-/*custom hook that given an election object returns its fields*/
 const useFillElectionFields = (electionData) => {
-  const [title, setTitle] = useState(null);
-  const [candidates, setCandidates] = useState(null);
+  const [electionTitle, setElectionTitle] = useState(null);
   const [id, setId] = useState(null);
+  const [configObj, setConfigObj] = useState(null);
   const [status, setStatus] = useState(null);
   const [pubKey, setPubKey] = useState('');
+  const [ballotSize, setBallotSize] = useState(0);
+  const [chunksPerBallot, setChunksPerBallot] = useState(0);
   const [result, setResult] = useState(null);
   const [isResultSet, setIsResultSet] = useState(false);
 
   useEffect(() => {
     if (electionData !== null) {
-      setTitle(electionData.Title);
-      setCandidates(electionData.Format.Candidates);
+      setElectionTitle(electionData.Title);
       setId(electionData.ElectionID);
+      setConfigObj(electionData.Format);
       setStatus(electionData.Status);
       setPubKey(electionData.Pubkey);
+      setBallotSize(electionData.BallotSize);
+      setChunksPerBallot(electionData.ChunksPerBallot);
       setResult(electionData.Result);
       if (electionData.Result.length > 0) {
         setIsResultSet(true);
@@ -25,11 +28,13 @@ const useFillElectionFields = (electionData) => {
   }, [electionData]);
 
   return {
-    title,
-    candidates,
+    electionTitle,
     id,
+    configObj,
     status,
     pubKey,
+    ballotSize,
+    chunksPerBallot,
     result,
     setResult,
     setStatus,

@@ -6,9 +6,9 @@ import useFillElectionFields from './useFillElectionFields';
  * @returns the fields of an election and a function to change the status field
  */
 const ElectionFields = (electionData) => {
-  const { title, candidates, id, status, pubKey, result, setStatus } =
+  const { electionTitle, id, status, pubKey, result, setStatus } =
     useFillElectionFields(electionData);
-  return { title, candidates, id, status, pubKey, result, setStatus };
+  return { electionTitle, id, status, pubKey, result, setStatus };
 };
 
 export default ElectionFields;

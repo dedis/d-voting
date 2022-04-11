@@ -2,8 +2,10 @@ import useFetchCall from './useFetchCall';
 import useFillElectionFields from './useFillElectionFields';
 import { ENDPOINT_EVOTING_GET_ELECTION } from './Endpoints';
 
-/* custom hook that fetches an election given its id and
-returns its different parameters*/
+// Custom hook that fetches an election given its id and returns its
+// different parameters
+
+// TODO remove tokens everywhere
 const useElection = (electionID, token) => {
   const request = {
     method: 'POST',
@@ -11,10 +13,12 @@ const useElection = (electionID, token) => {
   };
   const [data, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ELECTION, request);
   const {
-    title,
-    candidates,
+    electionTitle,
+    configObj,
     status,
     pubKey,
+    ballotSize,
+    chunksPerBallot,
     result,
     setResult,
     setStatus,
@@ -23,11 +27,13 @@ const useElection = (electionID, token) => {
   } = useFillElectionFields(data);
   return {
     loading,
-    title,
-    candidates,
+    electionTitle,
+    configObj,
     electionID,
     status,
     pubKey,
+    ballotSize,
+    chunksPerBallot,
     result,
     setResult,
     setStatus,

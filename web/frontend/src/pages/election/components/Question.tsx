@@ -7,11 +7,17 @@ import { ChevronUpIcon } from '@heroicons/react/solid';
 import useQuestionForm from './utils/useQuestionForm';
 
 import PropTypes from 'prop-types';
-import { Rank, Select, Text } from 'types/configuration';
+import {
+  RankQuestion,
+  SelectQuestion,
+  SubjectElement,
+  TEXT,
+  TextQuestion,
+} from 'types/configuration';
 
 type QuestionProps = {
-  question: Rank | Select | Text;
-  notifyParent(question: Rank | Select | Text): void;
+  question: RankQuestion | SelectQuestion | TextQuestion;
+  notifyParent(question: RankQuestion | SelectQuestion | TextQuestion): void;
   removeQuestion: () => void;
 };
 
@@ -41,10 +47,10 @@ const Question: FC<QuestionProps> = ({ question, notifyParent, removeQuestion })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [values]);
 
-  const showExtraFields = (quest: Rank | Select | Text) => {
+  const showExtraFields = (quest: SubjectElement) => {
     switch (quest.Type) {
-      case 'TEXT':
-        const t = question as Text;
+      case TEXT:
+        const t = question as TextQuestion;
         return (
           <>
             <label className="block text-md font-medium text-gray-500">MaxLength</label>

@@ -71,10 +71,10 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
 
   const constructRows = () =>
     elections.map((elec) => {
-      let { title, id, status, setStatus } = ElectionFields(elec);
+      let { electionTitle, id, status, setStatus } = ElectionFields(elec);
       let link = (
         <Link className="election-link" to={{ pathname: `${ROUTE_ELECTION_SHOW}/${id}` }}>
-          {title}
+          {electionTitle}
         </Link>
       );
       let stat = <Status status={status} />;
