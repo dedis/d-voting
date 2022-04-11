@@ -74,8 +74,9 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
   // exports the data to a JSON file, marshall the configuration state object
   // before exporting it
   const exportData = async () => {
+    const data = marshalConfig(conf);
     try {
-      await configurationSchema.validate(conf);
+      await configurationSchema.validate(data);
     } catch (err) {
       setTextModal(
         'Incorrect election configuration, please fill it completely: ' + err.errors.join(',')
@@ -83,9 +84,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
       setShowModal(true);
       return;
     }
-    const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(
-      JSON.stringify(marshalConfig(conf))
-    )}`;
+    const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(JSON.stringify(data))}`;
     const link = document.createElement('a');
     link.href = jsonString;
     link.download = 'election_configuration.json';

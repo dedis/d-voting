@@ -36,7 +36,7 @@ const selectsSchema = yup.object({
           });
         }
 
-        if (MaxN >= Choices.length) {
+        if (MaxN > Choices.length) {
           return this.createError({
             path,
             message: `MaxN should be less or equal to Choices length in selects, in object ID: ${ID}`,
