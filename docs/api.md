@@ -114,8 +114,8 @@ Return:
       "TextResult": [["<string>"]]
     }
   ],
-  "ChunksPerBallot": "",
-  "BallotSize": "",
+  "ChunksPerBallot": "<int>",
+  "BallotSize": "<int>",
   "Configuration": {<Configuration>}
 }
 ```
