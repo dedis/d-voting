@@ -18,32 +18,32 @@ the smart contract via `/evoting/elections/*`.
 Smart contract   DKG       Neff shuffle
 --------------   ---       ------------
     │             │        NS1:Init (on startup)
-    ▼             │
-SC1:Create        │
-    │             │
-    │             ▼
-    │          DK1:Init
-    │             │
-    │             ▼
-    │          DK2:Setup
-    │             │
-    ▼             │
-SC3:Open          │
-    │             │
-    ▼             │
-SC4:Cast          │
-    │             │
-    ▼             │
-SC5:Close         │
-    │             │
-    ▼             │
-SC6:Shuffle       │
+    ▼             │              │
+SC1:Create        │              │
+    │             │              │
+    │             ▼              │
+    │          DK1:Init          │
+    │             │              │
+    │             ▼              │
+    │          DK2:Setup         │
+    │             │              │
+    ▼             │              │
+SC3:Open          │              │
+    │             │              │
+    ▼             │              │
+SC4:Cast          │              │
+    │             │              │
+    ▼             │              │
+SC5:Close         │              │
+    │             │              │
+    │             │              ▼
+    │             │          NS2:Shuffle
     │             │
     │             ▼
     │         DK3:BeginDecryption
     │
     ▼
-SC7:CombineShares
+SC6:CombineShares
     │
     ▼
 SC2:ElectionGetInfo
@@ -192,13 +192,13 @@ Return:
 
 ```
 
-# SC6: Election shuffle
+# NS2: Election shuffle
 
-|        |                                   |
-| ------ | --------------------------------- |
-| URL    | `/evoting/elections/{ElectionID}` |
-| Method | `PUT`                             |
-| Input  | `application/json`                |
+|        |                                          |
+| ------ | ---------------------------------------- |
+| URL    | `/evoting/services/shuffle/{ElectionID}` |
+| Method | `PUT`                                    |
+| Input  | `application/json`                       |
 
 ```json
 {
@@ -214,13 +214,13 @@ Return:
 
 ```
 
-# SC7: Election begin decryption
+# DK3: Election begin decryption
 
-|        |                                   |
-| ------ | --------------------------------- |
-| URL    | `/evoting/elections/{ElectionID}` |
-| Method | `PUT`                             |
-| Input  | `application/json`                |
+|        |                                             |
+| ------ | ------------------------------------------- |
+| URL    | `/evoting/services/dkg/actors/{ElectionID}` |
+| Method | `PUT`                                       |
+| Input  | `application/json`                          |
 
 ```json
 {
@@ -236,7 +236,7 @@ Return:
 
 ```
 
-# SC7: Election combine shares
+# SC6: Election combine shares
 
 |        |                                   |
 | ------ | --------------------------------- |
