@@ -1,8 +1,6 @@
 package controller
 
 import (
-	"encoding/hex"
-	"fmt"
 	"net/http"
 
 	"github.com/dedis/d-voting/services/shuffle"
@@ -15,6 +13,8 @@ import (
 	"go.dedis.ch/dela/core/validation"
 	"go.dedis.ch/dela/mino/proxy"
 	"golang.org/x/xerrors"
+
+	eproxy "github.com/dedis/d-voting/proxy"
 )
 
 // InitAction is an action to initialize the shuffle protocol
@@ -80,39 +80,18 @@ func (a *RegisterHandlersAction) Execute(ctx node.Context) error {
 
 	router := mux.NewRouter()
 
-	router.Handle("/evoting/services/shuffle/{electionID}", ShuffleHandler(actor)).Methods("PUT")
+	ep := eproxy.NewShuffle(actor)
+
+	router.HandleFunc("/evoting/services/shuffle/{electionID}", ep.EditShuffle).Methods("PUT")
+
+	router.NotFoundHandler = http.HandlerFunc(eproxy.NotFoundHandler)
+	router.MethodNotAllowedHandler = http.HandlerFunc(eproxy.NotAllowedHandler)
 
 	proxy.RegisterHandler("/evoting/services/shuffle/", router.ServeHTTP)
 
 	dela.Logger.Info().Msg("DKG handler registered")
 
 	return nil
-}
-
-// ShuffleHandler calls the shuffling function on the shuffling actor
-func ShuffleHandler(actor shuffle.Actor) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-
-		if vars == nil || vars["electionID"] == "" {
-			http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
-			return
-		}
-
-		electionID := vars["electionID"]
-
-		buff, err := hex.DecodeString(electionID)
-		if err != nil {
-			http.Error(w, "failed to decode electionID: "+electionID, http.StatusInternalServerError)
-			return
-		}
-
-		err = actor.Shuffle(buff)
-		if err != nil {
-			http.Error(w, "failed to shuffle: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-	})
 }
 
 func makeClient(ctx node.Context) (client, error) {

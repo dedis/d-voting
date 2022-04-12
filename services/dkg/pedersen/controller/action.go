@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"go.dedis.ch/dela/core/access"
@@ -15,7 +14,6 @@ import (
 
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/dkg/pedersen"
-	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"github.com/gorilla/mux"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli/node"
@@ -24,6 +22,8 @@ import (
 	"go.dedis.ch/dela/mino/proxy"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
+
+	eproxy "github.com/dedis/d-voting/proxy"
 )
 
 var suite = suites.MustFind("Ed25519")
@@ -286,118 +286,33 @@ func (a *RegisterHandlersAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve dkg.DKG: %v", err)
 	}
 
+	signer, err := getSigner(ctx.Flags)
+	if err != nil {
+		return xerrors.Errorf("failed to get signer for txmngr : %v", err)
+	}
+
+	client, err := makeClient(ctx.Injector)
+	if err != nil {
+		return xerrors.Errorf("failed to make client: %v", err)
+	}
+
+	mngr := signed.NewManager(signer, &client)
+
 	router := mux.NewRouter()
 
-	router.HandleFunc("/evoting/services/dkg/actors", CreateActorHandler(dkg, ctx)).Methods("POST")
-	router.HandleFunc("/evoting/services/dkg/actors/{electionID}", UpdateActorHandler(dkg)).Methods("PUT")
+	ep := eproxy.NewDKG(mngr, dkg)
+
+	router.HandleFunc("/evoting/services/dkg/actors", ep.NewDKGActor).Methods("POST")
+	router.HandleFunc("/evoting/services/dkg/actors/{electionID}", ep.EditDKGActor).Methods("PUT")
+
+	router.NotFoundHandler = http.HandlerFunc(eproxy.NotFoundHandler)
+	router.MethodNotAllowedHandler = http.HandlerFunc(eproxy.NotAllowedHandler)
 
 	proxy.RegisterHandler("/evoting/services/dkg/", router.ServeHTTP)
 
 	dela.Logger.Info().Msg("DKG handler registered")
 
 	return nil
-}
-
-// CreateActorHandler runs Listen to initialize an Actor corresponding to the
-// given electionID
-func CreateActorHandler(dkg dkg.DKG, ctx node.Context) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Receive the hex-encoded electionID
-		data, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "failed to read body: "+err.Error(),
-				http.StatusInternalServerError)
-			return
-		}
-
-		electionID := string(data)
-
-		// sanity check
-		electionIDBuf, err := hex.DecodeString(electionID)
-		if err != nil {
-			http.Error(w, "failed to decode electionID: "+electionID,
-				http.StatusBadRequest)
-			return
-		}
-
-		//keyPath := ctx.Flags.String("signer")
-
-		signer, err := getSigner(ctx.Flags)
-		if err != nil {
-			http.Error(w,
-				fmt.Sprintf("failed to get signer for txmngr : %v", err),
-				http.StatusBadRequest,
-			)
-			return
-		}
-
-		client, err := makeClient(ctx.Injector)
-		if err != nil {
-			http.Error(w,
-				fmt.Sprintf("failed to make client: %v", err),
-				http.StatusBadRequest,
-			)
-			return
-		}
-
-		_, err = dkg.Listen(electionIDBuf, signed.NewManager(signer, &client))
-		if err != nil {
-			http.Error(w, "failed to start actor: "+err.Error(),
-				http.StatusInternalServerError)
-			return
-		}
-	}
-}
-
-// UpdateActorHandler defines the handler to setup and compute the pubshares.
-func UpdateActorHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-
-		if vars == nil || vars["electionID"] == "" {
-			http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
-			return
-		}
-
-		electionID := vars["electionID"]
-
-		electionIDBuf, err := hex.DecodeString(electionID)
-		if err != nil {
-			http.Error(w, "failed to decode electionID: "+electionID, http.StatusBadRequest)
-			return
-		}
-
-		a, exists := dkg.GetActor(electionIDBuf)
-		if !exists {
-			http.Error(w, "actor does not exist", http.StatusInternalServerError)
-			return
-		}
-
-		var input types.UpdateDKG
-
-		decoder := json.NewDecoder(r.Body)
-
-		err = decoder.Decode(&input)
-		if err != nil {
-			http.Error(w, "failed to decode input: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		switch input.Action {
-		case "setup":
-			_, err := a.Setup()
-			if err != nil {
-				http.Error(w, "failed to setup: "+err.Error(), http.StatusInternalServerError)
-				return
-			}
-		case "computePubshares":
-			err = a.ComputePubshares()
-			if err != nil {
-				http.Error(w, "failed to compute pubshares: "+err.Error(), http.StatusInternalServerError)
-				return
-			}
-		}
-	}
 }
 
 func updateDKGStore(inj node.Injector, fn func(kv.WritableTx) error) error {

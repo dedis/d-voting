@@ -1,20 +1,60 @@
 package proxy
 
 import (
+	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/gorilla/mux"
+	"github.com/rs/zerolog"
+	"go.dedis.ch/dela"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/serde"
 	"golang.org/x/xerrors"
 )
 
+// NewElection returns a new initialized election proxy
+func NewElection(srv ordering.Service, mngr txn.Manager, p pool.Pool,
+	ctx serde.Context, fac serde.Factory) Election {
+
+	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
+
+	return &election{
+		logger:      logger,
+		orderingSvc: srv,
+		context:     ctx,
+		electionFac: fac,
+		mngr:        mngr,
+		pool:        p,
+	}
+}
+
+// election defines HTTP handlers to manipulate the evoting smart contract
+//
+// - implements proxy.Election
+type election struct {
+	sync.Mutex
+
+	orderingSvc ordering.Service
+	logger      zerolog.Logger
+	context     serde.Context
+	electionFac serde.Factory
+	mngr        txn.Manager
+	pool        pool.Pool
+}
+
 // NewElection implements proxy.Proxy
-func (h *proxy) NewElection(w http.ResponseWriter, r *http.Request) {
+func (h *election) NewElection(w http.ResponseWriter, r *http.Request) {
 	req := &types.CreateElectionRequest{}
 
 	err := json.NewDecoder(r.Body).Decode(req)
@@ -60,7 +100,7 @@ func (h *proxy) NewElection(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewElectionVote implements proxy.Proxy
-func (h *proxy) NewElectionVote(w http.ResponseWriter, r *http.Request) {
+func (h *election) NewElectionVote(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	if vars == nil || vars["electionID"] == "" {
@@ -146,7 +186,7 @@ func (h *proxy) NewElectionVote(w http.ResponseWriter, r *http.Request) {
 }
 
 // EditElection implements proxy.Proxy
-func (h *proxy) EditElection(w http.ResponseWriter, r *http.Request) {
+func (h *election) EditElection(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	if vars == nil || vars["electionID"] == "" {
@@ -190,7 +230,7 @@ func (h *proxy) EditElection(w http.ResponseWriter, r *http.Request) {
 
 // openElection allows opening an election, which sets the public key based on
 // the DKG actor.
-func (h *proxy) openElection(elecID string, w http.ResponseWriter, r *http.Request) {
+func (h *election) openElection(elecID string, w http.ResponseWriter, r *http.Request) {
 	openElection := types.OpenElection{
 		ElectionID: elecID,
 	}
@@ -210,7 +250,7 @@ func (h *proxy) openElection(elecID string, w http.ResponseWriter, r *http.Reque
 }
 
 // closeElection closes an election.
-func (h *proxy) closeElection(electionIDHex string, w http.ResponseWriter, r *http.Request) {
+func (h *election) closeElection(electionIDHex string, w http.ResponseWriter, r *http.Request) {
 
 	closeElection := types.CloseElection{
 		ElectionID: electionIDHex,
@@ -231,7 +271,7 @@ func (h *proxy) closeElection(electionIDHex string, w http.ResponseWriter, r *ht
 }
 
 // combineShares decrypts the shuffled ballots in an election.
-func (h *proxy) combineShares(electionIDHex string, w http.ResponseWriter, r *http.Request) {
+func (h *election) combineShares(electionIDHex string, w http.ResponseWriter, r *http.Request) {
 
 	election, err := getElection(h.context, h.electionFac, electionIDHex, h.orderingSvc)
 	if err != nil {
@@ -264,7 +304,7 @@ func (h *proxy) combineShares(electionIDHex string, w http.ResponseWriter, r *ht
 }
 
 // cancelElection cancels an election.
-func (h *proxy) cancelElection(electionIDHex string, w http.ResponseWriter, r *http.Request) {
+func (h *election) cancelElection(electionIDHex string, w http.ResponseWriter, r *http.Request) {
 
 	cancelElection := types.CancelElection{
 		ElectionID: electionIDHex,
@@ -285,7 +325,7 @@ func (h *proxy) cancelElection(electionIDHex string, w http.ResponseWriter, r *h
 }
 
 // Election implements proxy.Proxy
-func (h *proxy) Election(w http.ResponseWriter, r *http.Request) {
+func (h *election) Election(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	if vars == nil || vars["electionID"] == "" {
@@ -331,7 +371,7 @@ func (h *proxy) Election(w http.ResponseWriter, r *http.Request) {
 }
 
 // Elections implements proxy.Proxy
-func (h *proxy) Elections(w http.ResponseWriter, r *http.Request) {
+func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 
 	elecMD, err := h.getElectionsMetadata()
 	if err != nil {
@@ -372,4 +412,133 @@ func (h *proxy) Elections(w http.ResponseWriter, r *http.Request) {
 			http.StatusInternalServerError)
 		return
 	}
+}
+
+// waitForTxnID blocks until `ID` is included or `events` is closed.
+func (h *election) waitForTxnID(events <-chan ordering.Event, ID []byte) bool {
+	for event := range events {
+		for _, res := range event.Transactions {
+			if !bytes.Equal(res.GetTransaction().GetID(), ID) {
+				continue
+			}
+
+			ok, msg := res.GetStatus()
+			if !ok {
+				h.logger.Info().Msgf("transaction %x denied : %s", ID, msg)
+			}
+			return ok
+		}
+	}
+	return false
+}
+
+func (h *election) getElectionsMetadata() (*types.ElectionsMetadata, error) {
+	electionsMetadata := &types.ElectionsMetadata{}
+
+	electionMetadataProof, err := h.orderingSvc.GetProof([]byte(evoting.ElectionsMetadataKey))
+	if err != nil {
+		return nil, xerrors.Errorf("failed to read on the blockchain: %v", err)
+	}
+
+	err = json.Unmarshal(electionMetadataProof.GetValue(), electionsMetadata)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to unmarshal ElectionMetadata: %v", err)
+	}
+
+	return electionsMetadata, nil
+}
+
+// getElection gets the election from the snap. Returns the election ID NOT hex
+// encoded.
+func getElection(ctx serde.Context, electionFac serde.Factory, electionIDHex string,
+	srv ordering.Service) (types.Election, error) {
+
+	var election types.Election
+
+	electionID, err := hex.DecodeString(electionIDHex)
+	if err != nil {
+		return election, xerrors.Errorf("failed to decode electionIDHex: %v", err)
+	}
+
+	proof, err := srv.GetProof(electionID)
+	if err != nil {
+		return election, xerrors.Errorf("failed to get proof: %v", err)
+	}
+
+	electionBuff := proof.GetValue()
+	if len(electionBuff) == 0 {
+		return election, xerrors.Errorf("election does not exist")
+	}
+
+	message, err := electionFac.Deserialize(ctx, electionBuff)
+	if err != nil {
+		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
+	}
+
+	election, ok := message.(types.Election)
+	if !ok {
+		return election, xerrors.Errorf("wrong message type: %T", message)
+	}
+
+	return election, nil
+}
+
+// submitAndWaitForTxn submits a transaction and waits for it to be included.
+// Returns the transaction ID.
+func (h *election) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
+	cmdArg string, payload []byte) ([]byte, error) {
+	h.Lock()
+	defer h.Unlock()
+
+	err := h.mngr.Sync()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to sync manager: %v", err)
+	}
+
+	tx, err := createTransaction(h.mngr, cmd, cmdArg, payload)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to create transaction: %v", err)
+	}
+
+	watchCtx, cancel := context.WithTimeout(ctx, inclusionTimeout)
+	defer cancel()
+
+	events := h.orderingSvc.Watch(watchCtx)
+
+	err = h.pool.Add(tx)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to add transaction to the pool: %v", err)
+	}
+
+	ok := h.waitForTxnID(events, tx.GetID())
+	if !ok {
+		return nil, xerrors.Errorf("transaction not processed within timeout")
+	}
+
+	return tx.GetID(), nil
+}
+
+func createTransaction(manager txn.Manager, commandType evoting.Command,
+	commandArg string, buf []byte) (txn.Transaction, error) {
+
+	args := []txn.Arg{
+		{
+			Key:   native.ContractArg,
+			Value: []byte(evoting.ContractName),
+		},
+		{
+			Key:   evoting.CmdArg,
+			Value: []byte(commandType),
+		},
+		{
+			Key:   commandArg,
+			Value: buf,
+		},
+	}
+
+	tx, err := manager.Make(args...)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to create transaction from manager: %v", err)
+	}
+	return tx, nil
 }

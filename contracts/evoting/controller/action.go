@@ -135,21 +135,21 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 	electionFac := types.NewElectionFactory(types.CiphervoteFactory{}, rosterFac)
 	mngr := getManager(signer, client)
 
-	ep := eproxy.NewProxy(ordering, mngr, p, sjson.NewContext(), electionFac)
+	ep := eproxy.NewElection(ordering, mngr, p, sjson.NewContext(), electionFac)
 
-	electionRouter := mux.NewRouter()
+	router := mux.NewRouter()
 
-	electionRouter.HandleFunc("/evoting/elections", ep.NewElection).Methods("POST")
-	electionRouter.HandleFunc("/evoting/elections", ep.Elections).Methods("GET")
-	electionRouter.HandleFunc("/evoting/elections/{electionID}", ep.Election).Methods("GET")
-	electionRouter.HandleFunc("/evoting/elections/{electionID}", ep.EditElection).Methods("PUT")
-	electionRouter.HandleFunc("/evoting/elections/{electionID}/vote", ep.NewElectionVote).Methods("POST")
+	router.HandleFunc("/evoting/elections", ep.NewElection).Methods("POST")
+	router.HandleFunc("/evoting/elections", ep.Elections).Methods("GET")
+	router.HandleFunc("/evoting/elections/{electionID}", ep.Election).Methods("GET")
+	router.HandleFunc("/evoting/elections/{electionID}", ep.EditElection).Methods("PUT")
+	router.HandleFunc("/evoting/elections/{electionID}/vote", ep.NewElectionVote).Methods("POST")
 
-	electionRouter.NotFoundHandler = http.HandlerFunc(eproxy.NotFoundHandler)
-	electionRouter.MethodNotAllowedHandler = http.HandlerFunc(eproxy.NotAllowedHandler)
+	router.NotFoundHandler = http.HandlerFunc(eproxy.NotFoundHandler)
+	router.MethodNotAllowedHandler = http.HandlerFunc(eproxy.NotAllowedHandler)
 
-	proxy.RegisterHandler("/evoting/elections", electionRouter.ServeHTTP)
-	proxy.RegisterHandler("/evoting/elections/", electionRouter.ServeHTTP)
+	proxy.RegisterHandler("/evoting/elections", router.ServeHTTP)
+	proxy.RegisterHandler("/evoting/elections/", router.ServeHTTP)
 
 	dela.Logger.Info().Msg("d-voting proxy handlers registered")
 
