@@ -1,7 +1,6 @@
-package controller
+package proxy
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -11,16 +10,11 @@ import (
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/gorilla/mux"
-	"go.dedis.ch/dela/core/ordering"
-	"go.dedis.ch/dela/serde"
-	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 )
 
-var suite = suites.MustFind("ed25519")
-
-// CreateElection allows creating an election.
-func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
+// NewElection implements proxy.Proxy
+func (h *proxy) NewElection(w http.ResponseWriter, r *http.Request) {
 	req := &types.CreateElectionRequest{}
 
 	err := json.NewDecoder(r.Body).Decode(req)
@@ -65,8 +59,8 @@ func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// CastVote is used to cast a vote in an election.
-func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
+// NewElectionVote implements proxy.Proxy
+func (h *proxy) NewElectionVote(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	if vars == nil || vars["electionID"] == "" {
@@ -90,8 +84,6 @@ func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to get election metadata", http.StatusNotFound)
 		return
 	}
-
-	fmt.Println("election metadata:", elecMD, electionID)
 
 	if !elecMD.ElectionsIDs.Contains(electionID) {
 		http.Error(w, "the election does not exist", http.StatusNotFound)
@@ -153,8 +145,8 @@ func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// UpdateElection defines the handler on the PUT elections/{electionID}
-func (h *votingProxy) UpdateElection(w http.ResponseWriter, r *http.Request) {
+// EditElection implements proxy.Proxy
+func (h *proxy) EditElection(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	if vars == nil || vars["electionID"] == "" {
@@ -186,20 +178,19 @@ func (h *votingProxy) UpdateElection(w http.ResponseWriter, r *http.Request) {
 
 	switch req.Action {
 	case "open":
-		h.OpenElection(electionID, w, r)
+		h.openElection(electionID, w, r)
 	case "close":
-		h.CloseElection(electionID, w, r)
+		h.closeElection(electionID, w, r)
 	case "combineShares":
-		h.CombineShares(electionID, w, r)
+		h.combineShares(electionID, w, r)
 	case "cancel":
-		h.CancelElection(electionID, w, r)
+		h.cancelElection(electionID, w, r)
 	}
 }
 
-// OpenElection allows opening an election, which sets the public key based on
+// openElection allows opening an election, which sets the public key based on
 // the DKG actor.
-// Body: hex-encoded electionID
-func (h *votingProxy) OpenElection(elecID string, w http.ResponseWriter, r *http.Request) {
+func (h *proxy) openElection(elecID string, w http.ResponseWriter, r *http.Request) {
 	openElection := types.OpenElection{
 		ElectionID: elecID,
 	}
@@ -218,8 +209,8 @@ func (h *votingProxy) OpenElection(elecID string, w http.ResponseWriter, r *http
 	}
 }
 
-// CloseElection closes an election.
-func (h *votingProxy) CloseElection(electionIDHex string, w http.ResponseWriter, r *http.Request) {
+// closeElection closes an election.
+func (h *proxy) closeElection(electionIDHex string, w http.ResponseWriter, r *http.Request) {
 
 	closeElection := types.CloseElection{
 		ElectionID: electionIDHex,
@@ -239,8 +230,8 @@ func (h *votingProxy) CloseElection(electionIDHex string, w http.ResponseWriter,
 	}
 }
 
-// CombineShares decrypts the shuffled ballots in an election.
-func (h *votingProxy) CombineShares(electionIDHex string, w http.ResponseWriter, r *http.Request) {
+// combineShares decrypts the shuffled ballots in an election.
+func (h *proxy) combineShares(electionIDHex string, w http.ResponseWriter, r *http.Request) {
 
 	election, err := getElection(h.context, h.electionFac, electionIDHex, h.orderingSvc)
 	if err != nil {
@@ -272,8 +263,8 @@ func (h *votingProxy) CombineShares(electionIDHex string, w http.ResponseWriter,
 	}
 }
 
-// CancelElection cancels an election.
-func (h *votingProxy) CancelElection(electionIDHex string, w http.ResponseWriter, r *http.Request) {
+// cancelElection cancels an election.
+func (h *proxy) cancelElection(electionIDHex string, w http.ResponseWriter, r *http.Request) {
 
 	cancelElection := types.CancelElection{
 		ElectionID: electionIDHex,
@@ -293,43 +284,8 @@ func (h *votingProxy) CancelElection(electionIDHex string, w http.ResponseWriter
 	}
 }
 
-// submitAndWaitForTxn submits a transaction and waits for it to be included.
-// Returns the transaction ID.
-func (h *votingProxy) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
-	cmdArg string, payload []byte) ([]byte, error) {
-	h.Lock()
-	defer h.Unlock()
-
-	err := h.mngr.Sync()
-	if err != nil {
-		return nil, xerrors.Errorf("failed to sync manager: %v", err)
-	}
-
-	tx, err := createTransaction(h.mngr, cmd, cmdArg, payload)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to create transaction: %v", err)
-	}
-
-	watchCtx, cancel := context.WithTimeout(ctx, inclusionTimeout)
-	defer cancel()
-
-	events := h.orderingSvc.Watch(watchCtx)
-
-	err = h.pool.Add(tx)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to add transaction to the pool: %v", err)
-	}
-
-	ok := h.waitForTxnID(events, tx.GetID())
-	if !ok {
-		return nil, xerrors.Errorf("transaction not processed within timeout")
-	}
-
-	return tx.GetID(), nil
-}
-
-// GetElection returns the information for a given election.
-func (h *votingProxy) GetElection(w http.ResponseWriter, r *http.Request) {
+// Election implements proxy.Proxy
+func (h *proxy) Election(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	if vars == nil || vars["electionID"] == "" {
@@ -341,8 +297,7 @@ func (h *votingProxy) GetElection(w http.ResponseWriter, r *http.Request) {
 
 	election, err := getElection(h.context, h.electionFac, electionID, h.orderingSvc)
 	if err != nil {
-		http.Error(w, xerrors.Errorf(getElectionErr, err).Error(),
-			http.StatusInternalServerError)
+		http.Error(w, xerrors.Errorf("failed to get election: %v", err).Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -375,8 +330,8 @@ func (h *votingProxy) GetElection(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetElections returns the information for all elections.
-func (h *votingProxy) GetElections(w http.ResponseWriter, r *http.Request) {
+// Elections implements proxy.Proxy
+func (h *proxy) Elections(w http.ResponseWriter, r *http.Request) {
 
 	elecMD, err := h.getElectionsMetadata()
 	if err != nil {
@@ -389,7 +344,7 @@ func (h *votingProxy) GetElections(w http.ResponseWriter, r *http.Request) {
 	for i, id := range elecMD.ElectionsIDs {
 		election, err := getElection(h.context, h.electionFac, id, h.orderingSvc)
 		if err != nil {
-			http.Error(w, xerrors.Errorf(getElectionErr, err).Error(),
+			http.Error(w, xerrors.Errorf("failed to get election: %v", err).Error(),
 				http.StatusInternalServerError)
 		}
 
@@ -417,77 +372,4 @@ func (h *votingProxy) GetElections(w http.ResponseWriter, r *http.Request) {
 			http.StatusInternalServerError)
 		return
 	}
-}
-
-// getElection gets the election from the snap. Returns the election ID NOT hex
-// encoded.
-func getElection(ctx serde.Context, electionFac serde.Factory, electionIDHex string,
-	srv ordering.Service) (types.Election, error) {
-
-	var election types.Election
-
-	electionID, err := hex.DecodeString(electionIDHex)
-	if err != nil {
-		return election, xerrors.Errorf("failed to decode electionIDHex: %v", err)
-	}
-
-	proof, err := srv.GetProof(electionID)
-	if err != nil {
-		return election, xerrors.Errorf("failed to get proof: %v", err)
-	}
-
-	electionBuff := proof.GetValue()
-	if len(electionBuff) == 0 {
-		return election, xerrors.Errorf("election does not exist")
-	}
-
-	message, err := electionFac.Deserialize(ctx, electionBuff)
-	if err != nil {
-		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
-	}
-
-	election, ok := message.(types.Election)
-	if !ok {
-		return election, xerrors.Errorf("wrong message type: %T", message)
-	}
-
-	return election, nil
-}
-
-func notFoundHandler(w http.ResponseWriter, r *http.Request) {
-	err := types.HTTPError{
-		Title:   "Not found",
-		Code:    http.StatusNotFound,
-		Message: "The requested endpoint was not found",
-		Args: map[string]interface{}{
-			"url":    r.URL.String(),
-			"method": r.Method,
-		},
-	}
-
-	buf, _ := json.MarshalIndent(&err, "", "  ")
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(http.StatusNotFound)
-	fmt.Fprintln(w, string(buf))
-}
-
-func notAllowedHandler(w http.ResponseWriter, r *http.Request) {
-	err := types.HTTPError{
-		Title:   "Not allowed",
-		Code:    http.StatusMethodNotAllowed,
-		Message: "The requested endpoint was not allowed",
-		Args: map[string]interface{}{
-			"url":    r.URL.String(),
-			"method": r.Method,
-		},
-	}
-
-	buf, _ := json.MarshalIndent(&err, "", "  ")
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(http.StatusMethodNotAllowed)
-	fmt.Fprintln(w, string(buf))
 }

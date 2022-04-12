@@ -15,15 +15,15 @@ import (
 
 	"go.dedis.ch/kyber/v3"
 
-	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
+	eproxy "github.com/dedis/d-voting/proxy"
 	"github.com/dedis/d-voting/services/dkg"
 	stypes "github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"github.com/dedis/d-voting/services/shuffle"
+	"github.com/gorilla/mux"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli/node"
-	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
@@ -36,11 +36,11 @@ import (
 	"go.dedis.ch/dela/crypto/loader"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/proxy"
+	"go.dedis.ch/dela/serde"
 	sjson "go.dedis.ch/dela/serde/json"
 	"golang.org/x/xerrors"
 )
 
-const inclusionTimeout = 2 * time.Second
 const contentType = "application/json"
 const getElectionErr = "failed to get election: %v"
 
@@ -132,41 +132,28 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve authority factory: %v", err)
 	}
 
-	serdecontext := sjson.NewContext()
 	electionFac := types.NewElectionFactory(types.CiphervoteFactory{}, rosterFac)
-
 	mngr := getManager(signer, client)
 
-	registerVotingProxy(proxy, mngr, orderingSvc, p, serdecontext, electionFac)
+	ep := eproxy.NewProxy(ordering, mngr, p, sjson.NewContext(), electionFac)
+
+	electionRouter := mux.NewRouter()
+
+	electionRouter.HandleFunc("/evoting/elections", ep.NewElection).Methods("POST")
+	electionRouter.HandleFunc("/evoting/elections", ep.Elections).Methods("GET")
+	electionRouter.HandleFunc("/evoting/elections/{electionID}", ep.Election).Methods("GET")
+	electionRouter.HandleFunc("/evoting/elections/{electionID}", ep.EditElection).Methods("PUT")
+	electionRouter.HandleFunc("/evoting/elections/{electionID}/vote", ep.NewElectionVote).Methods("POST")
+
+	electionRouter.NotFoundHandler = http.HandlerFunc(eproxy.NotFoundHandler)
+	electionRouter.MethodNotAllowedHandler = http.HandlerFunc(eproxy.NotAllowedHandler)
+
+	proxy.RegisterHandler("/evoting/elections", electionRouter.ServeHTTP)
+	proxy.RegisterHandler("/evoting/elections/", electionRouter.ServeHTTP)
 
 	dela.Logger.Info().Msg("d-voting proxy handlers registered")
 
 	return nil
-}
-
-func createTransaction(manager txn.Manager, commandType evoting.Command,
-	commandArg string, buf []byte) (txn.Transaction, error) {
-
-	args := []txn.Arg{
-		{
-			Key:   native.ContractArg,
-			Value: []byte(evoting.ContractName),
-		},
-		{
-			Key:   evoting.CmdArg,
-			Value: []byte(commandType),
-		},
-		{
-			Key:   commandArg,
-			Value: buf,
-		},
-	}
-
-	tx, err := manager.Make(args...)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to create transaction from manager: %v", err)
-	}
-	return tx, nil
 }
 
 // getSigner creates a signer from a file.
@@ -301,14 +288,14 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	err = initDKG(proxyAddr2, electionID)
 	if err != nil {
-		return xerrors.Errorf("failed to init dkg 1: %v", err)
+		return xerrors.Errorf("failed to init dkg 2: %v", err)
 	}
 
 	fmt.Fprintf(ctx.Out, "Node 3")
 
 	err = initDKG(proxyAddr3, electionID)
 	if err != nil {
-		return xerrors.Errorf("failed to init dkg 1: %v", err)
+		return xerrors.Errorf("failed to init dkg 3: %v", err)
 	}
 
 	fmt.Fprintf(ctx.Out, "Setup DKG on node 1")
@@ -726,4 +713,39 @@ func updateDKG(proxyAddr, electionIDHex, action string) (int, error) {
 	}
 
 	return 0, nil
+}
+
+// getElection gets the election from the snap. Returns the election ID NOT hex
+// encoded.
+func getElection(ctx serde.Context, electionFac serde.Factory, electionIDHex string,
+	srv ordering.Service) (types.Election, error) {
+
+	var election types.Election
+
+	electionID, err := hex.DecodeString(electionIDHex)
+	if err != nil {
+		return election, xerrors.Errorf("failed to decode electionIDHex: %v", err)
+	}
+
+	proof, err := srv.GetProof(electionID)
+	if err != nil {
+		return election, xerrors.Errorf("failed to get proof: %v", err)
+	}
+
+	electionBuff := proof.GetValue()
+	if len(electionBuff) == 0 {
+		return election, xerrors.Errorf("election does not exist")
+	}
+
+	message, err := electionFac.Deserialize(ctx, electionBuff)
+	if err != nil {
+		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
+	}
+
+	election, ok := message.(types.Election)
+	if !ok {
+		return election, xerrors.Errorf("wrong message type: %T", message)
+	}
+
+	return election, nil
 }
