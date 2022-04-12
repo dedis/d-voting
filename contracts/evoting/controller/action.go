@@ -134,10 +134,10 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 
 	serdecontext := sjson.NewContext()
 	electionFac := types.NewElectionFactory(types.CiphervoteFactory{}, rosterFac)
-	ciphervoteFac := types.CiphervoteFactory{}
 
-	registerVotingProxy(proxy, signer, client, dkg, shuffleActor,
-		orderingSvc, p, m, serdecontext, electionFac, ciphervoteFac)
+	mngr := getManager(signer, client)
+
+	registerVotingProxy(proxy, mngr, orderingSvc, p, serdecontext, electionFac)
 
 	dela.Logger.Info().Msg("d-voting proxy handlers registered")
 
@@ -375,22 +375,15 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to get actor: %v", err)
 	}
 
-	const ballotSerializeErr = "failed to serialize ballot: %v"
-
 	// Ballot 1
 	ballot1, err := marshallBallot(b1, dkgActor, election.ChunksPerBallot())
 	if err != nil {
 		return xerrors.Errorf("failed to marshall ballot : %v", err)
 	}
 
-	data1, err := ballot1.Serialize(serdecontext)
-	if err != nil {
-		return xerrors.Errorf(ballotSerializeErr, err)
-	}
-
 	castVoteRequest := types.CastVoteRequest{
 		UserID: "user1",
-		Ballot: data1,
+		Ballot: ballot1,
 	}
 
 	fmt.Fprintln(ctx.Out, "cast first ballot")
@@ -408,14 +401,9 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to marshall ballot : %v", err)
 	}
 
-	data2, err := ballot2.Serialize(serdecontext)
-	if err != nil {
-		return xerrors.Errorf(ballotSerializeErr, err)
-	}
-
 	castVoteRequest = types.CastVoteRequest{
 		UserID: "user2",
-		Ballot: data2,
+		Ballot: ballot2,
 	}
 
 	fmt.Fprintln(ctx.Out, "cast second ballot")
@@ -433,14 +421,9 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to marshall ballot: %v", err)
 	}
 
-	data3, err := ballot3.Serialize(serdecontext)
-	if err != nil {
-		return xerrors.Errorf(ballotSerializeErr, err)
-	}
-
 	castVoteRequest = types.CastVoteRequest{
 		UserID: "user3",
-		Ballot: data3,
+		Ballot: ballot3,
 	}
 
 	fmt.Fprintln(ctx.Out, "cast third ballot")
@@ -607,9 +590,9 @@ func encodeID(ID string) types.ID {
 	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
 }
 
-func marshallBallot(voteStr string, actor dkg.Actor, chunks int) (types.Ciphervote, error) {
+func marshallBallot(voteStr string, actor dkg.Actor, chunks int) (types.CiphervoteJSON, error) {
 
-	var ballot = make(types.Ciphervote, chunks)
+	var ballot = make(types.CiphervoteJSON, chunks)
 	vote := strings.NewReader(voteStr)
 
 	buf := make([]byte, 29)
@@ -626,12 +609,22 @@ func marshallBallot(voteStr string, actor dkg.Actor, chunks int) (types.Ciphervo
 		K, C, _, err = actor.Encrypt(buf[:n])
 
 		if err != nil {
-			return types.Ciphervote{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
+			return types.CiphervoteJSON{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
 		}
 
-		ballot[i] = types.EGPair{
-			K: K,
-			C: C,
+		kbuff, err := K.MarshalBinary()
+		if err != nil {
+			return types.CiphervoteJSON{}, xerrors.Errorf("failed to marshal K: %v", err)
+		}
+
+		cbuff, err := C.MarshalBinary()
+		if err != nil {
+			return types.CiphervoteJSON{}, xerrors.Errorf("failed to marshal C: %v", err)
+		}
+
+		ballot[i] = types.EGPairJSON{
+			K: kbuff,
+			C: cbuff,
 		}
 	}
 

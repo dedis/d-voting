@@ -13,8 +13,11 @@ import (
 	"github.com/gorilla/mux"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/serde"
+	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 )
+
+var suite = suites.MustFind("ed25519")
 
 // CreateElection allows creating an election.
 func (h *votingProxy) CreateElection(w http.ResponseWriter, r *http.Request) {
@@ -95,16 +98,29 @@ func (h *votingProxy) CastVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, err := h.ciphervoteFac.Deserialize(h.context, req.Ballot)
-	if err != nil {
-		http.Error(w, "failed to deserialize ballot: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
+	ciphervote := make(types.Ciphervote, len(req.Ballot))
 
-	ciphervote, ok := msg.(types.Ciphervote)
-	if !ok {
-		http.Error(w, fmt.Sprintf("wrong type of ciphervote: %T", msg), http.StatusInternalServerError)
-		return
+	for i, egpair := range req.Ballot {
+		k := suite.Point()
+
+		err = k.UnmarshalBinary(egpair.K)
+		if err != nil {
+			http.Error(w, "failed to unmarshal K: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		c := suite.Point()
+
+		err = c.UnmarshalBinary(egpair.C)
+		if err != nil {
+			http.Error(w, "failed to unmarshal C: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		ciphervote[i] = types.EGPair{
+			K: k,
+			C: c,
+		}
 	}
 
 	castVote := types.CastVote{
@@ -284,14 +300,12 @@ func (h *votingProxy) submitAndWaitForTxn(ctx context.Context, cmd evoting.Comma
 	h.Lock()
 	defer h.Unlock()
 
-	manager := getManager(h.signer, h.client)
-
-	err := manager.Sync()
+	err := h.mngr.Sync()
 	if err != nil {
 		return nil, xerrors.Errorf("failed to sync manager: %v", err)
 	}
 
-	tx, err := createTransaction(manager, cmd, cmdArg, payload)
+	tx, err := createTransaction(h.mngr, cmd, cmdArg, payload)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to create transaction: %v", err)
 	}
@@ -314,8 +328,8 @@ func (h *votingProxy) submitAndWaitForTxn(ctx context.Context, cmd evoting.Comma
 	return tx.GetID(), nil
 }
 
-// ElectionInfo returns the information for a given election.
-func (h *votingProxy) ElectionInfo(w http.ResponseWriter, r *http.Request) {
+// GetElection returns the information for a given election.
+func (h *votingProxy) GetElection(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	if vars == nil || vars["electionID"] == "" {
@@ -361,8 +375,8 @@ func (h *votingProxy) ElectionInfo(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// AllElectionInfo returns the information for all elections.
-func (h *votingProxy) AllElectionInfo(w http.ResponseWriter, r *http.Request) {
+// GetElections returns the information for all elections.
+func (h *votingProxy) GetElections(w http.ResponseWriter, r *http.Request) {
 
 	elecMD, err := h.getElectionsMetadata()
 	if err != nil {

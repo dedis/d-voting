@@ -341,9 +341,6 @@ func TestCommand_CloseElection(t *testing.T) {
 	err = snap.Set(dummyElectionIDBuff, electionBuf)
 	require.NoError(t, err)
 
-	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, "only the admin can close the election")
-
 	closeElection.UserID = hex.EncodeToString([]byte("dummyAdminID"))
 
 	data, err = closeElection.Serialize(ctx)
@@ -964,9 +961,6 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	err = snap.Set(dummyElectionIDBuff, electionBuf)
 	require.NoError(t, err)
 
-	err = cmd.combineShares(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, "only the admin can decrypt the ballots")
-
 	decryptBallot.UserID = hex.EncodeToString([]byte("dummyAdminID"))
 
 	data, err = decryptBallot.Serialize(ctx)
@@ -1066,9 +1060,6 @@ func TestCommand_CancelElection(t *testing.T) {
 
 	err = snap.Set(dummyElectionIDBuff, electionBuf)
 	require.NoError(t, err)
-
-	err = cmd.cancelElection(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, "only the admin can cancel the election")
 
 	cancelElection.UserID = hex.EncodeToString([]byte("dummyAdminID"))
 

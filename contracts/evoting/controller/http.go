@@ -8,16 +8,12 @@ import (
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/services/dkg"
-	"github.com/dedis/d-voting/services/shuffle"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
-	"go.dedis.ch/dela/core/txn/signed"
-	"go.dedis.ch/dela/crypto"
-	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/proxy"
 	"go.dedis.ch/dela/serde"
 	"golang.org/x/xerrors"
@@ -27,49 +23,33 @@ import (
 type votingProxy struct {
 	sync.Mutex
 
-	signer      crypto.Signer
 	orderingSvc ordering.Service
-	mino        mino.Mino
-
-	shuffleActor shuffle.Actor
-	dkg          dkg.DKG
-
-	pool   pool.Pool
-	client signed.Client
-
-	logger zerolog.Logger
-
-	context       serde.Context
-	electionFac   serde.Factory
-	ciphervoteFac serde.Factory
+	logger      zerolog.Logger
+	context     serde.Context
+	electionFac serde.Factory
+	mngr        txn.Manager
+	pool        pool.Pool
 }
 
-func registerVotingProxy(proxy proxy.Proxy, signer crypto.Signer,
-	client signed.Client, dkg dkg.DKG, shuffleActor shuffle.Actor,
-	oSvc ordering.Service, p pool.Pool, m mino.Mino, ctx serde.Context,
-	electionFac serde.Factory, ciphervoteFac serde.Factory) {
+func registerVotingProxy(proxy proxy.Proxy, mngr txn.Manager, oSvc ordering.Service,
+	p pool.Pool, ctx serde.Context, electionFac serde.Factory) {
 
 	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
 
 	h := &votingProxy{
-		logger:        logger,
-		signer:        signer,
-		client:        client,
-		dkg:           dkg,
-		shuffleActor:  shuffleActor,
-		orderingSvc:   oSvc,
-		pool:          p,
-		mino:          m,
-		context:       ctx,
-		electionFac:   electionFac,
-		ciphervoteFac: ciphervoteFac,
+		logger:      logger,
+		orderingSvc: oSvc,
+		context:     ctx,
+		electionFac: electionFac,
+		mngr:        mngr,
+		pool:        p,
 	}
 
 	electionRouter := mux.NewRouter()
 
 	electionRouter.HandleFunc("/evoting/elections", h.CreateElection).Methods("POST")
-	electionRouter.HandleFunc("/evoting/elections", h.AllElectionInfo).Methods("GET")
-	electionRouter.HandleFunc("/evoting/elections/{electionID}", h.ElectionInfo).Methods("GET")
+	electionRouter.HandleFunc("/evoting/elections", h.GetElections).Methods("GET")
+	electionRouter.HandleFunc("/evoting/elections/{electionID}", h.GetElection).Methods("GET")
 	electionRouter.HandleFunc("/evoting/elections/{electionID}", h.UpdateElection).Methods("PUT")
 	electionRouter.HandleFunc("/evoting/elections/{electionID}/vote", h.CastVote).Methods("POST")
 

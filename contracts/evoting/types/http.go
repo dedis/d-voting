@@ -1,8 +1,6 @@
 package types
 
 import (
-	"encoding/json"
-
 	"go.dedis.ch/kyber/v3/suites"
 )
 
@@ -36,7 +34,16 @@ type CreateElectionResponse struct {
 type CastVoteRequest struct {
 	UserID string
 	// Marshalled representation of Ciphervote. It contains []{K:,C:}
-	Ballot json.RawMessage
+	Ballot CiphervoteJSON
+}
+
+// CiphervoteJSON is the JSON representation of a ciphervote
+type CiphervoteJSON []EGPairJSON
+
+// EGPairJSON is the JSON representation of an ElGamal pair
+type EGPairJSON struct {
+	K []byte
+	C []byte
 }
 
 // CastVoteResponse degines the HTTP response when casting a vote
