@@ -15,6 +15,8 @@ import (
 
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/dkg/pedersen"
+	"github.com/dedis/d-voting/services/dkg/pedersen/types"
+	"github.com/gorilla/mux"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/store/kv"
@@ -22,11 +24,6 @@ import (
 	"go.dedis.ch/dela/mino/proxy"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
-)
-
-const (
-	initEndpoint  = "/evoting/dkg/init"
-	setupEndpoint = "/evoting/dkg/setup"
 )
 
 var suite = suites.MustFind("Ed25519")
@@ -289,17 +286,21 @@ func (a *RegisterHandlersAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve dkg.DKG: %v", err)
 	}
 
-	proxy.RegisterHandler(initEndpoint, ListenHandler(dkg, ctx))
-	proxy.RegisterHandler(setupEndpoint, SetupHandler(dkg))
+	router := mux.NewRouter()
+
+	router.HandleFunc("/evoting/services/dkg/actors", CreateActorHandler(dkg, ctx)).Methods("POST")
+	router.HandleFunc("/evoting/services/dkg/actors/{electionID}", UpdateActorHandler(dkg)).Methods("PUT")
+
+	proxy.RegisterHandler("/evoting/services/dkg/", router.ServeHTTP)
 
 	dela.Logger.Info().Msg("DKG handler registered")
 
 	return nil
 }
 
-// ListenHandler runs Listen to initialize an Actor corresponding to the given
-// electionID
-func ListenHandler(dkg dkg.DKG, ctx node.Context) func(http.ResponseWriter, *http.Request) {
+// CreateActorHandler runs Listen to initialize an Actor corresponding to the
+// given electionID
+func CreateActorHandler(dkg dkg.DKG, ctx node.Context) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Receive the hex-encoded electionID
 		data, err := ioutil.ReadAll(r.Body)
@@ -348,54 +349,54 @@ func ListenHandler(dkg dkg.DKG, ctx node.Context) func(http.ResponseWriter, *htt
 	}
 }
 
-// SetupHandler runs Setup on the Actor corresponding to the given electionID
-// and responds with the distributed public key.
-func SetupHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
+// UpdateActorHandler defines the handler to setup and compute the pubshares.
+func UpdateActorHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
 
-		data, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "failed to read body: "+err.Error(),
-				http.StatusInternalServerError)
+		if vars == nil || vars["electionID"] == "" {
+			http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
 			return
 		}
 
-		// hex-encoded string obtained from the URL
-		electionID := string(data)
+		electionID := vars["electionID"]
 
-		// sanity check
 		electionIDBuf, err := hex.DecodeString(electionID)
 		if err != nil {
-			http.Error(w, "failed to decode electionID: "+electionID,
-				http.StatusBadRequest)
+			http.Error(w, "failed to decode electionID: "+electionID, http.StatusBadRequest)
 			return
 		}
 
 		a, exists := dkg.GetActor(electionIDBuf)
 		if !exists {
-			http.Error(w, "actor does not exist",
-				http.StatusInternalServerError)
+			http.Error(w, "actor does not exist", http.StatusInternalServerError)
 			return
 		}
 
-		pubKey, err := a.Setup()
+		var input types.UpdateDKG
+
+		decoder := json.NewDecoder(r.Body)
+
+		err = decoder.Decode(&input)
 		if err != nil {
-			http.Error(w, "failed to setup: "+err.Error(),
-				http.StatusInternalServerError)
+			http.Error(w, "failed to decode input: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		pubKeyBuf, err := pubKey.MarshalBinary()
-		if err != nil {
-			http.Error(w, "failed to marshal the pubKey: "+err.Error(),
-				http.StatusInternalServerError)
-			return
+		switch input.Action {
+		case "setup":
+			_, err := a.Setup()
+			if err != nil {
+				http.Error(w, "failed to setup: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+		case "computePubshares":
+			err = a.ComputePubshares()
+			if err != nil {
+				http.Error(w, "failed to compute pubshares: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
-
-		fmt.Println("pubkyeBuf", string(pubKeyBuf))
-
-		w.Write(pubKeyBuf)
-		r.Body.Close()
 	}
 }
 

@@ -23,19 +23,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const (
-	openElectionEndpoint        = "/evoting/open"
-	castVoteEndpoint            = "/evoting/cast"
-	getAllElectionsIdsEndpoint  = "/evoting/allids"
-	getAllElectionsInfoEndpoint = "/evoting/all"
-	closeElectionEndpoint       = "/evoting/close"
-	shuffleBallotsEndpoint      = "/evoting/shuffle"
-	beginDecryptionEndpoint     = "/evoting/beginDecryption"
-	combineSharesEndpoint       = "/evoting/combineShares"
-	getElectionResultEndpoint   = "/evoting/result"
-	cancelElectionEndpoint      = "/evoting/cancel"
-)
-
 // HTTP exposes an http proxy for all evoting contract commands.
 type votingProxy struct {
 	sync.Mutex
@@ -78,18 +65,10 @@ func registerVotingProxy(proxy proxy.Proxy, signer crypto.Signer,
 		ciphervoteFac: ciphervoteFac,
 	}
 
-	proxy.RegisterHandler(getAllElectionsIdsEndpoint, h.ElectionIDs)
-	proxy.RegisterHandler(getAllElectionsInfoEndpoint, h.AllElectionInfo)
-	proxy.RegisterHandler(closeElectionEndpoint, h.CloseElection)
-	proxy.RegisterHandler(shuffleBallotsEndpoint, h.ShuffleBallots)
-	proxy.RegisterHandler(beginDecryptionEndpoint, h.BeginDecryption)
-	proxy.RegisterHandler(combineSharesEndpoint, h.CombineShares)
-	proxy.RegisterHandler(getElectionResultEndpoint, h.ElectionResult)
-	proxy.RegisterHandler(cancelElectionEndpoint, h.CancelElection)
-
 	electionRouter := mux.NewRouter()
 
 	electionRouter.HandleFunc("/evoting/elections", h.CreateElection).Methods("POST")
+	electionRouter.HandleFunc("/evoting/elections", h.AllElectionInfo).Methods("GET")
 	electionRouter.HandleFunc("/evoting/elections/{electionID}", h.ElectionInfo).Methods("GET")
 	electionRouter.HandleFunc("/evoting/elections/{electionID}", h.UpdateElection).Methods("PUT")
 	electionRouter.HandleFunc("/evoting/elections/{electionID}/vote", h.CastVote).Methods("POST")
@@ -97,8 +76,8 @@ func registerVotingProxy(proxy proxy.Proxy, signer crypto.Signer,
 	electionRouter.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	electionRouter.MethodNotAllowedHandler = http.HandlerFunc(notAllowedHandler)
 
-	proxy.RegisterHandler("/evoting/elections/", electionRouter.ServeHTTP)
 	proxy.RegisterHandler("/evoting/elections", electionRouter.ServeHTTP)
+	proxy.RegisterHandler("/evoting/elections/", electionRouter.ServeHTTP)
 }
 
 // waitForTxnID blocks until `ID` is included or `events` is closed.

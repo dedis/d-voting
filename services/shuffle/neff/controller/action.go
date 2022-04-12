@@ -1,13 +1,19 @@
 package controller
 
 import (
+	"encoding/hex"
+	"fmt"
+	"net/http"
+
 	"github.com/dedis/d-voting/services/shuffle"
+	"github.com/gorilla/mux"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/core/validation"
+	"go.dedis.ch/dela/mino/proxy"
 	"golang.org/x/xerrors"
 )
 
@@ -49,6 +55,64 @@ func (a *InitAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("The shuffle protocol has been initialized successfully")
 
 	return nil
+}
+
+// RegisterHandlersAction is an action that registers the proxy handlers
+//
+// - implements node.ActionTemplate
+type RegisterHandlersAction struct {
+}
+
+// Execute implements node.ActionTemplate. It registers the proxy
+// handlers to set up elections
+func (a *RegisterHandlersAction) Execute(ctx node.Context) error {
+	var proxy proxy.Proxy
+	err := ctx.Injector.Resolve(&proxy)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve proxy: %v", err)
+	}
+
+	var actor shuffle.Actor
+	err = ctx.Injector.Resolve(&actor)
+	if err != nil {
+		return xerrors.Errorf("failed to resolve dkg.DKG: %v", err)
+	}
+
+	router := mux.NewRouter()
+
+	router.Handle("/evoting/services/shuffle/{electionID}", ShuffleHandler(actor)).Methods("PUT")
+
+	proxy.RegisterHandler("/evoting/services/shuffle/", router.ServeHTTP)
+
+	dela.Logger.Info().Msg("DKG handler registered")
+
+	return nil
+}
+
+// ShuffleHandler calls the shuffling function on the shuffling actor
+func ShuffleHandler(actor shuffle.Actor) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+
+		if vars == nil || vars["electionID"] == "" {
+			http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
+			return
+		}
+
+		electionID := vars["electionID"]
+
+		buff, err := hex.DecodeString(electionID)
+		if err != nil {
+			http.Error(w, "failed to decode electionID: "+electionID, http.StatusInternalServerError)
+			return
+		}
+
+		err = actor.Shuffle(buff)
+		if err != nil {
+			http.Error(w, "failed to shuffle: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	})
 }
 
 func makeClient(ctx node.Context) (client, error) {

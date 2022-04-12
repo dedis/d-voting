@@ -140,6 +140,21 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 	}
 
 	//
+	// Register the Shuffle proxy handlers
+	//
+
+	nregister := neff.RegisterHandlersAction{}
+	err = nregister.Execute(node.Context{
+		Injector: inj,
+		Flags:    ctx,
+		Out:      os.Stdout,
+	})
+
+	if err != nil {
+		return xerrors.Errorf("failed to register neff handlers: %v", err)
+	}
+
+	//
 	// Start the Prometheus server
 	//
 

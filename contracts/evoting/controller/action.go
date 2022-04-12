@@ -19,6 +19,7 @@ import (
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg"
+	stypes "github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"github.com/dedis/d-voting/services/shuffle"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli/node"
@@ -36,16 +37,12 @@ import (
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/proxy"
 	sjson "go.dedis.ch/dela/serde/json"
-	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 )
 
-const token = "token"
 const inclusionTimeout = 2 * time.Second
 const contentType = "application/json"
 const getElectionErr = "failed to get election: %v"
-
-var suite = suites.MustFind("Ed25519")
 
 // getManager is the function called when we need a transaction manager. It
 // allows us to use a different manager for the tests.
@@ -293,72 +290,39 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "Init DKG")
 
-	const initEndpoint = "/evoting/dkg/init"
-
 	fmt.Fprintf(ctx.Out, "Node 1")
 
-	resp, err = http.Post(proxyAddr1+initEndpoint, contentType, bytes.NewBuffer([]byte(electionID)))
+	err = initDKG(proxyAddr1, electionID)
 	if err != nil {
-		return xerrors.Errorf("failed to retrieve the decryption from the server: %v", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		buf, _ := ioutil.ReadAll(resp.Body)
-		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+		return xerrors.Errorf("failed to init dkg 1: %v", err)
 	}
 
 	fmt.Fprintf(ctx.Out, "Node 2")
 
-	resp, err = http.Post(proxyAddr2+initEndpoint, contentType, bytes.NewBuffer([]byte(electionID)))
+	err = initDKG(proxyAddr2, electionID)
 	if err != nil {
-		return xerrors.Errorf("failed to retrieve the decryption from the server: %v", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		buf, _ := ioutil.ReadAll(resp.Body)
-		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+		return xerrors.Errorf("failed to init dkg 1: %v", err)
 	}
 
 	fmt.Fprintf(ctx.Out, "Node 3")
 
-	resp, err = http.Post(proxyAddr3+initEndpoint, contentType, bytes.NewBuffer([]byte(electionID)))
+	err = initDKG(proxyAddr3, electionID)
 	if err != nil {
-		return xerrors.Errorf("failed to retrieve the decryption from the server: %v", err)
+		return xerrors.Errorf("failed to init dkg 1: %v", err)
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		buf, _ := ioutil.ReadAll(resp.Body)
-		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
-	}
+	fmt.Fprintf(ctx.Out, "Setup DKG on node 1")
 
-	resp, err = http.Post(proxyAddr1+"/evoting/dkg/setup", contentType, bytes.NewBuffer([]byte(electionID)))
+	_, err = updateDKG(proxyAddr1, electionID, "setup")
 	if err != nil {
-		return xerrors.Errorf("failed to retrieve the decryption from the server: %v", err)
+		return xerrors.Errorf("failed to setup dkg on node 1: %v", err)
 	}
-
-	if resp.StatusCode != http.StatusOK {
-		buf, _ := ioutil.ReadAll(resp.Body)
-		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
-	}
-
-	pubkeyBuf, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return xerrors.Errorf("failed to read body: %v", err)
-	}
-
-	pubKey := suite.Point()
-	err = pubKey.UnmarshalBinary(pubkeyBuf)
-	if err != nil {
-		return xerrors.Errorf("failed to unmarshal pubkey: %v", err)
-	}
-
-	fmt.Fprintf(ctx.Out, "Pubkey: %v\n", pubKey)
 
 	// ##################################### OPEN ELECTION #####################
 
 	fmt.Fprintf(ctx.Out, "Open election")
 
-	err = updateElection(proxyAddr1, electionID, "open")
+	_, err = updateElection(proxyAddr1, electionID, "open")
 	if err != nil {
 		return xerrors.Errorf("failed to open election: %v", err)
 	}
@@ -376,53 +340,15 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
 	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 	dela.Logger.Info().Msgf("Pubkey of the election : %x", election.Pubkey)
-	dela.Logger.Info().
-		Hex("DKG public key", pubkeyBuf).
-		Msg("DKG public key")
 
 	// ############################# ATTEMPT TO CLOSE ELECTION #################
 
 	fmt.Fprintln(ctx.Out, "Close election")
 
-	closeElectionRequest := types.CloseElectionRequest{
-		ElectionID: electionID,
-		UserID:     "adminId",
-		Token:      token,
+	status, err := updateElection(proxyAddr1, electionID, "close")
+	if status != http.StatusInternalServerError {
+		return xerrors.Errorf("unexpected error: %d: %v", status, err)
 	}
-
-	js, err = json.Marshal(closeElectionRequest)
-	if err != nil {
-		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
-	}
-
-	resp, err = http.Post(proxyAddr1+closeElectionEndpoint, contentType, bytes.NewBuffer(js))
-	if err != nil {
-		return xerrors.Errorf("failed to retrieve the decryption from the server: %v", err)
-	}
-
-	// Expecting an error since there must be at least two ballots before
-	// closing
-	if resp.StatusCode != http.StatusInternalServerError {
-		buf, _ := ioutil.ReadAll(resp.Body)
-		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
-	}
-
-	body, err = io.ReadAll(resp.Body)
-	if err != nil {
-		return xerrors.Errorf("failed to read the body of the response: %v", err)
-	}
-
-	dela.Logger.Info().Msg("Response body : " + string(body))
-	resp.Body.Close()
-
-	election, err = getElection(serdecontext, electionFac, electionID, service)
-	if err != nil {
-		return xerrors.Errorf(getElectionErr, err)
-	}
-
-	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
-	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
-	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 
 	// ##################################### CAST BALLOTS ######################
 
@@ -541,34 +467,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "Close election (for real)")
 
-	closeElectionRequest = types.CloseElectionRequest{
-		ElectionID: electionID,
-		UserID:     "adminId",
-		Token:      token,
-	}
-
-	js, err = json.Marshal(closeElectionRequest)
+	_, err = updateElection(proxyAddr1, electionID, "close")
 	if err != nil {
-		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
+		return xerrors.Errorf("failed to close election: %v", err)
 	}
-
-	resp, err = http.Post(proxyAddr1+closeElectionEndpoint, contentType, bytes.NewBuffer(js))
-	if err != nil {
-		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		buf, _ := ioutil.ReadAll(resp.Body)
-		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
-	}
-
-	body, err = io.ReadAll(resp.Body)
-	if err != nil {
-		return xerrors.Errorf("failed to read the body of the response: %v", err)
-	}
-
-	dela.Logger.Info().Msg("Response body: " + string(body))
-	resp.Body.Close()
 
 	election, err = getElection(serdecontext, electionFac, electionID, service)
 	if err != nil {
@@ -582,34 +484,20 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "shuffle ballots")
 
-	shuffleBallotsRequest := types.ShuffleBallotsRequest{
-		ElectionID: electionID,
-		UserID:     "adminId",
-		Token:      token,
+	req, err := http.NewRequest(http.MethodPut, proxyAddr1+"/evoting/services/shuffle/"+electionID, nil)
+	if err != nil {
+		return xerrors.Errorf("failed to create shuffle request: %v", err)
 	}
 
-	js, err = json.Marshal(shuffleBallotsRequest)
+	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
-		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
-	}
-
-	resp, err = http.Post(proxyAddr1+shuffleBallotsEndpoint, contentType, bytes.NewBuffer(js))
-	if err != nil {
-		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
+		return xerrors.Errorf("failed to execute the shuffle query: %v", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		buf, _ := ioutil.ReadAll(resp.Body)
-		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+		return xerrors.Errorf("unexpected shuffle status: %s - %s", resp.Status, buf)
 	}
-
-	body, err = io.ReadAll(resp.Body)
-	if err != nil {
-		return xerrors.Errorf("failed to read the body of the response: %v", err)
-	}
-
-	dela.Logger.Info().Msg("Response body : " + string(body))
-	resp.Body.Close()
 
 	// time.Sleep(20 * time.Second)
 
@@ -628,34 +516,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "request public shares")
 
-	beginDecryptionRequest := types.BeginDecryptionRequest{
-		ElectionID: electionID,
-		UserID:     "adminId",
-		Token:      token,
-	}
-
-	js, err = json.Marshal(beginDecryptionRequest)
+	_, err = updateDKG(proxyAddr1, electionID, "computePubshares")
 	if err != nil {
-		return xerrors.Errorf("failed to set marshall types.SimpleElection: %v", err)
+		return xerrors.Errorf("failed to compute pubshares: %v", err)
 	}
-
-	resp, err = http.Post(proxyAddr1+beginDecryptionEndpoint, contentType, bytes.NewBuffer(js))
-	if err != nil {
-		return xerrors.Errorf("failed to request beginning of decryption on the server: %v", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		buf, _ := ioutil.ReadAll(resp.Body)
-		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
-	}
-
-	body, err = io.ReadAll(resp.Body)
-	if err != nil {
-		return xerrors.Errorf("failed to read body of the response: %v", err)
-	}
-
-	dela.Logger.Info().Msg("Response body : " + string(body))
-	resp.Body.Close()
 
 	time.Sleep(10 * time.Second)
 
@@ -675,34 +539,10 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "decrypt ballots")
 
-	decryptBallotsRequest := types.CombineSharesRequest{
-		ElectionID: electionID,
-		UserID:     "adminId",
-		Token:      token,
-	}
-
-	js, err = json.Marshal(decryptBallotsRequest)
+	_, err = updateElection(proxyAddr1, electionID, "combineShares")
 	if err != nil {
-		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
+		return xerrors.Errorf("failed to combine shares: %v", err)
 	}
-
-	resp, err = http.Post(proxyAddr1+combineSharesEndpoint, contentType, bytes.NewBuffer(js))
-	if err != nil {
-		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		buf, _ := ioutil.ReadAll(resp.Body)
-		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
-	}
-
-	body, err = io.ReadAll(resp.Body)
-	if err != nil {
-		return xerrors.Errorf("failed to read the body of the response: %v", err)
-	}
-
-	dela.Logger.Info().Msg("Response body : " + string(body))
-	resp.Body.Close()
 
 	election, err = getElection(serdecontext, electionFac, electionID, service)
 	if err != nil {
@@ -719,34 +559,6 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	// ###################################### GET ELECTION RESULT ##############
 
 	fmt.Fprintln(ctx.Out, "Get election result")
-
-	getElectionResultRequest := types.GetElectionResultRequest{
-		ElectionID: electionID,
-		Token:      token,
-	}
-
-	js, err = json.Marshal(getElectionResultRequest)
-	if err != nil {
-		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
-	}
-
-	resp, err = http.Post(proxyAddr1+getElectionResultEndpoint, contentType, bytes.NewBuffer(js))
-	if err != nil {
-		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		buf, _ := ioutil.ReadAll(resp.Body)
-		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
-	}
-
-	body, err = io.ReadAll(resp.Body)
-	if err != nil {
-		return xerrors.Errorf("failed to read the body of the response: %v", err)
-	}
-
-	dela.Logger.Info().Msg("Response body : " + string(body))
-	resp.Body.Close()
 
 	election, err = getElection(serdecontext, electionFac, electionID, service)
 	if err != nil {
@@ -765,6 +577,28 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	// dela.Logger.Info().Msg(election.DecryptedBallots[0].Vote)
 	// dela.Logger.Info().Msg(election.DecryptedBallots[1].Vote)
 	// dela.Logger.Info().Msg(election.DecryptedBallots[2].Vote)
+
+	// ###################################### GET ALL ELECTION ##############
+
+	resp, err = http.Get(proxyAddr1 + "/evoting/elections")
+	if err != nil {
+		return xerrors.Errorf("failed to get all elections")
+	}
+
+	var allElections types.GetAllElectionsInfoResponse
+
+	decoder := json.NewDecoder(resp.Body)
+
+	err = decoder.Decode(&allElections)
+	if err != nil {
+		return xerrors.Errorf("failed to decode getAllElections: %v", err)
+	}
+
+	dela.Logger.Info().Msgf("All elections: %v", allElections)
+
+	if len(allElections.Elections) != 1 && allElections.Elections[0].ElectionID != electionID {
+		return xerrors.Errorf("unexpected allElections: %v", allElections)
+	}
 
 	return nil
 }
@@ -831,34 +665,38 @@ func castVote(electionID string, castVoteRequest types.CastVoteRequest, proxyAdd
 	return string(body), nil
 }
 
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-
-	return false
-}
-
-func updateElection(proxyAddr, electionIDHex, action string) error {
+func updateElection(proxyAddr, electionIDHex, action string) (int, error) {
 	msg := types.UpdateElectionRequest{
-		Action: "open",
+		Action: action,
 	}
 
 	buf, err := json.Marshal(&msg)
 	if err != nil {
-		return xerrors.Errorf("failed to marshal update request: %v", err)
+		return 0, xerrors.Errorf("failed to marshal update request: %v", err)
 	}
 
 	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/elections/"+electionIDHex, bytes.NewBuffer(buf))
 	if err != nil {
-		return xerrors.Errorf("failed to create request: %v", err)
+		return 0, xerrors.Errorf("failed to create request: %v", err)
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
+		return 0, xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return resp.StatusCode, xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
+
+	return 0, nil
+}
+
+func initDKG(proxyAddr, electionIDHex string) error {
+	resp, err := http.Post(proxyAddr+"/evoting/services/dkg/actors", contentType, bytes.NewBuffer([]byte(electionIDHex)))
+	if err != nil {
+		return xerrors.Errorf("failed to post request: %v", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -867,4 +705,32 @@ func updateElection(proxyAddr, electionIDHex, action string) error {
 	}
 
 	return nil
+}
+
+func updateDKG(proxyAddr, electionIDHex, action string) (int, error) {
+	msg := stypes.UpdateDKG{
+		Action: action,
+	}
+
+	buf, err := json.Marshal(&msg)
+	if err != nil {
+		return 0, xerrors.Errorf("failed to marshal update request: %v", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/services/dkg/actors/"+electionIDHex, bytes.NewBuffer(buf))
+	if err != nil {
+		return 0, xerrors.Errorf("failed to create request: %v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0, xerrors.Errorf("failed to execute the query: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		buf, _ := ioutil.ReadAll(resp.Body)
+		return resp.StatusCode, xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
+	}
+
+	return 0, nil
 }

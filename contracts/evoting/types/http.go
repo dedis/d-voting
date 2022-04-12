@@ -142,11 +142,18 @@ type GetAllElectionsInfoRequest struct {
 	Token string
 }
 
+// LightElection represents a light version of the election
+type LightElection struct {
+	ElectionID string
+	Title      string
+	Status     uint16
+	Pubkey     string
+}
+
 // GetAllElectionsInfoResponse defines the HTTP response when getting all
 // elections infos.
 type GetAllElectionsInfoResponse struct {
-	// UserId         string
-	AllElectionsInfo []GetElectionInfoResponse
+	Elections []LightElection
 }
 
 // GetAllElectionsIDsRequest defines the HTTP request for getting all election
