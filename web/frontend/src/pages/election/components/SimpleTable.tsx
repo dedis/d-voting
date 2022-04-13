@@ -25,10 +25,8 @@ const SimpleTable: FC<SimpleTableProps> = ({
   textWhenNoData,
 }) => {
   const { t } = useTranslation();
-  const token = sessionStorage.getItem('token');
   const fetchRequest = {
-    method: 'POST',
-    body: JSON.stringify({ Token: token }),
+    method: 'GET',
   };
   const [fetchedData, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, fetchRequest);
 

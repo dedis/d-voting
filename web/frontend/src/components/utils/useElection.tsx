@@ -1,42 +1,42 @@
 import useFetchCall from './useFetchCall';
 import useFillElectionFields from './useFillElectionFields';
 import { ENDPOINT_EVOTING_GET_ELECTION } from './Endpoints';
+import { ID } from 'types/configuration';
 
 // Custom hook that fetches an election given its id and returns its
 // different parameters
 
-// TODO remove tokens everywhere
-const useElection = (electionID, token) => {
-  const request = {
-    method: 'POST',
-    body: JSON.stringify({ ElectionID: electionID, Token: token }),
+const useElection = (electionID: ID) => {
+  const request: RequestInit = {
+    method: 'GET',
   };
-  const [data, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ELECTION, request);
+  const endpoint = `${ENDPOINT_EVOTING_GET_ELECTION}/${electionID}`;
+  console.log(endpoint);
+  const [data, loading, error] = useFetchCall(endpoint, request);
   const {
-    electionTitle,
-    configObj,
     status,
+    setStatus,
     pubKey,
-    ballotSize,
-    chunksPerBallot,
     result,
     setResult,
-    setStatus,
+    chunksPerBallot,
+    ballotSize,
+    configObj,
     isResultSet,
     setIsResultSet,
   } = useFillElectionFields(data);
+
   return {
     loading,
-    electionTitle,
-    configObj,
     electionID,
     status,
+    setStatus,
     pubKey,
-    ballotSize,
-    chunksPerBallot,
     result,
     setResult,
-    setStatus,
+    chunksPerBallot,
+    ballotSize,
+    configObj,
     isResultSet,
     setIsResultSet,
     error,

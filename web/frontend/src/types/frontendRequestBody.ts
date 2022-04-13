@@ -6,7 +6,7 @@ interface GetElectionBody {
 }
 
 interface CreateElectionBody {
-  Format: any;
+  Configuration: any;
 }
 
 interface CreateElectionCastVote {
@@ -21,6 +21,16 @@ interface LightElectionInfo {
   Pubkey: string;
 }
 
+interface ElectionInfo {
+  ElectionID: ID;
+  Status: number;
+  Pubkey: string;
+  Result: [];
+  ChunksPerBallot: number;
+  BallotSize: number;
+  Configuration: any;
+}
+
 type GetAllElections = LightElectionInfo[];
 
 export type {
@@ -29,4 +39,5 @@ export type {
   CreateElectionBody,
   GetAllElections,
   LightElectionInfo,
+  ElectionInfo,
 };

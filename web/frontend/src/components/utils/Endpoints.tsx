@@ -15,5 +15,5 @@ export const ENDPOINT_EVOTING_SHUFFLE = '/api/evoting/shuffle';
 export const ENDPOINT_EVOTING_CAST_BALLOT = '/api/evoting/cast';
 
 // public information can be directly fetched from dela nodes
-export const ENDPOINT_EVOTING_GET_ALL = '/evoting/all';
-export const ENDPOINT_EVOTING_GET_ELECTION = '/evoting/info';
+export const ENDPOINT_EVOTING_GET_ALL = '/evoting/elections';
+export const ENDPOINT_EVOTING_GET_ELECTION = '/evoting/elections';
