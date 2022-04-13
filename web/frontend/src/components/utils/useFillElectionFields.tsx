@@ -15,7 +15,7 @@ const useFillElectionFields = (electionData) => {
     if (electionData !== null) {
       setElectionTitle(electionData.Title);
       setId(electionData.ElectionID);
-      setConfigObj(electionData.Format);
+      setConfigObj(electionData.Configuration);
       setStatus(electionData.Status);
       setPubKey(electionData.Pubkey);
       setBallotSize(electionData.BallotSize);

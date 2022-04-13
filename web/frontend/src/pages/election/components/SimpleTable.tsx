@@ -26,11 +26,14 @@ const SimpleTable: FC<SimpleTableProps> = ({
 }) => {
   const { t } = useTranslation();
   const token = sessionStorage.getItem('token');
-  const fetchRequest = {
-    method: 'POST',
-    body: JSON.stringify({ Token: token }),
+  const request = {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   };
-  const [fetchedData, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, fetchRequest);
+
+  const [fetchedData, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, request);
 
   const ballotsToDisplay = (elections: GetAllElections) => {
     let dataToDisplay = [];
@@ -93,7 +96,7 @@ const SimpleTable: FC<SimpleTableProps> = ({
   return (
     <div>
       {!loading ? (
-        showBallots(fetchedData.AllElectionsInfo)
+        showBallots(fetchedData.Elections)
       ) : error === null ? (
         <p className="loading">{t('loading')}</p>
       ) : (

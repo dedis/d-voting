@@ -8,10 +8,13 @@ import { ENDPOINT_EVOTING_GET_ELECTION } from './Endpoints';
 // TODO remove tokens everywhere
 const useElection = (electionID, token) => {
   const request = {
-    method: 'POST',
-    body: JSON.stringify({ ElectionID: electionID, Token: token }),
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   };
-  const [data, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ELECTION, request);
+
+  const [data, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ELECTION(electionID), request);
   const {
     electionTitle,
     configObj,

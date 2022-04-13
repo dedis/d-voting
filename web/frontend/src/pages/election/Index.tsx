@@ -11,18 +11,22 @@ const ElectionIndex: FC = () => {
   const token = sessionStorage.getItem('token');
   const request = {
     method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   };
+
   const [data, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, request);
 
   /*Show all the elections retrieved if any */
   const showElection = () => {
     return (
       <div>
-        {data.AllElectionsInfo.length > 0 ? (
+        {data.Elections.length > 0 ? (
           <div className="election-box">
             <div className="click-info">{t('clickElection')}</div>
             <div className="election-table-wrapper">
-              <ElectionTable elections={data.AllElectionsInfo} />
+              <ElectionTable elections={data.Elections} />
             </div>
           </div>
         ) : (

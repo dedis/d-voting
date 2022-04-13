@@ -29,22 +29,27 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
   // conf is the configuration object containing MainTitle and Scaffold which
   // contains an array of subject.
   const { t } = useTranslation();
+  const UserID = sessionStorage.getItem('id');
+  const token = sessionStorage.getItem('token');
   const emptyConf: Configuration = emptyConfiguration();
   const [conf, setConf] = useState<Configuration>(emptyConf);
   const { MainTitle, Scaffold } = conf;
 
   async function createHandler() {
     const data = {
-      Format: marshalConfig(conf),
+      Configuration: marshalConfig(conf),
+      UserID,
     };
     const req = {
       method: 'POST',
-      type: 'application/json',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify(data),
     };
 
     try {
-      await configurationSchema.validate(data.Format);
+      await configurationSchema.validate(data.Configuration);
     } catch (err) {
       setTextModal(
         'Incorrect election configuration, please fill it completely: ' + err.errors.join(',')
