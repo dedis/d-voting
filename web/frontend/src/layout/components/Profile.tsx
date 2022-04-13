@@ -1,11 +1,26 @@
-import React, { Fragment, useState } from 'react';
+import React, { Dispatch, FC, Fragment, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { AuthState } from 'index';
+import PropTypes from 'prop-types';
+
 import { Menu, Transition } from '@headlessui/react';
 import { UserCircleIcon } from '@heroicons/react/outline';
-import { useTranslation } from 'react-i18next';
 
-// TODO: proptype & interface validation
+type ProfileProps = {
+  authCtx: AuthState;
+  handleLogout: (e: any) => Promise<void>;
+  handleLogin: (loginError: any, setLoginError: Dispatch<any>) => Promise<void>;
+  loginError: any;
+  setLoginError: Dispatch<any>;
+};
 
-const Profile = ({ authCtx, handleLogout, handleLogin, loginError, setLoginError }) => {
+const Profile: FC<ProfileProps> = ({
+  authCtx,
+  handleLogout,
+  handleLogin,
+  loginError,
+  setLoginError,
+}) => {
   const { t } = useTranslation();
 
   const [toggle, setToggle] = useState(false);
@@ -13,7 +28,7 @@ const Profile = ({ authCtx, handleLogout, handleLogin, loginError, setLoginError
     setToggle(!toggle);
   };
 
-  return (
+  return authCtx.isLogged ? (
     <Menu as="div">
       <div>
         <Menu.Button
@@ -32,35 +47,34 @@ const Profile = ({ authCtx, handleLogout, handleLogin, loginError, setLoginError
         leaveFrom="transform opacity-100 scale-100"
         leaveTo="transform opacity-0 scale-95">
         <Menu.Items className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-          {authCtx.isLogged ? (
-            <>
-              <Menu.Item>
-                {/* <div className={'cursor-pointer block px-4 py-2 text-sm text-gray-700'}>
-                    Logged as {authCtx.firstname} {authCtx.lastname}
-                  </div> */}
-                <p className="block px-4 py-2 text-sm text-gray-400">
-                  Logged as {authCtx.firstname} {authCtx.lastname}
-                </p>
-              </Menu.Item>
-              <Menu.Item onClick={handleLogout}>
-                <div className={'cursor-pointer block px-4 py-2 text-sm text-gray-700'}>
-                  {t('logout')}
-                </div>
-              </Menu.Item>
-            </>
-          ) : (
-            <Menu.Item>
-              <div
-                onClick={() => handleLogin(loginError, setLoginError)}
-                className={'cursor-pointer block px-4 py-2 text-sm text-gray-700'}>
-                {t('login')}
-              </div>
-            </Menu.Item>
-          )}
+          <Menu.Item>
+            <p className="block px-4 py-2 text-sm text-gray-400">
+              Logged as {authCtx.firstname} {authCtx.lastname}
+            </p>
+          </Menu.Item>
+          <Menu.Item onClick={handleLogout}>
+            <div className={'cursor-pointer block px-4 py-2 text-sm text-gray-700'}>
+              {t('logout')}
+            </div>
+          </Menu.Item>
         </Menu.Items>
       </Transition>
     </Menu>
+  ) : (
+    <button
+      onClick={() => handleLogin(loginError, setLoginError)}
+      className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+      {t('login')}
+    </button>
   );
+};
+
+Profile.propTypes = {
+  authCtx: PropTypes.any.isRequired,
+  handleLogout: PropTypes.func.isRequired,
+  handleLogin: PropTypes.func.isRequired,
+  loginError: PropTypes.any,
+  setLoginError: PropTypes.any.isRequired,
 };
 
 export default Profile;
