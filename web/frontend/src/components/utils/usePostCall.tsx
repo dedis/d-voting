@@ -1,6 +1,6 @@
 // Custom hook that post a request to an endpoint
 const usePostCall = (setError) => {
-  const postData = async (endpoint, request, setIsPosting) => {
+  const sendFetchRequest = async (endpoint, request, setIsPosting) => {
     try {
       const response = await fetch(endpoint, request);
       if (!response.ok) {
@@ -18,7 +18,7 @@ const usePostCall = (setError) => {
     }
   };
 
-  return { postData };
+  return { sendFetchRequest };
 };
 
 export default usePostCall;

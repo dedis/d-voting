@@ -26,6 +26,7 @@ import { ballotIsValid } from './components/ValidateAnswers';
 const Ballot: FC = () => {
   const { t } = useTranslation();
   const { electionId } = useParams();
+  const UserID = sessionStorage.getItem('id');
   const token = sessionStorage.getItem('token');
   const { loading, configObj, electionID, status, pubKey, ballotSize, chunksPerBallot } =
     useElection(electionId, token);
@@ -36,11 +37,11 @@ const Ballot: FC = () => {
   const [postError, setPostError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [modalText, setModalText] = useState(t('voteSuccess') as string);
-  const { postData } = usePostCall(setPostError);
+  const { sendFetchRequest } = usePostCall(setPostError);
 
   useEffect(() => {
     if (postRequest !== null) {
-      postData(ENDPOINT_EVOTING_CAST_BALLOT, postRequest, setShowModal);
+      sendFetchRequest(ENDPOINT_EVOTING_CAST_BALLOT(electionID), postRequest, setShowModal);
     }
   }, [postRequest]);
 
@@ -68,9 +69,8 @@ const Ballot: FC = () => {
     const vote = [];
     EGPairs.forEach(([K, C]) => vote.push({ K: Array.from(K), C: Array.from(C) }));
     return {
-      ElectionID: electionID,
-      UserId: sessionStorage.getItem('id'),
       Ballot: vote,
+      UserID,
     };
   };
 
@@ -84,6 +84,9 @@ const Ballot: FC = () => {
     const ballot = createBallot(EGPairs);
     const newRequest = {
       method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify(ballot),
     };
     setPostRequest(newRequest);

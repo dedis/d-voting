@@ -10,9 +10,7 @@ const useElection = (electionID: ID) => {
   const request: RequestInit = {
     method: 'GET',
   };
-  const endpoint = `${ENDPOINT_EVOTING_GET_ELECTION}/${electionID}`;
-  console.log(endpoint);
-  const [data, loading, error] = useFetchCall(endpoint, request);
+  const [data, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ELECTION(electionID), request);
   const {
     status,
     setStatus,

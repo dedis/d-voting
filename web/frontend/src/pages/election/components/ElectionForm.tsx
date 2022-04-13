@@ -29,22 +29,27 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
   // conf is the configuration object containing MainTitle and Scaffold which
   // contains an array of subject.
   const { t } = useTranslation();
+  const UserID = sessionStorage.getItem('id');
+  const token = sessionStorage.getItem('token');
   const emptyConf: Configuration = emptyConfiguration();
   const [conf, setConf] = useState<Configuration>(emptyConf);
   const { MainTitle, Scaffold } = conf;
 
   async function createHandler() {
     const data = {
-      Format: marshalConfig(conf),
+      Configuration: marshalConfig(conf),
+      UserID,
     };
     const req = {
       method: 'POST',
-      type: 'application/json',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify(data),
     };
 
     try {
-      await configurationSchema.validate(data.Format);
+      await configurationSchema.validate(data.Configuration);
     } catch (err) {
       setTextModal(
         'Incorrect election configuration, please fill it completely: ' + err.errors.join(',')
@@ -74,8 +79,9 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
   // exports the data to a JSON file, marshall the configuration state object
   // before exporting it
   const exportData = async () => {
+    const data = marshalConfig(conf);
     try {
-      await configurationSchema.validate(conf);
+      await configurationSchema.validate(data);
     } catch (err) {
       setTextModal(
         'Incorrect election configuration, please fill it completely: ' + err.errors.join(',')
@@ -83,9 +89,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
       setShowModal(true);
       return;
     }
-    const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(
-      JSON.stringify(marshalConfig(conf))
-    )}`;
+    const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(JSON.stringify(data))}`;
     const link = document.createElement('a');
     link.href = jsonString;
     link.download = 'election_configuration.json';

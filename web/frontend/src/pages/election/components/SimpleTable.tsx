@@ -25,10 +25,11 @@ const SimpleTable: FC<SimpleTableProps> = ({
   textWhenNoData,
 }) => {
   const { t } = useTranslation();
-  const fetchRequest = {
+  const request = {
     method: 'GET',
   };
-  const [fetchedData, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, fetchRequest);
+
+  const [fetchedData, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, request);
 
   const ballotsToDisplay = (elections: GetAllElections) => {
     let dataToDisplay = [];
@@ -91,7 +92,7 @@ const SimpleTable: FC<SimpleTableProps> = ({
   return (
     <div>
       {!loading ? (
-        showBallots(fetchedData.AllElectionsInfo)
+        showBallots(fetchedData.Elections)
       ) : error === null ? (
         <p className="loading">{t('loading')}</p>
       ) : (

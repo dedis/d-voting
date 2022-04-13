@@ -1,17 +1,15 @@
 import { ID } from './configuration';
 
-interface GetElectionBody {
-  ElectionID: ID;
-  Token: string;
-}
-
 interface CreateElectionBody {
   Configuration: any;
 }
 
 interface CreateElectionCastVote {
-  UserID: string;
   Ballot: [];
+}
+
+interface ElectionActionsBody {
+  Action: 'open' | 'close' | 'combineShares' | 'cancel';
 }
 
 interface LightElectionInfo {
@@ -35,9 +33,9 @@ type GetAllElections = LightElectionInfo[];
 
 export type {
   CreateElectionCastVote,
-  GetElectionBody,
   CreateElectionBody,
   GetAllElections,
   LightElectionInfo,
   ElectionInfo,
+  ElectionActionsBody,
 };
