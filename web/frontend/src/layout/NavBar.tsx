@@ -11,11 +11,14 @@ import {
   ROUTE_ELECTION_INDEX,
   ROUTE_HOME,
 } from '../Routes';
-import logoWhite from '../assets/logo-white.png';
+import logo from '../assets/logo.png';
 import { LanguageSelector } from '../language';
-import { default as ProfilePicture } from '../components/ProfilePicture';
 import { AuthContext, FlashContext, FlashLevel } from '..';
 import handleLogin from 'pages/session/HandleLogin';
+import { PlusIcon } from '@heroicons/react/solid';
+import Profile from './components/Profile';
+
+// TODO: change mobile menu : put everything in the dropdown
 
 const NavBar: FC = () => {
   const { t } = useTranslation();
@@ -26,12 +29,6 @@ const NavBar: FC = () => {
   const navigate = useNavigate();
 
   const fctx = useContext(FlashContext);
-
-  // used for the profile button
-  const [profileToggle, setProfileToggle] = useState(false);
-  const triggerProfileToggle = () => {
-    setProfileToggle(!profileToggle);
-  };
 
   // used for the mobile menu button
   const [menuToggle, setMenuToggle] = useState(false);
@@ -55,12 +52,8 @@ const NavBar: FC = () => {
     navigate('/');
   };
 
-  const onSubmitPreventDefault = (e) => {
-    e.preventDefault();
-  };
-
   return (
-    <nav className="bg-gray-800 w-full">
+    <nav className="w-full border-b">
       <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
         <div className="relative flex items-center justify-between h-16">
           {/* Mobile icon */}
@@ -106,20 +99,16 @@ const NavBar: FC = () => {
           <div className="flex-1 flex items-center justify-center sm:justify-start">
             <div className="flex-shrink-0 flex items-center">
               <NavLink to={ROUTE_HOME}>
-                <img className="block lg:hidden h-6 w-auto" src={logoWhite} alt="Workflow" />
-                <img className="hidden lg:block h-6 w-auto" src={logoWhite} alt="Workflow" />
+                <img className="block lg:hidden h-10 w-auto" src={logo} alt="Workflow" />
+                <img className="hidden lg:block h-10 w-auto" src={logo} alt="Workflow" />
               </NavLink>
             </div>
             <div className="hidden sm:block sm:ml-6">
-              <div className="flex space-x-4">
+              <div className="flex space-x-6 mt-1">
                 <NavLink
                   to={ROUTE_ELECTION_INDEX}
                   title={t('navBarStatus')}
-                  className={(isActive) =>
-                    isActive
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
-                  }>
+                  className={'text-black text-lg hover:text-indigo-700'}>
                   {t('navBarStatus')}
                 </NavLink>
 
@@ -127,47 +116,18 @@ const NavBar: FC = () => {
                   <NavLink
                     title={t('navBarVote')}
                     to={ROUTE_BALLOT_INDEX}
-                    className={(isActive) =>
-                      isActive
-                        ? 'bg-gray-900 text-white'
-                        : 'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
-                    }>
+                    className={'text-black text-lg hover:text-indigo-700'}>
                     {t('navBarVote')}
                   </NavLink>
                 )}
 
-                {authCtx.isLogged && (authCtx.role === 'admin' || authCtx.role === 'operator') && (
-                  <NavLink
-                    title={t('navBarCreate')}
-                    to={ROUTE_ELECTION_CREATE}
-                    className={(isActive) =>
-                      isActive
-                        ? 'bg-gray-900 text-white'
-                        : 'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
-                    }>
-                    {t('navBarCreate')}
-                  </NavLink>
-                )}
-
                 {authCtx.role === 'admin' && authCtx.isLogged && (
-                  <NavLink
-                    to={ROUTE_ADMIN}
-                    className={(isActive) =>
-                      isActive
-                        ? 'bg-gray-900 text-white'
-                        : 'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
-                    }>
+                  <NavLink to={ROUTE_ADMIN} className={'text-black text-lg hover:text-indigo-700'}>
                     Admin
                   </NavLink>
                 )}
 
-                <NavLink
-                  to={ROUTE_ABOUT}
-                  className={(isActive) =>
-                    isActive
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
-                  }>
+                <NavLink to={ROUTE_ABOUT} className={'text-black text-lg hover:text-indigo-700'}>
                   {t('navBarAbout')}
                 </NavLink>
               </div>
@@ -175,89 +135,22 @@ const NavBar: FC = () => {
           </div>
 
           <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+            {authCtx.isLogged && (authCtx.role === 'admin' || authCtx.role === 'operator') && (
+              <NavLink title={t('navBarCreateElection')} to={ROUTE_ELECTION_CREATE}>
+                <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                  <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                  {t('navBarCreateElection')}
+                </div>
+              </NavLink>
+            )}
             <LanguageSelector />
-
-            <button
-              type="button"
-              className="bg-gray-800 p-1 rounded-full text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
-              <span className="sr-only">View notifications</span>
-              <svg
-                className="h-6 w-6"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                />
-              </svg>
-            </button>
-
-            <div className="ml-3 relative">
-              <div>
-                <button
-                  onClick={triggerProfileToggle}
-                  type="button"
-                  className="bg-gray-800 flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
-                  id="user-menu-button"
-                  aria-expanded="false"
-                  aria-haspopup="true">
-                  <span className="sr-only">Open user menu</span>
-                  <ProfilePicture />
-                </button>
-              </div>
-
-              <div
-                className={`${
-                  profileToggle
-                    ? 'ease-out duration-100 transform opacity-100 scale-100'
-                    : 'ease-in duration-75 transform opacity-0 scale-95'
-                } transition origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none`}
-                role="menu"
-                aria-orientation="vertical"
-                aria-labelledby="user-menu-button"
-                tabIndex={-1}>
-                {
-                  <div>
-                    {authCtx.isLogged ? (
-                      <div>
-                        <p className="block px-4 py-2 text-sm text-gray-400">
-                          Logged as {authCtx.firstname} {authCtx.lastname}
-                        </p>
-                        <button
-                          type="button"
-                          className="block px-4 py-2 text-sm text-gray-700"
-                          onClick={handleLogout}
-                          onSubmit={onSubmitPreventDefault}>
-                          {t('logout')}
-                        </button>
-                      </div>
-                    ) : (
-                      <div>
-                        <button
-                          id="login-button"
-                          className="block px-4 py-2 text-sm text-gray-700'"
-                          onClick={() => handleLogin(loginError, setLoginError)}>
-                          {t('login')}
-                        </button>
-                      </div>
-                    )}
-                    <a
-                      href="#top"
-                      className="block px-4 py-2 text-sm text-gray-700"
-                      role="menuitem"
-                      tabIndex={-1}
-                      id="user-menu-item-1">
-                      Settings
-                    </a>
-                  </div>
-                }
-              </div>
-            </div>
+            <Profile
+              authCtx={authCtx}
+              handleLogout={handleLogout}
+              handleLogin={handleLogin}
+              loginError={loginError}
+              setLoginError={setLoginError}
+            />
           </div>
         </div>
       </div>

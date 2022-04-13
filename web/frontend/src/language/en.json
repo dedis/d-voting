@@ -7,6 +7,7 @@
     "navBarVote": "Vote",
     "navBarResult": "Results",
     "navBarAbout": "About",
+    "navBarCreateElection": "Create election",
     "homeTitle": "Welcome to our e-voting platform!",
     "homeText": "Use the navigation bar above to reach the the page you want.",
     "loginText": "You need to login to access the content of {{from}}",
@@ -103,6 +104,9 @@
     "about2": "When an administrator creates an election, the election parameters are saved on a blockchain and so are every following transaction (closing/cancelling election, casting a vote,...). ",
     "about3": "A distributed key is generated at election creation time so that when a user votes, his/her vote is encrypted with the key guarantying the anonymity of the vote. However the system doesn't enforce the anonymity of the voter.",
     "about4": "When an election is closed, the nodes shuffle the ballots and check its correctness before decrypting the shuffle and publish the result of the election on a smart contract.",
-    "end": "The end"
+    "end": "The end",
+    "en": "English",
+    "fr": "French",
+    "de": "German"
   }
 }

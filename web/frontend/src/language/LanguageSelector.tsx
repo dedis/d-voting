@@ -1,8 +1,18 @@
-import React, { useState } from 'react';
+import React, { FC, Fragment, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { default as i18n } from 'i18next';
+
 import { availableLanguages } from './Configuration';
 
-const LanguageSelector = () => {
+import { Menu, Transition } from '@headlessui/react';
+import { GlobeAltIcon } from '@heroicons/react/outline';
+
+const classNames = (...classes: string[]) => {
+  return classes.filter(Boolean).join(' ');
+};
+
+const LanguageSelector: FC = () => {
+  const { t } = useTranslation();
   const [toggle, setToggle] = useState(false);
   const triggerToggle = () => {
     setToggle(!toggle);
@@ -10,51 +20,41 @@ const LanguageSelector = () => {
 
   return (
     <div className="relative inline-block text-left">
-      <div>
-        <button
-          onClick={triggerToggle}
-          type="button"
-          className="inline-flex justify-center w-full text-gray-300 px-2 py-0.5 text-sm font-medium focus:outline-none"
-          id="menu-button"
-          aria-expanded="true"
-          aria-haspopup="true">
-          {availableLanguages}
-          <svg
-            className="-mr-1 ml-2 h-5 w-5"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            aria-hidden="true">
-            <path
-              fillRule="evenodd"
-              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </button>
-      </div>
-
-      <div
-        className={`${
-          toggle
-            ? 'ease-out duration-100 transform opacity-100 scale-100'
-            : 'ease-in duration-75 transform opacity-0 scale-95'
-        } transition origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none`}
-        role="menu"
-        aria-orientation="vertical"
-        aria-labelledby="menu-button"
-        tabIndex={-1}>
-        <div className="py-1" role="none">
-          <select
-            className="text-gray-700 block px-4 py-2 text-sm"
-            defaultValue={i18n.language}
-            onChange={(e) => i18n.changeLanguage(e.target.value)}>
-            {availableLanguages.map((lang) => (
-              <option key={lang}>{lang}</option>
-            ))}
-          </select>
+      <Menu as="div" className="ml-6">
+        <div>
+          <Menu.Button
+            onClick={triggerToggle}
+            className="flex text-sm mr-6 rounded-full text-gray-400 hover:text-white">
+            <span className="sr-only">Language</span>
+            <GlobeAltIcon className="h-7 w-7 text-neutral-600" aria-hidden="true" />
+          </Menu.Button>
         </div>
-      </div>
+        <Transition
+          as={Fragment}
+          enter="transition ease-out duration-100"
+          enterFrom="transform opacity-0 scale-95"
+          enterTo="transform opacity-100 scale-100"
+          leave="transition ease-in duration-75"
+          leaveFrom="transform opacity-100 scale-100"
+          leaveTo="transform opacity-0 scale-95">
+          <Menu.Items className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+            {availableLanguages.map((lang) => (
+              <Menu.Item key={lang}>
+                <div
+                  onClick={() => {
+                    if (i18n.language !== lang) i18n.changeLanguage(lang);
+                  }}
+                  className={classNames(
+                    i18n.language === lang ? 'bg-gray-100' : 'cursor-pointer',
+                    ' block px-4 py-2 text-sm text-gray-700'
+                  )}>
+                  {t(lang)}
+                </div>
+              </Menu.Item>
+            ))}
+          </Menu.Items>
+        </Transition>
+      </Menu>
     </div>
   );
 };
