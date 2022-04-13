@@ -1,12 +1,10 @@
 import { ID } from './configuration';
 
 interface CreateElectionBody {
-  UserID: string;
   Configuration: any;
 }
 
 interface CreateElectionCastVote {
-  UserID: string;
   Ballot: [];
 }
 

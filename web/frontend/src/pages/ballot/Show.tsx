@@ -37,11 +37,11 @@ const Ballot: FC = () => {
   const [postError, setPostError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [modalText, setModalText] = useState(t('voteSuccess') as string);
-  const { postData } = usePostCall(setPostError);
+  const { sendFetchRequest } = usePostCall(setPostError);
 
   useEffect(() => {
     if (postRequest !== null) {
-      postData(ENDPOINT_EVOTING_CAST_BALLOT(electionID), postRequest, setShowModal);
+      sendFetchRequest(ENDPOINT_EVOTING_CAST_BALLOT(electionID), postRequest, setShowModal);
     }
   }, [postRequest]);
 

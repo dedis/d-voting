@@ -131,12 +131,11 @@ export const handlers = [
   }),
 
   rest.post(ENDPOINT_EVOTING_CAST_BALLOT(), (req, res, ctx) => {
-    const { UserID, Ballot }: CreateElectionCastVote = JSON.parse(req.body.toString());
+    const { Ballot }: CreateElectionCastVote = JSON.parse(req.body.toString());
 
     return res(
       ctx.status(200),
       ctx.json({
-        UserID: UserID,
         Ballot: Ballot,
       })
     );
@@ -155,10 +154,10 @@ export const handlers = [
         Status = 2;
         break;
       case 'combineShares':
-        Status = 3;
+        Status = 4;
         break;
       case 'cancel':
-        Status = 4;
+        Status = 6;
         break;
       default:
         break;
@@ -169,7 +168,7 @@ export const handlers = [
 
   rest.put(ENDPOINT_EVOTING_SHUFFLE(), (req, res, ctx) => {
     const { ElectionID } = req.params;
-    var Status = 5;
+    var Status = 3;
     const foundIndex = mockElections.findIndex((x) => x.ElectionID === ElectionID);
     mockElections[foundIndex] = { ...mockElections[foundIndex], Status };
     return res(ctx.status(200), ctx.text('Action sucessfully done'));
@@ -177,7 +176,7 @@ export const handlers = [
 
   rest.put(ENDPOINT_EVOTING_DECRYPT(), (req, res, ctx) => {
     const { ElectionID } = req.params;
-    var Status = 1;
+    var Status = 5;
     const foundIndex = mockElections.findIndex((x) => x.ElectionID === ElectionID);
     mockElections[foundIndex] = { ...mockElections[foundIndex], Status };
     return res(ctx.status(200), ctx.text('Action sucessfully done'));
