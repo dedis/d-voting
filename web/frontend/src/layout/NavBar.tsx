@@ -1,25 +1,31 @@
 import React, { FC, useContext, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ENDPOINT_LOGOUT } from '../components/utils/Endpoints';
 
 import {
   ROUTE_ABOUT,
   ROUTE_ADMIN,
+  ROUTE_BALLOT_INDEX,
   ROUTE_ELECTION_CREATE,
   ROUTE_ELECTION_INDEX,
   ROUTE_HOME,
-  ROUTE_LOGIN,
 } from '../Routes';
 import logoWhite from '../assets/logo-white.png';
 import { LanguageSelector } from '../language';
 import { default as ProfilePicture } from '../components/ProfilePicture';
-import { AuthContext } from '..';
+import { AuthContext, FlashContext, FlashLevel } from '..';
+import handleLogin from 'pages/session/HandleLogin';
 
 const NavBar: FC = () => {
   const { t } = useTranslation();
 
   const authCtx = useContext(AuthContext);
+  const [loginError, setLoginError] = useState(null);
+
+  const navigate = useNavigate();
+
+  const fctx = useContext(FlashContext);
 
   // used for the profile button
   const [profileToggle, setProfileToggle] = useState(false);
@@ -40,10 +46,13 @@ const NavBar: FC = () => {
 
     const res = await fetch(ENDPOINT_LOGOUT, opts);
     if (res.status !== 200) {
-      console.warn('failed to logout');
+      fctx.addMessage(t('logOutError', { error: res.statusText }), FlashLevel.Error);
     } else {
-      window.location.href = '/';
+      fctx.addMessage(t('logOutSuccessful'), FlashLevel.Info);
     }
+
+    authCtx.isLogged = false;
+    navigate('/');
   };
 
   const onSubmitPreventDefault = (e) => {
@@ -113,6 +122,19 @@ const NavBar: FC = () => {
                   }>
                   {t('navBarStatus')}
                 </NavLink>
+
+                {authCtx.isLogged && (authCtx.role === 'admin' || authCtx.role === 'operator') && (
+                  <NavLink
+                    title={t('navBarVote')}
+                    to={ROUTE_BALLOT_INDEX}
+                    className={(isActive) =>
+                      isActive
+                        ? 'bg-gray-900 text-white'
+                        : 'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
+                    }>
+                    {t('navBarVote')}
+                  </NavLink>
+                )}
 
                 {authCtx.isLogged && (authCtx.role === 'admin' || authCtx.role === 'operator') && (
                   <NavLink
@@ -215,9 +237,14 @@ const NavBar: FC = () => {
                         </button>
                       </div>
                     ) : (
-                      <NavLink to={ROUTE_LOGIN} className={'block px-4 py-2 text-sm text-gray-700'}>
-                        Login
-                      </NavLink>
+                      <div>
+                        <button
+                          id="login-button"
+                          className="block px-4 py-2 text-sm text-gray-700'"
+                          onClick={() => handleLogin(loginError, setLoginError)}>
+                          {t('login')}
+                        </button>
+                      </div>
                     )}
                     <a
                       href="#top"

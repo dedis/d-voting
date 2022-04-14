@@ -1,4 +1,4 @@
-/*custom hook that post a request to an endpoint */
+// Custom hook that post a request to an endpoint
 const usePostCall = (setError) => {
   const postData = async (endpoint, request, setIsPosting) => {
     try {
