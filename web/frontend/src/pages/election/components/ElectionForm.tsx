@@ -30,7 +30,6 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
   // contains an array of subject.
   const { t } = useTranslation();
   const UserID = sessionStorage.getItem('id');
-  const token = sessionStorage.getItem('token');
   const emptyConf: Configuration = emptyConfiguration();
   const [conf, setConf] = useState<Configuration>(emptyConf);
   const { MainTitle, Scaffold } = conf;
