@@ -6,7 +6,7 @@ import { ENDPOINT_EVOTING_GET_ELECTION } from './Endpoints';
 // different parameters
 
 // TODO remove tokens everywhere
-const useElection = (electionID, token) => {
+const useElection = (electionID) => {
   const request = {
     method: 'GET',
   };

@@ -26,7 +26,7 @@ const ElectionShow: FC = () => {
     setStatus,
     isResultSet,
     setIsResultSet,
-  } = useElection(electionId, token);
+  } = useElection(electionId);
   const [, setError] = useState(null);
   const [isResultAvailable, setIsResultAvailable] = useState(false);
   const { getResults } = useGetResults();

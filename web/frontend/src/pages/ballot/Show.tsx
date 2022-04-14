@@ -27,9 +27,8 @@ const Ballot: FC = () => {
   const { t } = useTranslation();
   const { electionId } = useParams();
   const UserID = sessionStorage.getItem('id');
-  const token = sessionStorage.getItem('token');
   const { loading, configObj, electionID, status, pubKey, ballotSize, chunksPerBallot } =
-    useElection(electionId, token);
+    useElection(electionId);
   const { configuration, answers, setAnswers } = useConfiguration(configObj);
   const [userErrors, setUserErrors] = useState('');
   const edCurve = kyber.curve.newCurve('edwards25519');
