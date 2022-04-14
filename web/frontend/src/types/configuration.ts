@@ -55,11 +55,22 @@ interface Answers {
   Errors: Map<ID, string>;
 }
 
+// TODO change to Map, requires to unmarshal the object in useElection
+interface Result {
+  SelectResultIDs: ID[];
+  SelectResult: [boolean[]];
+  RankResultIDs: ID[];
+  RankResult: [number[]];
+  TextResultIDs: ID[];
+  TextResult: [string[]];
+}
+
 export type {
   ID,
   TextQuestion,
   SelectQuestion,
   RankQuestion,
+  Result,
   Subject,
   SubjectElement,
   Configuration,

@@ -11,10 +11,11 @@ import {
   ENDPOINT_EVOTING_SHUFFLE,
 } from './Endpoints';
 import { CANCELED, CLOSED, OPEN, RESULT_AVAILABLE, SHUFFLED_BALLOT } from './StatusNumber';
+import { ID } from 'types/configuration';
 
 const useChangeAction = (
   status: number,
-  electionID: number,
+  electionID: ID,
   setStatus: (status: number) => void,
   setResultAvailable: ((available: boolean) => void | null) | undefined,
   setTextModalError: (value: ((prevState: null) => '') | string) => void,

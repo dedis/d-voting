@@ -14,14 +14,13 @@ type ResultShowProps = {
 const ResultShow: FC<ResultShowProps> = (props) => {
   const { t } = useTranslation();
   //props.location.data = id of the election
-  const token = sessionStorage.getItem('token');
-  const { loading, electionTitle, result, error } = useElection(props.location.data, token);
+  const { loading, configObj, result, error } = useElection(props.location.data);
 
   return (
     <div className="result-box">
       {!loading ? (
         <div>
-          <h1>{electionTitle}</h1>
+          <h1>{configObj.MainTitle}</h1>
           {/* TODO: <Result resultData={result} candidates={candidates} />*/}
         </div>
       ) : error === null ? (

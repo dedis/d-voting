@@ -19,18 +19,16 @@ import {
 import {
   CreateElectionBody,
   CreateElectionCastVote,
-  ElectionInfo,
-  LightElectionInfo,
   ElectionActionsBody,
 } from '../types/frontendRequestBody';
 import { mockElection1, mockElection2 } from './mockData';
 import { ID } from 'types/configuration';
+import { ElectionInfo, LightElectionInfo } from 'types/election';
 
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;
 
 const mockElections: Map<ID, ElectionInfo> = new Map();
-const mockElectionsLight: Map<ID, LightElectionInfo> = new Map();
 const electionID1 = uid();
 const electionID2 = uid();
 
@@ -53,19 +51,15 @@ mockElections.set(electionID2, {
   ChunksPerBallot: 6,
 });
 
-mockElectionsLight.set(electionID1, {
-  ElectionID: electionID1,
-  Title: unmarshalConfig(mockElection1).MainTitle,
-  Status: 1,
-  Pubkey: 'XL4V6EMIICW',
-});
-
-mockElectionsLight.set(electionID2, {
-  ElectionID: electionID2,
-  Title: unmarshalConfig(mockElection2).MainTitle,
-  Status: 1,
-  Pubkey: 'XL4V6EMIICW',
-});
+const toLightElectionInfo = (electionID: ID): LightElectionInfo => {
+  const election = mockElections.get(electionID);
+  return {
+    ElectionID: electionID,
+    Title: election.Configuration.MainTitle,
+    Status: election.Status,
+    Pubkey: election.Pubkey,
+  };
+};
 
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, (req, res, ctx) => {
@@ -88,7 +82,6 @@ export const handlers = [
     const url = ROUTE_LOGGED;
     sessionStorage.setItem('is-authenticated', 'true');
     sessionStorage.setItem('id', '283205');
-    sessionStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9');
     return res(ctx.status(200), ctx.json({ url: url }));
   }),
 
@@ -98,24 +91,17 @@ export const handlers = [
   }),
 
   rest.get(ENDPOINT_EVOTING_GET_ALL, (req, res, ctx) => {
-    // TODO: GET GET ALL SHOULD ONLY RETURN SOME FIELDS OF THE ELECTION
-    // BEFORE ADAPTING THE MOCK, THE FRONTEND SHOULD BE UPDATED TO ACCEPT THIS
-    // const Elections = mockElections.map(({ ElectionID, Title, Status, Pubkey }) => ({
-    //   ElectionID,
-    //   Title,
-    //   Status,
-    //   Pubkey,
-    // }));
     return res(
       ctx.status(200),
       ctx.json({
-        AllElectionsInfo: Array.from(mockElectionsLight.values()),
+        Elections: Array.from(mockElections.values()).map((election) =>
+          toLightElectionInfo(election.ElectionID)
+        ),
       })
     );
   }),
 
   rest.get(ENDPOINT_EVOTING_GET_ELECTION(), (req, res, ctx) => {
-    const electionID = req.url.toString().split('/').at(-1);
     const { ElectionID } = req.params;
 
     return res(ctx.status(200), ctx.json(mockElections.get(ElectionID as ID)));
@@ -135,12 +121,6 @@ export const handlers = [
         Configuration: configuration,
         BallotSize: 290,
         ChunksPerBallot: 10,
-      });
-      mockElectionsLight.set(newElectionID, {
-        ElectionID: newElectionID,
-        Title: configuration.MainTitle,
-        Status: 1,
-        Pubkey: 'DEAEV6EMII',
       });
 
       return newElectionID;
@@ -189,10 +169,7 @@ export const handlers = [
       ...mockElections.get(ElectionID as string),
       Status,
     });
-    mockElectionsLight.set(ElectionID as string, {
-      ...mockElectionsLight.get(ElectionID as string),
-      Status,
-    });
+
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
@@ -203,10 +180,7 @@ export const handlers = [
       ...mockElections.get(ElectionID as string),
       Status,
     });
-    mockElectionsLight.set(ElectionID as string, {
-      ...mockElectionsLight.get(ElectionID as string),
-      Status,
-    });
+
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
@@ -217,10 +191,7 @@ export const handlers = [
       ...mockElections.get(ElectionID as string),
       Status,
     });
-    mockElectionsLight.set(ElectionID as string, {
-      ...mockElectionsLight.get(ElectionID as string),
-      Status,
-    });
+
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 ];
