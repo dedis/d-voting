@@ -700,8 +700,7 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 
 	conn.SetWriteDeadline(time.Now().Add(writeTimeout))
 
-	bytesToSend := hex.EncodeToString(buf.Bytes())
-	dela.Logger.Info().Msgf("Data to Unikernel: %v", bytesToSend)
+	dela.Logger.Info().Hex("output", buf.Bytes()).Msg("Data to Unikernel")
 
 	_, err = buf.WriteTo(conn)
 	if err != nil {
@@ -719,8 +718,7 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 
 	readRes = readRes[:n]
 
-	bytesReceived := hex.EncodeToString(readRes)
-	dela.Logger.Info().Msgf("Data from Unikernel: %v", bytesReceived)
+	dela.Logger.Info().Hex("input", readRes).Msg("Data from Unikernel")
 
 	if strings.HasPrefix(string(readRes), "ERROR") {
 		return xerrors.Errorf("an error ocurred in the unikernel: %s", readRes)

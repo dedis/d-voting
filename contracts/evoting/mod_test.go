@@ -1106,12 +1106,13 @@ func TestCommand_CombineSharesCanLogToDela(t *testing.T) {
 	// setup a fake logger for the test purpose
 	logBuffer := new(bytes.Buffer)
 
-	logWriter := zerolog.ConsoleWriter{
-		Out:        logBuffer,
-		TimeFormat: time.RFC3339,
-	}
+	oldLogger := dela.Logger
 
-	dela.Logger = zerolog.New(logWriter).Level(zerolog.InfoLevel)
+	dela.Logger = zerolog.New(logBuffer).Level(zerolog.InfoLevel)
+
+	defer func() {
+		dela.Logger = oldLogger
+	}()
 
 	decryptBallot := types.CombineShares{
 		ElectionID: fakeElectionID,
@@ -1206,13 +1207,16 @@ func TestCommand_CombineSharesCanLogToDela(t *testing.T) {
 	err = cmd.combineShares(snap, makeStep(t, ElectionArg, string(data)))
 	require.NoError(t, err)
 
-	logBuffers := strings.Split(logBuffer.String(), "INF")
-	require.Len(t, logBuffers, 4)
-	require.Contains(t, logBuffers[1], "using the following folder:")
-	require.Contains(t, logBuffers[2], "Data to Unikernel:")
-	require.Contains(t, logBuffers[3], "Data from Unikernel:")
-	require.Len(t, logBuffers[2], 157)
-	require.Len(t, logBuffers[3], 31)
+	// logBuffer output example:
+	// {"level":"info","message":"using the following folder: decrypted-ballots-6475-e723-1649923012189772385/"}
+	// {"level":"info","output":"020000000a0000006465637279707465642d62616c6c6f74732d363437352d653732332d313634393932333031323138393737323338352f","message":"Data to Unikernel"}
+	// {"level":"info","input":"4f4b","message":"Data from Unikernel"}
+	logBuffers := strings.Split(logBuffer.String(), "\n")
+
+	require.Contains(t, logBuffers[1], "Data to Unikernel")
+	require.Contains(t, logBuffers[1], "output")
+	require.Contains(t, logBuffers[2], "Data from Unikernel")
+	require.Contains(t, logBuffers[2], "input")
 }
 
 func Test_ExportPubshares(t *testing.T) {
