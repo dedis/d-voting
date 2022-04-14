@@ -25,12 +25,8 @@ const SimpleTable: FC<SimpleTableProps> = ({
   textWhenNoData,
 }) => {
   const { t } = useTranslation();
-  const token = sessionStorage.getItem('token');
   const request = {
     method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
   };
 
   const [fetchedData, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, request);

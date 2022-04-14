@@ -9,9 +9,6 @@ import { ENDPOINT_EVOTING_GET_ELECTION } from './Endpoints';
 const useElection = (electionID, token) => {
   const request = {
     method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
   };
 
   const [data, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ELECTION(electionID), request);

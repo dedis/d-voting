@@ -42,9 +42,6 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
     };
     const req = {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
       body: JSON.stringify(data),
     };
 

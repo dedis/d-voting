@@ -8,12 +8,8 @@ import './Index.css';
 
 const ElectionIndex: FC = () => {
   const { t } = useTranslation();
-  const token = sessionStorage.getItem('token');
   const request = {
     method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
   };
 
   const [data, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, request);

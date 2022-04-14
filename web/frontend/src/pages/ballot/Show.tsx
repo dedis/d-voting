@@ -84,9 +84,6 @@ const Ballot: FC = () => {
     const ballot = createBallot(EGPairs);
     const newRequest = {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
       body: JSON.stringify(ballot),
     };
     setPostRequest(newRequest);
