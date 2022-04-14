@@ -18,6 +18,7 @@ import (
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	eproxy "github.com/dedis/d-voting/proxy"
+	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/dedis/d-voting/services/dkg"
 	stypes "github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"github.com/dedis/d-voting/services/shuffle"
@@ -210,7 +211,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	// Define the configuration
 	configuration := fake.BasicConfiguration
 
-	createSimpleElectionRequest := types.CreateElectionRequest{
+	createSimpleElectionRequest := ptypes.CreateElectionRequest{
 		Configuration: configuration,
 		AdminID:       "adminId",
 	}
@@ -244,7 +245,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	resp.Body.Close()
 
-	var electionResponse types.CreateElectionResponse
+	var electionResponse ptypes.CreateElectionResponse
 
 	err = json.Unmarshal(body, &electionResponse)
 	if err != nil {
@@ -368,7 +369,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to marshall ballot : %v", err)
 	}
 
-	castVoteRequest := types.CastVoteRequest{
+	castVoteRequest := ptypes.CastVoteRequest{
 		UserID: "user1",
 		Ballot: ballot1,
 	}
@@ -388,7 +389,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to marshall ballot : %v", err)
 	}
 
-	castVoteRequest = types.CastVoteRequest{
+	castVoteRequest = ptypes.CastVoteRequest{
 		UserID: "user2",
 		Ballot: ballot2,
 	}
@@ -408,7 +409,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to marshall ballot: %v", err)
 	}
 
-	castVoteRequest = types.CastVoteRequest{
+	castVoteRequest = ptypes.CastVoteRequest{
 		UserID: "user3",
 		Ballot: ballot3,
 	}
@@ -555,7 +556,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to get all elections")
 	}
 
-	var allElections types.GetAllElectionsInfoResponse
+	var allElections ptypes.GetElectionsResponse
 
 	decoder := json.NewDecoder(resp.Body)
 
@@ -577,9 +578,9 @@ func encodeID(ID string) types.ID {
 	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
 }
 
-func marshallBallot(voteStr string, actor dkg.Actor, chunks int) (types.CiphervoteJSON, error) {
+func marshallBallot(voteStr string, actor dkg.Actor, chunks int) (ptypes.CiphervoteJSON, error) {
 
-	var ballot = make(types.CiphervoteJSON, chunks)
+	var ballot = make(ptypes.CiphervoteJSON, chunks)
 	vote := strings.NewReader(voteStr)
 
 	buf := make([]byte, 29)
@@ -596,20 +597,20 @@ func marshallBallot(voteStr string, actor dkg.Actor, chunks int) (types.Ciphervo
 		K, C, _, err = actor.Encrypt(buf[:n])
 
 		if err != nil {
-			return types.CiphervoteJSON{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
+			return ptypes.CiphervoteJSON{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
 		}
 
 		kbuff, err := K.MarshalBinary()
 		if err != nil {
-			return types.CiphervoteJSON{}, xerrors.Errorf("failed to marshal K: %v", err)
+			return ptypes.CiphervoteJSON{}, xerrors.Errorf("failed to marshal K: %v", err)
 		}
 
 		cbuff, err := C.MarshalBinary()
 		if err != nil {
-			return types.CiphervoteJSON{}, xerrors.Errorf("failed to marshal C: %v", err)
+			return ptypes.CiphervoteJSON{}, xerrors.Errorf("failed to marshal C: %v", err)
 		}
 
-		ballot[i] = types.EGPairJSON{
+		ballot[i] = ptypes.EGPairJSON{
 			K: kbuff,
 			C: cbuff,
 		}
@@ -619,7 +620,7 @@ func marshallBallot(voteStr string, actor dkg.Actor, chunks int) (types.Ciphervo
 }
 
 // electionID is hex-encoded
-func castVote(electionID string, castVoteRequest types.CastVoteRequest, proxyAddr string) (string, error) {
+func castVote(electionID string, castVoteRequest ptypes.CastVoteRequest, proxyAddr string) (string, error) {
 	js, err := json.Marshal(castVoteRequest)
 	if err != nil {
 		return "", xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
@@ -646,7 +647,7 @@ func castVote(electionID string, castVoteRequest types.CastVoteRequest, proxyAdd
 }
 
 func updateElection(proxyAddr, electionIDHex, action string) (int, error) {
-	msg := types.UpdateElectionRequest{
+	msg := ptypes.UpdateElectionRequest{
 		Action: action,
 	}
 

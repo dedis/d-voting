@@ -12,6 +12,7 @@ import (
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
+	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 	"go.dedis.ch/dela"
@@ -55,9 +56,9 @@ type election struct {
 
 // NewElection implements proxy.Proxy
 func (h *election) NewElection(w http.ResponseWriter, r *http.Request) {
-	req := &types.CreateElectionRequest{}
+	var req ptypes.CreateElectionRequest
 
-	err := json.NewDecoder(r.Body).Decode(req)
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "failed to decode CreateElectionRequest: "+err.Error(),
 			http.StatusBadRequest)
@@ -86,7 +87,7 @@ func (h *election) NewElection(w http.ResponseWriter, r *http.Request) {
 	hash.Write(txID)
 	electionID := hash.Sum(nil)
 
-	response := types.CreateElectionResponse{
+	response := ptypes.CreateElectionResponse{
 		ElectionID: hex.EncodeToString(electionID),
 	}
 
@@ -110,9 +111,9 @@ func (h *election) NewElectionVote(w http.ResponseWriter, r *http.Request) {
 
 	electionID := vars["electionID"]
 
-	req := &types.CastVoteRequest{}
+	var req ptypes.CastVoteRequest
 
-	err := json.NewDecoder(r.Body).Decode(req)
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "failed to decode CastVoteRequest: "+err.Error(),
 			http.StatusBadRequest)
@@ -173,16 +174,6 @@ func (h *election) NewElectionVote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	response := types.CastVoteResponse{}
-	w.Header().Set("Content-Type", "application/json")
-
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
-			http.StatusInternalServerError)
-		return
-	}
 }
 
 // EditElection implements proxy.Proxy
@@ -207,9 +198,9 @@ func (h *election) EditElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := &types.UpdateElectionRequest{}
+	var req ptypes.UpdateElectionRequest
 
-	err = json.NewDecoder(r.Body).Decode(req)
+	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "failed to decode UpdateElectionRequest: "+err.Error(),
 			http.StatusBadRequest)
@@ -352,7 +343,7 @@ func (h *election) Election(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	response := types.GetElectionInfoResponse{
+	response := ptypes.GetElectionResponse{
 		ElectionID:    string(election.ElectionID),
 		Configuration: election.Configuration,
 		Status:        uint16(election.Status),
@@ -379,7 +370,7 @@ func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	allElectionsInfo := make([]types.LightElection, len(elecMD.ElectionsIDs))
+	allElectionsInfo := make([]ptypes.LightElection, len(elecMD.ElectionsIDs))
 
 	for i, id := range elecMD.ElectionsIDs {
 		election, err := getElection(h.context, h.electionFac, id, h.orderingSvc)
@@ -394,7 +385,7 @@ func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 				http.StatusInternalServerError)
 		}
 
-		info := types.LightElection{
+		info := ptypes.LightElection{
 			ElectionID: string(election.ElectionID),
 			Status:     uint16(election.Status),
 			Pubkey:     hex.EncodeToString(pubkeyBuf),
@@ -403,7 +394,7 @@ func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 		allElectionsInfo[i] = info
 	}
 
-	response := types.GetAllElectionsInfoResponse{Elections: allElectionsInfo}
+	response := ptypes.GetElectionsResponse{Elections: allElectionsInfo}
 
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
@@ -432,20 +423,20 @@ func (h *election) waitForTxnID(events <-chan ordering.Event, ID []byte) bool {
 	return false
 }
 
-func (h *election) getElectionsMetadata() (*types.ElectionsMetadata, error) {
-	electionsMetadata := &types.ElectionsMetadata{}
+func (h *election) getElectionsMetadata() (types.ElectionsMetadata, error) {
+	var md types.ElectionsMetadata
 
-	electionMetadataProof, err := h.orderingSvc.GetProof([]byte(evoting.ElectionsMetadataKey))
+	proof, err := h.orderingSvc.GetProof([]byte(evoting.ElectionsMetadataKey))
 	if err != nil {
-		return nil, xerrors.Errorf("failed to read on the blockchain: %v", err)
+		return md, xerrors.Errorf("failed to read on the blockchain: %v", err)
 	}
 
-	err = json.Unmarshal(electionMetadataProof.GetValue(), electionsMetadata)
+	err = json.Unmarshal(proof.GetValue(), &md)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to unmarshal ElectionMetadata: %v", err)
+		return md, xerrors.Errorf("failed to unmarshal ElectionMetadata: %v", err)
 	}
 
-	return electionsMetadata, nil
+	return md, nil
 }
 
 // getElection gets the election from the snap. Returns the election ID NOT hex
@@ -487,6 +478,7 @@ func getElection(ctx serde.Context, electionFac serde.Factory, electionIDHex str
 // Returns the transaction ID.
 func (h *election) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
 	cmdArg string, payload []byte) ([]byte, error) {
+
 	h.Lock()
 	defer h.Unlock()
 
@@ -540,5 +532,6 @@ func createTransaction(manager txn.Manager, commandType evoting.Command,
 	if err != nil {
 		return nil, xerrors.Errorf("failed to create transaction from manager: %v", err)
 	}
+
 	return tx, nil
 }

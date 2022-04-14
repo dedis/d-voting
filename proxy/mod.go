@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/proxy/types"
 	"go.dedis.ch/kyber/v3/suites"
 )
 

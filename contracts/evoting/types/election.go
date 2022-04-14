@@ -9,8 +9,11 @@ import (
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/registry"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 )
+
+var suite = suites.MustFind("Ed25519")
 
 // ID defines the ID of a ballot question
 type ID string
