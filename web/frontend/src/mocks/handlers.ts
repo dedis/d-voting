@@ -17,9 +17,16 @@ import {
 } from '../components/utils/Endpoints';
 
 import {
+  CANCELED_STATUS,
+  CLOSED_STATUS,
   CreateElectionBody,
   CreateElectionCastVote,
+  DECRYPTED_BALLOTS_STATUS,
   ElectionActionsBody,
+  INITIAL_STATUS,
+  OPEN_STATUS,
+  RESULT_AVAILABLE_STATUS,
+  SHUFFLED_BALLOTS_STATUS,
 } from '../types/frontendRequestBody';
 import { mockElection1, mockElection2 } from './mockData';
 
@@ -30,7 +37,7 @@ var mockElections = [
   {
     ElectionID: uid(),
     Title: 'Title Election 1',
-    Status: 1,
+    Status: OPEN_STATUS,
     Pubkey: 'XL4V6EMIICW',
     Result: [],
     Configuration: unmarshalConfig(mockElection1),
@@ -40,7 +47,7 @@ var mockElections = [
   {
     ElectionID: uid(),
     Title: 'Title Election 2',
-    Status: 1,
+    Status: OPEN_STATUS,
     Pubkey: 'XL4V6EMIICW',
     Result: [],
     Configuration: unmarshalConfig(mockElection2),
@@ -80,13 +87,10 @@ export const handlers = [
   }),
 
   rest.get(ENDPOINT_EVOTING_GET_ALL, (req, res, ctx) => {
-    // TODO: GET GET ALL SHOULD ONLY RETURN SOME FIELDS OF THE ELECTION
-    // BEFORE ADAPTING THE MOCK, THE FRONTEND SHOULD BE UPDATED TO ACCEPT THIS
-    // const Elections = mockElections.map(({ ElectionID, Title, Status, Pubkey }) => ({
-    //   ElectionID,
-    //   Title,
-    //   Status,
-    //   Pubkey,
+    // TODO: GET ALL SHOULD ONLY RETURN SOME FIELDS OF THE ELECTION BEFORE
+    // ADAPTING THE MOCK, THE FRONTEND SHOULD BE UPDATED TO ACCEPT ONLY THESE
+    // FIELDS const Elections = mockElections.map(({ ElectionID, Title, Status,
+    // Pubkey }) => ({ ElectionID, Title, Status, Pubkey,
     // }));
     return res(
       ctx.status(200),
@@ -144,20 +148,20 @@ export const handlers = [
   rest.put(ENDPOINT_EVOTING_ELECTION(), (req, res, ctx) => {
     const body: ElectionActionsBody = JSON.parse(req.body.toString());
     const { ElectionID } = req.params;
-    var Status = 1;
+    var Status = INITIAL_STATUS;
     const foundIndex = mockElections.findIndex((x) => x.ElectionID === ElectionID);
     switch (body.Action) {
       case 'open':
-        Status = 1;
+        Status = OPEN_STATUS;
         break;
       case 'close':
-        Status = 2;
+        Status = CLOSED_STATUS;
         break;
       case 'combineShares':
-        Status = 4;
+        Status = DECRYPTED_BALLOTS_STATUS;
         break;
       case 'cancel':
-        Status = 6;
+        Status = CANCELED_STATUS;
         break;
       default:
         break;
@@ -168,17 +172,15 @@ export const handlers = [
 
   rest.put(ENDPOINT_EVOTING_SHUFFLE(), (req, res, ctx) => {
     const { ElectionID } = req.params;
-    var Status = 3;
     const foundIndex = mockElections.findIndex((x) => x.ElectionID === ElectionID);
-    mockElections[foundIndex] = { ...mockElections[foundIndex], Status };
+    mockElections[foundIndex] = { ...mockElections[foundIndex], Status: SHUFFLED_BALLOTS_STATUS };
     return res(ctx.status(200), ctx.text('Action sucessfully done'));
   }),
 
   rest.put(ENDPOINT_EVOTING_DECRYPT(), (req, res, ctx) => {
     const { ElectionID } = req.params;
-    var Status = 5;
     const foundIndex = mockElections.findIndex((x) => x.ElectionID === ElectionID);
-    mockElections[foundIndex] = { ...mockElections[foundIndex], Status };
+    mockElections[foundIndex] = { ...mockElections[foundIndex], Status: RESULT_AVAILABLE_STATUS };
     return res(ctx.status(200), ctx.text('Action sucessfully done'));
   }),
 ];
