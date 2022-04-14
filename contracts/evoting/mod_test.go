@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -1207,16 +1208,23 @@ func TestCommand_CombineSharesCanLogToDela(t *testing.T) {
 	err = cmd.combineShares(snap, makeStep(t, ElectionArg, string(data)))
 	require.NoError(t, err)
 
-	// logBuffer output example:
-	// {"level":"info","message":"using the following folder: decrypted-ballots-6475-e723-1649923012189772385/"}
-	// {"level":"info","output":"020000000a0000006465637279707465642d62616c6c6f74732d363437352d653732332d313634393932333031323138393737323338352f","message":"Data to Unikernel"}
-	// {"level":"info","input":"4f4b","message":"Data from Unikernel"}
-	logBuffers := strings.Split(logBuffer.String(), "\n")
+	lines := bytes.Split(logBuffer.Bytes(), []byte("\n"))
 
-	require.Contains(t, logBuffers[1], "Data to Unikernel")
-	require.Contains(t, logBuffers[1], "output")
-	require.Contains(t, logBuffers[2], "Data from Unikernel")
-	require.Contains(t, logBuffers[2], "input")
+	require.Len(t, lines, 4)
+
+	var obj map[string]string
+
+	err = json.Unmarshal(lines[1], &obj)
+	require.NoError(t, err)
+
+	require.Contains(t, obj["output"], "020000000a000000")
+	require.Equal(t, "Data to Unikernel", obj["message"])
+
+	err = json.Unmarshal(lines[2], &obj)
+	require.NoError(t, err)
+
+	require.Equal(t, "4f4b", obj["input"])
+	require.Equal(t, "Data from Unikernel", obj["message"])
 }
 
 func Test_ExportPubshares(t *testing.T) {
