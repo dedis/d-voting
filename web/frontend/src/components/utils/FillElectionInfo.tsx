@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ID, Result } from 'types/configuration';
-import { ElectionInfo, LightElectionInfo } from 'types/election';
+import { ID } from 'types/configuration';
+import { ElectionInfo, LightElectionInfo, Result } from 'types/electionInfo';
 
 const useFillElectionInfo = (electionData: ElectionInfo) => {
   const [id, setId]: [ID, React.Dispatch<React.SetStateAction<ID>>] = useState(null);

@@ -23,7 +23,7 @@ import {
 } from '../types/frontendRequestBody';
 import { mockElection1, mockElection2 } from './mockData';
 import { ID } from 'types/configuration';
-import { ElectionInfo, LightElectionInfo } from 'types/election';
+import { ElectionInfo, LightElectionInfo } from 'types/electionInfo';
 
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;

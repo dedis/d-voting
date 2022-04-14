@@ -16,7 +16,7 @@ import Action from './Action';
 import Status from './Status';
 //import ElectionFields from 'components/utils/ElectionFields';
 import { ROUTE_ELECTION_SHOW } from 'Routes';
-import { LightElectionInfo } from 'types/election';
+import { LightElectionInfo } from 'types/electionInfo';
 import { ID } from 'types/configuration';
 import ElectionFields from 'components/utils/ElectionFields';
 

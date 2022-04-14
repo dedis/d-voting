@@ -1,4 +1,5 @@
-import { ID, Result } from 'types/configuration';
+import { ID } from 'types/configuration';
+import { Result } from 'types/electionInfo';
 import { ENDPOINT_EVOTING_GET_ELECTION } from './Endpoints';
 
 const useGetResults = () => {
