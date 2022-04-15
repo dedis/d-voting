@@ -17,16 +17,10 @@ import {
 } from '../components/utils/Endpoints';
 
 import {
-  CANCELED_STATUS,
-  CLOSED_STATUS,
   CreateElectionBody,
   CreateElectionCastVote,
-  DECRYPTED_BALLOTS_STATUS,
   ElectionActionsBody,
-  INITIAL_STATUS,
-  OPEN_STATUS,
-  RESULT_AVAILABLE_STATUS,
-  SHUFFLED_BALLOTS_STATUS,
+  STATUS,
 } from '../types/frontendRequestBody';
 import { mockElection1, mockElection2 } from './mockData';
 
@@ -37,7 +31,7 @@ var mockElections = [
   {
     ElectionID: uid(),
     Title: 'Title Election 1',
-    Status: OPEN_STATUS,
+    Status: STATUS.OPEN,
     Pubkey: 'XL4V6EMIICW',
     Result: [],
     Configuration: unmarshalConfig(mockElection1),
@@ -47,7 +41,7 @@ var mockElections = [
   {
     ElectionID: uid(),
     Title: 'Title Election 2',
-    Status: OPEN_STATUS,
+    Status: STATUS.OPEN,
     Pubkey: 'XL4V6EMIICW',
     Result: [],
     Configuration: unmarshalConfig(mockElection2),
@@ -77,7 +71,6 @@ export const handlers = [
     const url = ROUTE_LOGGED;
     sessionStorage.setItem('is-authenticated', 'true');
     sessionStorage.setItem('id', '283205');
-    sessionStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9');
     return res(ctx.status(200), ctx.json({ url: url }));
   }),
 
@@ -115,7 +108,7 @@ export const handlers = [
       const newElection = {
         ElectionID: uid(),
         Title: Configuration.MainTitle,
-        Status: 1,
+        Status: STATUS.OPEN,
         Pubkey: 'DEAEV6EMII',
         Result: [],
         Configuration: Configuration,
@@ -148,20 +141,20 @@ export const handlers = [
   rest.put(ENDPOINT_EVOTING_ELECTION(), (req, res, ctx) => {
     const body: ElectionActionsBody = JSON.parse(req.body.toString());
     const { ElectionID } = req.params;
-    var Status = INITIAL_STATUS;
+    var Status = STATUS.INITIAL;
     const foundIndex = mockElections.findIndex((x) => x.ElectionID === ElectionID);
     switch (body.Action) {
       case 'open':
-        Status = OPEN_STATUS;
+        Status = STATUS.OPEN;
         break;
       case 'close':
-        Status = CLOSED_STATUS;
+        Status = STATUS.CLOSED;
         break;
       case 'combineShares':
-        Status = DECRYPTED_BALLOTS_STATUS;
+        Status = STATUS.DECRYPTED_BALLOTS;
         break;
       case 'cancel':
-        Status = CANCELED_STATUS;
+        Status = STATUS.CANCELED;
         break;
       default:
         break;
@@ -173,14 +166,20 @@ export const handlers = [
   rest.put(ENDPOINT_EVOTING_SHUFFLE(), (req, res, ctx) => {
     const { ElectionID } = req.params;
     const foundIndex = mockElections.findIndex((x) => x.ElectionID === ElectionID);
-    mockElections[foundIndex] = { ...mockElections[foundIndex], Status: SHUFFLED_BALLOTS_STATUS };
+    mockElections[foundIndex] = {
+      ...mockElections[foundIndex],
+      Status: STATUS.SHUFFLED_BALLOTS,
+    };
     return res(ctx.status(200), ctx.text('Action sucessfully done'));
   }),
 
   rest.put(ENDPOINT_EVOTING_DECRYPT(), (req, res, ctx) => {
     const { ElectionID } = req.params;
     const foundIndex = mockElections.findIndex((x) => x.ElectionID === ElectionID);
-    mockElections[foundIndex] = { ...mockElections[foundIndex], Status: RESULT_AVAILABLE_STATUS };
+    mockElections[foundIndex] = {
+      ...mockElections[foundIndex],
+      Status: STATUS.RESULT_AVAILABLE,
+    };
     return res(ctx.status(200), ctx.text('Action sucessfully done'));
   }),
 ];
