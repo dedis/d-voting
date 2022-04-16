@@ -105,8 +105,8 @@
     "about3": "A distributed key is generated at election creation time so that when a user votes, his/her vote is encrypted with the key guarantying the anonymity of the vote. However the system doesn't enforce the anonymity of the voter.",
     "about4": "When an election is closed, the nodes shuffle the ballots and check its correctness before decrypting the shuffle and publish the result of the election on a smart contract.",
     "end": "The end",
-    "en": "English",
-    "fr": "French",
-    "de": "German"
+    "en": "🇺🇸 English",
+    "fr": "🇫🇷 French",
+    "de": "🇩🇪 German"
   }
 }

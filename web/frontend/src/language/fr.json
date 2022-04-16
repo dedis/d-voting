@@ -2,8 +2,8 @@
   "common": {
     "Welcome to React": "Welcome to React and react-i18next",
     "about": "This is the About text",
-    "en": "Englais",
-    "fr": "Français",
-    "de": "Allemand"
+    "en": "🇺🇸 Anglais",
+    "fr": "🇫🇷 Français",
+    "de": "🇩🇪 Allemand"
   }
 }
