@@ -86,6 +86,11 @@ func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 func (h *Handler) handleStartShuffle(electionID string) error {
 	dela.Logger.Info().Msg("Starting the neff shuffle protocol ...")
 
+	err := h.txmngr.Sync()
+	if err != nil {
+		return xerrors.Errorf("failed to sync manager: %v", err.Error())
+	}
+
 	// loop until the threshold is reached or our transaction has been accepted
 	for {
 		election, err := getElection(h.electionFac, h.context, electionID, h.service)
