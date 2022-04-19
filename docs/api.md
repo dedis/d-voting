@@ -14,6 +14,11 @@ Services are side components that augment the smart contract functionalities.
 Services are accessed via the `evoting/services/<dkg>|<neff>/*` endpoint, and
 the smart contract via `/evoting/elections/*`.
 
+## Signed requests
+
+Requests marked with 🔐 are encapsulated into a signed request as described in
+[msg_sig.md](msg_sig.md).
+
 ```
 Smart contract   DKG       Neff shuffle
 --------------   ---       ------------
@@ -63,7 +68,7 @@ In case of error:
 }
 ```
 
-# SC1: Election create
+# SC1: Election create 🔐
 
 |        |                      |
 | ------ | -------------------- |
@@ -120,7 +125,7 @@ Return:
 }
 ```
 
-# SC3: Election open
+# SC3: Election open 🔐
 
 |        |                                   |
 | ------ | --------------------------------- |
@@ -142,7 +147,7 @@ Return:
 
 ```
 
-# SC4: Election cast vote
+# SC4: Election cast vote 🔐
 
 |        |                                        |
 | ------ | -------------------------------------- |
@@ -170,7 +175,7 @@ Return:
 
 ```
 
-# SC5: Election close
+# SC5: Election close 🔐
 
 |        |                                   |
 | ------ | --------------------------------- |
@@ -192,7 +197,7 @@ Return:
 
 ```
 
-# NS2: Election shuffle
+# NS2: Election shuffle 🔐
 
 |        |                                          |
 | ------ | ---------------------------------------- |
@@ -214,7 +219,7 @@ Return:
 
 ```
 
-# DK3: Election begin decryption
+# DK3: Election begin decryption 🔐
 
 |        |                                             |
 | ------ | ------------------------------------------- |
@@ -236,7 +241,7 @@ Return:
 
 ```
 
-# SC6: Election combine shares
+# SC6: Election combine shares 🔐
 
 |        |                                   |
 | ------ | --------------------------------- |
@@ -258,7 +263,7 @@ Return:
 
 ```
 
-# SC?: Election cancel
+# SC?: Election cancel 🔐
 
 |        |                                   |
 | ------ | --------------------------------- |
@@ -305,7 +310,7 @@ Return:
 }
 ```
 
-# DK1: DKG init
+# DK1: DKG init 🔐
 
 |        |                                |
 | ------ | ------------------------------ |
@@ -327,7 +332,7 @@ Return:
 
 ```
 
-# DK2: DKG setup
+# DK2: DKG setup 🔐
 
 |        |                                             |
 | ------ | ------------------------------------------- |
@@ -349,7 +354,7 @@ Return:
 
 ```
 
-# DK3: DKG BeginDecryption
+# DK3: DKG BeginDecryption 🔐
 
 |        |                                             |
 | ------ | ------------------------------------------- |
