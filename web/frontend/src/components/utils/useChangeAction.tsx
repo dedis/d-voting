@@ -42,7 +42,7 @@ const useChangeAction = (
     />
   );
   const [postError, setPostError] = useState(t('operationFailure') as string);
-  const { sendFetchRequest } = usePostCall(setPostError);
+  const sendFetchRequest = usePostCall(setPostError);
   const closeRequest = {
     method: 'PUT',
     body: JSON.stringify({

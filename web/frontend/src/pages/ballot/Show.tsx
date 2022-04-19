@@ -36,7 +36,7 @@ const Ballot: FC = () => {
   const [postError, setPostError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [modalText, setModalText] = useState(t('voteSuccess') as string);
-  const { sendFetchRequest } = usePostCall(setPostError);
+  const sendFetchRequest = usePostCall(setPostError);
 
   useEffect(() => {
     if (postRequest !== null) {
