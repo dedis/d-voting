@@ -89,7 +89,6 @@ func TestHandler_StartShuffle(t *testing.T) {
 	// Election still opened:
 	election := etypes.Election{
 		ElectionID:       dummyID,
-		AdminID:          "dummyAdminID",
 		Status:           0,
 		Pubkey:           nil,
 		Suffragia:        etypes.Suffragia{},
@@ -264,7 +263,6 @@ func initFakeElection(electionID string) etypes.Election {
 	KsMarshalled, CsMarshalled, pubKey := fakeKCPoints(k)
 	election := etypes.Election{
 		ElectionID:       electionID,
-		AdminID:          "dummyAdminID",
 		Status:           etypes.Closed,
 		Pubkey:           pubKey,
 		Suffragia:        etypes.Suffragia{},

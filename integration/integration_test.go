@@ -519,7 +519,6 @@ func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error
 
 	decryptBallots := types.CombineShares{
 		ElectionID: election.ElectionID,
-		UserID:     election.AdminID,
 	}
 
 	data, err := decryptBallots.Serialize(serdecontext)

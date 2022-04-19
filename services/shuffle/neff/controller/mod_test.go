@@ -18,7 +18,7 @@ func TestController_SetCommands(t *testing.T) {
 	call := &fake.Call{}
 	c.SetCommands(fakeBuilder{call: call})
 
-	require.Equal(t, 7, call.Len())
+	require.Equal(t, 11, call.Len())
 	require.Equal(t, "shuffle", call.Get(0, 0))
 	require.Equal(t, "interact with the SHUFFLE service", call.Get(1, 0))
 	require.Equal(t, "init", call.Get(2, 0))
@@ -26,7 +26,9 @@ func TestController_SetCommands(t *testing.T) {
 	require.Equal(t, "initialize the SHUFFLE protocol", call.Get(4, 0))
 	require.IsType(t, &InitAction{}, call.Get(5, 0))
 	require.Nil(t, call.Get(6, 0))
-
+	require.Equal(t, "registerHandlers", call.Get(7, 0))
+	require.Equal(t, "register the proxy handlers", call.Get(8, 0))
+	require.IsType(t, &RegisterHandlersAction{}, call.Get(9, 0))
 }
 
 func TestController_OnStart(t *testing.T) {
