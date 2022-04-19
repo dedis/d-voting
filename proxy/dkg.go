@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	ptypes "github.com/dedis/d-voting/proxy/types"
+	"github.com/dedis/d-voting/proxy/types"
 	dkgSrv "github.com/dedis/d-voting/services/dkg"
-	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"github.com/gorilla/mux"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/kyber/v3"
@@ -33,9 +32,9 @@ type dkg struct {
 
 // NewDKGActor implements proxy.DKG
 func (d dkg) NewDKGActor(w http.ResponseWriter, r *http.Request) {
-	var req ptypes.NewDKGRequest
+	var req types.NewDKGRequest
 
-	signed, err := ptypes.NewSignedRequest(r.Body)
+	signed, err := types.NewSignedRequest(r.Body)
 	if err != nil {
 		InternalError(w, r, newSignedErr(err), nil)
 		return
@@ -87,7 +86,7 @@ func (d dkg) EditDKGActor(w http.ResponseWriter, r *http.Request) {
 
 	var req types.UpdateDKG
 
-	signed, err := ptypes.NewSignedRequest(r.Body)
+	signed, err := types.NewSignedRequest(r.Body)
 	if err != nil {
 		InternalError(w, r, newSignedErr(err), nil)
 		return

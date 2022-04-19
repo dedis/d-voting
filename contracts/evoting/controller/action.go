@@ -23,7 +23,6 @@ import (
 	eproxy "github.com/dedis/d-voting/proxy"
 	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/dedis/d-voting/services/dkg"
-	stypes "github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"github.com/dedis/d-voting/services/shuffle"
 	"github.com/gorilla/mux"
 	"go.dedis.ch/dela"
@@ -503,9 +502,11 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "shuffle ballots")
 
-	dummy := map[string]interface{}{}
+	shuffleRequest := ptypes.UpdateShuffle{
+		Action: "shuffle",
+	}
 
-	signed, err = createSignedRequest(secret, dummy)
+	signed, err = createSignedRequest(secret, shuffleRequest)
 	if err != nil {
 		return createSignedErr(err)
 	}
@@ -748,7 +749,7 @@ func initDKG(secret kyber.Scalar, proxyAddr, electionIDHex string) error {
 }
 
 func updateDKG(secret kyber.Scalar, proxyAddr, electionIDHex, action string) (int, error) {
-	msg := stypes.UpdateDKG{
+	msg := ptypes.UpdateDKG{
 		Action: action,
 	}
 

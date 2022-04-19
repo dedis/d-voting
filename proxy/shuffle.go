@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	ptypes "github.com/dedis/d-voting/proxy/types"
+	"github.com/dedis/d-voting/proxy/types"
 	shuffleSrv "github.com/dedis/d-voting/services/shuffle"
 	"github.com/gorilla/mux"
 	"go.dedis.ch/kyber/v3"
-	"golang.org/x/xerrors"
 )
 
 // NewShuffle returns a new initialized shuffle
@@ -45,21 +44,26 @@ func (s shuffle) EditShuffle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	signed, err := ptypes.NewSignedRequest(r.Body)
+	var req types.UpdateShuffle
+
+	signed, err := types.NewSignedRequest(r.Body)
 	if err != nil {
 		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
 
-	err = signed.Verify(s.pk)
+	err = signed.GetAndVerify(s.pk, &req)
 	if err != nil {
-		InternalError(w, r, xerrors.Errorf("failed to verify signed: %v", err), nil)
+		InternalError(w, r, getSignedErr(err), nil)
 		return
 	}
 
-	err = s.actor.Shuffle(buff)
-	if err != nil {
-		http.Error(w, "failed to shuffle: "+err.Error(), http.StatusInternalServerError)
-		return
+	switch req.Action {
+	case "shuffle":
+		err = s.actor.Shuffle(buff)
+		if err != nil {
+			http.Error(w, "failed to shuffle: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
