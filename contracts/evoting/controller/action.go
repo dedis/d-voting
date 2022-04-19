@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -14,6 +15,8 @@ import (
 	"time"
 
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/sign/schnorr"
+	"go.dedis.ch/kyber/v3/suites"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
@@ -44,6 +47,8 @@ import (
 
 const contentType = "application/json"
 const getElectionErr = "failed to get election: %v"
+
+var suite = suites.MustFind("ed25519")
 
 // getManager is the function called when we need a transaction manager. It
 // allows us to use a different manager for the tests.
@@ -136,7 +141,21 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 	electionFac := types.NewElectionFactory(types.CiphervoteFactory{}, rosterFac)
 	mngr := getManager(signer, client)
 
-	ep := eproxy.NewElection(ordering, mngr, p, sjson.NewContext(), electionFac)
+	proxykeyHex := ctx.Flags.String("proxykey")
+
+	proxykeyBuf, err := hex.DecodeString(proxykeyHex)
+	if err != nil {
+		return xerrors.Errorf("failed to decode proxykeyHex: %v", err)
+	}
+
+	proxykey := suite.Point()
+
+	err = proxykey.UnmarshalBinary(proxykeyBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to unmarshal proxy key: %v", err)
+	}
+
+	ep := eproxy.NewElection(ordering, mngr, p, sjson.NewContext(), electionFac, proxykey)
 
 	router := mux.NewRouter()
 
@@ -183,6 +202,20 @@ type scenarioTestAction struct {
 // Execute implements node.ActionTemplate. It creates an election and
 // simulates the full election process
 func (a *scenarioTestAction) Execute(ctx node.Context) error {
+	secretkeyHex := ctx.Flags.String("secretkey")
+
+	secretkeyBuf, err := hex.DecodeString(secretkeyHex)
+	if err != nil {
+		return xerrors.Errorf("failed to decode secretkeyHex: %v", err)
+	}
+
+	secret := suite.Scalar()
+
+	err = secret.UnmarshalBinary(secretkeyBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to unmarshal secret key: %v", err)
+	}
+
 	proxyAddr1 := ctx.Flags.String("proxy-addr1")
 	proxyAddr2 := ctx.Flags.String("proxy-addr2")
 	proxyAddr3 := ctx.Flags.String("proxy-addr3")
@@ -190,7 +223,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	fmt.Println("Welcome in the scenario test")
 
 	var rosterFac authority.Factory
-	err := ctx.Injector.Resolve(&rosterFac)
+	err = ctx.Injector.Resolve(&rosterFac)
 	if err != nil {
 		return xerrors.Errorf("failed to resolve authority factory: %v", err)
 	}
@@ -216,17 +249,17 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		AdminID:       "adminId",
 	}
 
-	js, err := json.Marshal(createSimpleElectionRequest)
+	signed, err := createSignedRequest(secret, createSimpleElectionRequest)
 	if err != nil {
-		return xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
+		return createSignedErr(err)
 	}
 
-	fmt.Fprintln(ctx.Out, "create election js:", string(js))
+	fmt.Fprintln(ctx.Out, "create election js:", signed)
 
 	url := proxyAddr1 + "/evoting/elections"
 	fmt.Fprintln(ctx.Out, "POST", url)
 
-	resp, err := http.Post(url, contentType, bytes.NewBuffer(js))
+	resp, err := http.Post(url, contentType, bytes.NewBuffer(signed))
 	if err != nil {
 		return xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -280,28 +313,28 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintf(ctx.Out, "Node 1")
 
-	err = initDKG(proxyAddr1, electionID)
+	err = initDKG(secret, proxyAddr1, electionID)
 	if err != nil {
 		return xerrors.Errorf("failed to init dkg 1: %v", err)
 	}
 
 	fmt.Fprintf(ctx.Out, "Node 2")
 
-	err = initDKG(proxyAddr2, electionID)
+	err = initDKG(secret, proxyAddr2, electionID)
 	if err != nil {
 		return xerrors.Errorf("failed to init dkg 2: %v", err)
 	}
 
 	fmt.Fprintf(ctx.Out, "Node 3")
 
-	err = initDKG(proxyAddr3, electionID)
+	err = initDKG(secret, proxyAddr3, electionID)
 	if err != nil {
 		return xerrors.Errorf("failed to init dkg 3: %v", err)
 	}
 
 	fmt.Fprintf(ctx.Out, "Setup DKG on node 1")
 
-	_, err = updateDKG(proxyAddr1, electionID, "setup")
+	_, err = updateDKG(secret, proxyAddr1, electionID, "setup")
 	if err != nil {
 		return xerrors.Errorf("failed to setup dkg on node 1: %v", err)
 	}
@@ -310,7 +343,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintf(ctx.Out, "Open election")
 
-	_, err = updateElection(proxyAddr1, electionID, "open")
+	_, err = updateElection(secret, proxyAddr1, electionID, "open")
 	if err != nil {
 		return xerrors.Errorf("failed to open election: %v", err)
 	}
@@ -333,7 +366,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "Close election")
 
-	status, err := updateElection(proxyAddr1, electionID, "close")
+	status, err := updateElection(secret, proxyAddr1, electionID, "close")
 	if status != http.StatusInternalServerError {
 		return xerrors.Errorf("unexpected error: %d: %v", status, err)
 	}
@@ -374,9 +407,14 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		Ballot: ballot1,
 	}
 
+	signed, err = createSignedRequest(secret, castVoteRequest)
+	if err != nil {
+		return createSignedErr(err)
+	}
+
 	fmt.Fprintln(ctx.Out, "cast first ballot")
 
-	respBody, err := castVote(electionID, castVoteRequest, proxyAddr1)
+	respBody, err := castVote(electionID, signed, proxyAddr1)
 	if err != nil {
 		return xerrors.Errorf("failed to cast vote: %v", err)
 	}
@@ -394,9 +432,14 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		Ballot: ballot2,
 	}
 
+	signed, err = createSignedRequest(secret, castVoteRequest)
+	if err != nil {
+		return createSignedErr(err)
+	}
+
 	fmt.Fprintln(ctx.Out, "cast second ballot")
 
-	respBody, err = castVote(electionID, castVoteRequest, proxyAddr1)
+	respBody, err = castVote(electionID, signed, proxyAddr1)
 	if err != nil {
 		return xerrors.Errorf("failed to cast vote: %v", err)
 	}
@@ -414,9 +457,14 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		Ballot: ballot3,
 	}
 
+	signed, err = createSignedRequest(secret, castVoteRequest)
+	if err != nil {
+		return createSignedErr(err)
+	}
+
 	fmt.Fprintln(ctx.Out, "cast third ballot")
 
-	respBody, err = castVote(electionID, castVoteRequest, proxyAddr1)
+	respBody, err = castVote(electionID, signed, proxyAddr1)
 	if err != nil {
 		return xerrors.Errorf("failed to cast vote: %v", err)
 	}
@@ -438,7 +486,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "Close election (for real)")
 
-	_, err = updateElection(proxyAddr1, electionID, "close")
+	_, err = updateElection(secret, proxyAddr1, electionID, "close")
 	if err != nil {
 		return xerrors.Errorf("failed to close election: %v", err)
 	}
@@ -455,7 +503,14 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "shuffle ballots")
 
-	req, err := http.NewRequest(http.MethodPut, proxyAddr1+"/evoting/services/shuffle/"+electionID, nil)
+	dummy := map[string]interface{}{}
+
+	signed, err = createSignedRequest(secret, dummy)
+	if err != nil {
+		return createSignedErr(err)
+	}
+
+	req, err := http.NewRequest(http.MethodPut, proxyAddr1+"/evoting/services/shuffle/"+electionID, bytes.NewBuffer(signed))
 	if err != nil {
 		return xerrors.Errorf("failed to create shuffle request: %v", err)
 	}
@@ -487,7 +542,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "request public shares")
 
-	_, err = updateDKG(proxyAddr1, electionID, "computePubshares")
+	_, err = updateDKG(secret, proxyAddr1, electionID, "computePubshares")
 	if err != nil {
 		return xerrors.Errorf("failed to compute pubshares: %v", err)
 	}
@@ -510,7 +565,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "decrypt ballots")
 
-	_, err = updateElection(proxyAddr1, electionID, "combineShares")
+	_, err = updateElection(secret, proxyAddr1, electionID, "combineShares")
 	if err != nil {
 		return xerrors.Errorf("failed to combine shares: %v", err)
 	}
@@ -620,13 +675,8 @@ func marshallBallot(voteStr string, actor dkg.Actor, chunks int) (ptypes.Cipherv
 }
 
 // electionID is hex-encoded
-func castVote(electionID string, castVoteRequest ptypes.CastVoteRequest, proxyAddr string) (string, error) {
-	js, err := json.Marshal(castVoteRequest)
-	if err != nil {
-		return "", xerrors.Errorf("failed to set marshall types.SimpleElection : %v", err)
-	}
-
-	resp, err := http.Post(proxyAddr+"/evoting/elections/"+electionID+"/vote", contentType, bytes.NewBuffer(js))
+func castVote(electionID string, signed []byte, proxyAddr string) (string, error) {
+	resp, err := http.Post(proxyAddr+"/evoting/elections/"+electionID+"/vote", contentType, bytes.NewBuffer(signed))
 	if err != nil {
 		return "", xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -646,17 +696,17 @@ func castVote(electionID string, castVoteRequest ptypes.CastVoteRequest, proxyAd
 	return string(body), nil
 }
 
-func updateElection(proxyAddr, electionIDHex, action string) (int, error) {
+func updateElection(secret kyber.Scalar, proxyAddr, electionIDHex, action string) (int, error) {
 	msg := ptypes.UpdateElectionRequest{
 		Action: action,
 	}
 
-	buf, err := json.Marshal(&msg)
+	signed, err := createSignedRequest(secret, msg)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to marshal update request: %v", err)
+		return 0, createSignedErr(err)
 	}
 
-	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/elections/"+electionIDHex, bytes.NewBuffer(buf))
+	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/elections/"+electionIDHex, bytes.NewBuffer(signed))
 	if err != nil {
 		return 0, xerrors.Errorf("failed to create request: %v", err)
 	}
@@ -674,8 +724,17 @@ func updateElection(proxyAddr, electionIDHex, action string) (int, error) {
 	return 0, nil
 }
 
-func initDKG(proxyAddr, electionIDHex string) error {
-	resp, err := http.Post(proxyAddr+"/evoting/services/dkg/actors", contentType, bytes.NewBuffer([]byte(electionIDHex)))
+func initDKG(secret kyber.Scalar, proxyAddr, electionIDHex string) error {
+	setupDKG := ptypes.NewDKGRequest{
+		ElectionID: electionIDHex,
+	}
+
+	signed, err := createSignedRequest(secret, setupDKG)
+	if err != nil {
+		return createSignedErr(err)
+	}
+
+	resp, err := http.Post(proxyAddr+"/evoting/services/dkg/actors", contentType, bytes.NewBuffer(signed))
 	if err != nil {
 		return xerrors.Errorf("failed to post request: %v", err)
 	}
@@ -688,17 +747,17 @@ func initDKG(proxyAddr, electionIDHex string) error {
 	return nil
 }
 
-func updateDKG(proxyAddr, electionIDHex, action string) (int, error) {
+func updateDKG(secret kyber.Scalar, proxyAddr, electionIDHex, action string) (int, error) {
 	msg := stypes.UpdateDKG{
 		Action: action,
 	}
 
-	buf, err := json.Marshal(&msg)
+	signed, err := createSignedRequest(secret, msg)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to marshal update request: %v", err)
+		return 0, createSignedErr(err)
 	}
 
-	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/services/dkg/actors/"+electionIDHex, bytes.NewBuffer(buf))
+	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/services/dkg/actors/"+electionIDHex, bytes.NewBuffer(signed))
 	if err != nil {
 		return 0, xerrors.Errorf("failed to create request: %v", err)
 	}
@@ -749,4 +808,39 @@ func getElection(ctx serde.Context, electionFac serde.Factory, electionIDHex str
 	}
 
 	return election, nil
+}
+
+func createSignedErr(err error) error {
+	return xerrors.Errorf("failed to create signed request: %v", err)
+}
+
+func createSignedRequest(secret kyber.Scalar, msg interface{}) ([]byte, error) {
+	jsonMsg, err := json.Marshal(msg)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to marshal json: %v", err)
+	}
+
+	payload := base64.URLEncoding.EncodeToString(jsonMsg)
+
+	hash := sha256.New()
+
+	hash.Write([]byte(payload))
+	md := hash.Sum(nil)
+
+	signature, err := schnorr.Sign(suite, secret, md)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to sign: %v", err)
+	}
+
+	signed := ptypes.SignedRequest{
+		Payload:   payload,
+		Signature: hex.EncodeToString(signature),
+	}
+
+	signedJSON, err := json.Marshal(signed)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to create json signed: %v", err)
+	}
+
+	return signedJSON, nil
 }

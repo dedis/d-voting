@@ -2,22 +2,23 @@ package proxy
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
+	ptypes "github.com/dedis/d-voting/proxy/types"
 	dkgSrv "github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"github.com/gorilla/mux"
 	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/kyber/v3"
 )
 
 // NewDKG returns a new initialized DKG proxy
-func NewDKG(mngr txn.Manager, d dkgSrv.DKG) DKG {
+func NewDKG(mngr txn.Manager, d dkgSrv.DKG, pk kyber.Point) DKG {
 	return dkg{
 		mngr: mngr,
 		d:    d,
+		pk:   pk,
 	}
 }
 
@@ -27,24 +28,28 @@ func NewDKG(mngr txn.Manager, d dkgSrv.DKG) DKG {
 type dkg struct {
 	mngr txn.Manager
 	d    dkgSrv.DKG
+	pk   kyber.Point
 }
 
 // NewDKGActor implements proxy.DKG
 func (d dkg) NewDKGActor(w http.ResponseWriter, r *http.Request) {
-	// Receive the hex-encoded electionID
-	data, err := ioutil.ReadAll(r.Body)
+	var req ptypes.NewDKGRequest
+
+	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
-		http.Error(w, "failed to read body: "+err.Error(),
-			http.StatusInternalServerError)
+		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
 
-	electionID := string(data)
-
-	// sanity check
-	electionIDBuf, err := hex.DecodeString(electionID)
+	err = signed.GetAndVerify(d.pk, &req)
 	if err != nil {
-		http.Error(w, "failed to decode electionID: "+electionID,
+		InternalError(w, r, getSignedErr(err), nil)
+		return
+	}
+
+	electionIDBuf, err := hex.DecodeString(req.ElectionID)
+	if err != nil {
+		http.Error(w, "failed to decode electionID: "+req.ElectionID,
 			http.StatusBadRequest)
 		return
 	}
@@ -80,17 +85,21 @@ func (d dkg) EditDKGActor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var input types.UpdateDKG
+	var req types.UpdateDKG
 
-	decoder := json.NewDecoder(r.Body)
-
-	err = decoder.Decode(&input)
+	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
-		http.Error(w, "failed to decode input: "+err.Error(), http.StatusInternalServerError)
+		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
 
-	switch input.Action {
+	err = signed.GetAndVerify(d.pk, &req)
+	if err != nil {
+		InternalError(w, r, getSignedErr(err), nil)
+		return
+	}
+
+	switch req.Action {
 	case "setup":
 		_, err := a.Setup()
 		if err != nil {

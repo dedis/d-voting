@@ -158,8 +158,15 @@ If nodes are running and `setup.sh` has been called, you can run a test
 scenario:
 
 ```sh
-LLVL=info memcoin --config /tmp/node1 e-voting scenarioTest
+sk=28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409
+LLVL=info memcoin --config /tmp/node1 e-voting scenarioTest --secretkey $sk
 ```
+
+For reference, here is a hex-encoded kyber Ed25519 keypair:
+
+Public key: `adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3`
+
+Secret key: `28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409`
 
 # Use the frontend
 

@@ -298,9 +298,23 @@ func (a *RegisterHandlersAction) Execute(ctx node.Context) error {
 
 	mngr := signed.NewManager(signer, &client)
 
+	proxykeyHex := ctx.Flags.String("proxykey")
+
+	proxykeyBuf, err := hex.DecodeString(proxykeyHex)
+	if err != nil {
+		return xerrors.Errorf("failed to decode proxykeyHex: %v", err)
+	}
+
+	proxykey := suite.Point()
+
+	err = proxykey.UnmarshalBinary(proxykeyBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to unmarshal proxy key: %v", err)
+	}
+
 	router := mux.NewRouter()
 
-	ep := eproxy.NewDKG(mngr, dkg)
+	ep := eproxy.NewDKG(mngr, dkg, proxykey)
 
 	router.HandleFunc("/evoting/services/dkg/actors", ep.NewDKGActor).Methods("POST")
 	router.HandleFunc("/evoting/services/dkg/actors/{electionID}", ep.EditDKGActor).Methods("PUT")
