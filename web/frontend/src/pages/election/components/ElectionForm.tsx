@@ -1,7 +1,7 @@
 import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
-import { ENDPOINT_EVOTING_CREATE } from 'components/utils/Endpoints';
+import { newElection } from 'components/utils/Endpoints';
 
 import { CloudDownloadIcon, CloudUploadIcon, TrashIcon } from '@heroicons/react/solid';
 
@@ -55,7 +55,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
     }
 
     try {
-      const res = await fetch(ENDPOINT_EVOTING_CREATE, req);
+      const res = await fetch(newElection, req);
       if (res.status !== 200) {
         const response = await res.text();
         setTextModal(`Error HTTP ${res.status} (${res.statusText}) : ${response}`);

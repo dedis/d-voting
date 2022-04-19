@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import useFetchCall from '../../../components/utils/useFetchCall';
-import { ENDPOINT_EVOTING_GET_ALL } from '../../../components/utils/Endpoints';
+import * as endpoints from '../../../components/utils/Endpoints';
 import { GetAllElections, LightElectionInfo } from 'types/frontendRequestBody';
 
 type SimpleTableProps = {
@@ -29,7 +29,7 @@ const SimpleTable: FC<SimpleTableProps> = ({
     method: 'GET',
   };
 
-  const [fetchedData, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, request);
+  const [fetchedData, loading, error] = useFetchCall(endpoints.elections, request);
 
   const ballotsToDisplay = (elections: GetAllElections) => {
     let dataToDisplay = [];

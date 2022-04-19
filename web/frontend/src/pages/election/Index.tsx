@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import ElectionTable from './components/ElectionTable';
 import useFetchCall from 'components/utils/useFetchCall';
-import { ENDPOINT_EVOTING_GET_ALL } from 'components/utils/Endpoints';
+import * as endpoints from 'components/utils/Endpoints';
 import './Index.css';
 
 const ElectionIndex: FC = () => {
@@ -12,7 +12,7 @@ const ElectionIndex: FC = () => {
     method: 'GET',
   };
 
-  const [data, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, request);
+  const [data, loading, error] = useFetchCall(endpoints.elections, request);
 
   /*Show all the elections retrieved if any */
   const showElection = () => {

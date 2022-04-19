@@ -1,6 +1,6 @@
 import useFetchCall from './useFetchCall';
 import useFillElectionFields from './useFillElectionFields';
-import { ENDPOINT_EVOTING_GET_ELECTION } from './Endpoints';
+import * as endpoints from './Endpoints';
 
 // Custom hook that fetches an election given its id and returns its
 // different parameters
@@ -11,7 +11,7 @@ const useElection = (electionID) => {
     method: 'GET',
   };
 
-  const [data, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ELECTION(electionID), request);
+  const [data, loading, error] = useFetchCall(endpoints.election(electionID.toString()), request);
   const {
     electionTitle,
     configObj,

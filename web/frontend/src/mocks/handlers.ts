@@ -4,17 +4,11 @@ import ShortUniqueId from 'short-unique-id';
 import { ROUTE_LOGGED } from 'Routes';
 
 import {
-  ENDPOINT_EVOTING_CAST_BALLOT,
-  ENDPOINT_EVOTING_CREATE,
-  ENDPOINT_EVOTING_DECRYPT,
-  ENDPOINT_EVOTING_ELECTION,
-  ENDPOINT_EVOTING_GET_ALL,
-  ENDPOINT_EVOTING_GET_ELECTION,
-  ENDPOINT_EVOTING_SHUFFLE,
   ENDPOINT_GET_TEQ_KEY,
   ENDPOINT_LOGOUT,
   ENDPOINT_PERSONAL_INFO,
 } from '../components/utils/Endpoints';
+import * as endpoints from '../components/utils/Endpoints';
 
 import {
   CreateElectionBody,
@@ -79,7 +73,7 @@ export const handlers = [
     return res(ctx.status(200));
   }),
 
-  rest.get(ENDPOINT_EVOTING_GET_ALL, (req, res, ctx) => {
+  rest.get(endpoints.elections, (req, res, ctx) => {
     // TODO: GET ALL SHOULD ONLY RETURN SOME FIELDS OF THE ELECTION BEFORE
     // ADAPTING THE MOCK, THE FRONTEND SHOULD BE UPDATED TO ACCEPT ONLY THESE
     // FIELDS const Elections = mockElections.map(({ ElectionID, Title, Status,
@@ -93,7 +87,7 @@ export const handlers = [
     );
   }),
 
-  rest.get(ENDPOINT_EVOTING_GET_ELECTION(), (req, res, ctx) => {
+  rest.get(endpoints.election(':ElectionID'), (req, res, ctx) => {
     const { ElectionID } = req.params;
     return res(
       ctx.status(200),
@@ -101,7 +95,7 @@ export const handlers = [
     );
   }),
 
-  rest.post(ENDPOINT_EVOTING_CREATE, (req, res, ctx) => {
+  rest.post(endpoints.newElection, (req, res, ctx) => {
     const body: CreateElectionBody = JSON.parse(req.body.toString());
 
     const createElection = (Configuration: any) => {
@@ -127,7 +121,7 @@ export const handlers = [
     );
   }),
 
-  rest.post(ENDPOINT_EVOTING_CAST_BALLOT(), (req, res, ctx) => {
+  rest.post(endpoints.newElectionVote(':ElectionID'), (req, res, ctx) => {
     const { Ballot }: CreateElectionCastVote = JSON.parse(req.body.toString());
 
     return res(
@@ -138,7 +132,7 @@ export const handlers = [
     );
   }),
 
-  rest.put(ENDPOINT_EVOTING_ELECTION(), (req, res, ctx) => {
+  rest.put(endpoints.editElection(':ElectionID'), (req, res, ctx) => {
     const body: ElectionActionsBody = JSON.parse(req.body.toString());
     const { ElectionID } = req.params;
     var Status = STATUS.INITIAL;
@@ -163,7 +157,7 @@ export const handlers = [
     return res(ctx.status(200), ctx.text('Action sucessfully done'));
   }),
 
-  rest.put(ENDPOINT_EVOTING_SHUFFLE(), (req, res, ctx) => {
+  rest.put(endpoints.editShuffle(':ElectionID'), (req, res, ctx) => {
     const { ElectionID } = req.params;
     const foundIndex = mockElections.findIndex((x) => x.ElectionID === ElectionID);
     mockElections[foundIndex] = {
@@ -173,9 +167,9 @@ export const handlers = [
     return res(ctx.status(200), ctx.text('Action sucessfully done'));
   }),
 
-  rest.put(ENDPOINT_EVOTING_DECRYPT(), (req, res, ctx) => {
+  rest.put(endpoints.editDKGActors(':ElectionID'), (req, res, ctx) => {
     const { ElectionID } = req.params;
-    const foundIndex = mockElections.findIndex((x) => x.ElectionID === ElectionID);
+    const foundIndex = mockElections.findIndex((election) => election.ElectionID === ElectionID);
     mockElections[foundIndex] = {
       ...mockElections[foundIndex],
       Status: STATUS.RESULT_AVAILABLE,

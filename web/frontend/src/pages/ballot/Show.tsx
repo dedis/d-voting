@@ -9,7 +9,7 @@ import { Buffer } from 'buffer';
 import { ROUTE_BALLOT_INDEX } from '../../Routes';
 import useElection from 'components/utils/useElection';
 import usePostCall from 'components/utils/usePostCall';
-import { ENDPOINT_EVOTING_CAST_BALLOT } from 'components/utils/Endpoints';
+import * as endpoints from 'components/utils/Endpoints';
 import { OPEN } from 'components/utils/StatusNumber';
 import { encryptVote } from './components/VoteEncrypt';
 import { voteEncode } from './components/VoteEncode';
@@ -40,7 +40,7 @@ const Ballot: FC = () => {
 
   useEffect(() => {
     if (postRequest !== null) {
-      sendFetchRequest(ENDPOINT_EVOTING_CAST_BALLOT(electionID), postRequest, setShowModal);
+      sendFetchRequest(endpoints.newElectionVote(electionID.toString()), postRequest, setShowModal);
     }
   }, [postRequest]);
 

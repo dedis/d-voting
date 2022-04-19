@@ -5,12 +5,8 @@ import { Link } from 'react-router-dom';
 import ConfirmModal from '../modal/ConfirmModal';
 import { ROUTE_ELECTION_SHOW } from '../../Routes';
 import usePostCall from './usePostCall';
-import {
-  ENDPOINT_EVOTING_DECRYPT,
-  ENDPOINT_EVOTING_ELECTION,
-  ENDPOINT_EVOTING_SHUFFLE,
-} from './Endpoints';
 import { CANCELED, CLOSED, OPEN, RESULT_AVAILABLE, SHUFFLED_BALLOT } from './StatusNumber';
+import * as endpoints from './Endpoints';
 
 const useChangeAction = (
   status: number,
@@ -84,7 +80,7 @@ const useChangeAction = (
     if (isClosing && userConfirmedClosing) {
       const close = async () => {
         const closeSuccess = await sendFetchRequest(
-          ENDPOINT_EVOTING_ELECTION(electionID),
+          endpoints.editElection(electionID.toString()),
           closeRequest,
           setIsClosing
         );
@@ -113,7 +109,7 @@ const useChangeAction = (
     if (isCanceling && userConfirmedCanceling) {
       const cancel = async () => {
         const cancelSuccess = await sendFetchRequest(
-          ENDPOINT_EVOTING_ELECTION(electionID),
+          endpoints.editElection(electionID.toString()),
           cancelRequest,
           setIsCanceling
         );
@@ -144,7 +140,7 @@ const useChangeAction = (
   const handleShuffle = async () => {
     setIsShuffling(true);
     const shuffleSuccess = await sendFetchRequest(
-      ENDPOINT_EVOTING_SHUFFLE(electionID),
+      endpoints.editShuffle(electionID.toString()),
       shuffleRequest,
       setIsShuffling
     );
@@ -159,7 +155,7 @@ const useChangeAction = (
 
   const handleDecrypt = async () => {
     const decryptSucess = await sendFetchRequest(
-      ENDPOINT_EVOTING_DECRYPT(electionID),
+      endpoints.editDKGActors(electionID.toString()),
       decryptRequest,
       setIsDecrypting
     );
