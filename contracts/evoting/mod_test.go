@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -20,7 +21,9 @@ import (
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/execution"
 	"go.dedis.ch/dela/core/execution/native"
@@ -1098,6 +1101,130 @@ func TestCommand_DecryptBallots(t *testing.T) {
 
 	require.True(t, election.DecryptedBallots[0].Equal(expectedBallot1))
 	require.True(t, election.DecryptedBallots[1].Equal(expectedBallot2))
+}
+
+func TestCommand_CombineSharesCanLogToDela(t *testing.T) {
+	// setup a fake logger for the test purpose
+	logBuffer := new(bytes.Buffer)
+
+	oldLogger := dela.Logger
+
+	dela.Logger = zerolog.New(logBuffer).Level(zerolog.InfoLevel)
+
+	defer func() {
+		dela.Logger = oldLogger
+	}()
+
+	decryptBallot := types.CombineShares{
+		ElectionID: fakeElectionID,
+		UserID:     hex.EncodeToString([]byte("dummyUserId")),
+	}
+
+	dummyElection, contract := initElectionAndContract()
+
+	tmpDir, err := ioutil.TempDir("", "")
+	require.NoError(t, err)
+
+	defer os.RemoveAll(tmpDir)
+
+	contract.exportFolder = tmpDir
+
+	electionBuf, err := dummyElection.Serialize(ctx)
+	require.NoError(t, err)
+
+	cmd := evotingCommand{
+		Contract: &contract,
+	}
+
+	snap := fake.NewSnapshot()
+
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
+
+	decryptBallot.UserID = hex.EncodeToString([]byte("dummyAdminID"))
+
+	data, err := decryptBallot.Serialize(ctx)
+	require.NoError(t, err)
+
+	dummyElection.Status = types.PubSharesSubmitted
+
+	dummyElection.Configuration = fake.BasicConfiguration
+
+	numNodes := 10
+
+	nodes, pk := computeDKG(t, numNodes)
+
+	ballot1 := fmt.Sprintf("select:%s:0,0,1,0\ntext:%s:eWVz\n\n", encodeID("bb"), encodeID("ee"))
+	ballot2 := fmt.Sprintf("select:%s:1,1,0,0\ntext:%s:amE=\n\n", encodeID("bb"), encodeID("ee"))
+
+	cipherVote1, err := marshallBallot(strings.NewReader(ballot1), pk, 2)
+	require.NoError(t, err)
+
+	cipherVote2, err := marshallBallot(strings.NewReader(ballot2), pk, 2)
+	require.NoError(t, err)
+
+	pubSharesBallot1 := getShares(nodes, cipherVote1)
+	pubSharesBallot2 := getShares(nodes, cipherVote2)
+
+	pubshares := make([]types.PubsharesUnit, numNodes)
+	indexes := make([]int, numNodes)
+
+	for i := range nodes {
+		pubshare := make(types.PubsharesUnit, 2) // number of votes
+
+		// first ballot
+		pubshare[0] = []types.Pubshare{
+			pubSharesBallot1[i][0], // first chunk
+			pubSharesBallot1[i][1], // second chunk
+		}
+
+		// second ballot
+		pubshare[1] = []types.Pubshare{
+			pubSharesBallot2[i][0], // first chunk
+			pubSharesBallot2[i][1], // second chunk
+		}
+
+		pubshares[i] = pubshare
+		indexes[i] = i // all nodes are in order
+	}
+
+	dummyElection.PubsharesUnits = types.PubsharesUnits{
+		Pubshares: pubshares,
+		Indexes:   indexes,
+	}
+
+	dummyElection.BallotSize = dummyElection.Configuration.MaxBallotSize()
+
+	electionBuf, err = dummyElection.Serialize(ctx)
+	require.NoError(t, err)
+
+	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	require.NoError(t, err)
+
+	cmd.dialer = func(network, address string, timeout time.Duration) (net.Conn, error) {
+		return &fake.Conn{Path: tmpDir}, nil
+	}
+
+	err = cmd.combineShares(snap, makeStep(t, ElectionArg, string(data)))
+	require.NoError(t, err)
+
+	lines := bytes.Split(logBuffer.Bytes(), []byte("\n"))
+
+	require.Len(t, lines, 4)
+
+	var obj map[string]string
+
+	err = json.Unmarshal(lines[1], &obj)
+	require.NoError(t, err)
+
+	require.Contains(t, obj["output"], "020000000a000000")
+	require.Equal(t, "Data to Unikernel", obj["message"])
+
+	err = json.Unmarshal(lines[2], &obj)
+	require.NoError(t, err)
+
+	require.Equal(t, "4f4b", obj["input"])
+	require.Equal(t, "Data from Unikernel", obj["message"])
 }
 
 func Test_ExportPubshares(t *testing.T) {
