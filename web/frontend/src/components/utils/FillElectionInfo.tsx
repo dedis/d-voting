@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { ID } from 'types/configuration';
-import { ElectionInfo, LightElectionInfo, Result } from 'types/electionInfo';
+import { ElectionInfo, LightElectionInfo, Results } from 'types/electionInfo';
 
 const useFillElectionInfo = (electionData: ElectionInfo) => {
   const [id, setId]: [ID, React.Dispatch<React.SetStateAction<ID>>] = useState(null);
   const [status, setStatus]: [number, React.Dispatch<React.SetStateAction<number>>] =
     useState(null);
   const [pubKey, setPubKey]: [string, React.Dispatch<React.SetStateAction<string>>] = useState('');
-  const [result, setResult]: [Result[], React.Dispatch<React.SetStateAction<Result[]>>] =
+  const [result, setResult]: [Results[], React.Dispatch<React.SetStateAction<Results[]>>] =
     useState(null);
   const [chunksPerBallot, setChunksPerBallot]: [
     number,

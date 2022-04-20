@@ -21,7 +21,13 @@ import {
   CreateElectionCastVote,
   ElectionActionsBody,
 } from '../types/frontendRequestBody';
-import { mockElection1, mockElection2 } from './mockData';
+import {
+  mockElection1,
+  mockElection2,
+  mockElectionResult21,
+  mockElectionResult22,
+  mockElectionResult23,
+} from './mockData';
 import { ID } from 'types/configuration';
 import { ElectionInfo, LightElectionInfo } from 'types/electionInfo';
 
@@ -43,9 +49,9 @@ mockElections.set(electionID1, {
 });
 mockElections.set(electionID2, {
   ElectionID: electionID2,
-  Status: 1,
+  Status: 5,
   Pubkey: 'XL4V6EMIICW',
-  Result: [],
+  Result: [mockElectionResult21, mockElectionResult22, mockElectionResult23],
   Configuration: unmarshalConfig(mockElection2),
   BallotSize: 174,
   ChunksPerBallot: 6,
@@ -53,6 +59,7 @@ mockElections.set(electionID2, {
 
 const toLightElectionInfo = (electionID: ID): LightElectionInfo => {
   const election = mockElections.get(electionID);
+  console.log(election.Status);
   return {
     ElectionID: electionID,
     Title: election.Configuration.MainTitle,

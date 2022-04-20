@@ -13,7 +13,7 @@ import { ENDPOINT_EVOTING_CAST_BALLOT } from 'components/utils/Endpoints';
 import { OPEN } from 'components/utils/StatusNumber';
 import { encryptVote } from './components/VoteEncrypt';
 import { voteEncode } from './components/VoteEncode';
-import useConfiguration from 'components/utils/useConfiguration';
+import { useConfiguration } from 'components/utils/useConfiguration';
 import * as types from 'types/configuration';
 import { ID, RANK, SELECT, SUBJECT, TEXT } from 'types/configuration';
 import { DragDropContext } from 'react-beautiful-dnd';

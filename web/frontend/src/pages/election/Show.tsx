@@ -10,6 +10,9 @@ import { RESULT_AVAILABLE } from 'components/utils/StatusNumber';
 import { ROUTE_ELECTION_INDEX } from 'Routes';
 import './Show.css';
 import useGetResults from 'components/utils/useGetResults';
+import Result from 'pages/result/components/Result';
+import { useConfigurationOnly } from 'components/utils/useConfiguration';
+import BackButton from 'pages/result/components/BackButton';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
@@ -23,13 +26,13 @@ const ElectionShow: FC = () => {
     pubKey,
     result,
     setResult,
-    chunksPerBallot,
-    ballotSize,
     configObj,
     isResultSet,
     setIsResultSet,
     error,
   } = useElection(electionId);
+
+  const configuration = useConfigurationOnly(configObj);
 
   const [, setError] = useState(null);
   const [isResultAvailable, setIsResultAvailable] = useState(false);
@@ -42,46 +45,43 @@ const ElectionShow: FC = () => {
   }, [isResultAvailable, status]);
 
   return (
-    <div className="election-details-box">
+    <div>
       {!loading ? (
-        <div>
-          <h1>{configObj.MainTitle}</h1>
-          <div className="election-details-wrapper">
-            {isResultSet ? (
-              <div className="election-wrapper-child">
-                {/* TODO: <Result resultData={result} candidates={candidates} />*/}
-              </div>
-            ) : (
-              <div className="election-wrapper-child">
-                {' '}
-                {t('status')}:<Status status={status} />
-                <span className="election-action">
-                  Action :
-                  <Action
-                    status={status}
-                    electionID={electionID}
-                    setStatus={setStatus}
-                    setResultAvailable={setIsResultAvailable}
-                  />{' '}
-                </span>
-                <div className="election-candidates">
-                  {t('candidates')}
-                  {/* TODO: candidates.map((cand) => (
+        <div className="shadow-lg rounded-md w-full my-0 sm:my-4">
+          <h1 className="px-4 text-2xl text-gray-900 sm:text-3xl sm:truncate">
+            <span className="font-bold">Results: </span>
+            {configuration.MainTitle}
+          </h1>
+
+          {isResultSet ? (
+            <Result resultData={result} configuration={configuration} />
+          ) : (
+            <div className="px-4 pb-4">
+              {t('status')}:<Status status={status} />
+              <span>
+                Action :
+                <Action
+                  status={status}
+                  electionID={electionID}
+                  setStatus={setStatus}
+                  setResultAvailable={setIsResultAvailable}
+                />{' '}
+              </span>
+              <div>
+                {/* TODO: Maybe replace with a button to go vote in the election
+                  if available
+                  candidates.map((cand) => (
                     <li key={cand} className="election-candidate">
                       {cand}
                     </li>
                   ))*/}
-                </div>
               </div>
-            )}
+            </div>
+          )}
 
-            <Link to={ROUTE_ELECTION_INDEX}>
-              <button className="back-btn">{t('back')}</button>
-            </Link>
-            {/* <Link to={ROUTE_RESULT_INDEX}>
-              <button className="back-btn">{t('back')}</button>
-            </Link> */}
-          </div>
+          <Link to={ROUTE_ELECTION_INDEX}>
+            <BackButton />
+          </Link>
         </div>
       ) : (
         <p className="loading">{t('loading')}</p>
