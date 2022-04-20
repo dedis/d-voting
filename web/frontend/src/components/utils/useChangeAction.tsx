@@ -43,29 +43,15 @@ const useChangeAction = (
   );
   const [postError, setPostError] = useState(t('operationFailure') as string);
   const sendFetchRequest = usePostCall(setPostError);
-  const closeRequest = {
-    method: 'PUT',
-    body: JSON.stringify({
-      Action: 'close',
-    }),
-  };
-  const cancelRequest = {
-    method: 'PUT',
-    body: JSON.stringify({
-      Action: 'cancel',
-    }),
-  };
-  const decryptRequest = {
-    method: 'PUT',
-    body: JSON.stringify({
-      Action: 'beginDecryption',
-    }),
-  };
-  const shuffleRequest = {
-    method: 'PUT',
-    body: JSON.stringify({
-      Action: 'shuffle',
-    }),
+
+  const electionUpdate = async (action: string, endpoint: string) => {
+    const req = {
+      method: 'PUT',
+      body: JSON.stringify({
+        Action: action,
+      }),
+    };
+    return sendFetchRequest(endpoint, req, setIsClosing);
   };
 
   useEffect(() => {
@@ -79,12 +65,10 @@ const useChangeAction = (
     //check if close button was clicked and the user validated the confirmation window
     if (isClosing && userConfirmedClosing) {
       const close = async () => {
-        const closeSuccess = await sendFetchRequest(
-          endpoints.editElection(electionID.toString()),
-          closeRequest,
-          setIsClosing
+        const closeSuccess = await electionUpdate(
+          'close',
+          endpoints.editElection(electionID.toString())
         );
-
         if (closeSuccess) {
           setStatus(CLOSED);
         } else {
@@ -108,10 +92,9 @@ const useChangeAction = (
   useEffect(() => {
     if (isCanceling && userConfirmedCanceling) {
       const cancel = async () => {
-        const cancelSuccess = await sendFetchRequest(
-          endpoints.editElection(electionID.toString()),
-          cancelRequest,
-          setIsCanceling
+        const cancelSuccess = await electionUpdate(
+          'cancel',
+          endpoints.editElection(electionID.toString())
         );
         if (cancelSuccess) {
           setStatus(CANCELED);
@@ -139,10 +122,9 @@ const useChangeAction = (
 
   const handleShuffle = async () => {
     setIsShuffling(true);
-    const shuffleSuccess = await sendFetchRequest(
-      endpoints.editShuffle(electionID.toString()),
-      shuffleRequest,
-      setIsShuffling
+    const shuffleSuccess = await electionUpdate(
+      'shuffle',
+      endpoints.editShuffle(electionID.toString())
     );
     if (shuffleSuccess && postError === null) {
       setStatus(SHUFFLED_BALLOT);
@@ -154,10 +136,9 @@ const useChangeAction = (
   };
 
   const handleDecrypt = async () => {
-    const decryptSucess = await sendFetchRequest(
-      endpoints.editDKGActors(electionID.toString()),
-      decryptRequest,
-      setIsDecrypting
+    const decryptSucess = await electionUpdate(
+      'beginDecryption',
+      endpoints.editDKGActors(electionID.toString())
     );
     if (decryptSucess && postError === null) {
       // TODO : setResultAvailable is undefined when the decryption is clicked
