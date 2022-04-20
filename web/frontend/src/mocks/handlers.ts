@@ -11,9 +11,9 @@ import {
 import * as endpoints from '../components/utils/Endpoints';
 
 import {
-  CreateElectionBody,
-  CreateElectionCastVote,
-  ElectionActionsBody,
+  EditElectionBody,
+  NewElectionBody,
+  NewElectionVoteBody,
   STATUS,
 } from '../types/frontendRequestBody';
 import { mockElection1, mockElection2 } from './mockData';
@@ -96,7 +96,7 @@ export const handlers = [
   }),
 
   rest.post(endpoints.newElection, (req, res, ctx) => {
-    const body: CreateElectionBody = JSON.parse(req.body.toString());
+    const body: NewElectionBody = JSON.parse(req.body.toString());
 
     const createElection = (Configuration: any) => {
       const newElection = {
@@ -122,7 +122,7 @@ export const handlers = [
   }),
 
   rest.post(endpoints.newElectionVote(':ElectionID'), (req, res, ctx) => {
-    const { Ballot }: CreateElectionCastVote = JSON.parse(req.body.toString());
+    const { Ballot }: NewElectionVoteBody = JSON.parse(req.body.toString());
 
     return res(
       ctx.status(200),
@@ -133,7 +133,7 @@ export const handlers = [
   }),
 
   rest.put(endpoints.editElection(':ElectionID'), (req, res, ctx) => {
-    const body: ElectionActionsBody = JSON.parse(req.body.toString());
+    const body: EditElectionBody = JSON.parse(req.body.toString());
     const { ElectionID } = req.params;
     var Status = STATUS.INITIAL;
     const foundIndex = mockElections.findIndex((x) => x.ElectionID === ElectionID);

@@ -10,15 +10,15 @@ const enum STATUS {
   CANCELED,
 }
 
-interface CreateElectionBody {
+interface NewElectionBody {
   Configuration: any;
 }
 
-interface CreateElectionCastVote {
+interface NewElectionVoteBody {
   Ballot: [];
 }
 
-interface ElectionActionsBody {
+interface EditElectionBody {
   Action: 'open' | 'close' | 'combineShares' | 'cancel';
 }
 
@@ -32,11 +32,11 @@ interface LightElectionInfo {
 type GetAllElections = LightElectionInfo[];
 
 export type {
-  CreateElectionCastVote,
-  CreateElectionBody,
+  NewElectionVoteBody,
+  NewElectionBody,
   GetAllElections,
   LightElectionInfo,
-  ElectionActionsBody,
+  EditElectionBody,
 };
 
 export { STATUS };
