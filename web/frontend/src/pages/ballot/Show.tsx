@@ -10,7 +10,6 @@ import { ROUTE_BALLOT_INDEX } from '../../Routes';
 import useElection from 'components/utils/useElection';
 import usePostCall from 'components/utils/usePostCall';
 import * as endpoints from 'components/utils/Endpoints';
-import { OPEN } from 'components/utils/StatusNumber';
 import { encryptVote } from './components/VoteEncrypt';
 import { voteEncode } from './components/VoteEncode';
 import useConfiguration from 'components/utils/useConfiguration';
@@ -22,6 +21,7 @@ import Select from './components/Select';
 import Rank, { handleOnDragEnd } from './components/Rank';
 import Text from './components/Text';
 import { ballotIsValid } from './components/ValidateAnswers';
+import { STATUS } from 'types/electionInfo';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
@@ -190,7 +190,7 @@ const Ballot: FC = () => {
       {loading ? (
         <p className="loading">{t('loading')}</p>
       ) : (
-        <div>{status === OPEN ? ballotDisplay() : electionClosedDisplay()}</div>
+        <div>{status === STATUS.OPEN ? ballotDisplay() : electionClosedDisplay()}</div>
       )}
     </div>
   );

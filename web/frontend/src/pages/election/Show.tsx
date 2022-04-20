@@ -6,42 +6,46 @@ import { useTranslation } from 'react-i18next';
 import Action from './components/Action';
 import Status from './components/Status';
 import useElection from 'components/utils/useElection';
-import { RESULT_AVAILABLE } from 'components/utils/StatusNumber';
-import useGetResults from 'components/utils/useGetResults';
 import { ROUTE_ELECTION_INDEX } from 'Routes';
 import './Show.css';
+import useGetResults from 'components/utils/useGetResults';
+import { STATUS } from 'types/electionInfo';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
   const { electionId } = useParams();
 
-  const token = sessionStorage.getItem('token');
   const {
     loading,
-    electionTitle,
     electionID,
     status,
+    setStatus,
+    pubKey,
     result,
     setResult,
-    setStatus,
+    chunksPerBallot,
+    ballotSize,
+    configObj,
     isResultSet,
     setIsResultSet,
+    error,
   } = useElection(electionId);
+
   const [, setError] = useState(null);
   const [isResultAvailable, setIsResultAvailable] = useState(false);
   const { getResults } = useGetResults();
   //fetch result when available after a status change
   useEffect(() => {
-    if (status === RESULT_AVAILABLE && isResultAvailable) {
-      getResults(electionID, token, setError, setResult, setIsResultSet);
+    if (status === STATUS.RESULT_AVAILABLE && isResultAvailable) {
+      getResults(electionID, setError, setResult, setIsResultSet);
     }
-  }, [electionID, getResults, isResultAvailable, setIsResultSet, setResult, status, token]);
+  }, [isResultAvailable, status]);
 
   return (
     <div className="election-details-box">
       {!loading ? (
         <div>
-          <h1>{electionTitle}</h1>
+          <h1>{configObj.MainTitle}</h1>
           <div className="election-details-wrapper">
             {isResultSet ? (
               <div className="election-wrapper-child">

@@ -5,10 +5,10 @@ import { useTranslation } from 'react-i18next';
 
 import useFetchCall from '../../../components/utils/useFetchCall';
 import * as endpoints from '../../../components/utils/Endpoints';
-import { GetAllElections, LightElectionInfo } from 'types/frontendRequestBody';
+import { LightElectionInfo, STATUS } from 'types/electionInfo';
 
 type SimpleTableProps = {
-  statusToKeep: number;
+  statusToKeep: STATUS;
   pathLink: string;
   textWhenData: string;
   textWhenNoData: string;
@@ -31,7 +31,7 @@ const SimpleTable: FC<SimpleTableProps> = ({
 
   const [fetchedData, loading, error] = useFetchCall(endpoints.elections, request);
 
-  const ballotsToDisplay = (elections: GetAllElections) => {
+  const ballotsToDisplay = (elections: LightElectionInfo[]) => {
     let dataToDisplay = [];
     elections.forEach((election) => {
       if (election.Status === statusToKeep) {
@@ -85,7 +85,7 @@ const SimpleTable: FC<SimpleTableProps> = ({
     }
   };
 
-  const showBallots = (elections) => {
+  const showBallots = (elections: LightElectionInfo[]) => {
     return displayBallotTable(ballotsToDisplay(elections));
   };
 

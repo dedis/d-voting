@@ -14,35 +14,47 @@ import {
   EditElectionBody,
   NewElectionBody,
   NewElectionVoteBody,
-  STATUS,
 } from '../types/frontendRequestBody';
+
 import { mockElection1, mockElection2 } from './mockData';
+import { ID } from 'types/configuration';
+import { ElectionInfo, LightElectionInfo, STATUS } from 'types/electionInfo';
 
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;
 
-var mockElections = [
-  {
-    ElectionID: uid(),
-    Title: 'Title Election 1',
-    Status: STATUS.OPEN,
-    Pubkey: 'XL4V6EMIICW',
-    Result: [],
-    Configuration: unmarshalConfig(mockElection1),
-    BallotSize: 174,
-    ChunksPerBallot: 6,
-  },
-  {
-    ElectionID: uid(),
-    Title: 'Title Election 2',
-    Status: STATUS.OPEN,
-    Pubkey: 'XL4V6EMIICW',
-    Result: [],
-    Configuration: unmarshalConfig(mockElection2),
-    BallotSize: 174,
-    ChunksPerBallot: 6,
-  },
-];
+const mockElections: Map<ID, ElectionInfo> = new Map();
+const electionID1 = uid();
+const electionID2 = uid();
+
+mockElections.set(electionID1, {
+  ElectionID: electionID1,
+  Status: STATUS.OPEN,
+  Pubkey: 'XL4V6EMIICW',
+  Result: [],
+  Configuration: unmarshalConfig(mockElection1),
+  BallotSize: 174,
+  ChunksPerBallot: 6,
+});
+mockElections.set(electionID2, {
+  ElectionID: electionID2,
+  Status: STATUS.OPEN,
+  Pubkey: 'XL4V6EMIICW',
+  Result: [],
+  Configuration: unmarshalConfig(mockElection2),
+  BallotSize: 174,
+  ChunksPerBallot: 6,
+});
+
+const toLightElectionInfo = (electionID: ID): LightElectionInfo => {
+  const election = mockElections.get(electionID);
+  return {
+    ElectionID: electionID,
+    Title: election.Configuration.MainTitle,
+    Status: election.Status,
+    Pubkey: election.Pubkey,
+  };
+};
 
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, (req, res, ctx) => {
@@ -74,43 +86,39 @@ export const handlers = [
   }),
 
   rest.get(endpoints.elections, (req, res, ctx) => {
-    // TODO: GET ALL SHOULD ONLY RETURN SOME FIELDS OF THE ELECTION BEFORE
-    // ADAPTING THE MOCK, THE FRONTEND SHOULD BE UPDATED TO ACCEPT ONLY THESE
-    // FIELDS const Elections = mockElections.map(({ ElectionID, Title, Status,
-    // Pubkey }) => ({ ElectionID, Title, Status, Pubkey,
-    // }));
     return res(
       ctx.status(200),
       ctx.json({
-        Elections: mockElections,
+        Elections: Array.from(mockElections.values()).map((election) =>
+          toLightElectionInfo(election.ElectionID)
+        ),
       })
     );
   }),
 
   rest.get(endpoints.election(':ElectionID'), (req, res, ctx) => {
     const { ElectionID } = req.params;
-    return res(
-      ctx.status(200),
-      ctx.json(mockElections.find((election) => election.ElectionID === ElectionID))
-    );
+
+    return res(ctx.status(200), ctx.json(mockElections.get(ElectionID as ID)));
   }),
 
   rest.post(endpoints.newElection, (req, res, ctx) => {
     const body: NewElectionBody = JSON.parse(req.body.toString());
 
-    const createElection = (Configuration: any) => {
-      const newElection = {
-        ElectionID: uid(),
-        Title: Configuration.MainTitle,
+    const createElection = (configuration: any) => {
+      const newElectionID = uid();
+
+      mockElections.set(newElectionID, {
+        ElectionID: newElectionID,
         Status: STATUS.OPEN,
         Pubkey: 'DEAEV6EMII',
         Result: [],
-        Configuration: Configuration,
+        Configuration: configuration,
         BallotSize: 290,
         ChunksPerBallot: 10,
-      };
-      mockElections.push(newElection);
-      return newElection.ElectionID;
+      });
+
+      return newElectionID;
     };
 
     return res(
@@ -136,7 +144,7 @@ export const handlers = [
     const body: EditElectionBody = JSON.parse(req.body.toString());
     const { ElectionID } = req.params;
     var Status = STATUS.INITIAL;
-    const foundIndex = mockElections.findIndex((x) => x.ElectionID === ElectionID);
+
     switch (body.Action) {
       case 'open':
         Status = STATUS.OPEN;
@@ -153,27 +161,31 @@ export const handlers = [
       default:
         break;
     }
-    mockElections[foundIndex] = { ...mockElections[foundIndex], Status };
-    return res(ctx.status(200), ctx.text('Action sucessfully done'));
+    mockElections.set(ElectionID as string, {
+      ...mockElections.get(ElectionID as string),
+      Status,
+    });
+
+    return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
   rest.put(endpoints.editShuffle(':ElectionID'), (req, res, ctx) => {
     const { ElectionID } = req.params;
-    const foundIndex = mockElections.findIndex((x) => x.ElectionID === ElectionID);
-    mockElections[foundIndex] = {
-      ...mockElections[foundIndex],
+    mockElections.set(ElectionID as string, {
+      ...mockElections.get(ElectionID as string),
       Status: STATUS.SHUFFLED_BALLOTS,
-    };
-    return res(ctx.status(200), ctx.text('Action sucessfully done'));
+    });
+
+    return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
   rest.put(endpoints.editDKGActors(':ElectionID'), (req, res, ctx) => {
     const { ElectionID } = req.params;
-    const foundIndex = mockElections.findIndex((election) => election.ElectionID === ElectionID);
-    mockElections[foundIndex] = {
-      ...mockElections[foundIndex],
+    mockElections.set(ElectionID as string, {
+      ...mockElections.get(ElectionID as string),
       Status: STATUS.RESULT_AVAILABLE,
-    };
-    return res(ctx.status(200), ctx.text('Action sucessfully done'));
+    });
+
+    return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 ];
