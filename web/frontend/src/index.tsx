@@ -70,6 +70,34 @@ export const FlashContext = createContext<FlashState>(undefined);
 // more elegant in the future and be its own component.
 const Loading: FC = () => <p>App is loading...</p>;
 
+const Failed: FC = ({ children }) => (
+  <div
+    className="
+    flex
+    items-center
+    justify-center
+    w-screen
+    h-screen
+    bg-gradient-to-r
+    from-red-600
+    to-red-700
+  ">
+    <div className="px-5 py-3 bg-white rounded-md shadow-xl">
+      <div className="flex flex-col items-center">
+        <div className="p-4">
+          <h1 className="text-2xl font-medium text-slate-600 pb-2">Failed to get personal info.</h1>
+          <p className="text-sm tracking-tight font-light text-slate-400 leading-6">
+            Is the backend running ?
+          </p>
+          <code className="text-sm tracking-tight font-light text-slate-400 leading-6">
+            {children}
+          </code>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 // AppContainer wraps the App with the "auth" and "flash" contexts. It makes
 // sure that the App is displayed only when the AuthContext has been updated,
 // and displays flash messages.
@@ -109,9 +137,18 @@ const AppContainer = () => {
     const req = {
       method: 'GET',
     };
-    fetch(ENDPOINT_PERSONAL_INFO, req)
-      .then((res) => res.json())
-      .then((result) => {
+
+    async function fetchData() {
+      try {
+        const res = await fetch(ENDPOINT_PERSONAL_INFO, req);
+
+        if (res.status !== 200) {
+          const txt = await res.text();
+          throw new Error(`unexpected status: ${res.status} - ${txt}`);
+        }
+
+        const result = await res.json();
+
         setAuth({
           isLogged: result.islogged,
           firstname: result.firstname,
@@ -120,10 +157,13 @@ const AppContainer = () => {
         });
 
         setContent(<App />);
-      })
-      .catch((e) => {
-        flashState.addMessage('failed to get personal info: ' + e, 1);
-      });
+      } catch (e) {
+        setContent(<Failed>{e.toString()}</Failed>);
+        console.log('error:', e);
+      }
+    }
+
+    fetchData();
   }, []);
 
   return (

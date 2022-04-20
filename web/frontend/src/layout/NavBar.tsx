@@ -21,7 +21,6 @@ const NavBar: FC = () => {
   const { t } = useTranslation();
 
   const authCtx = useContext(AuthContext);
-  const [loginError, setLoginError] = useState(null);
 
   const navigate = useNavigate();
 
@@ -241,7 +240,7 @@ const NavBar: FC = () => {
                         <button
                           id="login-button"
                           className="block px-4 py-2 text-sm text-gray-700'"
-                          onClick={() => handleLogin(loginError, setLoginError)}>
+                          onClick={() => handleLogin(fctx)}>
                           {t('login')}
                         </button>
                       </div>
