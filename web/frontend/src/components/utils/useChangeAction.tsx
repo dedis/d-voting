@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import ConfirmModal from '../modal/ConfirmModal';
-import { ROUTE_ELECTION_SHOW } from '../../Routes';
 import usePostCall from './usePostCall';
 import * as endpoints from './Endpoints';
 import { ID } from 'types/configuration';
@@ -17,10 +16,12 @@ const useChangeAction = (
   setShowModalError: (willShow: boolean) => void
 ) => {
   const { t } = useTranslation();
+  const [isOpening, setIsOpening] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
   const [isShuffling, setIsShuffling] = useState(false);
   const [isDecrypting, setIsDecrypting] = useState(false);
+  const [showModalOpen, setShowModalOpen] = useState(false);
   const [showModalClose, setShowModalClose] = useState(false);
   const [showModalCancel, setShowModalCancel] = useState(false);
   const [userConfirmedClosing, setUserConfirmedClosing] = useState(false);
@@ -50,6 +51,9 @@ const useChangeAction = (
       body: JSON.stringify({
         Action: action,
       }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
     };
     return sendFetchRequest(endpoint, req, setIsClosing);
   };
@@ -110,6 +114,17 @@ const useChangeAction = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCanceling, sendFetchRequest, setShowModalError, setStatus, userConfirmedCanceling]);
 
+  const handleOpen = async () => {
+    const openSuccess = await electionUpdate('open', endpoints.editElection(electionID.toString()));
+    if (openSuccess && postError === null) {
+      setStatus(STATUS.OPEN);
+    } else {
+      setShowModalError(true);
+      setIsOpening(false);
+    }
+    setPostError(null);
+  };
+
   const handleClose = () => {
     setShowModalClose(true);
     setIsClosing(true);
@@ -155,6 +170,17 @@ const useChangeAction = (
 
   const getAction = () => {
     switch (status) {
+      case STATUS.INITIAL:
+        return (
+          <span>
+            <button id="close-button" className="election-btn" onClick={handleOpen}>
+              {t('open')}
+            </button>
+            <button className="election-btn" onClick={handleCancel}>
+              {t('cancel')}
+            </button>
+          </span>
+        );
       case STATUS.OPEN:
         return (
           <span>
@@ -197,9 +223,7 @@ const useChangeAction = (
       case STATUS.RESULT_AVAILABLE:
         return (
           <span>
-            <Link
-              className="election-link"
-              to={{ pathname: `${ROUTE_ELECTION_SHOW}/${electionID}` }}>
+            <Link className="election-link" to={`/elections/${electionID}`}>
               <button className="election-btn">{t('seeResult')}</button>
             </Link>
           </span>

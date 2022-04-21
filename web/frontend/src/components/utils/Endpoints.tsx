@@ -14,8 +14,9 @@ export const editShuffle = (ElectionID: string) => `/evoting/services/shuffle/${
 export const editDKGActors = (ElectionID: string) => `/evoting/services/dkg/actors/${ElectionID}`;
 
 // public information can be directly fetched from dela nodes
-export const election = (ElectionID: string) => `/evoting/elections/${ElectionID}`;
-export const elections = '/evoting/elections';
+export const election = (ElectionID: string) =>
+  `${process.env.REACT_APP_PROXY}/evoting/elections/${ElectionID}`;
+export const elections = `${process.env.REACT_APP_PROXY}/evoting/elections`;
 
 // To remove
 export const ENDPOINT_EVOTING_RESULT = '/api/evoting/result';
