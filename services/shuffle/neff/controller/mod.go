@@ -46,6 +46,10 @@ func (m controller) SetCommands(builder node.Builder) {
 	})
 	sub.SetDescription("initialize the SHUFFLE protocol")
 	sub.SetAction(builder.MakeAction(&InitAction{}))
+
+	sub = cmd.SetSubCommand("registerHandlers")
+	sub.SetDescription("register the proxy handlers")
+	sub.SetAction(builder.MakeAction(&RegisterHandlersAction{}))
 }
 
 // OnStart implements node.Initializer. It creates and registers a neff

@@ -1,13 +1,13 @@
-interface CreateElectionBody {
+interface NewElectionBody {
   Configuration: any;
 }
 
-interface CreateElectionCastVote {
+interface NewElectionVoteBody {
   Ballot: [];
 }
 
-interface ElectionActionsBody {
+interface EditElectionBody {
   Action: 'open' | 'close' | 'combineShares' | 'cancel';
 }
 
-export type { CreateElectionCastVote, CreateElectionBody, ElectionActionsBody };
+export type { NewElectionVoteBody, NewElectionBody, EditElectionBody };

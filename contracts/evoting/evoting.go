@@ -8,9 +8,10 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"go.dedis.ch/dela"
 	"math/rand"
 	"strings"
+
+	"go.dedis.ch/dela"
 
 	"go.dedis.ch/kyber/v3/share"
 
@@ -87,7 +88,6 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 	election := types.Election{
 		ElectionID:    hex.EncodeToString(electionIDBuf),
 		Configuration: tx.Configuration,
-		AdminID:       tx.AdminID,
 		Status:        types.Initial,
 		// Pubkey is set by the opening command
 		BallotSize:       tx.Configuration.MaxBallotSize(),
@@ -454,10 +454,6 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 		return xerrors.Errorf(errGetElection, err)
 	}
 
-	if election.AdminID != tx.UserID {
-		return xerrors.Errorf("only the admin can close the election")
-	}
-
 	if election.Status != types.Open {
 		return xerrors.Errorf("the election is not open, current status: %d", election.Status)
 	}
@@ -606,10 +602,6 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 		return xerrors.Errorf(errGetElection, err)
 	}
 
-	if election.AdminID != tx.UserID {
-		return xerrors.Errorf("only the admin can decrypt the ballots")
-	}
-
 	if election.Status != types.PubSharesSubmitted {
 		return xerrors.Errorf("the public shares have not been submitted,"+
 			" current status: %d", election.Status)
@@ -680,10 +672,6 @@ func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step)
 	election, electionID, err := e.getElection(tx.ElectionID, snap)
 	if err != nil {
 		return xerrors.Errorf(errGetElection, err)
-	}
-
-	if election.AdminID != tx.UserID {
-		return xerrors.Errorf("only the admin can cancel the election")
 	}
 
 	election.Status = types.Canceled

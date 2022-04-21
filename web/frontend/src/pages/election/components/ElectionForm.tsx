@@ -1,7 +1,7 @@
 import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
-import { ENDPOINT_EVOTING_CREATE } from 'components/utils/Endpoints';
+import { newElection } from 'components/utils/Endpoints';
 
 import { CloudDownloadIcon, CloudUploadIcon, TrashIcon } from '@heroicons/react/solid';
 
@@ -29,7 +29,6 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
   // conf is the configuration object containing MainTitle and Scaffold which
   // contains an array of subject.
   const { t } = useTranslation();
-  const UserID = sessionStorage.getItem('id');
   const emptyConf: Configuration = emptyConfiguration();
   const [conf, setConf] = useState<Configuration>(emptyConf);
   const { MainTitle, Scaffold } = conf;
@@ -37,11 +36,11 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
   async function createHandler() {
     const data = {
       Configuration: marshalConfig(conf),
-      UserID,
     };
     const req = {
       method: 'POST',
       body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' },
     };
 
     try {
@@ -55,7 +54,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
     }
 
     try {
-      const res = await fetch(ENDPOINT_EVOTING_CREATE, req);
+      const res = await fetch(newElection, req);
       if (res.status !== 200) {
         const response = await res.text();
         setTextModal(`Error HTTP ${res.status} (${res.statusText}) : ${response}`);

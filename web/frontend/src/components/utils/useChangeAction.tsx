@@ -1,22 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-
 import ConfirmModal from '../modal/ConfirmModal';
 import { ROUTE_ELECTION_SHOW } from '../../Routes';
 import usePostCall from './usePostCall';
-import {
-  ENDPOINT_EVOTING_DECRYPT,
-  ENDPOINT_EVOTING_ELECTION,
-  ENDPOINT_EVOTING_SHUFFLE,
-} from './Endpoints';
-import { CANCELED, CLOSED, OPEN, RESULT_AVAILABLE, SHUFFLED_BALLOT } from './StatusNumber';
+import * as endpoints from './Endpoints';
 import { ID } from 'types/configuration';
+import { STATUS } from 'types/electionInfo';
 
 const useChangeAction = (
-  status: number,
+  status: STATUS,
   electionID: ID,
-  setStatus: (status: number) => void,
+  setStatus: (status: STATUS) => void,
   setResultAvailable: ((available: boolean) => void | null) | undefined,
   setTextModalError: (value: ((prevState: null) => '') | string) => void,
   setShowModalError: (willShow: boolean) => void
@@ -47,30 +42,16 @@ const useChangeAction = (
     />
   );
   const [postError, setPostError] = useState(t('operationFailure') as string);
-  const { sendFetchRequest } = usePostCall(setPostError);
-  const closeRequest = {
-    method: 'PUT',
-    body: JSON.stringify({
-      Action: 'close',
-    }),
-  };
-  const cancelRequest = {
-    method: 'PUT',
-    body: JSON.stringify({
-      Action: 'cancel',
-    }),
-  };
-  const decryptRequest = {
-    method: 'PUT',
-    body: JSON.stringify({
-      Action: 'beginDecryption',
-    }),
-  };
-  const shuffleRequest = {
-    method: 'PUT',
-    body: JSON.stringify({
-      Action: 'shuffle',
-    }),
+  const sendFetchRequest = usePostCall(setPostError);
+
+  const electionUpdate = async (action: string, endpoint: string) => {
+    const req = {
+      method: 'PUT',
+      body: JSON.stringify({
+        Action: action,
+      }),
+    };
+    return sendFetchRequest(endpoint, req, setIsClosing);
   };
 
   useEffect(() => {
@@ -84,14 +65,12 @@ const useChangeAction = (
     //check if close button was clicked and the user validated the confirmation window
     if (isClosing && userConfirmedClosing) {
       const close = async () => {
-        const closeSuccess = await sendFetchRequest(
-          ENDPOINT_EVOTING_ELECTION(electionID),
-          closeRequest,
-          setIsClosing
+        const closeSuccess = await electionUpdate(
+          'close',
+          endpoints.editElection(electionID.toString())
         );
-
         if (closeSuccess) {
-          setStatus(CLOSED);
+          setStatus(STATUS.CLOSED);
         } else {
           setShowModalError(true);
         }
@@ -113,13 +92,12 @@ const useChangeAction = (
   useEffect(() => {
     if (isCanceling && userConfirmedCanceling) {
       const cancel = async () => {
-        const cancelSuccess = await sendFetchRequest(
-          ENDPOINT_EVOTING_ELECTION(electionID),
-          cancelRequest,
-          setIsCanceling
+        const cancelSuccess = await electionUpdate(
+          'cancel',
+          endpoints.editElection(electionID.toString())
         );
         if (cancelSuccess) {
-          setStatus(CANCELED);
+          setStatus(STATUS.CANCELED);
         } else {
           setShowModalError(true);
         }
@@ -144,13 +122,12 @@ const useChangeAction = (
 
   const handleShuffle = async () => {
     setIsShuffling(true);
-    const shuffleSuccess = await sendFetchRequest(
-      ENDPOINT_EVOTING_SHUFFLE(electionID),
-      shuffleRequest,
-      setIsShuffling
+    const shuffleSuccess = await electionUpdate(
+      'shuffle',
+      endpoints.editShuffle(electionID.toString())
     );
     if (shuffleSuccess && postError === null) {
-      setStatus(SHUFFLED_BALLOT);
+      setStatus(STATUS.SHUFFLED_BALLOTS);
     } else {
       setShowModalError(true);
       setIsShuffling(false);
@@ -159,17 +136,16 @@ const useChangeAction = (
   };
 
   const handleDecrypt = async () => {
-    const decryptSucess = await sendFetchRequest(
-      ENDPOINT_EVOTING_DECRYPT(electionID),
-      decryptRequest,
-      setIsDecrypting
+    const decryptSuccess = await electionUpdate(
+      'beginDecryption',
+      endpoints.editDKGActors(electionID.toString())
     );
-    if (decryptSucess && postError === null) {
+    if (decryptSuccess && postError === null) {
       // TODO : setResultAvailable is undefined when the decryption is clicked
       if (setResultAvailable !== null && setResultAvailable !== undefined) {
         setResultAvailable(true);
       }
-      setStatus(RESULT_AVAILABLE);
+      setStatus(STATUS.RESULT_AVAILABLE);
     } else {
       setShowModalError(true);
       setIsDecrypting(false);
@@ -179,7 +155,7 @@ const useChangeAction = (
 
   const getAction = () => {
     switch (status) {
-      case OPEN:
+      case STATUS.OPEN:
         return (
           <span>
             <button id="close-button" className="election-btn" onClick={handleClose}>
@@ -190,7 +166,7 @@ const useChangeAction = (
             </button>
           </span>
         );
-      case CLOSED:
+      case STATUS.CLOSED:
         return (
           <span>
             {isShuffling ? (
@@ -204,7 +180,7 @@ const useChangeAction = (
             )}
           </span>
         );
-      case SHUFFLED_BALLOT:
+      case STATUS.SHUFFLED_BALLOTS:
         return (
           <span>
             {isDecrypting ? (
@@ -218,7 +194,7 @@ const useChangeAction = (
             )}
           </span>
         );
-      case RESULT_AVAILABLE:
+      case STATUS.RESULT_AVAILABLE:
         return (
           <span>
             <Link
@@ -228,7 +204,7 @@ const useChangeAction = (
             </Link>
           </span>
         );
-      case CANCELED:
+      case STATUS.CANCELED:
         return <span> ---</span>;
       default:
         return <span> --- </span>;

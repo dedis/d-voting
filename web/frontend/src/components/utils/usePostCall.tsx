@@ -1,24 +1,21 @@
 // Custom hook that post a request to an endpoint
 const usePostCall = (setError) => {
-  const sendFetchRequest = async (endpoint, request, setIsPosting) => {
+  return async (endpoint, request, setIsPosting) => {
+    let success = true;
     try {
       const response = await fetch(endpoint, request);
       if (!response.ok) {
-        let err = await response.text();
-        throw Error(err);
-      } else {
-        setError(null);
-        setIsPosting((prev) => !prev);
-        return true;
+        const txt = await response.text();
+        throw new Error(txt);
       }
+      setError(null);
     } catch (error) {
       setError(error.message);
-      setIsPosting((prev) => !prev);
-      return false;
+      success = false;
     }
+    setIsPosting((prev) => !prev);
+    return success;
   };
-
-  return { sendFetchRequest };
 };
 
 export default usePostCall;

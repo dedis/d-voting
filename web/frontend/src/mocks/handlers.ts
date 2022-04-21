@@ -4,22 +4,16 @@ import ShortUniqueId from 'short-unique-id';
 import { ROUTE_LOGGED } from 'Routes';
 
 import {
-  ENDPOINT_EVOTING_CAST_BALLOT,
-  ENDPOINT_EVOTING_CREATE,
-  ENDPOINT_EVOTING_DECRYPT,
-  ENDPOINT_EVOTING_ELECTION,
-  ENDPOINT_EVOTING_GET_ALL,
-  ENDPOINT_EVOTING_GET_ELECTION,
-  ENDPOINT_EVOTING_SHUFFLE,
   ENDPOINT_GET_TEQ_KEY,
   ENDPOINT_LOGOUT,
   ENDPOINT_PERSONAL_INFO,
 } from '../components/utils/Endpoints';
+import * as endpoints from '../components/utils/Endpoints';
 
 import {
-  CreateElectionBody,
-  CreateElectionCastVote,
-  ElectionActionsBody,
+  EditElectionBody,
+  NewElectionBody,
+  NewElectionVoteBody,
 } from '../types/frontendRequestBody';
 import {
   mockElection1,
@@ -29,7 +23,7 @@ import {
   mockElectionResult23,
 } from './mockData';
 import { ID } from 'types/configuration';
-import { ElectionInfo, LightElectionInfo } from 'types/electionInfo';
+import { ElectionInfo, LightElectionInfo, STATUS } from 'types/electionInfo';
 
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;
@@ -40,7 +34,7 @@ const electionID2 = uid();
 
 mockElections.set(electionID1, {
   ElectionID: electionID1,
-  Status: 1,
+  Status: STATUS.OPEN,
   Pubkey: 'XL4V6EMIICW',
   Result: [],
   Configuration: unmarshalConfig(mockElection1),
@@ -49,7 +43,7 @@ mockElections.set(electionID1, {
 });
 mockElections.set(electionID2, {
   ElectionID: electionID2,
-  Status: 5,
+  Status: STATUS.RESULT_AVAILABLE,
   Pubkey: 'XL4V6EMIICW',
   Result: [mockElectionResult21, mockElectionResult22, mockElectionResult23],
   Configuration: unmarshalConfig(mockElection2),
@@ -97,7 +91,7 @@ export const handlers = [
     return res(ctx.status(200));
   }),
 
-  rest.get(ENDPOINT_EVOTING_GET_ALL, (req, res, ctx) => {
+  rest.get(endpoints.elections, (req, res, ctx) => {
     return res(
       ctx.status(200),
       ctx.json({
@@ -108,21 +102,21 @@ export const handlers = [
     );
   }),
 
-  rest.get(ENDPOINT_EVOTING_GET_ELECTION(), (req, res, ctx) => {
+  rest.get(endpoints.election(':ElectionID'), (req, res, ctx) => {
     const { ElectionID } = req.params;
 
     return res(ctx.status(200), ctx.json(mockElections.get(ElectionID as ID)));
   }),
 
-  rest.post(ENDPOINT_EVOTING_CREATE, (req, res, ctx) => {
-    const body: CreateElectionBody = JSON.parse(req.body.toString());
+  rest.post(endpoints.newElection, (req, res, ctx) => {
+    const body = req.body as NewElectionBody;
 
     const createElection = (configuration: any) => {
       const newElectionID = uid();
 
       mockElections.set(newElectionID, {
         ElectionID: newElectionID,
-        Status: 1,
+        Status: STATUS.OPEN,
         Pubkey: 'DEAEV6EMII',
         Result: [],
         Configuration: configuration,
@@ -141,8 +135,8 @@ export const handlers = [
     );
   }),
 
-  rest.post(ENDPOINT_EVOTING_CAST_BALLOT(), (req, res, ctx) => {
-    const { Ballot }: CreateElectionCastVote = JSON.parse(req.body.toString());
+  rest.post(endpoints.newElectionVote(':ElectionID'), (req, res, ctx) => {
+    const { Ballot }: NewElectionVoteBody = JSON.parse(req.body.toString());
 
     return res(
       ctx.status(200),
@@ -152,22 +146,23 @@ export const handlers = [
     );
   }),
 
-  rest.put(ENDPOINT_EVOTING_ELECTION(), (req, res, ctx) => {
-    const body: ElectionActionsBody = JSON.parse(req.body.toString());
+  rest.put(endpoints.editElection(':ElectionID'), (req, res, ctx) => {
+    const body: EditElectionBody = JSON.parse(req.body.toString());
     const { ElectionID } = req.params;
-    var Status = 1;
+    var Status = STATUS.INITIAL;
+
     switch (body.Action) {
       case 'open':
-        Status = 1;
+        Status = STATUS.OPEN;
         break;
       case 'close':
-        Status = 2;
+        Status = STATUS.CLOSED;
         break;
       case 'combineShares':
-        Status = 4;
+        Status = STATUS.DECRYPTED_BALLOTS;
         break;
       case 'cancel':
-        Status = 6;
+        Status = STATUS.CANCELED;
         break;
       default:
         break;
@@ -180,23 +175,21 @@ export const handlers = [
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
-  rest.put(ENDPOINT_EVOTING_SHUFFLE(), (req, res, ctx) => {
+  rest.put(endpoints.editShuffle(':ElectionID'), (req, res, ctx) => {
     const { ElectionID } = req.params;
-    var Status = 3;
     mockElections.set(ElectionID as string, {
       ...mockElections.get(ElectionID as string),
-      Status,
+      Status: STATUS.SHUFFLED_BALLOTS,
     });
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
-  rest.put(ENDPOINT_EVOTING_DECRYPT(), (req, res, ctx) => {
+  rest.put(endpoints.editDKGActors(':ElectionID'), (req, res, ctx) => {
     const { ElectionID } = req.params;
-    var Status = 5;
     mockElections.set(ElectionID as string, {
       ...mockElections.get(ElectionID as string),
-      Status,
+      Status: STATUS.RESULT_AVAILABLE,
     });
 
     return res(ctx.status(200), ctx.text('Action successfully done'));

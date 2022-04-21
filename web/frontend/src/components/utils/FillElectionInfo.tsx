@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { ID } from 'types/configuration';
-import { ElectionInfo, LightElectionInfo, Results } from 'types/electionInfo';
+import { ElectionInfo, LightElectionInfo, Results, STATUS } from 'types/electionInfo';
 
 const useFillElectionInfo = (electionData: ElectionInfo) => {
-  const [id, setId]: [ID, React.Dispatch<React.SetStateAction<ID>>] = useState(null);
-  const [status, setStatus]: [number, React.Dispatch<React.SetStateAction<number>>] =
+  const [id, setId]: [ID, React.Dispatch<React.SetStateAction<ID>>] = useState('');
+  const [status, setStatus]: [STATUS, React.Dispatch<React.SetStateAction<STATUS>>] =
     useState(null);
   const [pubKey, setPubKey]: [string, React.Dispatch<React.SetStateAction<string>>] = useState('');
   const [result, setResult]: [Results[], React.Dispatch<React.SetStateAction<Results[]>>] =
@@ -49,10 +49,10 @@ const useFillElectionInfo = (electionData: ElectionInfo) => {
 };
 
 const useFillLightElectionInfo = (electionData: LightElectionInfo) => {
-  const [id, setId] = useState(null);
-  const [title, setTitle] = useState('');
-  const [status, setStatus] = useState(null);
-  const [pubKey, setPubKey] = useState('');
+  const [id, setId]: [ID, (ID: ID) => void] = useState('');
+  const [title, setTitle]: [string, (title: string) => void] = useState('');
+  const [status, setStatus]: [STATUS, (status: STATUS) => void] = useState(null);
+  const [pubKey, setPubKey]: [string, (pubkey: string) => void] = useState('');
 
   useEffect(() => {
     if (electionData !== null) {

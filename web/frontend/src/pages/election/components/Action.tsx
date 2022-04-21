@@ -2,15 +2,16 @@ import React, { FC, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import useChangeAction from 'components/utils/useChangeAction';
 import Modal from 'components/modal/Modal';
 import './Status.css';
 import { ID } from 'types/configuration';
+import useChangeAction from 'components/utils/useChangeAction';
+import { STATUS } from 'types/electionInfo';
 
 type ActionProps = {
-  status: number;
+  status: STATUS;
   electionID: ID;
-  setStatus: (status: number) => void;
+  setStatus: (status: STATUS) => void;
   setResultAvailable?: (available: boolean) => void | null;
 };
 

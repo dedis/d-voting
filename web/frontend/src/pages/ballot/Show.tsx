@@ -9,8 +9,7 @@ import { Buffer } from 'buffer';
 import { ROUTE_BALLOT_INDEX } from '../../Routes';
 import useElection from 'components/utils/useElection';
 import usePostCall from 'components/utils/usePostCall';
-import { ENDPOINT_EVOTING_CAST_BALLOT } from 'components/utils/Endpoints';
-import { OPEN } from 'components/utils/StatusNumber';
+import * as endpoints from 'components/utils/Endpoints';
 import { encryptVote } from './components/VoteEncrypt';
 import { voteEncode } from './components/VoteEncode';
 import { useConfiguration } from 'components/utils/useConfiguration';
@@ -22,6 +21,7 @@ import Select from './components/Select';
 import Rank, { handleOnDragEnd } from './components/Rank';
 import Text from './components/Text';
 import { ballotIsValid } from './components/ValidateAnswers';
+import { STATUS } from 'types/electionInfo';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
@@ -36,11 +36,11 @@ const Ballot: FC = () => {
   const [postError, setPostError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [modalText, setModalText] = useState(t('voteSuccess') as string);
-  const { sendFetchRequest } = usePostCall(setPostError);
+  const sendFetchRequest = usePostCall(setPostError);
 
   useEffect(() => {
     if (postRequest !== null) {
-      sendFetchRequest(ENDPOINT_EVOTING_CAST_BALLOT(electionID), postRequest, setShowModal);
+      sendFetchRequest(endpoints.newElectionVote(electionID.toString()), postRequest, setShowModal);
     }
   }, [postRequest]);
 
@@ -190,7 +190,7 @@ const Ballot: FC = () => {
       {loading ? (
         <p className="loading">{t('loading')}</p>
       ) : (
-        <div>{status === OPEN ? ballotDisplay() : electionClosedDisplay()}</div>
+        <div>{status === STATUS.OPEN ? ballotDisplay() : electionClosedDisplay()}</div>
       )}
     </div>
   );

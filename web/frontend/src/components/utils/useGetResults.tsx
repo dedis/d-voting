@@ -1,6 +1,6 @@
 import { ID } from 'types/configuration';
 import { Results } from 'types/electionInfo';
-import { ENDPOINT_EVOTING_GET_ELECTION } from './Endpoints';
+import * as endpoints from './Endpoints';
 
 const useGetResults = () => {
   async function getResults(
@@ -14,7 +14,7 @@ const useGetResults = () => {
     };
 
     try {
-      const response = await fetch(ENDPOINT_EVOTING_GET_ELECTION(electionID), request);
+      const response = await fetch(endpoints.election(electionID), request);
 
       if (!response.ok) {
         throw Error(response.statusText);

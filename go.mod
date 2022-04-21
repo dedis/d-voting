@@ -3,10 +3,10 @@ module github.com/dedis/d-voting
 go 1.16
 
 require (
+	github.com/gorilla/mux v1.8.0
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/prometheus/client_golang v1.12.1
 	github.com/rs/zerolog v1.19.0
-	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.7.0
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
 	go.dedis.ch/dela v0.0.0-20220323172319-20a841138815

@@ -1,8 +1,18 @@
 import { ID } from './configuration';
 
+export const enum STATUS {
+  INITIAL,
+  OPEN,
+  CLOSED,
+  SHUFFLED_BALLOTS,
+  DECRYPTED_BALLOTS,
+  RESULT_AVAILABLE,
+  CANCELED,
+}
+
 interface ElectionInfo {
   ElectionID: ID;
-  Status: number;
+  Status: STATUS;
   Pubkey: string;
   Result: any;
   ChunksPerBallot: number;
@@ -13,7 +23,7 @@ interface ElectionInfo {
 interface LightElectionInfo {
   ElectionID: ID;
   Title: string;
-  Status: number;
+  Status: STATUS;
   Pubkey: string;
 }
 

@@ -4,11 +4,11 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import useFetchCall from '../../../components/utils/useFetchCall';
-import { ENDPOINT_EVOTING_GET_ALL } from '../../../components/utils/Endpoints';
-import { LightElectionInfo } from 'types/electionInfo';
+import * as endpoints from '../../../components/utils/Endpoints';
+import { LightElectionInfo, STATUS } from 'types/electionInfo';
 
 type SimpleTableProps = {
-  statusToKeep: number;
+  statusToKeep: STATUS;
   pathLink: string;
   textWhenData: string;
   textWhenNoData: string;
@@ -29,16 +29,10 @@ const SimpleTable: FC<SimpleTableProps> = ({
     method: 'GET',
   };
 
-  const [fetchedData, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, request);
+  const [fetchedData, loading, error] = useFetchCall(endpoints.elections, request);
 
   const ballotsToDisplay = (elections: LightElectionInfo[]) => {
-    let dataToDisplay = [];
-    elections.forEach((election) => {
-      if (election.Status === statusToKeep) {
-        dataToDisplay.push(election);
-      }
-    });
-    return dataToDisplay;
+    return elections.filter((election) => election.Status === statusToKeep);
   };
 
   const displayBallotTable = (data: LightElectionInfo[]) => {

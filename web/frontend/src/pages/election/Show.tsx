@@ -6,13 +6,13 @@ import { useTranslation } from 'react-i18next';
 import Action from './components/Action';
 import Status from './components/Status';
 import useElection from 'components/utils/useElection';
-import { RESULT_AVAILABLE } from 'components/utils/StatusNumber';
 import { ROUTE_ELECTION_INDEX } from 'Routes';
 import './Show.css';
 import useGetResults from 'components/utils/useGetResults';
 import Result from 'pages/result/components/Result';
 import { useConfigurationOnly } from 'components/utils/useConfiguration';
 import BackButton from 'pages/result/components/BackButton';
+import { STATUS } from 'types/electionInfo';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
@@ -23,7 +23,6 @@ const ElectionShow: FC = () => {
     electionID,
     status,
     setStatus,
-    pubKey,
     result,
     setResult,
     configObj,
@@ -33,13 +32,13 @@ const ElectionShow: FC = () => {
   } = useElection(electionId);
 
   const configuration = useConfigurationOnly(configObj);
-
   const [, setError] = useState(null);
   const [isResultAvailable, setIsResultAvailable] = useState(false);
   const { getResults } = useGetResults();
-  //fetch result when available after a status change
+
+  //Fetch result when available after a status change
   useEffect(() => {
-    if (status === RESULT_AVAILABLE && isResultAvailable) {
+    if (status === STATUS.RESULT_AVAILABLE && isResultAvailable) {
       getResults(electionID, setError, setResult, setIsResultSet);
     }
   }, [isResultAvailable, status]);
