@@ -407,10 +407,14 @@ func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 				http.StatusInternalServerError)
 		}
 
-		pubkeyBuf, err := election.Pubkey.MarshalBinary()
-		if err != nil {
-			http.Error(w, "failed to marshal pubkey: "+err.Error(),
-				http.StatusInternalServerError)
+		var pubkeyBuf []byte
+
+		if election.Pubkey != nil {
+			pubkeyBuf, err = election.Pubkey.MarshalBinary()
+			if err != nil {
+				http.Error(w, "failed to marshal pubkey: "+err.Error(),
+					http.StatusInternalServerError)
+			}
 		}
 
 		info := ptypes.LightElection{
