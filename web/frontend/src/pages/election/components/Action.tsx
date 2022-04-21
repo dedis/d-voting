@@ -2,18 +2,19 @@ import React, { FC, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import useChangeAction from 'components/utils/useChangeAction';
 import Modal from 'components/modal/Modal';
 import './Status.css';
+import { ID } from 'types/configuration';
+import useChangeAction from 'components/utils/useChangeAction';
+import { STATUS } from 'types/electionInfo';
 
 type ActionProps = {
-  status: number;
-  electionID: number;
-  setStatus: (status: number) => void;
+  status: STATUS;
+  electionID: ID;
+  setStatus: (status: STATUS) => void;
   setResultAvailable?: (available: boolean) => void | null;
 };
 
-/**/
 const Action: FC<ActionProps> = ({ status, electionID, setStatus, setResultAvailable }) => {
   const { t } = useTranslation();
 
@@ -47,7 +48,7 @@ const Action: FC<ActionProps> = ({ status, electionID, setStatus, setResultAvail
 
 Action.propTypes = {
   status: PropTypes.number.isRequired,
-  electionID: PropTypes.number.isRequired,
+  electionID: PropTypes.string.isRequired,
   setStatus: PropTypes.func.isRequired,
   setResultAvailable: PropTypes.func,
 };

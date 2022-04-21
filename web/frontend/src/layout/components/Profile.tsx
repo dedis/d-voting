@@ -1,6 +1,6 @@
-import React, { Dispatch, FC, Fragment } from 'react';
+import React, { FC, Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AuthState } from 'index';
+import { AuthState, FlashState } from 'index';
 import PropTypes from 'prop-types';
 
 import { Menu, Transition } from '@headlessui/react';
@@ -9,18 +9,11 @@ import { UserCircleIcon } from '@heroicons/react/outline';
 type ProfileProps = {
   authCtx: AuthState;
   handleLogout: (e: any) => Promise<void>;
-  handleLogin: (loginError: any, setLoginError: Dispatch<any>) => Promise<void>;
-  loginError: any;
-  setLoginError: Dispatch<any>;
+  handleLogin: (FlashState) => Promise<void>;
+  fctx: FlashState;
 };
 
-const Profile: FC<ProfileProps> = ({
-  authCtx,
-  handleLogout,
-  handleLogin,
-  loginError,
-  setLoginError,
-}) => {
+const Profile: FC<ProfileProps> = ({ authCtx, handleLogout, handleLogin, fctx }) => {
   const { t } = useTranslation();
 
   return authCtx.isLogged ? (
@@ -55,7 +48,7 @@ const Profile: FC<ProfileProps> = ({
     </Menu>
   ) : (
     <button
-      onClick={() => handleLogin(loginError, setLoginError)}
+      onClick={() => handleLogin(fctx)}
       className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700">
       {t('login')}
     </button>
@@ -66,8 +59,7 @@ Profile.propTypes = {
   authCtx: PropTypes.any.isRequired,
   handleLogout: PropTypes.func.isRequired,
   handleLogin: PropTypes.func.isRequired,
-  loginError: PropTypes.any,
-  setLoginError: PropTypes.any.isRequired,
+  fctx: PropTypes.any.isRequired,
 };
 
 export default Profile;

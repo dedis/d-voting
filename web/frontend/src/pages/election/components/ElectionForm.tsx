@@ -1,7 +1,7 @@
 import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
-import { ENDPOINT_EVOTING_CREATE } from 'components/utils/Endpoints';
+import { newElection } from 'components/utils/Endpoints';
 
 import { CloudDownloadIcon, CloudUploadIcon, TrashIcon } from '@heroicons/react/solid';
 
@@ -35,16 +35,16 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
 
   async function createHandler() {
     const data = {
-      Format: marshalConfig(conf),
+      Configuration: marshalConfig(conf),
     };
     const req = {
       method: 'POST',
-      type: 'application/json',
       body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' },
     };
 
     try {
-      await configurationSchema.validate(data.Format);
+      await configurationSchema.validate(data.Configuration);
     } catch (err) {
       setTextModal(
         'Incorrect election configuration, please fill it completely: ' + err.errors.join(',')
@@ -54,7 +54,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
     }
 
     try {
-      const res = await fetch(ENDPOINT_EVOTING_CREATE, req);
+      const res = await fetch(newElection, req);
       if (res.status !== 200) {
         const response = await res.text();
         setTextModal(`Error HTTP ${res.status} (${res.statusText}) : ${response}`);

@@ -3,26 +3,26 @@ import { useTranslation } from 'react-i18next';
 
 import ElectionTable from './components/ElectionTable';
 import useFetchCall from 'components/utils/useFetchCall';
-import { ENDPOINT_EVOTING_GET_ALL } from 'components/utils/Endpoints';
+import * as endpoints from 'components/utils/Endpoints';
 import './Index.css';
 
 const ElectionIndex: FC = () => {
   const { t } = useTranslation();
-  const token = sessionStorage.getItem('token');
   const request = {
     method: 'GET',
   };
-  const [data, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, request);
+
+  const [data, loading, error] = useFetchCall(endpoints.elections, request);
 
   /*Show all the elections retrieved if any */
   const showElection = () => {
     return (
       <div>
-        {data.AllElectionsInfo.length > 0 ? (
+        {data.Elections.length > 0 ? (
           <div className="election-box">
             <div className="click-info">{t('clickElection')}</div>
             <div className="election-table-wrapper">
-              <ElectionTable elections={data.AllElectionsInfo} />
+              <ElectionTable elections={data.Elections} />
             </div>
           </div>
         ) : (

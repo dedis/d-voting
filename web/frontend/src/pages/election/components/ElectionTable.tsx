@@ -14,18 +14,19 @@ import { useTranslation } from 'react-i18next';
 
 import Action from './Action';
 import Status from './Status';
-import ElectionFields from 'components/utils/ElectionFields';
+//import ElectionFields from 'components/utils/ElectionFields';
 import { ROUTE_ELECTION_SHOW } from 'Routes';
+import { LightElectionInfo } from 'types/electionInfo';
+import { ID } from 'types/configuration';
+import ElectionFields from 'components/utils/ElectionFields';
 
 type ElectionTableProps = {
-  elections: string[];
+  elections: LightElectionInfo[];
 };
 
-/**
- *
- * @param {*} props : array of Elections
- * @returns a table where each line corresponds to an election with its name and status
- */
+// Returns a table where each line corresponds to an election with
+// its name and status
+
 const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
   const { t } = useTranslation();
   const [page, setPage] = useState(0);
@@ -65,16 +66,16 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
     },
   }))(TableRow);
 
-  const createData = (title, status, action, key) => {
+  const createData = (title: JSX.Element, status: JSX.Element, action: JSX.Element, key: ID) => {
     return { title, status, action, key };
   };
 
   const constructRows = () =>
-    elections.map((elec) => {
-      let { electionTitle, id, status, setStatus } = ElectionFields(elec);
+    elections.map((election) => {
+      let { title, id, status, setStatus } = ElectionFields(election);
       let link = (
         <Link className="election-link" to={{ pathname: `${ROUTE_ELECTION_SHOW}/${id}` }}>
-          {electionTitle}
+          {title}
         </Link>
       );
       let stat = <Status status={status} />;
