@@ -103,7 +103,7 @@ export const handlers = [
   }),
 
   rest.post(endpoints.newElection, (req, res, ctx) => {
-    const body: NewElectionBody = JSON.parse(req.body.toString());
+    const body = req.body as NewElectionBody;
 
     const createElection = (configuration: any) => {
       const newElectionID = uid();
