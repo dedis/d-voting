@@ -466,7 +466,9 @@ func (h *election) getElectionsMetadata() (types.ElectionsMetadata, error) {
 
 	proof, err := h.orderingSvc.GetProof([]byte(evoting.ElectionsMetadataKey))
 	if err != nil {
-		return md, xerrors.Errorf("failed to read on the blockchain: %v", err)
+		// if the proof doesn't exist we assume there is no metadata, thus no
+		// elections has been created so far.
+		return md, nil
 	}
 
 	err = json.Unmarshal(proof.GetValue(), &md)
