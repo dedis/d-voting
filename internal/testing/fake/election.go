@@ -21,7 +21,6 @@ func NewElection(electionID string) types.Election {
 			MainTitle: "dummyTitle",
 		},
 		ElectionID: electionID,
-		AdminID:    "dummyAdminID",
 		Status:     types.Closed,
 		Pubkey:     pubKey,
 		Suffragia: types.Suffragia{
