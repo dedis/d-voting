@@ -71,17 +71,7 @@ export const FlashContext = createContext<FlashState>(undefined);
 const Loading: FC = () => <p>App is loading...</p>;
 
 const Failed: FC = ({ children }) => (
-  <div
-    className="
-    flex
-    items-center
-    justify-center
-    w-screen
-    h-screen
-    bg-gradient-to-r
-    from-red-600
-    to-red-700
-  ">
+  <div className="flex items-center justify-center w-screen h-screen bg-gradient-to-r from-red-600 to-red-700">
     <div className="px-5 py-3 bg-white rounded-md shadow-xl">
       <div className="flex flex-col items-center">
         <div className="p-4">
