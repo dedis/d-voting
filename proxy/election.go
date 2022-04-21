@@ -344,6 +344,9 @@ func (h *election) cancelElection(electionIDHex string, w http.ResponseWriter, r
 // Election implements proxy.Proxy. The request should not be signed because it
 // is fetching public data.
 func (h *election) Election(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
+
 	vars := mux.Vars(r)
 
 	if vars == nil || vars["electionID"] == "" {
@@ -391,6 +394,8 @@ func (h *election) Election(w http.ResponseWriter, r *http.Request) {
 // Elections implements proxy.Proxy. The request should not be signed because it
 // is fecthing public data.
 func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
 
 	elecMD, err := h.getElectionsMetadata()
 	if err != nil {
@@ -429,6 +434,7 @@ func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 	response := ptypes.GetElectionsResponse{Elections: allElectionsInfo}
 
 	w.Header().Set("Content-Type", "application/json")
+
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),

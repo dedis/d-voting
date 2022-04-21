@@ -112,3 +112,10 @@ func InternalError(w http.ResponseWriter, r *http.Request, err error, args map[s
 	w.WriteHeader(http.StatusInternalServerError)
 	fmt.Fprintln(w, string(buf))
 }
+
+// AllowCORS defines a basic handler that adds wide Access Control Allow origin
+// headers.
+func AllowCORS(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
+}
