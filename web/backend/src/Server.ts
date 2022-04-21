@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import kyber from '@dedis/kyber';
 import crypto from 'crypto';
 import lmdb, { RangeOptions } from 'lmdb';
+import xss from 'xss';
 
 const config = require('../config.json');
 
@@ -304,6 +305,7 @@ app.use('/api/evoting/*', (req, res, next) => {
   // special case for voting
   const regex = /\/api\/evoting\/elections\/.*\/vote/;
   if (req.baseUrl.match(regex)) {
+    // will be handled by the next matcher, just bellow
     next();
   } else {
     sendToDela(dataStr, req, res);
@@ -313,7 +315,7 @@ app.use('/api/evoting/*', (req, res, next) => {
 app.post('/api/evoting/elections/:electionID/vote', (req, res) => {
   const bodyData = req.body;
 
-  // We must set the UserID to know to who this ballot is associated. This is
+  // We must set the UserID to know who this ballot is associated to. This is
   // only needed to allow users to cast multiple ballots, where only the last
   // ballot is taken into account. To preserve anonymity the web-backend could
   // translate UserIDs to another random ID.
@@ -327,7 +329,8 @@ app.post('/api/evoting/elections/:electionID/vote', (req, res) => {
 // Handles any requests that don't match the ones above
 app.get('*', (req, res) => {
   console.log('404 not found');
-  res.status(404).send(`not found ${req.url}`);
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  res.status(404).send(`not found ${xss(url.toString())}`);
 });
 
 const port = process.env.PORT || 5000;

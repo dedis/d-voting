@@ -24,7 +24,8 @@
     "express-session": "^1.17.2",
     "lmdb": "^2.2.1",
     "lodash": "^4.17.21",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "xss": "^1.0.11"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.2",
