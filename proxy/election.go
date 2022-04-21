@@ -399,7 +399,7 @@ func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 
 	elecMD, err := h.getElectionsMetadata()
 	if err != nil {
-		http.Error(w, "failed to get election metadata", http.StatusNotFound)
+		InternalError(w, r, xerrors.Errorf("failed to get election metadata: %v", err), nil)
 		return
 	}
 
@@ -408,8 +408,8 @@ func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 	for i, id := range elecMD.ElectionsIDs {
 		election, err := getElection(h.context, h.electionFac, id, h.orderingSvc)
 		if err != nil {
-			http.Error(w, xerrors.Errorf("failed to get election: %v", err).Error(),
-				http.StatusInternalServerError)
+			InternalError(w, r, xerrors.Errorf("failed to get election: %v", err), nil)
+			return
 		}
 
 		var pubkeyBuf []byte
@@ -417,8 +417,8 @@ func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 		if election.Pubkey != nil {
 			pubkeyBuf, err = election.Pubkey.MarshalBinary()
 			if err != nil {
-				http.Error(w, "failed to marshal pubkey: "+err.Error(),
-					http.StatusInternalServerError)
+				InternalError(w, r, xerrors.Errorf("failed to marshal pubkey: %v", err), nil)
+				return
 			}
 		}
 
@@ -437,8 +437,7 @@ func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
-			http.StatusInternalServerError)
+		InternalError(w, r, xerrors.Errorf("failed to write response: %v", err), nil)
 		return
 	}
 }
