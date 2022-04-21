@@ -424,6 +424,7 @@ func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 
 		info := ptypes.LightElection{
 			ElectionID: string(election.ElectionID),
+			Title:      election.Configuration.MainTitle,
 			Status:     uint16(election.Status),
 			Pubkey:     hex.EncodeToString(pubkeyBuf),
 		}
