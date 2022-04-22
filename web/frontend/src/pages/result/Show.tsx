@@ -13,6 +13,7 @@ type ResultShowProps = {
   location?: any;
 };
 
+// Is this page really necessary ?
 const ResultShow: FC<ResultShowProps> = (props) => {
   const { t } = useTranslation();
   //props.location.data = id of the election
@@ -22,21 +23,27 @@ const ResultShow: FC<ResultShowProps> = (props) => {
   return (
     <div>
       {!loading ? (
-        <div className="shadow-lg rounded-md w-full my-0 sm:my-4">
-          <h1 className="px-4 text-2xl text-gray-900 sm:text-3xl sm:truncate">
-            <span className="font-bold">Results: </span>
-            {configuration.MainTitle}
+        <div>
+          <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+            Results
           </h1>
           {<Result resultData={result} configuration={configuration} />}
         </div>
       ) : error === null ? (
-        <p className="loading">{t('loading')} </p>
+        <div>
+          <p className="loading">{t('loading')} </p>
+          <Link to={ROUTE_RESULT_INDEX}>
+            <BackButton />
+          </Link>
+        </div>
       ) : (
-        <div className="error-retrieving">{t('errorRetrievingElection')}</div>
+        <div>
+          <div className="error-retrieving">{t('errorRetrievingElection')}</div>
+          <Link to={ROUTE_RESULT_INDEX}>
+            <BackButton />
+          </Link>
+        </div>
       )}
-      <Link to={ROUTE_RESULT_INDEX}>
-        <BackButton />
-      </Link>
     </div>
   );
 };

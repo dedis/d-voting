@@ -78,8 +78,7 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
           {title}
         </Link>
       );
-      console.log('status: ' + status);
-      console.log('electionId: ' + id);
+
       let stat = <Status status={status} />;
       let action = <Action status={status} electionID={id} setStatus={setStatus} />;
       return createData(link, stat, action, id);

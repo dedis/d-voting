@@ -1,5 +1,4 @@
 import { rest } from 'msw';
-import { unmarshalConfig } from 'types/JSONparser';
 import ShortUniqueId from 'short-unique-id';
 import { ROUTE_LOGGED } from 'Routes';
 
@@ -15,52 +14,15 @@ import {
   NewElectionBody,
   NewElectionVoteBody,
 } from '../types/frontendRequestBody';
-import {
-  mockElection1,
-  mockElection2,
-  mockElectionResult21,
-  mockElectionResult22,
-  mockElectionResult23,
-} from './mockData';
+
 import { ID } from 'types/configuration';
-import { ElectionInfo, LightElectionInfo, STATUS } from 'types/electionInfo';
+import { ElectionInfo, STATUS } from 'types/electionInfo';
+import { setupMockElection, toLightElectionInfo } from './setupMockElections';
 
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;
 
-const mockElections: Map<ID, ElectionInfo> = new Map();
-const electionID1 = uid();
-const electionID2 = uid();
-
-mockElections.set(electionID1, {
-  ElectionID: electionID1,
-  Status: STATUS.OPEN,
-  Pubkey: 'XL4V6EMIICW',
-  Result: [],
-  Configuration: unmarshalConfig(mockElection1),
-  BallotSize: 174,
-  ChunksPerBallot: 6,
-});
-mockElections.set(electionID2, {
-  ElectionID: electionID2,
-  Status: STATUS.RESULT_AVAILABLE,
-  Pubkey: 'XL4V6EMIICW',
-  Result: [mockElectionResult21, mockElectionResult22, mockElectionResult23],
-  Configuration: unmarshalConfig(mockElection2),
-  BallotSize: 174,
-  ChunksPerBallot: 6,
-});
-
-const toLightElectionInfo = (electionID: ID): LightElectionInfo => {
-  const election = mockElections.get(electionID);
-  console.log(election.Status);
-  return {
-    ElectionID: electionID,
-    Title: election.Configuration.MainTitle,
-    Status: election.Status,
-    Pubkey: election.Pubkey,
-  };
-};
+const mockElections: Map<ID, ElectionInfo> = setupMockElection();
 
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, (req, res, ctx) => {
@@ -96,7 +58,7 @@ export const handlers = [
       ctx.status(200),
       ctx.json({
         Elections: Array.from(mockElections.values()).map((election) =>
-          toLightElectionInfo(election.ElectionID)
+          toLightElectionInfo(mockElections, election.ElectionID)
         ),
       })
     );

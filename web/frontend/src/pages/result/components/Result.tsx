@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, useState } from 'react';
 
 //import DownloadResult from './DownloadResult';
 import { RankResults, Results, SelectResults, TextResults } from 'types/electionInfo';
@@ -18,6 +18,12 @@ import {
   TEXT,
   TextQuestion,
 } from 'types/configuration';
+import DownloadButton from 'components/buttons/DownloadButton';
+import { useTranslation } from 'react-i18next';
+import saveAs from 'file-saver';
+import { ROUTE_ELECTION_INDEX } from 'Routes';
+import BackButton from './BackButton';
+import { Link } from 'react-router-dom';
 
 type ResultProps = {
   resultData: Results[];
@@ -27,8 +33,11 @@ type ResultProps = {
 // Functional component that display the result of the votes
 
 const Result: FC<ResultProps> = ({ resultData, configuration }) => {
-  //const [dataToDownload, setDataToDownload] = useState(null);
+  const { t } = useTranslation();
+  const [dataToDownload, setDataToDownload] = useState('');
 
+  // Group the different results by the ID of the question SelectResult
+  // are mapped to 0 or 1s, such that ballots can be count more efficiently
   const groupByID = (
     resultMap: Map<any, any>,
     IDs: ID[],
@@ -58,15 +67,10 @@ const Result: FC<ResultProps> = ({ resultData, configuration }) => {
     const textResult: TextResults = new Map<ID, string[][]>();
 
     resultData.forEach((result) => {
-      // transform into an array of number to count them using reduce
       groupByID(selectResult, result.SelectResultIDs, result.SelectResult, true);
       groupByID(rankResult, result.RankResultIDs, result.RankResult);
       groupByID(textResult, result.TextResultIDs, result.TextResult);
     });
-
-    console.log(selectResult);
-    console.log(rankResult);
-    console.log(textResult);
 
     return { rankResult, textResult, selectResult };
   };
@@ -94,9 +98,6 @@ const Result: FC<ResultProps> = ({ resultData, configuration }) => {
   };
 
   const displayResults = (subject: Subject) => {
-    /*if (dataToDownload === null) {
-      setDataToDownload(sortedResultMap);
-    }*/
     return (
       <div key={subject.ID} className="px-8 pt-4">
         <h2 className="text-lg font-bold">{subject.Title}</h2>
@@ -113,12 +114,35 @@ const Result: FC<ResultProps> = ({ resultData, configuration }) => {
     );
   };
 
+  const exportData = () => {
+    const fileName = 'result.json';
+
+    // Create a blob of the data
+    const fileToSave = new Blob([JSON.stringify({ Result: resultData })], {
+      type: 'application/json',
+    });
+
+    saveAs(fileToSave, fileName);
+    //https://stackoverflow.com/questions/19721439/download-json-object-as-a-file-from-browser
+  };
+
   return (
-    <div className="py-4">
-      <h2 className="px-8 text-lg">Total number of votes : {resultData.length}</h2>
-      {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
-      {/*<DownloadResult resultData={dataToDownload}></DownloadResult>*/}
-    </div>
+    <>
+      <div className="shadow-lg rounded-md w-full px-4 my-0 sm:my-4">
+        <h3 className="py-6 uppercase text-2xl text-center text-gray-700">
+          {configuration.MainTitle}
+        </h3>
+        <h2 className="px-8 text-lg">Total number of votes : {resultData.length}</h2>
+        {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
+        {/*TODO the ROUTE might need to be passed as a props */}
+      </div>
+      <div className="flex my-4">
+        <Link to={ROUTE_ELECTION_INDEX}>
+          <BackButton />
+        </Link>
+        <DownloadButton exportData={exportData}>{t('exportResJSON')}</DownloadButton>
+      </div>
+    </>
   );
 };
 

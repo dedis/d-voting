@@ -46,12 +46,10 @@ const ElectionShow: FC = () => {
   return (
     <div>
       {!loading ? (
-        <div className="shadow-lg rounded-md w-full my-0 sm:my-4">
-          <h1 className="px-4 text-2xl text-gray-900 sm:text-3xl sm:truncate">
-            <span className="font-bold">Results: </span>
-            {configuration.MainTitle}
+        <div>
+          <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+            Results
           </h1>
-
           {isResultSet ? (
             <Result resultData={result} configuration={configuration} />
           ) : (
@@ -75,12 +73,11 @@ const ElectionShow: FC = () => {
                     </li>
                   ))*/}
               </div>
+              <Link to={ROUTE_ELECTION_INDEX}>
+                <BackButton />
+              </Link>
             </div>
           )}
-
-          <Link to={ROUTE_ELECTION_INDEX}>
-            <BackButton />
-          </Link>
         </div>
       ) : (
         <p className="loading">{t('loading')}</p>

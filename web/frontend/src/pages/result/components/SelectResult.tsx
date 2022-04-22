@@ -1,3 +1,4 @@
+import React from 'react';
 import { FC } from 'react';
 import { SelectQuestion } from 'types/configuration';
 import ProgressBar from './ProgressBar';
@@ -9,8 +10,10 @@ type SelectResultProps = {
 
 // Count and display the results of a select question.
 const SelectResult: FC<SelectResultProps> = ({ select, selectResult }) => {
+  // Count the number of vote for a candidate and returns which candidates
+  // in the select.Choices has the most votes
   const countBallots = () => {
-    let maxIndices: number[] = [];
+    const maxIndices: number[] = [];
     let max = 0;
     const results = selectResult.reduce((a, b) => {
       return a.map((value, index) => {
@@ -22,7 +25,6 @@ const SelectResult: FC<SelectResultProps> = ({ select, selectResult }) => {
         return current;
       });
     });
-    console.log('results: ' + results);
 
     results.forEach((count, index) => {
       if (count === max) {
@@ -32,27 +34,32 @@ const SelectResult: FC<SelectResultProps> = ({ select, selectResult }) => {
     return { results, maxIndices };
   };
 
-  const displayResults = () => {
-    const { results, maxIndices } = countBallots();
-    //const maxIndex = results.indexOf(Math.max(...results));
+  const { results, maxIndices } = countBallots();
 
+  const displayResults = () => {
     return results.map((res, index) => {
       const percentage = (res / selectResult.length) * 100;
       const roundedPercentage = (Math.round(percentage * 100) / 100).toFixed(2);
+      const isBest = maxIndices.includes(index);
 
       return (
-        <div key={index}>
-          <div>
-            <ProgressBar candidate={select.Choices[index]} isBest={maxIndices.includes(index)}>
-              {roundedPercentage}
-            </ProgressBar>
+        <React.Fragment key={index}>
+          <div className="px-4 break-words max-w-xs w-max">
+            <span className={`${isBest && 'font-bold'}`}>{select.Choices[index]}</span>:
           </div>
-        </div>
+          <ProgressBar isBest={isBest}>{roundedPercentage}</ProgressBar>
+        </React.Fragment>
       );
     });
   };
 
-  return <div>{displayResults()}</div>;
+  return (
+    <div
+      className="grid [grid-template-columns:_min-content_auto] gap-1 items-center"
+      key={select.ID}>
+      {displayResults()}
+    </div>
+  );
 };
 
 export default SelectResult;
