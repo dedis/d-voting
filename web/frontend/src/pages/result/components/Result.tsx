@@ -22,8 +22,8 @@ import DownloadButton from 'components/buttons/DownloadButton';
 import { useTranslation } from 'react-i18next';
 import saveAs from 'file-saver';
 import { ROUTE_ELECTION_INDEX } from 'Routes';
-import BackButton from './BackButton';
 import { Link } from 'react-router-dom';
+import TextButton from '../../../components/buttons/TextButton';
 
 type ResultProps = {
   resultData: Results[];
@@ -44,7 +44,7 @@ const Result: FC<ResultProps> = ({ resultData, configuration }) => {
     results: any,
     toNumber: boolean = false
   ) => {
-    IDs.map((id, index) => {
+    IDs.forEach((id, index) => {
       let updatedRes: number[][] = new Array<number[]>();
       let res: number[] = results[index];
 
@@ -128,7 +128,7 @@ const Result: FC<ResultProps> = ({ resultData, configuration }) => {
 
   return (
     <>
-      <div className="shadow-lg rounded-md w-full px-4 my-0 sm:my-4">
+      <div className="shadow-lg rounded-md w-full px-4 pb-4 my-0 sm:my-4">
         <h3 className="py-6 uppercase text-2xl text-center text-gray-700">
           {configuration.MainTitle}
         </h3>
@@ -138,7 +138,7 @@ const Result: FC<ResultProps> = ({ resultData, configuration }) => {
       </div>
       <div className="flex my-4">
         <Link to={ROUTE_ELECTION_INDEX}>
-          <BackButton />
+          <TextButton>{t('back')}</TextButton>
         </Link>
         <DownloadButton exportData={exportData}>{t('exportResJSON')}</DownloadButton>
       </div>

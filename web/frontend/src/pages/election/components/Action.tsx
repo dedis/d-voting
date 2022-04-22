@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import Modal from 'components/modal/Modal';
-import './Status.css';
 import { ID } from 'types/configuration';
 import useChangeAction from 'components/utils/useChangeAction';
 import { STATUS } from 'types/electionInfo';

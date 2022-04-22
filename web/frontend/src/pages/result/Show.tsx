@@ -7,7 +7,7 @@ import { ROUTE_RESULT_INDEX } from 'Routes';
 import useElection from 'components/utils/useElection';
 import Result from './components/Result';
 import { useConfigurationOnly } from 'components/utils/useConfiguration';
-import BackButton from './components/BackButton';
+import TextButton from '../../components/buttons/TextButton';
 
 type ResultShowProps = {
   location?: any;
@@ -33,14 +33,14 @@ const ResultShow: FC<ResultShowProps> = (props) => {
         <div>
           <p className="loading">{t('loading')} </p>
           <Link to={ROUTE_RESULT_INDEX}>
-            <BackButton />
+            <TextButton>{t('back')}</TextButton>
           </Link>
         </div>
       ) : (
         <div>
           <div className="error-retrieving">{t('errorRetrievingElection')}</div>
           <Link to={ROUTE_RESULT_INDEX}>
-            <BackButton />
+            <TextButton>{t('back')}</TextButton>
           </Link>
         </div>
       )}
