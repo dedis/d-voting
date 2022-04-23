@@ -16,13 +16,13 @@ import {
 } from '../types/frontendRequestBody';
 
 import { ID } from 'types/configuration';
-import { ElectionInfo, STATUS } from 'types/electionInfo';
+import { STATUS } from 'types/electionInfo';
 import { setupMockElection, toLightElectionInfo } from './setupMockElections';
 
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;
 
-const mockElections: Map<ID, ElectionInfo> = setupMockElection();
+const { mockElections, mockResults } = setupMockElection();
 
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, (req, res, ctx) => {
@@ -151,6 +151,7 @@ export const handlers = [
     const { ElectionID } = req.params;
     mockElections.set(ElectionID as string, {
       ...mockElections.get(ElectionID as string),
+      Result: mockResults.get(ElectionID as string),
       Status: STATUS.RESULT_AVAILABLE,
     });
 

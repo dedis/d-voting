@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, useContext } from 'react';
 import TextButton from 'components/buttons/TextButton';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { Configuration, ID } from 'types/configuration';
 import { STATUS } from 'types/electionInfo';
 import Action from '../../election/components/Action';
 import Status from '../../election/components/Status';
+import { AuthContext } from 'index';
 
 type ResultNotAvailableProps = {
   status: STATUS;
@@ -24,6 +25,7 @@ const ResultNotAvailable: FC<ResultNotAvailableProps> = ({
   electionID,
 }) => {
   const { t } = useTranslation();
+  const authCtx = useContext(AuthContext);
 
   return (
     <>
@@ -43,7 +45,7 @@ const ResultNotAvailable: FC<ResultNotAvailableProps> = ({
         </div>
       </div>
       <div className="flex my-4">
-        {status === STATUS.OPEN ? (
+        {status === STATUS.OPEN && authCtx.isLogged ? (
           <Link to={ROUTE_BALLOT_SHOW + '/' + electionID}>
             <TextButton>{t('navBarVote')}</TextButton>
           </Link>

@@ -1,19 +1,22 @@
 import ShortUniqueId from 'short-unique-id';
 import { ID } from 'types/configuration';
-import { ElectionInfo, LightElectionInfo, STATUS } from 'types/electionInfo';
+import { ElectionInfo, LightElectionInfo, Results, STATUS } from 'types/electionInfo';
 import { unmarshalConfig } from 'types/JSONparser';
 import {
   mockElection1,
   mockElection2,
+  mockElectionResult11,
+  mockElectionResult12,
   mockElectionResult21,
   mockElectionResult22,
   mockElectionResult23,
 } from './mockData';
 
-const setupMockElection = (): Map<ID, ElectionInfo> => {
+const setupMockElection = () => {
   const mockElections: Map<ID, ElectionInfo> = new Map();
-  const uid = new ShortUniqueId({ length: 8 });
+  const mockResults: Map<ID, Results[]> = new Map();
 
+  const uid = new ShortUniqueId({ length: 8 });
   const electionID1 = uid();
   const electionID2 = uid();
 
@@ -27,6 +30,8 @@ const setupMockElection = (): Map<ID, ElectionInfo> => {
     ChunksPerBallot: 6,
   });
 
+  mockResults.set(electionID1, [mockElectionResult11, mockElectionResult12]);
+
   mockElections.set(electionID2, {
     ElectionID: electionID2,
     Status: STATUS.RESULT_AVAILABLE,
@@ -37,7 +42,9 @@ const setupMockElection = (): Map<ID, ElectionInfo> => {
     ChunksPerBallot: 6,
   });
 
-  return mockElections;
+  mockResults.set(electionID2, [mockElectionResult21, mockElectionResult22, mockElectionResult23]);
+
+  return { mockElections, mockResults };
 };
 
 const toLightElectionInfo = (
