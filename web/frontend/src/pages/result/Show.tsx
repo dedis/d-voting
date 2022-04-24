@@ -13,7 +13,6 @@ type ResultShowProps = {
   location?: any;
 };
 
-// Is this page really necessary ?
 const ResultShow: FC<ResultShowProps> = (props) => {
   const { t } = useTranslation();
   //props.location.data = id of the election
