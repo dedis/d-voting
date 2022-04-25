@@ -9,6 +9,13 @@ const useChangeStatus = (status: STATUS) => {
 
   const getStatus = () => {
     switch (status) {
+      case STATUS.INITIAL:
+        return (
+          <span className="election-status">
+            <span className="election-status-on"></span>
+            <span className="election-status-text">{t('statusInitial')}</span>
+          </span>
+        );
       case STATUS.OPEN:
         return (
           <span className="election-status">

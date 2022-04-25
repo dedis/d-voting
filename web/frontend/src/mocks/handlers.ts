@@ -141,7 +141,7 @@ export const handlers = [
   }),
 
   rest.put(endpoints.editElection(':ElectionID'), (req, res, ctx) => {
-    const body: EditElectionBody = JSON.parse(req.body.toString());
+    const body = req.body as EditElectionBody;
     const { ElectionID } = req.params;
     var Status = STATUS.INITIAL;
 
