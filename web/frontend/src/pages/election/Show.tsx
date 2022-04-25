@@ -6,11 +6,10 @@ import { useTranslation } from 'react-i18next';
 import useElection from 'components/utils/useElection';
 import './Show.css';
 import useGetResults from 'components/utils/useGetResults';
-import { useConfigurationOnly } from 'components/utils/useConfiguration';
 import { STATUS } from 'types/electionInfo';
 import Status from './components/Status';
 import Action from './components/Action';
-import { ROUTE_BALLOT_SHOW, ROUTE_ELECTION_INDEX, ROUTE_ELECTION_RESULT } from 'Routes';
+import { ROUTE_BALLOT_SHOW, ROUTE_ELECTION_INDEX } from 'Routes';
 import TextButton from 'components/buttons/TextButton';
 import { AuthContext } from 'index';
 
@@ -19,20 +18,9 @@ const ElectionShow: FC = () => {
   const { electionId } = useParams();
   const authCtx = useContext(AuthContext);
 
-  const {
-    loading,
-    electionID,
-    status,
-    setStatus,
-    result,
-    setResult,
-    configObj,
-    isResultSet,
-    setIsResultSet,
-    error,
-  } = useElection(electionId);
+  const { loading, electionID, status, setStatus, setResult, configObj, setIsResultSet } =
+    useElection(electionId);
 
-  const configuration = useConfigurationOnly(configObj);
   const [, setError] = useState(null);
   const [isResultAvailable, setIsResultAvailable] = useState(false);
   const { getResults } = useGetResults();
@@ -50,7 +38,7 @@ const ElectionShow: FC = () => {
         <div>
           <div className="shadow-lg rounded-md w-full px-4 my-0 sm:my-4">
             <h3 className="py-6 uppercase text-2xl text-center text-gray-700">
-              {configuration.MainTitle}
+              {configObj.MainTitle}
             </h3>
             <div className="px-4">
               {t('status')}: <Status status={status} />
@@ -73,12 +61,6 @@ const ElectionShow: FC = () => {
               <TextButton>{t('back')}</TextButton>
             </Link>
           </div>
-
-          {isResultSet ? (
-            <Link to={'/elections/' + electionID + '/result'}>
-              <TextButton>{t('seeResult')}</TextButton>
-            </Link>
-          ) : null}
         </div>
       ) : (
         <p className="loading">{t('loading')}</p>

@@ -1,15 +1,13 @@
 import React from 'react';
 import { FC } from 'react';
-import { TextQuestion } from 'types/configuration';
 import ProgressBar from './ProgressBar';
 
 type TextResultProps = {
-  text: TextQuestion;
   textResult: string[][];
 };
 
 // Count and display the results of a text question.
-const TextResult: FC<TextResultProps> = ({ text, textResult }) => {
+const TextResult: FC<TextResultProps> = ({ textResult }) => {
   // Count the number of votes for each candidate and returns the counts and the
   // candidate(s) with the most votes
   const countBallots = () => {

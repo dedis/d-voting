@@ -76,7 +76,7 @@ const mockElectionResult11: Results = {
   RankResultIDs: [(0x19c7).toString()],
   RankResult: [[0, 1, 2]],
   TextResultIDs: [(0xcd13).toString()],
-  TextResult: [['Jane Doe', 'John Smith']],
+  TextResult: [['Noémien', 'Pierluca']],
 };
 
 const mockElectionResult12: Results = {
@@ -89,7 +89,7 @@ const mockElectionResult12: Results = {
   RankResultIDs: [(0x19c7).toString()],
   RankResult: [[0, 2, 1]],
   TextResultIDs: [(0xcd13).toString()],
-  TextResult: [['Jane Doe']],
+  TextResult: [['Noémien', 'Pierluca']],
 };
 
 const mockElection2: any = {

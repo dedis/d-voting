@@ -14,7 +14,6 @@ import {
   Subject,
   SubjectElement,
   TEXT,
-  TextQuestion,
 } from 'types/configuration';
 import DownloadButton from 'components/buttons/DownloadButton';
 import { useTranslation } from 'react-i18next';
@@ -33,8 +32,6 @@ const ElectionResult: FC = () => {
 
   const { loading, result, configObj } = useElection(electionId);
   const configuration = useConfigurationOnly(configObj);
-
-  const [dataToDownload, setDataToDownload] = useState('');
 
   const [rankResult, setRankResult] = useState<RankResults>(null);
   const [selectResult, setSelectResult] = useState<SelectResults>(null);
@@ -102,9 +99,7 @@ const ElectionResult: FC = () => {
             selectResult={selectResult.get(element.ID)}
           />
         )}
-        {element.Type === TEXT && (
-          <TextResult text={element as TextQuestion} textResult={textResult.get(element.ID)} />
-        )}
+        {element.Type === TEXT && <TextResult textResult={textResult.get(element.ID)} />}
       </div>
     );
   };
