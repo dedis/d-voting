@@ -11,7 +11,8 @@ const useFetchCall = (endpoint: RequestInfo, request: RequestInit) => {
       try {
         const response = await fetch(endpoint, request);
         if (!response.ok) {
-          throw Error(response.statusText);
+          const js = await response.json();
+          throw new Error(JSON.stringify(js));
         } else {
           let dataReceived = await response.json();
           setData(dataReceived);

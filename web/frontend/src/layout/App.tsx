@@ -8,7 +8,6 @@ import {
   ROUTE_BALLOT_SHOW,
   ROUTE_ELECTION_CREATE,
   ROUTE_ELECTION_INDEX,
-  ROUTE_ELECTION_SHOW,
   ROUTE_LOGGED,
   ROUTE_LOGIN,
   ROUTE_RESULT_INDEX,
@@ -66,7 +65,7 @@ const App = () => {
                   </RequireAuth>
                 }
               />
-              <Route path={ROUTE_ELECTION_SHOW + '/:electionId'} element={<ElectionShow />} />
+              <Route path={'/elections/:electionId'} element={<ElectionShow />} />
               <Route path={ROUTE_RESULT_INDEX} element={<ResultIndex />} />
               <Route path={ROUTE_RESULT_SHOW + '/:electionId'} element={<ResultShow />} />
               <Route path={ROUTE_BALLOT_INDEX} element={<BallotIndex />} />

@@ -10,6 +10,9 @@ const ElectionIndex: FC = () => {
   const { t } = useTranslation();
   const request = {
     method: 'GET',
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+    },
   };
 
   const [data, loading, error] = useFetchCall(endpoints.elections, request);
@@ -40,7 +43,9 @@ const ElectionIndex: FC = () => {
       ) : error === null ? (
         <p className="loading">{t('loading')} </p>
       ) : (
-        <div className="error-retrieving">{t('errorRetrievingElection')}</div>
+        <div className="error-retrieving">
+          {t('errorRetrievingElection')} - {error.toString()}
+        </div>
       )}
     </div>
   );
