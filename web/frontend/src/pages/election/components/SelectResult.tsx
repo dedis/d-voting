@@ -10,8 +10,8 @@ type SelectResultProps = {
 
 // Count and display the results of a select question.
 const SelectResult: FC<SelectResultProps> = ({ select, selectResult }) => {
-  // Count the number of vote for a candidate and returns which candidates
-  // in the select.Choices has the most votes
+  // Count the number of vote for a candidate and returns the counts and
+  // which candidate(s) in the select.Choices has the most votes
   const countBallots = () => {
     const maxIndices: number[] = [];
     let max = 0;

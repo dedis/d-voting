@@ -1,19 +1,23 @@
-import React, { FC, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { FC, useContext, useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import useElection from 'components/utils/useElection';
 import './Show.css';
 import useGetResults from 'components/utils/useGetResults';
-import Result from 'pages/result/components/Result';
 import { useConfigurationOnly } from 'components/utils/useConfiguration';
 import { STATUS } from 'types/electionInfo';
-import ResultNotAvailable from '../result/components/ResultNotAvailable';
+import Status from './components/Status';
+import Action from './components/Action';
+import { ROUTE_BALLOT_SHOW, ROUTE_ELECTION_INDEX, ROUTE_ELECTION_RESULT } from 'Routes';
+import TextButton from 'components/buttons/TextButton';
+import { AuthContext } from 'index';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
   const { electionId } = useParams();
+  const authCtx = useContext(AuthContext);
 
   const {
     loading,
@@ -44,20 +48,37 @@ const ElectionShow: FC = () => {
     <div>
       {!loading ? (
         <div>
-          <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-            Results
-          </h1>
+          <div className="shadow-lg rounded-md w-full px-4 my-0 sm:my-4">
+            <h3 className="py-6 uppercase text-2xl text-center text-gray-700">
+              {configuration.MainTitle}
+            </h3>
+            <div className="px-4">
+              {t('status')}: <Status status={status} />
+              <span className="mx-4">{t('action')}:</span>
+              <Action
+                status={status}
+                electionID={electionID}
+                setStatus={setStatus}
+                setResultAvailable={setIsResultAvailable}
+              />
+            </div>
+          </div>
+          <div className="flex my-4">
+            {status === STATUS.OPEN && authCtx.isLogged ? (
+              <Link to={ROUTE_BALLOT_SHOW + '/' + electionID}>
+                <TextButton>{t('navBarVote')}</TextButton>
+              </Link>
+            ) : null}
+            <Link to={ROUTE_ELECTION_INDEX}>
+              <TextButton>{t('back')}</TextButton>
+            </Link>
+          </div>
+
           {isResultSet ? (
-            <Result resultData={result} configuration={configuration} />
-          ) : (
-            <ResultNotAvailable
-              status={status}
-              setStatus={setStatus}
-              setIsResultAvailable={setIsResultAvailable}
-              configuration={configuration}
-              electionID={electionID}
-            />
-          )}
+            <Link to={'/elections/' + electionID + '/result'}>
+              <TextButton>{t('seeResult')}</TextButton>
+            </Link>
+          ) : null}
         </div>
       ) : (
         <p className="loading">{t('loading')}</p>

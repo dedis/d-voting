@@ -12,7 +12,8 @@ type RankResultProps = {
 const RankResult: FC<RankResultProps> = ({ rank, rankResult }) => {
   // Sum the position for each candidate such that a low score is better
   // (e.g if choice 1 ranked first and then fourth then it will have a
-  // score of (1-1 + 4-1) = 3) and returns the candidate with the lowest score
+  // score of (1-1 + 4-1) = 3) and returns the counts and the candidate(s)
+  // with the lowest score
   const countBallots = () => {
     const minIndices: number[] = [];
     // the maximum score achievable is (number of choices - 1) * number of ballots

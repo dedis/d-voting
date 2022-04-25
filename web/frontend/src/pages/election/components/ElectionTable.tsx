@@ -72,7 +72,6 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
   const constructRows = () =>
     elections.map((election) => {
       let { title, id, status, setStatus } = ElectionFields(election);
-      console.log('status:', status);
       let link = (
         <Link className="election-link" to={`/elections/${id}`}>
           {title}

@@ -10,8 +10,8 @@ type TextResultProps = {
 
 // Count and display the results of a text question.
 const TextResult: FC<TextResultProps> = ({ text, textResult }) => {
-  // Count the number of votes for each candidate and returns the
-  // candidate with the most votes
+  // Count the number of votes for each candidate and returns the counts and the
+  // candidate(s) with the most votes
   const countBallots = () => {
     const results: Map<string, number> = new Map();
     let max = 0;
