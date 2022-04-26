@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { RankResults, SelectResults, TextResults } from 'types/electionInfo';
+import { DownloadedResults, RankResults, SelectResults, TextResults } from 'types/electionInfo';
 import SelectResult from './components/SelectResult';
 import RankResult from './components/RankResult';
 import TextResult from './components/TextResult';
@@ -23,9 +23,13 @@ import { Link, useParams } from 'react-router-dom';
 import TextButton from '../../components/buttons/TextButton';
 import useElection from 'components/utils/useElection';
 import { useConfigurationOnly } from 'components/utils/useConfiguration';
+import {
+  countRankResult,
+  countSelectResult,
+  countTextResult,
+} from './components/utils/countResult';
 
-// Functional component that display the result of the votes
-
+// Functional component that displays the result of the votes
 const ElectionResult: FC = () => {
   const { t } = useTranslation();
   const { electionId } = useParams();
@@ -37,10 +41,10 @@ const ElectionResult: FC = () => {
   const [selectResult, setSelectResult] = useState<SelectResults>(null);
   const [textResult, setTextResult] = useState<TextResults>(null);
 
-  // Group the different results by the ID of the question SelectResult
-  // are mapped to 0 or 1s, such that ballots can be count more efficiently
+  // Group the different results by the ID of the question, SelectResult
+  // are mapped to 0 or 1s, such that ballots can be counted more efficiently
   const groupByID = (
-    resultMap: Map<any, any>,
+    resultMap: Map<ID, any>,
     IDs: ID[],
     results: any,
     toNumber: boolean = false
@@ -63,12 +67,12 @@ const ElectionResult: FC = () => {
   };
 
   const groupResultsByID = () => {
-    const selectRes: SelectResults = new Map<ID, number[][]>();
-    const rankRes: RankResults = new Map<ID, number[][]>();
-    const textRes: TextResults = new Map<ID, string[][]>();
+    let selectRes: SelectResults = new Map<ID, number[][]>();
+    let rankRes: RankResults = new Map<ID, number[][]>();
+    let textRes: TextResults = new Map<ID, string[][]>();
 
     result.forEach((res) => {
-      groupByID(selectRes, res.SelectResultIDs, res.SelectResult, true);
+      groupByID(selectRes, res.SelectResultIDs, res.SelectResult);
       groupByID(rankRes, res.RankResultIDs, res.RankResult);
       groupByID(textRes, res.TextResultIDs, res.TextResult);
     });
@@ -121,16 +125,66 @@ const ElectionResult: FC = () => {
     );
   };
 
+  const getResultData = (subject: Subject, dataToDownload: DownloadedResults[]) => {
+    dataToDownload.push({ ID: subject.ID, Title: subject.Title });
+
+    subject.Order.forEach((id: ID) => {
+      const element = subject.Elements.get(id);
+      let res = undefined;
+
+      switch (element.Type) {
+        case RANK:
+          const rank = element as RankQuestion;
+          res = countRankResult(rankResult.get(id), element as RankQuestion).resultsInPercent.map(
+            (percent, index) => {
+              return { Candidate: rank.Choices[index], Percentage: percent };
+            }
+          );
+          dataToDownload.push({ ID: id, Title: element.Title, Results: res });
+          break;
+
+        case SELECT:
+          const select = element as SelectQuestion;
+          res = countSelectResult(selectResult.get(id)).resultsInPercent.map((percent, index) => {
+            return { Candidate: select.Choices[index], Percentage: percent };
+          });
+          dataToDownload.push({ ID: id, Title: element.Title, Results: res });
+          break;
+
+        case SUBJECT:
+          getResultData(element as Subject, dataToDownload);
+          break;
+
+        case TEXT:
+          res = Array.from(countTextResult(textResult.get(id)).resultsInPercent).map((r) => {
+            return { Candidate: r[0], Percentage: r[1] };
+          });
+          dataToDownload.push({ ID: id, Title: element.Title, Results: res });
+          break;
+      }
+    });
+  };
+
   const exportData = () => {
     const fileName = 'result.json';
 
-    // Create a blob of the data
-    const fileToSave = new Blob([JSON.stringify({ Result: result })], {
+    const dataToDownload: DownloadedResults[] = [];
+
+    configuration.Scaffold.forEach((subject: Subject) => {
+      getResultData(subject, dataToDownload);
+    });
+
+    const data = {
+      Title: configuration.MainTitle,
+      NumberOfVotes: result.length,
+      Results: dataToDownload,
+    };
+
+    const fileToSave = new Blob([JSON.stringify(data, null, 2)], {
       type: 'application/json',
     });
 
     saveAs(fileToSave, fileName);
-    //https://stackoverflow.com/questions/19721439/download-json-object-as-a-file-from-browser
   };
 
   return (

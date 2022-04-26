@@ -42,4 +42,18 @@ type RankResults = Map<ID, number[][]>;
 
 type TextResults = Map<ID, string[][]>;
 
-export type { LightElectionInfo, ElectionInfo, RankResults, Results, TextResults, SelectResults };
+interface DownloadedResults {
+  ID: ID;
+  Title: string;
+  Results?: { Candidate: string; Percentage: string }[];
+}
+
+export type {
+  LightElectionInfo,
+  ElectionInfo,
+  RankResults,
+  Results,
+  TextResults,
+  SelectResults,
+  DownloadedResults,
+};
