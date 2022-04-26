@@ -117,11 +117,16 @@ go build ./cli/memcoin
 In three different terminal sessions, from the root folder:
 
 ```sh
-LLVL=info memcoin --config /tmp/node1 start --port 2001
+pk=adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3
 
-LLVL=info memcoin --config /tmp/node2 start --port 2002
+LLVL=info memcoin --config /tmp/node1 start --postinstall \
+  --promaddr :9100 --proxyaddr :9080 --proxykey $pk --port 2001
 
-LLVL=info memcoin --config /tmp/node3 start --port 2003
+LLVL=info memcoin --config /tmp/node2 start --postinstall \
+  --promaddr :9101 --proxyaddr :9082 --proxykey $pk --port 2002
+
+LLVL=info memcoin --config /tmp/node3 start --postinstall \
+  --promaddr :9102 --proxyaddr :9083 --proxykey $pk --port 2003
 ```
 
 Then you should be able to run the setup script:
