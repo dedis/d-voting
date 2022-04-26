@@ -6,6 +6,7 @@ import 'index.css';
 import App from 'layout/App';
 import reportWebVitals from 'reportWebVitals';
 import Flash from 'layout/Flash';
+import ShortUniqueId from 'short-unique-id';
 
 const flashTimeout = 4000;
 
@@ -34,7 +35,7 @@ export interface AuthState {
 export interface FlashState {
   getMessages(): FlashMessage[];
   addMessage(msg: string, level: number): void;
-  hideMessage(index: number): void;
+  hideMessage(index: string): void;
 }
 
 export const enum FlashLevel {
@@ -50,13 +51,13 @@ class FlashMessage {
   // Level defines the type of flash: info, warn, error
   level: FlashLevel;
 
-  // Whether the FlashMessage is visible or not (true by default)
-  visibility: boolean;
+  // A uniq string identifier
+  id: string;
 
   constructor(text: string, level: FlashLevel) {
     this.text = text;
     this.level = level;
-    this.visibility = true;
+    this.id = new ShortUniqueId({ length: 8 })();
   }
 
   getText(): string {
@@ -65,10 +66,6 @@ class FlashMessage {
 
   getLevel(): FlashLevel {
     return this.level;
-  }
-
-  isVisible(): boolean {
-    return this.visibility;
   }
 }
 
@@ -120,22 +117,23 @@ const AppContainer = () => {
 
     // add a flash to the list and set a timeout on it
     addMessage: (message: string, level: number) => {
-      const newFlashes = [...flashes, new FlashMessage(message, level)];
+      const flash = new FlashMessage(message, level);
+      const newFlashes = [...flashes, flash];
       setFlashes(newFlashes);
 
       // remove the flash after some timeout
       setTimeout(() => {
-        const removedFlashes = [...flashesRef.current];
-        removedFlashes.shift();
+        let removedFlashes = [...flashesRef.current];
+        removedFlashes = removedFlashes.filter((f) => f.id !== flash.id);
         setFlashes(removedFlashes);
       }, flashTimeout);
     },
 
     // Set the visibility of flashMessage to false
-    hideMessage: (index: number) => {
-      const hideFlashes = [...flashesRef.current];
-      hideFlashes[index].visibility = false;
-      setFlashes(hideFlashes);
+    hideMessage: (id: string) => {
+      let removedFlashes = [...flashesRef.current];
+      removedFlashes = removedFlashes.filter((f) => f.id !== id);
+      setFlashes(removedFlashes);
     },
   };
 
