@@ -6,6 +6,7 @@ import {
   InformationCircleIcon,
   XIcon,
 } from '@heroicons/react/outline';
+import styles from './Flash.module.css';
 
 const Flash = () => {
   const fctx = useContext(FlashContext);
@@ -22,7 +23,7 @@ const Flash = () => {
           {msg.isVisible() ? (
             <div
               id={i.toString()}
-              className={`flex items-center text-white text-sm font-bold px-4 py-3 
+              className={`flex items-center text-white text-sm font-bold px-4 py-3 relative
               ${msg.getLevel() === FlashLevel.Info && 'bg-indigo-500'} 
               ${msg.getLevel() === FlashLevel.Warning && 'bg-orange-500'} 
               ${msg.getLevel() === FlashLevel.Error && 'bg-red-500'}`}
@@ -52,6 +53,7 @@ const Flash = () => {
                 aria-label="Close">
                 <XIcon />
               </button>
+              <div className={styles.progress} />
             </div>
           ) : null}
         </div>
