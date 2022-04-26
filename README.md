@@ -189,3 +189,13 @@ Note that `make build` will do that for you. You can also cross-compile with:
 ```sh
 GOOS=linux GOARCH=amd64 make build
 ```
+
+## Acknowledgement
+
+Part of this project has received funding from the European Union's Horizon 2020
+research and innovation programme under grant agreement No 825377.
+
+The elements under this acknowledgement concern the content of
+`contracts/evoting/unikernel` and all parts related to the integration of a
+Unikernel execution environment. Those elements are copyrighted under the
+BSD-3-Clause License.
