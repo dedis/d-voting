@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import ConfirmModal from '../modal/ConfirmModal';
@@ -6,6 +6,7 @@ import usePostCall from './usePostCall';
 import * as endpoints from './Endpoints';
 import { ID } from 'types/configuration';
 import { STATUS } from 'types/electionInfo';
+import { AuthContext } from 'index';
 
 const useChangeAction = (
   status: STATUS,
@@ -16,6 +17,7 @@ const useChangeAction = (
   setShowModalError: (willShow: boolean) => void
 ) => {
   const { t } = useTranslation();
+  const { role } = useContext(AuthContext);
   const [isOpening, setIsOpening] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
@@ -26,6 +28,7 @@ const useChangeAction = (
   const [showModalCancel, setShowModalCancel] = useState(false);
   const [userConfirmedClosing, setUserConfirmedClosing] = useState(false);
   const [userConfirmedCanceling, setUserConfirmedCanceling] = useState(false);
+
   const modalClose = (
     <ConfirmModal
       showModal={showModalClose}
@@ -169,69 +172,99 @@ const useChangeAction = (
   };
 
   const getAction = () => {
-    switch (status) {
-      case STATUS.INITIAL:
-        return (
-          <span>
-            <button id="close-button" className="election-btn" onClick={handleOpen}>
-              {t('open')}
-            </button>
-            <button className="election-btn" onClick={handleCancel}>
-              {t('cancel')}
-            </button>
-          </span>
-        );
-      case STATUS.OPEN:
-        return (
-          <span>
-            <button id="close-button" className="election-btn" onClick={handleClose}>
-              {t('close')}
-            </button>
-            <button className="election-btn" onClick={handleCancel}>
-              {t('cancel')}
-            </button>
-          </span>
-        );
-      case STATUS.CLOSED:
-        return (
-          <span>
-            {isShuffling ? (
-              <p className="loading">{t('shuffleOnGoing')}</p>
-            ) : (
-              <span>
-                <button className="election-btn" onClick={handleShuffle}>
-                  {t('shuffle')}
-                </button>
-              </span>
-            )}
-          </span>
-        );
-      case STATUS.SHUFFLED_BALLOTS:
-        return (
-          <span>
-            {isDecrypting ? (
-              <p className="loading">{t('decryptOnGoing')}</p>
-            ) : (
-              <span>
-                <button className="election-btn" onClick={handleDecrypt}>
-                  {t('decrypt')}
-                </button>
-              </span>
-            )}
-          </span>
-        );
-      case STATUS.RESULT_AVAILABLE:
-        return (
-          <span>
-            <Link className="election-link" to={`/elections/${electionID}`}>
-              <button className="election-btn">{t('seeResult')}</button>
-            </Link>
-          </span>
-        );
-      case STATUS.CANCELED:
-        return <span> ---</span>;
-      default:
-        return <span> --- </span>;
+    if (role === 'admin' || role === 'operator') {
+      switch (status) {
+        case STATUS.INITIAL:
+          return (
+            <span>
+              <button id="close-button" className="election-btn" onClick={handleOpen}>
+                {t('open')}
+              </button>
+              <button className="election-btn" onClick={handleCancel}>
+                {t('cancel')}
+              </button>
+            </span>
+          );
+        case STATUS.OPEN:
+          return (
+            <span>
+              <button id="close-button" className="election-btn" onClick={handleClose}>
+                {t('close')}
+              </button>
+              <button className="election-btn" onClick={handleCancel}>
+                {t('cancel')}
+              </button>
+            </span>
+          );
+        case STATUS.CLOSED:
+          return (
+            <span>
+              {isShuffling ? (
+                <p className="loading">{t('shuffleOnGoing')}</p>
+              ) : (
+                <span>
+                  <button className="election-btn" onClick={handleShuffle}>
+                    {t('shuffle')}
+                  </button>
+                </span>
+              )}
+            </span>
+          );
+        case STATUS.SHUFFLED_BALLOTS:
+          return (
+            <span>
+              {isDecrypting ? (
+                <p className="loading">{t('decryptOnGoing')}</p>
+              ) : (
+                <span>
+                  <button className="election-btn" onClick={handleDecrypt}>
+                    {t('decrypt')}
+                  </button>
+                </span>
+              )}
+            </span>
+          );
+        case STATUS.RESULT_AVAILABLE:
+          return (
+            <span>
+              <Link className="election-link" to={`/elections/${electionID}`}>
+                <button className="election-btn">{t('seeResult')}</button>
+              </Link>
+            </span>
+          );
+        case STATUS.CANCELED:
+          return <span> --- </span>;
+        default:
+          return <span> --- </span>;
+      }
+    } else if (role === 'user') {
+      switch (status) {
+        case STATUS.RESULT_AVAILABLE:
+          return (
+            <span>
+              <Link className="election-link" to={`/elections/${electionID}`}>
+                <button className="election-btn">{t('seeResult')}</button>
+              </Link>
+            </span>
+          );
+        default:
+          return <span> --- </span>;
+      }
+    } else {
+      switch (status) {
+        // TODO: when the action Vote is added, an unauthenticated user won't
+        // see the vote action
+        case STATUS.RESULT_AVAILABLE:
+          return (
+            <span>
+              <Link className="election-link" to={`/elections/${electionID}`}>
+                <button className="election-btn">{t('seeResult')}</button>
+              </Link>
+            </span>
+          );
+        default:
+          return <span> --- </span>;
+      }
     }
   };
   return { getAction, modalClose, modalCancel };

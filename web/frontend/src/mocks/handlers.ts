@@ -60,15 +60,20 @@ export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, (req, res, ctx) => {
     const isLogged = sessionStorage.getItem('is-authenticated') === 'true';
     const userId = isLogged ? mockUserID : 0;
+    const userInfos = isLogged
+      ? {
+          lastname: 'Bobster',
+          firstname: 'Alice',
+          role: 'admin',
+          sciper: userId,
+        }
+      : {};
 
     return res(
       ctx.status(200),
       ctx.json({
         islogged: isLogged,
-        lastname: 'Bobster',
-        firstname: 'Alice',
-        role: 'admin',
-        sciper: userId,
+        ...userInfos,
       })
     );
   }),
