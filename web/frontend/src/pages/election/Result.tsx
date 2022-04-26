@@ -18,7 +18,6 @@ import {
 import DownloadButton from 'components/buttons/DownloadButton';
 import { useTranslation } from 'react-i18next';
 import saveAs from 'file-saver';
-import { ROUTE_ELECTION_INDEX } from 'Routes';
 import { Link, useParams } from 'react-router-dom';
 import TextButton from '../../components/buttons/TextButton';
 import useElection from 'components/utils/useElection';
@@ -41,20 +40,21 @@ const ElectionResult: FC = () => {
   const [selectResult, setSelectResult] = useState<SelectResults>(null);
   const [textResult, setTextResult] = useState<TextResults>(null);
 
-  // Group the different results by the ID of the question, SelectResult
-  // are mapped to 0 or 1s, such that ballots can be counted more efficiently
+  // Group the different results by the ID of the question,
   const groupByID = (
-    resultMap: Map<ID, any>,
+    resultMap: Map<ID, number[][] | string[][]>,
     IDs: ID[],
-    results: any,
+    results: boolean[][] | number[][] | string[][],
     toNumber: boolean = false
   ) => {
     IDs.forEach((id, index) => {
-      let updatedRes: number[][] = new Array<number[]>();
-      let res: number[] = results[index];
+      let updatedRes = [];
+      let res = results[index];
 
+      // SelectResult are mapped to 0 or 1s, such that ballots can be
+      // counted more efficiently
       if (toNumber) {
-        res = results[index].map((r: boolean) => (r ? 1 : 0));
+        res = (results[index] as boolean[]).map((r: boolean) => (r ? 1 : 0));
       }
 
       if (resultMap.has(id)) {
@@ -72,7 +72,7 @@ const ElectionResult: FC = () => {
     let textRes: TextResults = new Map<ID, string[][]>();
 
     result.forEach((res) => {
-      groupByID(selectRes, res.SelectResultIDs, res.SelectResult);
+      groupByID(selectRes, res.SelectResultIDs, res.SelectResult, true);
       groupByID(rankRes, res.RankResultIDs, res.RankResult);
       groupByID(textRes, res.TextResultIDs, res.TextResult);
     });
@@ -202,7 +202,7 @@ const ElectionResult: FC = () => {
             {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
           </div>
           <div className="flex my-4">
-            <Link to={ROUTE_ELECTION_INDEX}>
+            <Link to={'/elections/' + electionId}>
               <TextButton>{t('back')}</TextButton>
             </Link>
             <DownloadButton exportData={exportData}>{t('exportResJSON')}</DownloadButton>

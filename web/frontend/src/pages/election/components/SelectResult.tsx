@@ -1,45 +1,19 @@
-import React from 'react';
-import { FC } from 'react';
+import React, { FC } from 'react';
 import { SelectQuestion } from 'types/configuration';
 import ProgressBar from './ProgressBar';
+import { countSelectResult } from './utils/countResult';
 
 type SelectResultProps = {
   select: SelectQuestion;
   selectResult: number[][];
 };
 
-// Count and display the results of a select question.
+// Display the results of a select question.
 const SelectResult: FC<SelectResultProps> = ({ select, selectResult }) => {
-  // Count the number of vote for a candidate and returns the counts and
-  // which candidate(s) in the select.Choices has the most votes
-  const countBallots = () => {
-    const maxIndices: number[] = [];
-    let max = 0;
-    const results = selectResult.reduce((a, b) => {
-      return a.map((value, index) => {
-        const current = value + b[index];
-
-        if (current >= max) {
-          max = current;
-        }
-        return current;
-      });
-    });
-
-    results.forEach((count, index) => {
-      if (count === max) {
-        maxIndices.push(index);
-      }
-    });
-    return { results, maxIndices };
-  };
-
-  const { results, maxIndices } = countBallots();
+  const { resultsInPercent, maxIndices } = countSelectResult(selectResult);
 
   const displayResults = () => {
-    return results.map((res, index) => {
-      const percentage = (res / selectResult.length) * 100;
-      const roundedPercentage = (Math.round(percentage * 100) / 100).toFixed(2);
+    return resultsInPercent.map((percent, index) => {
       const isBest = maxIndices.includes(index);
 
       return (
@@ -47,7 +21,7 @@ const SelectResult: FC<SelectResultProps> = ({ select, selectResult }) => {
           <div className="px-4 break-words max-w-xs w-max">
             <span className={`${isBest && 'font-bold'}`}>{select.Choices[index]}</span>:
           </div>
-          <ProgressBar isBest={isBest}>{roundedPercentage}</ProgressBar>
+          <ProgressBar isBest={isBest}>{percent}</ProgressBar>
         </React.Fragment>
       );
     });

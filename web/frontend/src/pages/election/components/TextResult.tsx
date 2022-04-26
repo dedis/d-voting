@@ -1,58 +1,25 @@
-import React from 'react';
-import { FC } from 'react';
+import React, { FC } from 'react';
 import ProgressBar from './ProgressBar';
+import { countTextResult } from './utils/countResult';
 
 type TextResultProps = {
   textResult: string[][];
 };
 
-// Count and display the results of a text question.
+// Display the results of a text question.
 const TextResult: FC<TextResultProps> = ({ textResult }) => {
-  // Count the number of votes for each candidate and returns the counts and the
-  // candidate(s) with the most votes
-  const countBallots = () => {
-    const results: Map<string, number> = new Map();
-    let max = 0;
-    const maxKey: string[] = [];
-
-    textResult.forEach((result) => {
-      result.forEach((res) => {
-        let count = 1;
-
-        if (results.has(res)) {
-          count += results.get(res);
-        }
-
-        if (count >= max) {
-          max = count;
-        }
-        results.set(res, count);
-      });
-    });
-
-    results.forEach((count, candidate) => {
-      if (count === max) {
-        maxKey.push(candidate);
-      }
-    });
-
-    return { results, maxKey };
-  };
+  const { resultsInPercent, maxKey } = countTextResult(textResult);
 
   const displayResults = () => {
-    const { results, maxKey } = countBallots();
-
-    return Array.from(results.keys()).map((candidate) => {
-      const percentage = (results.get(candidate) / textResult.length) * 100;
-      const roundedPercentage = (Math.round(percentage * 100) / 100).toFixed(2);
-      const isBest = maxKey.includes(candidate);
+    return Array.from(resultsInPercent).map((res) => {
+      const isBest = maxKey.includes(res[0]);
 
       return (
-        <React.Fragment key={candidate}>
+        <React.Fragment key={res[0]}>
           <div className="px-4 break-words max-w-xs w-max">
-            <span className={`${isBest && 'font-bold'}`}>{candidate}</span>:
+            <span className={`${isBest && 'font-bold'}`}>{res[0]}</span>:
           </div>
-          <ProgressBar isBest={isBest}>{roundedPercentage}</ProgressBar>
+          <ProgressBar isBest={isBest}>{res[1]}</ProgressBar>
         </React.Fragment>
       );
     });

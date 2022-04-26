@@ -65,7 +65,14 @@ const App = () => {
               <Route path={'/elections/:electionId'} element={<ElectionShow />} />
               <Route path={'/elections/:electionId/result'} element={<ElectionResult />} />
               <Route path={ROUTE_BALLOT_INDEX} element={<BallotIndex />} />
-              <Route path={ROUTE_BALLOT_SHOW + '/:electionId'} element={<BallotShow />} />
+              <Route
+                path={ROUTE_BALLOT_SHOW + '/:electionId'}
+                element={
+                  <RequireAuth>
+                    <BallotShow />
+                  </RequireAuth>
+                }
+              />
               <Route
                 path={ROUTE_ADMIN}
                 element={

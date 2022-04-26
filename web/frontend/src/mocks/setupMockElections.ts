@@ -17,8 +17,8 @@ const setupMockElection = () => {
   const mockResults: Map<ID, Results[]> = new Map();
 
   const uid = new ShortUniqueId({ length: 8 });
-  const electionID1 = uid();
-  const electionID2 = uid();
+  const electionID1 = '36kSJ0tH';
+  const electionID2 = 'Bnq9gLmf';
 
   mockElections.set(electionID1, {
     ElectionID: electionID1,
