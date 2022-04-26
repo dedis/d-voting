@@ -34,6 +34,7 @@ export interface AuthState {
 export interface FlashState {
   getMessages(): FlashMessage[];
   addMessage(msg: string, level: number): void;
+  hideMessage(index: number): void;
 }
 
 export const enum FlashLevel {
@@ -47,19 +48,27 @@ class FlashMessage {
   text: string;
 
   // Level defines the type of flash: info, warn, error
-  level: number;
+  level: FlashLevel;
 
-  constructor(text: string, level: number) {
+  // Whether the FlashMessage is visible or not (true by default)
+  visibility: boolean;
+
+  constructor(text: string, level: FlashLevel) {
     this.text = text;
     this.level = level;
+    this.visibility = true;
   }
 
   getText(): string {
     return this.text;
   }
 
-  getLevel(): number {
+  getLevel(): FlashLevel {
     return this.level;
+  }
+
+  isVisible(): boolean {
+    return this.visibility;
   }
 }
 
@@ -120,6 +129,13 @@ const AppContainer = () => {
         removedFlashes.shift();
         setFlashes(removedFlashes);
       }, flashTimeout);
+    },
+
+    // Set the visibility of flashMessage to false
+    hideMessage: (index: number) => {
+      const hideFlashes = [...flashesRef.current];
+      hideFlashes[index].visibility = false;
+      setFlashes(hideFlashes);
     },
   };
 
