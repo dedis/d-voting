@@ -101,6 +101,8 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 		ShuffleThreshold: threshold.ByzantineThreshold(roster.Len()),
 	}
 
+	PromElectionStatus.Set(float64(election.Status))
+
 	electionBuf, err := election.Serialize(e.context)
 	if err != nil {
 		return xerrors.Errorf("failed to marshal Election : %v", err)
@@ -168,6 +170,7 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) e
 	}
 
 	election.Status = types.Open
+	PromElectionStatus.Set(float64(election.Status))
 
 	if election.Pubkey != nil {
 		return xerrors.Errorf("pubkey is already set: %s", election.Pubkey)
@@ -236,6 +239,8 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
+
+	PromElectionBallots.Inc()
 
 	return nil
 }
@@ -385,9 +390,12 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 
 	election.ShuffleInstances = append(election.ShuffleInstances, currentShuffleInstance)
 
+	PromElectionShufflingInstances.Add(float64(len(election.ShuffleInstances)))
+
 	// in case we have enough shuffled ballots, we update the status
 	if len(election.ShuffleInstances) >= election.ShuffleThreshold {
 		election.Status = types.ShuffledBallots
+		PromElectionStatus.Set(float64(election.Status))
 	}
 
 	electionBuf, err := election.Serialize(e.context)
@@ -463,6 +471,7 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 	}
 
 	election.Status = types.Closed
+	PromElectionStatus.Set(float64(election.Status))
 
 	electionBuf, err := election.Serialize(e.context)
 	if err != nil {
@@ -569,6 +578,7 @@ func (e evotingCommand) registerPubshares(snap store.Snapshot, step execution.St
 
 	if nbrSubmissions >= election.ShuffleThreshold {
 		election.Status = types.PubSharesSubmitted
+		PromElectionStatus.Set(float64(election.Status))
 	}
 
 	electionBuf, err := election.Serialize(e.context)
@@ -642,6 +652,7 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 	election.DecryptedBallots = decryptedBallots
 
 	election.Status = types.ResultAvailable
+	PromElectionStatus.Set(float64(election.Status))
 
 	electionBuf, err := election.Serialize(e.context)
 	if err != nil {
