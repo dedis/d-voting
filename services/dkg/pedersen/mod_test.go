@@ -3,6 +3,7 @@ package pedersen
 import (
 	"encoding/hex"
 	"encoding/json"
+	"net/url"
 	"strconv"
 	"testing"
 	"time"
@@ -426,7 +427,7 @@ func TestPedersen_Scenario(t *testing.T) {
 	for i := 0; i < n; i++ {
 		addr := minogrpc.ParseAddress("127.0.0.1", 0)
 
-		minogrpc, err := minogrpc.NewMinogrpc(addr, tree.NewRouter(minogrpc.NewAddressFactory()))
+		minogrpc, err := minogrpc.NewMinogrpc(addr, nil, tree.NewRouter(minogrpc.NewAddressFactory()))
 		require.NoError(t, err)
 
 		defer minogrpc.GracefulStop()
@@ -440,7 +441,9 @@ func TestPedersen_Scenario(t *testing.T) {
 		joinable, ok := mino.(minogrpc.Joinable)
 		require.True(t, ok)
 
-		addrStr := mino.GetAddress().String()
+		addrURL, err := url.Parse("//" + mino.GetAddress().String())
+		require.NoError(t, err, addrURL)
+
 		token := joinable.GenerateToken(time.Hour)
 
 		certHash, err := joinable.GetCertificateStore().Hash(joinable.GetCertificate())
@@ -450,7 +453,7 @@ func TestPedersen_Scenario(t *testing.T) {
 			otherJoinable, ok := n.(minogrpc.Joinable)
 			require.True(t, ok)
 
-			err = otherJoinable.Join(addrStr, token, certHash)
+			err = otherJoinable.Join(addrURL, token, certHash)
 			require.NoError(t, err)
 		}
 	}
