@@ -251,13 +251,15 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 
 	dkg := pedersen.NewPedersen(onet, srvc, pool, electionFac, signer)
 
+	unikernelMnt := filepath.Join(path, "mnt")
+
 	newConn := func(network, address string, timeout time.Duration) (net.Conn, error) {
-		return &fake.Conn{Path: path}, nil
+		return &fake.Conn{Path: unikernelMnt}, nil
 	}
 
 	rosterKey := [32]byte{}
 	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:],
-		accessService, dkg, rosterFac, filepath.Join(path, "mnt"), newConn, ""))
+		accessService, dkg, rosterFac, unikernelMnt, newConn, ""))
 
 	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, electionFac, signer)
 

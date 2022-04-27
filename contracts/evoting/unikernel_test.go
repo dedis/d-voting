@@ -25,6 +25,8 @@ import (
 // shared between the Unikernel and the blockchain node, and the Unikernel
 // address respectively. The folder path must be absolute.
 func Test_Unikernel(t *testing.T) {
+	t.Skip()
+
 	sharedFolder := os.Getenv("SHARED_FOLDER")
 	ukAddr := os.Getenv("UK_ADDR")
 
