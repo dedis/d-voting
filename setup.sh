@@ -13,9 +13,9 @@ NC='\033[0m' # No Color
 
 echo "${GREEN}[1/7]${NC} connect nodes"
 ./memcoin --config /tmp/node2 minogrpc join \
-    --address 127.0.0.1:2001 $(./memcoin --config /tmp/node1 minogrpc token)
+    --address //localhost:2001 $(./memcoin --config /tmp/node1 minogrpc token)
 ./memcoin --config /tmp/node3 minogrpc join \
-    --address 127.0.0.1:2001 $(./memcoin --config /tmp/node1 minogrpc token)
+    --address //localhost:2001 $(./memcoin --config /tmp/node1 minogrpc token)
 
 echo "${GREEN}[2/7]${NC} create a chain"
 ./memcoin --config /tmp/node1 ordering setup\

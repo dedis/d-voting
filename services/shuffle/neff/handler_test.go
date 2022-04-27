@@ -22,7 +22,9 @@ import (
 
 func TestHandler_Stream(t *testing.T) {
 	handler := Handler{}
+
 	receiver := fake.NewBadReceiver()
+
 	err := handler.Stream(fake.Sender{}, receiver)
 	require.EqualError(t, err, fake.Err("failed to receive"))
 
@@ -34,6 +36,8 @@ func TestHandler_Stream(t *testing.T) {
 
 	receiver = fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0),
 		types.NewStartShuffle("dummyID", make([]mino.Address, 0))))
+
+	handler.txmngr = fake.Manager{}
 
 	err = handler.Stream(fake.Sender{}, receiver)
 	require.EqualError(t, err, "failed to handle StartShuffle message: failed "+
@@ -69,6 +73,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 		Elections: nil,
 	}
 	handler.service = &badService
+	handler.txmngr = fake.Manager{}
 
 	err := handler.handleStartShuffle(dummyID)
 	require.EqualError(t, err, "failed to get election: failed to get proof: fake error")
