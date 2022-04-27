@@ -113,9 +113,9 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		// ##### CLOSE ELECTION #####
 		err = closeElection(m, electionID, adminID)
 		require.NoError(t, err)
-		require.Equal(t, float64(types.Closed), testutil.ToFloat64(evoting.PromElectionStatus))
-
+		
 		time.Sleep(time.Second * 1)
+		require.Equal(t, float64(types.Closed), testutil.ToFloat64(evoting.PromElectionStatus))
 
 		// ##### SHUFFLE BALLOTS #####
 		t.Logf("initializing shuffle")
@@ -138,11 +138,11 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		require.NoError(t, err)
 		err = actor.ComputePubshares()
 		require.NoError(t, err)
+		
+		time.Sleep(time.Millisecond * 5000 * time.Duration(numNodes))
 		require.Equal(t, float64(types.PubSharesSubmitted), testutil.ToFloat64(evoting.PromElectionStatus))
 
 		// ##### DECRYPT BALLOTS #####
-		time.Sleep(time.Millisecond * 5000 * time.Duration(numNodes))
-
 		t.Logf("decrypting")
 
 		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
@@ -150,9 +150,9 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		require.NoError(t, err)
 		err = decryptBallots(m, actor, election)
 		require.NoError(t, err)
-		require.Equal(t, float64(types.ResultAvailable), testutil.ToFloat64(evoting.PromElectionStatus))
 
 		time.Sleep(time.Second * 1)
+		require.Equal(t, float64(types.ResultAvailable), testutil.ToFloat64(evoting.PromElectionStatus))
 
 		t.Logf("get vote proof")
 		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
