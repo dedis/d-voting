@@ -6,7 +6,7 @@ const ResultButton = ({ status, electionID }) => {
   const { t } = useTranslation();
   return (
     status === STATUS.RESULT_AVAILABLE && (
-      <Link to={`/elections/${electionID}`}>
+      <Link to={`/elections/${electionID}/result`}>
         <button>{t('seeResult')}</button>
       </Link>
     )
