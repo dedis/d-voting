@@ -165,7 +165,7 @@ func getScenarioTest() func(*testing.T) {
 			"text:" + encodeID("ee") + ":amE=\n\n") //encoding of "ja
 
 		b3 := string("select:" + encodeID("bb") + ":0,0,0,1\n" +
-			"text:" + encodeID("ee") + "b3Vp\n\n") //encoding of "oui"
+			"text:" + encodeID("ee") + ":b3Vp\n\n") //encoding of "oui"
 
 		var votesfrontend [3]map[string]interface{}
 
@@ -499,6 +499,7 @@ func getScenarioTest() func(*testing.T) {
 		// _ = json.Unmarshal([]byte(body1), &objmap1)
 		// tmp_ballots := (objmap1["Result"]).([]interface{})
 		// tmp_map := tmp_ballots[0].(map[string]interface{})
+		// unmarshal in a ballot object
 
 		// require.Equal(t, temp_obj, tmp_map)
 		// return
