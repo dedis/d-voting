@@ -39,12 +39,22 @@ export function voteEncode(answers: Answers, maxBallotSize: number, chunksPerBal
     encodedBallot += padding();
   }
 
-  const ballotChunks = Array<string>();
+  let utf8Encode = new TextEncoder();
+  // transform the encodedBallot into an array of bytes
+  const encodedBallotInBytes: Uint8Array = utf8Encode.encode(encodedBallot);
+  const ballotChunksInBytes: Uint8Array[] = [];
   const chunkSize = maxBallotSize / chunksPerBallot;
-  // divide the concatenated string into chunks of 29 bytes
+  // divide into chunks of 29 bytes
   for (let i = 0; i < maxBallotSize; i += chunkSize) {
-    ballotChunks.push(encodedBallot.substring(i, i + chunkSize));
+    ballotChunksInBytes.push(encodedBallotInBytes.slice(i, i + chunkSize));
   }
+
+  let utf8Decode = new TextDecoder();
+  const ballotChunks: string[] = [];
+  // decode each chunk back into a string
+  ballotChunksInBytes.forEach((chunk) => {
+    ballotChunks.push(utf8Decode.decode(chunk));
+  });
 
   return ballotChunks;
 }
