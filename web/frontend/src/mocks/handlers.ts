@@ -13,16 +13,21 @@ import {
   EditElectionBody,
   NewElectionBody,
   NewElectionVoteBody,
+  NewUserRole,
+  RemoveUserRole,
 } from '../types/frontendRequestBody';
 
 import { ID } from 'types/configuration';
 import { STATUS } from 'types/electionInfo';
 import { setupMockElection, toLightElectionInfo } from './setupMockElections';
+import setupMockUserDB from './setupMockUserDB';
 
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;
 
 const { mockElections, mockResults } = setupMockElection();
+
+var mockUserDB = setupMockUserDB();
 
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, (req, res, ctx) => {
@@ -156,5 +161,23 @@ export const handlers = [
     });
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
+  }),
+
+  rest.get(endpoints.ENDPOINT_USER_RIGHTS, (req, res, ctx) => {
+    return res(ctx.status(200), ctx.json(mockUserDB.filter((user) => user.role !== 'voter')));
+  }),
+
+  rest.post(endpoints.ENDPOINT_ADD_ROLE, (req, res, ctx) => {
+    const body = req.body as NewUserRole;
+    mockUserDB.push({ id: uid(), ...body });
+
+    return res(ctx.status(200));
+  }),
+
+  rest.post(endpoints.ENDPOINT_REMOVE_ROLE, (req, res, ctx) => {
+    const body = req.body as RemoveUserRole;
+    mockUserDB = mockUserDB.filter((user) => user.sciper !== body.sciper);
+
+    return res(ctx.status(200));
   }),
 ];

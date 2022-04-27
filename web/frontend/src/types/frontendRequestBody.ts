@@ -10,4 +10,13 @@ interface EditElectionBody {
   Action: 'open' | 'close' | 'combineShares' | 'cancel';
 }
 
-export type { NewElectionVoteBody, NewElectionBody, EditElectionBody };
+interface NewUserRole {
+  sciper: string;
+  role: string;
+}
+
+interface RemoveUserRole {
+  sciper: string;
+}
+
+export type { NewElectionVoteBody, NewElectionBody, EditElectionBody, NewUserRole, RemoveUserRole };

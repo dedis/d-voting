@@ -1,4 +1,3 @@
-import ShortUniqueId from 'short-unique-id';
 import { ID } from 'types/configuration';
 import { ElectionInfo, LightElectionInfo, Results, STATUS } from 'types/electionInfo';
 import { unmarshalConfig } from 'types/JSONparser';
@@ -16,7 +15,6 @@ const setupMockElection = () => {
   const mockElections: Map<ID, ElectionInfo> = new Map();
   const mockResults: Map<ID, Results[]> = new Map();
 
-  const uid = new ShortUniqueId({ length: 8 });
   const electionID1 = '36kSJ0tH';
   const electionID2 = 'Bnq9gLmf';
 

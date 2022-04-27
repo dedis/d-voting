@@ -6,8 +6,8 @@ In this section, it is explained how the epxressJS backend server of the web app
 
 ## Proxying request
 In order to avoid with the CORS policy, all the requests that goes to the DELA nodes and the to the Express server are "reverse proxied" by the react server. To do so the React middleware `http-proxy-middleware` with the following rules :
-- All requests with an url begining with `/evoting/*` are sent to the express server without url rewriting
-- All requests with an url begining with `/api/*` are sent to the express server without url rewriting
+- All requests with an url beginning with `/evoting/*` are sent to the express server without url rewriting
+- All requests with an url beginning with `/api/*` are sent to the express server without url rewriting
 
 These configs are stored in the file `setupProxy.js` inside the react project.
 
@@ -17,7 +17,7 @@ To vote the users are first authenticated with tequila (which is the internal au
 In order to use it some steps are required :
 - First it is needed to recover a token from the tequila service : this token will be used by one user and is linked to a particular redirection user
 - The user opens a webpage to the tequila authentication form and passes the key as a get parameter and enters username and password
-- The tequila controls the credentials and if they are valids the user is redirect to our own servers (actually the request ends up on the express server) with another key as a get parameter
+- The tequila controls the credentials and if they are valid the user is redirected to our own servers (actually the request ends up on the express server) with another key as a get parameter
 - This last key is then used by the express server to finally validate that the user request is valid and receive the user information from the tequila (sciper, lastname, firstname, etc...)
 - If the previous request was valid, the express server logs the user in by setting in its session the sciper, the role, the first name and the name.
 
@@ -62,7 +62,7 @@ If the key is valid, the user is then logged in the website through this request
 |Method|`GET`|
 |Input|`url parameters`|
 
-The only parameter to give is the paramater automatically passed by the tequila which as follows :
+The only parameter to give is the parameter automatically passed by the tequila which as follows :
 
 `https://<host>/api/control_key?key=<tequila_key>`
 
@@ -85,7 +85,7 @@ If the key is valid, the user is then logged in the website through this request
 |Method|`GET`|
 |Input|`url parameters`|
 
-The only parameter to give is the paramater automatically passed by the tequila which as follows :
+The only parameter to give is the parameter automatically passed by the tequila which as follows :
 
 `https://<host>/api/control_key?key=<tequila_key>`
 
@@ -131,7 +131,7 @@ Return:
 
 `200 OK` `application/json`
 
-```json{
+```json {
     "sciper" : <current user's sciper>,
     "lastname" : "<current user's last name>",
     "firstname" : "<current user's first name>",
@@ -140,12 +140,12 @@ Return:
 }
 ```
 
-If islogged is set to false (which means that the user is not currently logged in) all the others return values are respectevily set to 0 or ""
+If islogged is set to false (which means that the user is not currently logged in) all the others return values are respectively set to 0 or ""
 
 
 ## Get the users role
 
-This endpoint is used to get the list of users that have specials roles (i.e. operators and admins) and their correspondig roles.
+This endpoint is used to get the list of users that have specials roles (i.e. operators and admins) and their corresponding roles.
 
 | | |
 |-|-|
@@ -159,11 +159,14 @@ Return:
 `200 OK` `application/json`
 
 ```json
-[{
+[
+    {
     "id" : <DB id>,
     "sciper" : <user's sciper>,
     "role" : "<user's role>"
-}, ...]
+    }, 
+    ...
+]
 ```
 
 ## Add a role to a user
@@ -176,12 +179,12 @@ This allows to add new users to the list of the previous call.
 |Input|`json`|
 
 Input :
-´´´json
+```json
 {
     "sciper" : <user's sciper>,
     "role" : "<operator|admin>"
 }
-´´´
+```
 
 
 Return:
@@ -199,11 +202,11 @@ This allows to remove a user to the list of the previous call.
 |Input|`json`|
 
 Input :
-´´´json
+```json
 {
     "sciper" : <user's sciper>
 }
-´´´
+```
 
 Return:
 
@@ -213,7 +216,7 @@ Return:
 
 # Production settings
 
-The 2 followings things that will be shown here is how to have https on the different webpages and how to make the app run on a on server.
+The two followings things that will be shown here is how to have https on the different webpages and how to make the app run on a on server.
 
 ## HTTPS server
 To have HTTPS on the server, one way to do this can be to install NGINX on the server and use it as a reverse proxy that handle the SSL connections and redirect them to the react or the express (especially if the express and the react are not on the same server). 
@@ -241,7 +244,7 @@ server {
 ```
 
 ## Services files
-The services files are the files that contains the information to run correctly the epxress and react processes on the server.
+The services files are the files that contains the information to run correctly the express and react processes on the server.
 
 Those files must be located in `/etc/systemd/system/` and could be for instance be named `dvote-express.service` and `dvote-react.service`. Those file should look like this :
 
@@ -269,10 +272,10 @@ It now possible to do the following command :
 After that the files have been created/modified or after that the `sudo systemctl enable ...` command is ran, it would be good to be sure that the changes are taken in account to run `sudo systemctl daemon-reload`.
 
 ## Crond
-To restart often the 2 processes it is recommended to restart often the processes.
+It is recommended to restart periodically the two processes.
 This can be done with crond. Once installed here are the following things to enable it :
 
-- Type the commande `crontab -e`, this will open a text editor.
+- Type the command `crontab -e`, this will open a text editor.
 - Add this line at the end of the file : `0 2 * * * sudo systemctl restart <dvoting-express.service>`
 - Add this line at the end of the file : `0 2 * * * sudo systemctl restart <dvoting-reeact.service>`
 - Save the file and exit
