@@ -340,9 +340,14 @@ func getScenarioTest() func(*testing.T) {
 
 		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
 
+		oldTime := time.Now()
+
 		resp, err = http.Post(randomproxy+shuffleBallotsEndpoint, contentType, bytes.NewBuffer(js))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
+		currentTime := time.Now()
+		diff := currentTime.Sub(oldTime)
+		t.Logf("Shuffle takes: %v sec", diff.Seconds())
 
 		body, err = io.ReadAll(resp.Body)
 		require.NoError(t, err, "failed to read the body of the response: %v", err)
@@ -387,9 +392,13 @@ func getScenarioTest() func(*testing.T) {
 
 		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
 
+		oldTime = time.Now()
 		resp, err = http.Post(randomproxy+beginDecryptionEndpoint, contentType, bytes.NewBuffer(js))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
+		currentTime = time.Now()
+		diff = currentTime.Sub(oldTime)
+		t.Logf("Request public shares takes: %v sec", diff.Seconds())
 
 		body, err = io.ReadAll(resp.Body)
 		require.NoError(t, err, "failed to read the body of the response: %v", err)
