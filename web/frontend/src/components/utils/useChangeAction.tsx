@@ -179,15 +179,15 @@ const useChangeAction = (
       case STATUS.INITIAL:
         return (
           <span>
-            <OpenButton status={status} t={t} handleOpen={handleOpen} />
-            <CancelButton status={status} t={t} handleCancel={handleCancel} />
+            <OpenButton status={status} handleOpen={handleOpen} />
+            <CancelButton status={status} handleCancel={handleCancel} />
           </span>
         );
       case STATUS.OPEN:
         return (
           <span>
-            <CloseButton status={status} t={t} handleClose={handleClose} />
-            <CancelButton status={status} t={t} handleCancel={handleCancel} />
+            <CloseButton status={status} handleClose={handleClose} />
+            <CancelButton status={status} handleCancel={handleCancel} />
           </span>
         );
       case STATUS.CLOSED:
@@ -197,7 +197,6 @@ const useChangeAction = (
               status={status}
               isShuffling={isShuffling}
               handleShuffle={handleShuffle}
-              t={t}
             />
           </span>
         );
@@ -208,14 +207,13 @@ const useChangeAction = (
               status={status}
               isDecrypting={isDecrypting}
               handleDecrypt={handleDecrypt}
-              t={t}
             />
           </span>
         );
       case STATUS.RESULT_AVAILABLE:
         return (
           <span>
-            <ResultButton status={status} electionID={electionID} t={t} />
+            <ResultButton status={status} electionID={electionID} />
           </span>
         );
       case STATUS.CANCELED:
