@@ -7,6 +7,7 @@
     "/api/personal_info",
     "/api/user_rights",
     "/api/add_role",
-    "/api/remove_role"
+    "/api/remove_role",
+    "/api/evoting/elections"
   ]
 }
