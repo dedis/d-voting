@@ -43,6 +43,11 @@ func (m controller) SetCommands(builder node.Builder) {
 	sub.SetDescription("evoting scenario test")
 	sub.SetFlags(
 		cli.StringFlag{
+			Name:     "secretkey",
+			Usage:    "the proxy secret key to sign requests, hex encoded",
+			Required: true,
+		},
+		cli.StringFlag{
 			Name:  "proxy-addr1",
 			Usage: "base address of the proxy for node 1",
 			Value: "http://localhost:9080",

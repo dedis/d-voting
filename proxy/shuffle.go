@@ -5,14 +5,17 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/dedis/d-voting/proxy/types"
 	shuffleSrv "github.com/dedis/d-voting/services/shuffle"
 	"github.com/gorilla/mux"
+	"go.dedis.ch/kyber/v3"
 )
 
 // NewShuffle returns a new initialized shuffle
-func NewShuffle(actor shuffleSrv.Actor) Shuffle {
+func NewShuffle(actor shuffleSrv.Actor, pk kyber.Point) Shuffle {
 	return shuffle{
 		actor: actor,
+		pk:    pk,
 	}
 }
 
@@ -21,6 +24,7 @@ func NewShuffle(actor shuffleSrv.Actor) Shuffle {
 // - implements proxy.Shuffle
 type shuffle struct {
 	actor shuffleSrv.Actor
+	pk    kyber.Point
 }
 
 // EditShuffle implements proxy.Shuffle
@@ -40,9 +44,26 @@ func (s shuffle) EditShuffle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.actor.Shuffle(buff)
+	var req types.UpdateShuffle
+
+	signed, err := types.NewSignedRequest(r.Body)
 	if err != nil {
-		http.Error(w, "failed to shuffle: "+err.Error(), http.StatusInternalServerError)
+		InternalError(w, r, newSignedErr(err), nil)
 		return
+	}
+
+	err = signed.GetAndVerify(s.pk, &req)
+	if err != nil {
+		InternalError(w, r, getSignedErr(err), nil)
+		return
+	}
+
+	switch req.Action {
+	case "shuffle":
+		err = s.actor.Shuffle(buff)
+		if err != nil {
+			http.Error(w, "failed to shuffle: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }

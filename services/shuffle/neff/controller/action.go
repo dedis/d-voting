@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/hex"
 	"net/http"
 
 	"github.com/dedis/d-voting/services/shuffle"
@@ -12,10 +13,13 @@ import (
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/core/validation"
 	"go.dedis.ch/dela/mino/proxy"
+	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 
 	eproxy "github.com/dedis/d-voting/proxy"
 )
+
+var suite = suites.MustFind("ed25519")
 
 // InitAction is an action to initialize the shuffle protocol
 //
@@ -78,9 +82,23 @@ func (a *RegisterHandlersAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve dkg.DKG: %v", err)
 	}
 
+	proxykeyHex := ctx.Flags.String("proxykey")
+
+	proxykeyBuf, err := hex.DecodeString(proxykeyHex)
+	if err != nil {
+		return xerrors.Errorf("failed to decode proxykeyHex: %v", err)
+	}
+
+	proxykey := suite.Point()
+
+	err = proxykey.UnmarshalBinary(proxykeyBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to unmarshal proxy key: %v", err)
+	}
+
 	router := mux.NewRouter()
 
-	ep := eproxy.NewShuffle(actor)
+	ep := eproxy.NewShuffle(actor, proxykey)
 
 	router.HandleFunc("/evoting/services/shuffle/{electionID}", ep.EditShuffle).Methods("PUT")
 

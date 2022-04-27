@@ -1,56 +1,84 @@
 # API documentation
 
-Regular workflow:
+_Documentation Last Review: 11.04.2022_
+
+## Regular workflow:
+
+The election workflow involves 3 actors:
+
+- Smart contract
+- DKG service
+- Neff shuffle service
+
+Services are side components that augment the smart contract functionalities.
+Services are accessed via the `evoting/services/<dkg>|<neff>/*` endpoint, and
+the smart contract via `/evoting/elections/*`.
+
+## Signed requests
+
+Requests marked with 🔐 are encapsulated into a signed request as described in
+[msg_sig.md](msg_sig.md).
 
 ```
 Smart contract   DKG       Neff shuffle
 --------------   ---       ------------
-    ▼             │          │
-SC1:Create        │          │
-    │             │          │
-    │             ▼          ▼
-    │          DK1:Init   NS1:Init
+    │             │        NS1:Init (on startup)
+    ▼             │              │
+SC1:Create        │              │
+    │             │              │
+    │             ▼              │
+    │          DK1:Init          │
+    │             │              │
+    │             ▼              │
+    │          DK2:Setup         │
+    │             │              │
+    ▼             │              │
+SC3:Open          │              │
+    │             │              │
+    ▼             │              │
+SC4:Cast          │              │
+    │             │              │
+    ▼             │              │
+SC5:Close         │              │
+    │             │              │
+    │             │              ▼
+    │             │          NS2:Shuffle
     │             │
     │             ▼
-    │          DK2:Setup
+    │         DK3:BeginDecryption
     │
     ▼
-SC3:Open
+SC6:CombineShares
     │
     ▼
-SC4:Cast
-    │
-    ▼
-SC5:Close
-    │
-    ▼
-SC6:Shuffle
-    │
-    ▼
-SC7:BeginDecryption
-    │
-    ▼
-SC8:CombineShares
-    │
-    ▼
-SC9:GetResult
+SC2:ElectionGetInfo
 
 ```
 
-# SC1: Election create
+In case of error:
 
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/create`  |
-| Method | `POST`             |
-| Input  | `application/json` |
+`500 ERROR` `application/json`
 
 ```json
 {
-    "Title": "",
-    "AdminID": "",
-    "Token": "",
-    "Format": ""
+  "Title": "",
+  "Code": "<uint>",
+  "Message": "",
+  "Args": {}
+}
+```
+
+# SC1: Election create 🔐
+
+|        |                      |
+| ------ | -------------------- |
+| URL    | `/evoting/elections` |
+| Method | `POST`               |
+| Input  | `application/json`   |
+
+```json
+{
+  "Configuration": {<Configuration>}
 }
 ```
 
@@ -60,111 +88,17 @@ Return:
 
 ```json
 {
-    "ElectionID": "<hex encoded>"
+  "ElectionID": "<hex encoded>"
 }
 ```
 
 # SC2: Election get info
 
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/info`    |
-| Method | `POST`             |
-| Input  | `application/json` |
-
-```json
-{
-    "ElectionID": "",
-    "Token": ""
-}
-```
-
-# SC3: Election open
-
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/open`    |
-| Method | `POST`             |
-| Input  | `application/json` |
-
-```json
- "<hex encoded electionID>"
-```
-
-Return:
-
-`200 OK` `application/json`
-
-```json
-<empty>
-```
-
-# SC4: Election cast vote
-
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/cast`    |
-| Method | `POST`             |
-| Input  | `application/json` |
-
-```json
-{
-    "ElectionID": "",
-    "UserID": "",
-    "Ballot": {
-        "K": "",
-        "C": ""
-    },
-    "Token": ""
-}
-```
-
-Return:
-
-`200 OK` `application/json`
-
-```json
-{}
-```
-
-# SC5: Election close
-
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/close`   |
-| Method | `POST`             |
-| Input  | `application/json` |
-
-```json
-{
-    "ElectionID": "",
-    "UserID": ""
-}
-```
-
-Return:
-
-`200 OK` `application/json`
-
-```json
-{}
-```
-
-# SC6: Election shuffle
-
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/shuffle` |
-| Method | `POST`             |
-| Input  | `application/json` |
-
-```json
-{
-    "ElectionID": "",
-    "UserID": "",
-    "Token": ""
-}
-```
+|        |                                   |
+| ------ | --------------------------------- |
+| URL    | `/evoting/elections/{ElectionID}` |
+| Method | `GET`                             |
+| Input  |                                   |
 
 Return:
 
@@ -172,186 +106,272 @@ Return:
 
 ```json
 {
-    "Message": ""
+  "ElectionID": "<hex encoded>",
+  "Status": "",
+  "Pubkey": "<hex encoded>",
+  "Result": [
+    {
+      "SelectResultIDs": ["<string>"],
+      "SelectResult": [["<bool>"]],
+      "RankResultIDs": ["<string>"],
+      "RankResult": [["<int8>"]],
+      "TextResultIDs": ["<string>"],
+      "TextResult": [["<string>"]]
+    }
+  ],
+  "ChunksPerBallot": "<int>",
+  "BallotSize": "<int>",
+  "Configuration": {<Configuration>}
 }
 ```
 
-# SC7: Election begin decryption
+# SC3: Election open 🔐
 
-|        |                            |
-| -      | -                          |
-| URL    | `/evoting/beginDecryption` |
-| Method | `POST`                     |
-| Input  | `application/json`         |
+|        |                                   |
+| ------ | --------------------------------- |
+| URL    | `/evoting/elections/{ElectionID}` |
+| Method | `PUT`                             |
+| Input  | `application/json`                |
 
 ```json
 {
-    "ElectionID": "",
-    "UserID": "",
-    "Token": ""
+  "Action": "open"
 }
 ```
 
 Return:
 
-`200 OK` `application/json`
+`200 OK` `text/plain`
+
+```
+
+```
+
+# SC4: Election cast vote 🔐
+
+|        |                                        |
+| ------ | -------------------------------------- |
+| URL    | `/evoting/elections/{ElectionID}/vote` |
+| Method | `POST`                                 |
+| Input  | `application/json`                     |
 
 ```json
 {
-    "Message": ""
-}
-```
-
-# SC8: Election combine shares
-
-|        |                          |
-| -      | -                        |
-| URL    | `/evoting/combineShares` |
-| Method | `POST`                   |
-| Input  | `application/json`       |
-
-```json
-{
-    "ElectionID": "",
-    "UserID": "",
-    "Token": ""
-}
-```
-
-Return:
-
-`200 OK` `application/json`
-
-```json
-{}
-```
-
-# SC9: Election get result
-
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/result`  |
-| Method | `POST`             |
-| Input  | `application/json` |
-
-```json
-{
-    "ElectionID": "",
-    "Token": ""
+  "UserID": "",
+  "Ballot": [
+    {
+      "K": "<bin>",
+      "C": "<bin>"
+    }
+  ]
 }
 ```
 
 Return:
 
-`200 OK` `application/json`
+`200 OK` `text/plain`
 
-```json
-{
-    "Result": [
-        {
-            "Vote": ""
-        }
-    ]
-}
 ```
 
-# SC?: Election cancel
+```
 
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/cancel`  |
-| Method | `POST`             |
-| Input  | `application/json` |
+# SC5: Election close 🔐
+
+|        |                                   |
+| ------ | --------------------------------- |
+| URL    | `/evoting/elections/{ElectionID}` |
+| Method | `PUT`                             |
+| Input  | `application/json`                |
 
 ```json
 {
-    "ElectionID": "",
-    "UserID": "",
-    "Token": ""
+  "Action": "close"
 }
 ```
 
 Return:
 
-`200 OK` `application/json`
+`200 OK` `text/plain`
+
+```
+
+```
+
+# NS2: Election shuffle 🔐
+
+|        |                                          |
+| ------ | ---------------------------------------- |
+| URL    | `/evoting/services/shuffle/{ElectionID}` |
+| Method | `PUT`                                    |
+| Input  | `application/json`                       |
 
 ```json
 {
-    "Message": ""
+  "Action": "shuffle"
 }
+```
+
+Return:
+
+`200 OK` `text/plain`
+
+```
+
+```
+
+# DK3: Election begin decryption 🔐
+
+|        |                                             |
+| ------ | ------------------------------------------- |
+| URL    | `/evoting/services/dkg/actors/{ElectionID}` |
+| Method | `PUT`                                       |
+| Input  | `application/json`                          |
+
+```json
+{
+  "Action": "beginDecryption"
+}
+```
+
+Return:
+
+`200 OK` `text/plain`
+
+```
+
+```
+
+# SC6: Election combine shares 🔐
+
+|        |                                   |
+| ------ | --------------------------------- |
+| URL    | `/evoting/elections/{ElectionID}` |
+| Method | `PUT`                             |
+| Input  | `application/json`                |
+
+```json
+{
+  "Action": "combineShares"
+}
+```
+
+Return:
+
+`200 OK` `text/plain`
+
+```
+
+```
+
+# SC?: Election cancel 🔐
+
+|        |                                   |
+| ------ | --------------------------------- |
+| URL    | `/evoting/elections/{ElectionID}` |
+| Method | `PUT`                             |
+| Input  | `application/json`                |
+
+```json
+{
+  "Action": "cancel"
+}
+```
+
+Return:
+
+`200 OK` `text/plain`
+
+```
+
 ```
 
 # SC?: Election get all infos
 
-|        |                    |
-| -      | -                  |
-| URL    | `/evoting/all`     |
-| Method | `POST`             |
-| Input  | `application/json` |
-
-```json
-{
-    "Token": ""
-}
-```
-
-Return:
-
-`200 OK` `application/json`
-
-```json
-{
-    "AllElectionsInfos": [
-        {
-            "ElectionID": "",
-            "Title": "",
-            "Status": "",
-            "Pubkey": "",
-            "Result": [
-                "Vote": ""
-            ],
-            "Format": ""
-        }
-    ]
-}
-```
-
-# DK1: DKG init
-
-|        |                     |
-| -      | -                   |
-| URL    | `/evoting/dkg/init` |
-| Method | `POST`              |
-| Input  | `application/json`  |
-
-```json
-"<hex encoded electionID>"
-```
-
-Return:
-
-`200 OK` `application/json`
-
-```json
-<empty>
-```
-
-# DK2: DKG setup
-
 |        |                      |
-| -      | -                    |
-| URL    | `/evoting/dkg/setup` |
-| Method | `POST`               |
-| Input  | `application/json`   |
-
-```json
-"<hex encoded electionID>"
-```
+| ------ | -------------------- |
+| URL    | `/evoting/elections` |
+| Method | `GET`                |
+| Input  |                      |
 
 Return:
 
 `200 OK` `application/json`
 
 ```json
-"<hex encoded dkg pub key>"
+{
+  "Elections": [
+    {
+      "ElectionID": "<hex encoded>",
+      "Title": "",
+      "Status": "",
+      "Pubkey": "<hex encoded>"
+    }
+  ]
+}
+```
+
+# DK1: DKG init 🔐
+
+|        |                                |
+| ------ | ------------------------------ |
+| URL    | `/evoting/services/dkg/actors` |
+| Method | `POST`                         |
+| Input  | `application/json`             |
+
+```json
+{
+  "ElectionID": "<hex encoded>"
+}
+```
+
+Return:
+
+`200 OK` `text/plain`
+
+```
+
+```
+
+# DK2: DKG setup 🔐
+
+|        |                                             |
+| ------ | ------------------------------------------- |
+| URL    | `/evoting/services/dkg/actors/{ElectionID}` |
+| Method | `PUT`                                       |
+| Input  | `application/json`                          |
+
+```json
+{
+  "Action": "setup"
+}
+```
+
+Return:
+
+`200 OK` `text/plain`
+
+```
+
+```
+
+# DK3: DKG BeginDecryption 🔐
+
+|        |                                             |
+| ------ | ------------------------------------------- |
+| URL    | `/evoting/services/dkg/actors/{ElectionID}` |
+| Method | `PUT`                                       |
+| Input  | `application/json`                          |
+
+```json
+{
+  "Action": "beginDecryption"
+}
+```
+
+Return:
+
+`200 OK` `text/plain`
+
+```
+
 ```

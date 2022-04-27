@@ -32,13 +32,7 @@ const SimpleTable: FC<SimpleTableProps> = ({
   const [fetchedData, loading, error] = useFetchCall(endpoints.elections, request);
 
   const ballotsToDisplay = (elections: LightElectionInfo[]) => {
-    let dataToDisplay = [];
-    elections.forEach((election) => {
-      if (election.Status === statusToKeep) {
-        dataToDisplay.push(election);
-      }
-    });
-    return dataToDisplay;
+    return elections.filter((election) => election.Status === statusToKeep);
   };
 
   const displayBallotTable = (data: LightElectionInfo[]) => {

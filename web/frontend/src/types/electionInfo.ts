@@ -14,7 +14,7 @@ interface ElectionInfo {
   ElectionID: ID;
   Status: STATUS;
   Pubkey: string;
-  Result: [];
+  Result: any;
   ChunksPerBallot: number;
   BallotSize: number;
   Configuration: any;
@@ -27,7 +27,7 @@ interface LightElectionInfo {
   Pubkey: string;
 }
 
-interface Result {
+interface Results {
   SelectResultIDs: ID[];
   SelectResult: boolean[][];
   RankResultIDs: ID[];
@@ -36,4 +36,24 @@ interface Result {
   TextResult: string[][];
 }
 
-export type { LightElectionInfo, ElectionInfo, Result };
+type SelectResults = Map<ID, number[][]>;
+
+type RankResults = Map<ID, number[][]>;
+
+type TextResults = Map<ID, string[][]>;
+
+interface DownloadedResults {
+  ID: ID;
+  Title: string;
+  Results?: { Candidate: string; Percentage: string }[];
+}
+
+export type {
+  LightElectionInfo,
+  ElectionInfo,
+  RankResults,
+  Results,
+  TextResults,
+  SelectResults,
+  DownloadedResults,
+};

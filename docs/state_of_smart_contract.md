@@ -75,7 +75,7 @@ type Ballot struct {
     // ID to its index in the RankResult slice
     RankResultIDs []ID
     RankResult    [][]int8
-    
+
     // TextResult contains the result of each Text question. The result of a
     // text question is the list of text answer for each choice. The ID slice is
     // used to map a question ID to its index in the TextResult slice
@@ -93,13 +93,13 @@ type Configuration struct {
 // "rank", or "text".
 type Subject struct {
     ID ID
-    
+
     Title string
-    
+
     // Order defines the order of the different question, which all have a uniq
     // identifier. This is purely for display purpose.
     Order []ID
-    
+
     Subjects []Subject
     Selects  []Select
     Ranks    []Rank
@@ -110,7 +110,7 @@ type Subject struct {
 // or multiple choices.
 type Select struct {
     ID ID
-    
+
     Title   string
     MaxN    int
     MinN    int
@@ -120,7 +120,7 @@ type Select struct {
 // Rank describes a "rank" question, which requires the user to rank choices.
 type Rank struct {
     ID ID
-    
+
     Title   string
     MaxN    int
     MinN    int
@@ -130,7 +130,7 @@ type Rank struct {
 // Text describes a "text" question, which allows the user to enter free text.
 type Text struct {
     ID int
-    
+
     Title      string
     MaxN       int
     MinN       int
