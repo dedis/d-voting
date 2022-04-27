@@ -1,0 +1,15 @@
+version: '3'
+
+
+services:
+  {% for i in range(N_NODE) %}
+  node{{i+1}}:
+    build: .
+    container_name: node{{i+1}}
+    command: memcoin --config /tmp/node{{i+1}} start --port {{2001+i}}
+    network_mode: "host"
+    volumes:
+      - type: bind
+        source: ./nodedata
+        target: /tmp
+  {% endfor %}
