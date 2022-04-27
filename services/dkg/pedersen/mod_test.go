@@ -3,14 +3,16 @@ package pedersen
 import (
 	"encoding/hex"
 	"encoding/json"
+	"net/url"
+	"strconv"
+	"testing"
+	"time"
+
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/core/validation"
 	"golang.org/x/xerrors"
-	"strconv"
-	"testing"
-	"time"
 
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
@@ -425,7 +427,7 @@ func TestPedersen_Scenario(t *testing.T) {
 	for i := 0; i < n; i++ {
 		addr := minogrpc.ParseAddress("127.0.0.1", 0)
 
-		minogrpc, err := minogrpc.NewMinogrpc(addr, tree.NewRouter(minogrpc.NewAddressFactory()))
+		minogrpc, err := minogrpc.NewMinogrpc(addr, nil, tree.NewRouter(minogrpc.NewAddressFactory()))
 		require.NoError(t, err)
 
 		defer minogrpc.GracefulStop()
@@ -439,7 +441,9 @@ func TestPedersen_Scenario(t *testing.T) {
 		joinable, ok := mino.(minogrpc.Joinable)
 		require.True(t, ok)
 
-		addrStr := mino.GetAddress().String()
+		addrURL, err := url.Parse("//" + mino.GetAddress().String())
+		require.NoError(t, err, addrURL)
+
 		token := joinable.GenerateToken(time.Hour)
 
 		certHash, err := joinable.GetCertificateStore().Hash(joinable.GetCertificate())
@@ -449,7 +453,7 @@ func TestPedersen_Scenario(t *testing.T) {
 			otherJoinable, ok := n.(minogrpc.Joinable)
 			require.True(t, ok)
 
-			err = otherJoinable.Join(addrStr, token, certHash)
+			err = otherJoinable.Join(addrURL, token, certHash)
 			require.NoError(t, err)
 		}
 	}
@@ -515,6 +519,105 @@ func TestPedersen_Scenario(t *testing.T) {
 	//	err := actor.ComputePubshares()
 	//	require.NoError(t, err.)
 	//}
+}
+
+func TestPedersen_Encrypt_NotStarted(t *testing.T) {
+	a := Actor{
+		handler: &Handler{
+			startRes: &state{
+				distKey: nil,
+			},
+		},
+	}
+
+	_, _, _, err := a.Encrypt(nil)
+	require.EqualError(t, err, "setup() was not called")
+}
+
+func TestPedersen_Encrypt_OK(t *testing.T) {
+	secret := suite.Scalar().Pick(suite.RandomStream())
+	pubkey := suite.Point().Mul(secret, nil)
+
+	a := Actor{
+		handler: &Handler{
+			startRes: &state{
+				distKey:      pubkey,
+				participants: []mino.Address{},
+			},
+		},
+	}
+
+	msg := []byte("this is a long message that is over 29 bytes")
+
+	k, c, reminder, err := a.Encrypt(msg)
+	require.NoError(t, err)
+
+	require.Equal(t, msg[29:], reminder)
+
+	s := suite.Point().Mul(secret, k)
+	m := suite.Point().Sub(c, s)
+
+	message, err := m.Data()
+	require.NoError(t, err)
+	require.Equal(t, msg[:29], message)
+}
+
+func TestPedersen_ComputePubshares_NotStarted(t *testing.T) {
+	a := Actor{
+		handler: &Handler{
+			startRes: &state{
+				distKey: nil,
+			},
+		},
+	}
+
+	err := a.ComputePubshares()
+	require.EqualError(t, err, "setup() was not called")
+}
+
+func TestPedersen_ComputePubshares_StreamFailed(t *testing.T) {
+	a := Actor{
+		handler: &Handler{
+			startRes: &state{
+				distKey:      suite.Point(),
+				participants: []mino.Address{},
+			},
+		},
+		rpc: fake.NewBadRPC(),
+	}
+
+	err := a.ComputePubshares()
+	require.EqualError(t, err, fake.Err("failed to create stream"))
+}
+
+func TestPedersen_ComputePubshares_SenderFailed(t *testing.T) {
+	a := Actor{
+		handler: &Handler{
+			startRes: &state{
+				distKey:      suite.Point(),
+				participants: []mino.Address{fake.NewAddress(1)},
+			},
+		},
+		rpc: fake.NewStreamRPC(nil, fake.NewBadSender()),
+	}
+
+	err := a.ComputePubshares()
+	require.EqualError(t, err, fake.Err("failed to send decrypt request"))
+}
+
+func TestPedersen_ComputePubshares_OK(t *testing.T) {
+	a := Actor{
+		handler: &Handler{
+			startRes: &state{
+				distKey:      suite.Point(),
+				participants: []mino.Address{fake.NewAddress(1)},
+			},
+		},
+		rpc: fake.NewStreamRPC(nil, fake.Sender{}),
+	}
+
+	err := a.ComputePubshares()
+	require.NoError(t, err)
 }
 
 // -----------------------------------------------------------------------------

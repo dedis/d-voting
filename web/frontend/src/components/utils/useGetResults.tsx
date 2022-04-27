@@ -1,13 +1,20 @@
-import { ENDPOINT_EVOTING_RESULT } from './Endpoints';
+import { ID } from 'types/configuration';
+import { Results } from 'types/electionInfo';
+import * as endpoints from './Endpoints';
 
 const useGetResults = () => {
-  async function getResults(electionID, token, setError, setResult, setIsResultSet) {
-    const request = {
-      method: 'POST',
-      body: JSON.stringify({ ElectionID: electionID, Token: token }),
+  async function getResults(
+    electionID: ID,
+    setError: React.Dispatch<any>,
+    setResult: React.Dispatch<React.SetStateAction<Results[]>>,
+    setIsResultSet: React.Dispatch<React.SetStateAction<boolean>>
+  ) {
+    const request: RequestInit = {
+      method: 'GET',
     };
+
     try {
-      const response = await fetch(ENDPOINT_EVOTING_RESULT, request);
+      const response = await fetch(endpoints.election(electionID), request);
 
       if (!response.ok) {
         throw Error(response.statusText);

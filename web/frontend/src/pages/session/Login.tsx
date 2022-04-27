@@ -1,15 +1,17 @@
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 
 import { useLocation } from 'react-router-dom';
-import { ENDPOINT_GET_TEQ_KEY } from 'components/utils/Endpoints';
+import { FlashContext } from 'index';
+import handleLogin from './HandleLogin';
 
 const Login: FC = () => {
   const { t } = useTranslation();
-  const [loginError, setLoginError] = useState(null);
   const [content, setContent] = useState('');
   const location = useLocation();
+
+  const fctx = useContext(FlashContext);
 
   type LocationState = {
     from: Location;
@@ -22,24 +24,10 @@ const Login: FC = () => {
     }
   }, [location]);
 
-  const handleLogin = async () => {
-    fetch(ENDPOINT_GET_TEQ_KEY)
-      .then((resp) => {
-        const jsonData = resp.json();
-        jsonData.then((result) => {
-          window.location = result.url;
-        });
-      })
-      .catch((error) => {
-        setLoginError(error);
-        console.log(error);
-      });
-  };
-
   return (
     <div>
       <div className="flex py-8">{content}</div>
-      <button id="login-button" className="flex" onClick={handleLogin}>
+      <button id="login-button" className="flex" onClick={() => handleLogin(fctx)}>
         {t('login')}
       </button>
     </div>

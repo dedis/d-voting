@@ -9,8 +9,11 @@ import (
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/registry"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 )
+
+var suite = suites.MustFind("Ed25519")
 
 // ID defines the ID of a ballot question
 type ID string
@@ -58,9 +61,8 @@ type Election struct {
 	// the election
 	ElectionID string
 
-	AdminID string
-	Status  Status
-	Pubkey  kyber.Point
+	Status Status
+	Pubkey kyber.Point
 
 	// BallotSize represents the total size in bytes of one ballot. It is used
 	// to pad smaller ballots such that all  ballots cast have the same size

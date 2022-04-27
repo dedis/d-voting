@@ -485,13 +485,11 @@ func (h *Handler) handleDecryptRequest(electionID string) error {
 		}
 
 		if accepted {
-			dela.Logger.Info().Msgf("our pubShares have been accepted on the chain, "+
-				"total # of submissions = %d, "+
-				"index: %v", len(election.PubsharesUnits.Pubshares), h.privShare.I)
+			dela.Logger.Info().Msgf("pubShares accepted on the chain (index: %d)", h.privShare.I)
 			return nil
 		}
 
-		dela.Logger.Info().Msgf("submission of pubShares denied: %v", msg)
+		dela.Logger.Info().Msgf("submission of pubShares denied: %s", msg)
 
 		cancel()
 	}

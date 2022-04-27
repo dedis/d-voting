@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"go.dedis.ch/dela/core/access"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/dkg/pedersen"
+	"github.com/gorilla/mux"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/store/kv"
@@ -22,11 +22,8 @@ import (
 	"go.dedis.ch/dela/mino/proxy"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
-)
 
-const (
-	initEndpoint  = "/evoting/dkg/init"
-	setupEndpoint = "/evoting/dkg/setup"
+	eproxy "github.com/dedis/d-voting/proxy"
 )
 
 var suite = suites.MustFind("Ed25519")
@@ -289,114 +286,47 @@ func (a *RegisterHandlersAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve dkg.DKG: %v", err)
 	}
 
-	proxy.RegisterHandler(initEndpoint, ListenHandler(dkg, ctx))
-	proxy.RegisterHandler(setupEndpoint, SetupHandler(dkg))
+	signer, err := getSigner(ctx.Flags)
+	if err != nil {
+		return xerrors.Errorf("failed to get signer for txmngr : %v", err)
+	}
+
+	client, err := makeClient(ctx.Injector)
+	if err != nil {
+		return xerrors.Errorf("failed to make client: %v", err)
+	}
+
+	mngr := signed.NewManager(signer, &client)
+
+	proxykeyHex := ctx.Flags.String("proxykey")
+
+	proxykeyBuf, err := hex.DecodeString(proxykeyHex)
+	if err != nil {
+		return xerrors.Errorf("failed to decode proxykeyHex: %v", err)
+	}
+
+	proxykey := suite.Point()
+
+	err = proxykey.UnmarshalBinary(proxykeyBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to unmarshal proxy key: %v", err)
+	}
+
+	router := mux.NewRouter()
+
+	ep := eproxy.NewDKG(mngr, dkg, proxykey)
+
+	router.HandleFunc("/evoting/services/dkg/actors", ep.NewDKGActor).Methods("POST")
+	router.HandleFunc("/evoting/services/dkg/actors/{electionID}", ep.EditDKGActor).Methods("PUT")
+
+	router.NotFoundHandler = http.HandlerFunc(eproxy.NotFoundHandler)
+	router.MethodNotAllowedHandler = http.HandlerFunc(eproxy.NotAllowedHandler)
+
+	proxy.RegisterHandler("/evoting/services/dkg/", router.ServeHTTP)
 
 	dela.Logger.Info().Msg("DKG handler registered")
 
 	return nil
-}
-
-// ListenHandler runs Listen to initialize an Actor corresponding to the given
-// electionID
-func ListenHandler(dkg dkg.DKG, ctx node.Context) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Receive the hex-encoded electionID
-		data, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "failed to read body: "+err.Error(),
-				http.StatusInternalServerError)
-			return
-		}
-
-		electionID := string(data)
-
-		// sanity check
-		electionIDBuf, err := hex.DecodeString(electionID)
-		if err != nil {
-			http.Error(w, "failed to decode electionID: "+electionID,
-				http.StatusBadRequest)
-			return
-		}
-
-		//keyPath := ctx.Flags.String("signer")
-
-		signer, err := getSigner(ctx.Flags)
-		if err != nil {
-			http.Error(w,
-				fmt.Sprintf("failed to get signer for txmngr : %v", err),
-				http.StatusBadRequest,
-			)
-			return
-		}
-
-		client, err := makeClient(ctx.Injector)
-		if err != nil {
-			http.Error(w,
-				fmt.Sprintf("failed to make client: %v", err),
-				http.StatusBadRequest,
-			)
-			return
-		}
-
-		_, err = dkg.Listen(electionIDBuf, signed.NewManager(signer, &client))
-		if err != nil {
-			http.Error(w, "failed to start actor: "+err.Error(),
-				http.StatusInternalServerError)
-			return
-		}
-	}
-}
-
-// SetupHandler runs Setup on the Actor corresponding to the given electionID
-// and responds with the distributed public key.
-func SetupHandler(dkg dkg.DKG) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		data, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "failed to read body: "+err.Error(),
-				http.StatusInternalServerError)
-			return
-		}
-
-		// hex-encoded string obtained from the URL
-		electionID := string(data)
-
-		// sanity check
-		electionIDBuf, err := hex.DecodeString(electionID)
-		if err != nil {
-			http.Error(w, "failed to decode electionID: "+electionID,
-				http.StatusBadRequest)
-			return
-		}
-
-		a, exists := dkg.GetActor(electionIDBuf)
-		if !exists {
-			http.Error(w, "actor does not exist",
-				http.StatusInternalServerError)
-			return
-		}
-
-		pubKey, err := a.Setup()
-		if err != nil {
-			http.Error(w, "failed to setup: "+err.Error(),
-				http.StatusInternalServerError)
-			return
-		}
-
-		pubKeyBuf, err := pubKey.MarshalBinary()
-		if err != nil {
-			http.Error(w, "failed to marshal the pubKey: "+err.Error(),
-				http.StatusInternalServerError)
-			return
-		}
-
-		fmt.Println("pubkyeBuf", string(pubKeyBuf))
-
-		w.Write(pubKeyBuf)
-		r.Body.Close()
-	}
 }
 
 func updateDKGStore(inj node.Injector, fn func(kv.WritableTx) error) error {

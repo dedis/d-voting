@@ -53,6 +53,11 @@ func (m controller) SetCommands(builder node.Builder) {
 			Usage:    "run the postinstall functions",
 			Required: false,
 		},
+		cli.StringFlag{
+			Name:     "proxykey",
+			Usage:    "the frontend public key that signs requests, hex encoded",
+			Required: false,
+		},
 	)
 }
 
@@ -115,7 +120,8 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 	err = eregister.Execute(node.Context{
 		Injector: inj,
 		Flags: node.FlagSet{
-			"signer": filepath.Join(ctx.Path("config"), "private.key"),
+			"signer":   filepath.Join(ctx.Path("config"), "private.key"),
+			"proxykey": ctx.String("proxykey"),
 		},
 		Out: os.Stdout,
 	})
@@ -137,6 +143,21 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 
 	if err != nil {
 		return xerrors.Errorf("failed to register dkg handlers: %v", err)
+	}
+
+	//
+	// Register the Shuffle proxy handlers
+	//
+
+	nregister := neff.RegisterHandlersAction{}
+	err = nregister.Execute(node.Context{
+		Injector: inj,
+		Flags:    ctx,
+		Out:      os.Stdout,
+	})
+
+	if err != nil {
+		return xerrors.Errorf("failed to register neff handlers: %v", err)
 	}
 
 	//

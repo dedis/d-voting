@@ -1,32 +1,13 @@
-import { ID } from './configuration';
-
-interface GetElectionBody {
-  ElectionID: ID;
-  Token: string;
+interface NewElectionBody {
+  Configuration: any;
 }
 
-interface CreateElectionBody {
-  Format: any;
-}
-
-interface CreateElectionCastVote {
-  UserID: string;
+interface NewElectionVoteBody {
   Ballot: [];
 }
 
-interface LightElectionInfo {
-  ElectionID: ID;
-  Title: string;
-  Status: number;
-  Pubkey: string;
+interface EditElectionBody {
+  Action: 'open' | 'close' | 'combineShares' | 'cancel';
 }
 
-type GetAllElections = LightElectionInfo[];
-
-export type {
-  CreateElectionCastVote,
-  GetElectionBody,
-  CreateElectionBody,
-  GetAllElections,
-  LightElectionInfo,
-};
+export type { NewElectionVoteBody, NewElectionBody, EditElectionBody };

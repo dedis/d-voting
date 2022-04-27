@@ -6,14 +6,17 @@ export const ENDPOINT_USER_RIGHTS = '/api/user_rights';
 export const ENDPOINT_ADD_ROLE = '/api/add_role';
 export const ENDPOINT_REMOVE_ROLE = '/api/remove_role';
 
-export const ENDPOINT_EVOTING_CREATE = '/api/evoting/create';
-export const ENDPOINT_EVOTING_RESULT = '/api/evoting/result';
-export const ENDPOINT_EVOTING_CLOSE = '/api/evoting/close';
-export const ENDPOINT_EVOTING_CANCEL = '/api/evoting/cancel';
-export const ENDPOINT_EVOTING_DECRYPT = '/api/evoting/decrypt';
-export const ENDPOINT_EVOTING_SHUFFLE = '/api/evoting/shuffle';
-export const ENDPOINT_EVOTING_CAST_BALLOT = '/api/evoting/cast';
+export const newElection = '/api/evoting/elections';
+export const editElection = (ElectionID: string) => `/api/evoting/elections/${ElectionID}`;
+export const newElectionVote = (ElectionID: string) => `/api/evoting/elections/${ElectionID}/vote`;
+export const editShuffle = (ElectionID: string) => `/evoting/services/shuffle/${ElectionID}`;
+// Decrypt
+export const editDKGActors = (ElectionID: string) => `/evoting/services/dkg/actors/${ElectionID}`;
 
 // public information can be directly fetched from dela nodes
-export const ENDPOINT_EVOTING_GET_ALL = '/evoting/all';
-export const ENDPOINT_EVOTING_GET_ELECTION = '/evoting/info';
+export const election = (ElectionID: string) =>
+  `${process.env.REACT_APP_PROXY}/evoting/elections/${ElectionID}`;
+export const elections = `${process.env.REACT_APP_PROXY}/evoting/elections`;
+
+// To remove
+export const ENDPOINT_EVOTING_RESULT = '/api/evoting/result';

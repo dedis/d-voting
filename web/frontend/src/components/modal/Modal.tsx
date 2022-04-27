@@ -44,7 +44,7 @@ const Modal = ({ showModal, setShowModal, textModal, buttonRightText }) => {
                     Notification
                   </Dialog.Title>
                   <div className="mt-2">
-                    <p className="text-sm text-gray-500">{textModal}</p>
+                    <p className="text-sm text-gray-500 break-words">{textModal}</p>
                   </div>
 
                   <div className="mt-4">

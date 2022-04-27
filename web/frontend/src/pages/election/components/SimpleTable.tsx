@@ -4,11 +4,11 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import useFetchCall from '../../../components/utils/useFetchCall';
-import { ENDPOINT_EVOTING_GET_ALL } from '../../../components/utils/Endpoints';
-import { GetAllElections, LightElectionInfo } from 'types/frontendRequestBody';
+import * as endpoints from '../../../components/utils/Endpoints';
+import { LightElectionInfo, STATUS } from 'types/electionInfo';
 
 type SimpleTableProps = {
-  statusToKeep: number;
+  statusToKeep: STATUS;
   pathLink: string;
   textWhenData: string;
   textWhenNoData: string;
@@ -25,21 +25,14 @@ const SimpleTable: FC<SimpleTableProps> = ({
   textWhenNoData,
 }) => {
   const { t } = useTranslation();
-  const token = sessionStorage.getItem('token');
-  const fetchRequest = {
-    method: 'POST',
-    body: JSON.stringify({ Token: token }),
+  const request = {
+    method: 'GET',
   };
-  const [fetchedData, loading, error] = useFetchCall(ENDPOINT_EVOTING_GET_ALL, fetchRequest);
 
-  const ballotsToDisplay = (elections: GetAllElections) => {
-    let dataToDisplay = [];
-    elections.forEach((election) => {
-      if (election.Status === statusToKeep) {
-        dataToDisplay.push(election);
-      }
-    });
-    return dataToDisplay;
+  const [fetchedData, loading, error] = useFetchCall(endpoints.elections, request);
+
+  const ballotsToDisplay = (elections: LightElectionInfo[]) => {
+    return elections.filter((election) => election.Status === statusToKeep);
   };
 
   const displayBallotTable = (data: LightElectionInfo[]) => {
@@ -86,14 +79,14 @@ const SimpleTable: FC<SimpleTableProps> = ({
     }
   };
 
-  const showBallots = (elections) => {
+  const showBallots = (elections: LightElectionInfo[]) => {
     return displayBallotTable(ballotsToDisplay(elections));
   };
 
   return (
     <div>
       {!loading ? (
-        showBallots(fetchedData.AllElectionsInfo)
+        showBallots(fetchedData.Elections)
       ) : error === null ? (
         <p className="loading">{t('loading')}</p>
       ) : (

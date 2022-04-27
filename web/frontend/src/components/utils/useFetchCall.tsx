@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
-/*custom hook to fetch data from an endpoint */
-const useFetchCall = (endpoint, request) => {
+// Custom hook to fetch data from an endpoint
+const useFetchCall = (endpoint: RequestInfo, request: RequestInit) => {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -11,7 +11,8 @@ const useFetchCall = (endpoint, request) => {
       try {
         const response = await fetch(endpoint, request);
         if (!response.ok) {
-          throw Error(response.statusText);
+          const js = await response.json();
+          throw new Error(JSON.stringify(js));
         } else {
           let dataReceived = await response.json();
           setData(dataReceived);

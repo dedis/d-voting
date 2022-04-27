@@ -55,7 +55,6 @@ func TestHandler_Stream(t *testing.T) {
 	election := electionTypes.Election{
 		Configuration:    electionTypes.Configuration{},
 		ElectionID:       electionIDHex,
-		AdminID:          "",
 		Status:           electionTypes.ShuffledBallots,
 		Pubkey:           nil,
 		BallotSize:       0,
@@ -251,7 +250,6 @@ func TestHandler_HandlerDecryptRequest(t *testing.T) {
 	election := electionTypes.Election{
 		Configuration:    electionTypes.Configuration{},
 		ElectionID:       electionIDHex,
-		AdminID:          "",
 		Status:           electionTypes.ShuffledBallots,
 		Pubkey:           nil,
 		BallotSize:       0,

@@ -24,13 +24,15 @@
     "express-session": "^1.17.2",
     "lmdb": "^2.2.1",
     "lodash": "^4.17.21",
-    "request": "^2.88.2"
+    "morgan": "^1.10.0",
+    "xss": "^1.0.11"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.2",
     "@types/express": "^4.17.13",
     "@types/express-session": "^1.17.4",
     "@types/jest": "^27.4.0",
+    "@types/morgan": "^1.9.3",
     "@types/node": "^17.0.18",
     "@types/request": "^2.48.8",
     "eslint": "^8.9.0",

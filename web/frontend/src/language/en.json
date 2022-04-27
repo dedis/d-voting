@@ -7,6 +7,8 @@
     "navBarVote": "Vote",
     "navBarResult": "Results",
     "navBarAbout": "About",
+    "navBarAdmin": "Admin",
+    "navBarCreateElection": "Create election",
     "homeTitle": "Welcome to our e-voting platform!",
     "homeText": "Use the navigation bar above to reach the the page you want.",
     "loginText": "You need to login to access the content of {{from}}",
@@ -44,6 +46,7 @@
     "candidates": "Candidates:",
     "title": "Title",
     "back": "Back",
+    "open": "Open",
     "close": "Close",
     "cancel": "Cancel",
     "action": "Action",
@@ -55,6 +58,7 @@
     "confirmCloseElection": "Are you sure you want to close this election?",
     "confirmCancelElection": "Are you sure you want to cancel this election?",
     "createElection": "Create election",
+    "statusInitial": "Created",
     "statusOpen": "Open",
     "statusClose": "Closed",
     "statusCancel": "Canceled",
@@ -87,6 +91,7 @@
     "voteAllowed": "You are allowed to vote on the election(s) below. Click on an election title to display its ballot and vote.",
     "displayResults": "The results of the election(s) listed below are available. Click on an election title to access them.",
     "noResultsAvailable": "There is currently no available results.",
+    "exportResJSON": "Export as JSON",
     "shuffle": "Shuffle",
     "decrypt": "Decrypt",
     "seeResult": "See results",
@@ -103,6 +108,9 @@
     "about2": "When an administrator creates an election, the election parameters are saved on a blockchain and so are every following transaction (closing/cancelling election, casting a vote,...). ",
     "about3": "A distributed key is generated at election creation time so that when a user votes, his/her vote is encrypted with the key guarantying the anonymity of the vote. However the system doesn't enforce the anonymity of the voter.",
     "about4": "When an election is closed, the nodes shuffle the ballots and check its correctness before decrypting the shuffle and publish the result of the election on a smart contract.",
-    "end": "The end"
+    "end": "The end",
+    "en": "🇺🇸 English",
+    "fr": "🇫🇷 French",
+    "de": "🇩🇪 German"
   }
 }

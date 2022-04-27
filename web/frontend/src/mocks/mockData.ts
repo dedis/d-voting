@@ -1,5 +1,7 @@
+import { Results } from 'types/electionInfo';
+
 const mockElection1: any = {
-  MainTitle: 'Please give your opinion',
+  MainTitle: 'Life on the campus',
   Scaffold: [
     {
       ID: (0xa2ab).toString(),
@@ -62,6 +64,32 @@ const mockElection1: any = {
       ],
     },
   ],
+};
+
+const mockElectionResult11: Results = {
+  SelectResultIDs: [(0x3fb2).toString(), (0x41e2).toString(), (0xa319).toString()],
+  SelectResult: [
+    [true, false, false, false, false],
+    [true, false, false],
+    [false, true, true],
+  ],
+  RankResultIDs: [(0x19c7).toString()],
+  RankResult: [[0, 1, 2]],
+  TextResultIDs: [(0xcd13).toString()],
+  TextResult: [['Noémien', 'Pierluca']],
+};
+
+const mockElectionResult12: Results = {
+  SelectResultIDs: [(0x3fb2).toString(), (0x41e2).toString(), (0xa319).toString()],
+  SelectResult: [
+    [false, false, false, true, false],
+    [false, false, true],
+    [true, false, true],
+  ],
+  RankResultIDs: [(0x19c7).toString()],
+  RankResult: [[0, 2, 1]],
+  TextResultIDs: [(0xcd13).toString()],
+  TextResult: [['Noémien', 'Pierluca']],
 };
 
 const mockElection2: any = {
@@ -135,4 +163,57 @@ const mockElection2: any = {
   ],
 };
 
-export { mockElection1, mockElection2 };
+const mockElectionResult21: Results = {
+  SelectResultIDs: [(0x3fb2).toString(), (0xa319).toString()],
+  SelectResult: [
+    [true, false, false, false, false],
+    [false, true, true, false],
+  ],
+  RankResultIDs: [(0xcafe).toString(), (0xbeef).toString()],
+  RankResult: [
+    [2, 3, 1, 0],
+    [0, 1],
+  ],
+  TextResultIDs: [(0xcd13).toString()],
+  TextResult: [['Jane Doe', 'John Smith']],
+};
+
+const mockElectionResult22: Results = {
+  SelectResultIDs: [(0x3fb2).toString(), (0xa319).toString()],
+  SelectResult: [
+    [false, false, true, false, false],
+    [true, true, true, false],
+  ],
+  RankResultIDs: [(0xcafe).toString(), (0xbeef).toString()],
+  RankResult: [
+    [3, 0, 1, 2],
+    [1, 0],
+  ],
+  TextResultIDs: [(0xcd13).toString()],
+  TextResult: [['Jane Doe', 'John Smith']],
+};
+
+const mockElectionResult23: Results = {
+  SelectResultIDs: [(0x3fb2).toString(), (0xa319).toString()],
+  SelectResult: [
+    [false, false, false, true, false],
+    [false, true, false, true],
+  ],
+  RankResultIDs: [(0xcafe).toString(), (0xbeef).toString()],
+  RankResult: [
+    [3, 0, 1, 2],
+    [1, 0],
+  ],
+  TextResultIDs: [(0xcd13).toString()],
+  TextResult: [['Another Name', 'Jane Doe']],
+};
+
+export {
+  mockElection1,
+  mockElectionResult11,
+  mockElectionResult12,
+  mockElection2,
+  mockElectionResult21,
+  mockElectionResult22,
+  mockElectionResult23,
+};

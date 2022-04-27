@@ -8,6 +8,7 @@ import (
 	"io"
 	"math/rand"
 	"net"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -173,7 +174,7 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 		minogrpc.WithCertificateKey(key, key.Public()),
 	}
 
-	onet, err := minogrpc.NewMinogrpc(addr, router, opts...)
+	onet, err := minogrpc.NewMinogrpc(addr, nil, router, opts...)
 	require.NoError(t, err)
 
 	// ordering + validation + execution
@@ -315,7 +316,9 @@ func (c dVotingNode) Setup(nodes ...dela) {
 	joinable, ok := c.onet.(minogrpc.Joinable)
 	require.True(c.t, ok)
 
-	addrStr := c.onet.GetAddress().String()
+	addrURL, err := url.Parse("//" + c.onet.GetAddress().String())
+	require.NoError(c.t, err, addrURL)
+
 	token := joinable.GenerateToken(time.Hour)
 
 	certHash, err := joinable.GetCertificateStore().Hash(joinable.GetCertificate())
@@ -325,7 +328,7 @@ func (c dVotingNode) Setup(nodes ...dela) {
 		otherJoinable, ok := n.GetMino().(minogrpc.Joinable)
 		require.True(c.t, ok)
 
-		err = otherJoinable.Join(addrStr, token, certHash)
+		err = otherJoinable.Join(addrURL, token, certHash)
 		require.NoError(c.t, err)
 	}
 
