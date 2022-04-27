@@ -1,3 +1,5 @@
+import { Role } from './userRole';
+
 interface NewElectionBody {
   Configuration: any;
 }
@@ -12,7 +14,7 @@ interface EditElectionBody {
 
 interface NewUserRole {
   sciper: string;
-  role: string;
+  role: Role.Admin | Role.Operator;
 }
 
 interface RemoveUserRole {

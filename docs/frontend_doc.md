@@ -131,7 +131,8 @@ Return:
 
 `200 OK` `application/json`
 
-```json {
+```json 
+{
     "sciper" : <current user's sciper>,
     "lastname" : "<current user's last name>",
     "firstname" : "<current user's first name>",
