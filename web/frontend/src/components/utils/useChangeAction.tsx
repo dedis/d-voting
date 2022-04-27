@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
 import ConfirmModal from '../modal/ConfirmModal';
 import usePostCall from './usePostCall';
 import * as endpoints from './Endpoints';
 import { ID } from 'types/configuration';
 import { STATUS } from 'types/electionInfo';
+import ShuffleButton from './ShuffleButton';
+import CloseButton from './CloseButton';
+import CancelButton from './CancelButton';
+import OpenButton from './OpenButton';
+import DecryptButton from './DecryptButton';
+import ResultButton from './ResultButton';
 
 const useChangeAction = (
   status: STATUS,
@@ -26,6 +31,7 @@ const useChangeAction = (
   const [showModalCancel, setShowModalCancel] = useState(false);
   const [userConfirmedClosing, setUserConfirmedClosing] = useState(false);
   const [userConfirmedCanceling, setUserConfirmedCanceling] = useState(false);
+
   const modalClose = (
     <ConfirmModal
       showModal={showModalClose}
@@ -173,63 +179,45 @@ const useChangeAction = (
       case STATUS.INITIAL:
         return (
           <span>
-            <button id="close-button" className="election-btn" onClick={handleOpen}>
-              {t('open')}
-            </button>
-            <button className="election-btn" onClick={handleCancel}>
-              {t('cancel')}
-            </button>
+            <OpenButton status={status} handleOpen={handleOpen} />
+            <CancelButton status={status} handleCancel={handleCancel} />
           </span>
         );
       case STATUS.OPEN:
         return (
           <span>
-            <button id="close-button" className="election-btn" onClick={handleClose}>
-              {t('close')}
-            </button>
-            <button className="election-btn" onClick={handleCancel}>
-              {t('cancel')}
-            </button>
+            <CloseButton status={status} handleClose={handleClose} />
+            <CancelButton status={status} handleCancel={handleCancel} />
           </span>
         );
       case STATUS.CLOSED:
         return (
           <span>
-            {isShuffling ? (
-              <p className="loading">{t('shuffleOnGoing')}</p>
-            ) : (
-              <span>
-                <button className="election-btn" onClick={handleShuffle}>
-                  {t('shuffle')}
-                </button>
-              </span>
-            )}
+            <ShuffleButton
+              status={status}
+              isShuffling={isShuffling}
+              handleShuffle={handleShuffle}
+            />
           </span>
         );
       case STATUS.SHUFFLED_BALLOTS:
         return (
           <span>
-            {isDecrypting ? (
-              <p className="loading">{t('decryptOnGoing')}</p>
-            ) : (
-              <span>
-                <button className="election-btn" onClick={handleDecrypt}>
-                  {t('decrypt')}
-                </button>
-              </span>
-            )}
+            <DecryptButton
+              status={status}
+              isDecrypting={isDecrypting}
+              handleDecrypt={handleDecrypt}
+            />
           </span>
         );
       case STATUS.RESULT_AVAILABLE:
         return (
           <span>
-            <Link className="election-link" to={`/elections/${electionID}/result`}>
-              <button className="election-btn">{t('seeResult')}</button>
-            </Link>
+            <ResultButton status={status} electionID={electionID} />
           </span>
         );
       case STATUS.CANCELED:
-        return <span> ---</span>;
+        return <span> --- </span>;
       default:
         return <span> --- </span>;
     }

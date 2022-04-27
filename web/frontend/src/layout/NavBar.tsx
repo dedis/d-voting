@@ -230,8 +230,12 @@ const NavBar: FC = () => {
     } else {
       fctx.addMessage(t('logOutSuccessful'), FlashLevel.Info);
     }
-
+    // TODO: should be a setAuth function passed to AuthContext rather than
+    // changing the state directly
     authCtx.isLogged = false;
+    authCtx.firstname = undefined;
+    authCtx.role = undefined;
+    authCtx.lastname = undefined;
     navigate('/');
   };
 
