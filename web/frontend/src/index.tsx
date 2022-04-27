@@ -5,7 +5,6 @@ import { ENDPOINT_PERSONAL_INFO } from 'components/utils/Endpoints';
 import 'index.css';
 import App from 'layout/App';
 import reportWebVitals from 'reportWebVitals';
-import Flash from 'layout/Flash';
 import ShortUniqueId from 'short-unique-id';
 
 const flashTimeout = 4000;
@@ -172,7 +171,6 @@ const AppContainer = () => {
 
   return (
     <FlashContext.Provider value={flashState}>
-      <Flash />
       <AuthContext.Provider value={auth}>{content}</AuthContext.Provider>
     </FlashContext.Provider>
   );

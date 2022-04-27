@@ -30,6 +30,7 @@ import Footer from './Footer';
 import './App.css';
 import { AuthContext } from '..';
 import Logged from 'pages/session/Logged';
+import Flash from './Flash';
 
 const NotFound = () => <div>404 not found</div>;
 
@@ -85,6 +86,9 @@ const App = () => {
               <Route path="/" element={<Home />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+          </div>
+          <div>
+            <Flash />
           </div>
           <div>
             <Footer />

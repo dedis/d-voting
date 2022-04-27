@@ -12,7 +12,7 @@ const Flash = () => {
   const fctx = useContext(FlashContext);
 
   return (
-    <div className="w-full fixed z-50">
+    <div className="w-full z-50">
       {fctx.getMessages().map((msg) => (
         <div
           key={msg.id}

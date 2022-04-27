@@ -16,7 +16,10 @@ const Home: FC = () => {
         <button
           className="flex inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
           onClick={() => {
-            fctx.addMessage('Hello world!', FlashLevel.Info);
+            fctx.addMessage(
+              'Hello world! Hello world! Hello world! Hello world! Hello world! Hello world! Hello world! Hello world! Hello world! Hello world! Hello world! Hello world! Hello world!',
+              FlashLevel.Info
+            );
           }}>
           Add flash info
         </button>
