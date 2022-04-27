@@ -21,12 +21,21 @@ import (
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/serde"
+	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
 )
 
+func newSignedErr(err error) error {
+	return xerrors.Errorf("failed to created signed request: %v", err)
+}
+
+func getSignedErr(err error) error {
+	return xerrors.Errorf("failed to get and verify signed request: %v", err)
+}
+
 // NewElection returns a new initialized election proxy
 func NewElection(srv ordering.Service, mngr txn.Manager, p pool.Pool,
-	ctx serde.Context, fac serde.Factory) Election {
+	ctx serde.Context, fac serde.Factory, pk kyber.Point) Election {
 
 	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
 
@@ -37,6 +46,7 @@ func NewElection(srv ordering.Service, mngr txn.Manager, p pool.Pool,
 		electionFac: fac,
 		mngr:        mngr,
 		pool:        p,
+		pk:          pk,
 	}
 }
 
@@ -52,16 +62,22 @@ type election struct {
 	electionFac serde.Factory
 	mngr        txn.Manager
 	pool        pool.Pool
+	pk          kyber.Point
 }
 
 // NewElection implements proxy.Proxy
 func (h *election) NewElection(w http.ResponseWriter, r *http.Request) {
 	var req ptypes.CreateElectionRequest
 
-	err := json.NewDecoder(r.Body).Decode(&req)
+	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
-		http.Error(w, "failed to decode CreateElectionRequest: "+err.Error(),
-			http.StatusBadRequest)
+		InternalError(w, r, newSignedErr(err), nil)
+		return
+	}
+
+	err = signed.GetAndVerify(h.pk, &req)
+	if err != nil {
+		InternalError(w, r, getSignedErr(err), nil)
 		return
 	}
 
@@ -113,10 +129,15 @@ func (h *election) NewElectionVote(w http.ResponseWriter, r *http.Request) {
 
 	var req ptypes.CastVoteRequest
 
-	err := json.NewDecoder(r.Body).Decode(&req)
+	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
-		http.Error(w, "failed to decode CastVoteRequest: "+err.Error(),
-			http.StatusBadRequest)
+		InternalError(w, r, newSignedErr(err), nil)
+		return
+	}
+
+	err = signed.GetAndVerify(h.pk, &req)
+	if err != nil {
+		InternalError(w, r, getSignedErr(err), nil)
 		return
 	}
 
@@ -200,10 +221,15 @@ func (h *election) EditElection(w http.ResponseWriter, r *http.Request) {
 
 	var req ptypes.UpdateElectionRequest
 
-	err = json.NewDecoder(r.Body).Decode(&req)
+	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
-		http.Error(w, "failed to decode UpdateElectionRequest: "+err.Error(),
-			http.StatusBadRequest)
+		InternalError(w, r, newSignedErr(err), nil)
+		return
+	}
+
+	err = signed.GetAndVerify(h.pk, &req)
+	if err != nil {
+		InternalError(w, r, getSignedErr(err), nil)
 		return
 	}
 
@@ -315,8 +341,12 @@ func (h *election) cancelElection(electionIDHex string, w http.ResponseWriter, r
 	}
 }
 
-// Election implements proxy.Proxy
+// Election implements proxy.Proxy. The request should not be signed because it
+// is fetching public data.
 func (h *election) Election(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
+
 	vars := mux.Vars(r)
 
 	if vars == nil || vars["electionID"] == "" {
@@ -361,12 +391,15 @@ func (h *election) Election(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Elections implements proxy.Proxy
+// Elections implements proxy.Proxy. The request should not be signed because it
+// is fecthing public data.
 func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
 
 	elecMD, err := h.getElectionsMetadata()
 	if err != nil {
-		http.Error(w, "failed to get election metadata", http.StatusNotFound)
+		InternalError(w, r, xerrors.Errorf("failed to get election metadata: %v", err), nil)
 		return
 	}
 
@@ -375,18 +408,23 @@ func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 	for i, id := range elecMD.ElectionsIDs {
 		election, err := getElection(h.context, h.electionFac, id, h.orderingSvc)
 		if err != nil {
-			http.Error(w, xerrors.Errorf("failed to get election: %v", err).Error(),
-				http.StatusInternalServerError)
+			InternalError(w, r, xerrors.Errorf("failed to get election: %v", err), nil)
+			return
 		}
 
-		pubkeyBuf, err := election.Pubkey.MarshalBinary()
-		if err != nil {
-			http.Error(w, "failed to marshal pubkey: "+err.Error(),
-				http.StatusInternalServerError)
+		var pubkeyBuf []byte
+
+		if election.Pubkey != nil {
+			pubkeyBuf, err = election.Pubkey.MarshalBinary()
+			if err != nil {
+				InternalError(w, r, xerrors.Errorf("failed to marshal pubkey: %v", err), nil)
+				return
+			}
 		}
 
 		info := ptypes.LightElection{
 			ElectionID: string(election.ElectionID),
+			Title:      election.Configuration.MainTitle,
 			Status:     uint16(election.Status),
 			Pubkey:     hex.EncodeToString(pubkeyBuf),
 		}
@@ -397,10 +435,10 @@ func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 	response := ptypes.GetElectionsResponse{Elections: allElectionsInfo}
 
 	w.Header().Set("Content-Type", "application/json")
+
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
-			http.StatusInternalServerError)
+		InternalError(w, r, xerrors.Errorf("failed to write response: %v", err), nil)
 		return
 	}
 }
@@ -428,7 +466,9 @@ func (h *election) getElectionsMetadata() (types.ElectionsMetadata, error) {
 
 	proof, err := h.orderingSvc.GetProof([]byte(evoting.ElectionsMetadataKey))
 	if err != nil {
-		return md, xerrors.Errorf("failed to read on the blockchain: %v", err)
+		// if the proof doesn't exist we assume there is no metadata, thus no
+		// elections has been created so far.
+		return md, nil
 	}
 
 	err = json.Unmarshal(proof.GetValue(), &md)

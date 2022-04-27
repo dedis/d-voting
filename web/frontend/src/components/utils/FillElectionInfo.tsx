@@ -1,22 +1,16 @@
 import { useEffect, useState } from 'react';
 import { ID } from 'types/configuration';
-import { ElectionInfo, LightElectionInfo, Result, STATUS } from 'types/electionInfo';
+import { ElectionInfo, LightElectionInfo, Results, STATUS } from 'types/electionInfo';
 
 const useFillElectionInfo = (electionData: ElectionInfo) => {
-  const [id, setId]: [ID, React.Dispatch<React.SetStateAction<ID>>] = useState(null);
-  const [status, setStatus]: [STATUS, React.Dispatch<React.SetStateAction<STATUS>>] =
-    useState(null);
-  const [pubKey, setPubKey]: [string, React.Dispatch<React.SetStateAction<string>>] = useState('');
-  const [result, setResult]: [Result[], React.Dispatch<React.SetStateAction<Result[]>>] =
-    useState(null);
-  const [chunksPerBallot, setChunksPerBallot]: [
-    number,
-    React.Dispatch<React.SetStateAction<number>>
-  ] = useState(0);
-  const [ballotSize, setBallotSize]: [number, React.Dispatch<React.SetStateAction<number>>] =
-    useState(0);
+  const [id, setId] = useState<ID>('');
+  const [status, setStatus] = useState<STATUS>(null);
+  const [pubKey, setPubKey] = useState<string>('');
+  const [result, setResult] = useState<Results[]>(null);
+  const [chunksPerBallot, setChunksPerBallot] = useState<number>(0);
+  const [ballotSize, setBallotSize] = useState<number>(0);
   const [configObj, setConfigObj] = useState(null);
-  const [isResultSet, setIsResultSet] = useState(false);
+  const [isResultSet, setIsResultSet] = useState<boolean>(false);
 
   useEffect(() => {
     if (electionData !== null) {
@@ -49,10 +43,10 @@ const useFillElectionInfo = (electionData: ElectionInfo) => {
 };
 
 const useFillLightElectionInfo = (electionData: LightElectionInfo) => {
-  const [id, setId] = useState(null);
-  const [title, setTitle] = useState('');
-  const [status, setStatus] = useState(null);
-  const [pubKey, setPubKey] = useState('');
+  const [id, setId] = useState<ID>('');
+  const [title, setTitle] = useState<string>('');
+  const [status, setStatus] = useState<STATUS>(null);
+  const [pubKey, setPubKey] = useState<string>('');
 
   useEffect(() => {
     if (electionData !== null) {

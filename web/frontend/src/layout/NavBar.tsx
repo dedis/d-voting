@@ -80,7 +80,9 @@ const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
                 {authCtx.isLogged && (authCtx.role === 'admin' || authCtx.role === 'operator') && (
                   <NavLink to={ROUTE_ADMIN}>
                     <Popover.Button className=" w-full -m-3 p-3 flex items-center rounded-md hover:bg-gray-50">
-                      <span className="ml-3 text-base font-medium text-gray-900">{t('Admin')}</span>
+                      <span className="ml-3 text-base font-medium text-gray-900">
+                        {t('navBarAdmin')}
+                      </span>
                     </Popover.Button>
                   </NavLink>
                 )}

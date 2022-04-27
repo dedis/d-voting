@@ -87,3 +87,35 @@ func NotAllowedHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusMethodNotAllowed)
 	fmt.Fprintln(w, string(buf))
 }
+
+// InternalError set an internal server error
+func InternalError(w http.ResponseWriter, r *http.Request, err error, args map[string]interface{}) {
+	if args == nil {
+		args = make(map[string]interface{})
+	}
+
+	args["error"] = err.Error()
+	args["url"] = r.URL.String()
+	args["method"] = r.Method
+
+	errMsg := types.HTTPError{
+		Title:   "Internal server error",
+		Code:    http.StatusInternalServerError,
+		Message: "A problem occurred on the proxy",
+		Args:    args,
+	}
+
+	buf, _ := json.MarshalIndent(&errMsg, "", "  ")
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(http.StatusInternalServerError)
+	fmt.Fprintln(w, string(buf))
+}
+
+// AllowCORS defines a basic handler that adds wide Access Control Allow origin
+// headers.
+func AllowCORS(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
+}
