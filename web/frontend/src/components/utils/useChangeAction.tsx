@@ -223,7 +223,7 @@ const useChangeAction = (
       case STATUS.RESULT_AVAILABLE:
         return (
           <span>
-            <Link className="election-link" to={`/elections/${electionID}`}>
+            <Link className="election-link" to={`/elections/${electionID}/result`}>
               <button className="election-btn">{t('seeResult')}</button>
             </Link>
           </span>

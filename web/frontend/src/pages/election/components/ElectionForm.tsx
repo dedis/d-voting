@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { newElection } from 'components/utils/Endpoints';
 
-import { CloudDownloadIcon, CloudUploadIcon, TrashIcon } from '@heroicons/react/solid';
+import { CloudUploadIcon, TrashIcon } from '@heroicons/react/solid';
 
 import SubjectComponent from './SubjectComponent';
 import AddButton from './AddButton';
@@ -13,6 +13,7 @@ import configurationSchema from '../../../schema/configurationValidation';
 import { Configuration, ID, Subject } from '../../../types/configuration';
 import { emptyConfiguration, newSubject } from '../../../types/getObjectType';
 import { marshalConfig } from '../../../types/JSONparser';
+import DownloadButton from 'components/buttons/DownloadButton';
 
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
@@ -156,13 +157,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
           <TrashIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
           {t('clearElec')}
         </button>
-        <button
-          type="button"
-          className="flex inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm shadow-md font-medium"
-          onClick={exportData}>
-          <CloudDownloadIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-          {t('exportElecJSON')}
-        </button>
+        <DownloadButton exportData={exportData}>{t('exportElecJSON')}</DownloadButton>
       </div>
     </div>
   );

@@ -10,8 +10,6 @@ import {
   ROUTE_ELECTION_INDEX,
   ROUTE_LOGGED,
   ROUTE_LOGIN,
-  ROUTE_RESULT_INDEX,
-  ROUTE_RESULT_SHOW,
 } from '../Routes';
 import Login from '../pages/session/Login';
 import Home from '../pages/Home';
@@ -19,9 +17,8 @@ import About from '../pages/About';
 import Admin from '../pages/Admin';
 import ElectionIndex from '../pages/election/Index';
 import ElectionCreate from '../pages/election/New';
+import ElectionResult from '../pages/election/Result';
 import ElectionShow from '../pages/election/Show';
-import ResultIndex from '../pages/result/Index';
-import ResultShow from '../pages/result/Show';
 import BallotIndex from '../pages/ballot/Index';
 import BallotShow from '../pages/ballot/Show';
 import NavBar from './NavBar';
@@ -66,10 +63,16 @@ const App = () => {
                 }
               />
               <Route path={'/elections/:electionId'} element={<ElectionShow />} />
-              <Route path={ROUTE_RESULT_INDEX} element={<ResultIndex />} />
-              <Route path={ROUTE_RESULT_SHOW + '/:electionId'} element={<ResultShow />} />
+              <Route path={'/elections/:electionId/result'} element={<ElectionResult />} />
               <Route path={ROUTE_BALLOT_INDEX} element={<BallotIndex />} />
-              <Route path={ROUTE_BALLOT_SHOW + '/:electionId'} element={<BallotShow />} />
+              <Route
+                path={ROUTE_BALLOT_SHOW + '/:electionId'}
+                element={
+                  <RequireAuth>
+                    <BallotShow />
+                  </RequireAuth>
+                }
+              />
               <Route
                 path={ROUTE_ADMIN}
                 element={
