@@ -589,8 +589,10 @@ func postRequest(addr string, body []byte) (*http.Response, error) {
 	resp, err := http.Post(addr, "application/json", bytes.NewBuffer([]byte(body)))
 	for resp.StatusCode != http.StatusOK {
 		resp, err = http.Post(addr, "application/json", bytes.NewBuffer([]byte(body)))
-		//fmt.Printf("error" +err)
+
 		fmt.Println("retry: " + addr)
+		fmt.Println(err)
+
 		time.Sleep(4 * time.Second)
 	}
 
