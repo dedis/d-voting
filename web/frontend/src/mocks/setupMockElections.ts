@@ -1,5 +1,5 @@
 import { ID } from 'types/configuration';
-import { ElectionInfo, LightElectionInfo, Results, STATUS } from 'types/electionInfo';
+import { ElectionInfo, LightElectionInfo, Results, STATUS } from 'types/election';
 import { unmarshalConfig } from 'types/JSONparser';
 import {
   mockElection1,

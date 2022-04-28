@@ -6,13 +6,13 @@ import { useTranslation } from 'react-i18next';
 import useElection from 'components/utils/useElection';
 import './Show.css';
 import useGetResults from 'components/utils/useGetResults';
-import { STATUS } from 'types/electionInfo';
+import { STATUS } from 'types/election';
 import Status from './components/Status';
 import Action from './components/Action';
 import { ROUTE_BALLOT_SHOW, ROUTE_ELECTION_INDEX } from 'Routes';
 import TextButton from 'components/buttons/TextButton';
 import { AuthContext } from 'index';
-import { Role } from 'types/userRole';
+import { ROLE } from 'types/userRole';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
@@ -55,9 +55,9 @@ const ElectionShow: FC = () => {
           <div className="flex my-4">
             {status === STATUS.Open &&
             authCtx.isLogged &&
-            (authCtx.role === Role.Admin ||
-              authCtx.role === Role.Operator ||
-              authCtx.role === Role.Voter) ? (
+            (authCtx.role === ROLE.Admin ||
+              authCtx.role === ROLE.Operator ||
+              authCtx.role === ROLE.Voter) ? (
               <Link to={ROUTE_BALLOT_SHOW + '/' + electionID}>
                 <TextButton>{t('navBarVote')}</TextButton>
               </Link>

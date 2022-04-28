@@ -1,4 +1,4 @@
-import { LightElectionInfo } from 'types/electionInfo';
+import { LightElectionInfo } from 'types/election';
 import { useFillLightElectionInfo } from './FillElectionInfo';
 
 /**

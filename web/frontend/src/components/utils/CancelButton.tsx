@@ -1,7 +1,7 @@
 import { AuthContext } from 'index';
 import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
-import { STATUS } from 'types/electionInfo';
+import { STATUS } from 'types/election';
 
 const CancelButton = ({ status, handleCancel }) => {
   const authCtx = useContext(AuthContext);

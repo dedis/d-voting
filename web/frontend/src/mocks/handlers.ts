@@ -18,10 +18,10 @@ import {
 } from '../types/frontendRequestBody';
 
 import { ID } from 'types/configuration';
-import { STATUS } from 'types/electionInfo';
+import { STATUS } from 'types/election';
 import { setupMockElection, toLightElectionInfo } from './setupMockElections';
 import setupMockUserDB from './setupMockUserDB';
-import { Role } from 'types/userRole';
+import { ROLE } from 'types/userRole';
 
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;
@@ -38,7 +38,7 @@ export const handlers = [
       ? {
           lastname: 'Bobster',
           firstname: 'Alice',
-          role: Role.Admin,
+          role: ROLE.Admin,
           sciper: userId,
         }
       : {};

@@ -4,7 +4,7 @@ import ConfirmModal from '../modal/ConfirmModal';
 import usePostCall from './usePostCall';
 import * as endpoints from './Endpoints';
 import { ID } from 'types/configuration';
-import { STATUS } from 'types/electionInfo';
+import { STATUS } from 'types/election';
 import ShuffleButton from './ShuffleButton';
 import CloseButton from './CloseButton';
 import CancelButton from './CancelButton';

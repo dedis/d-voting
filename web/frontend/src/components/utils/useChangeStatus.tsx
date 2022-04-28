@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { STATUS } from 'types/electionInfo';
+import { STATUS } from 'types/election';
 
 // Custom hook that can display the status of an election and enable changes
 // of status (closing, cancelling,...)
@@ -14,6 +14,20 @@ const useChangeStatus = (status: STATUS) => {
           <span className="election-status">
             <span className="election-status-on"></span>
             <span className="election-status-text">{t('statusInitial')}</span>
+          </span>
+        );
+      case STATUS.OnGoingSetup:
+        return (
+          <span className="election-status">
+            <span className="election-status-on"></span>
+            <span className="election-status-text">{t('statusOnGoingSetup')}</span>
+          </span>
+        );
+      case STATUS.Setup:
+        return (
+          <span className="election-status">
+            <span className="election-status-on"></span>
+            <span className="election-status-text">{t('statusSetup')}</span>
           </span>
         );
       case STATUS.Open:
@@ -30,6 +44,13 @@ const useChangeStatus = (status: STATUS) => {
             <span className="election-status-text">{t('statusClose')}</span>
           </span>
         );
+      case STATUS.OnGoingShuffle:
+        return (
+          <span className="election-status">
+            <span className="election-status-closed"></span>
+            <span className="election-status-text">{t('statusOnGoingShuffle')}</span>
+          </span>
+        );
       case STATUS.ShuffledBallots:
         return (
           <span className="election-status">
@@ -37,11 +58,25 @@ const useChangeStatus = (status: STATUS) => {
             <span className="election-status-text">{t('statusShuffle')}</span>
           </span>
         );
+      case STATUS.OnGoingDecryption:
+        return (
+          <span className="election-status">
+            <span className="election-status-closed"></span>
+            <span className="election-status-text">{t('statusOnGoingDecryption')}</span>
+          </span>
+        );
+      case STATUS.DecryptedBallots:
+        return (
+          <span className="election-status">
+            <span className="election-status-closed"></span>
+            <span className="election-status-text">{t('statusDecrypted')}</span>
+          </span>
+        );
       case STATUS.ResultAvailable:
         return (
           <span className="election-status">
             <span className="election-status-closed"></span>
-            <span className="election-status-text">{t('resultsAvailable')}</span>
+            <span className="election-status-text">{t('statusResultAvailable')}</span>
           </span>
         );
       case STATUS.Canceled:

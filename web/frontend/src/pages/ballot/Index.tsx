@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import SimpleTable from 'pages/election/components/SimpleTable';
 import './Index.css';
 import { ROUTE_BALLOT_SHOW } from 'Routes';
-import { STATUS } from 'types/electionInfo';
+import { STATUS } from 'types/election';
 
 const BallotIndex: FC = () => {
   const { t } = useTranslation();
