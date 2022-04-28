@@ -1,31 +1,52 @@
 import { FlashContext, FlashLevel } from 'index';
 import { useContext } from 'react';
+import {
+  ExclamationCircleIcon,
+  ExclamationIcon,
+  InformationCircleIcon,
+  XIcon,
+} from '@heroicons/react/outline';
+import styles from './Flash.module.css';
 
 const Flash = () => {
   const fctx = useContext(FlashContext);
 
-  const flashContainer = (level: number) => {
-    switch (level) {
-      case FlashLevel.Info:
-        return 'flex items-center text-white text-sm font-bold px-4 py-3 bg-indigo-500';
-      case FlashLevel.Warning:
-        return 'flex items-center text-white text-sm font-bold px-4 py-3 bg-orange-500';
-      case FlashLevel.Error:
-        return 'flex items-center text-white text-sm font-bold px-4 py-3 bg-red-500';
-    }
-  };
-
   return (
-    <div>
-      {fctx.getMessages().map((msg, i) => (
-        <div key={i.toString()} className={flashContainer(msg.getLevel())} role="alert">
-          <svg
-            className="fill-current w-4 h-4 mr-2"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20">
-            <path d="M12.432 0c1.34 0 2.01.912 2.01 1.957 0 1.305-1.164 2.512-2.679 2.512-1.269 0-2.009-.75-1.974-1.99C9.789 1.436 10.67 0 12.432 0zM8.309 20c-1.058 0-1.833-.652-1.093-3.524l1.214-5.092c.211-.814.246-1.141 0-1.141-.317 0-1.689.562-2.502 1.117l-.528-.88c2.572-2.186 5.531-3.467 6.801-3.467 1.057 0 1.233 1.273.705 3.23l-1.391 5.352c-.246.945-.141 1.271.106 1.271.317 0 1.357-.392 2.379-1.207l.6.814C12.098 19.02 9.365 20 8.309 20z" />
-          </svg>
-          <p>{msg.getText()}</p>
+    <div className="w-full z-50">
+      {fctx.getMessages().map((msg) => (
+        <div
+          key={msg.id}
+          className={`relative
+                      ${msg.getLevel() === FlashLevel.Info && 'bg-indigo-500'} 
+                      ${msg.getLevel() === FlashLevel.Warning && 'bg-orange-500'} 
+                      ${msg.getLevel() === FlashLevel.Error && 'bg-red-500'}`}>
+          <div
+            id={msg.id}
+            className={`flex items-center text-white text-sm font-bold px-4 py-3 max-w-7xl mx-auto px-2 md:px-6 lg:px-8`}
+            role="alert">
+            <div className="px-2">
+              {msg.getLevel() === FlashLevel.Info && <InformationCircleIcon className="h-6 w-6" />}
+              {msg.getLevel() === FlashLevel.Warning && <ExclamationIcon className="h-6 w-6" />}
+              {msg.getLevel() === FlashLevel.Error && <ExclamationCircleIcon className="h-6 w-6" />}
+            </div>
+            <p>{msg.getText()}</p>
+            <button
+              type="button"
+              className={`ml-auto -mx-1.5 -my-1.5 rounded-lg focus:ring-2 p-1.5 inline-flex h-8 w-8 
+                ${
+                  msg.getLevel() === FlashLevel.Info && 'focus:ring-indigo-400 hover:bg-indigo-600'
+                } 
+                ${
+                  msg.getLevel() === FlashLevel.Warning &&
+                  'focus:ring-orange-400 hover:bg-orange-600'
+                } 
+                ${msg.getLevel() === FlashLevel.Error && 'focus:ring-red-400 hover:bg-red-600'}`}
+              onClick={() => fctx.hideMessage(msg.id)}
+              aria-label="Close">
+              <XIcon />
+            </button>
+          </div>
+          <div className={styles.progress} />
         </div>
       ))}
     </div>
