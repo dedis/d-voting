@@ -1,11 +1,9 @@
+import { Group } from '@dedis/kyber';
 import { Buffer } from 'buffer';
 
-export function encryptVote(vote, dkgKey, edCurve) {
+export function encryptVote(vote: Uint8Array, dkgKey: Buffer, edCurve: Group) {
   //embed the vote into a curve point
-  const enc = new TextEncoder();
-  const voteByte = enc.encode(vote); //vote as []byte
-  const voteBuff = Buffer.from(voteByte.buffer);
-  const M = edCurve.point().embed(voteBuff);
+  const M = edCurve.point().embed(Buffer.from(vote));
   //dkg public key as a point on the EC
   const keyBuff = dkgKey;
   const p = edCurve.point();

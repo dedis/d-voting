@@ -36,6 +36,8 @@ const Ballot: FC = () => {
   const [postError, setPostError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [modalText, setModalText] = useState(t('voteSuccess') as string);
+  const [modalTitle, setModalTitle] = useState('');
+  const [navigateDest, setNavigateDest] = useState(null);
   const sendFetchRequest = usePostCall(setPostError);
 
   useEffect(() => {
@@ -51,8 +53,11 @@ const Ballot: FC = () => {
       } else {
         setModalText(t('voteFailure'));
       }
+      setModalTitle(t('errorTitle'));
     } else {
+      setNavigateDest('/');
       setModalText(t('voteSuccess'));
+      setModalTitle(t('voteSuccessful'));
     }
   }, [postError, t]);
 
@@ -74,18 +79,26 @@ const Ballot: FC = () => {
   };
 
   const sendBallot = async () => {
-    const ballotChunks = voteEncode(answers, ballotSize, chunksPerBallot);
-    const EGPairs = Array<Buffer[]>();
-    ballotChunks.forEach((chunk) =>
-      EGPairs.push(encryptVote(chunk, Buffer.from(hexToBytes(pubKey).buffer), edCurve))
-    );
-    //sending the ballot to evoting server
-    const ballot = createBallot(EGPairs);
-    const newRequest = {
-      method: 'POST',
-      body: JSON.stringify(ballot),
-    };
-    setPostRequest(newRequest);
+    try {
+      const ballotChunks = voteEncode(answers, ballotSize, chunksPerBallot);
+      const EGPairs = Array<Buffer[]>();
+      ballotChunks.forEach((chunk) =>
+        EGPairs.push(encryptVote(chunk, Buffer.from(hexToBytes(pubKey).buffer), edCurve))
+      );
+      //sending the ballot to evoting server
+      const ballot = createBallot(EGPairs);
+      const newRequest = {
+        method: 'POST',
+        body: JSON.stringify(ballot),
+      };
+      setPostRequest(newRequest);
+    } catch (e) {
+      console.log(e);
+      setModalText(t('ballotFailure'));
+      setModalTitle(t('errorTitle'));
+
+      setShowModal(true);
+    }
   };
 
   const handleClick = () => {
@@ -182,9 +195,9 @@ const Ballot: FC = () => {
       <RedirectToModal
         showModal={showModal}
         setShowModal={setShowModal}
-        title={'Vote successful'}
+        title={modalTitle}
         buttonRightText={t('close')}
-        navigateDestination={'/'}>
+        navigateDestination={navigateDest}>
         {modalText}
       </RedirectToModal>
       {loading ? (
