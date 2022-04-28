@@ -2,7 +2,12 @@ import { Buffer } from 'buffer';
 import ShortUniqueId from 'short-unique-id';
 import { Answers, RANK, SELECT, TEXT } from 'types/configuration';
 
-export function voteEncode(answers: Answers, maxBallotSize: number, chunksPerBallot: number) {
+export function voteEncode(
+  answers: Answers,
+  maxBallotSize: number,
+  chunksPerBallot: number
+): Uint8Array[] {
+  // contains the special string representation of the result
   let encodedBallot = '';
 
   answers.SelectAnswers.forEach((selectAnswer, id) => {
@@ -42,19 +47,14 @@ export function voteEncode(answers: Answers, maxBallotSize: number, chunksPerBal
   let utf8Encode = new TextEncoder();
   // transform the encodedBallot into an array of bytes
   const encodedBallotInBytes: Uint8Array = utf8Encode.encode(encodedBallot);
+
   const ballotChunksInBytes: Uint8Array[] = [];
   const chunkSize = maxBallotSize / chunksPerBallot;
+
   // divide into chunks of 29 bytes
   for (let i = 0; i < maxBallotSize; i += chunkSize) {
     ballotChunksInBytes.push(encodedBallotInBytes.slice(i, i + chunkSize));
   }
 
-  let utf8Decode = new TextDecoder();
-  const ballotChunks: string[] = [];
-  // decode each chunk back into a string
-  ballotChunksInBytes.forEach((chunk) => {
-    ballotChunks.push(utf8Decode.decode(chunk));
-  });
-
-  return ballotChunks;
+  return ballotChunksInBytes;
 }
