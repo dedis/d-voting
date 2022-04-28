@@ -1,38 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
-
 import ConfirmModal from '../modal/ConfirmModal';
-import { ROUTE_ELECTION_SHOW } from '../../Routes';
 import usePostCall from './usePostCall';
-import {
-  ENDPOINT_EVOTING_CANCEL,
-  ENDPOINT_EVOTING_CLOSE,
-  ENDPOINT_EVOTING_DECRYPT,
-  ENDPOINT_EVOTING_SHUFFLE,
-} from './Endpoints';
-import { CANCELED, CLOSED, OPEN, RESULT_AVAILABLE, SHUFFLED_BALLOT } from './StatusNumber';
-import { COLLECTIVE_AUTHORITY_MEMBERS } from './CollectiveAuthorityMembers';
+import * as endpoints from './Endpoints';
+import { ID } from 'types/configuration';
+import { STATUS } from 'types/electionInfo';
+import ShuffleButton from './ShuffleButton';
+import CloseButton from './CloseButton';
+import CancelButton from './CancelButton';
+import OpenButton from './OpenButton';
+import DecryptButton from './DecryptButton';
+import ResultButton from './ResultButton';
 
 const useChangeAction = (
-  status: number,
-  electionID: number,
-  setStatus: (status: number) => void,
+  status: STATUS,
+  electionID: ID,
+  setStatus: (status: STATUS) => void,
   setResultAvailable: ((available: boolean) => void | null) | undefined,
   setTextModalError: (value: ((prevState: null) => '') | string) => void,
   setShowModalError: (willShow: boolean) => void
 ) => {
   const { t } = useTranslation();
-  const userID = sessionStorage.getItem('id');
-  const token = sessionStorage.getItem('token');
+  const [isOpening, setIsOpening] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
   const [isShuffling, setIsShuffling] = useState(false);
   const [isDecrypting, setIsDecrypting] = useState(false);
+  const [showModalOpen, setShowModalOpen] = useState(false);
   const [showModalClose, setShowModalClose] = useState(false);
   const [showModalCancel, setShowModalCancel] = useState(false);
   const [userConfirmedClosing, setUserConfirmedClosing] = useState(false);
   const [userConfirmedCanceling, setUserConfirmedCanceling] = useState(false);
+
   const modalClose = (
     <ConfirmModal
       showModal={showModalClose}
@@ -50,23 +49,19 @@ const useChangeAction = (
     />
   );
   const [postError, setPostError] = useState(t('operationFailure') as string);
-  const { postData } = usePostCall(setPostError);
-  const simplePostRequest = {
-    method: 'POST',
-    body: JSON.stringify({
-      ElectionID: electionID,
-      UserId: userID,
-      Token: token,
-    }),
-  };
-  const shuffleRequest = {
-    method: 'POST',
-    body: JSON.stringify({
-      ElectionID: electionID,
-      UserId: userID,
-      Token: token,
-      Members: COLLECTIVE_AUTHORITY_MEMBERS,
-    }),
+  const sendFetchRequest = usePostCall(setPostError);
+
+  const electionUpdate = async (action: string, endpoint: string) => {
+    const req = {
+      method: 'PUT',
+      body: JSON.stringify({
+        Action: action,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+    return sendFetchRequest(endpoint, req, setIsClosing);
   };
 
   useEffect(() => {
@@ -80,14 +75,12 @@ const useChangeAction = (
     //check if close button was clicked and the user validated the confirmation window
     if (isClosing && userConfirmedClosing) {
       const close = async () => {
-        const closeSuccess = await postData(
-          ENDPOINT_EVOTING_CLOSE,
-          simplePostRequest,
-          setIsClosing
+        const closeSuccess = await electionUpdate(
+          'close',
+          endpoints.editElection(electionID.toString())
         );
-
         if (closeSuccess) {
-          setStatus(CLOSED);
+          setStatus(STATUS.CLOSED);
         } else {
           setShowModalError(true);
         }
@@ -96,12 +89,12 @@ const useChangeAction = (
 
       close().catch(console.error);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isClosing,
-    postData,
+    sendFetchRequest,
     setShowModalError,
     setStatus,
-    simplePostRequest,
     showModalClose,
     userConfirmedClosing,
   ]);
@@ -109,13 +102,12 @@ const useChangeAction = (
   useEffect(() => {
     if (isCanceling && userConfirmedCanceling) {
       const cancel = async () => {
-        const cancelSuccess = await postData(
-          ENDPOINT_EVOTING_CANCEL,
-          simplePostRequest,
-          setIsCanceling
+        const cancelSuccess = await electionUpdate(
+          'cancel',
+          endpoints.editElection(electionID.toString())
         );
         if (cancelSuccess) {
-          setStatus(CANCELED);
+          setStatus(STATUS.CANCELED);
         } else {
           setShowModalError(true);
         }
@@ -125,14 +117,19 @@ const useChangeAction = (
 
       cancel().catch(console.error);
     }
-  }, [
-    isCanceling,
-    postData,
-    setShowModalError,
-    setStatus,
-    simplePostRequest,
-    userConfirmedCanceling,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCanceling, sendFetchRequest, setShowModalError, setStatus, userConfirmedCanceling]);
+
+  const handleOpen = async () => {
+    const openSuccess = await electionUpdate('open', endpoints.editElection(electionID.toString()));
+    if (openSuccess && postError === null) {
+      setStatus(STATUS.OPEN);
+    } else {
+      setShowModalError(true);
+      setIsOpening(false);
+    }
+    setPostError(null);
+  };
 
   const handleClose = () => {
     setShowModalClose(true);
@@ -146,9 +143,12 @@ const useChangeAction = (
 
   const handleShuffle = async () => {
     setIsShuffling(true);
-    const shuffleSuccess = await postData(ENDPOINT_EVOTING_SHUFFLE, shuffleRequest, setIsShuffling);
+    const shuffleSuccess = await electionUpdate(
+      'shuffle',
+      endpoints.editShuffle(electionID.toString())
+    );
     if (shuffleSuccess && postError === null) {
-      setStatus(SHUFFLED_BALLOT);
+      setStatus(STATUS.SHUFFLED_BALLOTS);
     } else {
       setShowModalError(true);
       setIsShuffling(false);
@@ -157,16 +157,16 @@ const useChangeAction = (
   };
 
   const handleDecrypt = async () => {
-    const decryptSucess = await postData(
-      ENDPOINT_EVOTING_DECRYPT,
-      simplePostRequest,
-      setIsDecrypting
+    const decryptSuccess = await electionUpdate(
+      'beginDecryption',
+      endpoints.editDKGActors(electionID.toString())
     );
-    if (decryptSucess && postError === null) {
-      if (setResultAvailable !== null) {
+    if (decryptSuccess && postError === null) {
+      // TODO : setResultAvailable is undefined when the decryption is clicked
+      if (setResultAvailable !== null && setResultAvailable !== undefined) {
         setResultAvailable(true);
       }
-      setStatus(RESULT_AVAILABLE);
+      setStatus(STATUS.RESULT_AVAILABLE);
     } else {
       setShowModalError(true);
       setIsDecrypting(false);
@@ -176,57 +176,48 @@ const useChangeAction = (
 
   const getAction = () => {
     switch (status) {
-      case OPEN:
+      case STATUS.INITIAL:
         return (
           <span>
-            <button id="close-button" className="election-btn" onClick={handleClose}>
-              {t('close')}
-            </button>
-            <button className="election-btn" onClick={handleCancel}>
-              {t('cancel')}
-            </button>
+            <OpenButton status={status} handleOpen={handleOpen} />
+            <CancelButton status={status} handleCancel={handleCancel} />
           </span>
         );
-      case CLOSED:
+      case STATUS.OPEN:
         return (
           <span>
-            {isShuffling ? (
-              <p className="loading">{t('shuffleOnGoing')}</p>
-            ) : (
-              <span>
-                <button className="election-btn" onClick={handleShuffle}>
-                  {t('shuffle')}
-                </button>
-              </span>
-            )}
+            <CloseButton status={status} handleClose={handleClose} />
+            <CancelButton status={status} handleCancel={handleCancel} />
           </span>
         );
-      case SHUFFLED_BALLOT:
+      case STATUS.CLOSED:
         return (
           <span>
-            {isDecrypting ? (
-              <p className="loading">{t('decryptOnGoing')}</p>
-            ) : (
-              <span>
-                <button className="election-btn" onClick={handleDecrypt}>
-                  {t('decrypt')}
-                </button>
-              </span>
-            )}
+            <ShuffleButton
+              status={status}
+              isShuffling={isShuffling}
+              handleShuffle={handleShuffle}
+            />
           </span>
         );
-      case RESULT_AVAILABLE:
+      case STATUS.SHUFFLED_BALLOTS:
         return (
           <span>
-            <Link
-              className="election-link"
-              to={{ pathname: `${ROUTE_ELECTION_SHOW}/${electionID}` }}>
-              <button className="election-btn">{t('seeResult')}</button>
-            </Link>
+            <DecryptButton
+              status={status}
+              isDecrypting={isDecrypting}
+              handleDecrypt={handleDecrypt}
+            />
           </span>
         );
-      case CANCELED:
-        return <span> ---</span>;
+      case STATUS.RESULT_AVAILABLE:
+        return (
+          <span>
+            <ResultButton status={status} electionID={electionID} />
+          </span>
+        );
+      case STATUS.CANCELED:
+        return <span> --- </span>;
       default:
         return <span> --- </span>;
     }

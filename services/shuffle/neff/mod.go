@@ -64,13 +64,6 @@ func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool,
 // Listen implements shuffle.SHUFFLE. It must be called on each node that
 // participates in the SHUFFLE. Creates the RPC.
 func (n NeffShuffle) Listen(txmngr txn.Manager) (shuffle.Actor, error) {
-	// We are expecting the manager to be exclusive for the service, with no
-	// other use than us.
-	err := txmngr.Sync()
-	if err != nil {
-		return nil, xerrors.Errorf("failed to sync manager: %v", err)
-	}
-
 	h := NewHandler(n.mino.GetAddress(), n.service, n.p, txmngr, n.nodeSigner,
 		n.context, n.electionFac)
 
@@ -137,6 +130,8 @@ func (a *Actor) Shuffle(electionID []byte) error {
 			addrs = append(addrs, addr)
 		}
 	}
+
+	dela.Logger.Info().Msgf("sending start shuffle to: %v", addrs)
 
 	message := types.NewStartShuffle(electionIDHex, addrs)
 

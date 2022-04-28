@@ -2,12 +2,13 @@ package pedersen
 
 import (
 	"encoding/hex"
+	"strconv"
+	"testing"
+
 	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/serde/json"
-	"strconv"
-	"testing"
 
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
@@ -58,7 +59,6 @@ func TestHandler_Stream(t *testing.T) {
 	election := electionTypes.Election{
 		Configuration:    electionTypes.Configuration{},
 		ElectionID:       electionIDHex,
-		AdminID:          "",
 		Status:           electionTypes.ShuffledBallots,
 		Pubkey:           nil,
 		BallotSize:       0,
@@ -257,7 +257,6 @@ func TestHandler_HandlerDecryptRequest(t *testing.T) {
 	election := electionTypes.Election{
 		Configuration:    electionTypes.Configuration{},
 		ElectionID:       electionIDHex,
-		AdminID:          "",
 		Status:           electionTypes.ShuffledBallots,
 		Pubkey:           nil,
 		BallotSize:       0,

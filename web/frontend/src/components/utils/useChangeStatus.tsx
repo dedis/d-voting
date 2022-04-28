@@ -1,43 +1,50 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { STATUS } from 'types/electionInfo';
 
-import { CANCELED, CLOSED, OPEN, RESULT_AVAILABLE, SHUFFLED_BALLOT } from './StatusNumber';
-
-/*Custom hook that can display the status of an election and enable changes of status (closing, cancelling,...)*/
-const useChangeStatus = (status: number) => {
+// Custom hook that can display the status of an election and enable changes
+// of status (closing, cancelling,...)
+const useChangeStatus = (status: STATUS) => {
   const { t } = useTranslation();
 
   const getStatus = () => {
     switch (status) {
-      case OPEN:
+      case STATUS.INITIAL:
+        return (
+          <span className="election-status">
+            <span className="election-status-on"></span>
+            <span className="election-status-text">{t('statusInitial')}</span>
+          </span>
+        );
+      case STATUS.OPEN:
         return (
           <span className="election-status">
             <span className="election-status-on"></span>
             <span className="election-status-text">{t('statusOpen')}</span>
           </span>
         );
-      case CLOSED:
+      case STATUS.CLOSED:
         return (
           <span className="election-status">
             <span className="election-status-closed"></span>
             <span className="election-status-text">{t('statusClose')}</span>
           </span>
         );
-      case SHUFFLED_BALLOT:
+      case STATUS.SHUFFLED_BALLOTS:
         return (
           <span className="election-status">
             <span className="election-status-closed"></span>
             <span className="election-status-text">{t('statusShuffle')}</span>
           </span>
         );
-      case RESULT_AVAILABLE:
+      case STATUS.RESULT_AVAILABLE:
         return (
           <span className="election-status">
             <span className="election-status-closed"></span>
             <span className="election-status-text">{t('resultsAvailable')}</span>
           </span>
         );
-      case CANCELED:
+      case STATUS.CANCELED:
         return (
           <span className="election-status">
             <span className="election-status-cancelled"></span>

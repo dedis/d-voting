@@ -86,6 +86,11 @@ func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 func (h *Handler) handleStartShuffle(electionID string) error {
 	dela.Logger.Info().Msg("Starting the neff shuffle protocol ...")
 
+	err := h.txmngr.Sync()
+	if err != nil {
+		return xerrors.Errorf("failed to sync manager: %v", err.Error())
+	}
+
 	// loop until the threshold is reached or our transaction has been accepted
 	for {
 		election, err := getElection(h.electionFac, h.context, electionID, h.service)
@@ -117,7 +122,13 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 
 		err = h.p.Add(tx)
 		if err != nil {
-			return xerrors.Errorf("failed to add transaction to the pool: %v", err.Error())
+			// it is possible that an error is returned in case the nonce is not
+			// synced. In that case we sync and retry.
+			err = h.txmngr.Sync()
+			if err != nil {
+				dela.Logger.Warn().Err(err).Msgf("failed to add tx, syncing nonce")
+				return xerrors.Errorf("failed to sync manager: %v", err.Error())
+			}
 		}
 
 		accepted, msg := watchTx(events, tx.GetID())
@@ -237,7 +248,9 @@ func makeTx(ctx serde.Context, election *etypes.Election, manager txn.Manager,
 
 	tx, err := manager.Make(args...)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to use manager: %v", err.Error())
+		if err != nil {
+			return nil, xerrors.Errorf("failed to use manager: %v", err.Error())
+		}
 	}
 
 	return tx, nil

@@ -1,4 +1,5 @@
-import React, { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
+import { CloudUploadIcon } from '@heroicons/react/outline';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import kyber from '@dedis/kyber';
@@ -8,33 +9,42 @@ import { Buffer } from 'buffer';
 import { ROUTE_BALLOT_INDEX } from '../../Routes';
 import useElection from 'components/utils/useElection';
 import usePostCall from 'components/utils/usePostCall';
-import { ENDPOINT_EVOTING_CAST_BALLOT } from 'components/utils/Endpoints';
-import Modal from 'components/modal/Modal';
-import { OPEN } from 'components/utils/StatusNumber';
+import * as endpoints from 'components/utils/Endpoints';
 import { encryptVote } from './components/VoteEncrypt';
-import './Show.css';
+import { voteEncode } from './components/VoteEncode';
+import { useConfiguration } from 'components/utils/useConfiguration';
+import * as types from 'types/configuration';
+import { ID, RANK, SELECT, SUBJECT, TEXT } from 'types/configuration';
+import { DragDropContext } from 'react-beautiful-dnd';
+import RedirectToModal from 'components/modal/RedirectToModal';
+import Select from './components/Select';
+import Rank, { handleOnDragEnd } from './components/Rank';
+import Text from './components/Text';
+import { ballotIsValid } from './components/ValidateAnswers';
+import { STATUS } from 'types/electionInfo';
 
 const Ballot: FC = () => {
-  var bytes: number[];
   const { t } = useTranslation();
   const { electionId } = useParams();
-  const token = sessionStorage.getItem('token');
-  const { loading, title, candidates, electionID, status, pubKey } = useElection(electionId, token);
-  const [choice, setChoice] = useState('');
-  const [userErrors, setUserErrors] = useState({ noCandidate: '' });
+  const UserID = sessionStorage.getItem('id');
+  const { loading, configObj, electionID, status, pubKey, ballotSize, chunksPerBallot } =
+    useElection(electionId);
+  const { configuration, answers, setAnswers } = useConfiguration(configObj);
+  const [userErrors, setUserErrors] = useState('');
   const edCurve = kyber.curve.newCurve('edwards25519');
   const [postRequest, setPostRequest] = useState(null);
   const [postError, setPostError] = useState('');
-  const { postData } = usePostCall(setPostError);
   const [showModal, setShowModal] = useState(false);
   const [modalText, setModalText] = useState(t('voteSuccess') as string);
+  const [modalTitle, setModalTitle] = useState('');
+  const [navigateDest, setNavigateDest] = useState(null);
+  const sendFetchRequest = usePostCall(setPostError);
 
   useEffect(() => {
     if (postRequest !== null) {
-      setPostError('');
-      postData(ENDPOINT_EVOTING_CAST_BALLOT, postRequest, setShowModal);
+      sendFetchRequest(endpoints.newElectionVote(electionID.toString()), postRequest, setShowModal);
     }
-  }, [postData, postRequest]);
+  }, [postRequest]);
 
   useEffect(() => {
     if (postError !== null) {
@@ -43,113 +53,157 @@ const Ballot: FC = () => {
       } else {
         setModalText(t('voteFailure'));
       }
+      setModalTitle(t('errorTitle'));
     } else {
+      setNavigateDest('/');
       setModalText(t('voteSuccess'));
+      setModalTitle(t('voteSuccessful'));
     }
   }, [postError, t]);
 
-  const handleCheck = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setChoice(e.target.value);
-  };
-
   const hexToBytes = (hex: string) => {
-    for (let c = 0; c < hex.length; c += 2) bytes.push(parseInt(hex.substr(c, 2), 16));
+    const bytes: number[] = [];
+    for (let c = 0; c < hex.length; c += 2) {
+      bytes.push(parseInt(hex.substr(c, 2), 16));
+    }
     return new Uint8Array(bytes);
   };
 
-  const createBallot = (K: Buffer, C: Buffer) => {
-    let vote = JSON.stringify({ K: Array.from(K), C: Array.from(C) });
+  const createBallot = (EGPairs: Array<Buffer[]>) => {
+    const vote = [];
+    EGPairs.forEach(([K, C]) => vote.push({ K: Array.from(K), C: Array.from(C) }));
     return {
-      ElectionID: electionID,
-      UserId: sessionStorage.getItem('id'),
-      Ballot: Buffer.from(vote),
-      Token: token,
+      Ballot: vote,
+      UserID,
     };
   };
 
   const sendBallot = async () => {
-    const [K, C] = encryptVote(choice, Buffer.from(hexToBytes(pubKey).buffer), edCurve);
+    try {
+      const ballotChunks = voteEncode(answers, ballotSize, chunksPerBallot);
+      const EGPairs = Array<Buffer[]>();
+      ballotChunks.forEach((chunk) =>
+        EGPairs.push(encryptVote(chunk, Buffer.from(hexToBytes(pubKey).buffer), edCurve))
+      );
+      //sending the ballot to evoting server
+      const ballot = createBallot(EGPairs);
+      const newRequest = {
+        method: 'POST',
+        body: JSON.stringify(ballot),
+      };
+      setPostRequest(newRequest);
+    } catch (e) {
+      console.log(e);
+      setModalText(t('ballotFailure'));
+      setModalTitle(t('errorTitle'));
 
-    //sending the ballot to evoting server
-    let ballot = createBallot(K, C);
-    let newRequest = {
-      method: 'POST',
-      body: JSON.stringify(ballot),
-    };
-    setPostRequest(newRequest);
+      setShowModal(true);
+    }
   };
 
   const handleClick = () => {
-    if (choice === '') {
-      userErrors.noCandidate = t('noCandidate');
-      setUserErrors(userErrors);
+    if (!ballotIsValid(configuration, answers, setAnswers)) {
+      setUserErrors(t('incompleteBallot'));
       return;
     }
+
+    setUserErrors('');
     sendBallot();
-    userErrors.noCandidate = '';
-    setUserErrors(userErrors);
   };
 
-  const electionClosedDisplay = () => {
-    return <div> {t('voteImpossible')}</div>;
-  };
-
-  const possibleChoice = (candidate) => {
+  const SubjectElementDisplay = (element: types.SubjectElement) => {
     return (
-      <div className="checkbox-full">
-        <input
-          type="checkbox"
-          key={candidate}
-          className="checkbox-candidate"
-          value={candidate}
-          checked={choice === candidate} //only one checkbox can be selected
-          onChange={handleCheck}
-        />
-        <label className="checkbox-label">{candidate}</label>
+      <div>
+        {element.Type === RANK && <Rank rank={element as types.RankQuestion} answers={answers} />}
+        {element.Type === SELECT && (
+          <Select
+            select={element as types.SelectQuestion}
+            answers={answers}
+            setAnswers={setAnswers}
+          />
+        )}
+        {element.Type === TEXT && (
+          <Text text={element as types.TextQuestion} answers={answers} setAnswers={setAnswers} />
+        )}
+      </div>
+    );
+  };
+
+  const SubjectTree = (subject: types.Subject) => {
+    return (
+      <div className="sm:px-8 pl-2" key={subject.ID}>
+        {subject.Order.map((id: ID) => (
+          <div key={id}>
+            {subject.Elements.get(id).Type === SUBJECT ? (
+              <div>
+                <h3 className="text-lg font-bold text-gray-600">
+                  {subject.Elements.get(id).Title}
+                </h3>
+                {SubjectTree(subject.Elements.get(id) as types.Subject)}
+              </div>
+            ) : (
+              SubjectElementDisplay(subject.Elements.get(id))
+            )}
+          </div>
+        ))}
       </div>
     );
   };
 
   const ballotDisplay = () => {
     return (
-      <div>
-        <h3 className="ballot-title">{title}</h3>
-        <div className="checkbox-text">{t('pickCandidate')}</div>
-        {candidates !== null && candidates.length !== 0 ? (
-          candidates.map((candidate) => possibleChoice(candidate))
-        ) : (
-          <p>Default</p>
-        )}
-        {candidates !== null ? (
+      <DragDropContext onDragEnd={(dropRes) => handleOnDragEnd(dropRes, answers, setAnswers)}>
+        <div className="shadow-lg rounded-md my-0 sm:my-4 py-8 w-full">
+          <h3 className="font-bold uppercase py-4 text-2xl text-center text-gray-600">
+            {configuration.MainTitle}
+          </h3>
           <div>
-            <div className="cast-ballot-error">{userErrors.noCandidate}</div>
-            <button className="cast-ballot-btn" onClick={handleClick}>
-              {t('castVote')}
-            </button>
+            {configuration.Scaffold.map((subject: types.Subject) => SubjectTree(subject))}
+            <div className="sm:mx-8 mx-4 text-red-600 text-sm pt-3 pb-5">{userErrors}</div>
+            <div className="flex sm:mx-8 mx-4">
+              <button
+                type="button"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
+                onClick={handleClick}>
+                <CloudUploadIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                {t('castVote')}
+              </button>
+            </div>
           </div>
-        ) : null}
+        </div>
+      </DragDropContext>
+    );
+  };
+
+  const electionClosedDisplay = () => {
+    return (
+      <div>
+        <div> {t('voteImpossible')}</div>
+        <Link to={ROUTE_BALLOT_INDEX}>
+          <button
+            type="button"
+            className="inline-flex mt-2 mb-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600">
+            {t('back')}
+          </button>
+        </Link>
       </div>
     );
   };
 
   return (
-    <div className="ballot-wrapper">
-      <Modal
+    <div>
+      <RedirectToModal
         showModal={showModal}
         setShowModal={setShowModal}
-        textModal={modalText}
+        title={modalTitle}
         buttonRightText={t('close')}
-      />
+        navigateDestination={navigateDest}>
+        {modalText}
+      </RedirectToModal>
       {loading ? (
         <p className="loading">{t('loading')}</p>
       ) : (
-        <div>
-          {' '}
-          {status === OPEN ? ballotDisplay() : electionClosedDisplay()}
-          <Link to={ROUTE_BALLOT_INDEX}>
-            <button className="back-btn">{t('back')}</button>
-          </Link>
-        </div>
+        <div>{status === STATUS.OPEN ? ballotDisplay() : electionClosedDisplay()}</div>
       )}
     </div>
   );

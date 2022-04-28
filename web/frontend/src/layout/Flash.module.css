@@ -1,0 +1,21 @@
+.progress {
+  position: absolute;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.4);
+  height: 5px;
+  left: 0;
+  right: 100%;
+
+  animation-name: progress;
+  animation-duration: 4s;
+  animation-timing-function: linear;
+}
+
+@keyframes progress {
+  from {
+    right: 100%;
+  }
+  to {
+    right: 0%;
+  }
+}

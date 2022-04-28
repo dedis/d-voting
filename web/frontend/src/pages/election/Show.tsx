@@ -1,84 +1,65 @@
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useContext, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import Action from './components/Action';
-import Result from '../result/components/Result';
-import Status from './components/Status';
 import useElection from 'components/utils/useElection';
-import { RESULT_AVAILABLE } from 'components/utils/StatusNumber';
-import useGetResults from 'components/utils/useGetResults';
-import { ROUTE_ELECTION_INDEX } from 'Routes';
 import './Show.css';
+import useGetResults from 'components/utils/useGetResults';
+import { STATUS } from 'types/electionInfo';
+import Status from './components/Status';
+import Action from './components/Action';
+import { ROUTE_BALLOT_SHOW, ROUTE_ELECTION_INDEX } from 'Routes';
+import TextButton from 'components/buttons/TextButton';
+import { AuthContext } from 'index';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
   const { electionId } = useParams();
+  const authCtx = useContext(AuthContext);
 
-  const token = sessionStorage.getItem('token');
-  const {
-    loading,
-    title,
-    candidates,
-    electionID,
-    status,
-    result,
-    setResult,
-    setStatus,
-    isResultSet,
-    setIsResultSet,
-  } = useElection(electionId, token);
+  const { loading, electionID, status, setStatus, setResult, configObj, setIsResultSet } =
+    useElection(electionId);
+
   const [, setError] = useState(null);
   const [isResultAvailable, setIsResultAvailable] = useState(false);
   const { getResults } = useGetResults();
-  //fetch result when available after a status change
+
+  //Fetch result when available after a status change
   useEffect(() => {
-    if (status === RESULT_AVAILABLE && isResultAvailable) {
-      getResults(electionID, token, setError, setResult, setIsResultSet);
+    if (status === STATUS.RESULT_AVAILABLE && isResultAvailable) {
+      getResults(electionID, setError, setResult, setIsResultSet);
     }
-  }, [electionID, getResults, isResultAvailable, setIsResultSet, setResult, status, token]);
+  }, [isResultAvailable, status]);
 
   return (
-    <div className="election-details-box">
+    <div>
       {!loading ? (
         <div>
-          <h1>{title}</h1>
-          <div className="election-details-wrapper">
-            {isResultSet ? (
-              <div className="election-wrapper-child">
-                <Result resultData={result} candidates={candidates} />
-              </div>
-            ) : (
-              <div className="election-wrapper-child">
-                {' '}
-                {t('status')}:<Status status={status} />
-                <span className="election-action">
-                  Action :
-                  <Action
-                    status={status}
-                    electionID={electionID}
-                    setStatus={setStatus}
-                    setResultAvailable={setIsResultAvailable}
-                  />{' '}
-                </span>
-                <div className="election-candidates">
-                  {t('candidates')}
-                  {candidates.map((cand) => (
-                    <li key={cand} className="election-candidate">
-                      {cand}
-                    </li>
-                  ))}
-                </div>
-              </div>
-            )}
-
+          <div className="shadow-lg rounded-md w-full px-4 my-0 sm:my-4">
+            <h3 className="py-6 uppercase text-2xl text-center text-gray-700">
+              {configObj.MainTitle}
+            </h3>
+            <div className="px-4">
+              {t('status')}: <Status status={status} />
+              <span className="mx-4">{t('action')}:</span>
+              <Action
+                status={status}
+                electionID={electionID}
+                setStatus={setStatus}
+                setResultAvailable={setIsResultAvailable}
+              />
+            </div>
+          </div>
+          <div className="flex my-4">
+            {status === STATUS.OPEN && authCtx.isLogged ? (
+              <Link to={ROUTE_BALLOT_SHOW + '/' + electionID}>
+                <TextButton>{t('navBarVote')}</TextButton>
+              </Link>
+            ) : null}
             <Link to={ROUTE_ELECTION_INDEX}>
-              <button className="back-btn">{t('back')}</button>
+              <TextButton>{t('back')}</TextButton>
             </Link>
-            {/* <Link to={ROUTE_RESULT_INDEX}>
-              <button className="back-btn">{t('back')}</button>
-            </Link> */}
           </div>
         </div>
       ) : (

@@ -6,6 +6,7 @@ import (
 
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/shuffle/neff"
+	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/ordering"
@@ -44,7 +45,11 @@ func (m controller) SetCommands(builder node.Builder) {
 		Required: true,
 	})
 	sub.SetDescription("initialize the SHUFFLE protocol")
-	sub.SetAction(builder.MakeAction(&initAction{}))
+	sub.SetAction(builder.MakeAction(&InitAction{}))
+
+	sub = cmd.SetSubCommand("registerHandlers")
+	sub.SetDescription("register the proxy handlers")
+	sub.SetAction(builder.MakeAction(&RegisterHandlersAction{}))
 }
 
 // OnStart implements node.Initializer. It creates and registers a neff
@@ -101,6 +106,8 @@ func (controller) OnStop(node.Injector) error {
 // getSigner creates a signer from a file.
 func getSigner(filePath string) (crypto.Signer, error) {
 	l := loader.NewFileLoader(filePath)
+
+	dela.Logger.Info().Msgf("loading private key from %q", filePath)
 
 	signerData, err := l.Load()
 	if err != nil {

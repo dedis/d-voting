@@ -28,8 +28,8 @@ var suite = suites.MustFind("Ed25519")
 
 // Check the shuffled votes versus the cast votes on a few nodes
 func TestScenario(t *testing.T) {
-	t.Run("Basic configuration", getScenarioTest())
-	t.Run("Differents combination ", testVariableNode(3, 6, 1))
+	//t.Run("Basic configuration", getScenarioTest())
+	t.Run("Differents combination ", testVariableNode(3, 3, 1))
 }
 
 func getScenarioTest() func(*testing.T) {
@@ -588,10 +588,9 @@ func postRequest(addr string, body []byte) (*http.Response, error) {
 
 	resp, err := http.Post(addr, "application/json", bytes.NewBuffer([]byte(body)))
 	for resp.StatusCode != http.StatusOK {
-		resp, err = http.Post(addr, "application/json", bytes.NewBuffer([]byte(body)))
-
 		fmt.Println("retry: " + addr)
-		fmt.Println(err)
+		fmt.Println(resp.StatusCode)
+		resp, err = http.Post(addr, "application/json", bytes.NewBuffer([]byte(body)))
 
 		time.Sleep(4 * time.Second)
 	}

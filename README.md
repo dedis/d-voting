@@ -106,16 +106,27 @@ cd cli/memcoin
 go install
 ```
 
+Additionally, you can build the memcoin binary with:
+
+```sh
+go build ./cli/memcoin
+```
+
 # Run the nodes
 
 In three different terminal sessions, from the root folder:
 
 ```sh
-LLVL=info memcoin --config /tmp/node1 start --port 2001
+pk=adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3
 
-LLVL=info memcoin --config /tmp/node2 start --port 2002
+LLVL=info memcoin --config /tmp/node1 start --postinstall \
+  --promaddr :9100 --proxyaddr :9080 --proxykey $pk --listen tcp://0.0.0.0:2001 --public //localhost:2001
 
-LLVL=info memcoin --config /tmp/node3 start --port 2003
+LLVL=info memcoin --config /tmp/node2 start --postinstall \
+  --promaddr :9101 --proxyaddr :9082 --proxykey $pk --listen tcp://0.0.0.0:2002 --public //localhost:2002
+
+LLVL=info memcoin --config /tmp/node3 start --postinstall \
+  --promaddr :9102 --proxyaddr :9083 --proxykey $pk --listen tcp://0.0.0.0:2003 --public //localhost:2003
 ```
 
 Then you should be able to run the setup script:
@@ -152,9 +163,37 @@ If nodes are running and `setup.sh` has been called, you can run a test
 scenario:
 
 ```sh
-LLVL=info memcoin --config /tmp/node1 e-voting scenarioTest
+sk=28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409
+LLVL=info memcoin --config /tmp/node1 e-voting scenarioTest --secretkey $sk
 ```
+
+For reference, here is a hex-encoded kyber Ed25519 keypair:
+
+Public key: `adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3`
+
+Secret key: `28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409`
 
 # Use the frontend
 
 See README in `web/`.
+
+# Metrics
+
+A d-Voting node exposes Prometheus metrics. You can start an HTTP server that
+serves those metrics with:
+
+```sh
+./memcoin --config /tmp/node1 metrics start --addr 127.0.0.1:9100 --path /metrics
+```
+
+Build info can be added to the binary with the `ldflags`, at build time. Infos
+are stored on variables in the root `mod.go`. For example:
+
+```sh
+versionFlag="github.com/dedis/d-voting.Version=`git describe --tags`"
+timeFlag="github.com/dedis/d-voting.BuildTime=`date +'%d/%m/%y_%H:%M'`"
+
+go build -ldflags="-X $versionFlag -X $timeFlag" ./cli/memcoin
+```
+
+Note that `make build` will do that for you.

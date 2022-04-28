@@ -166,7 +166,6 @@ func TestCommand_CreateElection(t *testing.T) {
 	election, ok := message.(types.Election)
 	require.True(t, ok)
 
-	require.Equal(t, createElection.AdminID, election.AdminID)
 	require.Equal(t, types.Initial, election.Status)
 }
 
@@ -341,9 +340,6 @@ func TestCommand_CloseElection(t *testing.T) {
 
 	err = snap.Set(dummyElectionIDBuff, electionBuf)
 	require.NoError(t, err)
-
-	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, "only the admin can close the election")
 
 	closeElection.UserID = hex.EncodeToString([]byte("dummyAdminID"))
 
@@ -965,9 +961,6 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	err = snap.Set(dummyElectionIDBuff, electionBuf)
 	require.NoError(t, err)
 
-	err = cmd.combineShares(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, "only the admin can decrypt the ballots")
-
 	decryptBallot.UserID = hex.EncodeToString([]byte("dummyAdminID"))
 
 	data, err = decryptBallot.Serialize(ctx)
@@ -1068,9 +1061,6 @@ func TestCommand_CancelElection(t *testing.T) {
 	err = snap.Set(dummyElectionIDBuff, electionBuf)
 	require.NoError(t, err)
 
-	err = cmd.cancelElection(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, "only the admin can cancel the election")
-
 	cancelElection.UserID = hex.EncodeToString([]byte("dummyAdminID"))
 
 	data, err = cancelElection.Serialize(ctx)
@@ -1104,11 +1094,9 @@ func initElectionAndContract() (types.Election, Contract) {
 		actor: fakeDkgActor{},
 		err:   nil,
 	}
-	adminID := hex.EncodeToString([]byte("dummyAdminID"))
 
 	dummyElection := types.Election{
 		ElectionID:       fakeElectionID,
-		AdminID:          adminID,
 		Status:           0,
 		Pubkey:           nil,
 		Suffragia:        types.Suffragia{},

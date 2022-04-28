@@ -135,7 +135,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		require.NoError(t, err)
 
 		// ##### DECRYPT BALLOTS #####
-		time.Sleep(time.Millisecond * 2500 * time.Duration(numNodes))
+		time.Sleep(time.Millisecond * 5000 * time.Duration(numNodes))
 
 		t.Logf("decrypting")
 
@@ -519,7 +519,6 @@ func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error
 
 	decryptBallots := types.CombineShares{
 		ElectionID: election.ElectionID,
-		UserID:     election.AdminID,
 	}
 
 	data, err := decryptBallots.Serialize(serdecontext)
