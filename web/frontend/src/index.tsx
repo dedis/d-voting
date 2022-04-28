@@ -5,7 +5,7 @@ import { ENDPOINT_PERSONAL_INFO } from 'components/utils/Endpoints';
 import 'index.css';
 import App from 'layout/App';
 import reportWebVitals from 'reportWebVitals';
-import Flash from 'layout/Flash';
+import ShortUniqueId from 'short-unique-id';
 
 const flashTimeout = 4000;
 
@@ -34,6 +34,7 @@ export interface AuthState {
 export interface FlashState {
   getMessages(): FlashMessage[];
   addMessage(msg: string, level: number): void;
+  hideMessage(index: string): void;
 }
 
 export const enum FlashLevel {
@@ -47,18 +48,22 @@ class FlashMessage {
   text: string;
 
   // Level defines the type of flash: info, warn, error
-  level: number;
+  level: FlashLevel;
 
-  constructor(text: string, level: number) {
+  // A uniq string identifier
+  id: string;
+
+  constructor(text: string, level: FlashLevel) {
     this.text = text;
     this.level = level;
+    this.id = new ShortUniqueId({ length: 8 })();
   }
 
   getText(): string {
     return this.text;
   }
 
-  getLevel(): number {
+  getLevel(): FlashLevel {
     return this.level;
   }
 }
@@ -111,15 +116,23 @@ const AppContainer = () => {
 
     // add a flash to the list and set a timeout on it
     addMessage: (message: string, level: number) => {
-      const newFlashes = [...flashes, new FlashMessage(message, level)];
+      const flash = new FlashMessage(message, level);
+      const newFlashes = [...flashes, flash];
       setFlashes(newFlashes);
 
       // remove the flash after some timeout
       setTimeout(() => {
-        const removedFlashes = [...flashesRef.current];
-        removedFlashes.shift();
+        let removedFlashes = [...flashesRef.current];
+        removedFlashes = removedFlashes.filter((f) => f.id !== flash.id);
         setFlashes(removedFlashes);
       }, flashTimeout);
+    },
+
+    // Set the visibility of flashMessage to false
+    hideMessage: (id: string) => {
+      let removedFlashes = [...flashesRef.current];
+      removedFlashes = removedFlashes.filter((f) => f.id !== id);
+      setFlashes(removedFlashes);
     },
   };
 
@@ -158,7 +171,6 @@ const AppContainer = () => {
 
   return (
     <FlashContext.Provider value={flashState}>
-      <Flash />
       <AuthContext.Provider value={auth}>{content}</AuthContext.Provider>
     </FlashContext.Provider>
   );
