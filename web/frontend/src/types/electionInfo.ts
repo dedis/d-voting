@@ -1,13 +1,28 @@
 import { ID } from './configuration';
 
 export const enum STATUS {
-  INITIAL,
-  OPEN,
-  CLOSED,
-  SHUFFLED_BALLOTS,
-  DECRYPTED_BALLOTS,
-  RESULT_AVAILABLE,
-  CANCELED,
+  // Initial is when the node has been initialized by the dkg service
+  Initial = 0,
+  // BeingSetup is when a node is currently being setup by the dkg service
+  BeingSetup = 7,
+  // Setup is when a node has been setup by the dkg service
+  Setup = 8,
+  // Open is when an election is open, and users can cast ballots
+  Open = 1,
+  // Closed is when an election is closed, users can no longer cast ballots
+  Closed = 2,
+  // BeingShuffled is when the ballots are currently being shuffled
+  BeingShuffled = 9,
+  // ShuffledBallots is when the ballots have been shuffled
+  ShuffledBallots = 3,
+  // BeingDecrypted is when public keys are currently being shared and combined
+  BeingDecrypted = 10,
+  // DecryptedBallots is when public keys have been shared and combined
+  DecryptedBallots = 4,
+  // ResultAvailable is when the ballots have been decrypted
+  ResultAvailable = 5,
+  // Canceled is when an election has been canceled
+  Canceled = 6,
 }
 
 interface ElectionInfo {

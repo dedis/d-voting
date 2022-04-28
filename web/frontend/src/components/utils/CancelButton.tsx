@@ -10,7 +10,7 @@ const CancelButton = ({ status, handleCancel }) => {
   const isAuthorized = authCtx.role === 'admin' || authCtx.role === 'operator';
 
   return (
-    isAuthorized && status === STATUS.OPEN && <button onClick={handleCancel}>{t('cancel')}</button>
+    isAuthorized && status === STATUS.Open && <button onClick={handleCancel}>{t('cancel')}</button>
   );
 };
 export default CancelButton;

@@ -12,6 +12,7 @@ import Action from './components/Action';
 import { ROUTE_BALLOT_SHOW, ROUTE_ELECTION_INDEX } from 'Routes';
 import TextButton from 'components/buttons/TextButton';
 import { AuthContext } from 'index';
+import { Role } from 'types/userRole';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
@@ -27,7 +28,7 @@ const ElectionShow: FC = () => {
 
   //Fetch result when available after a status change
   useEffect(() => {
-    if (status === STATUS.RESULT_AVAILABLE && isResultAvailable) {
+    if (status === STATUS.ResultAvailable && isResultAvailable) {
       getResults(electionID, setError, setResult, setIsResultSet);
     }
   }, [isResultAvailable, status]);
@@ -52,7 +53,11 @@ const ElectionShow: FC = () => {
             </div>
           </div>
           <div className="flex my-4">
-            {status === STATUS.OPEN && authCtx.isLogged ? (
+            {status === STATUS.Open &&
+            authCtx.isLogged &&
+            (authCtx.role === Role.Admin ||
+              authCtx.role === Role.Operator ||
+              authCtx.role === Role.Voter) ? (
               <Link to={ROUTE_BALLOT_SHOW + '/' + electionID}>
                 <TextButton>{t('navBarVote')}</TextButton>
               </Link>

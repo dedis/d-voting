@@ -80,7 +80,7 @@ const useChangeAction = (
           endpoints.editElection(electionID.toString())
         );
         if (closeSuccess) {
-          setStatus(STATUS.CLOSED);
+          setStatus(STATUS.Closed);
         } else {
           setShowModalError(true);
         }
@@ -107,7 +107,7 @@ const useChangeAction = (
           endpoints.editElection(electionID.toString())
         );
         if (cancelSuccess) {
-          setStatus(STATUS.CANCELED);
+          setStatus(STATUS.Canceled);
         } else {
           setShowModalError(true);
         }
@@ -123,7 +123,7 @@ const useChangeAction = (
   const handleOpen = async () => {
     const openSuccess = await electionUpdate('open', endpoints.editElection(electionID.toString()));
     if (openSuccess && postError === null) {
-      setStatus(STATUS.OPEN);
+      setStatus(STATUS.Open);
     } else {
       setShowModalError(true);
       setIsOpening(false);
@@ -148,7 +148,7 @@ const useChangeAction = (
       endpoints.editShuffle(electionID.toString())
     );
     if (shuffleSuccess && postError === null) {
-      setStatus(STATUS.SHUFFLED_BALLOTS);
+      setStatus(STATUS.ShuffledBallots);
     } else {
       setShowModalError(true);
       setIsShuffling(false);
@@ -166,7 +166,7 @@ const useChangeAction = (
       if (setResultAvailable !== null && setResultAvailable !== undefined) {
         setResultAvailable(true);
       }
-      setStatus(STATUS.RESULT_AVAILABLE);
+      setStatus(STATUS.ResultAvailable);
     } else {
       setShowModalError(true);
       setIsDecrypting(false);
@@ -176,21 +176,21 @@ const useChangeAction = (
 
   const getAction = () => {
     switch (status) {
-      case STATUS.INITIAL:
+      case STATUS.Initial:
         return (
           <span>
             <OpenButton status={status} handleOpen={handleOpen} />
             <CancelButton status={status} handleCancel={handleCancel} />
           </span>
         );
-      case STATUS.OPEN:
+      case STATUS.Open:
         return (
           <span>
             <CloseButton status={status} handleClose={handleClose} />
             <CancelButton status={status} handleCancel={handleCancel} />
           </span>
         );
-      case STATUS.CLOSED:
+      case STATUS.Closed:
         return (
           <span>
             <ShuffleButton
@@ -200,7 +200,7 @@ const useChangeAction = (
             />
           </span>
         );
-      case STATUS.SHUFFLED_BALLOTS:
+      case STATUS.ShuffledBallots:
         return (
           <span>
             <DecryptButton
@@ -210,13 +210,13 @@ const useChangeAction = (
             />
           </span>
         );
-      case STATUS.RESULT_AVAILABLE:
+      case STATUS.ResultAvailable:
         return (
           <span>
             <ResultButton status={status} electionID={electionID} />
           </span>
         );
-      case STATUS.CANCELED:
+      case STATUS.Canceled:
         return <span> --- </span>;
       default:
         return <span> --- </span>;
