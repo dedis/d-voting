@@ -16,6 +16,13 @@ const useChangeStatus = (status: STATUS) => {
             <span className="election-status-text">{t('statusInitial')}</span>
           </span>
         );
+      case STATUS.InitializedNodes:
+        return (
+          <span className="election-status">
+            <span className="election-status-on"></span>
+            <span className="election-status-text">{t('statusInitializedNodes')}</span>
+          </span>
+        );
       case STATUS.OnGoingSetup:
         return (
           <span className="election-status">

@@ -59,6 +59,7 @@
     "confirmCancelElection": "Are you sure you want to cancel this election?",
     "createElection": "Create election",
     "statusInitial": "Created",
+    "statusInitializedNodes": "Node initialized",
     "statusOnGoingSetup": "Setting up...",
     "statusSetup": "Setup",
     "statusOpen": "Open",
