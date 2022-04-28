@@ -1,3 +1,4 @@
+import { ACTION } from './election';
 import { ROLE } from './userRole';
 
 interface NewElectionBody {
@@ -9,7 +10,7 @@ interface NewElectionVoteBody {
 }
 
 interface EditElectionBody {
-  Action: 'open' | 'close' | 'combineShares' | 'cancel';
+  Action: ACTION.Open | ACTION.Close | ACTION.CombineShares | ACTION.Cancel;
 }
 
 interface NewUserRole {

@@ -4,7 +4,7 @@ import ConfirmModal from '../modal/ConfirmModal';
 import usePostCall from './usePostCall';
 import * as endpoints from './Endpoints';
 import { ID } from 'types/configuration';
-import { STATUS } from 'types/election';
+import { ACTION, STATUS } from 'types/election';
 import ShuffleButton from './ShuffleButton';
 import CloseButton from './CloseButton';
 import CancelButton from './CancelButton';
@@ -76,7 +76,7 @@ const useChangeAction = (
     if (isClosing && userConfirmedClosing) {
       const close = async () => {
         const closeSuccess = await electionUpdate(
-          'close',
+          ACTION.Close,
           endpoints.editElection(electionID.toString())
         );
         if (closeSuccess) {
@@ -103,7 +103,7 @@ const useChangeAction = (
     if (isCanceling && userConfirmedCanceling) {
       const cancel = async () => {
         const cancelSuccess = await electionUpdate(
-          'cancel',
+          ACTION.Cancel,
           endpoints.editElection(electionID.toString())
         );
         if (cancelSuccess) {
@@ -121,7 +121,10 @@ const useChangeAction = (
   }, [isCanceling, sendFetchRequest, setShowModalError, setStatus, userConfirmedCanceling]);
 
   const handleOpen = async () => {
-    const openSuccess = await electionUpdate('open', endpoints.editElection(electionID.toString()));
+    const openSuccess = await electionUpdate(
+      ACTION.Open,
+      endpoints.editElection(electionID.toString())
+    );
     if (openSuccess && postError === null) {
       setStatus(STATUS.Open);
     } else {
@@ -144,7 +147,7 @@ const useChangeAction = (
   const handleShuffle = async () => {
     setIsShuffling(true);
     const shuffleSuccess = await electionUpdate(
-      'shuffle',
+      ACTION.Shuffle,
       endpoints.editShuffle(electionID.toString())
     );
     if (shuffleSuccess && postError === null) {
@@ -158,7 +161,7 @@ const useChangeAction = (
 
   const handleDecrypt = async () => {
     const decryptSuccess = await electionUpdate(
-      'beginDecryption',
+      ACTION.BeginDecryption,
       endpoints.editDKGActors(electionID.toString())
     );
     if (decryptSuccess && postError === null) {

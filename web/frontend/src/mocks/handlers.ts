@@ -18,7 +18,7 @@ import {
 } from '../types/frontendRequestBody';
 
 import { ID } from 'types/configuration';
-import { STATUS } from 'types/election';
+import { ACTION, STATUS } from 'types/election';
 import { setupMockElection, toLightElectionInfo } from './setupMockElections';
 import setupMockUserDB from './setupMockUserDB';
 import { ROLE } from 'types/userRole';
@@ -125,16 +125,16 @@ export const handlers = [
     var Status = STATUS.Initial;
 
     switch (body.Action) {
-      case 'open':
+      case ACTION.Open:
         Status = STATUS.Open;
         break;
-      case 'close':
+      case ACTION.Close:
         Status = STATUS.Closed;
         break;
-      case 'combineShares':
+      case ACTION.CombineShares:
         Status = STATUS.DecryptedBallots;
         break;
-      case 'cancel':
+      case ACTION.Cancel:
         Status = STATUS.Canceled;
         break;
       default:

@@ -25,6 +25,17 @@ export const enum STATUS {
   Canceled = 6,
 }
 
+export const enum ACTION {
+  Initialize = 'initialize',
+  Setup = 'setup',
+  Open = 'open',
+  Close = 'close',
+  Shuffle = 'shuffle',
+  BeginDecryption = 'beginDecryption',
+  CombineShares = 'combineShares',
+  Cancel = 'cancel',
+}
+
 interface ElectionInfo {
   ElectionID: ID;
   Status: STATUS;
