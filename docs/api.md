@@ -45,7 +45,7 @@ SC5:Close         │              │
     │             │          NS2:Shuffle
     │             │
     │             ▼
-    │         DK3:BeginDecryption
+    │         DK4:BeginDecryption
     │
     ▼
 SC6:CombineShares
@@ -119,6 +119,7 @@ Return:
       "TextResult": [["<string>"]]
     }
   ],
+  "Roster": ["<string>"],
   "ChunksPerBallot": "<int>",
   "BallotSize": "<int>",
   "Configuration": {<Configuration>}
@@ -354,7 +355,31 @@ Return:
 
 ```
 
-# DK3: DKG BeginDecryption 🔐
+# DK3: DKG Get info
+
+|        |                                             |
+| ------ | ------------------------------------------- |
+| URL    | `/evoting/services/dkg/actors/{ElectionID}` |
+| Method | `GET`                                       |
+| Input  |                                             |
+
+Return:
+
+`200 OK` `application/json`
+
+```json
+{
+  "Status": "<int>",
+  "Error": {
+    "Title": "",
+    "Code": "<uint>",
+    "Message": "",
+    "Args": {}
+  }
+}
+```
+
+# DK4: DKG BeginDecryption 🔐
 
 |        |                                             |
 | ------ | ------------------------------------------- |
