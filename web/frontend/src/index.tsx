@@ -1,10 +1,13 @@
-import React, { FC, ReactElement, createContext, useEffect, useState } from 'react';
+import React, { FC, ReactElement, createContext, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { ENDPOINT_PERSONNAL_INFO } from 'components/utils/Endpoints';
+import { ENDPOINT_PERSONAL_INFO } from 'components/utils/Endpoints';
 
 import 'index.css';
 import App from 'layout/App';
 import reportWebVitals from 'reportWebVitals';
+import ShortUniqueId from 'short-unique-id';
+
+const flashTimeout = 4000;
 
 // By default we load the mock messages when not in production. This is handy
 // because it removes the need to have a backend server.
@@ -28,23 +31,127 @@ export interface AuthState {
   role: string;
 }
 
+export interface FlashState {
+  getMessages(): FlashMessage[];
+  addMessage(msg: string, level: number): void;
+  hideMessage(index: string): void;
+}
+
+export const enum FlashLevel {
+  Info = 1,
+  Warning,
+  Error,
+}
+
+// FlashMessage defines the structure of a flash.
+class FlashMessage {
+  text: string;
+
+  // Level defines the type of flash: info, warn, error
+  level: FlashLevel;
+
+  // A uniq string identifier
+  id: string;
+
+  constructor(text: string, level: FlashLevel) {
+    this.text = text;
+    this.level = level;
+    this.id = new ShortUniqueId({ length: 8 })();
+  }
+
+  getText(): string {
+    return this.text;
+  }
+
+  getLevel(): FlashLevel {
+    return this.level;
+  }
+}
+
+// the flash context handles flash messages across the app
+export const FlashContext = createContext<FlashState>(undefined);
+
 // A small elements to display that the page is loading, should be something
 // more elegant in the future and be its own component.
 const Loading: FC = () => <p>App is loading...</p>;
 
-// AppContainer wraps the App with the context. It makes sure that the App is
-// displayed only when the AuthContext has been updated.
+const Failed: FC = ({ children }) => (
+  <div className="flex items-center justify-center w-screen h-screen bg-gradient-to-r from-red-600 to-red-700">
+    <div className="px-5 py-3 bg-white rounded-md shadow-xl">
+      <div className="flex flex-col items-center">
+        <div className="p-4">
+          <h1 className="text-2xl font-medium text-slate-600 pb-2">Failed to get personal info.</h1>
+          <p className="text-sm tracking-tight font-light text-slate-400 leading-6">
+            Is the backend running ?
+          </p>
+          <code className="text-sm tracking-tight font-light text-slate-400 leading-6">
+            {children}
+          </code>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// AppContainer wraps the App with the "auth" and "flash" contexts. It makes
+// sure that the App is displayed only when the AuthContext has been updated,
+// and displays flash messages.
 const AppContainer = () => {
   const [content, setContent] = useState<ReactElement>(<Loading />);
   const [auth, setAuth] = useState<AuthState>(undefined);
+
+  const [flashes, setFlashes] = useState<FlashMessage[]>([]);
+
+  // subtle react thing so the flashes can be used in setTimeout:
+  // https://github.com/facebook/react/issues/14010
+  const flashesRef = useRef(flashes);
+  flashesRef.current = flashes;
+
+  // flashState implements FlashStates. It wraps the necessary functions to be
+  // passed to the FlashContext.
+  const flashState = {
+    getMessages: (): FlashMessage[] => {
+      return flashes;
+    },
+
+    // add a flash to the list and set a timeout on it
+    addMessage: (message: string, level: number) => {
+      const flash = new FlashMessage(message, level);
+      const newFlashes = [...flashes, flash];
+      setFlashes(newFlashes);
+
+      // remove the flash after some timeout
+      setTimeout(() => {
+        let removedFlashes = [...flashesRef.current];
+        removedFlashes = removedFlashes.filter((f) => f.id !== flash.id);
+        setFlashes(removedFlashes);
+      }, flashTimeout);
+    },
+
+    // Set the visibility of flashMessage to false
+    hideMessage: (id: string) => {
+      let removedFlashes = [...flashesRef.current];
+      removedFlashes = removedFlashes.filter((f) => f.id !== id);
+      setFlashes(removedFlashes);
+    },
+  };
 
   useEffect(() => {
     const req = {
       method: 'GET',
     };
-    fetch(ENDPOINT_PERSONNAL_INFO, req)
-      .then((res) => res.json())
-      .then((result) => {
+
+    async function fetchData() {
+      try {
+        const res = await fetch(ENDPOINT_PERSONAL_INFO, req);
+
+        if (res.status !== 200) {
+          const txt = await res.text();
+          throw new Error(`unexpected status: ${res.status} - ${txt}`);
+        }
+
+        const result = await res.json();
+
         setAuth({
           isLogged: result.islogged,
           firstname: result.firstname,
@@ -53,10 +160,20 @@ const AppContainer = () => {
         });
 
         setContent(<App />);
-      });
+      } catch (e) {
+        setContent(<Failed>{e.toString()}</Failed>);
+        console.log('error:', e);
+      }
+    }
+
+    fetchData();
   }, []);
 
-  return <AuthContext.Provider value={auth}>{content}</AuthContext.Provider>;
+  return (
+    <FlashContext.Provider value={flashState}>
+      <AuthContext.Provider value={auth}>{content}</AuthContext.Provider>
+    </FlashContext.Provider>
+  );
 };
 
 // Main entry point

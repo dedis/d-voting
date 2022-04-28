@@ -59,7 +59,6 @@ func (electionFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, 
 		electionJSON := ElectionJSON{
 			Configuration:    m.Configuration,
 			ElectionID:       m.ElectionID,
-			AdminID:          m.AdminID,
 			Status:           uint16(m.Status),
 			Pubkey:           pubkey,
 			BallotSize:       m.BallotSize,
@@ -130,7 +129,6 @@ func (electionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, err
 	return types.Election{
 		Configuration:    electionJSON.Configuration,
 		ElectionID:       electionJSON.ElectionID,
-		AdminID:          electionJSON.AdminID,
 		Status:           types.Status(electionJSON.Status),
 		Pubkey:           pubKey,
 		BallotSize:       electionJSON.BallotSize,

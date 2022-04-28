@@ -36,26 +36,31 @@ func (m controller) SetCommands(builder node.Builder) {
 			Required: true,
 		},
 	)
-	sub.SetAction(builder.MakeAction(&registerAction{}))
+	sub.SetAction(builder.MakeAction(&RegisterAction{}))
 
 	// memcoin --config /tmp/node1 e-voting scenarioTest
 	sub = cmd.SetSubCommand("scenarioTest")
 	sub.SetDescription("evoting scenario test")
 	sub.SetFlags(
 		cli.StringFlag{
+			Name:     "secretkey",
+			Usage:    "the proxy secret key to sign requests, hex encoded",
+			Required: true,
+		},
+		cli.StringFlag{
 			Name:  "proxy-addr1",
 			Usage: "base address of the proxy for node 1",
-			Value: "http://localhost:8081",
+			Value: "http://localhost:9080",
 		},
 		cli.StringFlag{
 			Name:  "proxy-addr2",
 			Usage: "base address of the proxy for node 2",
-			Value: "http://localhost:8082",
+			Value: "http://localhost:9081",
 		},
 		cli.StringFlag{
 			Name:  "proxy-addr3",
 			Usage: "base address of the proxy for node 3",
-			Value: "http://localhost:8083",
+			Value: "http://localhost:9082",
 		},
 	)
 	sub.SetAction(builder.MakeAction(&scenarioTestAction{}))
