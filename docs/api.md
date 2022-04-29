@@ -32,6 +32,9 @@ SC1:Create        │              │
     │             ▼              │
     │          DK2:Setup         │
     │             │              │
+    │             ▼              │
+    │          DK3: DKG get info │
+    │             │              │
     ▼             │              │
 SC3:Open          │              │
     │             │              │
@@ -45,7 +48,13 @@ SC5:Close         │              │
     │             │          NS2:Shuffle
     │             │
     │             ▼
+    │         DK3: DKG get info
+    │             │
+    │             ▼
     │         DK4:BeginDecryption
+    │             │
+    │             ▼
+    │         DK3: DKG get info
     │
     ▼
 SC6:CombineShares
