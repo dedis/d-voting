@@ -2,23 +2,32 @@ package integration
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"math/rand"
-	"net/http"
 	"reflect"
+	"time"
+
+	//"math/rand"
+	"net/http"
+	//"reflect"
 	"strconv"
 	"strings"
-	"sync"
+
+	//"sync"
 	"testing"
-	"time"
+	//"time"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
+	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/sign/schnorr"
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/random"
 	"golang.org/x/xerrors"
@@ -28,44 +37,39 @@ var suite = suites.MustFind("Ed25519")
 
 // Check the shuffled votes versus the cast votes on a few nodes
 func TestScenario(t *testing.T) {
-	//t.Run("Basic configuration", getScenarioTest())
-	t.Run("Differents combination ", testVariableNode(3, 3, 1))
+	t.Run("Basic configuration", getScenarioTest())
+	//t.Run("Differents combination ", testVariableNode(3, 3, 1))
 }
 
 func getScenarioTest() func(*testing.T) {
 	return func(t *testing.T) {
-		const (
-			loginEndpoint               = "/evoting/login"
-			createElectionEndpoint      = "/evoting/create"
-			openElectionEndpoint        = "/evoting/open"
-			castVoteEndpoint            = "/evoting/cast"
-			getAllElectionsIdsEndpoint  = "/evoting/allids"
-			getElectionInfoEndpoint     = "/evoting/info"
-			getAllElectionsInfoEndpoint = "/evoting/all"
-			closeElectionEndpoint       = "/evoting/close"
-			shuffleBallotsEndpoint      = "/evoting/shuffle"
-			beginDecryptionEndpoint     = "/evoting/beginDecryption"
-			combineSharesEndpoint       = "/evoting/combineShares"
-			getElectionResultEndpoint   = "/evoting/result"
-			cancelElectionEndpoint      = "/evoting/cancel"
-			initEndpoint                = "/evoting/dkg/init"
-		)
 
 		const contentType = "application/json"
-
+		secretkeyBuf, err := hex.DecodeString("28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409")
+		secret := suite.Scalar()
+		err = secret.UnmarshalBinary(secretkeyBuf)
 		t.Parallel()
-		proxyAddr1 := "http://localhost:8081"
-		proxyAddr2 := "http://localhost:8082"
-		proxyAddr3 := "http://localhost:8083"
+
+		proxyAddr1 := "http://localhost:9080"
+		proxyAddr2 := "http://localhost:9081"
+		proxyAddr3 := "http://localhost:9082"
 
 		proxyArray := [3]string{proxyAddr1, proxyAddr2, proxyAddr3}
 
 		// ###################################### CREATE SIMPLE ELECTION ######
-		createElectionJs := `{"Configuration":{"MainTitle":"electionTitle","Scaffold":[{"ID":"YWE=","Title":"subject1","Order":null,"Subjects":null,"Selects":[{"ID":"YmI=","Title":"Select your favorite snacks","MaxN":3,"MinN":0,"Choices":["snickers","mars","vodka","babibel"]}],"Ranks":[],"Texts":null},{"ID":"ZGQ=","Title":"subject2","Order":null,"Subjects":null,"Selects":null,"Ranks":null,"Texts":[{"ID":"ZWU=","Title":"dissertation","MaxN":1,"MinN":1,"MaxLength":3,"Regex":"","Choices":["write yes in your language"]}]}]},"AdminID":"adminId"}`
-		t.Logf("Create election")
-		t.Logf("create election js: %v", createElectionJs)
 
-		resp, err := http.Post(proxyAddr1+createElectionEndpoint, contentType, bytes.NewBuffer([]byte(createElectionJs)))
+		t.Logf("Create election")
+
+		configuration := fake.BasicConfiguration
+
+		createSimpleElectionRequest := ptypes.CreateElectionRequest{
+			Configuration: configuration,
+			AdminID:       "adminId",
+		}
+		fmt.Println(secret)
+		signed, err := createSignedRequest(secret, createSimpleElectionRequest)
+		require.NoError(t, err, "fail to create singature")
+		resp, err := http.Post(proxyAddr1+"/evoting/elections", contentType, bytes.NewBuffer(signed))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
@@ -76,7 +80,6 @@ func getScenarioTest() func(*testing.T) {
 		t.Log("response body:", string(body))
 		resp.Body.Close()
 
-		// var payload interface{}
 		var objmap map[string]interface{}
 
 		err = json.Unmarshal(body, &objmap)
@@ -90,70 +93,58 @@ func getScenarioTest() func(*testing.T) {
 
 		t.Log("Node 1")
 
-		resp, err = http.Post(proxyAddr1+initEndpoint, contentType, bytes.NewBuffer([]byte(electionID)))
-		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
-		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
+		err = initDKG(secret, proxyAddr1, electionID, t)
+		require.NoError(t, err, "failed to init dkg 1: %v", err)
 
 		t.Log("Node 2")
-		resp, err = http.Post(proxyAddr2+initEndpoint, contentType, bytes.NewBuffer([]byte(electionID)))
-		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
-		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
+		err = initDKG(secret, proxyAddr2, electionID, t)
+		require.NoError(t, err, "failed to init dkg 2: %v", err)
 
 		t.Log("Node 3")
-		resp, err = http.Post(proxyAddr3+initEndpoint, contentType, bytes.NewBuffer([]byte(electionID)))
-		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
-		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
+		err = initDKG(secret, proxyAddr3, electionID, t)
+		require.NoError(t, err, "failed to init dkg 3: %v", err)
 
 		t.Log("Setup DKG")
-		resp, err = http.Post(proxyAddr1+"/evoting/dkg/setup", contentType, bytes.NewBuffer([]byte(electionID)))
-		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
+
+		msg := ptypes.UpdateDKG{
+			Action: "setup",
+		}
+		signed, err = createSignedRequest(secret, msg)
+
+		req, err := http.NewRequest(http.MethodPut, proxyAddr1+"/evoting/services/dkg/actors/"+electionID, bytes.NewBuffer(signed))
+		require.NoError(t, err, "failed to create request: %v", err)
+		resp, err = http.DefaultClient.Do(req)
+		require.NoError(t, err, "failed to setup dkg on node 1: %v", err)
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
-
-		pubkeyBuf, err := io.ReadAll(resp.Body)
-		require.NoError(t, err, "failed to read body: %v", err)
-		t.Logf("DKG public key: %x", pubkeyBuf)
-
-		pubKey := suite.Point()
-		err = pubKey.UnmarshalBinary(pubkeyBuf)
-		require.NoError(t, err, "failed to unmarshal pubkey: %v", err)
-		t.Logf("Pubkey: %v\n", pubKey)
 
 		// ##################################### OPEN ELECTION #####################
 
 		randomproxy := proxyArray[rand.Intn(len(proxyArray))]
 		t.Logf("Open election send to proxy %v", randomproxy)
 
-		resp, err = http.Post(randomproxy+"/evoting/open", contentType, bytes.NewBuffer([]byte(electionID)))
+		_, err = updateElection(secret, proxyAddr1, electionID, "open", t)
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
-		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
 		// ##################################### GET ELECTION INFO #################
-		// Get election public key
 
-		t.Log("Get election info")
-		createInfoJs := fmt.Sprintf(`{"ElectionID":"%v","Token":"token"}`, electionID)
+		getElectionInfo(objmap, proxyAddr1, electionID, t)
 
-		resp, err = http.Post(proxyAddr1+getElectionInfoEndpoint, contentType, bytes.NewBuffer([]byte(createInfoJs)))
-		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
-
-		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
-
-		body, err = io.ReadAll(resp.Body)
-		require.NoError(t, err, "failed to read the body of the response: %v", err)
-
-		t.Log("response body:", string(body))
-		resp.Body.Close()
-		err = json.Unmarshal(body, &objmap)
-		require.NoError(t, err, "failed to parse body of the response from js: %v", err)
 		electionpubkey := objmap["Pubkey"].(string)
 		electionStatus := int(objmap["Status"].(float64))
 		BallotSize := int(objmap["BallotSize"].(float64))
 		Chunksperballot := ChunksPerBallotManuel(BallotSize)
 		t.Logf("Publickey of the election : " + electionpubkey)
 		t.Logf("Status of the election : %v", electionStatus)
+
+		require.NoError(t, err, "failed to unmarshal pubkey: %v", err)
 		t.Logf("BallotSize of the election : %v", BallotSize)
 		t.Logf("Chunksperballot of the election : %v", Chunksperballot)
 
+		// Get election public key
+
+		pubkeyBuf, err := hex.DecodeString(electionpubkey)
+		pubKey := suite.Point()
+		err = pubKey.UnmarshalBinary(pubkeyBuf)
 		// ##################################### CAST BALLOTS ######################
 
 		t.Log("cast ballots")
@@ -175,21 +166,16 @@ func getScenarioTest() func(*testing.T) {
 
 		b1Marshal, _ := UnmarshalBallotManual(b1, fakeConfiguration)
 		ballotByte, _ := json.Marshal(b1Marshal)
-		// var temp_obj map[string]interface{}
 		_ = json.Unmarshal(ballotByte, &votesfrontend[0])
-		// t.Logf("b1_marshal is: %v", temp_obj)
 
 		b2Marshal, _ := UnmarshalBallotManual(b2, fakeConfiguration)
 		ballotByte, _ = json.Marshal(b2Marshal)
 		_ = json.Unmarshal(ballotByte, &votesfrontend[1])
-		// t.Logf("b2_marshal is: %v", temp_obj)
-		// votesfrontend[1] = temp_obj
 
 		b3Marshal, _ := UnmarshalBallotManual(b3, fakeConfiguration)
 		ballotByte, _ = json.Marshal(b3Marshal)
 		_ = json.Unmarshal(ballotByte, &votesfrontend[2])
-		// t.Logf("b1_marshal is: %v", temp_obj)
-		// votesfrontend[2] = temp_obj
+
 		t.Logf("b123_marshal is: %v", votesfrontend)
 
 		// Ballot 1
@@ -200,24 +186,18 @@ func getScenarioTest() func(*testing.T) {
 
 		require.NoError(t, err, "failed to encrypt ballot : %v", err)
 
-		data1, err := EncodeCiphervote(ballot1)
-		require.NoError(t, err, "failed to marshall ballot : %v", err)
-		t.Logf("1st marshalled ballot is: %v", data1)
-
-		castVoteRequest := types.CastVoteRequest{
-			ElectionID: electionID,
-			UserID:     "user1",
-			Ballot:     data1,
-			Token:      "token",
+		castVoteRequest := ptypes.CastVoteRequest{
+			UserID: "user1",
+			Ballot: ballot1,
 		}
 
 		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
 		t.Logf("cast first ballot to proxy %v", randomproxy)
-		jsVote, err := json.Marshal(castVoteRequest)
-		require.NoError(t, err, "failed to marshal castVoteRequest: %v", err)
 
 		t.Logf("vote is: %v", castVoteRequest)
-		resp, err = http.Post(randomproxy+castVoteEndpoint, contentType, bytes.NewBuffer(jsVote))
+		signed, err = createSignedRequest(secret, castVoteRequest)
+		require.NoError(t, err, "failed to sign: %v", err)
+		resp, err = http.Post(randomproxy+"/evoting/elections/"+electionID+"/vote", contentType, bytes.NewBuffer(signed))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected status: %s", resp.Status)
 		body, err = io.ReadAll(resp.Body)
@@ -230,23 +210,18 @@ func getScenarioTest() func(*testing.T) {
 		ballot2, err := marshallBallotManual(b2, pubKey, Chunksperballot)
 		require.NoError(t, err, "failed to encrypt ballot : %v", err)
 
-		data2, err := EncodeCiphervote(ballot2)
-		require.NoError(t, err, "failed to marshall ballot : %v", err)
-
-		castVoteRequest = types.CastVoteRequest{
-			ElectionID: electionID,
-			UserID:     "user2",
-			Ballot:     data2,
-			Token:      "token",
+		castVoteRequest = ptypes.CastVoteRequest{
+			UserID: "user2",
+			Ballot: ballot2,
 		}
 
 		t.Logf("cast second ballot")
-		jsVote, err = json.Marshal(castVoteRequest)
-		require.NoError(t, err, "failed to marshal castVoteRequest: %v", err)
 
 		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
-		resp, err = http.Post(randomproxy+castVoteEndpoint, contentType, bytes.NewBuffer(jsVote))
-		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
+
+		signed, err = createSignedRequest(secret, castVoteRequest)
+		require.NoError(t, err, "failed to sign: %v", err)
+		resp, err = http.Post(randomproxy+"/evoting/elections/"+electionID+"/vote", contentType, bytes.NewBuffer(signed))
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 		body, err = io.ReadAll(resp.Body)
 		require.NoError(t, err, "failed to read the response of castVoteRequest: %v", err)
@@ -258,24 +233,18 @@ func getScenarioTest() func(*testing.T) {
 		ballot3, err := marshallBallotManual(b3, pubKey, Chunksperballot)
 		require.NoError(t, err, "failed to encrypt ballot : %v", err)
 
-		data3, err := EncodeCiphervote(ballot3)
-		require.NoError(t, err, "failed to marshall ballot : %v", err)
-
-		castVoteRequest = types.CastVoteRequest{
-			ElectionID: electionID,
-			UserID:     "user3",
-			Ballot:     data3,
-			Token:      "token",
+		castVoteRequest = ptypes.CastVoteRequest{
+			UserID: "user3",
+			Ballot: ballot3,
 		}
 
 		t.Logf("cast third ballot")
-		jsVote, err = json.Marshal(castVoteRequest)
-		require.NoError(t, err, "failed to marshal castVoteRequest: %v", err)
 
 		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
 
-		resp, err = http.Post(randomproxy+castVoteEndpoint, contentType, bytes.NewBuffer(jsVote))
-		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
+		signed, err = createSignedRequest(secret, castVoteRequest)
+		require.NoError(t, err, "failed to sign: %v", err)
+		resp, err = http.Post(randomproxy+"/evoting/elections/"+electionID+"/vote", contentType, bytes.NewBuffer(signed))
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 		body, err = io.ReadAll(resp.Body)
 		require.NoError(t, err, "failed to read the response of castVoteRequest: %v", err)
@@ -289,63 +258,38 @@ func getScenarioTest() func(*testing.T) {
 
 		t.Logf("Close election (for real) send to proxy %v", randomproxy)
 
-		closeElectionRequest := types.CloseElectionRequest{
-			ElectionID: electionID,
-			UserID:     "adminId",
-			Token:      "token",
-		}
-
-		js, err := json.Marshal(closeElectionRequest)
+		_, err = updateElection(secret, randomproxy, electionID, "close", t)
 		require.NoError(t, err, "failed to set marshall types.CloseElectionRequest : %v", err)
 
-		resp, err = http.Post(randomproxy+closeElectionEndpoint, contentType, bytes.NewBuffer(js))
-		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
-		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
+		getElectionInfo(objmap, proxyAddr1, electionID, t)
 
-		body, err = io.ReadAll(resp.Body)
-		require.NoError(t, err, "failed to read the body of the response: %v", err)
-
-		t.Log("Response body: " + string(body))
-		resp.Body.Close()
-
-		t.Log("Get election info")
-		createInfoJs = fmt.Sprintf(`{"ElectionID":"%v","Token":"token"}`, electionID)
-
-		resp, err = http.Post(randomproxy+getElectionInfoEndpoint, contentType, bytes.NewBuffer([]byte(createInfoJs)))
-		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
-
-		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
-
-		body, err = io.ReadAll(resp.Body)
-		require.NoError(t, err, "failed to read the body of the response: %v", err)
-
-		t.Log("response body:", string(body))
-		resp.Body.Close()
-		err = json.Unmarshal(body, &objmap)
 		require.NoError(t, err, "failed to parsethe body of the response from js: %v", err)
 		electionStatus = int(objmap["Status"].(float64))
 		t.Logf("Status of the election : %v", electionStatus)
+		require.Equal(t, 2, electionStatus)
 
 		// ###################################### SHUFFLE BALLOTS ##################
 
 		t.Log("shuffle ballots")
 
-		shuffleBallotsRequest := types.ShuffleBallotsRequest{
-			ElectionID: electionID,
-			UserID:     "adminId",
-			Token:      "token",
+		shuffleBallotsRequest := ptypes.UpdateShuffle{
+			Action: "shuffle",
 		}
 
-		js, err = json.Marshal(shuffleBallotsRequest)
+		//js, err = json.Marshal(shuffleBallotsRequest)
+		signed, err = createSignedRequest(secret, shuffleBallotsRequest)
 		require.NoError(t, err, "failed to set marshall types.SimpleElection : %v", err)
 
 		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
 
 		oldTime := time.Now()
 
-		resp, err = http.Post(randomproxy+shuffleBallotsEndpoint, contentType, bytes.NewBuffer(js))
+		req, err = http.NewRequest(http.MethodPut, randomproxy+"/evoting/services/shuffle/"+electionID, bytes.NewBuffer(signed))
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
+		resp, err = http.DefaultClient.Do(req)
+		require.NoError(t, err, "failed to execute the shuffle query: %v", err)
+
 		currentTime := time.Now()
 		diff := currentTime.Sub(oldTime)
 		t.Logf("Shuffle takes: %v sec", diff.Seconds())
@@ -358,164 +302,51 @@ func getScenarioTest() func(*testing.T) {
 
 		time.Sleep(10 * time.Second)
 
-		t.Log("Get election info")
-		createInfoJs = fmt.Sprintf(`{"ElectionID":"%v","Token":"token"}`, electionID)
+		getElectionInfo(objmap, proxyAddr1, electionID, t)
 
-		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
-
-		resp, err = http.Post(randomproxy+getElectionInfoEndpoint, contentType, bytes.NewBuffer([]byte(createInfoJs)))
-		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
-
-		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
-
-		body, err = io.ReadAll(resp.Body)
-		require.NoError(t, err, "failed to read the body of the response: %v", err)
-
-		t.Log("response body:", string(body))
-		resp.Body.Close()
-		err = json.Unmarshal(body, &objmap)
-		require.NoError(t, err, "failed to parsethe body of the response from js: %v", err)
 		electionStatus = int(objmap["Status"].(float64))
 		t.Logf("Status of the election : %v", electionStatus)
+		require.Equal(t, 3, electionStatus)
 
 		// ###################################### REQUEST PUBLIC SHARES ############
 
 		t.Log("request public shares")
 
-		beginDecryptionRequest := types.BeginDecryptionRequest{
-			ElectionID: electionID,
-			UserID:     "adminId",
-			Token:      "token",
-		}
+		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
+		oldTime = time.Now()
 
-		js, err = json.Marshal(beginDecryptionRequest)
+		_, err = updateDKG(secret, randomproxy, electionID, "computePubshares", t)
 		require.NoError(t, err, "failed to set marshall types.SimpleElection : %v", err)
 
-		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
-
-		oldTime = time.Now()
-		resp, err = http.Post(randomproxy+beginDecryptionEndpoint, contentType, bytes.NewBuffer(js))
-		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
-		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 		currentTime = time.Now()
 		diff = currentTime.Sub(oldTime)
-		t.Logf("Request public shares takes: %v sec", diff.Seconds())
-
-		body, err = io.ReadAll(resp.Body)
-		require.NoError(t, err, "failed to read the body of the response: %v", err)
-
-		t.Log("Response body: " + string(body))
-		resp.Body.Close()
 
 		time.Sleep(10 * time.Second)
 
-		t.Log("Get election info")
-		createInfoJs = fmt.Sprintf(`{"ElectionID":"%v","Token":"token"}`, electionID)
+		getElectionInfo(objmap, proxyAddr1, electionID, t)
 
-		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
-
-		resp, err = http.Post(randomproxy+getElectionInfoEndpoint, contentType, bytes.NewBuffer([]byte(createInfoJs)))
-		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
-
-		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
-
-		body, err = io.ReadAll(resp.Body)
-		require.NoError(t, err, "failed to read the body of the response: %v", err)
-
-		t.Log("response body:", string(body))
-		resp.Body.Close()
-		err = json.Unmarshal(body, &objmap)
-		require.NoError(t, err, "failed to parsethe body of the response from js: %v", err)
 		electionStatus = int(objmap["Status"].(float64))
 		t.Logf("Status of the election : %v", electionStatus)
+		require.Equal(t, 4, electionStatus)
 
 		// ###################################### DECRYPT BALLOTS ##################
 
 		t.Log("decrypt ballots")
 
-		decryptBallotsRequest := types.CombineSharesRequest{
-			ElectionID: electionID,
-			UserID:     "adminId",
-			Token:      "token",
-		}
-
-		js, err = json.Marshal(decryptBallotsRequest)
-		require.NoError(t, err, "failed to set marshall types.CombineSharesRequest : %v", err)
-
 		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
 
-		resp, err = http.Post(randomproxy+combineSharesEndpoint, contentType, bytes.NewBuffer(js))
-		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
-		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
-
-		body, err = io.ReadAll(resp.Body)
-		require.NoError(t, err, "failed to read the body of the response: %v", err)
-
-		t.Log("Response body: " + string(body))
-		resp.Body.Close()
+		_, err = updateElection(secret, randomproxy, electionID, "combineShares", t)
+		require.NoError(t, err, "failed to combine shares: %v", err)
 
 		time.Sleep(10 * time.Second)
 
-		t.Log("Get election info")
-		createInfoJs = fmt.Sprintf(`{"ElectionID":"%v","Token":"token"}`, electionID)
+		getElectionInfo(objmap, proxyAddr1, electionID, t)
 
-		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
-
-		resp, err = http.Post(randomproxy+getElectionInfoEndpoint, contentType, bytes.NewBuffer([]byte(createInfoJs)))
-		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
-
-		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
-
-		body, err = io.ReadAll(resp.Body)
-		require.NoError(t, err, "failed to read the body of the response: %v", err)
-
-		t.Log("response body:", string(body))
-		resp.Body.Close()
-		err = json.Unmarshal(body, &objmap)
-		require.NoError(t, err, "failed to parsethe body of the response from js: %v", err)
 		electionStatus = int(objmap["Status"].(float64))
 		t.Logf("Status of the election : %v", electionStatus)
-
-		// ###################################### GET ELECTION RESULT ##############
-
-		t.Log("Get election result")
-
-		getElectionResultRequest := types.GetElectionResultRequest{
-			ElectionID: electionID,
-			Token:      "token",
-		}
-
-		js, err = json.Marshal(getElectionResultRequest)
-		require.NoError(t, err, "failed to set marshall types.GetElectionResultRequest : %v", err)
-
-		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
-
-		resp, err = http.Post(randomproxy+getElectionResultEndpoint, contentType, bytes.NewBuffer(js))
-
-		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
-		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
-
-		body, err = io.ReadAll(resp.Body)
-		require.NoError(t, err, "failed to read the body of the response: %v", err)
-
-		t.Log("Response body: " + string(body))
-		resp.Body.Close()
+		require.Equal(t, 5, electionStatus)
 
 		// ###################################### VALIDATE ELECTION RESULT ##############
-
-		// body1 := `{"Result":[{"SelectResultIDs":["YmI="],"SelectResult":[[false,false,true,false]],"RankResultIDs":[],"RankResult":[],"TextResultIDs":["ZWU="],"TextResult":[["yes"]]},{"SelectResultIDs":["YmI="],"SelectResult":[[true,true,false,false]],"RankResultIDs":[],"RankResult":[],"TextResultIDs":["ZWU="],"TextResult":[["ja"]]},{"SelectResultIDs":null,"SelectResult":null,"RankResultIDs":null,"RankResult":null,"TextResultIDs":null,"TextResult":null}]}`
-
-		// var objmap1 map[string]interface{}
-		// _ = json.Unmarshal([]byte(body1), &objmap1)
-		// tmpBallots := (objmap1["Result"]).([]interface{})
-		// tmp_map := tmpBallots[0].(map[string]interface{})
-		// unmarshal in a ballot object
-
-		// require.Equal(t, temp_obj, tmp_map)
-		// return
-
-		err = json.Unmarshal(body, &objmap)
-		require.NoError(t, err, "failed to parsethe body of the response from js: %v", err)
 
 		tmpBallots := (objmap["Result"]).([]interface{})
 		var tmpComp map[string]interface{}
@@ -537,20 +368,12 @@ func getScenarioTest() func(*testing.T) {
 		}
 		require.True(t, tmpCount, "front end votes are different from decrypted votes")
 
-		// // tmpBallots := (objmap["Result"]).([]types.Ballot)
-
-		// t.Logf("Response body tmpBallots is %v", tmpBallots[0])
-		// b_test, _ := tmpBallots[0]["RankResult"]
-		// t.Logf("Response body tmpBallots RankResult is %v", b_test)
-
-		// // var sendback_ballots types.Ballot
-		// // _ = json.Unmarshal(b_test, sendback_ballots)
-		// // t.Logf("Response body unmarshalled is %v", sendback_ballots)
 		return
 
 	}
 }
 
+/*
 func testVariableNode(numNodes int, numVotes int, numElection int) func(*testing.T) {
 	return func(t *testing.T) {
 
@@ -1014,11 +837,13 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyL
 
 }
 
+*/
+
 // -----------------------------------------------------------------------------
 // Utility functions
-func marshallBallotManual(voteStr string, pubkey kyber.Point, chunks int) (types.Ciphervote, error) {
+func marshallBallotManual(voteStr string, pubkey kyber.Point, chunks int) (ptypes.CiphervoteJSON, error) {
 
-	var ballot = make(types.Ciphervote, chunks)
+	var ballot = make(ptypes.CiphervoteJSON, chunks)
 	vote := strings.NewReader(voteStr)
 	fmt.Printf("votestr is: %v", voteStr)
 
@@ -1036,12 +861,22 @@ func marshallBallotManual(voteStr string, pubkey kyber.Point, chunks int) (types
 		K, C, _, err = EncryptManual(buf[:n], pubkey)
 
 		if err != nil {
-			return types.Ciphervote{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
+			return ptypes.CiphervoteJSON{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
 		}
 
-		ballot[i] = types.EGPair{
-			K: K,
-			C: C,
+		kbuff, err := K.MarshalBinary()
+		if err != nil {
+			return ptypes.CiphervoteJSON{}, xerrors.Errorf("failed to marshal K: %v", err)
+		}
+
+		cbuff, err := C.MarshalBinary()
+		if err != nil {
+			return ptypes.CiphervoteJSON{}, xerrors.Errorf("failed to marshal C: %v", err)
+		}
+
+		ballot[i] = ptypes.EGPairJSON{
+			K: kbuff,
+			C: cbuff,
 		}
 	}
 
@@ -1304,4 +1139,112 @@ func UnmarshalBallotManual(marshalledBallot string, configuration types.Configur
 
 func encodeIDBallot(ID string) types.ID {
 	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
+}
+
+func createSignedRequest(secret kyber.Scalar, msg interface{}) ([]byte, error) {
+	jsonMsg, err := json.Marshal(msg)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to marshal json: %v", err)
+	}
+
+	payload := base64.URLEncoding.EncodeToString(jsonMsg)
+
+	hash := sha256.New()
+
+	hash.Write([]byte(payload))
+	md := hash.Sum(nil)
+
+	signature, err := schnorr.Sign(suite, secret, md)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to sign: %v", err)
+	}
+
+	signed := ptypes.SignedRequest{
+		Payload:   payload,
+		Signature: hex.EncodeToString(signature),
+	}
+
+	signedJSON, err := json.Marshal(signed)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to create json signed: %v", err)
+	}
+
+	return signedJSON, nil
+}
+func initDKG(secret kyber.Scalar, proxyAddr, electionIDHex string, t *testing.T) error {
+	setupDKG := ptypes.NewDKGRequest{
+		ElectionID: electionIDHex,
+	}
+
+	signed, err := createSignedRequest(secret, setupDKG)
+	require.NoError(t, err, "fail to create singature")
+
+	resp, err := http.Post(proxyAddr+"/evoting/services/dkg/actors", "application/json", bytes.NewBuffer(signed))
+	if err != nil {
+		return xerrors.Errorf("failed to post request: %v", err)
+	}
+	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
+
+	return nil
+}
+
+func updateElection(secret kyber.Scalar, proxyAddr, electionIDHex, action string, t *testing.T) (int, error) {
+	msg := ptypes.UpdateElectionRequest{
+		Action: action,
+	}
+
+	signed, err := createSignedRequest(secret, msg)
+	require.NoError(t, err, "fail to create singature")
+
+	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/elections/"+electionIDHex, bytes.NewBuffer(signed))
+	if err != nil {
+		return 0, xerrors.Errorf("failed to create request: %v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0, xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
+	}
+
+	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
+
+	return 0, nil
+}
+func updateDKG(secret kyber.Scalar, proxyAddr, electionIDHex, action string, t *testing.T) (int, error) {
+	msg := ptypes.UpdateDKG{
+		Action: action,
+	}
+
+	signed, err := createSignedRequest(secret, msg)
+	require.NoError(t, err, "fail to create singature")
+
+	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/services/dkg/actors/"+electionIDHex, bytes.NewBuffer(signed))
+	if err != nil {
+		return 0, xerrors.Errorf("failed to create request: %v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0, xerrors.Errorf("failed to execute the query: %v", err)
+	}
+
+	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
+
+	return 0, nil
+}
+
+func getElectionInfo(objmap map[string]interface{}, proxyAddr, electionID string, t *testing.T) {
+	t.Log("Get election info")
+	resp, err := http.Get(proxyAddr + "/evoting/elections" + "/" + electionID)
+
+	require.NoError(t, err, "failed to get the election: %v", err)
+
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err, "failed to read the body of the response: %v", err)
+
+	t.Log("response body:", string(body))
+	resp.Body.Close()
+	err = json.Unmarshal(body, &objmap)
+	require.NoError(t, err, "failed to parse body of the response from js: %v", err)
+
 }

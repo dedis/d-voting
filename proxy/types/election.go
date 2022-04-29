@@ -39,12 +39,14 @@ type UpdateElectionRequest struct {
 // GetElectionResponse defines the HTTP response when getting the election info
 type GetElectionResponse struct {
 	// ElectionID is hex-encoded
-	ElectionID    string
-	Configuration etypes.Configuration
-	Status        uint16
-	Pubkey        string
-	Result        []etypes.Ballot
-	Format        string
+	ElectionID      string
+	Configuration   etypes.Configuration
+	Status          uint16
+	Pubkey          string
+	Result          []etypes.Ballot
+	Format          string
+	BallotSize      int
+	Chunksperballot int
 }
 
 // GetElections defines the HTTP request for getting all elections infos.
