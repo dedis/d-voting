@@ -48,9 +48,6 @@ SC5:Close         │              │
     │             │          NS2:Shuffle
     │             │
     │             ▼
-    │         DK3: DKG get info
-    │             │
-    │             ▼
     │         DK4:BeginDecryption
     │             │
     │             ▼
