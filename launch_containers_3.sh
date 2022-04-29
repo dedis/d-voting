@@ -26,7 +26,10 @@ node2="tmux send-keys -t $s:0.%2"
 node3="tmux send-keys -t $s:0.%3"
 
 # Clean containers and tmp dir
-docker rm -f $(docker ps -a -q)
+if [[ $(docker ps -a -q) ]]; then
+    docker rm -f $(docker ps -a -q)
+fi
+
 rm -rf ./nodedata    
 mkdir nodedata
 
