@@ -220,28 +220,6 @@ Return:
 
 ```
 
-# DK3: Election begin decryption 🔐
-
-|        |                                             |
-| ------ | ------------------------------------------- |
-| URL    | `/evoting/services/dkg/actors/{ElectionID}` |
-| Method | `PUT`                                       |
-| Input  | `application/json`                          |
-
-```json
-{
-  "Action": "beginDecryption"
-}
-```
-
-Return:
-
-`200 OK` `text/plain`
-
-```
-
-```
-
 # SC6: Election combine shares 🔐
 
 |        |                                   |
@@ -355,7 +333,7 @@ Return:
 
 ```
 
-# DK3: DKG Get info
+# DK3: DKG get info
 
 |        |                                             |
 | ------ | ------------------------------------------- |
@@ -379,7 +357,7 @@ Return:
 }
 ```
 
-# DK4: DKG BeginDecryption 🔐
+# DK4: DKG begin decryption 🔐
 
 |        |                                             |
 | ------ | ------------------------------------------- |
