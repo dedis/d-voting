@@ -358,7 +358,7 @@ func getScenarioTest() func(*testing.T) {
 		t.Logf("Status of the election : %v", electionStatus)
 		require.Equal(t, 5, electionStatus)
 
-		// ###################################### VALIDATE ELECTION RESULT ##############
+		//##################################### VALIDATE ELECTION RESULT ############
 
 		tmpBallots := (objmap["Result"]).([]interface{})
 		var tmpComp map[string]interface{}
@@ -379,8 +379,6 @@ func getScenarioTest() func(*testing.T) {
 			}
 		}
 		require.True(t, tmpCount, "front end votes are different from decrypted votes")
-
-		return
 
 	}
 }
@@ -412,8 +410,6 @@ func testVariableNode(numNodes int, numVotes int, numElection int) func(*testing
 
 		fmt.Println("Waiting for workers to finish")
 		wg.Wait()
-
-		return
 
 	}
 }
@@ -666,7 +662,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Logf("Status of the election : %v", electionStatus)
 	require.Equal(t, 5, electionStatus)
 
-	// ###################################### VALIDATE ELECTION RESULT ##############
+	//#################################### VALIDATE ELECTION RESULT ##############
 
 	tmpBallots := (objmap["Result"]).([]interface{})
 	var tmpComp map[string]interface{}
