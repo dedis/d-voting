@@ -24,7 +24,6 @@ done
 
 
 echo "${GREEN}[2/4]${NC} create a chain"
-N_NODE=3
 vals=($(seq 1 1 $N_NODE))
 ARRAY=""
 foo+=" World"
