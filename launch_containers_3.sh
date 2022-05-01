@@ -37,10 +37,10 @@ mkdir nodedata
 # docker network create --driver bridge evoting-net
 
 
-#Start docker images and bind volume
-docker run -d -it --name node1 --network evoting-net -v "$(pwd)"/nodedata:/tmp node
-docker run -d -it --name node2 --network evoting-net -v "$(pwd)"/nodedata:/tmp node
-docker run -d -it --name node3 --network evoting-net -v "$(pwd)"/nodedata:/tmp node
+#Start docker images and bind volume and ports to localhost 
+docker run -d -it --name node1 --network evoting-net -v "$(pwd)"/nodedata:/tmp --publish 9081:9080 node
+docker run -d -it --name node2 --network evoting-net -v "$(pwd)"/nodedata:/tmp --publish 9082:9080 node
+docker run -d -it --name node3 --network evoting-net -v "$(pwd)"/nodedata:/tmp --publish 9083:9080 node
 
 #Get docker images IP addr
 addr1=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' node1)

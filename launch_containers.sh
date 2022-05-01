@@ -34,7 +34,7 @@ pk=adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3
 #Start docker images and bind volume
 for i in "${vals[@]}"
 do
-    docker run -d -it --name node$i --network evoting-net -v "$(pwd)"/nodedata:/tmp node
+    docker run -d -it --name node$i --network evoting-net -v "$(pwd)"/nodedata:/tmp  --publish $(( 9080+$i )):9080 node
     tmux new-window -t $TMUX_SESSION_NAME
 
     tmux send-keys -t $TMUX_SESSION_NAME:$i.0 "eval docker exec node$i memcoin --config /tmp/node$i start --postinstall \
