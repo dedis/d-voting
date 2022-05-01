@@ -11,6 +11,7 @@ import CancelButton from './CancelButton';
 import OpenButton from './OpenButton';
 import DecryptButton from './DecryptButton';
 import ResultButton from './ResultButton';
+import VoteButton from './VoteButton';
 
 const useChangeAction = (
   status: STATUS,
@@ -188,6 +189,7 @@ const useChangeAction = (
           <span>
             <CloseButton status={status} handleClose={handleClose} />
             <CancelButton status={status} handleCancel={handleCancel} />
+            <VoteButton status={status} electionID={electionID} />
           </span>
         );
       case STATUS.Closed:

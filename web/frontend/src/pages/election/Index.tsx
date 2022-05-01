@@ -36,7 +36,7 @@ const ElectionIndex: FC = () => {
   };
 
   return (
-    <div className="election-wrapper">
+    <div className="pt-4 mx-2">
       {t('listElection')}
       {!loading ? (
         showElection()

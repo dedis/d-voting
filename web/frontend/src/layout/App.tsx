@@ -48,12 +48,12 @@ const App = () => {
     <Suspense fallback="...loading app">
       <Router>
         <div className="App flex flex-col h-screen justify-between">
-          <div className="app-nav">
+          <div>
             <NavBar />
           </div>
           <div
             data-testid="content"
-            className="app-page mb-auto flex flex-row justify-center items-center w-full">
+            className=" mb-auto max-w-[80rem] mx-auto flex flex-row justify-center items-center w-full">
             <Routes>
               <Route
                 path={ROUTE_ELECTION_CREATE}
