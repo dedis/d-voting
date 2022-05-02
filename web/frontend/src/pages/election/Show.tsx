@@ -7,7 +7,6 @@ import useElection from 'components/utils/useElection';
 import './Show.css';
 import useGetResults from 'components/utils/useGetResults';
 import { STATUS } from 'types/election';
-import Status from './components/Status';
 import Action from './components/Action';
 import StatusTimeline from './components/StatusTimeline';
 
@@ -40,15 +39,14 @@ const ElectionShow: FC = () => {
             </div>
             <h2>Election ID : {electionId}</h2>
             <div className="py-6 pl-2">
-              <div className="font-bold uppercase text-lg text-gray-700">Workflow</div>
+              <div className="font-bold uppercase text-lg text-gray-700">{t('status')}</div>
 
-              <div className="px-2">
-                {t('status')}: <Status status={status} />
+              <div className="px-2 pt-6">
                 <StatusTimeline status={status} />
               </div>
             </div>
-            <div className="py-6 pl-2 pb-8">
-              <div className="font-bold uppercase text-lg text-gray-700">{t('action')}</div>
+            <div className="py-4 pl-2 pb-8">
+              <div className="font-bold uppercase text-lg text-gray-700 pb-2">{t('action')}</div>
               <div className="px-2">
                 <Action
                   status={status}
