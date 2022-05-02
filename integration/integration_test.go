@@ -574,8 +574,8 @@ func encodeID(ID string) types.ID {
 	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
 }
 
-// waitForStatus polls the node until they all updated to the expected status for
-// the given election. An error is raised if the timeout expires.
+// waitForStatus polls the node until they all updated to the expected status
+// for the given election. An error is raised if the timeout expires.
 func waitForStatus(status types.Status, electionFac types.ElectionFactory, electionID []byte,
 	nodes []dVotingCosiDela, t *testing.T, numNodes int, timeOut time.Duration) {
 	// setup a timer to fail the test in case we never reach the status
