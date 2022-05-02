@@ -33,7 +33,7 @@ const Admin = () => {
       });
   }, [showDeleteModal]);
 
-  const partitionArray = (array, size) =>
+  const partitionArray = (array: any[], size: number) =>
     array.map((v, i) => (i % size === 0 ? array.slice(i, i + size) : null)).filter((v) => v);
 
   useEffect(() => {
@@ -65,7 +65,7 @@ const Admin = () => {
         <div className="mt-3 ml-2">Add/remove roles of users from the admin table</div>
         <button
           onClick={openModal}
-          className=" whitespace-nowrap inline-flex mb-2 items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+          className=" whitespace-nowrap inline-flex mb-2 items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gray-600 hover:bg-gray-700">
           <PlusIcon className="-ml-1 mr-2 h-4 w-4" aria-hidden="true" />
           Add a user
         </button>
