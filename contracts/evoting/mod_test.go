@@ -1284,6 +1284,10 @@ func (f fakeDkgActor) ComputePubshares() error {
 	return f.err
 }
 
+func (f fakeDkgActor) Status() dkg.Status {
+	return dkg.Status{}
+}
+
 type fakeAccess struct {
 	access.Service
 

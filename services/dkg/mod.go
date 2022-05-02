@@ -5,6 +5,27 @@ import (
 	"go.dedis.ch/kyber/v3"
 )
 
+// StatusCode is the type used to define a DKG status
+type StatusCode uint16
+
+// Status defines a struct to hold the status and error context if any.
+type Status struct {
+	Status StatusCode
+	// The following is mostly usefull to return context to a frontend in case
+	// of error.
+	Err  error
+	Args map[string]interface{}
+}
+
+const (
+	// Initialized is when the actor has been initialized
+	Initialized StatusCode = 0
+	// Setup is when the actor was set up
+	Setup StatusCode = 1
+	// Failed is when the actor failed to set up
+	Failed StatusCode = 2
+)
+
 // DKG defines the primitive to start a DKG protocol
 type DKG interface {
 	// Listen starts the RPC. This function should be called on each node that
@@ -40,4 +61,7 @@ type Actor interface {
 	// MarshalJSON returns a JSON-encoded bytestring containing all the actor
 	// data that is meant to be persistent.
 	MarshalJSON() ([]byte, error)
+
+	// Status returns the actor's status
+	Status() Status
 }

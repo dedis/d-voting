@@ -44,15 +44,9 @@ type GetElectionResponse struct {
 	Status          uint16
 	Pubkey          string
 	Result          []etypes.Ballot
-	Format          string
+	Roster          []string
 	BallotSize      int
 	Chunksperballot int
-}
-
-// GetElections defines the HTTP request for getting all elections infos.
-type GetElections struct {
-	// UserId string
-	Token string
 }
 
 // LightElection represents a light version of the election

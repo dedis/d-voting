@@ -373,12 +373,20 @@ func (h *election) Election(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	roster := make([]string, 0, election.Roster.Len())
+
+	iter := election.Roster.AddressIterator()
+	for iter.HasNext() {
+		roster = append(roster, iter.GetNext().String())
+	}
+
 	response := ptypes.GetElectionResponse{
 		ElectionID:      string(election.ElectionID),
 		Configuration:   election.Configuration,
 		Status:          uint16(election.Status),
 		Pubkey:          hex.EncodeToString(pubkeyBuf),
 		Result:          election.DecryptedBallots,
+		Roster:          roster,
 		BallotSize:      election.BallotSize,
 		Chunksperballot: election.ChunksPerBallot(),
 	}
