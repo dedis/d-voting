@@ -49,9 +49,6 @@ SC5:Close         │              │
     │             │
     │             ▼
     │         DK4:BeginDecryption
-    │             │
-    │             ▼
-    │         DK3: DKG get info
     │
     ▼
 SC6:CombineShares
