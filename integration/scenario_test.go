@@ -30,6 +30,7 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/schnorr"
 	"go.dedis.ch/kyber/v3/suites"
+	"go.dedis.ch/kyber/v3/util/encoding"
 	"go.dedis.ch/kyber/v3/util/random"
 	"golang.org/x/xerrors"
 )
@@ -147,11 +148,7 @@ func getScenarioTest() func(*testing.T) {
 
 		// Get election public key
 
-		pubkeyBuf, err := hex.DecodeString(electionpubkey)
-		require.NoError(t, err, "failed to decode key: %v", err)
-
-		pubKey := suite.Point()
-		err = pubKey.UnmarshalBinary(pubkeyBuf)
+		pubKey, err := encoding.StringHexToPoint(suite, electionpubkey)
 		require.NoError(t, err, "failed to Unmarshal key: %v", err)
 
 		// ##################################### CAST BALLOTS ######################
@@ -460,7 +457,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 
 	t.Log("Init DKG")
 
-	for i := 0; i < len(proxyArray); i++ {
+	for i := 0; i < numNodes; i++ {
 		t.Log("Node" + strconv.Itoa(i))
 		fmt.Println(proxyArray[i])
 		err = initDKG(secret, proxyArray[i], electionID, t)
@@ -490,7 +487,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	// ##################################### GET ELECTION INFO #################
 
 	proxyAddr1 := proxyArray[0]
-
+	time.Sleep(time.Second * 3)
 	getElectionInfo(objmap, proxyAddr1, electionID, t)
 
 	electionpubkey := objmap["Pubkey"].(string)
@@ -506,13 +503,8 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 
 	// Get election public key
 
-	pubkeyBuf, err := hex.DecodeString(electionpubkey)
-	require.NoError(t, err, "failed to decode key: %v", err)
-
-	pubKey := suite.Point()
-	err = pubKey.UnmarshalBinary(pubkeyBuf)
+	pubKey, err := encoding.StringHexToPoint(suite, electionpubkey)
 	require.NoError(t, err, "failed to Unmarshal key: %v", err)
-
 	// ##################################### CAST BALLOTS ######################
 
 	t.Log("cast ballots")
@@ -576,8 +568,9 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	_, err = updateElection(secret, randomproxy, electionID, "close", t)
 	require.NoError(t, err, "failed to set marshall types.CloseElectionRequest : %v", err)
 
-	getElectionInfo(objmap, proxyAddr1, electionID, t)
+	time.Sleep(time.Second * 3)
 
+	getElectionInfo(objmap, proxyAddr1, electionID, t)
 	require.NoError(t, err, "failed to parsethe body of the response from js: %v", err)
 	electionStatus = int(objmap["Status"].(float64))
 	t.Logf("Status of the election : %v", electionStatus)
@@ -597,16 +590,21 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 
 	randomproxy = proxyArray[rand.Intn(len(proxyArray))]
 
+	timeTable := make([]float64, 3)
+
 	oldTime := time.Now()
 
 	req, err = http.NewRequest(http.MethodPut, randomproxy+"/evoting/services/shuffle/"+electionID, bytes.NewBuffer(signed))
+
 	require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 	resp, err = http.DefaultClient.Do(req)
+
 	require.NoError(t, err, "failed to execute the shuffle query: %v", err)
 
 	currentTime := time.Now()
 	diff := currentTime.Sub(oldTime)
+	timeTable[0] = diff.Seconds()
 	t.Logf("Shuffle takes: %v sec", diff.Seconds())
 
 	body, err = io.ReadAll(resp.Body)
@@ -615,7 +613,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Log("Response body: " + string(body))
 	resp.Body.Close()
 
-	time.Sleep(10 * time.Second)
+	//time.Sleep(10 * time.Second)
 
 	getElectionInfo(objmap, proxyAddr1, electionID, t)
 
@@ -635,7 +633,9 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 
 	currentTime = time.Now()
 	diff = currentTime.Sub(oldTime)
-	t.Logf("Shuffle takes: %v sec", diff.Seconds())
+	timeTable[1] = diff.Seconds()
+
+	t.Logf("Request public share takes: %v sec", diff.Seconds())
 
 	time.Sleep(10 * time.Second)
 
@@ -650,13 +650,21 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Log("decrypt ballots")
 
 	randomproxy = proxyArray[rand.Intn(len(proxyArray))]
+	oldTime = time.Now()
 
 	_, err = updateElection(secret, randomproxy, electionID, "combineShares", t)
 	require.NoError(t, err, "failed to combine shares: %v", err)
 
-	time.Sleep(10 * time.Second)
+	currentTime = time.Now()
+	diff = currentTime.Sub(oldTime)
+	timeTable[2] = diff.Seconds()
+
+	t.Logf("decryption takes: %v sec", diff.Seconds())
+
+	//time.Sleep(10 * time.Second)
 
 	getElectionInfo(objmap, proxyAddr1, electionID, t)
+	time.Sleep(time.Second * 3)
 
 	electionStatus = int(objmap["Status"].(float64))
 	t.Logf("Status of the election : %v", electionStatus)
@@ -683,7 +691,9 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 		}
 	}
 	require.True(t, tmpCount, "front end votes are different from decrypted votes")
-
+	t.Logf("shuffle time : %v", timeTable[0])
+	t.Logf("Public share time : %v", timeTable[1])
+	t.Logf("decryption time : %v", timeTable[2])
 }
 
 // -----------------------------------------------------------------------------

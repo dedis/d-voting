@@ -63,6 +63,18 @@ then
      --member $(./memcoin --config /tmp/node5 ordering export)\
      --member $(./memcoin --config /tmp/node6 ordering export)
 
+elif [ $1 -eq 7 ]
+then
+
+./memcoin --config /tmp/node1 ordering setup\
+    --member $(./memcoin --config /tmp/node1 ordering export)\
+    --member $(./memcoin --config /tmp/node2 ordering export)\
+    --member $(./memcoin --config /tmp/node3 ordering export)\
+     --member $(./memcoin --config /tmp/node4 ordering export)\
+     --member $(./memcoin --config /tmp/node5 ordering export)\
+     --member $(./memcoin --config /tmp/node6 ordering export)\
+     --member $(./memcoin --config /tmp/node7 ordering export)
+
 elif [ $1 -eq 10 ]
 then
 ./memcoin --config /tmp/node1 ordering setup\
