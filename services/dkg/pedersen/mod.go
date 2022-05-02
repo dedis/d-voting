@@ -296,6 +296,8 @@ func (a *Actor) Setup() (kyber.Point, error) {
 		}
 	}
 
+	a.status = dkg.Status{Status: dkg.Setup}
+
 	return dkgPubKeys[0], nil
 }
 
