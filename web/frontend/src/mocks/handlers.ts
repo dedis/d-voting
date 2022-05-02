@@ -31,7 +31,7 @@ const { mockElections, mockResults } = setupMockElection();
 var mockUserDB = setupMockUserDB();
 
 export const handlers = [
-  rest.get(ENDPOINT_PERSONAL_INFO, (req, res, ctx) => {
+  rest.get(ENDPOINT_PERSONAL_INFO, async (req, res, ctx) => {
     const isLogged = sessionStorage.getItem('is-authenticated') === 'true';
     const userId = isLogged ? mockUserID : 0;
     const userInfos = isLogged
@@ -42,6 +42,7 @@ export const handlers = [
           sciper: userId,
         }
       : {};
+    await new Promise((r) => setTimeout(r, 1000));
 
     return res(
       ctx.status(200),
@@ -52,10 +53,12 @@ export const handlers = [
     );
   }),
 
-  rest.get(ENDPOINT_GET_TEQ_KEY, (req, res, ctx) => {
+  rest.get(ENDPOINT_GET_TEQ_KEY, async (req, res, ctx) => {
     const url = ROUTE_LOGGED;
     sessionStorage.setItem('is-authenticated', 'true');
     sessionStorage.setItem('id', '283205');
+    await new Promise((r) => setTimeout(r, 1000));
+
     return res(ctx.status(200), ctx.json({ url: url }));
   }),
 
@@ -64,7 +67,9 @@ export const handlers = [
     return res(ctx.status(200));
   }),
 
-  rest.get(endpoints.elections, (req, res, ctx) => {
+  rest.get(endpoints.elections, async (req, res, ctx) => {
+    await new Promise((r) => setTimeout(r, 1000));
+
     return res(
       ctx.status(200),
       ctx.json({
@@ -75,14 +80,17 @@ export const handlers = [
     );
   }),
 
-  rest.get(endpoints.election(':ElectionID'), (req, res, ctx) => {
+  rest.get(endpoints.election(':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
+    await new Promise((r) => setTimeout(r, 1000));
 
     return res(ctx.status(200), ctx.json(mockElections.get(ElectionID as ID)));
   }),
 
-  rest.post(endpoints.newElection, (req, res, ctx) => {
+  rest.post(endpoints.newElection, async (req, res, ctx) => {
     const body = req.body as NewElectionBody;
+
+    await new Promise((r) => setTimeout(r, 1000));
 
     const createElection = (configuration: any) => {
       const newElectionID = uid();
@@ -108,8 +116,9 @@ export const handlers = [
     );
   }),
 
-  rest.post(endpoints.newElectionVote(':ElectionID'), (req, res, ctx) => {
+  rest.post(endpoints.newElectionVote(':ElectionID'), async (req, res, ctx) => {
     const { Ballot }: NewElectionVoteBody = JSON.parse(req.body.toString());
+    await new Promise((r) => setTimeout(r, 1000));
 
     return res(
       ctx.status(200),
@@ -119,7 +128,7 @@ export const handlers = [
     );
   }),
 
-  rest.put(endpoints.editElection(':ElectionID'), (req, res, ctx) => {
+  rest.put(endpoints.editElection(':ElectionID'), async (req, res, ctx) => {
     const body = req.body as EditElectionBody;
     const { ElectionID } = req.params;
     var Status = STATUS.Initial;
@@ -144,45 +153,52 @@ export const handlers = [
       ...mockElections.get(ElectionID as string),
       Status,
     });
+    await new Promise((r) => setTimeout(r, 1000));
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
-  rest.put(endpoints.editShuffle(':ElectionID'), (req, res, ctx) => {
+  rest.put(endpoints.editShuffle(':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
     mockElections.set(ElectionID as string, {
       ...mockElections.get(ElectionID as string),
       Status: STATUS.ShuffledBallots,
     });
+    await new Promise((r) => setTimeout(r, 1000));
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
-  rest.put(endpoints.editDKGActors(':ElectionID'), (req, res, ctx) => {
+  rest.put(endpoints.editDKGActors(':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
     mockElections.set(ElectionID as string, {
       ...mockElections.get(ElectionID as string),
       Result: mockResults.get(ElectionID as string),
       Status: STATUS.ResultAvailable,
     });
+    await new Promise((r) => setTimeout(r, 1000));
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
-  rest.get(endpoints.ENDPOINT_USER_RIGHTS, (req, res, ctx) => {
+  rest.get(endpoints.ENDPOINT_USER_RIGHTS, async (req, res, ctx) => {
+    await new Promise((r) => setTimeout(r, 1000));
+
     return res(ctx.status(200), ctx.json(mockUserDB.filter((user) => user.role !== 'voter')));
   }),
 
-  rest.post(endpoints.ENDPOINT_ADD_ROLE, (req, res, ctx) => {
+  rest.post(endpoints.ENDPOINT_ADD_ROLE, async (req, res, ctx) => {
     const body = req.body as NewUserRole;
     mockUserDB.push({ id: uid(), ...body });
+    await new Promise((r) => setTimeout(r, 1000));
 
     return res(ctx.status(200));
   }),
 
-  rest.post(endpoints.ENDPOINT_REMOVE_ROLE, (req, res, ctx) => {
+  rest.post(endpoints.ENDPOINT_REMOVE_ROLE, async (req, res, ctx) => {
     const body = req.body as RemoveUserRole;
     mockUserDB = mockUserDB.filter((user) => user.sciper !== body.sciper);
+    await new Promise((r) => setTimeout(r, 1000));
 
     return res(ctx.status(200));
   }),
