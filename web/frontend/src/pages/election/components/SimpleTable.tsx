@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import useFetchCall from '../../../components/utils/useFetchCall';
 import * as endpoints from '../../../components/utils/Endpoints';
-import { LightElectionInfo, STATUS } from 'types/electionInfo';
+import { LightElectionInfo, STATUS } from 'types/election';
 
 type SimpleTableProps = {
   statusToKeep: STATUS;

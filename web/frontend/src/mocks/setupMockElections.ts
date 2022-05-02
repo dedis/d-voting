@@ -1,5 +1,5 @@
 import { ID } from 'types/configuration';
-import { ElectionInfo, LightElectionInfo, Results, STATUS } from 'types/electionInfo';
+import { ElectionInfo, LightElectionInfo, Results, STATUS } from 'types/election';
 import { unmarshalConfig } from 'types/JSONparser';
 import {
   mockElection1,
@@ -20,7 +20,7 @@ const setupMockElection = () => {
 
   mockElections.set(electionID1, {
     ElectionID: electionID1,
-    Status: STATUS.OPEN,
+    Status: STATUS.Open,
     Pubkey: 'XL4V6EMIICW',
     Result: [],
     Configuration: unmarshalConfig(mockElection1),
@@ -32,7 +32,7 @@ const setupMockElection = () => {
 
   mockElections.set(electionID2, {
     ElectionID: electionID2,
-    Status: STATUS.RESULT_AVAILABLE,
+    Status: STATUS.ResultAvailable,
     Pubkey: 'XL4V6EMIICW',
     Result: [mockElectionResult21, mockElectionResult22, mockElectionResult23],
     Configuration: unmarshalConfig(mockElection2),
