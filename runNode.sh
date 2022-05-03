@@ -1,29 +1,34 @@
 #!/bin/bash
-# Basic while loop
+
+
+set -o errexit
+
+command -v tmux >/dev/null 2>&1 || { echo >&2 "tmux is not on your PATH!"; exit 1; }
+
 
 pk=adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3
 
 
+# Launch session
+s="d-voting-test"
+
+tmux list-sessions | rg "^$TMUX_SESSION_NAME:" >/dev/null 2>&1 && { echo >&2 "A session with the name $TMUX_SESSION_NAME already exists; kill it and try again"; exit 1; }
+
+tmux new-session -d -s $s
 
 
-from=0
-fromb=1
+from=1
 to=$1
-ne=0
-while [ $fromb -le $to ]
+while [ $from -le $to ]
 do
-if [ $from -le 9 ]
-then
-gnome-terminal --tab --title="test" --command="./memcoin --config /tmp/node$fromb start --postinstall --promaddr :910$from --proxyaddr :908$from --proxykey $pk --listen tcp://0.0.0.0:200$fromb --public //localhost:200$fromb"
 
-else
-
-
-
-gnome-terminal --tab --title="test" --command="./memcoin --config /tmp/node$fromb start --postinstall --promaddr :91$from --proxyaddr :909$ne --proxykey $pk --listen tcp://0.0.0.0:20$fromb --public //localhost:20$fromb"
-((ne++))
-fi
-((fromb++))
+echo $from
+tmux new-window -t $s
+window=$from
+tmux send-keys -t $s:$window "LLVL=info ./memcoin --config /tmp/node$from start --postinstall --promaddr :$((9099 + $from)) --proxyaddr :$((9079 + $from)) --proxykey $pk --listen tcp://0.0.0.0:$((2000 + $from)) --public //localhost:$((2000 + $from))" C-m
 ((from++))
+
 done
 
+
+tmux a
