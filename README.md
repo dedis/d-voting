@@ -123,10 +123,10 @@ LLVL=info memcoin --config /tmp/node1 start --postinstall \
   --promaddr :9100 --proxyaddr :9080 --proxykey $pk --listen tcp://0.0.0.0:2001 --public //localhost:2001
 
 LLVL=info memcoin --config /tmp/node2 start --postinstall \
-  --promaddr :9101 --proxyaddr :9082 --proxykey $pk --listen tcp://0.0.0.0:2002 --public //localhost:2002
+  --promaddr :9101 --proxyaddr :9081 --proxykey $pk --listen tcp://0.0.0.0:2002 --public //localhost:2002
 
 LLVL=info memcoin --config /tmp/node3 start --postinstall \
-  --promaddr :9102 --proxyaddr :9083 --proxykey $pk --listen tcp://0.0.0.0:2003 --public //localhost:2003
+  --promaddr :9102 --proxyaddr :9082 --proxykey $pk --listen tcp://0.0.0.0:2003 --public //localhost:2003
 ```
 
 Then you should be able to run the setup script:
@@ -196,11 +196,13 @@ timeFlag="github.com/dedis/d-voting.BuildTime=`date +'%d/%m/%y_%H:%M'`"
 go build -ldflags="-X $versionFlag -X $timeFlag" ./cli/memcoin
 ```
 
-Note that `make build` will do that for you. You can also cross-compile with:
+You can also cross-compile with:
 
 ```sh
 GOOS=linux GOARCH=amd64 make build
 ```
+
+Note that `make build` will do that for you.
 
 ## Acknowledgement
 

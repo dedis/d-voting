@@ -1,4 +1,4 @@
-import { Results } from 'types/electionInfo';
+import { Results } from 'types/election';
 
 const mockElection1: any = {
   MainTitle: 'Life on the campus',
