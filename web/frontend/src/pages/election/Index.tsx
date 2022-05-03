@@ -5,6 +5,7 @@ import ElectionTable from './components/ElectionTable';
 import useFetchCall from 'components/utils/useFetchCall';
 import * as endpoints from 'components/utils/Endpoints';
 import './Index.css';
+import Loading from 'pages/Loading';
 
 const ElectionIndex: FC = () => {
   const { t } = useTranslation();
@@ -41,7 +42,7 @@ const ElectionIndex: FC = () => {
       {!loading ? (
         showElection()
       ) : error === null ? (
-        <p className="loading">{t('loading')} </p>
+        <Loading />
       ) : (
         <div className="error-retrieving">
           {t('errorRetrievingElection')} - {error.toString()}
