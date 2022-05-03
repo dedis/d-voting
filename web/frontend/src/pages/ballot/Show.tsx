@@ -22,6 +22,7 @@ import { ballotIsValid } from './components/ValidateAnswers';
 import { STATUS } from 'types/election';
 import ElectionClosed from './components/ElectionClosed';
 import Loading from 'pages/Loading';
+import { CloudUploadIcon } from '@heroicons/react/solid';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
