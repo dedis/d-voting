@@ -90,6 +90,9 @@ const Ballot: FC = () => {
       const newRequest = {
         method: 'POST',
         body: JSON.stringify(ballot),
+        headers: {
+          'Content-Type': 'Application/json',
+        },
       };
       setPostRequest(newRequest);
     } catch (e) {
