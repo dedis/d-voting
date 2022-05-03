@@ -6,7 +6,7 @@ import kyber from '@dedis/kyber';
 import PropTypes from 'prop-types';
 import { Buffer } from 'buffer';
 
-import { ROUTE_BALLOT_INDEX } from '../../Routes';
+import { ROUTE_ELECTION_INDEX } from '../../Routes';
 import useElection from 'components/utils/useElection';
 import usePostCall from 'components/utils/usePostCall';
 import * as endpoints from 'components/utils/Endpoints';
@@ -179,7 +179,7 @@ const Ballot: FC = () => {
     return (
       <div>
         <div> {t('voteImpossible')}</div>
-        <Link to={ROUTE_BALLOT_INDEX}>
+        <Link to={ROUTE_ELECTION_INDEX}>
           <button
             type="button"
             className="inline-flex mt-2 mb-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600">

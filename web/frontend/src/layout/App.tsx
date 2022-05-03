@@ -4,7 +4,6 @@ import { Navigate, Route, BrowserRouter as Router, Routes, useLocation } from 'r
 import {
   ROUTE_ABOUT,
   ROUTE_ADMIN,
-  ROUTE_BALLOT_INDEX,
   ROUTE_BALLOT_SHOW,
   ROUTE_ELECTION_CREATE,
   ROUTE_ELECTION_INDEX,
@@ -19,7 +18,6 @@ import ElectionIndex from '../pages/election/Index';
 import ElectionCreate from '../pages/election/New';
 import ElectionResult from '../pages/election/Result';
 import ElectionShow from '../pages/election/Show';
-import BallotIndex from '../pages/ballot/Index';
 import BallotShow from '../pages/ballot/Show';
 import NavBar from './NavBar';
 import Footer from './Footer';
@@ -65,7 +63,6 @@ const App = () => {
               />
               <Route path={'/elections/:electionId'} element={<ElectionShow />} />
               <Route path={'/elections/:electionId/result'} element={<ElectionResult />} />
-              <Route path={ROUTE_BALLOT_INDEX} element={<BallotIndex />} />
               <Route
                 path={ROUTE_BALLOT_SHOW + '/:electionId'}
                 element={

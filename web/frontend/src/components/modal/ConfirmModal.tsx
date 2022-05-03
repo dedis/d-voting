@@ -1,4 +1,4 @@
-import React, { FC, Fragment, useRef } from 'react';
+import { FC, Fragment, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
