@@ -8,18 +8,6 @@ import { useTranslation } from 'react-i18next';
 import SpinnerIcon from 'components/utils/SpinnerIcon';
 import { UserAddIcon } from '@heroicons/react/outline';
 
-const style = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: 400,
-  bgcolor: 'background.paper',
-  border: '2px solid #000',
-  boxShadow: 24,
-  p: 4,
-};
-
 type AddAdminUserModalProps = {
   open: boolean;
   setOpen(opened: boolean): void;
@@ -40,12 +28,6 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen }) => {
   };
 
   const handleAddUser = () => {
-    if (sciperValue.length !== 6) {
-      alert('Sciper required');
-      setLoading(false);
-      return;
-    }
-
     const requestOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
