@@ -22,6 +22,7 @@ import Rank, { handleOnDragEnd } from './components/Rank';
 import Text from './components/Text';
 import { ballotIsValid } from './components/ValidateAnswers';
 import { STATUS } from 'types/election';
+import ElectionClosed from './components/ElectionClosed';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
@@ -204,7 +205,7 @@ const Ballot: FC = () => {
       {loading ? (
         <p className="loading">{t('loading')}</p>
       ) : (
-        <div>{status === STATUS.Open ? ballotDisplay() : electionClosedDisplay()}</div>
+        <div>{status === STATUS.Open ? ballotDisplay() : <ElectionClosed />}</div>
       )}
     </div>
   );

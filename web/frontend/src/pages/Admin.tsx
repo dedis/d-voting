@@ -32,7 +32,7 @@ const Admin = () => {
       .catch((error) => {
         console.log(error);
       });
-  }, [showDeleteModal]);
+  }, [showDeleteModal, newusrOpen]);
 
   const partitionArray = (array: any[], size: number) =>
     array.map((v, i) => (i % size === 0 ? array.slice(i, i + size) : null)).filter((v) => v);
