@@ -26,8 +26,7 @@ import './App.css';
 import { AuthContext } from '..';
 import Logged from 'pages/session/Logged';
 import Flash from './Flash';
-
-const NotFound = () => <div>404 not found</div>;
+import NotFound from './NotFound';
 
 const App = () => {
   const RequireAuth = ({ children }) => {
