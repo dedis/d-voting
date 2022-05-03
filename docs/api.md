@@ -48,7 +48,7 @@ SC5:Close         │              │
     │             │          NS2:Shuffle
     │             │
     │             ▼
-    │         DK4:BeginDecryption
+    │         DK4:ComputePubshares
     │
     ▼
 SC6:CombineShares
@@ -370,7 +370,7 @@ Return:
 
 ```json
 {
-  "Action": "beginDecryption"
+  "Action": "computePubshares"
 }
 ```
 

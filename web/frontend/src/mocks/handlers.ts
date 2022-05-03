@@ -117,7 +117,7 @@ export const handlers = [
   }),
 
   rest.post(endpoints.newElectionVote(':ElectionID'), async (req, res, ctx) => {
-    const { Ballot }: NewElectionVoteBody = JSON.parse(req.body.toString());
+    const { Ballot }: NewElectionVoteBody = req.body as NewElectionVoteBody;
     await new Promise((r) => setTimeout(r, 1000));
 
     return res(
