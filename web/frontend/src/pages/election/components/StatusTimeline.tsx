@@ -1,5 +1,6 @@
 import { AuthContext } from 'index';
 import { FC, useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { STATUS } from 'types/election';
 import { ROLE } from 'types/userRole';
 
@@ -11,28 +12,29 @@ const CanceledStep = { name: 'Canceled', state: 'upcoming', status: STATUS.Cance
 
 const StatusTimeline: FC<StatusTimelineProps> = ({ status }) => {
   const authCtx = useContext(AuthContext);
+  const { t } = useTranslation();
 
   const completeSteps = [
-    { name: 'Initial', state: 'complete', status: STATUS.Initial },
-    { name: 'Initialized', state: 'current', status: STATUS.InitializedNodes },
-    { name: 'On Going Setup', state: 'upcoming', status: STATUS.Setup },
-    { name: 'Setup', state: 'upcoming', status: STATUS.Setup },
-    { name: 'Open', state: 'upcoming', status: STATUS.Open },
-    { name: 'Closed', state: 'upcoming', status: STATUS.Closed },
-    { name: 'On Going Shuffle', state: 'upcoming', status: STATUS.OnGoingShuffle },
-    { name: 'Shuffled Ballots', state: 'upcoming', status: STATUS.ShuffledBallots },
-    { name: 'On Going Decryption', state: 'upcoming', status: STATUS.OnGoingDecryption },
-    { name: 'Decrypted Ballots', state: 'upcoming', status: STATUS.DecryptedBallots },
-    { name: 'Result Available', state: 'upcoming', status: STATUS.ResultAvailable },
+    { name: 'statusInitial', state: 'complete', status: STATUS.Initial },
+    { name: 'statusInitializedNodes', state: 'current', status: STATUS.InitializedNodes },
+    { name: 'statusOnGoingSetup', state: 'upcoming', status: STATUS.Setup },
+    { name: 'statusSetup', state: 'upcoming', status: STATUS.Setup },
+    { name: 'statusOpen', state: 'upcoming', status: STATUS.Open },
+    { name: 'statusClose', state: 'upcoming', status: STATUS.Closed },
+    { name: 'statusOnGoingShuffle', state: 'upcoming', status: STATUS.OnGoingShuffle },
+    { name: 'statusShuffle', state: 'upcoming', status: STATUS.ShuffledBallots },
+    { name: 'statusOnGoingDecryption', state: 'upcoming', status: STATUS.OnGoingDecryption },
+    { name: 'statusDecrypted', state: 'upcoming', status: STATUS.DecryptedBallots },
+    { name: 'statusResultAvailable', state: 'upcoming', status: STATUS.ResultAvailable },
   ];
 
   const simpleSteps = [
-    { name: 'Initial', state: 'complete', status: STATUS.Initial },
-    { name: 'Open', state: 'current', status: STATUS.Open },
-    { name: 'Closed', state: 'upcoming', status: STATUS.Closed },
-    { name: 'Shuffled Ballots', state: 'upcoming', status: STATUS.ShuffledBallots },
-    { name: 'Decrypted Ballots', state: 'upcoming', status: STATUS.DecryptedBallots },
-    { name: 'Result Available', state: 'upcoming', status: STATUS.ResultAvailable },
+    { name: 'statusInitial', state: 'complete', status: STATUS.Initial },
+    { name: 'statusOpen', state: 'current', status: STATUS.Open },
+    { name: 'statusClose', state: 'upcoming', status: STATUS.Closed },
+    { name: 'statusShuffle', state: 'upcoming', status: STATUS.ShuffledBallots },
+    { name: 'statusDecrypted', state: 'upcoming', status: STATUS.DecryptedBallots },
+    { name: 'statusResultAvailable', state: 'upcoming', status: STATUS.ResultAvailable },
   ];
 
   const steps =
@@ -54,35 +56,29 @@ const StatusTimeline: FC<StatusTimelineProps> = ({ status }) => {
     switch (state) {
       case 'complete':
         return (
-          <>
-            <div className="group pl-4 py-2 flex flex-col border-l-4 border-indigo-600 hover:border-indigo-800 md:pl-0 md:pt-4 md:pb-0 md:border-l-0 md:border-t-4">
-              <span className="text-xs text-indigo-600 font-semibold tracking-wide uppercase group-hover:text-indigo-800">
-                {name}
-              </span>
-            </div>
-          </>
+          <div className="group pl-4 py-2 flex flex-col border-l-4 border-indigo-600 hover:border-indigo-800 md:pl-0 md:pt-4 md:pb-0 md:border-l-0 md:border-t-4">
+            <span className="text-xs text-indigo-600 font-semibold tracking-wide uppercase group-hover:text-indigo-800">
+              {t(name)}
+            </span>
+          </div>
         );
       case 'current':
         return (
-          <>
-            <div
-              className=" animate-pulse pl-4 py-2 flex flex-col border-l-4 border-indigo-600 md:pl-0 md:pt-4 md:pb-0 md:border-l-0 md:border-t-4"
-              aria-current="step">
-              <span className="animate-pulse text-xs text-indigo-600 font-semibold tracking-wide uppercase">
-                {name}
-              </span>
-            </div>
-          </>
+          <div
+            className=" animate-pulse pl-4 py-2 flex flex-col border-l-4 border-indigo-600 md:pl-0 md:pt-4 md:pb-0 md:border-l-0 md:border-t-4"
+            aria-current="step">
+            <span className="animate-pulse text-xs text-indigo-600 font-semibold tracking-wide uppercase">
+              {t(name)}
+            </span>
+          </div>
         );
       default:
         return (
-          <>
-            <div className="group pl-4 py-2 flex flex-col border-l-4 border-gray-200 hover:border-gray-300 md:pl-0 md:pt-4 md:pb-0 md:border-l-0 md:border-t-4">
-              <span className="text-xs text-gray-500 font-semibold tracking-wide uppercase group-hover:text-gray-700">
-                {name}
-              </span>
-            </div>
-          </>
+          <div className="group pl-4 py-2 flex flex-col border-l-4 border-gray-200 hover:border-gray-300 md:pl-0 md:pt-4 md:pb-0 md:border-l-0 md:border-t-4">
+            <span className="text-xs text-gray-500 font-semibold tracking-wide uppercase group-hover:text-gray-700">
+              {t(name)}
+            </span>
+          </div>
         );
     }
   };
