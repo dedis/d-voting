@@ -77,6 +77,7 @@
     "voteSuccess": "Your vote was successfully submitted!",
     "voteSuccessful": "Vote successful",
     "errorTitle": "Error",
+    "actionChange": "Action Change",
     "voteFailure": "Your ballot hasn't been taken into account. It might be that the election has been closed or cancelled. Try refreshing the page.",
     "ballotFailure": "An error seemed to have occurred while sending your ballot. Please contact the administrator of this website",
     "incompleteBallot": "Some answers are not complete.",

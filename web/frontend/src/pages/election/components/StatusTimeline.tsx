@@ -41,7 +41,7 @@ const StatusTimeline: FC<StatusTimelineProps> = ({ status }) => {
     authCtx.role === ROLE.Admin || authCtx.role === ROLE.Operator ? completeSteps : simpleSteps;
 
   // If the status is Canceled we need to add the Canceled step to the steps
-  // array at the correct position in the workflow (after the Open step)
+  // array at the correct position in the workflow (before the Closed step)
   if (status === STATUS.Canceled) {
     steps.splice(
       steps.findIndex((step) => step.status === STATUS.Closed),
@@ -50,6 +50,7 @@ const StatusTimeline: FC<StatusTimelineProps> = ({ status }) => {
     );
   }
 
+  // Find the current step in the steps array (the status)
   const currentStep = steps.findIndex((step) => step.status === status);
 
   const DisplayStatus = ({ state, name }) => {
