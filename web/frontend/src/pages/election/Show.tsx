@@ -31,31 +31,30 @@ const ElectionShow: FC = () => {
   }, [isResultAvailable, status]);
 
   return (
-    <div className="w-full md:w-[60rem] px-4 py-6">
+    <div className="w-[60rem] font-sans px-4 py-4">
       {!loading ? (
         <>
-          <div className="border px-8 border-gray-200 w-full md:px-10 my-0">
-            <div className="pt-6 font-bold uppercase text-2xl text-gray-700">
-              {configObj.MainTitle}
-            </div>
-            <h2>Election ID : {electionId}</h2>
-            <div className="py-6 pl-2">
-              <div className="font-bold uppercase text-lg text-gray-700">{t('status')}</div>
+          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+            {configObj.MainTitle}
+          </h2>
 
-              <div className="px-2 pt-6">
-                <StatusTimeline status={status} />
-              </div>
+          <h2>Election ID : {electionId}</h2>
+          <div className="py-6 pl-2">
+            <div className="font-bold uppercase text-lg text-gray-700">{t('status')}</div>
+
+            <div className="px-2 pt-6 flex justify-center">
+              <StatusTimeline status={status} />
             </div>
-            <div className="py-4 pl-2 pb-8">
-              <div className="font-bold uppercase text-lg text-gray-700 pb-2">{t('action')}</div>
-              <div className="px-2">
-                <Action
-                  status={status}
-                  electionID={electionID}
-                  setStatus={setStatus}
-                  setResultAvailable={setIsResultAvailable}
-                />
-              </div>
+          </div>
+          <div className="py-4 pl-2 pb-8">
+            <div className="font-bold uppercase text-lg text-gray-700 pb-2">{t('action')}</div>
+            <div className="px-2">
+              <Action
+                status={status}
+                electionID={electionID}
+                setStatus={setStatus}
+                setResultAvailable={setIsResultAvailable}
+              />
             </div>
           </div>
         </>

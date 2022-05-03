@@ -85,7 +85,7 @@ const StatusTimeline: FC<StatusTimelineProps> = ({ status }) => {
   };
 
   return (
-    <ol className="space-y-1 md:flex md:space-y-0 md:space-x-2 ">
+    <ol className="space-y-2 md:flex md:space-y-0 md:space-x-2 ">
       {steps.map((step, index) => {
         if (index < currentStep) {
           return (

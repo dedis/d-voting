@@ -60,7 +60,7 @@ const Admin = () => {
   };
 
   return (
-    <div className="w-[55rem] font-sans px-4 py-4">
+    <div className="w-[60rem] font-sans px-4 py-4">
       <AddAdminUserModal open={newusrOpen} setOpen={setNewusrOpen} />
       <div className="flex items-center justify-between mb-4">
         <div className="flex-1 min-w-0">
