@@ -8,33 +8,33 @@ type StatusTimelineProps = {
   status: STATUS;
 };
 
-const CanceledStep = { name: 'Canceled', state: 'upcoming', status: STATUS.Canceled };
+const CanceledStep = { name: 'Canceled', status: STATUS.Canceled };
 
 const StatusTimeline: FC<StatusTimelineProps> = ({ status }) => {
   const authCtx = useContext(AuthContext);
   const { t } = useTranslation();
 
   const completeSteps = [
-    { name: 'statusInitial', state: 'complete', status: STATUS.Initial },
-    { name: 'statusInitializedNodes', state: 'current', status: STATUS.InitializedNodes },
-    { name: 'statusOnGoingSetup', state: 'upcoming', status: STATUS.Setup },
-    { name: 'statusSetup', state: 'upcoming', status: STATUS.Setup },
-    { name: 'statusOpen', state: 'upcoming', status: STATUS.Open },
-    { name: 'statusClose', state: 'upcoming', status: STATUS.Closed },
-    { name: 'statusOnGoingShuffle', state: 'upcoming', status: STATUS.OnGoingShuffle },
-    { name: 'statusShuffle', state: 'upcoming', status: STATUS.ShuffledBallots },
-    { name: 'statusOnGoingDecryption', state: 'upcoming', status: STATUS.OnGoingDecryption },
-    { name: 'statusDecrypted', state: 'upcoming', status: STATUS.DecryptedBallots },
-    { name: 'statusResultAvailable', state: 'upcoming', status: STATUS.ResultAvailable },
+    { name: 'statusInitial', status: STATUS.Initial },
+    { name: 'statusInitializedNodes', status: STATUS.InitializedNodes },
+    { name: 'statusOnGoingSetup', status: STATUS.Setup },
+    { name: 'statusSetup', status: STATUS.Setup },
+    { name: 'statusOpen', status: STATUS.Open },
+    { name: 'statusClose', status: STATUS.Closed },
+    { name: 'statusOnGoingShuffle', status: STATUS.OnGoingShuffle },
+    { name: 'statusShuffle', status: STATUS.ShuffledBallots },
+    { name: 'statusOnGoingDecryption', status: STATUS.OnGoingDecryption },
+    { name: 'statusDecrypted', status: STATUS.DecryptedBallots },
+    { name: 'statusResultAvailable', status: STATUS.ResultAvailable },
   ];
 
   const simpleSteps = [
-    { name: 'statusInitial', state: 'complete', status: STATUS.Initial },
-    { name: 'statusOpen', state: 'current', status: STATUS.Open },
-    { name: 'statusClose', state: 'upcoming', status: STATUS.Closed },
-    { name: 'statusShuffle', state: 'upcoming', status: STATUS.ShuffledBallots },
-    { name: 'statusDecrypted', state: 'upcoming', status: STATUS.DecryptedBallots },
-    { name: 'statusResultAvailable', state: 'upcoming', status: STATUS.ResultAvailable },
+    { name: 'statusInitial', status: STATUS.Initial },
+    { name: 'statusOpen', status: STATUS.Open },
+    { name: 'statusClose', status: STATUS.Closed },
+    { name: 'statusShuffle', status: STATUS.ShuffledBallots },
+    { name: 'statusDecrypted', status: STATUS.DecryptedBallots },
+    { name: 'statusResultAvailable', status: STATUS.ResultAvailable },
   ];
 
   const steps =
