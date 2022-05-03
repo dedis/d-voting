@@ -1,5 +1,5 @@
 import { ID } from 'types/configuration';
-import { Results } from 'types/electionInfo';
+import { Results } from 'types/election';
 import * as endpoints from './Endpoints';
 
 const useGetResults = () => {

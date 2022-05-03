@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ID } from 'types/configuration';
-import { ElectionInfo, LightElectionInfo, Results, STATUS } from 'types/electionInfo';
+import { ElectionInfo, LightElectionInfo, Results, STATUS } from 'types/election';
 
 const useFillElectionInfo = (electionData: ElectionInfo) => {
   const [id, setId] = useState<ID>('');

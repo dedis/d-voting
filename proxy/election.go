@@ -387,8 +387,8 @@ func (h *election) Election(w http.ResponseWriter, r *http.Request) {
 		Pubkey:          hex.EncodeToString(pubkeyBuf),
 		Result:          election.DecryptedBallots,
 		Roster:          roster,
+		ChunksPerBallot: election.ChunksPerBallot(),
 		BallotSize:      election.BallotSize,
-		Chunksperballot: election.ChunksPerBallot(),
 	}
 
 	w.Header().Set("Content-Type", "application/json")

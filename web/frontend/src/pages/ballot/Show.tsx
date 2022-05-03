@@ -21,7 +21,7 @@ import Select from './components/Select';
 import Rank, { handleOnDragEnd } from './components/Rank';
 import Text from './components/Text';
 import { ballotIsValid } from './components/ValidateAnswers';
-import { STATUS } from 'types/electionInfo';
+import { STATUS } from 'types/election';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
@@ -203,7 +203,7 @@ const Ballot: FC = () => {
       {loading ? (
         <p className="loading">{t('loading')}</p>
       ) : (
-        <div>{status === STATUS.OPEN ? ballotDisplay() : electionClosedDisplay()}</div>
+        <div>{status === STATUS.Open ? ballotDisplay() : electionClosedDisplay()}</div>
       )}
     </div>
   );

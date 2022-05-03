@@ -45,8 +45,8 @@ type GetElectionResponse struct {
 	Pubkey          string
 	Result          []etypes.Ballot
 	Roster          []string
+	ChunksPerBallot int
 	BallotSize      int
-	Chunksperballot int
 }
 
 // LightElection represents a light version of the election
