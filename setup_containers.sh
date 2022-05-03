@@ -31,6 +31,8 @@ for i in "${vals[@]}"
 do
     ARRAY+="--member "
     ARRAY+="$(docker exec node$i memcoin --config /tmp/node$i ordering export) "
+    echo "Node$i addr is:"
+    echo $(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' node$i)
 done
 
 
