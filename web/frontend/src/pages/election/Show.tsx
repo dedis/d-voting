@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import useElection from 'components/utils/useElection';
-import './Show.css';
 import useGetResults from 'components/utils/useGetResults';
 import { STATUS } from 'types/election';
 import Action from './components/Action';

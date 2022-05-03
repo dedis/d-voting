@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import ElectionTable from './components/ElectionTable';
 import useFetchCall from 'components/utils/useFetchCall';
 import * as endpoints from 'components/utils/Endpoints';
-import './Index.css';
 import Loading from 'pages/Loading';
 
 const ElectionIndex: FC = () => {
@@ -34,7 +33,7 @@ const ElectionIndex: FC = () => {
         </div>
       </>
     ) : (
-      <div className="no-election">{t('noElection')}</div>
+      <div>{t('noElection')}</div>
     );
   };
 
@@ -45,7 +44,7 @@ const ElectionIndex: FC = () => {
       ) : error === null ? (
         <Loading />
       ) : (
-        <div className="error-retrieving">
+        <div>
           {t('errorRetrievingElection')} - {error.toString()}
         </div>
       )}
