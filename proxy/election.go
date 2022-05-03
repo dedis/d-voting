@@ -381,12 +381,14 @@ func (h *election) Election(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := ptypes.GetElectionResponse{
-		ElectionID:    string(election.ElectionID),
-		Configuration: election.Configuration,
-		Status:        uint16(election.Status),
-		Pubkey:        hex.EncodeToString(pubkeyBuf),
-		Result:        election.DecryptedBallots,
-		Roster:        roster,
+		ElectionID:      string(election.ElectionID),
+		Configuration:   election.Configuration,
+		Status:          uint16(election.Status),
+		Pubkey:          hex.EncodeToString(pubkeyBuf),
+		Result:          election.DecryptedBallots,
+		Roster:          roster,
+		ChunksPerBallot: election.ChunksPerBallot(),
+		BallotSize:      election.BallotSize,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
