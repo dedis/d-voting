@@ -44,6 +44,7 @@ const Ballot: FC = () => {
     if (postRequest !== null) {
       sendFetchRequest(endpoints.newElectionVote(electionID.toString()), postRequest, setShowModal);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postRequest]);
 
   useEffect(() => {
