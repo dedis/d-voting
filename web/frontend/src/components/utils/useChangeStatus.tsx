@@ -1,4 +1,3 @@
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { STATUS } from 'types/election';
 
@@ -11,87 +10,87 @@ const useChangeStatus = (status: STATUS) => {
     switch (status) {
       case STATUS.Initial:
         return (
-          <span className="election-status">
-            <span className="election-status-on"></span>
-            <span className="election-status-text">{t('statusInitial')}</span>
-          </span>
+          <div className="flex">
+            <div className="block h-4 w-4 bg-green-500 rounded-full mr-2"></div>
+            <div>{t('statusInitial')}</div>
+          </div>
         );
       case STATUS.InitializedNodes:
         return (
-          <span className="election-status">
-            <span className="election-status-on"></span>
-            <span className="election-status-text">{t('statusInitializedNodes')}</span>
-          </span>
+          <div className="flex">
+            <div className="block h-4 w-4 bg-green-500 rounded-full mr-2"></div>
+            <div>{t('statusInitializedNodes')}</div>
+          </div>
         );
       case STATUS.OnGoingSetup:
         return (
-          <span className="election-status">
-            <span className="election-status-on"></span>
-            <span className="election-status-text">{t('statusOnGoingSetup')}</span>
-          </span>
+          <div className="flex">
+            <div className="block h-4 w-4 bg-green-500 rounded-full mr-2"></div>
+            <div>{t('statusOnGoingSetup')}</div>
+          </div>
         );
       case STATUS.Setup:
         return (
-          <span className="election-status">
-            <span className="election-status-on"></span>
-            <span className="election-status-text">{t('statusSetup')}</span>
-          </span>
+          <div className="flex">
+            <div className="block h-4 w-4 bg-green-500 rounded-full mr-2"></div>
+            <div>{t('statusSetup')}</div>
+          </div>
         );
       case STATUS.Open:
         return (
-          <span className="election-status">
-            <span className="election-status-on"></span>
-            <span className="election-status-text">{t('statusOpen')}</span>
-          </span>
+          <div className="flex">
+            <div className="block h-4 w-4 bg-green-500 rounded-full mr-2"></div>
+            <div>{t('statusOpen')}</div>
+          </div>
         );
       case STATUS.Closed:
         return (
-          <span className="election-status">
-            <span className="election-status-closed"></span>
-            <span className="election-status-text">{t('statusClose')}</span>
-          </span>
+          <div className="flex">
+            <div className="block h-4 w-4 bg-gray-400 rounded-full mr-2"></div>
+            <div>{t('statusClose')}</div>
+          </div>
         );
       case STATUS.OnGoingShuffle:
         return (
-          <span className="election-status">
-            <span className="election-status-closed"></span>
-            <span className="election-status-text">{t('statusOnGoingShuffle')}</span>
-          </span>
+          <div className="flex">
+            <div className="block h-4 w-4 bg-gray-400 rounded-full mr-2"></div>
+            <div>{t('statusOnGoingShuffle')}</div>
+          </div>
         );
       case STATUS.ShuffledBallots:
         return (
-          <span className="election-status">
-            <span className="election-status-closed"></span>
-            <span className="election-status-text">{t('statusShuffle')}</span>
-          </span>
+          <div className="flex">
+            <div className="block h-4 w-4 bg-gray-400 rounded-full mr-2"></div>
+            <div>{t('statusShuffle')}</div>
+          </div>
         );
       case STATUS.OnGoingDecryption:
         return (
-          <span className="election-status">
-            <span className="election-status-closed"></span>
-            <span className="election-status-text">{t('statusOnGoingDecryption')}</span>
-          </span>
+          <div className="flex">
+            <div className="block h-4 w-4 bg-gray-400 rounded-full mr-2"></div>
+            <div>{t('statusOnGoingDecryption')}</div>
+          </div>
         );
       case STATUS.DecryptedBallots:
         return (
-          <span className="election-status">
-            <span className="election-status-closed"></span>
-            <span className="election-status-text">{t('statusDecrypted')}</span>
-          </span>
+          <div className="flex">
+            <div className="block h-4 w-4 bg-gray-400 rounded-full mr-2"></div>
+            <div>{t('statusDecrypted')}</div>
+          </div>
         );
       case STATUS.ResultAvailable:
         return (
-          <span className="election-status">
-            <span className="election-status-closed"></span>
-            <span className="election-status-text">{t('statusResultAvailable')}</span>
-          </span>
+          <div className="flex">
+            <div className="block h-4 w-4 bg-gray-400 rounded-full mr-2"></div>
+            <div>{t('statusResultAvailable')}</div>
+          </div>
         );
       case STATUS.Canceled:
         return (
-          <span className="election-status">
-            <span className="election-status-cancelled"></span>
-            <span className="election-status-text">{t('statusCancel')}</span>
-          </span>
+          <div className="flex">
+            <div className="block h-4 w-4 bg-red-500 rounded-full mr-2"></div>
+            <div>{t('statusCancel')}</div>
+          </div>
         );
       default:
         return null;
