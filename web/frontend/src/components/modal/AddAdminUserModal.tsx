@@ -77,7 +77,7 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen }) => {
             leave="ease-in duration-200"
             leaveFrom="opacity-100 translate-y-0 sm:scale-100"
             leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
-            <div className="inline-block bg-white rounded-lg  text-left overflow-hidden shadow-xl transform transition-all my-8 align-middle max-w-lg w-full p-6">
+            <div className="inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all my-8 align-middle max-w-lg w-full p-6">
               <div>
                 <div className="text-center">
                   <Dialog.Title as="h3" className="text-lg leading-6 font-medium text-gray-900">
