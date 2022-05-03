@@ -89,6 +89,7 @@ const ElectionResult: FC = () => {
       setSelectResult(selectRes);
       setTextResult(textRes);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result]);
 
   const SubjectElementResultDisplay = (element: SubjectElement) => {

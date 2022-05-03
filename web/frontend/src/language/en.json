@@ -12,6 +12,7 @@
     "admin": "Admin",
     "previous": "Previous",
     "next": "Next",
+    "confirmDeleteUserSciper": "Do confirm deleting the role for the user sciper",
     "notFound": "Page not found",
     "notFoundDescription": "The page you are looking for does not exist.",
     "notFoundLink": "Go to home page",
