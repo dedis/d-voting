@@ -150,7 +150,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
       <div className="my-2">
         <button
           type="button"
-          className="flex inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
+          className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
           onClick={createHandler}>
           {loading ? (
             <SpinnerIcon />
@@ -162,7 +162,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
         </button>
         <button
           type="button"
-          className="flex inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+          className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
           onClick={() => setConf(emptyConf)}>
           <TrashIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
           {t('clearElec')}

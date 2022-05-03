@@ -9,6 +9,7 @@ import useGetResults from 'components/utils/useGetResults';
 import { STATUS } from 'types/election';
 import Action from './components/Action';
 import StatusTimeline from './components/StatusTimeline';
+import Loading from 'pages/Loading';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
@@ -59,7 +60,7 @@ const ElectionShow: FC = () => {
           </div>
         </>
       ) : (
-        <p className="loading">{t('loading')}</p>
+        <Loading />
       )}
     </div>
   );

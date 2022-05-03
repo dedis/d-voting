@@ -22,6 +22,8 @@ import Rank, { handleOnDragEnd } from './components/Rank';
 import Text from './components/Text';
 import { ballotIsValid } from './components/ValidateAnswers';
 import { STATUS } from 'types/election';
+import ElectionClosed from './components/ElectionClosed';
+import Loading from 'pages/Loading';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
@@ -44,6 +46,7 @@ const Ballot: FC = () => {
     if (postRequest !== null) {
       sendFetchRequest(endpoints.newElectionVote(electionID.toString()), postRequest, setShowModal);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postRequest]);
 
   useEffect(() => {
@@ -204,9 +207,9 @@ const Ballot: FC = () => {
         {modalText}
       </RedirectToModal>
       {loading ? (
-        <p className="loading">{t('loading')}</p>
+        <Loading />
       ) : (
-        <div>{status === STATUS.Open ? ballotDisplay() : electionClosedDisplay()}</div>
+        <div>{status === STATUS.Open ? ballotDisplay() : <ElectionClosed />}</div>
       )}
     </div>
   );

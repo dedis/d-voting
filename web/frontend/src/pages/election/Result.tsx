@@ -27,6 +27,7 @@ import {
   countSelectResult,
   countTextResult,
 } from './components/utils/countResult';
+import Loading from 'pages/Loading';
 
 // Functional component that displays the result of the votes
 const ElectionResult: FC = () => {
@@ -209,7 +210,7 @@ const ElectionResult: FC = () => {
           </div>
         </div>
       ) : (
-        <p className="loading">{t('loading')}</p>
+        <Loading />
       )}
     </div>
   );

@@ -240,7 +240,7 @@ const useChangeAction = (
           </span>
         );
       case STATUS.Canceled:
-        return <span> --- </span>;
+        return <span> </span>;
       default:
         return <span> --- </span>;
     }
