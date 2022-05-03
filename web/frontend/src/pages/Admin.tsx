@@ -5,12 +5,14 @@ import { ENDPOINT_USER_RIGHTS } from 'components/utils/Endpoints';
 import AddAdminUserModal from 'components/modal/AddAdminUserModal';
 import { useTranslation } from 'react-i18next';
 import RemoveAdminUserModal from 'components/modal/RemoveAdminUserModal';
+import Loading from './Loading';
 
 const SCIPERS_PER_PAGE = 10;
 
 const Admin = () => {
   const { t } = useTranslation();
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [newusrOpen, setNewusrOpen] = useState(false);
   const [scipersToDisplay, setScipersToDisplay] = useState([]);
@@ -24,14 +26,17 @@ const Admin = () => {
       return;
     }
 
+    setLoading(true);
     fetch(ENDPOINT_USER_RIGHTS)
       .then((resp) => {
+        setLoading(false);
         const jsonData = resp.json();
         jsonData.then((result) => {
           setUsers(result);
         });
       })
       .catch((error) => {
+        setLoading(false);
         console.log(error);
       });
   }, [newusrOpen, showDeleteModal]);
@@ -61,7 +66,7 @@ const Admin = () => {
     }
   };
 
-  return (
+  return !loading ? (
     <div className="w-[60rem] font-sans px-4 py-4">
       <AddAdminUserModal open={newusrOpen} setOpen={setNewusrOpen} />
       <RemoveAdminUserModal
@@ -164,6 +169,8 @@ const Admin = () => {
         </div>
       </div>
     </div>
+  ) : (
+    <Loading />
   );
 };
 export default Admin;
