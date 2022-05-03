@@ -4,6 +4,7 @@ import { ENDPOINT_USER_RIGHTS } from 'components/utils/Endpoints';
 
 import AddAdminUserModal from 'components/modal/AddAdminUserModal';
 import { useTranslation } from 'react-i18next';
+import RemoveAdminUserModal from 'components/modal/RemoveAdminUserModal';
 
 const SCIPERS_PER_PAGE = 10;
 
@@ -13,12 +14,13 @@ const Admin = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [newusrOpen, setNewusrOpen] = useState(false);
   const [scipersToDisplay, setScipersToDisplay] = useState([]);
+  const [sciperToDelete, setSciperToDelete] = useState(0);
   const [pageIndex, setPageIndex] = useState(0);
 
   const openModal = () => setNewusrOpen(true);
 
   useEffect(() => {
-    if (showDeleteModal) {
+    if (newusrOpen || showDeleteModal) {
       return;
     }
 
@@ -32,7 +34,7 @@ const Admin = () => {
       .catch((error) => {
         console.log(error);
       });
-  }, [showDeleteModal, newusrOpen]);
+  }, [newusrOpen, showDeleteModal]);
 
   const partitionArray = (array: any[], size: number) =>
     array.map((v, i) => (i % size === 0 ? array.slice(i, i + size) : null)).filter((v) => v);
@@ -44,7 +46,7 @@ const Admin = () => {
   }, [users, pageIndex]);
 
   const handleDelete = (sciper: number): void => {
-    console.log(sciper);
+    setSciperToDelete(sciper);
     setShowDeleteModal(true);
   };
 
@@ -62,6 +64,11 @@ const Admin = () => {
   return (
     <div className="w-[60rem] font-sans px-4 py-4">
       <AddAdminUserModal open={newusrOpen} setOpen={setNewusrOpen} />
+      <RemoveAdminUserModal
+        setOpen={setShowDeleteModal}
+        open={showDeleteModal}
+        sciper={sciperToDelete}
+      />
       <div className="flex items-center justify-between mb-4">
         <div className="flex-1 min-w-0">
           <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
@@ -160,3 +167,88 @@ const Admin = () => {
   );
 };
 export default Admin;
+
+// import React, { useEffect, useState } from 'react';
+// import Button from '@mui/material/Button';
+// import { DataGrid } from '@mui/x-data-grid';
+
+// import { ENDPOINT_USER_RIGHTS } from 'components/utils/Endpoints';
+// import AddAdminUserModal from 'components/modal/AddAdminUserModal';
+// import RemoveAdminUserModal from 'components/modal/RemoveAdminUserModal';
+// import './Admin.css';
+
+// const Admin = () => {
+//   const [rows, setRows] = useState([]);
+//   const [newusrOpen, setNewusrOpen] = useState(false);
+
+//   const [sciperToDelete, setSciperToDelete] = useState(0);
+//   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+//   const openModal = () => setNewusrOpen(true);
+
+//   useEffect(() => {
+//     if (newusrOpen || showDeleteModal) {
+//       return;
+//     }
+
+//     fetch(ENDPOINT_USER_RIGHTS)
+//       .then((resp) => {
+//         const jsonData = resp.json();
+//         jsonData.then((result) => {
+//           console.log(result);
+//           setRows(result);
+//         });
+//       })
+//       .catch((error) => {
+//         console.log(error);
+//       });
+//   }, [newusrOpen, showDeleteModal]);
+
+//   const columns = [
+//     {
+//       field: 'sciper',
+//       headerName: 'sciper',
+//       width: 150,
+//     },
+//     {
+//       field: 'role',
+//       headerName: 'role',
+//       width: 150,
+//     },
+//     {
+//       field: 'action',
+//       headerName: 'Action',
+//       width: 150,
+//       renderCell: function (params: any) {
+//         function handledClick() {
+//           setSciperToDelete(params.row.sciper);
+//           setShowDeleteModal(true);
+//         }
+//         return (
+//           <Button onClick={handledClick} variant="outlined" color="error">
+//             Delete
+//           </Button>
+//         );
+//       },
+//     },
+//   ];
+
+//   return (
+//     <div className="admin-container">
+//       <div className="admin-grid">
+//         <Button onClick={openModal} variant="contained">
+//           Add a user
+//         </Button>
+//         <DataGrid rows={rows} columns={columns} />
+//         <AddAdminUserModal open={newusrOpen} setOpen={setNewusrOpen}></AddAdminUserModal>
+//         <RemoveAdminUserModal
+//           setOpen={setShowDeleteModal}
+//           open={showDeleteModal}
+//           sciper={sciperToDelete}
+//         />
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default Admin;
