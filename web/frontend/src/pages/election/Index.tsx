@@ -23,12 +23,13 @@ const ElectionIndex: FC = () => {
     return (
       <div>
         {data.Elections.length > 0 ? (
-          <div className="election-box">
-            <div className="click-info">{t('clickElection')}</div>
-            <div className="election-table-wrapper">
+          <>
+            {t('listElection')}
+            <div className="pb-8">{t('clickElection')}</div>
+            <div>
               <ElectionTable elections={data.Elections} />
             </div>
-          </div>
+          </>
         ) : (
           <div className="no-election">{t('noElection')}</div>
         )}
@@ -38,7 +39,6 @@ const ElectionIndex: FC = () => {
 
   return (
     <div className="pt-4 mx-2">
-      {t('listElection')}
       {!loading ? (
         showElection()
       ) : error === null ? (
