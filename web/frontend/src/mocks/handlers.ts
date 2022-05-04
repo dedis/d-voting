@@ -35,7 +35,7 @@ var mockUserDB = setupMockUserDB();
 
 const SETUP_TIMER = 2000;
 const SHUFFLE_TIMER = 2000;
-const DECRYPT_TIMER = 2000;
+const DECRYPT_TIMER = 8000;
 
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, (req, res, ctx) => {

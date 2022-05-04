@@ -11,16 +11,19 @@ const poll = (
 
   const executePoll = async (resolve, reject) => {
     console.log('- poll');
+    try {
+      const response = await fetch(endpoint, request);
+      const result = await response.json();
 
-    const response = await fetch(endpoint, request);
-    const result = await response.json();
-
-    if (!response.ok) {
-      return reject(new Error(JSON.stringify(result)));
-    } else if (validate(result.Status)) {
-      return resolve(result);
-    } else {
-      setTimeout(executePoll, interval, resolve, reject);
+      if (!response.ok) {
+        return reject(new Error(JSON.stringify(result)));
+      } else if (validate(result.Status)) {
+        return resolve(result);
+      } else {
+        setTimeout(executePoll, interval, resolve, reject);
+      }
+    } catch (e) {
+      return reject(e);
     }
   };
 

@@ -56,6 +56,7 @@ const useChangeAction = (
       setUserConfirmedAction={setUserConfirmedCanceling}
     />
   );
+
   const [postError, setPostError] = useState(t('operationFailure') as string);
   const sendFetchRequest = usePostCall(setPostError);
 
@@ -89,10 +90,11 @@ const useChangeAction = (
   // Start to poll on the given endpoint, statusToMatch is the status we are
   // waiting for to stop polling. The previous status is used if there's an error,
   // in which case the election status is set back to this value.
-  const pollStatus = (endpoint: string, statusToMatch: STATUS, previousStatus: STATUS) => {
+  const pollStatus = (endpoint: string, statusToMatch: STATUS, previousStatus: STATUS, signal) => {
     const interval = 1000;
     const request = {
       method: 'GET',
+      signal: signal,
     };
 
     const onFullFilled = () => {
@@ -104,11 +106,15 @@ const useChangeAction = (
     };
 
     const onRejected = (error) => {
-      if (setGetError !== null && setGetError !== undefined) {
-        setGetError(error.message);
-      }
+      // AbortController sends an AbortError of type DOMException
+      // when the component is unmounted, we ignore those
+      if (!(error instanceof DOMException)) {
+        if (setGetError !== null && setGetError !== undefined) {
+          setGetError(error.message);
+        }
 
-      setStatus(previousStatus);
+        setStatus(previousStatus);
+      }
     };
 
     const match = (s: STATUS) => s === statusToMatch;
@@ -121,6 +127,39 @@ const useChangeAction = (
         setShowModalError(true);
       });
   };
+
+  useEffect(() => {
+    // use an abortController to stop polling when the component is unmounted
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
+    if (status == STATUS.OnGoingSetup) {
+      console.log('polling setup');
+      pollStatus(
+        endpoints.editDKGActors(electionID),
+        STATUS.Setup,
+        STATUS.InitializedNodes,
+        signal
+      );
+    }
+
+    if (status == STATUS.OnGoingShuffle) {
+      pollStatus(endpoints.election(electionID), STATUS.ShuffledBallots, STATUS.Closed, signal);
+    }
+
+    if (status == STATUS.OnGoingDecryption) {
+      pollStatus(
+        endpoints.editDKGActors(electionID),
+        STATUS.DecryptedBallots,
+        STATUS.ShuffledBallots,
+        signal
+      );
+    }
+
+    return () => {
+      abortController.abort();
+    };
+  }, [status]);
 
   useEffect(() => {
     if (postError !== null) {
@@ -208,7 +247,6 @@ const useChangeAction = (
 
     if (setupSuccess && postError === null) {
       setStatus(STATUS.OnGoingSetup);
-      pollStatus(endpoints.editDKGActors(electionID), STATUS.Setup, STATUS.InitializedNodes);
     } else {
       setShowModalError(true);
       setIsSettingUp(false);
@@ -218,6 +256,7 @@ const useChangeAction = (
 
   const handleOpen = async () => {
     const openSuccess = await electionUpdate(ACTION.Open, endpoints.editElection(electionID));
+
     if (openSuccess && postError === null) {
       setStatus(STATUS.Open);
     } else {
@@ -244,7 +283,6 @@ const useChangeAction = (
 
     if (shuffleSuccess && postError === null) {
       setStatus(STATUS.OnGoingShuffle);
-      pollStatus(endpoints.election(electionID), STATUS.ShuffledBallots, STATUS.Closed);
     } else {
       setShowModalError(true);
       setIsShuffling(false);
@@ -262,11 +300,6 @@ const useChangeAction = (
 
     if (decryptSuccess && postError === null) {
       setStatus(STATUS.OnGoingDecryption);
-      pollStatus(
-        endpoints.editDKGActors(electionID),
-        STATUS.DecryptedBallots,
-        STATUS.ShuffledBallots
-      );
     } else {
       setShowModalError(true);
       setIsDecrypting(false);
@@ -348,6 +381,7 @@ const useChangeAction = (
         return <span> --- </span>;
     }
   };
+
   return { getAction, modalClose, modalCancel };
 };
 
