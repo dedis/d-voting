@@ -6,6 +6,7 @@ const useFillElectionInfo = (electionData: ElectionInfo) => {
   const [id, setId] = useState<ID>('');
   const [status, setStatus] = useState<STATUS>(null);
   const [pubKey, setPubKey] = useState<string>('');
+  const [roster, setRoster] = useState<string[]>(null);
   const [result, setResult] = useState<Results[]>(null);
   const [chunksPerBallot, setChunksPerBallot] = useState<number>(0);
   const [ballotSize, setBallotSize] = useState<number>(0);
@@ -17,6 +18,7 @@ const useFillElectionInfo = (electionData: ElectionInfo) => {
       setId(electionData.ElectionID);
       setStatus(electionData.Status);
       setPubKey(electionData.Pubkey);
+      setRoster(electionData.Roster);
       setResult(electionData.Result);
       setChunksPerBallot(electionData.ChunksPerBallot);
       setBallotSize(electionData.BallotSize);
@@ -32,6 +34,7 @@ const useFillElectionInfo = (electionData: ElectionInfo) => {
     status,
     setStatus,
     pubKey,
+    roster,
     result,
     setResult,
     chunksPerBallot,

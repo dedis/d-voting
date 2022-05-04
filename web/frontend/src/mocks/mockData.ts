@@ -1,5 +1,7 @@
 import { Results } from 'types/election';
 
+const mockRoster: string[] = ['//localhost:2001', '//localhost:2002', '//localhost:2003'];
+
 const mockElection1: any = {
   MainTitle: 'Life on the campus',
   Scaffold: [
@@ -216,4 +218,5 @@ export {
   mockElectionResult21,
   mockElectionResult22,
   mockElectionResult23,
+  mockRoster,
 };

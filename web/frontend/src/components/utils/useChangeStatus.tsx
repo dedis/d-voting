@@ -27,7 +27,7 @@ const useChangeStatus = (status: STATUS) => {
         return (
           <span className="election-status">
             <span className="election-status-on"></span>
-            <span className="election-status-text">{t('statusOnGoingSetup')}</span>
+            <span className="election-status-text">{t('statusInitializedNodes')}</span>
           </span>
         );
       case STATUS.Setup:
@@ -55,7 +55,7 @@ const useChangeStatus = (status: STATUS) => {
         return (
           <span className="election-status">
             <span className="election-status-closed"></span>
-            <span className="election-status-text">{t('statusOnGoingShuffle')}</span>
+            <span className="election-status-text">{t('statusClose')}</span>
           </span>
         );
       case STATUS.ShuffledBallots:
@@ -69,7 +69,7 @@ const useChangeStatus = (status: STATUS) => {
         return (
           <span className="election-status">
             <span className="election-status-closed"></span>
-            <span className="election-status-text">{t('statusOnGoingDecryption')}</span>
+            <span className="election-status-text">{t('statusShuffle')}</span>
           </span>
         );
       case STATUS.DecryptedBallots:

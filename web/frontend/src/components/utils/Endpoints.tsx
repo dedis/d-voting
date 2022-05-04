@@ -10,12 +10,10 @@ export const newElection = '/api/evoting/elections';
 export const editElection = (ElectionID: string) => `/api/evoting/elections/${ElectionID}`;
 export const newElectionVote = (ElectionID: string) => `/api/evoting/elections/${ElectionID}/vote`;
 export const editShuffle = (ElectionID: string) => `/evoting/services/shuffle/${ElectionID}`;
-// Decrypt
+// Setup and Decrypt
 export const editDKGActors = (ElectionID: string) => `/evoting/services/dkg/actors/${ElectionID}`;
 // Init nodes
 export const dkgActors = `${process.env.REACT_APP_PROXY}/evoting/services/dkg/actors`;
-// Setup
-export const dkgActor = (ElectionID: string) => `/evoting/services/dkg/actors/${ElectionID}`;
 
 // public information can be directly fetched from dela nodes
 export const election = (ElectionID: string) =>

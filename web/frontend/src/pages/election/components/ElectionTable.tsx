@@ -12,7 +12,6 @@ import { withStyles } from '@material-ui/core/styles';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { LightElectionInfo } from 'types/election';
-import Action from './Action';
 import Status from './Status';
 import { ID } from 'types/configuration';
 import ElectionFields from 'components/utils/ElectionFields';
@@ -47,12 +46,6 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
       minWidth: 170,
       align: 'left',
     },
-    {
-      id: 'action',
-      label: t('action'),
-      minWidth: 170,
-      align: 'left',
-    },
   ];
 
   const StyledTableRow = withStyles((theme) => ({
@@ -63,13 +56,13 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
     },
   }))(TableRow);
 
-  const createData = (title: JSX.Element, status: JSX.Element, action: JSX.Element, key: ID) => {
-    return { title, status, action, key };
+  const createData = (title: JSX.Element, status: JSX.Element, key: ID) => {
+    return { title, status, key };
   };
 
   const constructRows = () =>
     elections.map((election) => {
-      let { title, id, status, setStatus } = ElectionFields(election);
+      let { title, id, status } = ElectionFields(election);
       let link = (
         <Link className="election-link" to={`/elections/${id}`}>
           {title}
@@ -77,8 +70,8 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
       );
 
       let stat = <Status status={status} />;
-      let action = <Action status={status} electionID={id} setStatus={setStatus} />;
-      return createData(link, stat, action, id);
+
+      return createData(link, stat, id);
     });
 
   const rows = constructRows();

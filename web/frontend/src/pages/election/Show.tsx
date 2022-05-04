@@ -13,18 +13,23 @@ import { ROUTE_BALLOT_SHOW, ROUTE_ELECTION_INDEX } from 'Routes';
 import TextButton from 'components/buttons/TextButton';
 import { AuthContext } from 'index';
 import { ROLE } from 'types/userRole';
+import Modal from 'components/modal/Modal';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
   const { electionId } = useParams();
   const authCtx = useContext(AuthContext);
 
-  const { loading, electionID, status, setStatus, setResult, configObj, setIsResultSet } =
+  const { loading, electionID, status, setStatus, roster, setResult, configObj, setIsResultSet } =
     useElection(electionId);
 
   const [, setError] = useState(null);
   const [isResultAvailable, setIsResultAvailable] = useState(false);
   const { getResults } = useGetResults();
+
+  const [getError, setGetError] = useState(null);
+  const [textModalError, setTextModalError] = useState(null);
+  const [showModalError, setShowModalError] = useState(false);
 
   //Fetch result when available after a status change
   useEffect(() => {
@@ -33,10 +38,25 @@ const ElectionShow: FC = () => {
     }
   }, [isResultAvailable, status]);
 
+  useEffect(() => {
+    if (getError !== null) {
+      console.log(getError);
+      setTextModalError(getError);
+      setShowModalError(true);
+      setGetError(null);
+    }
+  }, [getError, setTextModalError]);
+
   return (
     <div>
       {!loading ? (
         <div>
+          <Modal
+            showModal={showModalError}
+            setShowModal={setShowModalError}
+            textModal={textModalError === null ? '' : textModalError}
+            buttonRightText={t('close')}
+          />
           <div className="shadow-lg rounded-md w-full px-4 my-0 sm:my-4">
             <h3 className="py-6 uppercase text-2xl text-center text-gray-700">
               {configObj.MainTitle}
@@ -47,8 +67,12 @@ const ElectionShow: FC = () => {
               <Action
                 status={status}
                 electionID={electionID}
+                nodeRoster={roster}
                 setStatus={setStatus}
                 setResultAvailable={setIsResultAvailable}
+                setGetError={setGetError}
+                setTextModalError={setTextModalError}
+                setShowModalError={setShowModalError}
               />
             </div>
           </div>

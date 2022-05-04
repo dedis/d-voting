@@ -9,6 +9,7 @@ import {
   mockElectionResult21,
   mockElectionResult22,
   mockElectionResult23,
+  mockRoster,
 } from './mockData';
 
 const setupMockElection = () => {
@@ -20,9 +21,10 @@ const setupMockElection = () => {
 
   mockElections.set(electionID1, {
     ElectionID: electionID1,
-    Status: STATUS.Open,
+    Status: STATUS.Initial,
     Pubkey: 'XL4V6EMIICW',
     Result: [],
+    Roster: mockRoster,
     Configuration: unmarshalConfig(mockElection1),
     BallotSize: 174,
     ChunksPerBallot: 6,
@@ -35,6 +37,7 @@ const setupMockElection = () => {
     Status: STATUS.ResultAvailable,
     Pubkey: 'XL4V6EMIICW',
     Result: [mockElectionResult21, mockElectionResult22, mockElectionResult23],
+    Roster: mockRoster,
     Configuration: unmarshalConfig(mockElection2),
     BallotSize: 174,
     ChunksPerBallot: 6,

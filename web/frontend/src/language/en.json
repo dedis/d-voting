@@ -60,6 +60,7 @@
     "createElection": "Create election",
     "statusInitial": "Created",
     "statusInitializedNodes": "Node initialized",
+    "initNodes": "Initialize nodes",
     "statusOnGoingSetup": "Setting up...",
     "statusSetup": "Setup",
     "statusOpen": "Open",

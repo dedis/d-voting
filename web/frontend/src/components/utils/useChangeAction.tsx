@@ -5,28 +5,35 @@ import usePostCall from './usePostCall';
 import * as endpoints from './Endpoints';
 import { ID } from 'types/configuration';
 import { ACTION, STATUS } from 'types/election';
-import ShuffleButton from './ShuffleButton';
-import CloseButton from './CloseButton';
-import CancelButton from './CancelButton';
-import OpenButton from './OpenButton';
-import DecryptButton from './DecryptButton';
-import ResultButton from './ResultButton';
+import {
+  CancelButton,
+  CloseButton,
+  DecryptButton,
+  InitializeButton,
+  OpenButton,
+  ResultButton,
+  SetupButton,
+  ShuffleButton,
+} from './ActionButtons';
+import { poll } from './usePolling';
 
 const useChangeAction = (
   status: STATUS,
   electionID: ID,
+  nodeRoster: string[],
   setStatus: (status: STATUS) => void,
   setResultAvailable: ((available: boolean) => void | null) | undefined,
   setTextModalError: (value: ((prevState: null) => '') | string) => void,
-  setShowModalError: (willShow: boolean) => void
+  setShowModalError: (willShow: boolean) => void,
+  setGetError: (error: string) => void
 ) => {
   const { t } = useTranslation();
+  const [isSettingUp, setIsSettingUp] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
   const [isShuffling, setIsShuffling] = useState(false);
   const [isDecrypting, setIsDecrypting] = useState(false);
-  const [showModalOpen, setShowModalOpen] = useState(false);
   const [showModalClose, setShowModalClose] = useState(false);
   const [showModalCancel, setShowModalCancel] = useState(false);
   const [userConfirmedClosing, setUserConfirmedClosing] = useState(false);
@@ -64,6 +71,57 @@ const useChangeAction = (
     return sendFetchRequest(endpoint, req, setIsClosing);
   };
 
+  const initializeNode = async (node: string) => {
+    const request = {
+      method: 'POST',
+      body: JSON.stringify({
+        ElectionID: electionID,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+
+    return sendFetchRequest(
+      endpoints.dkgActors,
+      request,
+      setIsClosing // the function require this argument, which cannot be set here
+    );
+  };
+
+  const pollStatus = (endpoint: string, statusToMatch: STATUS, previousStatus: STATUS) => {
+    const interval = 1000;
+    const request = {
+      method: 'GET',
+    };
+
+    const onFullFilled = () => {
+      if (setGetError !== null && setGetError !== undefined) {
+        setGetError(null);
+      }
+
+      setStatus(statusToMatch);
+    };
+
+    const onRejected = (error) => {
+      if (setGetError !== null && setGetError !== undefined) {
+        setGetError(error.message);
+      }
+
+      setStatus(previousStatus);
+    };
+
+    const match = (s: STATUS) => s === statusToMatch;
+
+    poll(endpoint, request, match, interval)
+      .then(onFullFilled, onRejected)
+      .catch((e) => {
+        setStatus(previousStatus);
+        setGetError(e.message);
+        setShowModalError(true);
+      });
+  };
+
   useEffect(() => {
     if (postError !== null) {
       setTextModalError(postError);
@@ -79,6 +137,7 @@ const useChangeAction = (
           ACTION.Close,
           endpoints.editElection(electionID.toString())
         );
+
         if (closeSuccess) {
           setStatus(STATUS.Closed);
         } else {
@@ -106,6 +165,7 @@ const useChangeAction = (
           ACTION.Cancel,
           endpoints.editElection(electionID.toString())
         );
+
         if (cancelSuccess) {
           setStatus(STATUS.Canceled);
         } else {
@@ -120,11 +180,44 @@ const useChangeAction = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCanceling, sendFetchRequest, setShowModalError, setStatus, userConfirmedCanceling]);
 
+  const handleInitialize = () => {
+    const initNodes = new Map<string, boolean>();
+
+    nodeRoster.forEach(async (node) => {
+      const initSuccess = await initializeNode(node);
+
+      if (initSuccess && postError === null) {
+        initNodes.set(node, initSuccess);
+
+        // All the nodes have been initialized
+        if (initNodes.size === nodeRoster.length) {
+          console.log(initNodes);
+          setStatus(STATUS.InitializedNodes);
+        }
+      } else {
+        setShowModalError(true);
+      }
+      setPostError(null);
+    });
+  };
+
+  // Setup one node
+  const handleSetup = async () => {
+    setIsSettingUp(true);
+    const setupSuccess = await electionUpdate(ACTION.Setup, endpoints.editDKGActors(electionID));
+
+    if (setupSuccess && postError === null) {
+      setStatus(STATUS.OnGoingSetup);
+      pollStatus(endpoints.editDKGActors(electionID), STATUS.Setup, STATUS.InitializedNodes);
+    } else {
+      setShowModalError(true);
+      setIsSettingUp(false);
+    }
+    setPostError(null);
+  };
+
   const handleOpen = async () => {
-    const openSuccess = await electionUpdate(
-      ACTION.Open,
-      endpoints.editElection(electionID.toString())
-    );
+    const openSuccess = await electionUpdate(ACTION.Open, endpoints.editElection(electionID));
     if (openSuccess && postError === null) {
       setStatus(STATUS.Open);
     } else {
@@ -146,12 +239,10 @@ const useChangeAction = (
 
   const handleShuffle = async () => {
     setIsShuffling(true);
-    const shuffleSuccess = await electionUpdate(
-      ACTION.Shuffle,
-      endpoints.editShuffle(electionID.toString())
-    );
+    const shuffleSuccess = await electionUpdate(ACTION.Shuffle, endpoints.editShuffle(electionID));
     if (shuffleSuccess && postError === null) {
-      setStatus(STATUS.ShuffledBallots);
+      setStatus(STATUS.OnGoingShuffle);
+      pollStatus(endpoints.election(electionID), STATUS.ShuffledBallots, STATUS.Closed);
     } else {
       setShowModalError(true);
       setIsShuffling(false);
@@ -160,16 +251,18 @@ const useChangeAction = (
   };
 
   const handleDecrypt = async () => {
+    setIsDecrypting(true);
     const decryptSuccess = await electionUpdate(
       ACTION.BeginDecryption,
-      endpoints.editDKGActors(electionID.toString())
+      endpoints.editDKGActors(electionID)
     );
     if (decryptSuccess && postError === null) {
-      // TODO : setResultAvailable is undefined when the decryption is clicked
-      if (setResultAvailable !== null && setResultAvailable !== undefined) {
-        setResultAvailable(true);
-      }
-      setStatus(STATUS.ResultAvailable);
+      setStatus(STATUS.OnGoingDecryption);
+      pollStatus(
+        endpoints.editDKGActors(electionID),
+        STATUS.DecryptedBallots,
+        STATUS.ShuffledBallots
+      );
     } else {
       setShowModalError(true);
       setIsDecrypting(false);
@@ -177,13 +270,35 @@ const useChangeAction = (
     setPostError(null);
   };
 
+  useEffect(() => {
+    if (status === STATUS.DecryptedBallots) {
+      setStatus(STATUS.ResultAvailable);
+
+      setResultAvailable(true);
+    }
+  }, [status]);
+
   const getAction = () => {
+    console.log('ID: ' + electionID + ' Status: ' + status);
     switch (status) {
       case STATUS.Initial:
         return (
           <span>
+            <InitializeButton status={status} handleInitialize={handleInitialize} />
+          </span>
+        );
+      case STATUS.InitializedNodes:
+        return (
+          <span>
+            <SetupButton status={status} handleSetup={handleSetup} />
+          </span>
+        );
+      case STATUS.OnGoingSetup:
+        return <span>{t('statusOnGoingSetup')}</span>;
+      case STATUS.Setup:
+        return (
+          <span>
             <OpenButton status={status} handleOpen={handleOpen} />
-            <CancelButton status={status} handleCancel={handleCancel} />
           </span>
         );
       case STATUS.Open:
@@ -203,6 +318,9 @@ const useChangeAction = (
             />
           </span>
         );
+      case STATUS.OnGoingShuffle:
+        return <span>{t('statusOnGoingShuffle')}</span>;
+
       case STATUS.ShuffledBallots:
         return (
           <span>
@@ -213,6 +331,8 @@ const useChangeAction = (
             />
           </span>
         );
+      case STATUS.OnGoingDecryption:
+        return <span>{t('statusOnGoingDecryption')}</span>;
       case STATUS.ResultAvailable:
         return (
           <span>

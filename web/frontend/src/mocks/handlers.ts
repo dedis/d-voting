@@ -10,7 +10,9 @@ import {
 import * as endpoints from '../components/utils/Endpoints';
 
 import {
+  EditDKGActorBody,
   EditElectionBody,
+  NewDKGBody,
   NewElectionBody,
   NewElectionVoteBody,
   NewUserRole,
@@ -22,6 +24,7 @@ import { ACTION, STATUS } from 'types/election';
 import { setupMockElection, toLightElectionInfo } from './setupMockElections';
 import setupMockUserDB from './setupMockUserDB';
 import { ROLE } from 'types/userRole';
+import { mockRoster } from './mockData';
 
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;
@@ -29,6 +32,10 @@ const mockUserID = 561934;
 const { mockElections, mockResults } = setupMockElection();
 
 var mockUserDB = setupMockUserDB();
+
+const SETUP_TIMER = 2000;
+const SHUFFLE_TIMER = 2000;
+const DECRYPT_TIMER = 2000;
 
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, (req, res, ctx) => {
@@ -64,7 +71,23 @@ export const handlers = [
     return res(ctx.status(200));
   }),
 
-  rest.get(endpoints.elections, (req, res, ctx) => {
+  rest.get(endpoints.elections, async (req, res, ctx) => {
+    mockElections.forEach(async (election) => {
+      switch (election.Status) {
+        case STATUS.OnGoingShuffle:
+          setTimeout(() => {
+            mockElections.set(election.ElectionID as string, {
+              ...mockElections.get(election.ElectionID as string),
+              Result: mockResults.get(election.ElectionID as string),
+              Status: STATUS.ShuffledBallots,
+            });
+          }, SHUFFLE_TIMER);
+          break;
+        default:
+          break;
+      }
+    });
+
     return res(
       ctx.status(200),
       ctx.json({
@@ -75,8 +98,24 @@ export const handlers = [
     );
   }),
 
-  rest.get(endpoints.election(':ElectionID'), (req, res, ctx) => {
+  rest.get(endpoints.election(':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
+
+    const mockElection = mockElections.get(ElectionID as string);
+
+    switch (mockElection.Status) {
+      case STATUS.OnGoingShuffle:
+        setTimeout(() => {
+          mockElections.set(ElectionID as string, {
+            ...mockElections.get(ElectionID as string),
+            Result: mockResults.get(ElectionID as string),
+            Status: STATUS.ShuffledBallots,
+          });
+        }, SHUFFLE_TIMER);
+        break;
+      default:
+        break;
+    }
 
     return res(ctx.status(200), ctx.json(mockElections.get(ElectionID as ID)));
   }),
@@ -89,9 +128,10 @@ export const handlers = [
 
       mockElections.set(newElectionID, {
         ElectionID: newElectionID,
-        Status: STATUS.Open,
+        Status: STATUS.Initial,
         Pubkey: 'DEAEV6EMII',
         Result: [],
+        Roster: mockRoster,
         Configuration: configuration,
         BallotSize: 290,
         ChunksPerBallot: 10,
@@ -152,7 +192,7 @@ export const handlers = [
     const { ElectionID } = req.params;
     mockElections.set(ElectionID as string, {
       ...mockElections.get(ElectionID as string),
-      Status: STATUS.ShuffledBallots,
+      Status: STATUS.OnGoingShuffle,
     });
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
@@ -160,13 +200,67 @@ export const handlers = [
 
   rest.put(endpoints.editDKGActors(':ElectionID'), (req, res, ctx) => {
     const { ElectionID } = req.params;
+    const body = req.body as EditDKGActorBody;
+    var status = STATUS.InitializedNodes;
+
+    switch (body.Action) {
+      case ACTION.Setup:
+        status = STATUS.OnGoingSetup;
+        break;
+      case ACTION.BeginDecryption:
+        status = STATUS.OnGoingDecryption;
+        break;
+      default:
+        break;
+    }
+
     mockElections.set(ElectionID as string, {
       ...mockElections.get(ElectionID as string),
       Result: mockResults.get(ElectionID as string),
-      Status: STATUS.ResultAvailable,
+      Status: status,
     });
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
+  }),
+
+  rest.get(endpoints.editDKGActors(':ElectionID'), async (req, res, ctx) => {
+    const { ElectionID } = req.params;
+    const election = mockElections.get(ElectionID as string);
+
+    switch (election.Status) {
+      case STATUS.OnGoingSetup:
+        setTimeout(() => {
+          mockElections.set(ElectionID as string, {
+            ...mockElections.get(ElectionID as string),
+            Result: mockResults.get(ElectionID as string),
+            Status: STATUS.Setup,
+          });
+
+          console.log('updated Setup status');
+        }, SETUP_TIMER);
+        break;
+      case STATUS.OnGoingDecryption:
+        setTimeout(() => {
+          mockElections.set(ElectionID as string, {
+            ...mockElections.get(ElectionID as string),
+            Result: mockResults.get(ElectionID as string),
+            Status: STATUS.DecryptedBallots,
+          });
+
+          console.log('updated Decrypted status');
+        }, DECRYPT_TIMER);
+        break;
+      default:
+        break;
+    }
+
+    return res(ctx.status(200), ctx.json({ Status: election.Status }));
+  }),
+
+  rest.post(endpoints.dkgActors, (req, res, ctx) => {
+    const body = req.body as NewDKGBody;
+
+    return res(ctx.status(200));
   }),
 
   rest.get(endpoints.ENDPOINT_USER_RIGHTS, (req, res, ctx) => {

@@ -43,6 +43,7 @@ interface ElectionInfo {
   Status: STATUS;
   Pubkey: string;
   Result: any;
+  Roster: string[];
   ChunksPerBallot: number;
   BallotSize: number;
   Configuration: any;
