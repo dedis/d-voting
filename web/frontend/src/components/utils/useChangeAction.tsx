@@ -28,6 +28,7 @@ const useChangeAction = (
   setGetError: (error: string) => void
 ) => {
   const { t } = useTranslation();
+  const [isInitialized, setIsInitialized] = useState(false);
   const [isSettingUp, setIsSettingUp] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -71,7 +72,7 @@ const useChangeAction = (
     return sendFetchRequest(endpoint, req, setIsClosing);
   };
 
-  const initializeNode = async (node: string) => {
+  const initializeNode = async () => {
     const request = {
       method: 'POST',
       body: JSON.stringify({
@@ -81,14 +82,13 @@ const useChangeAction = (
         'Content-Type': 'application/json',
       },
     };
-
-    return sendFetchRequest(
-      endpoints.dkgActors,
-      request,
-      setIsClosing // the function require this argument, which cannot be set here
-    );
+    // TODO not sure why sendFetchRequest requires a function setIsPosting
+    return sendFetchRequest(endpoints.dkgActors, request, setIsInitialized);
   };
 
+  // Start to poll on the given endpoint, statusToMatch is the status we are
+  // waiting for to stop polling. The previous status is used if there's an error,
+  // in which case the election status is set back to this value.
   const pollStatus = (endpoint: string, statusToMatch: STATUS, previousStatus: STATUS) => {
     const interval = 1000;
     const request = {
@@ -181,17 +181,16 @@ const useChangeAction = (
   }, [isCanceling, sendFetchRequest, setShowModalError, setStatus, userConfirmedCanceling]);
 
   const handleInitialize = () => {
-    const initNodes = new Map<string, boolean>();
+    const initNodes: string[] = [];
 
     nodeRoster.forEach(async (node) => {
-      const initSuccess = await initializeNode(node);
+      const initSuccess = await initializeNode();
 
       if (initSuccess && postError === null) {
-        initNodes.set(node, initSuccess);
+        initNodes.push(node);
 
         // All the nodes have been initialized
-        if (initNodes.size === nodeRoster.length) {
-          console.log(initNodes);
+        if (initNodes.length === nodeRoster.length) {
           setStatus(STATUS.InitializedNodes);
         }
       } else {
@@ -201,7 +200,8 @@ const useChangeAction = (
     });
   };
 
-  // Setup one node
+  // Setup one of the node and then start polling to know when all the nodes
+  // have been setup
   const handleSetup = async () => {
     setIsSettingUp(true);
     const setupSuccess = await electionUpdate(ACTION.Setup, endpoints.editDKGActors(electionID));
@@ -237,9 +237,11 @@ const useChangeAction = (
     setIsCanceling(true);
   };
 
+  // Start the shuffle and poll to know when the shuffle has finished
   const handleShuffle = async () => {
     setIsShuffling(true);
     const shuffleSuccess = await electionUpdate(ACTION.Shuffle, endpoints.editShuffle(electionID));
+
     if (shuffleSuccess && postError === null) {
       setStatus(STATUS.OnGoingShuffle);
       pollStatus(endpoints.election(electionID), STATUS.ShuffledBallots, STATUS.Closed);
@@ -250,12 +252,14 @@ const useChangeAction = (
     setPostError(null);
   };
 
+  // Start decrypting the ballots and poll to know when the decryption has finished
   const handleDecrypt = async () => {
     setIsDecrypting(true);
     const decryptSuccess = await electionUpdate(
       ACTION.BeginDecryption,
       endpoints.editDKGActors(electionID)
     );
+
     if (decryptSuccess && postError === null) {
       setStatus(STATUS.OnGoingDecryption);
       pollStatus(
@@ -279,7 +283,6 @@ const useChangeAction = (
   }, [status]);
 
   const getAction = () => {
-    console.log('ID: ' + electionID + ' Status: ' + status);
     switch (status) {
       case STATUS.Initial:
         return (
