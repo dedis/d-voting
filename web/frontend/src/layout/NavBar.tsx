@@ -182,11 +182,9 @@ const LeftSideNavBar = ({ authCtx, t }) => (
             Admin
           </NavLink>
         )}
-        {!authCtx.isLogged && (
-          <NavLink to={ROUTE_ABOUT} className={'text-black text-lg hover:text-indigo-700'}>
-            {t('navBarAbout')}
-          </NavLink>
-        )}
+        <NavLink to={ROUTE_ABOUT} className={'text-black text-lg hover:text-indigo-700'}>
+          {t('navBarAbout')}
+        </NavLink>
       </div>
     </div>
   </div>
