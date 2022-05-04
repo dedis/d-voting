@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import { ENDPOINT_USER_RIGHTS } from 'components/utils/Endpoints';
 
@@ -6,40 +6,45 @@ import AddAdminUserModal from 'components/modal/AddAdminUserModal';
 import { useTranslation } from 'react-i18next';
 import RemoveAdminUserModal from 'components/modal/RemoveAdminUserModal';
 import Loading from './Loading';
+import { FlashContext, FlashLevel } from 'index';
 
 const SCIPERS_PER_PAGE = 10;
 
 const Admin = () => {
   const { t } = useTranslation();
+  const fctx = useContext(FlashContext);
+
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [newusrOpen, setNewusrOpen] = useState(false);
+  const [newUserOpen, setNewUserOpen] = useState(false);
   const [scipersToDisplay, setScipersToDisplay] = useState([]);
   const [sciperToDelete, setSciperToDelete] = useState(0);
   const [pageIndex, setPageIndex] = useState(0);
 
-  const openModal = () => setNewusrOpen(true);
+  const openModal = () => setNewUserOpen(true);
 
   useEffect(() => {
-    if (newusrOpen || showDeleteModal) {
-      return;
-    }
-
     setLoading(true);
     fetch(ENDPOINT_USER_RIGHTS)
       .then((resp) => {
         setLoading(false);
-        const jsonData = resp.json();
-        jsonData.then((result) => {
-          setUsers(result);
-        });
+        if (resp.status === 200) {
+          const jsonData = resp.json();
+          jsonData.then((result) => {
+            setUsers(result);
+          });
+        } else {
+          setUsers([]);
+          fctx.addMessage(t('errorFetchingUsers'), FlashLevel.Error);
+        }
       })
       .catch((error) => {
         setLoading(false);
-        console.log(error);
+        fctx.addMessage(t('errorFetchingUsers') + ': ' + error, FlashLevel.Error);
       });
-  }, [newusrOpen, showDeleteModal]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const partitionArray = (array: any[], size: number) =>
     array.map((v, i) => (i % size === 0 ? array.slice(i, i + size) : null)).filter((v) => v);
@@ -66,13 +71,25 @@ const Admin = () => {
     }
   };
 
+  const handleAddRoleUser = (user: object): void => {
+    setUsers([...users, user]);
+  };
+  const handleRemoveRoleUser = (): void => {
+    setUsers(users.filter((user) => user.sciper !== sciperToDelete));
+  };
+
   return !loading ? (
     <div className="w-[60rem] font-sans px-4 py-4">
-      <AddAdminUserModal open={newusrOpen} setOpen={setNewusrOpen} />
+      <AddAdminUserModal
+        open={newUserOpen}
+        setOpen={setNewUserOpen}
+        handleAddRoleUser={handleAddRoleUser}
+      />
       <RemoveAdminUserModal
         setOpen={setShowDeleteModal}
         open={showDeleteModal}
         sciper={sciperToDelete}
+        handleRemoveRoleUser={handleRemoveRoleUser}
       />
       <div className="flex items-center justify-between mb-4">
         <div className="flex-1 min-w-0">
@@ -119,7 +136,7 @@ const Admin = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {scipersToDisplay.map((user) => (
-                    <tr key={user.id}>
+                    <tr key={user.sciper}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {user.sciper}
                       </td>

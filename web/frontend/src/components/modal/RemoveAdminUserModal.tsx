@@ -1,19 +1,28 @@
-import React, { FC, Fragment, useRef, useState } from 'react';
+import React, { FC, Fragment, useContext, useRef, useState } from 'react';
 import { ENDPOINT_REMOVE_ROLE } from '../utils/Endpoints';
 import PropTypes from 'prop-types';
 import { Dialog, Transition } from '@headlessui/react';
 import { UserRemoveIcon } from '@heroicons/react/outline';
 import SpinnerIcon from 'components/utils/SpinnerIcon';
 import { useTranslation } from 'react-i18next';
+import { FlashContext, FlashLevel } from 'index';
 
 type RemoveAdminUserModalProps = {
   open: boolean;
   setOpen(opened: boolean): void;
   sciper: number;
+  handleRemoveRoleUser(): void;
 };
 
-const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({ open, setOpen, sciper }) => {
+const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({
+  open,
+  setOpen,
+  sciper,
+  handleRemoveRoleUser,
+}) => {
   const { t } = useTranslation();
+  const fctx = useContext(FlashContext);
+
   const [loading, setLoading] = useState(false);
 
   const handleClose = () => setOpen(false);
@@ -27,11 +36,12 @@ const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({ open, setOpen, sc
     setLoading(true);
     fetch(ENDPOINT_REMOVE_ROLE, requestOptions).then((data) => {
       setLoading(false);
+      setOpen(false);
       if (data.status === 200) {
-        alert('User removed successfully');
-        setOpen(false);
+        handleRemoveRoleUser();
+        fctx.addMessage(t('successRemoveUser'), FlashLevel.Info);
       } else {
-        alert('Error while adding the user');
+        fctx.addMessage(t('errorRemoveUser'), FlashLevel.Error);
       }
     });
   };

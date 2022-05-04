@@ -1,4 +1,4 @@
-import React, { FC, Fragment, useRef, useState } from 'react';
+import React, { FC, Fragment, useContext, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Dialog, Listbox, Transition } from '@headlessui/react';
 import { CheckIcon, SelectorIcon } from '@heroicons/react/solid';
@@ -7,16 +7,20 @@ import { ENDPOINT_ADD_ROLE } from 'components/utils/Endpoints';
 import { useTranslation } from 'react-i18next';
 import SpinnerIcon from 'components/utils/SpinnerIcon';
 import { UserAddIcon } from '@heroicons/react/outline';
+import { FlashContext, FlashLevel } from 'index';
 
 type AddAdminUserModalProps = {
   open: boolean;
   setOpen(opened: boolean): void;
+  handleAddRoleUser(user: object): void;
 };
 
 const roles = ['Admin', 'Operator'];
 
-const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen }) => {
+const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen, handleAddRoleUser }) => {
   const { t } = useTranslation();
+  const fctx = useContext(FlashContext);
+
   const [loading, setLoading] = useState(false);
   const [sciperValue, setSciperValue] = useState('');
   const [selectedRole, setSelectedRole] = useState(roles[0]);
@@ -28,19 +32,23 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen }) => {
   };
 
   const handleAddUser = () => {
+    const userToAdd = { sciper: sciperValue, role: selectedRole };
     const requestOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sciper: sciperValue, role: selectedRole }),
+      body: JSON.stringify(userToAdd),
     };
     setLoading(true);
     fetch(ENDPOINT_ADD_ROLE, requestOptions).then((data) => {
       setLoading(false);
+      setOpen(false);
       if (data.status === 200) {
-        alert('User added successfully');
-        setOpen(false);
+        setSciperValue('');
+        setSelectedRole(roles[0]);
+        handleAddRoleUser(userToAdd);
+        fctx.addMessage(t('successAddUser'), FlashLevel.Info);
       } else {
-        alert('Error while adding the user');
+        fctx.addMessage(t('errorAddUser'), FlashLevel.Error);
       }
     });
   };
