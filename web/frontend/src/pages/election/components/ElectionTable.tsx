@@ -15,6 +15,7 @@ import { LightElectionInfo } from 'types/election';
 import Status from './Status';
 import { ID } from 'types/configuration';
 import ElectionFields from 'components/utils/ElectionFields';
+import QuickAction from './QuickAction';
 
 type ElectionTableProps = {
   elections: LightElectionInfo[];
@@ -46,6 +47,12 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
       minWidth: 170,
       align: 'left',
     },
+    {
+      id: 'quickAction',
+      label: '',
+      minWidth: 170,
+      align: 'left',
+    },
   ];
 
   const StyledTableRow = withStyles((theme) => ({
@@ -56,8 +63,13 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
     },
   }))(TableRow);
 
-  const createData = (title: JSX.Element, status: JSX.Element, key: ID) => {
-    return { title, status, key };
+  const createData = (
+    title: JSX.Element,
+    status: JSX.Element,
+    quickAction: JSX.Element,
+    key: ID
+  ) => {
+    return { title, status, quickAction, key };
   };
 
   const constructRows = () =>
@@ -71,7 +83,9 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
 
       let stat = <Status status={status} />;
 
-      return createData(link, stat, id);
+      let quickAction = <QuickAction status={status} electionID={id} />;
+
+      return createData(link, stat, quickAction, id);
     });
 
   const rows = constructRows();
