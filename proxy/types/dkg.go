@@ -9,3 +9,9 @@ type NewDKGRequest struct {
 type UpdateDKG struct {
 	Action string
 }
+
+// GetActorInfo defines the result of a get actor info
+type GetActorInfo struct {
+	Status int
+	Error  HTTPError
+}

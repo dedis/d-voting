@@ -72,3 +72,7 @@ func (f DKGActor) MarshalJSON() ([]byte, error) {
 	}
 	return data, f.Err
 }
+
+func (f DKGActor) Status() dkg.Status {
+	return dkg.Status{}
+}

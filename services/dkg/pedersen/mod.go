@@ -131,6 +131,7 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, pool pool.Pool, txmngr txn.Man
 		electionFac: s.electionFac,
 		handler:     h,
 		electionID:  electionID,
+		status:      dkg.Status{Status: dkg.Initialized},
 	}
 
 	s.Lock()
@@ -159,19 +160,33 @@ type Actor struct {
 	electionFac serde.Factory
 	handler     *Handler
 	electionID  string
+	status      dkg.Status
 }
 
-// Setup implements dkg.Actor. It initializes the DKG protocol
-// across all participating nodes.
+func (a *Actor) setErr(err error, args map[string]interface{}) {
+	a.status = dkg.Status{
+		Status: dkg.Failed,
+		Err:    err,
+		Args:   args,
+	}
+}
+
+// Setup implements dkg.Actor. It initializes the DKG protocol across all
+// participating nodes. This function updates the actor's status in case of
+// error to allow asynchronous call of this function.
 func (a *Actor) Setup() (kyber.Point, error) {
 
 	if a.handler.startRes.Done() {
-		return nil, xerrors.Errorf("setup() was already called, only one call is allowed")
+		err := xerrors.New("setup() was already called, only one call is allowed")
+		a.setErr(err, nil)
+		return nil, err
 	}
 
 	election, err := a.getElection()
 	if err != nil {
-		return nil, xerrors.Errorf("failed to get election: %v", err)
+		err := xerrors.Errorf("failed to get election: %v", err)
+		a.setErr(err, nil)
+		return nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), setupTimeout)
@@ -180,7 +195,9 @@ func (a *Actor) Setup() (kyber.Point, error) {
 
 	sender, receiver, err := a.rpc.Stream(ctx, election.Roster)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to stream: %v", err)
+		err := xerrors.Errorf("failed to stream: %v", err)
+		a.setErr(err, nil)
+		return nil, err
 	}
 
 	addrs := make([]mino.Address, 0, election.Roster.Len())
@@ -195,7 +212,9 @@ func (a *Actor) Setup() (kyber.Point, error) {
 
 	err = <-errs
 	if err != nil {
-		return nil, xerrors.Errorf("failed to send getPeerKey message: %v", err)
+		err := xerrors.Errorf("failed to send getPeerKey message: %v", err)
+		a.setErr(err, nil)
+		return nil, err
 	}
 
 	lenAddrs := len(addrs)
@@ -203,7 +222,9 @@ func (a *Actor) Setup() (kyber.Point, error) {
 	associatedAddrs := make([]mino.Address, 0, lenAddrs)
 
 	if lenAddrs == 0 {
-		return nil, xerrors.Errorf("the list of addresses is empty")
+		err := xerrors.Errorf("the list of addresses is empty")
+		a.setErr(err, nil)
+		return nil, err
 	}
 
 	for i := 0; i < lenAddrs; i++ {
@@ -212,14 +233,18 @@ func (a *Actor) Setup() (kyber.Point, error) {
 
 		from, msg, err := receiver.Recv(ctx)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to receive peer pubkey: %v", err)
+			err := xerrors.Errorf("failed to receive peer pubkey: %v", err)
+			a.setErr(err, nil)
+			return nil, err
 		}
 
 		dela.Logger.Info().Msgf("received a response from %v", from)
 
 		resp, ok := msg.(types.GetPeerPubKeyResp)
 		if !ok {
-			return nil, xerrors.Errorf("received an unexpected message: %T - %s", resp, resp)
+			err := xerrors.Errorf("received an unexpected message: %T - %s", resp, resp)
+			a.setErr(err, nil)
+			return nil, err
 		}
 
 		dkgPeerPubkeys = append(dkgPeerPubkeys, resp.GetPublicKey())
@@ -233,7 +258,9 @@ func (a *Actor) Setup() (kyber.Point, error) {
 	errs = sender.Send(message, addrs...)
 	err = <-errs
 	if err != nil {
-		return nil, xerrors.Errorf("failed to send start: %v", err)
+		err := xerrors.Errorf("failed to send start: %v", err)
+		a.setErr(err, nil)
+		return nil, err
 	}
 
 	dkgPubKeys := make([]kyber.Point, lenAddrs)
@@ -245,14 +272,17 @@ func (a *Actor) Setup() (kyber.Point, error) {
 
 		addr, msg, err := receiver.Recv(ctx)
 		if err != nil {
-			return nil, xerrors.Errorf("got an error from '%s' while "+
-				"receiving: %v", addr, err)
+			err := xerrors.Errorf("got an error from '%s' while receiving: %v", addr, err)
+			a.setErr(err, nil)
+			return nil, err
 		}
 
 		doneMsg, ok := msg.(types.StartDone)
 		if !ok {
-			return nil, xerrors.Errorf("expected to receive a Done message, but "+
+			err := xerrors.Errorf("expected to receive a Done message, but "+
 				"go the following: %T", msg)
+			a.setErr(err, nil)
+			return nil, err
 		}
 
 		dkgPubKeys[i] = doneMsg.GetPublicKey()
@@ -260,9 +290,13 @@ func (a *Actor) Setup() (kyber.Point, error) {
 		// this is a simple check that every node sends back the same DKG pub
 		// key.
 		if i != 0 && !dkgPubKeys[i-1].Equal(doneMsg.GetPublicKey()) {
-			return nil, xerrors.Errorf("the public keys do not match: %v", dkgPubKeys)
+			err := xerrors.Errorf("the public keys do not match: %v", dkgPubKeys)
+			a.setErr(err, nil)
+			return nil, err
 		}
 	}
+
+	a.status = dkg.Status{Status: dkg.Setup}
 
 	return dkgPubKeys[0], nil
 }
@@ -340,6 +374,11 @@ func (a *Actor) ComputePubshares() error {
 // that is meant to be persistent.
 func (a *Actor) MarshalJSON() ([]byte, error) {
 	return a.handler.MarshalJSON()
+}
+
+// Status implements dkg.Actor
+func (a *Actor) Status() dkg.Status {
+	return a.status
 }
 
 func electionExists(service ordering.Service, electionIDBuf []byte) (ordering.Proof, bool) {

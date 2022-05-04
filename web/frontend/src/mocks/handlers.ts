@@ -18,9 +18,10 @@ import {
 } from '../types/frontendRequestBody';
 
 import { ID } from 'types/configuration';
-import { STATUS } from 'types/electionInfo';
+import { STATUS } from 'types/election';
 import { setupMockElection, toLightElectionInfo } from './setupMockElections';
 import setupMockUserDB from './setupMockUserDB';
+import { ROLE } from 'types/userRole';
 
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;
@@ -37,7 +38,7 @@ export const handlers = [
       ? {
           lastname: 'Bobster',
           firstname: 'Alice',
-          role: 'admin',
+          role: ROLE.Admin,
           sciper: userId,
         }
       : {};
@@ -88,7 +89,7 @@ export const handlers = [
 
       mockElections.set(newElectionID, {
         ElectionID: newElectionID,
-        Status: STATUS.OPEN,
+        Status: STATUS.Open,
         Pubkey: 'DEAEV6EMII',
         Result: [],
         Configuration: configuration,
@@ -121,20 +122,20 @@ export const handlers = [
   rest.put(endpoints.editElection(':ElectionID'), (req, res, ctx) => {
     const body = req.body as EditElectionBody;
     const { ElectionID } = req.params;
-    var Status = STATUS.INITIAL;
+    var Status = STATUS.Initial;
 
     switch (body.Action) {
       case 'open':
-        Status = STATUS.OPEN;
+        Status = STATUS.Open;
         break;
       case 'close':
-        Status = STATUS.CLOSED;
+        Status = STATUS.Closed;
         break;
       case 'combineShares':
-        Status = STATUS.DECRYPTED_BALLOTS;
+        Status = STATUS.DecryptedBallots;
         break;
       case 'cancel':
-        Status = STATUS.CANCELED;
+        Status = STATUS.Canceled;
         break;
       default:
         break;
@@ -151,7 +152,7 @@ export const handlers = [
     const { ElectionID } = req.params;
     mockElections.set(ElectionID as string, {
       ...mockElections.get(ElectionID as string),
-      Status: STATUS.SHUFFLED_BALLOTS,
+      Status: STATUS.ShuffledBallots,
     });
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
@@ -162,7 +163,7 @@ export const handlers = [
     mockElections.set(ElectionID as string, {
       ...mockElections.get(ElectionID as string),
       Result: mockResults.get(ElectionID as string),
-      Status: STATUS.RESULT_AVAILABLE,
+      Status: STATUS.ResultAvailable,
     });
 
     return res(ctx.status(200), ctx.text('Action successfully done'));

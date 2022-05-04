@@ -16,7 +16,7 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 )
 
-const inclusionTimeout = 2 * time.Second
+const inclusionTimeout = 10 * time.Second
 
 var suite = suites.MustFind("ed25519")
 
@@ -38,6 +38,8 @@ type Election interface {
 type DKG interface {
 	// POST /services/dkg
 	NewDKGActor(http.ResponseWriter, *http.Request)
+	// GET /services/dkg/{electionID}
+	Actor(http.ResponseWriter, *http.Request)
 	// PUT /services/dkg/{electionID}
 	EditDKGActor(http.ResponseWriter, *http.Request)
 }
@@ -88,8 +90,17 @@ func NotAllowedHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, string(buf))
 }
 
-// InternalError set an internal server error
+// InternalError sets an internal server error
 func InternalError(w http.ResponseWriter, r *http.Request, err error, args map[string]interface{}) {
+	httpErr(w, r, err, http.StatusInternalServerError, "Internal server error", args)
+}
+
+// BadRequestError sets an bad request error
+func BadRequestError(w http.ResponseWriter, r *http.Request, err error, args map[string]interface{}) {
+	httpErr(w, r, err, http.StatusBadRequest, "bad request", args)
+}
+
+func httpErr(w http.ResponseWriter, r *http.Request, err error, code uint, title string, args map[string]interface{}) {
 	if args == nil {
 		args = make(map[string]interface{})
 	}
@@ -99,8 +110,8 @@ func InternalError(w http.ResponseWriter, r *http.Request, err error, args map[s
 	args["method"] = r.Method
 
 	errMsg := types.HTTPError{
-		Title:   "Internal server error",
-		Code:    http.StatusInternalServerError,
+		Title:   title,
+		Code:    code,
 		Message: "A problem occurred on the proxy",
 		Args:    args,
 	}

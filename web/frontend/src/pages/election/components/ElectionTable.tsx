@@ -11,11 +11,9 @@ import TablePagination from '@material-ui/core/TablePagination';
 import { withStyles } from '@material-ui/core/styles';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-
+import { LightElectionInfo } from 'types/election';
 import Action from './Action';
 import Status from './Status';
-//import ElectionFields from 'components/utils/ElectionFields';
-import { LightElectionInfo } from 'types/electionInfo';
 import { ID } from 'types/configuration';
 import ElectionFields from 'components/utils/ElectionFields';
 

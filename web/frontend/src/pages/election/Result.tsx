@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { DownloadedResults, RankResults, SelectResults, TextResults } from 'types/electionInfo';
+import { DownloadedResults, RankResults, SelectResults, TextResults } from 'types/election';
 import SelectResult from './components/SelectResult';
 import RankResult from './components/RankResult';
 import TextResult from './components/TextResult';
