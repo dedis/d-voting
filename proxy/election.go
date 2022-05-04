@@ -454,7 +454,7 @@ func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 }
 
 // waitForTxnID blocks until `ID` is included or `events` is closed.
-func (h *election) waitForTxnID(events <-chan ordering.Event, ID []byte) bool {
+func (h *election) waitForTxnID(events <-chan ordering.Event, ID []byte) error {
 	for event := range events {
 		for _, res := range event.Transactions {
 			if !bytes.Equal(res.GetTransaction().GetID(), ID) {
@@ -463,12 +463,14 @@ func (h *election) waitForTxnID(events <-chan ordering.Event, ID []byte) bool {
 
 			ok, msg := res.GetStatus()
 			if !ok {
-				h.logger.Info().Msgf("transaction %x denied : %s", ID, msg)
+				return xerrors.Errorf("transaction %x denied : %s", ID, msg)
 			}
-			return ok
+
+			return nil
 		}
 	}
-	return false
+
+	return xerrors.New("transaction not found")
 }
 
 func (h *election) getElectionsMetadata() (types.ElectionsMetadata, error) {
@@ -552,9 +554,9 @@ func (h *election) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
 		return nil, xerrors.Errorf("failed to add transaction to the pool: %v", err)
 	}
 
-	ok := h.waitForTxnID(events, tx.GetID())
-	if !ok {
-		return nil, xerrors.Errorf("transaction not processed within timeout")
+	err = h.waitForTxnID(events, tx.GetID())
+	if err != nil {
+		return nil, xerrors.Errorf("failed to wait for transaction: %v", err)
 	}
 
 	return tx.GetID(), nil
