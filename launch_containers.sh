@@ -25,7 +25,7 @@ mkdir nodedata
 # Clean logs
 if [ -d "./log" ] 
 then
-    rm ./log/*.log
+    rm -rf ./log
 else
     mkdir log
 fi
@@ -42,7 +42,7 @@ pk=adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3
 #Start docker images and bind volume
 for i in "${vals[@]}"
 do
-    docker run -d -it --name node$i --network evoting-net -v "$(pwd)"/nodedata:/tmp  --publish $(( 9080+$i )):9080 node
+    docker run -d -it --env LLVL=info --name node$i --network evoting-net -v "$(pwd)"/nodedata:/tmp  --publish $(( 9080+$i )):9080 node
     tmux new-window -t $TMUX_SESSION_NAME
     tmux send-keys -t $TMUX_SESSION_NAME:$i.0 "eval docker exec node$i memcoin --config /tmp/node$i start --postinstall \
   --promaddr :9100 --proxyaddr :9080 --proxykey $pk --listen tcp://0.0.0.0:2001 --public //$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' node$i):2001 | tee ./log/node$i.log" C-m

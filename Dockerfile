@@ -6,6 +6,7 @@
 FROM golang:1.17.7-alpine AS build
 
 RUN apk add --update \
+        coreutils \
         curl \
         git \
         gcc \
