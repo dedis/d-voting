@@ -42,7 +42,7 @@ func getScenarioTest(numNodes int, numVotes int, numElection int) func(*testing.
 		proxyList := make([]string, numNodes)
 
 		for i := 0; i < numNodes; i++ {
-			proxyList[i] = fmt.Sprintf("http://localhost:90%02d", 80+i)
+			proxyList[i] = fmt.Sprintf("http://localhost:%v", 9081+i)
 			t.Log(proxyList[i])
 		}
 
@@ -113,7 +113,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Log("Init DKG")
 
 	for i := 0; i < numNodes; i++ {
-		t.Log("Node" + strconv.Itoa(i))
+		t.Log("Node" + strconv.Itoa(i+1))
 		t.Log(proxyArray[i])
 		err = initDKG(secret, proxyArray[i], electionID, t)
 		require.NoError(t, err, "failed to init dkg: %v", err)
