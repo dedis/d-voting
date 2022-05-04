@@ -16,7 +16,7 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 )
 
-const inclusionTimeout = 2 * time.Second
+const inclusionTimeout = 10 * time.Second
 
 var suite = suites.MustFind("ed25519")
 
