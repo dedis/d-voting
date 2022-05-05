@@ -113,7 +113,7 @@ const Ballot: FC = () => {
 
   const SubjectElementDisplay = (element: types.SubjectElement) => {
     return (
-      <div>
+      <div className="pl-4">
         {element.Type === RANK && <Rank rank={element as types.RankQuestion} answers={answers} />}
         {element.Type === SELECT && (
           <Select
@@ -132,15 +132,11 @@ const Ballot: FC = () => {
   const SubjectTree = (subject: types.Subject) => {
     return (
       <div className="sm:px-8 pl-2" key={subject.ID}>
+        <h3 className="text-lg font-bold text-gray-600">{subject.Title}</h3>
         {subject.Order.map((id: ID) => (
           <div key={id}>
             {subject.Elements.get(id).Type === SUBJECT ? (
-              <div>
-                <h3 className="text-lg font-bold text-gray-600">
-                  {subject.Elements.get(id).Title}
-                </h3>
-                {SubjectTree(subject.Elements.get(id) as types.Subject)}
-              </div>
+              <div>{SubjectTree(subject.Elements.get(id) as types.Subject)}</div>
             ) : (
               SubjectElementDisplay(subject.Elements.get(id))
             )}

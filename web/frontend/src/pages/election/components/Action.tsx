@@ -10,7 +10,7 @@ import { STATUS } from 'types/election';
 type ActionProps = {
   status: STATUS;
   electionID: ID;
-  nodeRoster: string[];
+  roster: string[];
   setStatus: (status: STATUS) => void;
   setResultAvailable?: (available: boolean) => void | null;
   setGetError: (error: string) => void;
@@ -21,7 +21,7 @@ type ActionProps = {
 const Action: FC<ActionProps> = ({
   status,
   electionID,
-  nodeRoster,
+  roster,
   setStatus,
   setResultAvailable,
   setGetError,
@@ -30,10 +30,10 @@ const Action: FC<ActionProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  const { getAction, modalClose, modalCancel } = useChangeAction(
+  const { getAction, modalClose, modalCancel, modalAddProxyAddresses } = useChangeAction(
     status,
     electionID,
-    nodeRoster,
+    roster,
     setStatus,
     setResultAvailable,
     setTextModalError,
@@ -46,6 +46,7 @@ const Action: FC<ActionProps> = ({
       {getAction()}
       {modalClose}
       {modalCancel}
+      {modalAddProxyAddresses}
     </span>
   );
 };

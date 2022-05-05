@@ -37,6 +37,8 @@ const SETUP_TIMER = 2000;
 const SHUFFLE_TIMER = 2000;
 const DECRYPT_TIMER = 8000;
 
+var nodeSetups: Map<ID, number> = new Map();
+
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, (req, res, ctx) => {
     const isLogged = sessionStorage.getItem('is-authenticated') === 'true';
@@ -259,6 +261,19 @@ export const handlers = [
 
   rest.post(endpoints.dkgActors, (req, res, ctx) => {
     const body = req.body as NewDKGBody;
+
+    if (nodeSetups.has(body.ElectionID)) {
+      nodeSetups.set(body.ElectionID, nodeSetups.get(body.ElectionID) + 1);
+    } else {
+      nodeSetups.set(body.ElectionID, 1);
+    }
+
+    if (nodeSetups.get(body.ElectionID) == mockElections.get(body.ElectionID).Roster.length) {
+      mockElections.set(body.ElectionID, {
+        ...mockElections.get(body.ElectionID),
+        Status: STATUS.InitializedNodes,
+      });
+    }
 
     return res(ctx.status(200));
   }),

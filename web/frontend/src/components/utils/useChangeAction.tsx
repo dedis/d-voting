@@ -16,11 +16,12 @@ import {
   ShuffleButton,
 } from './ActionButtons';
 import { poll } from './usePolling';
+import AddProxyAddressesModal from 'components/modal/AddProxyAddressesModal';
 
 const useChangeAction = (
   status: STATUS,
   electionID: ID,
-  nodeRoster: string[],
+  roster: string[],
   setStatus: (status: STATUS) => void,
   setResultAvailable: ((available: boolean) => void | null) | undefined,
   setTextModalError: (value: ((prevState: null) => '') | string) => void,
@@ -29,6 +30,7 @@ const useChangeAction = (
 ) => {
   const { t } = useTranslation();
   const [isInitialized, setIsInitialized] = useState(false);
+  const [initializedNodes, setInitializedNodes] = useState<Map<string, boolean>>();
   const [isSettingUp, setIsSettingUp] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -37,8 +39,11 @@ const useChangeAction = (
   const [isDecrypting, setIsDecrypting] = useState(false);
   const [showModalClose, setShowModalClose] = useState(false);
   const [showModalCancel, setShowModalCancel] = useState(false);
+  const [showModalAddProxy, setShowModalAddProxy] = useState(false);
+  const [userConfirmedAddProxy, setUserConfirmedAddProx] = useState(false);
   const [userConfirmedClosing, setUserConfirmedClosing] = useState(false);
   const [userConfirmedCanceling, setUserConfirmedCanceling] = useState(false);
+  const [proxyAddresses, setProxyAddresses] = useState<Map<string, string>>();
 
   const modalClose = (
     <ConfirmModal
@@ -54,6 +59,16 @@ const useChangeAction = (
       setShowModal={setShowModalCancel}
       textModal={t('confirmCancelElection')}
       setUserConfirmedAction={setUserConfirmedCanceling}
+    />
+  );
+  const modalAddProxyAddresses = (
+    <AddProxyAddressesModal
+      roster={roster}
+      proxyAddresses={proxyAddresses}
+      setProxyAddresses={setProxyAddresses}
+      showModal={showModalAddProxy}
+      setShowModal={setShowModalAddProxy}
+      setUserConfirmedAction={setUserConfirmedAddProx}
     />
   );
 
@@ -73,17 +88,17 @@ const useChangeAction = (
     return sendFetchRequest(endpoint, req, setIsClosing);
   };
 
-  const initializeNode = async () => {
+  const initializeNode = async (address: string) => {
     const request = {
       method: 'POST',
       body: JSON.stringify({
         ElectionID: electionID,
+        ProxyAddress: address,
       }),
       headers: {
         'Content-Type': 'application/json',
       },
     };
-    // TODO not sure why sendFetchRequest requires a function setIsPosting
     return sendFetchRequest(endpoints.dkgActors, request, setIsInitialized);
   };
 
@@ -219,24 +234,36 @@ const useChangeAction = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCanceling, sendFetchRequest, setShowModalError, setStatus, userConfirmedCanceling]);
 
-  const handleInitialize = () => {
-    const initNodes: string[] = [];
+  useEffect(() => {
+    if (userConfirmedAddProxy) {
+      proxyAddresses.forEach(async (address, index) => {
+        const initSuccess = await initializeNode(address);
 
-    nodeRoster.forEach(async (node) => {
-      const initSuccess = await initializeNode();
-
-      if (initSuccess && postError === null) {
-        initNodes.push(node);
-
-        // All the nodes have been initialized
-        if (initNodes.length === nodeRoster.length) {
-          setStatus(STATUS.InitializedNodes);
+        if (initSuccess && postError === null) {
+          const initNodes = new Map(initializedNodes);
+          initNodes.set(address, true);
+          console.log('iciiii');
+          setInitializedNodes(initNodes);
+        } else {
+          setShowModalError(true);
         }
-      } else {
-        setShowModalError(true);
+        setPostError(null);
+      });
+    }
+  }, [userConfirmedAddProxy]);
+
+  useEffect(() => {
+    if (initializedNodes) {
+      // All the nodes have been initialized
+      if (!Array.from(initializedNodes.values()).includes(false)) {
+        console.log('changing state');
+        setStatus(STATUS.InitializedNodes);
       }
-      setPostError(null);
-    });
+    }
+  }, [initializedNodes]);
+
+  const handleInitialize = () => {
+    setShowModalAddProxy(true);
   };
 
   // Setup one of the node and then start polling to know when all the nodes
@@ -382,7 +409,7 @@ const useChangeAction = (
     }
   };
 
-  return { getAction, modalClose, modalCancel };
+  return { getAction, modalClose, modalCancel, modalAddProxyAddresses };
 };
 
 export default useChangeAction;

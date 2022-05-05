@@ -8,6 +8,7 @@ const useChangeStatus = (status: STATUS) => {
   const { t } = useTranslation();
 
   const getStatus = () => {
+    console.log('status: ' + status);
     switch (status) {
       case STATUS.Initial:
         return (

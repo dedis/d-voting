@@ -119,6 +119,11 @@
     "end": "The end",
     "en": "🇺🇸 English",
     "fr": "🇫🇷 French",
-    "de": "🇩🇪 German"
+    "de": "🇩🇪 German",
+    "save": "Save",
+    "nodeInitialization": "Node initialization",
+    "inputProxyAddresses": "To initialize the nodes, enter the addresses of their proxies:",
+    "inputProxyAddressesError": "Error: the address for all proxies must be filled.",
+    "node": "Node"
   }
 }

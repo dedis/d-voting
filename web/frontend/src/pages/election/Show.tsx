@@ -67,7 +67,7 @@ const ElectionShow: FC = () => {
               <Action
                 status={status}
                 electionID={electionID}
-                nodeRoster={roster}
+                roster={roster}
                 setStatus={setStatus}
                 setResultAvailable={setIsResultAvailable}
                 setGetError={setGetError}
