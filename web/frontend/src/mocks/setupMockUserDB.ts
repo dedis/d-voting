@@ -26,7 +26,6 @@ const setupMockUserDB = () => {
   userDB.push(mockUser1);
   userDB.push(mockUser2);
   userDB.push(mockUser3);
-
   return userDB;
 };
 

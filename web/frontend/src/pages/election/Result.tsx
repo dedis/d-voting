@@ -27,6 +27,7 @@ import {
   countSelectResult,
   countTextResult,
 } from './components/utils/countResult';
+import Loading from 'pages/Loading';
 
 // Functional component that displays the result of the votes
 const ElectionResult: FC = () => {
@@ -88,6 +89,7 @@ const ElectionResult: FC = () => {
       setSelectResult(selectRes);
       setTextResult(textRes);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result]);
 
   const SubjectElementResultDisplay = (element: SubjectElement) => {
@@ -209,7 +211,7 @@ const ElectionResult: FC = () => {
           </div>
         </div>
       ) : (
-        <p className="loading">{t('loading')}</p>
+        <Loading />
       )}
     </div>
   );

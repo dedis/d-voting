@@ -9,6 +9,5 @@ export const ROUTE_ELECTION_CREATE = '/election/create';
 export const ROUTE_ELECTION_SHOW = '/elections/:electionID';
 export const ROUTE_ELECTION_RESULT = '/elections/:electionID/result';
 
-export const ROUTE_BALLOT_INDEX = '/ballot/index';
 export const ROUTE_BALLOT_CAST = '/ballot/cast';
 export const ROUTE_BALLOT_SHOW = '/ballot/show';

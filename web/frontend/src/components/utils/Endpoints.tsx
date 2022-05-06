@@ -9,9 +9,10 @@ export const ENDPOINT_REMOVE_ROLE = '/api/remove_role';
 export const newElection = '/api/evoting/elections';
 export const editElection = (ElectionID: string) => `/api/evoting/elections/${ElectionID}`;
 export const newElectionVote = (ElectionID: string) => `/api/evoting/elections/${ElectionID}/vote`;
-export const editShuffle = (ElectionID: string) => `/evoting/services/shuffle/${ElectionID}`;
+export const editShuffle = (ElectionID: string) => `/api/evoting/services/shuffle/${ElectionID}`;
 // Decrypt
-export const editDKGActors = (ElectionID: string) => `/evoting/services/dkg/actors/${ElectionID}`;
+export const editDKGActors = (ElectionID: string) =>
+  `/api/evoting/services/dkg/actors/${ElectionID}`;
 
 // public information can be directly fetched from dela nodes
 export const election = (ElectionID: string) =>
