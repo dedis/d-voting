@@ -292,7 +292,7 @@ app.use('/api/evoting/*', (req, res, next) => {
 // controlled. Once this is done the data are signed before the are sent to the
 // DELA node To make this work, react has to redirect to this backend all the
 // request that needs to go the DELA nodes
-app.use('/api/evoting/*', (req, res, next) => {
+app.use('/api/evoting/*', (req, res) => {
   if (!req.session.userid) {
     res.status(400).send('Unauthorized');
     return;
@@ -300,26 +300,15 @@ app.use('/api/evoting/*', (req, res, next) => {
 
   const bodyData = req.body;
 
-  const dataStr = JSON.stringify(bodyData);
-
   // special case for voting
   const regex = /\/api\/evoting\/elections\/.*\/vote/;
   if (req.baseUrl.match(regex)) {
-    // will be handled by the next matcher, just bellow
-    next();
-  } else {
-    sendToDela(dataStr, req, res);
+    // We must set the UserID to know who this ballot is associated to. This is
+    // only needed to allow users to cast multiple ballots, where only the last
+    // ballot is taken into account. To preserve anonymity the web-backend could
+    // translate UserIDs to another random ID.
+    bodyData.UserID = req.session.userid.toString();
   }
-});
-
-app.post('/api/evoting/elections/:electionID/vote', (req, res) => {
-  const bodyData = req.body;
-
-  // We must set the UserID to know who this ballot is associated to. This is
-  // only needed to allow users to cast multiple ballots, where only the last
-  // ballot is taken into account. To preserve anonymity the web-backend could
-  // translate UserIDs to another random ID.
-  bodyData.UserID = req.session.userid;
 
   const dataStr = JSON.stringify(bodyData);
 
