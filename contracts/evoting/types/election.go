@@ -15,6 +15,10 @@ import (
 
 var suite = suites.MustFind("Ed25519")
 
+// LightElectionJSONFormat defines a special format to deserialize a light
+// election.
+var LightElectionJSONFormat serde.Format = "lightElectionJSON"
+
 // ID defines the ID of a ballot question
 type ID string
 
