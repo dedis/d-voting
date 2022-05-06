@@ -686,6 +686,7 @@ func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step)
 	}
 
 	election.Status = types.Canceled
+	PromElectionStatus.WithLabelValues(election.ElectionID).Set(float64(election.Status))
 
 	electionBuf, err := election.Serialize(e.context)
 	if err != nil {

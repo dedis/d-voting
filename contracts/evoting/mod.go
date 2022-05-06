@@ -22,8 +22,6 @@ import (
 )
 
 var (
-	o prometheus.Opts
-
 	PromElectionStatus = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "dvoting_evoting_status",
 		Help: "status of election",
