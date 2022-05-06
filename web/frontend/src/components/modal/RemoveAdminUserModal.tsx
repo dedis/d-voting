@@ -27,23 +27,31 @@ const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({
 
   const handleClose = () => setOpen(false);
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     const requestOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sciper: sciper }),
     };
-    setLoading(true);
-    fetch(ENDPOINT_REMOVE_ROLE, requestOptions).then((data) => {
-      setLoading(false);
-      setOpen(false);
-      if (data.status === 200) {
+
+    try {
+      setLoading(true);
+      const res = await fetch(ENDPOINT_REMOVE_ROLE, requestOptions);
+      if (res.status !== 200) {
+        const response = await res.text();
+        fctx.addMessage(
+          `Error HTTP ${res.status} (${res.statusText}) : ${response}`,
+          FlashLevel.Error
+        );
+      } else {
         handleRemoveRoleUser();
         fctx.addMessage(t('successRemoveUser'), FlashLevel.Info);
-      } else {
-        fctx.addMessage(t('errorRemoveUser'), FlashLevel.Error);
       }
-    });
+    } catch (error) {
+      fctx.addMessage(`${t('errorRemoveUser')}: ${error.message}`, FlashLevel.Error);
+    }
+    setLoading(false);
+    setOpen(false);
   };
   const cancelButtonRef = useRef(null);
 

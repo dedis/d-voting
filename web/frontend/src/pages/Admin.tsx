@@ -15,7 +15,7 @@ const Admin = () => {
   const fctx = useContext(FlashContext);
 
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [newUserOpen, setNewUserOpen] = useState(false);
   const [scipersToDisplay, setScipersToDisplay] = useState([]);
@@ -41,7 +41,7 @@ const Admin = () => {
       })
       .catch((error) => {
         setLoading(false);
-        fctx.addMessage(t('errorFetchingUsers') + ': ' + error, FlashLevel.Error);
+        fctx.addMessage(`${t('errorFetchingUsers')}: ${error.message}`, FlashLevel.Error);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -136,7 +136,7 @@ const Admin = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {scipersToDisplay.map((user) => (
-                    <tr key={user.sciper}>
+                    <tr key={user.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {user.sciper}
                       </td>

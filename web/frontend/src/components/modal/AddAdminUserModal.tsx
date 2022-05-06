@@ -7,7 +7,10 @@ import { ENDPOINT_ADD_ROLE } from 'components/utils/Endpoints';
 import { useTranslation } from 'react-i18next';
 import SpinnerIcon from 'components/utils/SpinnerIcon';
 import { UserAddIcon } from '@heroicons/react/outline';
+import ShortUniqueId from 'short-unique-id';
 import { FlashContext, FlashLevel } from 'index';
+
+const uid = new ShortUniqueId({ length: 8 });
 
 type AddAdminUserModalProps = {
   open: boolean;
@@ -31,26 +34,34 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen, handleAd
     setSciperValue(e.target.value);
   };
 
-  const handleAddUser = () => {
-    const userToAdd = { sciper: sciperValue, role: selectedRole };
+  const handleAddUser = async () => {
+    const userToAdd = { id: uid(), sciper: sciperValue, role: selectedRole };
     const requestOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userToAdd),
     };
-    setLoading(true);
-    fetch(ENDPOINT_ADD_ROLE, requestOptions).then((data) => {
-      setLoading(false);
-      setOpen(false);
-      if (data.status === 200) {
+
+    try {
+      setLoading(true);
+      const res = await fetch(ENDPOINT_ADD_ROLE, requestOptions);
+      if (res.status !== 200) {
+        const response = await res.text();
+        fctx.addMessage(
+          `Error HTTP ${res.status} (${res.statusText}) : ${response}`,
+          FlashLevel.Error
+        );
+      } else {
         setSciperValue('');
         setSelectedRole(roles[0]);
         handleAddRoleUser(userToAdd);
-        fctx.addMessage(t('successAddUser'), FlashLevel.Info);
-      } else {
-        fctx.addMessage(t('errorAddUser'), FlashLevel.Error);
+        fctx.addMessage(`${t('successAddUser')}`, FlashLevel.Info);
       }
-    });
+    } catch (error) {
+      fctx.addMessage(`${t('errorAddUser')}: ${error.message}`, FlashLevel.Error);
+    }
+    setLoading(false);
+    setOpen(false);
   };
   const cancelButtonRef = useRef(null);
 

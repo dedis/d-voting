@@ -26,37 +26,6 @@ const setupMockUserDB = () => {
   userDB.push(mockUser1);
   userDB.push(mockUser2);
   userDB.push(mockUser3);
-  userDB.push({
-    id: uid(),
-    sciper: uid().toString(),
-    role: ROLE.Operator,
-  });
-  userDB.push({
-    id: uid(),
-    sciper: uid().toString(),
-    role: ROLE.Operator,
-  });
-  userDB.push({
-    id: uid(),
-    sciper: uid().toString(),
-    role: ROLE.Operator,
-  });
-  userDB.push({
-    id: uid(),
-    sciper: uid().toString(),
-    role: ROLE.Operator,
-  });
-  userDB.push({
-    id: uid(),
-    sciper: uid().toString(),
-    role: ROLE.Operator,
-  });
-  userDB.push({
-    id: uid(),
-    sciper: uid().toString(),
-    role: ROLE.Operator,
-  });
-
   return userDB;
 };
 
