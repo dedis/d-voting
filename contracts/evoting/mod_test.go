@@ -1346,6 +1346,10 @@ func (c fakeCmd) cancelElection(snap store.Snapshot, step execution.Step) error 
 	return c.err
 }
 
+func (c fakeCmd) deleteElection(snap store.Snapshot, step execution.Step) error {
+	return c.err
+}
+
 func (c fakeCmd) registerPubshares(snap store.Snapshot, step execution.Step) error {
 	return c.err
 }

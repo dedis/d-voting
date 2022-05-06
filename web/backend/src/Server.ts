@@ -287,6 +287,60 @@ app.use('/api/evoting/*', (req, res, next) => {
   }
 });
 
+// https://stackoverflow.com/a/1349426
+function makeid(length: number) {
+  let result = '';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i += 1) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
+app.delete('/api/evoting/elections/:electionID', (req, res) => {
+  const { electionID } = req.params;
+
+  const edCurve = kyber.curve.newCurve('edwards25519');
+
+  const priv = Buffer.from(config.PRIVATE_KEY, 'hex');
+  const pub = Buffer.from(config.PUBLIC_KEY, 'hex');
+
+  const scalar = edCurve.scalar();
+  scalar.unmarshalBinary(priv);
+
+  const point = edCurve.point();
+  point.unmarshalBinary(pub);
+
+  const sign = kyber.sign.schnorr.sign(edCurve, scalar, Buffer.from(electionID));
+
+  // we strip the `/api` part: /api/election/xxx => /election/xxx
+  const uri = config.DELA_NODE_URL + req.url.slice(4);
+
+  console.log('sending delete', 'to', uri, req.baseUrl, req.url);
+
+  axios({
+    method: req.method as Method,
+    url: uri,
+    headers: {
+      Authorization: sign.toString('hex'),
+    },
+  })
+    .then((resp) => {
+      res.status(200).send(resp.data);
+    })
+    .catch((error: AxiosError) => {
+      let resp = '';
+      if (error.response) {
+        resp = JSON.stringify(error.response.data);
+      }
+
+      res
+        .status(500)
+        .send(`failed to proxy request: ${req.method} ${uri} - ${error.message} - ${resp}`);
+    });
+});
+
 // This API call is used redirect all the calls for DELA to the DELAs nodes.
 // During this process the data are processed : the user is authenticated and
 // controlled. Once this is done the data are signed before the are sent to the
@@ -307,7 +361,8 @@ app.use('/api/evoting/*', (req, res) => {
     // only needed to allow users to cast multiple ballots, where only the last
     // ballot is taken into account. To preserve anonymity the web-backend could
     // translate UserIDs to another random ID.
-    bodyData.UserID = req.session.userid.toString();
+    // bodyData.UserID = req.session.userid.toString();
+    bodyData.UserID = makeid(10);
   }
 
   const dataStr = JSON.stringify(bodyData);

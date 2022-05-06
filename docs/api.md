@@ -56,6 +56,8 @@ SC6:CombineShares
     ▼
 SC2:ElectionGetInfo
 
+
+
 ```
 
 In case of error:
@@ -257,6 +259,30 @@ Return:
 {
   "Action": "cancel"
 }
+```
+
+Return:
+
+`200 OK` `text/plain`
+
+```
+
+```
+
+# SC?: Election delete
+
+|         |                                   |
+| ------- | --------------------------------- |
+| URL     | `/evoting/elections/{ElectionID}` |
+| Method  | `DELETE`                          |
+| Input   |                                   |
+| Headers | {Authorization: <token>}          |
+
+The <token> value must be the hex-encoded signature on the hex-encoded
+electionID:
+
+```
+<token> = hex( sig( hex( electionID ) ) )
 ```
 
 Return:

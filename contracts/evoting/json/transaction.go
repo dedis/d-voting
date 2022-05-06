@@ -2,6 +2,7 @@ package json
 
 import (
 	"encoding/json"
+
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/serde"
 	"golang.org/x/xerrors"
@@ -111,6 +112,12 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 		}
 
 		m = TransactionJSON{CancelElection: &ce}
+	case types.DeleteElection:
+		de := DeleteElectionJSON{
+			ElectionID: t.ElectionID,
+		}
+
+		m = TransactionJSON{DeleteElection: &de}
 	default:
 		return nil, xerrors.Errorf("unknown type: '%T", msg)
 	}
@@ -178,6 +185,10 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 			ElectionID: m.CancelElection.ElectionID,
 			UserID:     m.CancelElection.UserID,
 		}, nil
+	case m.DeleteElection != nil:
+		return types.DeleteElection{
+			ElectionID: m.DeleteElection.ElectionID,
+		}, nil
 	}
 
 	return nil, xerrors.Errorf("empty type: %s", data)
@@ -194,6 +205,7 @@ type TransactionJSON struct {
 	RegisterPubShares *RegisterPubSharesJSON `json:",omitempty"`
 	CombineShares     *CombineSharesJSON     `json:",omitempty"`
 	CancelElection    *CancelElectionJSON    `json:",omitempty"`
+	DeleteElection    *DeleteElectionJSON    `json:",omitempty"`
 }
 
 // CreateElectionJSON is the JSON representation of a CreateElection transaction
@@ -249,6 +261,11 @@ type CombineSharesJSON struct {
 type CancelElectionJSON struct {
 	ElectionID string
 	UserID     string
+}
+
+// DeleteElectionJSON is the JSON representation of a DeleteElection transaction
+type DeleteElectionJSON struct {
+	ElectionID string
 }
 
 func decodeCastVote(ctx serde.Context, m CastVoteJSON) (serde.Message, error) {

@@ -55,6 +55,7 @@ type commands interface {
 	registerPubshares(snap store.Snapshot, step execution.Step) error
 	combineShares(snap store.Snapshot, step execution.Step) error
 	cancelElection(snap store.Snapshot, step execution.Step) error
+	deleteElection(snap store.Snapshot, step execution.Step) error
 }
 
 // Command defines a type of command for the value contract
@@ -72,12 +73,16 @@ const (
 	// CmdShuffleBallots is the command to shuffle ballots
 	CmdShuffleBallots Command = "SHUFFLE_BALLOTS"
 
+	// CmdRegisterPubShares is the command to register the pubshares
 	CmdRegisterPubShares Command = "REGISTER_PUB_SHARES"
 
 	// CmdCombineShares is the command to decrypt ballots
 	CmdCombineShares Command = "COMBINE_SHARES"
 	// CmdCancelElection is the command to cancel an election
 	CmdCancelElection Command = "CANCEL_ELECTION"
+
+	// CmdDelteElection is the command to delete an election
+	CmdDelteElection Command = "DELETE_ELECTION"
 )
 
 // NewCreds creates new credentials for a evoting contract execution. We might
@@ -199,6 +204,11 @@ func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 		err := c.cmd.cancelElection(snap, step)
 		if err != nil {
 			return xerrors.Errorf("failed to cancel election: %v", err)
+		}
+	case CmdDelteElection:
+		err := c.cmd.deleteElection(snap, step)
+		if err != nil {
+			return xerrors.Errorf("failed to delete election: %v", err)
 		}
 	default:
 		return xerrors.Errorf("unknown command: %s", cmd)
