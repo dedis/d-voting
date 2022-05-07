@@ -26,7 +26,7 @@ const SetupButton = ({ status, handleSetup }) => {
 
   return (
     isAuthorized &&
-    status === STATUS.InitializedNodes && <button onClick={handleSetup}>{t('statusSetup')}</button>
+    status === STATUS.Initialized && <button onClick={handleSetup}>{t('statusSetup')}</button>
   );
 };
 
@@ -105,6 +105,21 @@ const DecryptButton = ({ status, isDecrypting, handleDecrypt }) => {
   );
 };
 
+const CombineSharesButton = ({ status, handleCombineShares }) => {
+  const authCtx = useContext(AuthContext);
+  const { t } = useTranslation();
+  const isAuthorized = authCtx.role === ROLE.Admin || authCtx.role === ROLE.Operator;
+
+  return (
+    isAuthorized &&
+    status === STATUS.PubSharesSubmitted && (
+      <span>
+        <button onClick={handleCombineShares}>{t('combine')}</button>
+      </span>
+    )
+  );
+};
+
 const ResultButton = ({ status, electionID }) => {
   const { t } = useTranslation();
   return (
@@ -135,6 +150,7 @@ export {
   CloseButton,
   ShuffleButton,
   DecryptButton,
+  CombineSharesButton,
   ResultButton,
   CancelButton,
 };

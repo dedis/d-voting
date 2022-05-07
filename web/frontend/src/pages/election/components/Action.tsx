@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 
 //import Modal from 'components/modal/Modal';
 import { ID } from 'types/configuration';
-import useChangeAction from 'components/utils/useChangeAction';
 import { STATUS } from 'types/election';
+import useChangeAction from 'components/utils/useChangeAction';
 
 type ActionProps = {
   status: STATUS;

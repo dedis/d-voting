@@ -15,6 +15,7 @@ import {
 const setupMockElection = () => {
   const mockElections: Map<ID, ElectionInfo> = new Map();
   const mockResults: Map<ID, Results[]> = new Map();
+  const mockDKG: Map<ID, number[]> = new Map();
 
   const electionID1 = '36kSJ0tH';
   const electionID2 = 'Bnq9gLmf';
@@ -32,6 +33,11 @@ const setupMockElection = () => {
 
   mockResults.set(electionID1, [mockElectionResult11, mockElectionResult12]);
 
+  mockDKG.set(
+    electionID1,
+    mockRoster.map(() => -1)
+  );
+
   mockElections.set(electionID2, {
     ElectionID: electionID2,
     Status: STATUS.ResultAvailable,
@@ -44,8 +50,12 @@ const setupMockElection = () => {
   });
 
   mockResults.set(electionID2, [mockElectionResult21, mockElectionResult22, mockElectionResult23]);
+  mockDKG.set(
+    electionID2,
+    mockRoster.map(() => -1)
+  );
 
-  return { mockElections, mockResults };
+  return { mockElections, mockResults, mockDKG };
 };
 
 const toLightElectionInfo = (

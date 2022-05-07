@@ -17,7 +17,7 @@ const useChangeStatus = (status: STATUS) => {
             <span className="election-status-text">{t('statusInitial')}</span>
           </span>
         );
-      case STATUS.InitializedNodes:
+      case STATUS.Initialized:
         return (
           <span className="election-status">
             <span className="election-status-on"></span>
@@ -73,7 +73,7 @@ const useChangeStatus = (status: STATUS) => {
             <span className="election-status-text">{t('statusShuffle')}</span>
           </span>
         );
-      case STATUS.DecryptedBallots:
+      case STATUS.PubSharesSubmitted:
         return (
           <span className="election-status">
             <span className="election-status-closed"></span>

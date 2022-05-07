@@ -29,15 +29,14 @@ import { mockRoster } from './mockData';
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;
 
-const { mockElections, mockResults } = setupMockElection();
+const { mockElections, mockResults, mockDKG } = setupMockElection();
 
 var mockUserDB = setupMockUserDB();
 
 const SETUP_TIMER = 2000;
 const SHUFFLE_TIMER = 2000;
 const DECRYPT_TIMER = 8000;
-
-var nodeSetups: Map<ID, number> = new Map();
+const CHANGE_STATE_TIMER = 1000;
 
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, (req, res, ctx) => {
@@ -74,22 +73,6 @@ export const handlers = [
   }),
 
   rest.get(endpoints.elections, async (req, res, ctx) => {
-    mockElections.forEach(async (election) => {
-      switch (election.Status) {
-        case STATUS.OnGoingShuffle:
-          setTimeout(() => {
-            mockElections.set(election.ElectionID as string, {
-              ...mockElections.get(election.ElectionID as string),
-              Result: mockResults.get(election.ElectionID as string),
-              Status: STATUS.ShuffledBallots,
-            });
-          }, SHUFFLE_TIMER);
-          break;
-        default:
-          break;
-      }
-    });
-
     return res(
       ctx.status(200),
       ctx.json({
@@ -127,6 +110,10 @@ export const handlers = [
 
     const createElection = (configuration: any) => {
       const newElectionID = uid();
+      mockDKG.set(
+        newElectionID,
+        mockRoster.map(() => -1)
+      );
 
       mockElections.set(newElectionID, {
         ElectionID: newElectionID,
@@ -174,7 +161,7 @@ export const handlers = [
         Status = STATUS.Closed;
         break;
       case ACTION.CombineShares:
-        Status = STATUS.DecryptedBallots;
+        Status = STATUS.ResultAvailable;
         break;
       case ACTION.Cancel:
         Status = STATUS.Canceled;
@@ -182,6 +169,7 @@ export const handlers = [
       default:
         break;
     }
+
     mockElections.set(ElectionID as string, {
       ...mockElections.get(ElectionID as string),
       Status,
@@ -192,10 +180,6 @@ export const handlers = [
 
   rest.put(endpoints.editShuffle(':ElectionID'), (req, res, ctx) => {
     const { ElectionID } = req.params;
-    mockElections.set(ElectionID as string, {
-      ...mockElections.get(ElectionID as string),
-      Status: STATUS.OnGoingShuffle,
-    });
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
@@ -203,24 +187,6 @@ export const handlers = [
   rest.put(endpoints.editDKGActors(':ElectionID'), (req, res, ctx) => {
     const { ElectionID } = req.params;
     const body = req.body as EditDKGActorBody;
-    var status = STATUS.InitializedNodes;
-
-    switch (body.Action) {
-      case ACTION.Setup:
-        status = STATUS.OnGoingSetup;
-        break;
-      case ACTION.BeginDecryption:
-        status = STATUS.OnGoingDecryption;
-        break;
-      default:
-        break;
-    }
-
-    mockElections.set(ElectionID as string, {
-      ...mockElections.get(ElectionID as string),
-      Result: mockResults.get(ElectionID as string),
-      Status: status,
-    });
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
@@ -230,23 +196,24 @@ export const handlers = [
     const election = mockElections.get(ElectionID as string);
 
     switch (election.Status) {
-      case STATUS.OnGoingSetup:
+      case STATUS.Initial:
         setTimeout(() => {
-          mockElections.set(ElectionID as string, {
+          /*mockElections.set(ElectionID as string, {
             ...mockElections.get(ElectionID as string),
             Result: mockResults.get(ElectionID as string),
             Status: STATUS.Setup,
-          });
+          });*/
 
           console.log('updated Setup status');
         }, SETUP_TIMER);
         break;
-      case STATUS.OnGoingDecryption:
+      //TODO wrong endpoint !
+      case STATUS.ShuffledBallots:
         setTimeout(() => {
           mockElections.set(ElectionID as string, {
             ...mockElections.get(ElectionID as string),
             Result: mockResults.get(ElectionID as string),
-            Status: STATUS.DecryptedBallots,
+            Status: STATUS.PubSharesSubmitted,
           });
 
           console.log('updated Decrypted status');
@@ -261,19 +228,9 @@ export const handlers = [
 
   rest.post(endpoints.dkgActors, (req, res, ctx) => {
     const body = req.body as NewDKGBody;
+    const ElectionID = body.ElectionID;
 
-    if (nodeSetups.has(body.ElectionID)) {
-      nodeSetups.set(body.ElectionID, nodeSetups.get(body.ElectionID) + 1);
-    } else {
-      nodeSetups.set(body.ElectionID, 1);
-    }
-
-    if (nodeSetups.get(body.ElectionID) == mockElections.get(body.ElectionID).Roster.length) {
-      mockElections.set(body.ElectionID, {
-        ...mockElections.get(body.ElectionID),
-        Status: STATUS.InitializedNodes,
-      });
-    }
+    // TODO update the node status in mockDKG ?
 
     return res(ctx.status(200));
   }),

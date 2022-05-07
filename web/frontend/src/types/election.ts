@@ -4,7 +4,7 @@ export const enum STATUS {
   // Initial is when the election has just been created
   Initial = 0,
   // InitializedNode is when the nodes has been initialized by the dkg service
-  InitializedNodes = 7,
+  Initialized = 7,
   // OnGoingSetup is when a node is currently being setup by the dkg service
   OnGoingSetup = 8,
   // Setup is when a node has been setup by the dkg service
@@ -20,11 +20,20 @@ export const enum STATUS {
   // OnGoingDecryption is when public keys are currently being shared and combined
   OnGoingDecryption = 11,
   // DecryptedBallots is when public keys have been shared and combined
-  DecryptedBallots = 4,
+  PubSharesSubmitted = 4,
   // ResultAvailable is when the ballots have been decrypted
   ResultAvailable = 5,
   // Canceled is when an election has been canceled
   Canceled = 6,
+}
+
+export const enum NODE_STATUS {
+  // Initialized is when the actor has been initialized
+  Initialized,
+  // Setup is when the actor was set up
+  Setup,
+  // Failed is when the actor failed to set up
+  Failed,
 }
 
 export const enum ACTION {

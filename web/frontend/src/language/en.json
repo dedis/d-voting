@@ -61,6 +61,7 @@
     "statusInitial": "Created",
     "statusInitializedNodes": "Node initialized",
     "initNodes": "Initialize nodes",
+    "combine": "Combine",
     "statusOnGoingSetup": "Setting up...",
     "statusSetup": "Setup",
     "statusOpen": "Open",
@@ -69,6 +70,7 @@
     "statusShuffle": "Ballots shuffled",
     "statusOnGoingDecryption": "Decrypting...",
     "statusDecrypted": "Ballots decrypted",
+    "statusPubSharesSubmitted": "PubShares submitted",
     "statusResultAvailable": " Results available",
     "statusCancel": "Canceled",
     "alreadyVoted": "You have already voted for",
@@ -123,7 +125,7 @@
     "save": "Save",
     "nodeInitialization": "Node initialization",
     "inputProxyAddresses": "To initialize the nodes, enter the addresses of their proxies:",
-    "inputProxyAddressesError": "Error: the address for all proxies must be filled.",
+    "inputProxyAddressesError": "Error: the address of all proxies must be filled.",
     "node": "Node"
   }
 }
