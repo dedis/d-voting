@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import useElection from 'components/utils/useElection';
 import useGetResults from 'components/utils/useGetResults';
-import { Status } from 'types/election';
+import { OngoingAction, Status } from 'types/election';
 import Action from './components/Action';
 import Modal from 'components/modal/Modal';
 import StatusTimeline from './components/StatusTimeline';
@@ -26,6 +26,9 @@ const ElectionShow: FC = () => {
   const [textModalError, setTextModalError] = useState(null);
   const [showModalError, setShowModalError] = useState(false);
 
+  const [hasInitialized, setHasInitialized] = useState(false);
+  const [ongoingAction, setOngoingAction] = useState(OngoingAction.None);
+
   //Fetch result when available after a status change
   useEffect(() => {
     if (status === Status.ResultAvailable && isResultAvailable) {
@@ -43,6 +46,7 @@ const ElectionShow: FC = () => {
     }
   }, [getError, setTextModalError]);
 
+  console.log('ongoingAction: ' + ongoingAction);
   return (
     <div className="w-[60rem] font-sans px-4 py-4">
       {!loading ? (
@@ -62,7 +66,7 @@ const ElectionShow: FC = () => {
             <div className="font-bold uppercase text-lg text-gray-700">{t('status')}</div>
 
             <div className="px-2 pt-6 flex justify-center">
-              <StatusTimeline status={status} />
+              <StatusTimeline status={status} ongoingAction={ongoingAction} />
             </div>
           </div>
           <div className="py-4 pl-2 pb-8">
@@ -77,6 +81,9 @@ const ElectionShow: FC = () => {
                 setGetError={setGetError}
                 setTextModalError={setTextModalError}
                 setShowModalError={setShowModalError}
+                setHasInitialized={setHasInitialized}
+                ongoingAction={ongoingAction}
+                setOngoingAction={setOngoingAction}
               />
             </div>
           </div>

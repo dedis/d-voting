@@ -79,7 +79,7 @@ const Admin = () => {
   };
 
   return !loading ? (
-    <div className="w-[60rem] font-sans px-4 py-4">
+    <div className="w-[60rem] font-sans px-4 py-8">
       <AddAdminUserModal
         open={newUserOpen}
         setOpen={setNewUserOpen}

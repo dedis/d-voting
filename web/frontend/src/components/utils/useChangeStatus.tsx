@@ -23,18 +23,6 @@ const useChangeStatus = (status: Status) => {
             <div>{t('statusInitializedNodes')}</div>
           </div>
         );
-      case Status.OnGoingSetup:
-        return (
-          <div className="flex">
-            {/*<span className="election-status">
-            <span className="election-status-on"></span>
-            <span className="election-status-text">{t('statusInitializedNodes')}</span>
-        </span>*/}
-
-            <div className="block h-4 w-4 bg-green-500 rounded-full mr-2"></div>
-            <div>{t('settingUp')}</div>
-          </div>
-        );
       case Status.Setup:
         return (
           <div className="flex">
@@ -56,35 +44,11 @@ const useChangeStatus = (status: Status) => {
             <div>{t('statusClose')}</div>
           </div>
         );
-      case Status.OnGoingShuffle:
-        return (
-          <div className="flex">
-            {/*<span className="election-status">
-            <span className="election-status-closed"></span>
-            <span className="election-status-text">{t('statusClose')}</span>
-        </span>*/}
-
-            <div className="block h-4 w-4 bg-gray-400 rounded-full mr-2"></div>
-            <div>{t('shuffling')}</div>
-          </div>
-        );
       case Status.ShuffledBallots:
         return (
           <div className="flex">
             <div className="block h-4 w-4 bg-gray-400 rounded-full mr-2"></div>
             <div>{t('statusShuffle')}</div>
-          </div>
-        );
-      case Status.OnGoingDecryption:
-        return (
-          <div className="flex">
-            {/*<span className="election-status">
-            <span className="election-status-closed"></span>
-            <span className="election-status-text">{t('statusShuffle')}</span>
-        </span>*/}
-
-            <div className="block h-4 w-4 bg-gray-400 rounded-full mr-2"></div>
-            <div>{t('decrypting')}</div>
           </div>
         );
       case Status.PubSharesSubmitted:

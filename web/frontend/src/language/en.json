@@ -155,6 +155,9 @@
     "nodeInitialization": "Node initialization",
     "inputProxyAddresses": "To initialize the nodes, enter the addresses of their proxies:",
     "inputProxyAddressesError": "Error: the address of all proxies must be filled.",
-    "node": "Node"
+    "node": "Node",
+    "filterByStatus": "Filter by status",
+    "all": "All",
+    "resetFilter": "Reset filter"
   }
 }

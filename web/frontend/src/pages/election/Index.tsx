@@ -21,7 +21,7 @@ const ElectionIndex: FC = () => {
   const showElection = () => {
     return data.Elections.length > 0 ? (
       <>
-        <div className="pb-8">
+        <div className="py-8">
           <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
             {t('elections')}
           </h2>

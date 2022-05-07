@@ -1,21 +1,12 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import Paper from '@material-ui/core/Paper';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import TablePagination from '@material-ui/core/TablePagination';
-import { withStyles } from '@material-ui/core/styles';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { LightElectionInfo } from 'types/election';
 import Status from './Status';
-import { ID } from 'types/configuration';
-import ElectionFields from 'components/utils/ElectionFields';
 import QuickAction from './QuickAction';
+import ElectionTableFilter from './ElectionTableFilter';
+import ResetFilterButton from './ResetFilterButton';
 
 type ElectionTableProps = {
   elections: LightElectionInfo[];
@@ -23,133 +14,137 @@ type ElectionTableProps = {
 
 // Returns a table where each line corresponds to an election with
 // its name and status
+const ELECTION_PER_PAGE = 10;
 
 const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
   const { t } = useTranslation();
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [electionsToDisplay, setElectionsToDisplay] = useState<LightElectionInfo[]>([]);
+  const [statusToKeep, setStatusToKeep] = useState(null);
 
-  const columns: Array<{
-    id: string;
-    label: string;
-    minWidth: number;
-    align: 'left';
-  }> = [
-    {
-      id: 'title',
-      label: t('title'),
-      minWidth: 170,
-      align: 'left',
-    },
-    {
-      id: 'status',
-      label: t('status'),
-      minWidth: 170,
-      align: 'left',
-    },
-    {
-      id: 'quickAction',
-      label: '',
-      minWidth: 170,
-      align: 'left',
-    },
-  ];
+  const displayAllElections = () => {
+    if (elections) {
+      const electToDisplay = [];
+      elections.forEach((election) => {
+        electToDisplay.push(election);
+      });
 
-  const StyledTableRow = withStyles((theme) => ({
-    root: {
-      '&:nth-of-type(odd)': {
-        backgroundColor: theme.palette.action.hover,
-      },
-    },
-  }))(TableRow);
-
-  const createData = (
-    title: JSX.Element,
-    status: JSX.Element,
-    quickAction: JSX.Element,
-    key: ID
-  ) => {
-    return { title, status, quickAction, key };
+      setElectionsToDisplay(electToDisplay);
+    }
   };
 
-  const constructRows = () =>
-    elections.map((election) => {
-      let { title, id, status } = ElectionFields(election);
-      let link = (
-        <Link className="election-link" to={`/elections/${id}`}>
-          {title}
-        </Link>
+  useEffect(() => {
+    displayAllElections();
+  }, [elections]);
+
+  const partitionArray = (array: LightElectionInfo[], size: number) =>
+    array.map((v, i) => (i % size === 0 ? array.slice(i, i + size) : null)).filter((v) => v);
+
+  useEffect(() => {
+    if (statusToKeep) {
+      const newElectionsToDisplay = elections.filter(
+        (election) => election.Status === statusToKeep
       );
+      setElectionsToDisplay(newElectionsToDisplay);
+    } else {
+      displayAllElections();
+    }
+  }, [statusToKeep]);
 
-      let stat = <Status status={status} />;
+  useEffect(() => {
+    if (electionsToDisplay.length) {
+      setElectionsToDisplay(partitionArray(electionsToDisplay, ELECTION_PER_PAGE)[pageIndex]);
+    }
+  }, [pageIndex]);
 
-      let quickAction = <QuickAction status={status} electionID={id} />;
-
-      return createData(link, stat, quickAction, id);
-    });
-
-  const rows = constructRows();
-  const renderTH = () => {
-    return (
-      <TableRow className="row-head">
-        {columns.map((col) => {
-          return (
-            <TableCell style={{ width: 800 }} key={col.id} align={col.align}>
-              {col.label}
-            </TableCell>
-          );
-        })}
-      </TableRow>
-    );
+  const handlePrevious = (): void => {
+    if (pageIndex > 0) {
+      setPageIndex(pageIndex - 1);
+    }
   };
 
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
+  const handleNext = (): void => {
+    if (partitionArray(electionsToDisplay, ELECTION_PER_PAGE).length > pageIndex + 1) {
+      setPageIndex(pageIndex + 1);
+    }
   };
 
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+  useEffect(() => {
+    if (electionsToDisplay.length) {
+      setElectionsToDisplay(partitionArray(electionsToDisplay, ELECTION_PER_PAGE)[pageIndex]);
+    }
+  }, [pageIndex]);
 
   return (
     <div>
-      <Paper>
-        <TableContainer>
-          <Table>
-            <TableHead className="table-header">{renderTH()}</TableHead>
-            <TableBody>
-              {rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                return (
-                  <StyledTableRow key={row.key}>
-                    {columns.map((column) => {
-                      const value = row[column.id];
-                      return (
-                        <TableCell key={column.id} align={column.align}>
-                          {value}
-                        </TableCell>
-                      );
-                    })}
-                  </StyledTableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={rows.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onChangeRowsPerPage={handleChangeRowsPerPage}
-          labelDisplayedRows={({ from, to, count }) => {
-            return '' + from + '-' + to + t('of') + count;
-          }}
-          labelRowsPerPage={t('rowsPerPage')}
-        />
-      </Paper>
+      <div className="relative divide-y overflow-x-auto shadow-md sm:rounded-lg">
+        <table className="w-full text-sm text-left text-gray-500">
+          <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+            <tr>
+              <th scope="col" className="px-6 py-3">
+                {t('elecName')}
+              </th>
+              <th scope="col" className="px-6 py-3">
+                {t('status')}
+              </th>
+              <th scope="col" className="px-6 py-3">
+                <span className="sr-only">Edit</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {electionsToDisplay.map((election) => (
+              <tr key={election.ElectionID} className="bg-white border-b hover:bg-gray-50 ">
+                <td scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                  <Link
+                    className="election-link text-gray-700 hover:text-indigo-500"
+                    to={`/elections/${election.ElectionID}`}>
+                    {election.Title}
+                  </Link>
+                </td>
+                <td className="px-6 py-4">
+                  <Status status={election.Status} />
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <QuickAction status={election.Status} electionID={election.ElectionID} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <nav
+          className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6"
+          aria-label="Pagination">
+          <div className="hidden sm:block">
+            <p className="text-sm text-gray-700">
+              {t('showing')} <span className="font-medium">{pageIndex + 1}</span> /{' '}
+              <span className="font-medium">
+                {partitionArray(electionsToDisplay, ELECTION_PER_PAGE).length}
+              </span>{' '}
+              {t('of')} <span className="font-medium">{electionsToDisplay.length}</span>{' '}
+              {t('results')}
+            </p>
+          </div>
+          <div className="flex-1 flex justify-between sm:justify-end">
+            <button
+              disabled={pageIndex === 0}
+              onClick={handlePrevious}
+              className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+              {t('previous')}
+            </button>
+            <button
+              disabled={
+                partitionArray(electionsToDisplay, ELECTION_PER_PAGE).length <= pageIndex + 1
+              }
+              onClick={handleNext}
+              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+              {t('next')}
+            </button>
+          </div>
+        </nav>
+      </div>
+      <ElectionTableFilter setStatusToKeep={setStatusToKeep} />
+      <ResetFilterButton setStatusToKeep={setStatusToKeep} />
     </div>
   );
 };

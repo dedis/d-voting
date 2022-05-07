@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 //import Modal from 'components/modal/Modal';
 import { ID } from 'types/configuration';
-import { Status } from 'types/election';
+import { OngoingAction, Status } from 'types/election';
 import useChangeAction from 'components/utils/useChangeAction';
 
 type ActionProps = {
@@ -16,6 +16,9 @@ type ActionProps = {
   setGetError: (error: string) => void;
   setTextModalError: (text: string) => void;
   setShowModalError: (show: boolean) => void;
+  setHasInitialized: (init: boolean) => void;
+  ongoingAction: OngoingAction;
+  setOngoingAction: (action: OngoingAction) => void;
 };
 
 const Action: FC<ActionProps> = ({
@@ -27,6 +30,9 @@ const Action: FC<ActionProps> = ({
   setGetError,
   setTextModalError,
   setShowModalError,
+  setHasInitialized,
+  ongoingAction,
+  setOngoingAction,
 }) => {
   const { t } = useTranslation();
 
@@ -38,7 +44,10 @@ const Action: FC<ActionProps> = ({
     setResultAvailable,
     setTextModalError,
     setShowModalError,
-    setGetError
+    setGetError,
+    setHasInitialized,
+    ongoingAction,
+    setOngoingAction
   );
 
   return (

@@ -12,7 +12,6 @@ import * as endpoints from '../components/utils/Endpoints';
 import {
   EditDKGActorBody,
   EditElectionBody,
-  NewDKGBody,
   NewElectionBody,
   NewElectionVoteBody,
   NewUserRole,
@@ -180,12 +179,6 @@ export const handlers = [
   }),
 
   rest.post(endpoints.dkgActors, (req, res, ctx) => {
-    const body = req.body as NewDKGBody;
-    const ElectionID = body.ElectionID;
-
-    //update to initialized instantly but the response is differed in the GET
-    mockDKG.set(ElectionID, [NodeStatus.Initialized, false]);
-
     return res(ctx.status(200));
   }),
 
@@ -228,7 +221,7 @@ export const handlers = [
 
     switch (election.Status) {
       case Status.Initial:
-        if (mockDKG.get(ElectionID as string)[0] === NodeStatus.Initialized) {
+        if (mockDKG.get(ElectionID as string)[0] === NodeStatus.NotInitialized) {
           setTimeout(() => {
             mockDKG.set(ElectionID as string, [NodeStatus.Initialized, true]);
           }, INIT_TIMER);

@@ -29,11 +29,14 @@ const useChangeAction = (
   setResultAvailable: ((available: boolean) => void | null) | undefined,
   setTextModalError: (value: ((prevState: null) => '') | string) => void,
   setShowModalError: (willShow: boolean) => void,
-  setGetError: (error: string) => void
+  setGetError: (error: string) => void,
+  setHasInitialized: (init: boolean) => void,
+  ongoingAction: OngoingAction,
+  setOngoingAction: (action: OngoingAction) => void
 ) => {
   const { t } = useTranslation();
   const [isInitializing, setIsInitializing] = useState(false);
-  const [hasInitialized, setHasInitialized] = useState(false);
+  //const [hasInitialized, setHasInitialized] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
   const [showModalClose, setShowModalClose] = useState(false);
@@ -44,7 +47,7 @@ const useChangeAction = (
   const [userConfirmedAddProxy, setUserConfirmedAddProx] = useState(false);
   const [proxyAddresses, setProxyAddresses] = useState<Map<string, string>>(new Map());
   const [initializedNodes, setInitializedNodes] = useState<Map<string, boolean>>(new Map());
-  const [ongoingAction, setOngoingAction] = useState(OngoingAction.None);
+  //const [ongoingAction, setOngoingAction] = useState(OngoingAction.None);
 
   const modalClose = (
     <ConfirmModal
@@ -409,6 +412,7 @@ const useChangeAction = (
   };
 
   const getAction = () => {
+    console.log(ongoingAction);
     switch (status) {
       case Status.Initial:
         return (
@@ -492,7 +496,7 @@ const useChangeAction = (
         );
     }
   };
-  return { getAction, modalClose, modalCancel, modalAddProxyAddresses, hasInitialized };
+  return { getAction, modalClose, modalCancel, modalAddProxyAddresses };
 };
 
 export default useChangeAction;

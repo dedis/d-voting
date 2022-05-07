@@ -1,4 +1,4 @@
-import { ResultButton, VoteButton } from 'components/utils/ActionButtons';
+import { NoActionAvailable, ResultButton, VoteButton } from 'components/utils/ActionButtons';
 import React, { FC } from 'react';
 import { ID } from 'types/configuration';
 import { Status } from 'types/election';
@@ -13,6 +13,7 @@ const QuickAction: FC<QuickActionProps> = ({ status, electionID }) => {
     <div>
       {status == Status.Open && <VoteButton status={status} electionID={electionID} />}
       {status == Status.ResultAvailable && <ResultButton status={status} electionID={electionID} />}
+      {status !== Status.Open && status !== Status.ResultAvailable && <NoActionAvailable />}
     </div>
   );
 };
