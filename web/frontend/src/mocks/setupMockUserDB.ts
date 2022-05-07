@@ -1,24 +1,24 @@
 import ShortUniqueId from 'short-unique-id';
-import { ROLE } from 'types/userRole';
+import { UserRole } from 'types/userRole';
 
 const uid = new ShortUniqueId({ length: 8 });
 
 const mockUser1 = {
   id: uid(),
   sciper: '123456',
-  role: ROLE.Admin,
+  role: UserRole.Admin,
 };
 
 const mockUser2 = {
   id: uid(),
   sciper: '234567',
-  role: ROLE.Operator,
+  role: UserRole.Operator,
 };
 
 const mockUser3 = {
   id: uid(),
   sciper: '345678',
-  role: ROLE.Voter,
+  role: UserRole.Voter,
 };
 
 const setupMockUserDB = () => {

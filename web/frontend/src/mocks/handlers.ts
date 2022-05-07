@@ -20,10 +20,10 @@ import {
 } from '../types/frontendRequestBody';
 
 import { ID } from 'types/configuration';
-import { ACTION, STATUS } from 'types/election';
+import { Action, NodeStatus, Status } from 'types/election';
 import { setupMockElection, toLightElectionInfo } from './setupMockElections';
 import setupMockUserDB from './setupMockUserDB';
-import { ROLE } from 'types/userRole';
+import { UserRole } from 'types/userRole';
 import { mockRoster } from './mockData';
 
 const uid = new ShortUniqueId({ length: 8 });
@@ -33,10 +33,12 @@ const { mockElections, mockResults, mockDKG } = setupMockElection();
 
 var mockUserDB = setupMockUserDB();
 
+const RESPONSE_TIME = 200;
+const CHANGE_STATUS_TIMER = 1000;
+const INIT_TIMER = 1000;
 const SETUP_TIMER = 2000;
 const SHUFFLE_TIMER = 2000;
 const DECRYPT_TIMER = 8000;
-const CHANGE_STATE_TIMER = 1000;
 
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, async (req, res, ctx) => {
@@ -46,11 +48,11 @@ export const handlers = [
       ? {
           lastname: 'Bobster',
           firstname: 'Alice',
-          role: ROLE.Admin,
+          role: UserRole.Admin,
           sciper: userId,
         }
       : {};
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(
       ctx.status(200),
@@ -65,7 +67,7 @@ export const handlers = [
     const url = ROUTE_LOGGED;
     sessionStorage.setItem('is-authenticated', 'true');
     sessionStorage.setItem('id', '283205');
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200), ctx.json({ url: url }));
   }),
@@ -76,7 +78,7 @@ export const handlers = [
   }),
 
   rest.get(endpoints.elections, async (req, res, ctx) => {
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(
       ctx.status(200),
@@ -90,23 +92,7 @@ export const handlers = [
 
   rest.get(endpoints.election(':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
-    await new Promise((r) => setTimeout(r, 1000));
-
-    const mockElection = mockElections.get(ElectionID as string);
-
-    switch (mockElection.Status) {
-      case STATUS.OnGoingShuffle:
-        setTimeout(() => {
-          mockElections.set(ElectionID as string, {
-            ...mockElections.get(ElectionID as string),
-            Result: mockResults.get(ElectionID as string),
-            Status: STATUS.ShuffledBallots,
-          });
-        }, SHUFFLE_TIMER);
-        break;
-      default:
-        break;
-    }
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200), ctx.json(mockElections.get(ElectionID as ID)));
   }),
@@ -114,18 +100,15 @@ export const handlers = [
   rest.post(endpoints.newElection, async (req, res, ctx) => {
     const body = req.body as NewElectionBody;
 
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     const createElection = (configuration: any) => {
       const newElectionID = uid();
-      mockDKG.set(
-        newElectionID,
-        mockRoster.map(() => -1)
-      );
+      mockDKG.set(newElectionID, [NodeStatus.NotInitialized, false]);
 
       mockElections.set(newElectionID, {
         ElectionID: newElectionID,
-        Status: STATUS.Initial,
+        Status: Status.Initial,
         Pubkey: 'DEAEV6EMII',
         Result: [],
         Roster: mockRoster,
@@ -147,7 +130,7 @@ export const handlers = [
 
   rest.post(endpoints.newElectionVote(':ElectionID'), async (req, res, ctx) => {
     const { Ballot }: NewElectionVoteBody = req.body as NewElectionVoteBody;
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(
       ctx.status(200),
@@ -160,43 +143,77 @@ export const handlers = [
   rest.put(endpoints.editElection(':ElectionID'), async (req, res, ctx) => {
     const body = req.body as EditElectionBody;
     const { ElectionID } = req.params;
-    var Status = STATUS.Initial;
+    var status = Status.Initial;
+    const Result = [];
 
     switch (body.Action) {
-      case ACTION.Open:
-        Status = STATUS.Open;
+      case Action.Open:
+        status = Status.Open;
         break;
-      case ACTION.Close:
-        Status = STATUS.Closed;
+      case Action.Close:
+        status = Status.Closed;
         break;
-      case ACTION.CombineShares:
-        Status = STATUS.ResultAvailable;
+      case Action.CombineShares:
+        status = Status.ResultAvailable;
+        mockResults.get(ElectionID as string).forEach((result) => Result.push(result));
         break;
-      case ACTION.Cancel:
-        Status = STATUS.Canceled;
+      case Action.Cancel:
+        status = Status.Canceled;
         break;
       default:
         break;
     }
 
-    mockElections.set(ElectionID as string, {
-      ...mockElections.get(ElectionID as string),
-      Status,
-    });
-    await new Promise((r) => setTimeout(r, 1000));
+    setTimeout(
+      () =>
+        mockElections.set(ElectionID as string, {
+          ...mockElections.get(ElectionID as string),
+          Status: status,
+          Result,
+        }),
+      CHANGE_STATUS_TIMER
+    );
+
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
-  rest.put(endpoints.editShuffle(':ElectionID'), async (req, res, ctx) => {
-    const { ElectionID } = req.params;
+  rest.post(endpoints.dkgActors, (req, res, ctx) => {
+    const body = req.body as NewDKGBody;
+    const ElectionID = body.ElectionID;
 
-    return res(ctx.status(200), ctx.text('Action successfully done'));
+    //update to initialized instantly but the response is differed in the GET
+    mockDKG.set(ElectionID, [NodeStatus.Initialized, false]);
+
+    return res(ctx.status(200));
   }),
 
   rest.put(endpoints.editDKGActors(':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
     const body = req.body as EditDKGActorBody;
+
+    switch (body.Action) {
+      case Action.Setup:
+        // TODO bug here!
+        console.log('updating node status to Setup');
+        mockDKG.set(ElectionID as string, [NodeStatus.Setup, false]);
+        console.log(mockDKG);
+        break;
+      case Action.BeginDecryption:
+        setTimeout(
+          () =>
+            mockElections.set(ElectionID as string, {
+              ...mockElections.get(ElectionID as string),
+              Status: Status.PubSharesSubmitted,
+            }),
+          DECRYPT_TIMER
+        );
+
+        break;
+      default:
+        break;
+    }
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
@@ -205,48 +222,53 @@ export const handlers = [
     const { ElectionID } = req.params;
     const election = mockElections.get(ElectionID as string);
 
+    var status = NodeStatus.NotInitialized;
+
+    console.log(mockDKG);
+
     switch (election.Status) {
-      case STATUS.Initial:
-        setTimeout(() => {
-          /*mockElections.set(ElectionID as string, {
-            ...mockElections.get(ElectionID as string),
-            Result: mockResults.get(ElectionID as string),
-            Status: STATUS.Setup,
-          });*/
-
-          console.log('updated Setup status');
-        }, SETUP_TIMER);
-        break;
-      //TODO wrong endpoint !
-      case STATUS.ShuffledBallots:
-        setTimeout(() => {
-          mockElections.set(ElectionID as string, {
-            ...mockElections.get(ElectionID as string),
-            Result: mockResults.get(ElectionID as string),
-            Status: STATUS.PubSharesSubmitted,
-          });
-
-          console.log('updated Decrypted status');
-        }, DECRYPT_TIMER);
+      case Status.Initial:
+        if (mockDKG.get(ElectionID as string)[0] === NodeStatus.Initialized) {
+          setTimeout(() => {
+            mockDKG.set(ElectionID as string, [NodeStatus.Initialized, true]);
+          }, INIT_TIMER);
+        } else {
+          console.log(mockDKG);
+          status = NodeStatus.Initialized;
+          // If all nodes have been initialized mock a setup for all node
+          setTimeout(() => {
+            mockDKG.set(ElectionID as string, [NodeStatus.Setup, true]);
+          }, SETUP_TIMER);
+        }
         break;
       default:
         break;
     }
 
-    return res(ctx.status(200), ctx.json({ Status: election.Status }));
+    if (mockDKG.get(ElectionID as string)[1]) {
+      status = mockDKG.get(ElectionID as string)[0];
+    }
+
+    return res(ctx.status(200), ctx.json({ Status: status }));
   }),
 
-  rest.post(endpoints.dkgActors, (req, res, ctx) => {
-    const body = req.body as NewDKGBody;
-    const ElectionID = body.ElectionID;
+  rest.put(endpoints.editShuffle(':ElectionID'), async (req, res, ctx) => {
+    const { ElectionID } = req.params;
 
-    // TODO update the node status in mockDKG ?
+    setTimeout(
+      () =>
+        mockElections.set(ElectionID as string, {
+          ...mockElections.get(ElectionID as string),
+          Status: Status.ShuffledBallots,
+        }),
+      SHUFFLE_TIMER
+    );
 
-    return res(ctx.status(200));
+    return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
   rest.get(endpoints.ENDPOINT_USER_RIGHTS, async (req, res, ctx) => {
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200), ctx.json(mockUserDB.filter((user) => user.role !== 'voter')));
   }),
@@ -254,7 +276,7 @@ export const handlers = [
   rest.post(endpoints.ENDPOINT_ADD_ROLE, async (req, res, ctx) => {
     const body = req.body as NewUserRole;
     mockUserDB.push({ id: uid(), ...body });
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200));
   }),
@@ -262,7 +284,7 @@ export const handlers = [
   rest.post(endpoints.ENDPOINT_REMOVE_ROLE, async (req, res, ctx) => {
     const body = req.body as RemoveUserRole;
     mockUserDB = mockUserDB.filter((user) => user.sciper !== body.sciper);
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200));
   }),

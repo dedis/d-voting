@@ -19,7 +19,7 @@ import Select from './components/Select';
 import Rank, { handleOnDragEnd } from './components/Rank';
 import Text from './components/Text';
 import { ballotIsValid } from './components/ValidateAnswers';
-import { STATUS } from 'types/election';
+import { Status } from 'types/election';
 import ElectionClosed from './components/ElectionClosed';
 import Loading from 'pages/Loading';
 import { CloudUploadIcon } from '@heroicons/react/solid';
@@ -189,7 +189,7 @@ const Ballot: FC = () => {
       {loading ? (
         <Loading />
       ) : (
-        <div>{status === STATUS.Open ? ballotDisplay() : <ElectionClosed />}</div>
+        <div>{status === Status.Open ? ballotDisplay() : <ElectionClosed />}</div>
       )}
     </div>
   );

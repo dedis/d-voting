@@ -1,6 +1,6 @@
 import { ID } from './configuration';
 
-export const enum STATUS {
+export const enum Status {
   // Initial is when the election has just been created
   Initial = 0,
   // InitializedNode is when the nodes has been initialized by the dkg service
@@ -27,7 +27,9 @@ export const enum STATUS {
   Canceled = 6,
 }
 
-export const enum NODE_STATUS {
+export const enum NodeStatus {
+  // Internal Status when the actor hasn't been initialized yet
+  NotInitialized = -1,
   // Initialized is when the actor has been initialized
   Initialized,
   // Setup is when the actor was set up
@@ -36,7 +38,7 @@ export const enum NODE_STATUS {
   Failed,
 }
 
-export const enum ACTION {
+export const enum Action {
   Initialize = 'initialize',
   Setup = 'setup',
   Open = 'open',
@@ -47,9 +49,21 @@ export const enum ACTION {
   Cancel = 'cancel',
 }
 
+export const enum OngoingAction {
+  None = -1,
+  Initializing,
+  SettingUp,
+  Opening,
+  Closing,
+  Canceling,
+  Shuffling,
+  Decrypting,
+  Combining,
+}
+
 interface ElectionInfo {
   ElectionID: ID;
-  Status: STATUS;
+  Status: Status;
   Pubkey: string;
   Result: any;
   Roster: string[];
@@ -61,7 +75,7 @@ interface ElectionInfo {
 interface LightElectionInfo {
   ElectionID: ID;
   Title: string;
-  Status: STATUS;
+  Status: Status;
   Pubkey: string;
 }
 

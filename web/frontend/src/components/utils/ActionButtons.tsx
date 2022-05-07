@@ -1,8 +1,12 @@
 import {
   ChartSquareBarIcon,
+  CogIcon,
+  CubeTransparentIcon,
   EyeOffIcon,
   KeyIcon,
   LockClosedIcon,
+  LockOpenIcon,
+  MinusIcon,
   PencilAltIcon,
   ShieldCheckIcon,
   XIcon,
@@ -12,41 +16,95 @@ import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { ROUTE_BALLOT_SHOW } from 'Routes';
-import { STATUS } from 'types/election';
-import { ROLE } from 'types/userRole';
+import { OngoingAction, Status } from 'types/election';
+import { UserRole } from 'types/userRole';
+import { IndigoSpinnerIcon } from './SpinnerIcon';
 
-const InitializeButton = ({ status, handleInitialize }) => {
+const InitializeButton = ({ status, handleInitialize, ongoingAction }) => {
   const authCtx = useContext(AuthContext);
   const { t } = useTranslation();
 
-  const isAuthorized = authCtx.role === ROLE.Admin || authCtx.role === ROLE.Operator;
+  const isAuthorized = authCtx.role === UserRole.Admin || authCtx.role === UserRole.Operator;
 
   return (
     isAuthorized &&
-    status === STATUS.Initial && <button onClick={handleInitialize}>{t('initNodes')}</button>
+    status === Status.Initial && (
+      <button onClick={handleInitialize}>
+        <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-1 mr-2 border border-gray-300 text-sm rounded-full font-medium text-gray-700">
+          {ongoingAction === OngoingAction.None && (
+            <>
+              <CubeTransparentIcon
+                className="-ml-1 mr-2 h-5 w-5 text-gray-700"
+                aria-hidden="true"
+              />
+              {t('initializeNode')}
+            </>
+          )}
+          {ongoingAction === OngoingAction.Initializing && (
+            <>
+              <IndigoSpinnerIcon /> {t('initializing')}
+            </>
+          )}
+        </div>
+      </button>
+    )
   );
 };
 
-const SetupButton = ({ status, handleSetup }) => {
+const SetupButton = ({ status, handleSetup, ongoingAction }) => {
   const authCtx = useContext(AuthContext);
   const { t } = useTranslation();
 
-  const isAuthorized = authCtx.role === ROLE.Admin || authCtx.role === ROLE.Operator;
+  const isAuthorized = authCtx.role === UserRole.Admin || authCtx.role === UserRole.Operator;
 
   return (
     isAuthorized &&
-    status === STATUS.Initialized && <button onClick={handleSetup}>{t('statusSetup')}</button>
+    status === Status.Initialized && (
+      <button onClick={handleSetup}>
+        <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-1 mr-2 border border-gray-300 text-sm rounded-full font-medium text-gray-700">
+          {ongoingAction === OngoingAction.None && (
+            <>
+              <CogIcon className="-ml-1 mr-2 h-5 w-5 text-gray-700" aria-hidden="true" />
+              {t('statusSetup')}
+            </>
+          )}
+          {ongoingAction === OngoingAction.SettingUp && (
+            <>
+              <IndigoSpinnerIcon /> {t('settingUp')}
+            </>
+          )}
+        </div>
+      </button>
+    )
   );
 };
 
-const OpenButton = ({ status, handleOpen }) => {
+const OpenButton = ({ status, handleOpen, ongoingAction }) => {
   const authCtx = useContext(AuthContext);
   const { t } = useTranslation();
 
-  const isAuthorized = authCtx.role === ROLE.Admin || authCtx.role === ROLE.Operator;
+  const isAuthorized = authCtx.role === UserRole.Admin || authCtx.role === UserRole.Operator;
 
   return (
-    isAuthorized && status === STATUS.Setup && <button onClick={handleOpen}>{t('open')}</button>
+    isAuthorized &&
+    status === Status.Setup && (
+      <button onClick={handleOpen}>
+        <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-1 mr-2 border border-gray-300 text-sm rounded-full font-medium text-gray-700">
+          {ongoingAction === OngoingAction.None && (
+            <>
+              <LockOpenIcon className="-ml-1 mr-2 h-5 w-5 text-gray-700" aria-hidden="true" />
+              {t('open')}
+            </>
+          )}
+          {ongoingAction === OngoingAction.Opening && (
+            <>
+              <IndigoSpinnerIcon />
+              {t('opening')}
+            </>
+          )}
+        </div>
+      </button>
+    )
   );
 };
 
@@ -55,11 +113,13 @@ const VoteButton = ({ status, electionID }) => {
   const { t } = useTranslation();
 
   const isAuthorized =
-    authCtx.role === ROLE.Admin || authCtx.role === ROLE.Operator || authCtx.role === ROLE.Voter;
+    authCtx.role === UserRole.Admin ||
+    authCtx.role === UserRole.Operator ||
+    authCtx.role === UserRole.Voter;
 
   return (
     isAuthorized &&
-    status === STATUS.Open &&
+    status === Status.Open &&
     authCtx.isLogged && (
       <Link to={ROUTE_BALLOT_SHOW + '/' + electionID}>
         <button>
@@ -73,87 +133,116 @@ const VoteButton = ({ status, electionID }) => {
   );
 };
 
-const CloseButton = ({ status, handleClose }) => {
+const CloseButton = ({ status, handleClose, ongoingAction }) => {
   const authCtx = useContext(AuthContext);
   const { t } = useTranslation();
 
-  const isAuthorized = authCtx.role === ROLE.Admin || authCtx.role === ROLE.Operator;
+  const isAuthorized = authCtx.role === UserRole.Admin || authCtx.role === UserRole.Operator;
 
   return (
     isAuthorized &&
-    status === STATUS.Open && (
+    status === Status.Open && (
       <button onClick={handleClose}>
         <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-1 mr-2 border border-gray-300 text-sm rounded-full font-medium text-gray-700">
-          <LockClosedIcon className="-ml-1 mr-2 h-5 w-5 text-gray-700" aria-hidden="true" />
-          {t('close')}
+          {ongoingAction !== OngoingAction.Closing && (
+            <>
+              <LockClosedIcon className="-ml-1 mr-2 h-5 w-5 text-gray-700" aria-hidden="true" />
+              {t('close')}
+            </>
+          )}
+          {ongoingAction === OngoingAction.Closing && (
+            <>
+              <IndigoSpinnerIcon />
+              {t('closing')}
+            </>
+          )}
         </div>
       </button>
     )
   );
 };
 
-const ShuffleButton = ({ status, isShuffling, handleShuffle }) => {
+const ShuffleButton = ({ status, handleShuffle, ongoingAction }) => {
   const authCtx = useContext(AuthContext);
   const { t } = useTranslation();
 
-  const isAuthorized = authCtx.role === ROLE.Admin || authCtx.role === ROLE.Operator;
+  const isAuthorized = authCtx.role === UserRole.Admin || authCtx.role === UserRole.Operator;
 
   return (
     isAuthorized &&
-    status === STATUS.Closed &&
-    (isShuffling ? (
-      <p className="loading">{t('statusOnGoingShuffle')}</p>
-    ) : (
-      <span>
-        <button onClick={handleShuffle}>
-          <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-1 border border-gray-300 text-sm rounded-full font-medium text-gray-700">
-            <EyeOffIcon className="-ml-1 mr-2 h-5 w-5 text-gray-700" aria-hidden="true" />
-            {t('shuffle')}
-          </div>
-        </button>
-      </span>
-    ))
+    status === Status.Closed && (
+      <button onClick={handleShuffle}>
+        <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-1 border border-gray-300 text-sm rounded-full font-medium text-gray-700">
+          {ongoingAction === OngoingAction.None && (
+            <>
+              <EyeOffIcon className="-ml-1 mr-2 h-5 w-5 text-gray-700" aria-hidden="true" />
+              {t('shuffle')}
+            </>
+          )}
+          {ongoingAction === OngoingAction.Shuffling && (
+            <>
+              <IndigoSpinnerIcon /> {t('shuffling')}
+            </>
+          )}
+        </div>
+      </button>
+    )
   );
 };
 
-const DecryptButton = ({ status, isDecrypting, handleDecrypt }) => {
+const DecryptButton = ({ status, handleDecrypt, ongoingAction }) => {
   const authCtx = useContext(AuthContext);
   const { t } = useTranslation();
 
-  const isAuthorized = authCtx.role === ROLE.Admin || authCtx.role === ROLE.Operator;
+  const isAuthorized = authCtx.role === UserRole.Admin || authCtx.role === UserRole.Operator;
 
   return (
     isAuthorized &&
-    status === STATUS.ShuffledBallots &&
-    (isDecrypting ? (
-      <p className="loading">{t('statusOnGoingDecryption')}</p>
-    ) : (
-      <span>
-        <button onClick={handleDecrypt}>
-          <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-1 border border-gray-300 text-sm rounded-full font-medium text-gray-700">
-            <KeyIcon className="-ml-1 mr-2 h-5 w-5 text-gray-700" aria-hidden="true" />
-            {t('decrypt')}
-          </div>
-        </button>
-      </span>
-    ))
+    status === Status.ShuffledBallots && (
+      <button onClick={handleDecrypt}>
+        <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-1 border border-gray-300 text-sm rounded-full font-medium text-gray-700">
+          {ongoingAction === OngoingAction.None && (
+            <>
+              <KeyIcon className="-ml-1 mr-2 h-5 w-5 text-gray-700" aria-hidden="true" />
+              {t('decrypt')}
+            </>
+          )}
+          {ongoingAction === OngoingAction.Decrypting && (
+            <>
+              <IndigoSpinnerIcon />
+              {t('decrypting')}
+            </>
+          )}
+        </div>
+      </button>
+    )
   );
 };
 
-const CombineButton = ({ status, handleCombine }) => {
+const CombineButton = ({ status, handleCombine, ongoingAction }) => {
   const authCtx = useContext(AuthContext);
   const { t } = useTranslation();
 
-  const isAuthorized = authCtx.role === ROLE.Admin || authCtx.role === ROLE.Operator;
+  const isAuthorized = authCtx.role === UserRole.Admin || authCtx.role === UserRole.Operator;
 
   return (
     isAuthorized &&
-    status === STATUS.PubSharesSubmitted && (
+    status === Status.PubSharesSubmitted && (
       <span>
         <button onClick={handleCombine}>
           <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-1 border border-gray-300 text-sm rounded-full font-medium text-gray-700">
-            <ShieldCheckIcon className="-ml-1 mr-2 h-5 w-5 text-gray-700" aria-hidden="true" />
-            {t('combine')}
+            {ongoingAction === OngoingAction.None && (
+              <>
+                <ShieldCheckIcon className="-ml-1 mr-2 h-5 w-5 text-gray-700" aria-hidden="true" />
+                {t('combine')}
+              </>
+            )}
+            {ongoingAction === OngoingAction.Combining && (
+              <>
+                <IndigoSpinnerIcon />
+                {t('combining')}
+              </>
+            )}
           </div>
         </button>
       </span>
@@ -164,7 +253,7 @@ const CombineButton = ({ status, handleCombine }) => {
 const ResultButton = ({ status, electionID }) => {
   const { t } = useTranslation();
   return (
-    status === STATUS.ResultAvailable && (
+    status === Status.ResultAvailable && (
       <Link to={`/elections/${electionID}/result`}>
         <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-1 border border-gray-300 text-sm rounded-full font-medium text-gray-700">
           <ChartSquareBarIcon className="-ml-1 mr-2 h-5 w-5 text-gray-700" aria-hidden="true" />
@@ -175,7 +264,7 @@ const ResultButton = ({ status, electionID }) => {
   );
 };
 
-const CancelButton = ({ status, handleCancel }) => {
+const CancelButton = ({ status, handleCancel, ongoingAction }) => {
   const authCtx = useContext(AuthContext);
   const { t } = useTranslation();
 
@@ -183,14 +272,35 @@ const CancelButton = ({ status, handleCancel }) => {
 
   return (
     isAuthorized &&
-    status === STATUS.Open && (
+    status === Status.Open && (
       <button onClick={handleCancel}>
         <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-1 mr-2 border border-gray-300 text-sm rounded-full font-medium text-gray-700">
-          <XIcon className="-ml-1 mr-2 h-5 w-5 text-gray-700" aria-hidden="true" />
-          {t('cancel')}
+          {ongoingAction !== OngoingAction.Canceling && (
+            <>
+              <XIcon className="-ml-1 mr-2 h-5 w-5 text-gray-700" aria-hidden="true" />
+              {t('cancel')}
+            </>
+          )}
+          {ongoingAction === OngoingAction.Canceling && (
+            <>
+              <IndigoSpinnerIcon />
+              {t('canceling')}
+            </>
+          )}
         </div>
       </button>
     )
+  );
+};
+
+const NoActionAvailable = () => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-1 mr-2 border border-gray-300 text-sm rounded-full font-medium text-gray-700">
+      <MinusIcon className="-ml-1 mr-2 h-5 w-5 text-gray-700" aria-hidden="true" />
+      {t('noActionAvailable')}
+    </div>
   );
 };
 
@@ -205,4 +315,5 @@ export {
   CombineButton,
   ResultButton,
   CancelButton,
+  NoActionAvailable,
 };

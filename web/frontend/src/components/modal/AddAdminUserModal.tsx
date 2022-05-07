@@ -5,7 +5,7 @@ import { CheckIcon, SelectorIcon } from '@heroicons/react/solid';
 
 import { ENDPOINT_ADD_ROLE } from 'components/utils/Endpoints';
 import { useTranslation } from 'react-i18next';
-import SpinnerIcon from 'components/utils/SpinnerIcon';
+import { SpinnerIcon } from 'components/utils/SpinnerIcon';
 import { UserAddIcon } from '@heroicons/react/outline';
 import ShortUniqueId from 'short-unique-id';
 import { FlashContext, FlashLevel } from 'index';

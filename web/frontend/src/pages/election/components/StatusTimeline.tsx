@@ -1,50 +1,52 @@
 import { AuthContext } from 'index';
 import { FC, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
-import { STATUS } from 'types/election';
-import { ROLE } from 'types/userRole';
+import { Status } from 'types/election';
+import { UserRole } from 'types/userRole';
 
 type StatusTimelineProps = {
-  status: STATUS;
+  status: Status;
 };
 
-const CanceledStep = { name: 'Canceled', status: STATUS.Canceled };
+const CanceledStep = { name: 'Canceled', status: Status.Canceled };
 
 const StatusTimeline: FC<StatusTimelineProps> = ({ status }) => {
   const authCtx = useContext(AuthContext);
   const { t } = useTranslation();
 
   const completeSteps = [
-    { name: 'statusInitial', status: STATUS.Initial },
-    { name: 'statusInitializedNodes', status: STATUS.Initialized },
-    { name: 'statusOnGoingSetup', status: STATUS.Setup },
-    { name: 'statusSetup', status: STATUS.Setup },
-    { name: 'statusOpen', status: STATUS.Open },
-    { name: 'statusClose', status: STATUS.Closed },
-    { name: 'statusOnGoingShuffle', status: STATUS.OnGoingShuffle },
-    { name: 'statusShuffle', status: STATUS.ShuffledBallots },
-    { name: 'statusOnGoingDecryption', status: STATUS.OnGoingDecryption },
-    { name: 'statusDecrypted', status: STATUS.PubSharesSubmitted },
-    { name: 'statusResultAvailable', status: STATUS.ResultAvailable },
+    { name: 'statusInitial', status: Status.Initial },
+    { name: 'statusInitializedNodes', status: Status.Initialized },
+    { name: 'settingUp', status: Status.Setup },
+    { name: 'statusSetup', status: Status.Setup },
+    { name: 'statusOpen', status: Status.Open },
+    { name: 'statusClose', status: Status.Closed },
+    { name: 'shuffling', status: Status.OnGoingShuffle },
+    { name: 'statusShuffle', status: Status.ShuffledBallots },
+    { name: 'decrypting', status: Status.OnGoingDecryption },
+    { name: 'statusDecrypted', status: Status.PubSharesSubmitted },
+    { name: 'statusResultAvailable', status: Status.ResultAvailable },
   ];
 
   const simpleSteps = [
-    { name: 'statusInitial', status: STATUS.Initial },
-    { name: 'statusOpen', status: STATUS.Open },
-    { name: 'statusClose', status: STATUS.Closed },
-    { name: 'statusShuffle', status: STATUS.ShuffledBallots },
-    { name: 'statusDecrypted', status: STATUS.PubSharesSubmitted },
-    { name: 'statusResultAvailable', status: STATUS.ResultAvailable },
+    { name: 'statusInitial', status: Status.Initial },
+    { name: 'statusOpen', status: Status.Open },
+    { name: 'statusClose', status: Status.Closed },
+    { name: 'statusShuffle', status: Status.ShuffledBallots },
+    { name: 'statusDecrypted', status: Status.PubSharesSubmitted },
+    { name: 'statusResultAvailable', status: Status.ResultAvailable },
   ];
 
   const steps =
-    authCtx.role === ROLE.Admin || authCtx.role === ROLE.Operator ? completeSteps : simpleSteps;
+    authCtx.role === UserRole.Admin || authCtx.role === UserRole.Operator
+      ? completeSteps
+      : simpleSteps;
 
   // If the status is Canceled we need to add the Canceled step to the steps
   // array at the correct position in the workflow (before the Closed step)
-  if (status === STATUS.Canceled) {
+  if (status === Status.Canceled) {
     steps.splice(
-      steps.findIndex((step) => step.status === STATUS.Closed),
+      steps.findIndex((step) => step.status === Status.Closed),
       0,
       CanceledStep
     );

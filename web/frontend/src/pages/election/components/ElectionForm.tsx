@@ -14,7 +14,7 @@ import { Configuration, ID, Subject } from '../../../types/configuration';
 import { emptyConfiguration, newSubject } from '../../../types/getObjectType';
 import { marshalConfig } from '../../../types/JSONparser';
 import DownloadButton from 'components/buttons/DownloadButton';
-import SpinnerIcon from 'components/utils/SpinnerIcon';
+import { SpinnerIcon } from 'components/utils/SpinnerIcon';
 
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.

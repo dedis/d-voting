@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { ID } from 'types/configuration';
-import { ElectionInfo, LightElectionInfo, Results, STATUS } from 'types/election';
+import { ElectionInfo, LightElectionInfo, Results, Status } from 'types/election';
 
 const useFillElectionInfo = (electionData: ElectionInfo) => {
   const [id, setId] = useState<ID>('');
-  const [status, setStatus] = useState<STATUS>(null);
+  const [status, setStatus] = useState<Status>(null);
   const [pubKey, setPubKey] = useState<string>('');
   const [roster, setRoster] = useState<string[]>(null);
   const [result, setResult] = useState<Results[]>(null);
@@ -48,7 +48,7 @@ const useFillElectionInfo = (electionData: ElectionInfo) => {
 const useFillLightElectionInfo = (electionData: LightElectionInfo) => {
   const [id, setId] = useState<ID>('');
   const [title, setTitle] = useState<string>('');
-  const [status, setStatus] = useState<STATUS>(null);
+  const [status, setStatus] = useState<Status>(null);
   const [pubKey, setPubKey] = useState<string>('');
 
   useEffect(() => {

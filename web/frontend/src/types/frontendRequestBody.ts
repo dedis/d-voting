@@ -1,6 +1,6 @@
 import { ID } from './configuration';
-import { ACTION } from './election';
-import { ROLE } from './userRole';
+import { Action } from './election';
+import { UserRole } from './userRole';
 
 interface NewElectionBody {
   Configuration: any;
@@ -11,11 +11,11 @@ interface NewElectionVoteBody {
 }
 
 interface EditElectionBody {
-  Action: ACTION.Open | ACTION.Close | ACTION.CombineShares | ACTION.Cancel;
+  Action: Action.Open | Action.Close | Action.CombineShares | Action.Cancel;
 }
 
 interface EditDKGActorBody {
-  Action: ACTION.Setup | ACTION.BeginDecryption;
+  Action: Action.Setup | Action.BeginDecryption;
 }
 
 interface NewDKGBody {
@@ -24,7 +24,7 @@ interface NewDKGBody {
 
 interface NewUserRole {
   sciper: string;
-  role: ROLE.Admin | ROLE.Operator;
+  role: UserRole.Admin | UserRole.Operator;
 }
 
 interface RemoveUserRole {

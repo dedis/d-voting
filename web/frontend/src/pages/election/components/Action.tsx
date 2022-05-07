@@ -4,14 +4,14 @@ import { useTranslation } from 'react-i18next';
 
 //import Modal from 'components/modal/Modal';
 import { ID } from 'types/configuration';
-import { STATUS } from 'types/election';
+import { Status } from 'types/election';
 import useChangeAction from 'components/utils/useChangeAction';
 
 type ActionProps = {
-  status: STATUS;
+  status: Status;
   electionID: ID;
   roster: string[];
-  setStatus: (status: STATUS) => void;
+  setStatus: (status: Status) => void;
   setResultAvailable?: (available: boolean) => void | null;
   setGetError: (error: string) => void;
   setTextModalError: (text: string) => void;

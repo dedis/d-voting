@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import useElection from 'components/utils/useElection';
 import useGetResults from 'components/utils/useGetResults';
-import { STATUS } from 'types/election';
+import { Status } from 'types/election';
 import Action from './components/Action';
 import Modal from 'components/modal/Modal';
 import StatusTimeline from './components/StatusTimeline';
@@ -28,7 +28,7 @@ const ElectionShow: FC = () => {
 
   //Fetch result when available after a status change
   useEffect(() => {
-    if (status === STATUS.ResultAvailable && isResultAvailable) {
+    if (status === Status.ResultAvailable && isResultAvailable) {
       getResults(electionID, setError, setResult, setIsResultSet);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
