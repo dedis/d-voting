@@ -1,7 +1,7 @@
 /*addresses and public keys of each node*/
 
 const address1 = 'RjEyNy4wLjAuMToyMDAx'; //address of a collective authority member
-const PK1 = 'fbrhQNEluLFqzUOoxE7ZAvKF0C49aeltqtaiVc5iESc='; //key of a collective authority memeber
+const PK1 = 'fbrhQNEluLFqzUOoxE7ZAvKF0C49aeltqtaiVc5iESc='; //key of a collective authority member
 const address2 = 'RjEyNy4wLjAuMToyMDAy';
 const PK2 = 'amYlvJ0+AN/ygE8xhHb8oH6Zax6IcwNhSz6gs/OY/Ow=';
 const address3 = 'RjEyNy4wLjAuMToyMDAz';

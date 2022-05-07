@@ -10,17 +10,19 @@ const ElectionCreate: FC = () => {
   const [textModal, setTextModal] = useState('');
 
   return (
-    <div className="mx-4">
+    <div className="font-sans">
       <Modal
         showModal={showModal}
         setShowModal={setShowModal}
         textModal={textModal}
         buttonRightText={t('close')}
       />
-      <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-        {t('navBarCreate')}
-      </h1>
-      <p className="py-5">{t('create')}</p>
+      <div className="px-4 py-4">
+        <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+          {t('navBarCreate')}
+        </h2>
+        <div className="pt-2">{t('create')}</div>
+      </div>
 
       <ElectionForm setShowModal={setShowModal} setTextModal={setTextModal} />
     </div>

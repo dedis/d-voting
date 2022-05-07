@@ -1,12 +1,10 @@
 import { FC, useEffect, useState } from 'react';
-import { CloudUploadIcon } from '@heroicons/react/outline';
 import { useTranslation } from 'react-i18next';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import kyber from '@dedis/kyber';
 import PropTypes from 'prop-types';
 import { Buffer } from 'buffer';
 
-import { ROUTE_BALLOT_INDEX } from '../../Routes';
 import useElection from 'components/utils/useElection';
 import usePostCall from 'components/utils/usePostCall';
 import * as endpoints from 'components/utils/Endpoints';
@@ -22,6 +20,9 @@ import Rank, { handleOnDragEnd } from './components/Rank';
 import Text from './components/Text';
 import { ballotIsValid } from './components/ValidateAnswers';
 import { STATUS } from 'types/election';
+import ElectionClosed from './components/ElectionClosed';
+import Loading from 'pages/Loading';
+import { CloudUploadIcon } from '@heroicons/react/solid';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
@@ -44,6 +45,7 @@ const Ballot: FC = () => {
     if (postRequest !== null) {
       sendFetchRequest(endpoints.newElectionVote(electionID.toString()), postRequest, setShowModal);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postRequest]);
 
   useEffect(() => {
@@ -90,6 +92,9 @@ const Ballot: FC = () => {
       const newRequest = {
         method: 'POST',
         body: JSON.stringify(ballot),
+        headers: {
+          'Content-Type': 'Application/json',
+        },
       };
       setPostRequest(newRequest);
     } catch (e) {
@@ -171,21 +176,6 @@ const Ballot: FC = () => {
     );
   };
 
-  const electionClosedDisplay = () => {
-    return (
-      <div>
-        <div> {t('voteImpossible')}</div>
-        <Link to={ROUTE_BALLOT_INDEX}>
-          <button
-            type="button"
-            className="inline-flex mt-2 mb-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600">
-            {t('back')}
-          </button>
-        </Link>
-      </div>
-    );
-  };
-
   return (
     <div>
       <RedirectToModal
@@ -197,9 +187,9 @@ const Ballot: FC = () => {
         {modalText}
       </RedirectToModal>
       {loading ? (
-        <p className="loading">{t('loading')}</p>
+        <Loading />
       ) : (
-        <div>{status === STATUS.Open ? ballotDisplay() : electionClosedDisplay()}</div>
+        <div>{status === STATUS.Open ? ballotDisplay() : <ElectionClosed />}</div>
       )}
     </div>
   );

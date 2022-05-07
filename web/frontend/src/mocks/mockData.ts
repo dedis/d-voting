@@ -153,10 +153,7 @@ const mockElection2: any = {
           ID: (0xbeef).toString(),
           MaxN: 2,
           MinN: 1,
-          Choices: [
-            'INNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN',
-            'SC',
-          ],
+          Choices: ['IN', 'SC'],
         },
       ],
       Texts: [],
