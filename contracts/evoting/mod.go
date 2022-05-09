@@ -23,35 +23,35 @@ import (
 
 var (
 	PromElectionStatus = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "dvoting_evoting_status",
+		Name: "evoting_status",
 		Help: "status of election",
 	},
 		[]string{"election"},
 	)
 
 	PromElectionBallots = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "dvoting_evoting_ballots",
+		Name: "evoting_ballots",
 		Help: "number of cast ballots",
 	},
 		[]string{"election"},
 	)
 
 	PromElectionShufflingInstances = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "dvoting_evoting_shufflings",
+		Name: "evoting_shufflings",
 		Help: "number of shuffling instances",
 	},
 		[]string{"election"},
 	)
 
 	PromElectionPubShares = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "dvoting_evoting_pub_shares",
+		Name: "pub_shares",
 		Help: "published public shares",
 	},
 		[]string{"election"},
 	)
 
 	PromDkgStatus = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "dvoting_evoting_dkg_status",
+		Name: "evoting_dkg_status",
 		Help: "status of DKG",
 	},
 		[]string{"election"},
