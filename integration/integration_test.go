@@ -24,7 +24,6 @@ import (
 	_ "github.com/dedis/d-voting/services/dkg/pedersen/json"
 	"github.com/dedis/d-voting/services/shuffle"
 	_ "github.com/dedis/d-voting/services/shuffle/neff/json"
-	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 	delaPkg "go.dedis.ch/dela"
@@ -51,7 +50,7 @@ func TestIntegration(t *testing.T) {
 
 func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 	return func(t *testing.T) {
-		initMetrics()
+		t.Parallel()
 
 		adminID := "first admin"
 
@@ -88,7 +87,6 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		require.NoError(t, err)
 
 		time.Sleep(time.Second * 1)
-		require.Equal(t, float64(types.Initial), testutil.ToFloat64(evoting.PromElectionStatus))
 
 		// ##### SETUP DKG #####
 		actor, err := initDkg(nodes, electionID, m.m)
@@ -97,7 +95,6 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		// ##### OPEN ELECTION #####
 		err = openElection(m, electionID)
 		require.NoError(t, err)
-		require.Equal(t, float64(types.Open), testutil.ToFloat64(evoting.PromElectionStatus))
 
 		electionFac := types.NewElectionFactory(types.CiphervoteFactory{}, nodes[0].GetRosterFac())
 
@@ -115,7 +112,6 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		require.NoError(t, err)
 
 		time.Sleep(time.Second * 1)
-		require.Equal(t, float64(types.Closed), testutil.ToFloat64(evoting.PromElectionStatus))
 
 		// ##### SHUFFLE BALLOTS #####
 		t.Logf("initializing shuffle")
@@ -127,7 +123,6 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		t.Logf("shuffling")
 		err = sActor.Shuffle(electionID)
 		require.NoError(t, err)
-		require.Equal(t, float64(types.ShuffledBallots), testutil.ToFloat64(evoting.PromElectionStatus))
 
 		time.Sleep(time.Second * 1)
 
@@ -140,7 +135,6 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		require.NoError(t, err)
 
 		time.Sleep(time.Millisecond * 5000 * time.Duration(numNodes))
-		require.Equal(t, float64(types.PubSharesSubmitted), testutil.ToFloat64(evoting.PromElectionStatus))
 
 		// ##### DECRYPT BALLOTS #####
 		t.Logf("decrypting")
@@ -152,7 +146,6 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		require.NoError(t, err)
 
 		time.Sleep(time.Second * 1)
-		require.Equal(t, float64(types.ResultAvailable), testutil.ToFloat64(evoting.PromElectionStatus))
 
 		t.Logf("get vote proof")
 		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
@@ -576,11 +569,4 @@ func closeNodes(t *testing.T, nodes []dVotingCosiDela) {
 
 func encodeID(ID string) types.ID {
 	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
-}
-
-func initMetrics() {
-	evoting.PromElectionStatus.Reset()
-	evoting.PromElectionBallots.Reset()
-	evoting.PromElectionShufflingInstances.Reset()
-	evoting.PromElectionPubShares.Reset()
 }
