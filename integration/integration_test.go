@@ -51,7 +51,6 @@ func TestIntegration(t *testing.T) {
 
 func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 	return func(t *testing.T) {
-		t.Parallel()
 		initMetrics()
 
 		adminID := "first admin"
