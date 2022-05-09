@@ -44,14 +44,14 @@ var (
 	)
 
 	PromElectionPubShares = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "pub_shares",
+		Name: "evoting_pubshares",
 		Help: "published public shares",
 	},
 		[]string{"election"},
 	)
 
 	PromDkgStatus = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "evoting_dkg_status",
+		Name: "evoting_dkgstatus",
 		Help: "status of DKG",
 	},
 		[]string{"election"},
