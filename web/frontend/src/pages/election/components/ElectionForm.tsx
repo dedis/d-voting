@@ -15,6 +15,7 @@ import { emptyConfiguration, newSubject } from '../../../types/getObjectType';
 import { marshalConfig } from '../../../types/JSONparser';
 import DownloadButton from 'components/buttons/DownloadButton';
 import SpinnerIcon from 'components/utils/SpinnerIcon';
+import { useNavigate } from 'react-router';
 
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
@@ -31,6 +32,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
   // conf is the configuration object containing MainTitle and Scaffold which
   // contains an array of subject.
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const emptyConf: Configuration = emptyConfiguration();
   const [conf, setConf] = useState<Configuration>(emptyConf);
   const [loading, setLoading] = useState(false);
@@ -65,9 +67,11 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
         setShowModal(true);
       } else {
         const response = await res.json();
-        setTextModal(`Success creating an election ! ElectionID : ${response.ElectionID}`);
-        setShowModal(true);
+        // TODO: remove the following lines if we don't need a confirmation modal anymore
+        // setTextModal(`Success creating an election ! ElectionID : ${response.ElectionID}`);
+        // setShowModal(true);
         setConf(emptyConf);
+        navigate('/elections/' + response.ElectionID);
       }
       setLoading(false);
     } catch (error) {
