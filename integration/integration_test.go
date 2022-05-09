@@ -52,6 +52,7 @@ func TestIntegration(t *testing.T) {
 func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Parallel()
+		initMetrics()
 
 		adminID := "first admin"
 
@@ -113,7 +114,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		// ##### CLOSE ELECTION #####
 		err = closeElection(m, electionID, adminID)
 		require.NoError(t, err)
-		
+
 		time.Sleep(time.Second * 1)
 		require.Equal(t, float64(types.Closed), testutil.ToFloat64(evoting.PromElectionStatus))
 
@@ -138,7 +139,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		require.NoError(t, err)
 		err = actor.ComputePubshares()
 		require.NoError(t, err)
-		
+
 		time.Sleep(time.Millisecond * 5000 * time.Duration(numNodes))
 		require.Equal(t, float64(types.PubSharesSubmitted), testutil.ToFloat64(evoting.PromElectionStatus))
 
@@ -576,4 +577,11 @@ func closeNodes(t *testing.T, nodes []dVotingCosiDela) {
 
 func encodeID(ID string) types.ID {
 	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
+}
+
+func initMetrics() {
+	evoting.PromElectionStatus.Reset()
+	evoting.PromElectionBallots.Reset()
+	evoting.PromElectionShufflingInstances.Reset()
+	evoting.PromElectionPubShares.Reset()
 }

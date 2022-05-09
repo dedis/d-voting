@@ -30,28 +30,28 @@ var (
 	)
 
 	PromElectionBallots = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "evoting_ballots",
+		Name: "evoting_ballots_total",
 		Help: "number of cast ballots",
 	},
 		[]string{"election"},
 	)
 
 	PromElectionShufflingInstances = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "evoting_shufflings",
+		Name: "evoting_shufflings_total",
 		Help: "number of shuffling instances",
 	},
 		[]string{"election"},
 	)
 
 	PromElectionPubShares = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "evoting_pubshares",
+		Name: "evoting_pubshares_total",
 		Help: "published public shares",
 	},
 		[]string{"election"},
 	)
 
 	PromDkgStatus = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "evoting_dkgstatus",
+		Name: "evoting_dkg_status",
 		Help: "status of DKG",
 	},
 		[]string{"election"},
