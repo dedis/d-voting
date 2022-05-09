@@ -23,9 +23,12 @@ import { STATUS } from 'types/election';
 import ElectionClosed from './components/ElectionClosed';
 import Loading from 'pages/Loading';
 import { CloudUploadIcon } from '@heroicons/react/solid';
+import { useNavigate } from 'react-router';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
   const { electionId } = useParams();
   const UserID = sessionStorage.getItem('id');
   const { loading, configObj, electionID, status, pubKey, ballotSize, chunksPerBallot } =
@@ -104,6 +107,7 @@ const Ballot: FC = () => {
 
       setShowModal(true);
     }
+    navigate(-1);
   };
 
   const handleClick = () => {
