@@ -26,6 +26,7 @@ mkdir nodedata
 if [ -d "./log" ] 
 then
     rm -rf ./log
+    mkdir log
 else
     mkdir log
 fi
