@@ -251,7 +251,7 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
   };
 
   // we strip the `/api` part: /api/election/xxx => /election/xxx
-  const uri = config.DELA_NODE_URL + req.baseUrl.slice(4);
+  const uri = config.DELA_NODE_URL + xss(req.baseUrl.slice(4));
 
   console.log('sending payload:', JSON.stringify(payload), 'to', uri);
 
@@ -315,9 +315,7 @@ app.delete('/api/evoting/elections/:electionID', (req, res) => {
   const sign = kyber.sign.schnorr.sign(edCurve, scalar, Buffer.from(electionID));
 
   // we strip the `/api` part: /api/election/xxx => /election/xxx
-  const uri = config.DELA_NODE_URL + req.url.slice(4);
-
-  console.log('sending delete', 'to', uri, req.baseUrl, req.url);
+  const uri = config.DELA_NODE_URL + xss(req.url.slice(4));
 
   axios({
     method: req.method as Method,
