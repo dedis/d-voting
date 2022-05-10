@@ -27,15 +27,20 @@ import { AuthContext } from '..';
 import Logged from 'pages/session/Logged';
 import Flash from './Flash';
 import NotFound from './NotFound';
+import { ROLE } from 'types/userRole';
 
 const App = () => {
-  const RequireAuth = ({ children }) => {
+  const RequireAuth = ({ children, roles }: { children: any; roles?: string[] }): any => {
     let location = useLocation();
 
     const authCtx = useContext(AuthContext);
 
     if (!authCtx.isLogged) {
       return <Navigate to="/login" state={{ from: location }} replace />;
+    } else {
+      if (roles && !roles.includes(authCtx.role)) {
+        return <Navigate to="/notfound" state={{ from: location }} replace />;
+      }
     }
 
     return children;
@@ -55,7 +60,7 @@ const App = () => {
               <Route
                 path={ROUTE_ELECTION_CREATE}
                 element={
-                  <RequireAuth>
+                  <RequireAuth roles={[ROLE.Admin, ROLE.Operator]}>
                     <ElectionCreate />
                   </RequireAuth>
                 }
@@ -65,7 +70,7 @@ const App = () => {
               <Route
                 path={ROUTE_BALLOT_SHOW + '/:electionId'}
                 element={
-                  <RequireAuth>
+                  <RequireAuth roles={null}>
                     <BallotShow />
                   </RequireAuth>
                 }
@@ -73,7 +78,7 @@ const App = () => {
               <Route
                 path={ROUTE_ADMIN}
                 element={
-                  <RequireAuth>
+                  <RequireAuth roles={[ROLE.Admin]}>
                     <Admin />
                   </RequireAuth>
                 }
