@@ -23,11 +23,9 @@ import { STATUS } from 'types/election';
 import ElectionClosed from './components/ElectionClosed';
 import Loading from 'pages/Loading';
 import { CloudUploadIcon } from '@heroicons/react/solid';
-import { useNavigate } from 'react-router';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   const { electionId } = useParams();
   const UserID = sessionStorage.getItem('id');
@@ -41,7 +39,6 @@ const Ballot: FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalText, setModalText] = useState(t('voteSuccess') as string);
   const [modalTitle, setModalTitle] = useState('');
-  const [navigateDest, setNavigateDest] = useState(null);
   const sendFetchRequest = usePostCall(setPostError);
 
   useEffect(() => {
@@ -60,7 +57,6 @@ const Ballot: FC = () => {
       }
       setModalTitle(t('errorTitle'));
     } else {
-      setNavigateDest('/');
       setModalText(t('voteSuccess'));
       setModalTitle(t('voteSuccessful'));
     }
@@ -107,7 +103,6 @@ const Ballot: FC = () => {
 
       setShowModal(true);
     }
-    navigate(-1);
   };
 
   const handleClick = () => {
@@ -191,7 +186,7 @@ const Ballot: FC = () => {
         setShowModal={setShowModal}
         title={modalTitle}
         buttonRightText={t('close')}
-        navigateDestination={navigateDest}>
+        navigateDestination={-1}>
         {modalText}
       </RedirectToModal>
       {loading ? (

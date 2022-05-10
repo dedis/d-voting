@@ -8,7 +8,7 @@ type RedirectToModalProps = {
   title: string;
   children: string;
   buttonRightText: string;
-  navigateDestination?: string;
+  navigateDestination?: any;
 };
 
 const RedirectToModal: FC<RedirectToModalProps> = ({
