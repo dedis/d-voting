@@ -34,7 +34,7 @@ var suite = suites.MustFind("Ed25519")
 
 // Check the shuffled votes versus the cast votes on a few nodes
 func TestScenario(t *testing.T) {
-	t.Run("Basic configuration", getScenarioTest(5, 8, 1, []int{}))
+	t.Run("Basic configuration", getScenarioTest(5, 3, 1, []int{5}))
 }
 
 func getScenarioTest(numNodes int, numVotes int, numElection int, killNode []int) func(*testing.T) {
