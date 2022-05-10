@@ -689,6 +689,62 @@ func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step)
 	return nil
 }
 
+// deleteElection implements commands. It performs the DELETE_ELECTION command
+func (e evotingCommand) deleteElection(snap store.Snapshot, step execution.Step) error {
+
+	msg, err := e.getTransaction(step.Current)
+	if err != nil {
+		return xerrors.Errorf(errGetTransaction, err)
+	}
+
+	tx, ok := msg.(types.DeleteElection)
+	if !ok {
+		return xerrors.Errorf(errWrongTx, msg)
+	}
+
+	election, electionID, err := e.getElection(tx.ElectionID, snap)
+	if err != nil {
+		return xerrors.Errorf(errGetElection, err)
+	}
+
+	err = snap.Delete(electionID)
+	if err != nil {
+		return xerrors.Errorf("failed to delete election: %v", err)
+	}
+
+	// Update the election metadata store
+
+	electionsMetadataBuf, err := snap.Get([]byte(ElectionsMetadataKey))
+	if err != nil {
+		return xerrors.Errorf("failed to get key '%s': %v", electionsMetadataBuf, err)
+	}
+
+	if len(electionsMetadataBuf) == 0 {
+		return nil
+	}
+
+	var electionsMetadata types.ElectionsMetadata
+
+	err = json.Unmarshal(electionsMetadataBuf, &electionsMetadata)
+	if err != nil {
+		return xerrors.Errorf("failed to unmarshal ElectionsMetadata: %v", err)
+	}
+
+	electionsMetadata.ElectionsIDs.Remove(election.ElectionID)
+
+	electionMetadataJSON, err := json.Marshal(electionsMetadata)
+	if err != nil {
+		return xerrors.Errorf("failed to marshal ElectionsMetadata: %v", err)
+	}
+
+	err = snap.Set([]byte(ElectionsMetadataKey), electionMetadataJSON)
+	if err != nil {
+		return xerrors.Errorf("failed to set value: %v", err)
+	}
+
+	return nil
+}
+
 // isMemberOf is a utility function to verify if a public key is associated to a
 // member of the roster or not. Returns nil if it's the case.
 func isMemberOf(roster authority.Authority, publicKey []byte) error {

@@ -22,6 +22,7 @@ import (
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/sign/schnorr"
 	"golang.org/x/xerrors"
 )
 
@@ -147,7 +148,7 @@ func (h *election) NewElectionVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !elecMD.ElectionsIDs.Contains(electionID) {
+	if elecMD.ElectionsIDs.Contains(electionID) < 0 {
 		http.Error(w, "the election does not exist", http.StatusNotFound)
 		return
 	}
@@ -214,7 +215,7 @@ func (h *election) EditElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !elecMD.ElectionsIDs.Contains(electionID) {
+	if elecMD.ElectionsIDs.Contains(electionID) < 0 {
 		http.Error(w, "the election does not exist", http.StatusNotFound)
 		return
 	}
@@ -453,6 +454,61 @@ func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// DeleteElection implements proxy.Proxy
+func (h *election) DeleteElection(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	if vars == nil || vars["electionID"] == "" {
+		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
+		return
+	}
+
+	electionID := vars["electionID"]
+
+	elecMD, err := h.getElectionsMetadata()
+	if err != nil {
+		http.Error(w, "failed to get election metadata", http.StatusNotFound)
+		return
+	}
+
+	if elecMD.ElectionsIDs.Contains(electionID) < 0 {
+		http.Error(w, "the election does not exist", http.StatusNotFound)
+		return
+	}
+
+	// auth should contain the hex-encoded signature on the hex-encoded election
+	// ID
+	auth := r.Header.Get("Authorization")
+
+	sig, err := hex.DecodeString(auth)
+	if err != nil {
+		BadRequestError(w, r, xerrors.Errorf("failed to decode auth: %v", err), nil)
+		return
+	}
+
+	err = schnorr.Verify(suite, h.pk, []byte(electionID), sig)
+	if err != nil {
+		ForbiddenError(w, r, xerrors.Errorf("signature verification failed: %v", err), nil)
+		return
+	}
+
+	deleteElection := types.DeleteElection{
+		ElectionID: electionID,
+	}
+
+	data, err := deleteElection.Serialize(h.context)
+	if err != nil {
+		InternalError(w, r, xerrors.Errorf("failed to marshal DeleteElection: %v", err), nil)
+		return
+	}
+
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdDeleteElection, evoting.ElectionArg, data)
+	if err != nil {
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 // waitForTxnID blocks until `ID` is included or `events` is closed.
 func (h *election) waitForTxnID(events <-chan ordering.Event, ID []byte) error {
 	for event := range events {
@@ -481,6 +537,11 @@ func (h *election) getElectionsMetadata() (types.ElectionsMetadata, error) {
 		// if the proof doesn't exist we assume there is no metadata, thus no
 		// elections has been created so far.
 		return md, nil
+	}
+
+	// if there is not election created yet the metadata will be empty
+	if len(proof.GetValue()) == 0 {
+		return types.ElectionsMetadata{}, nil
 	}
 
 	err = json.Unmarshal(proof.GetValue(), &md)

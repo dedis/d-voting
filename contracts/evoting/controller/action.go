@@ -164,6 +164,7 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 	router.HandleFunc("/evoting/elections/{electionID}", ep.Election).Methods("GET")
 	router.HandleFunc("/evoting/elections/{electionID}", ep.EditElection).Methods("PUT")
 	router.HandleFunc("/evoting/elections/{electionID}", eproxy.AllowCORS).Methods("OPTIONS")
+	router.HandleFunc("/evoting/elections/{electionID}", ep.DeleteElection).Methods("DELETE")
 	router.HandleFunc("/evoting/elections/{electionID}/vote", ep.NewElectionVote).Methods("POST")
 
 	router.NotFoundHandler = http.HandlerFunc(eproxy.NotFoundHandler)
