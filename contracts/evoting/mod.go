@@ -36,7 +36,7 @@ var (
 		[]string{"election"},
 	)
 
-	PromElectionShufflingInstances = prometheus.NewCounterVec(prometheus.CounterOpts{
+	PromElectionShufflingInstances = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "evoting_shufflings_total",
 		Help: "number of shuffling instances",
 	},

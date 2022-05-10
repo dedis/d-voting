@@ -390,7 +390,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 
 	election.ShuffleInstances = append(election.ShuffleInstances, currentShuffleInstance)
 
-	PromElectionShufflingInstances.WithLabelValues(election.ElectionID).Add(float64(len(election.ShuffleInstances)))
+	PromElectionShufflingInstances.WithLabelValues(election.ElectionID).Set(float64(len(election.ShuffleInstances)))
 
 	// in case we have enough shuffled ballots, we update the status
 	if len(election.ShuffleInstances) >= election.ShuffleThreshold {
@@ -575,6 +575,7 @@ func (e evotingCommand) registerPubshares(snap store.Snapshot, step execution.St
 	election.PubsharesUnits.Indexes = append(election.PubsharesUnits.Indexes, tx.Index)
 
 	nbrSubmissions := len(election.PubsharesUnits.Pubshares)
+	PromElectionPubShares.WithLabelValues(election.ElectionID).Add(float64(nbrSubmissions))
 
 	if nbrSubmissions >= election.ShuffleThreshold {
 		election.Status = types.PubSharesSubmitted

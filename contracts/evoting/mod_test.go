@@ -467,6 +467,7 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 
 	err = cmd.shuffleBallots(snap, step)
 	require.NoError(t, err)
+	require.Equal(t, float64(1), testutil.ToFloat64(PromElectionShufflingInstances))
 
 	// Valid Shuffle is over :
 	shuffleBallots.Round = k
@@ -496,6 +497,7 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
 	require.NoError(t, err)
+	require.Equal(t, float64(k+1), testutil.ToFloat64(PromElectionShufflingInstances))
 
 	// Check the shuffle is over:
 	electionTxIDBuff, err := hex.DecodeString(election.ElectionID)
@@ -512,7 +514,6 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 
 	require.Equal(t, types.ShuffledBallots, election.Status)
 	require.Equal(t, float64(types.ShuffledBallots), testutil.ToFloat64(PromElectionStatus))
-	require.Equal(t, float64(len(election.ShuffleInstances)), testutil.ToFloat64(PromElectionShufflingInstances))
 }
 
 func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
@@ -936,6 +937,8 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 
 	require.Equal(t, resultElection.PubsharesUnits.PubKeys[0], registerPubShares.PublicKey)
 	require.Equal(t, resultElection.PubsharesUnits.Indexes[0], registerPubShares.Index)
+
+	require.Equal(t, float64(len(election.PubsharesUnits.Indexes)), testutil.ToFloat64(PromElectionPubShares))
 }
 
 func TestCommand_DecryptBallots(t *testing.T) {
