@@ -10,6 +10,7 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"os/exec"
 	"reflect"
 	"strconv"
 	"strings"
@@ -33,10 +34,10 @@ var suite = suites.MustFind("Ed25519")
 
 // Check the shuffled votes versus the cast votes on a few nodes
 func TestScenario(t *testing.T) {
-	t.Run("Basic configuration", getScenarioTest(3, 3, 1))
+	t.Run("Basic configuration", getScenarioTest(5, 8, 1, []int{}))
 }
 
-func getScenarioTest(numNodes int, numVotes int, numElection int) func(*testing.T) {
+func getScenarioTest(numNodes int, numVotes int, numElection int, killNode []int) func(*testing.T) {
 	return func(t *testing.T) {
 
 		proxyList := make([]string, numNodes)
@@ -52,7 +53,7 @@ func getScenarioTest(numNodes int, numVotes int, numElection int) func(*testing.
 			t.Log("Starting worker", i)
 			wg.Add(1)
 
-			go startElectionProcess(&wg, numNodes, numVotes, proxyList, t, numElection)
+			go startElectionProcess(&wg, numNodes, numVotes, proxyList, t, numElection, killNode)
 			time.Sleep(2 * time.Second)
 
 		}
@@ -63,9 +64,9 @@ func getScenarioTest(numNodes int, numVotes int, numElection int) func(*testing.
 	}
 }
 
-func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray []string, t *testing.T, numElection int) {
+func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray []string, t *testing.T, numElection int, killNode []int) {
 	defer wg.Done()
-	rand.Seed(0)
+	rand.Seed(10)
 
 	const contentType = "application/json"
 	secretkeyBuf, err := hex.DecodeString("28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409")
@@ -135,7 +136,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
 	// ##################################### OPEN ELECTION #####################
-
+	time.Sleep(time.Second * 3)
 	randomproxy := proxyArray[rand.Intn(len(proxyArray))]
 	t.Logf("Open election send to proxy %v", randomproxy)
 
@@ -242,6 +243,23 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Logf("Status of the election : %v", electionStatus)
 	require.Equal(t, uint16(2), electionStatus)
 
+	if len(killNode) != 0 {
+		t.Log("start killing node")
+
+		for i := 0; i < len(killNode); i++ {
+			t.Logf("kill node : %v", killNode[i])
+
+			// given the port kill this node
+			cmd := exec.Command("fuser", "-k", strconv.Itoa(2000+killNode[i])+"/tcp")
+
+			err := cmd.Run()
+			if err != nil {
+				t.Log(err)
+			}
+		}
+
+	}
+
 	// ###################################### SHUFFLE BALLOTS ##################
 
 	t.Log("shuffle ballots")
@@ -253,16 +271,29 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	signed, err = createSignedRequest(secret, shuffleBallotsRequest)
 	require.NoError(t, err, "failed to set marshall types.SimpleElection : %v", err)
 
-	randomproxy = proxyArray[rand.Intn(len(proxyArray))]
-
 	timeTable := make([]float64, 3)
 	oldTime := time.Now()
+	for count := 0; count < 2; count++ {
 
-	req, err = http.NewRequest(http.MethodPut, randomproxy+"/evoting/services/shuffle/"+electionID, bytes.NewBuffer(signed))
-	require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
-	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
+		index := rand.Intn(len(proxyArray))
+		randomproxy = proxyArray[index]
 
-	resp, err = http.DefaultClient.Do(req)
+		t.Logf("choose proxy. %v", randomproxy)
+
+		req, err = http.NewRequest(http.MethodPut, randomproxy+"/evoting/services/shuffle/"+electionID, bytes.NewBuffer(signed))
+		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
+		//require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
+
+		resp, err = http.DefaultClient.Do(req)
+		if err == nil {
+			break
+		}
+		//remove the killed proxy
+		proxyArray[index] = proxyArray[len(proxyArray)-1]
+		proxyArray[len(proxyArray)-1] = ""
+		proxyArray = proxyArray[:len(proxyArray)-1]
+
+	}
 	require.NoError(t, err, "failed to execute the shuffle query: %v", err)
 
 	currentTime := time.Now()
@@ -276,7 +307,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Log("Response body: " + string(body))
 	resp.Body.Close()
 
-	getElectionResponse = getElectionInfo(proxyAddr1, electionID, t)
+	getElectionResponse = getElectionInfo(randomproxy, electionID, t)
 	electionStatus = getElectionResponse.Status
 
 	t.Logf("Status of the election : %v", electionStatus)
@@ -285,13 +316,24 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	// ###################################### REQUEST PUBLIC SHARES ############
 
 	t.Log("request public shares")
-
-	randomproxy = proxyArray[rand.Intn(len(proxyArray))]
 	oldTime = time.Now()
 
-	_, err = updateDKG(secret, randomproxy, electionID, "computePubshares", t)
-	require.NoError(t, err, "failed to set marshall types.SimpleElection : %v", err)
+	for count := 0; count < 2; count++ {
+		index := rand.Intn(len(proxyArray))
+		randomproxy = proxyArray[index]
+		t.Logf("my proxy is: %v", randomproxy)
+		_, err = updateDKG(secret, randomproxy, electionID, "computePubshares", t)
+		//require.NoError(t, err, "failed to set marshall types.SimpleElection : %v", err)
+		if err == nil {
+			break
+		}
+		//remove the killed proxy
+		proxyArray[index] = proxyArray[len(proxyArray)-1]
+		proxyArray[len(proxyArray)-1] = ""
+		proxyArray = proxyArray[:len(proxyArray)-1]
 
+	}
+	require.NoError(t, err, "failed to set marshall types.SimpleElection : %v", err)
 	currentTime = time.Now()
 	diff = currentTime.Sub(oldTime)
 	timeTable[1] = diff.Seconds()
@@ -300,7 +342,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 
 	time.Sleep(10 * time.Second)
 
-	getElectionResponse = getElectionInfo(proxyAddr1, electionID, t)
+	getElectionResponse = getElectionInfo(randomproxy, electionID, t)
 	electionStatus = getElectionResponse.Status
 
 	t.Logf("Status of the election : %v", electionStatus)
@@ -313,9 +355,20 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	randomproxy = proxyArray[rand.Intn(len(proxyArray))]
 	oldTime = time.Now()
 
-	_, err = updateElection(secret, randomproxy, electionID, "combineShares", t)
+	for count := 0; count < 3; count++ {
+		index := rand.Intn(len(proxyArray))
+		randomproxy = proxyArray[index]
+		_, err = updateElection(secret, randomproxy, electionID, "combineShares", t)
+		if err == nil {
+			break
+		}
+		//require.NoError(t, err, "failed to combine shares: %v", err)
+		//remove the killed proxy
+		proxyArray[index] = proxyArray[len(proxyArray)-1]
+		proxyArray[len(proxyArray)-1] = ""
+		proxyArray = proxyArray[:len(proxyArray)-1]
+	}
 	require.NoError(t, err, "failed to combine shares: %v", err)
-
 	currentTime = time.Now()
 	diff = currentTime.Sub(oldTime)
 	timeTable[2] = diff.Seconds()
@@ -324,7 +377,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 
 	time.Sleep(time.Second * 3)
 
-	getElectionResponse = getElectionInfo(proxyAddr1, electionID, t)
+	getElectionResponse = getElectionInfo(randomproxy, electionID, t)
 	electionStatus = getElectionResponse.Status
 
 	t.Logf("Status of the election : %v", electionStatus)
@@ -513,7 +566,6 @@ func updateDKG(secret kyber.Scalar, proxyAddr, electionIDHex, action string, t *
 	if err != nil {
 		return 0, xerrors.Errorf("failed to execute the query: %v", err)
 	}
-
 	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
 	return 0, nil
