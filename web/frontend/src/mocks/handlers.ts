@@ -12,6 +12,7 @@ import * as endpoints from '../components/utils/Endpoints';
 import {
   EditDKGActorBody,
   EditElectionBody,
+  NewDKGBody,
   NewElectionBody,
   NewElectionVoteBody,
   NewUserRole,
@@ -34,8 +35,8 @@ var mockUserDB = setupMockUserDB();
 
 const RESPONSE_TIME = 200;
 const CHANGE_STATUS_TIMER = 1000;
-const INIT_TIMER = 1000;
-const SETUP_TIMER = 2000;
+const INIT_TIMER = 4000;
+const SETUP_TIMER = 4000;
 const SHUFFLE_TIMER = 2000;
 const DECRYPT_TIMER = 8000;
 
@@ -179,6 +180,9 @@ export const handlers = [
   }),
 
   rest.post(endpoints.dkgActors, (req, res, ctx) => {
+    const body = req.body as NewDKGBody;
+    mockDKG.set(body.ElectionID, [NodeStatus.Initialized, false]);
+
     return res(ctx.status(200));
   }),
 
@@ -188,10 +192,8 @@ export const handlers = [
 
     switch (body.Action) {
       case Action.Setup:
-        // TODO bug here!
         console.log('updating node status to Setup');
         mockDKG.set(ElectionID as string, [NodeStatus.Setup, false]);
-        console.log(mockDKG);
         break;
       case Action.BeginDecryption:
         setTimeout(
@@ -217,18 +219,19 @@ export const handlers = [
 
     var status = NodeStatus.NotInitialized;
 
-    console.log(mockDKG);
-
     switch (election.Status) {
       case Status.Initial:
-        if (mockDKG.get(ElectionID as string)[0] === NodeStatus.NotInitialized) {
+        const currentNodeStatus = mockDKG.get(ElectionID as string)[0];
+        const response = mockDKG.get(ElectionID as string)[1];
+
+        if (currentNodeStatus === NodeStatus.Initialized && !response) {
           setTimeout(() => {
             mockDKG.set(ElectionID as string, [NodeStatus.Initialized, true]);
           }, INIT_TIMER);
-        } else {
+        }
+        if (currentNodeStatus === NodeStatus.Setup && !response) {
           console.log(mockDKG);
           status = NodeStatus.Initialized;
-          // If all nodes have been initialized mock a setup for all node
           setTimeout(() => {
             mockDKG.set(ElectionID as string, [NodeStatus.Setup, true]);
           }, SETUP_TIMER);
@@ -242,7 +245,17 @@ export const handlers = [
       status = mockDKG.get(ElectionID as string)[0];
     }
 
-    return res(ctx.status(200), ctx.json({ Status: status }));
+    if (mockDKG.get(ElectionID as string)[0] === NodeStatus.NotInitialized) {
+      return res(ctx.status(404), ctx.json('election does not exist'));
+    }
+
+    // mock a node initialization failure
+    // return res(
+    //   ctx.status(200),
+    //   ctx.json({ Status: NodeStatus.Failed, Error: { message: 'Failed to Initialize the node' } })
+    // );
+
+    return res(ctx.status(200), ctx.json({ Status: status, Error: {} }));
   }),
 
   rest.put(endpoints.editShuffle(':ElectionID'), async (req, res, ctx) => {

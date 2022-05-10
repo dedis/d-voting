@@ -2,60 +2,33 @@ import React, { FC, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { LightElectionInfo } from 'types/election';
-import Status from './Status';
+import { LightElectionInfo, Status } from 'types/election';
+import ElectionStatus from './ElectionStatus';
 import QuickAction from './QuickAction';
-import ElectionTableFilter from './ElectionTableFilter';
-import ResetFilterButton from './ResetFilterButton';
+import { ID } from 'types/configuration';
 
 type ElectionTableProps = {
   elections: LightElectionInfo[];
+  electionStatuses: Map<ID, Status>;
 };
 
 // Returns a table where each line corresponds to an election with
-// its name and status
+// its name, status and a quickAction if available
 const ELECTION_PER_PAGE = 10;
 
-const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
+const ElectionTable: FC<ElectionTableProps> = ({ elections, electionStatuses }) => {
   const { t } = useTranslation();
   const [pageIndex, setPageIndex] = useState(0);
   const [electionsToDisplay, setElectionsToDisplay] = useState<LightElectionInfo[]>([]);
-  const [statusToKeep, setStatusToKeep] = useState(null);
-
-  const displayAllElections = () => {
-    if (elections) {
-      const electToDisplay = [];
-      elections.forEach((election) => {
-        electToDisplay.push(election);
-      });
-
-      setElectionsToDisplay(electToDisplay);
-    }
-  };
-
-  useEffect(() => {
-    displayAllElections();
-  }, [elections]);
 
   const partitionArray = (array: LightElectionInfo[], size: number) =>
     array.map((v, i) => (i % size === 0 ? array.slice(i, i + size) : null)).filter((v) => v);
 
   useEffect(() => {
-    if (statusToKeep) {
-      const newElectionsToDisplay = elections.filter(
-        (election) => election.Status === statusToKeep
-      );
-      setElectionsToDisplay(newElectionsToDisplay);
-    } else {
-      displayAllElections();
+    if (elections !== null) {
+      setElectionsToDisplay(partitionArray(elections, ELECTION_PER_PAGE)[pageIndex]);
     }
-  }, [statusToKeep]);
-
-  useEffect(() => {
-    if (electionsToDisplay.length) {
-      setElectionsToDisplay(partitionArray(electionsToDisplay, ELECTION_PER_PAGE)[pageIndex]);
-    }
-  }, [pageIndex]);
+  }, [pageIndex, elections]);
 
   const handlePrevious = (): void => {
     if (pageIndex > 0) {
@@ -64,16 +37,10 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
   };
 
   const handleNext = (): void => {
-    if (partitionArray(electionsToDisplay, ELECTION_PER_PAGE).length > pageIndex + 1) {
+    if (partitionArray(elections, ELECTION_PER_PAGE).length > pageIndex + 1) {
       setPageIndex(pageIndex + 1);
     }
   };
-
-  useEffect(() => {
-    if (electionsToDisplay.length) {
-      setElectionsToDisplay(partitionArray(electionsToDisplay, ELECTION_PER_PAGE)[pageIndex]);
-    }
-  }, [pageIndex]);
 
   return (
     <div>
@@ -93,23 +60,29 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
             </tr>
           </thead>
           <tbody>
-            {electionsToDisplay.map((election) => (
-              <tr key={election.ElectionID} className="bg-white border-b hover:bg-gray-50 ">
-                <td scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                  <Link
-                    className="election-link text-gray-700 hover:text-indigo-500"
-                    to={`/elections/${election.ElectionID}`}>
-                    {election.Title}
-                  </Link>
-                </td>
-                <td className="px-6 py-4">
-                  <Status status={election.Status} />
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <QuickAction status={election.Status} electionID={election.ElectionID} />
-                </td>
-              </tr>
-            ))}
+            <>
+              {electionsToDisplay
+                ? electionsToDisplay.map((election) => (
+                    <tr key={election.ElectionID} className="bg-white border-b hover:bg-gray-50 ">
+                      <td
+                        scope="row"
+                        className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                        <Link
+                          className="election-link text-gray-700 hover:text-indigo-500"
+                          to={`/elections/${election.ElectionID}`}>
+                          {election.Title}
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4">
+                        <ElectionStatus status={electionStatuses.get(election.ElectionID)} />
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <QuickAction status={election.Status} electionID={election.ElectionID} />
+                      </td>
+                    </tr>
+                  ))
+                : null}
+            </>
           </tbody>
         </table>
         <nav
@@ -119,10 +92,9 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
             <p className="text-sm text-gray-700">
               {t('showing')} <span className="font-medium">{pageIndex + 1}</span> /{' '}
               <span className="font-medium">
-                {partitionArray(electionsToDisplay, ELECTION_PER_PAGE).length}
+                {partitionArray(elections, ELECTION_PER_PAGE).length}
               </span>{' '}
-              {t('of')} <span className="font-medium">{electionsToDisplay.length}</span>{' '}
-              {t('results')}
+              {t('of')} <span className="font-medium">{elections.length}</span> {t('results')}
             </p>
           </div>
           <div className="flex-1 flex justify-between sm:justify-end">
@@ -133,9 +105,7 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
               {t('previous')}
             </button>
             <button
-              disabled={
-                partitionArray(electionsToDisplay, ELECTION_PER_PAGE).length <= pageIndex + 1
-              }
+              disabled={partitionArray(elections, ELECTION_PER_PAGE).length <= pageIndex + 1}
               onClick={handleNext}
               className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
               {t('next')}
@@ -143,8 +113,6 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
           </div>
         </nav>
       </div>
-      <ElectionTableFilter setStatusToKeep={setStatusToKeep} />
-      <ResetFilterButton setStatusToKeep={setStatusToKeep} />
     </div>
   );
 };

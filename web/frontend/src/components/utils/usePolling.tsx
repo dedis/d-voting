@@ -5,20 +5,20 @@ const poll = (
   endpoint: RequestInfo,
   request: RequestInit,
   validate: (status: Status | NodeStatus) => boolean,
-  interval: number
+  interval: number,
+  isDKGRequest: boolean
 ) => {
-  console.log('Start poll...');
-
   const executePoll = async (resolve, reject) => {
-    console.log('- poll');
     try {
       const response = await fetch(endpoint, request);
       const result = await response.json();
-      console.log('Poll status: ' + result.Status + ' ' + validate(result.Status));
+
       if (!response.ok) {
         return reject(new Error(JSON.stringify(result)));
       } else if (validate(result.Status)) {
         return resolve(result);
+      } else if (isDKGRequest && (result.Status as NodeStatus) === NodeStatus.Failed) {
+        return reject(new Error(JSON.stringify(result.Error.message)));
       } else {
         setTimeout(executePoll, interval, resolve, reject);
       }

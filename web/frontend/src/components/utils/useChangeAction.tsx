@@ -5,21 +5,19 @@ import usePostCall from './usePostCall';
 import * as endpoints from './Endpoints';
 import { ID } from 'types/configuration';
 import { Action, NodeStatus, OngoingAction, Status } from 'types/election';
-import {
-  CancelButton,
-  CloseButton,
-  CombineButton,
-  DecryptButton,
-  InitializeButton,
-  NoActionAvailable,
-  OpenButton,
-  ResultButton,
-  SetupButton,
-  ShuffleButton,
-  VoteButton,
-} from './ActionButtons';
 import { poll } from './usePolling';
 import AddProxyAddressesModal from 'components/modal/AddProxyAddressesModal';
+import InitializeButton from './InitializeButton';
+import SetupButton from './SetupButton';
+import OpenButton from './OpenButton';
+import CloseButton from './CloseButton';
+import CancelButton from './CancelButton';
+import VoteButton from './VoteButton';
+import ShuffleButton from './ShuffleButton';
+import DecryptButton from './DecryptButton';
+import CombineButton from './CombnieButton';
+import ResultButton from './ResultButton';
+import NoActionAvailable from './NoActionAvailable';
 
 const useChangeAction = (
   status: Status,
@@ -30,13 +28,11 @@ const useChangeAction = (
   setTextModalError: (value: ((prevState: null) => '') | string) => void,
   setShowModalError: (willShow: boolean) => void,
   setGetError: (error: string) => void,
-  setHasInitialized: (init: boolean) => void,
   ongoingAction: OngoingAction,
   setOngoingAction: (action: OngoingAction) => void
 ) => {
   const { t } = useTranslation();
   const [isInitializing, setIsInitializing] = useState(false);
-  //const [hasInitialized, setHasInitialized] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
   const [showModalClose, setShowModalClose] = useState(false);
@@ -44,10 +40,9 @@ const useChangeAction = (
   const [showModalAddProxy, setShowModalAddProxy] = useState(false);
   const [userConfirmedClosing, setUserConfirmedClosing] = useState(false);
   const [userConfirmedCanceling, setUserConfirmedCanceling] = useState(false);
-  const [userConfirmedAddProxy, setUserConfirmedAddProx] = useState(false);
+  const [userConfirmedAddProxy, setUserConfirmedAddProxy] = useState(false);
   const [proxyAddresses, setProxyAddresses] = useState<Map<string, string>>(new Map());
   const [initializedNodes, setInitializedNodes] = useState<Map<string, boolean>>(new Map());
-  //const [ongoingAction, setOngoingAction] = useState(OngoingAction.None);
 
   const modalClose = (
     <ConfirmModal
@@ -73,7 +68,7 @@ const useChangeAction = (
       setProxyAddresses={setProxyAddresses}
       showModal={showModalAddProxy}
       setShowModal={setShowModalAddProxy}
-      setUserConfirmedAction={setUserConfirmedAddProx}
+      setUserConfirmedAction={setUserConfirmedAddProxy}
     />
   );
   const [postError, setPostError] = useState(t('operationFailure') as string);
@@ -114,8 +109,10 @@ const useChangeAction = (
     statusToMatch: Status | NodeStatus,
     previousStatus: Status,
     nextStatus: Status,
-    signal: AbortSignal
+    signal: AbortSignal,
+    isDKGRequest: boolean
   ) => {
+    // polling interval
     const interval = 1000;
     const request = {
       method: 'GET',
@@ -138,14 +135,14 @@ const useChangeAction = (
         if (setGetError !== null && setGetError !== undefined) {
           setGetError(error.message);
         }
-
+        setOngoingAction(OngoingAction.None);
         setStatus(previousStatus);
       }
     };
 
     const match = (s: Status | NodeStatus) => s === statusToMatch;
 
-    poll(endpoint, request, match, interval)
+    poll(endpoint, request, match, interval, isDKGRequest)
       .then(onFullFilled, onRejected)
       .catch((e) => {
         setStatus(previousStatus);
@@ -154,7 +151,7 @@ const useChangeAction = (
       });
   };
 
-  // TODO poll on every Status
+  // Start to poll when there is an ongoingAction
   useEffect(() => {
     // use an abortController to stop polling when the component is unmounted
     const abortController = new AbortController();
@@ -167,7 +164,8 @@ const useChangeAction = (
           NodeStatus.Initialized,
           Status.Initial,
           Status.Initialized,
-          signal
+          signal,
+          true
         );
         break;
       case OngoingAction.SettingUp:
@@ -176,18 +174,18 @@ const useChangeAction = (
           NodeStatus.Setup,
           Status.Initialized,
           Status.Setup,
-          signal
+          signal,
+          true
         );
         break;
       case OngoingAction.Opening:
         pollStatus(
           endpoints.election(electionID),
           Status.Open,
-          // TODO: works only with the mock !
-          // Will go back to Status.Initial using the real backend
           Status.Setup,
           Status.Open,
-          signal
+          signal,
+          false
         );
         break;
       case OngoingAction.Closing:
@@ -196,7 +194,8 @@ const useChangeAction = (
           Status.Closed,
           Status.Open,
           Status.Closed,
-          signal
+          signal,
+          false
         );
         break;
       case OngoingAction.Canceling:
@@ -205,7 +204,8 @@ const useChangeAction = (
           Status.Canceled,
           Status.Open,
           Status.Canceled,
-          signal
+          signal,
+          false
         );
         break;
       case OngoingAction.Shuffling:
@@ -214,7 +214,8 @@ const useChangeAction = (
           Status.ShuffledBallots,
           Status.Closed,
           Status.ShuffledBallots,
-          signal
+          signal,
+          false
         );
         break;
       case OngoingAction.Decrypting:
@@ -223,7 +224,8 @@ const useChangeAction = (
           Status.PubSharesSubmitted,
           Status.ShuffledBallots,
           Status.PubSharesSubmitted,
-          signal
+          signal,
+          false
         );
         break;
       case OngoingAction.Combining:
@@ -232,7 +234,8 @@ const useChangeAction = (
           Status.ResultAvailable,
           Status.PubSharesSubmitted,
           Status.ResultAvailable,
-          signal
+          signal,
+          false
         );
         setResultAvailable(true);
         break;
@@ -309,13 +312,11 @@ const useChangeAction = (
             initNodes.set(address, true);
             setInitializedNodes(initNodes);
 
-            // All the nodes have been initialized
+            // All post request to initialize the nodes have been sent
             if (!Array.from(initializedNodes.values()).includes(false)) {
               setIsInitializing(false);
-
-              // TODO This should persist
-              setHasInitialized(true);
               setOngoingAction(OngoingAction.Initializing);
+              setUserConfirmedAddProxy(false);
             }
           } else {
             setShowModalError(true);
@@ -341,8 +342,6 @@ const useChangeAction = (
     setIsInitializing(true);
   };
 
-  // Setup one of the node and then start polling to know when all the nodes
-  // have been setup
   const handleSetup = async () => {
     const setupSuccess = await electionUpdate(Action.Setup, endpoints.editDKGActors(electionID));
 
@@ -393,7 +392,6 @@ const useChangeAction = (
       setOngoingAction(OngoingAction.Decrypting);
     } else {
       setShowModalError(true);
-      //setIsDecrypting(false);
     }
     setPostError(null);
   };
@@ -412,7 +410,6 @@ const useChangeAction = (
   };
 
   const getAction = () => {
-    console.log(ongoingAction);
     switch (status) {
       case Status.Initial:
         return (

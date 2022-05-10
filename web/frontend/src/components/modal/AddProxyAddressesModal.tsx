@@ -31,7 +31,6 @@ const AddProxyAddressesModal: FC<AddProxyAddressesModalProps> = ({
 
   const confirmChoice = () => {
     setError(null);
-    console.log(proxyAddresses);
     if (proxyAddresses && !Array.from(proxyAddresses.values()).includes('')) {
       setProxyAddresses(proxyAddresses);
       setUserConfirmedAction(true);
@@ -46,7 +45,6 @@ const AddProxyAddressesModal: FC<AddProxyAddressesModalProps> = ({
     newAddresses.set(node, e.target.value);
 
     setProxyAddresses(newAddresses);
-    console.log(proxyAddresses);
   };
 
   const proxyInputField = () => {

@@ -44,8 +44,8 @@ export const enum Action {
 }
 
 export const enum OngoingAction {
-  None = 0,
-  Initializing = 1,
+  None,
+  Initializing,
   SettingUp,
   Opening,
   Closing,
@@ -94,6 +94,11 @@ interface DownloadedResults {
   Results?: { Candidate: string; Percentage: string }[];
 }
 
+interface DKGInfo {
+  Status: NodeStatus;
+  Error: { Title: string; Code: number; Message: string; Args: string[] };
+}
+
 export type {
   LightElectionInfo,
   ElectionInfo,
@@ -102,4 +107,5 @@ export type {
   TextResults,
   SelectResults,
   DownloadedResults,
+  DKGInfo,
 };

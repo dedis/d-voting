@@ -50,7 +50,50 @@ const setupMockElection = () => {
   });
 
   mockResults.set(electionID2, [mockElectionResult21, mockElectionResult22, mockElectionResult23]);
-  mockDKG.set(electionID2, [NodeStatus.NotInitialized, false]);
+  mockDKG.set(electionID2, [NodeStatus.Initialized, true]);
+
+  for (let j = 0; j < 5; j++) {
+    let electionID11 = '36kSJ0t' + (j as number);
+    let electionID22 = 'Bnq9gLm' + (j as number);
+
+    mockElections.set(electionID11, {
+      ElectionID: electionID11,
+      Status: j as Status,
+      Pubkey: 'XL4V6EMIICW',
+      Result: [],
+      Roster: mockRoster,
+      Configuration: unmarshalConfig(mockElection1),
+      BallotSize: 174,
+      ChunksPerBallot: 6,
+    });
+
+    mockResults.set(electionID11, [mockElectionResult11, mockElectionResult12]);
+
+    mockElections.set(electionID22, {
+      ElectionID: electionID22,
+      Status: j as Status,
+      Pubkey: 'XL4V6EMIICW',
+      Result: [mockElectionResult21, mockElectionResult22, mockElectionResult23],
+      Roster: mockRoster,
+      Configuration: unmarshalConfig(mockElection2),
+      BallotSize: 174,
+      ChunksPerBallot: 6,
+    });
+
+    mockResults.set(electionID22, [
+      mockElectionResult21,
+      mockElectionResult22,
+      mockElectionResult23,
+    ]);
+
+    if (j >= Status.Open) {
+      mockDKG.set(electionID11, [NodeStatus.Initialized, true]);
+      mockDKG.set(electionID22, [NodeStatus.Initialized, true]);
+    } else {
+      mockDKG.set(electionID11, [NodeStatus.NotInitialized, false]);
+      mockDKG.set(electionID22, [NodeStatus.NotInitialized, false]);
+    }
+  }
 
   return { mockElections, mockResults, mockDKG };
 };

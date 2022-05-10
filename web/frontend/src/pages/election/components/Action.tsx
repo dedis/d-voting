@@ -16,7 +16,6 @@ type ActionProps = {
   setGetError: (error: string) => void;
   setTextModalError: (text: string) => void;
   setShowModalError: (show: boolean) => void;
-  setHasInitialized: (init: boolean) => void;
   ongoingAction: OngoingAction;
   setOngoingAction: (action: OngoingAction) => void;
 };
@@ -30,7 +29,6 @@ const Action: FC<ActionProps> = ({
   setGetError,
   setTextModalError,
   setShowModalError,
-  setHasInitialized,
   ongoingAction,
   setOngoingAction,
 }) => {
@@ -45,7 +43,6 @@ const Action: FC<ActionProps> = ({
     setTextModalError,
     setShowModalError,
     setGetError,
-    setHasInitialized,
     ongoingAction,
     setOngoingAction
   );

@@ -5,11 +5,13 @@ import { useTranslation } from 'react-i18next';
 
 import useElection from 'components/utils/useElection';
 import useGetResults from 'components/utils/useGetResults';
-import { OngoingAction, Status } from 'types/election';
-import Action from './components/Action';
+import { NodeStatus, OngoingAction, Status } from 'types/election';
 import Modal from 'components/modal/Modal';
 import StatusTimeline from './components/StatusTimeline';
 import Loading from 'pages/Loading';
+import * as endpoints from '../../components/utils/Endpoints';
+import useFetchCall from '../../components/utils/useFetchCall';
+import Action from './components/Action';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
@@ -26,10 +28,17 @@ const ElectionShow: FC = () => {
   const [textModalError, setTextModalError] = useState(null);
   const [showModalError, setShowModalError] = useState(false);
 
-  const [hasInitialized, setHasInitialized] = useState(false);
   const [ongoingAction, setOngoingAction] = useState(OngoingAction.None);
+  const request = {
+    method: 'GET',
+  };
+  const [dkgStatus, dkgLoading, dkgError] = useFetchCall(
+    endpoints.editDKGActors(electionId),
+    request
+  );
+  const ongoingItem = 'ongoingAction' + electionID;
 
-  //Fetch result when available after a status change
+  // Fetch result when available after a status change
   useEffect(() => {
     if (status === Status.ResultAvailable && isResultAvailable) {
       getResults(electionID, setError, setResult, setIsResultSet);
@@ -46,7 +55,48 @@ const ElectionShow: FC = () => {
     }
   }, [getError, setTextModalError]);
 
-  console.log('ongoingAction: ' + ongoingAction);
+  // Clean up the storage when it's not needed anymore
+  useEffect(() => {
+    if (status === Status.ResultAvailable) {
+      window.localStorage.removeItem(ongoingItem);
+    }
+  }, [status]);
+
+  // Get the ongoingAction from the storage
+  useEffect(() => {
+    const storedOngoingAction = JSON.parse(window.localStorage.getItem(ongoingItem));
+
+    if (storedOngoingAction) {
+      setOngoingAction(storedOngoingAction);
+    }
+  }, []);
+
+  // Set the ongoingAction in the storage
+  useEffect(() => {
+    window.localStorage.setItem(ongoingItem, ongoingAction.toString());
+  }, [ongoingAction]);
+
+  // Fetch the status of the nodes
+  useEffect(() => {
+    if (dkgError !== null) {
+      // Ignore error 404 when node is not initialized
+      if (!dkgError.message.includes('election does not exist')) {
+        setTextModalError(dkgError.message + ' show');
+        setShowModalError(true);
+      }
+    } else {
+      if (status == Status.Initial) {
+        if ((dkgStatus.Status as NodeStatus) === NodeStatus.Initialized) {
+          setStatus(Status.Initialized);
+        }
+        if ((dkgStatus.Status as NodeStatus) === NodeStatus.Setup) {
+          setStatus(Status.Setup);
+        }
+        // Status Failed is handled by useChangeAction
+      }
+    }
+  }, [dkgStatus, status, dkgError, ongoingAction]);
+
   return (
     <div className="w-[60rem] font-sans px-4 py-4">
       {!loading ? (
@@ -57,7 +107,7 @@ const ElectionShow: FC = () => {
             textModal={textModalError === null ? '' : textModalError}
             buttonRightText={t('close')}
           />
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+          <h2 className="pt-8 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
             {configObj.MainTitle}
           </h2>
 
@@ -81,7 +131,6 @@ const ElectionShow: FC = () => {
                 setGetError={setGetError}
                 setTextModalError={setTextModalError}
                 setShowModalError={setShowModalError}
-                setHasInitialized={setHasInitialized}
                 ongoingAction={ongoingAction}
                 setOngoingAction={setOngoingAction}
               />
