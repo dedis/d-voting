@@ -81,8 +81,8 @@ const (
 	// CmdCancelElection is the command to cancel an election
 	CmdCancelElection Command = "CANCEL_ELECTION"
 
-	// CmdDelteElection is the command to delete an election
-	CmdDelteElection Command = "DELETE_ELECTION"
+	// CmdDeleteElection is the command to delete an election
+	CmdDeleteElection Command = "DELETE_ELECTION"
 )
 
 // NewCreds creates new credentials for a evoting contract execution. We might
@@ -205,7 +205,7 @@ func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 		if err != nil {
 			return xerrors.Errorf("failed to cancel election: %v", err)
 		}
-	case CmdDelteElection:
+	case CmdDeleteElection:
 		err := c.cmd.deleteElection(snap, step)
 		if err != nil {
 			return xerrors.Errorf("failed to delete election: %v", err)

@@ -278,7 +278,7 @@ Return:
 | Input   |                                   |
 | Headers | {Authorization: <token>}          |
 
-The <token> value must be the hex-encoded signature on the hex-encoded
+The <token> value must be the hex-encoded signature of the hex-encoded
 electionID:
 
 ```

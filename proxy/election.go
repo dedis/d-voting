@@ -502,7 +502,7 @@ func (h *election) DeleteElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdDelteElection, evoting.ElectionArg, data)
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdDeleteElection, evoting.ElectionArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return

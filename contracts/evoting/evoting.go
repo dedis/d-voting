@@ -689,7 +689,7 @@ func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step)
 	return nil
 }
 
-// deleteElection implements commands. It performs the DELETE_ELECTiON command
+// deleteElection implements commands. It performs the DELETE_ELECTION command
 func (e evotingCommand) deleteElection(snap store.Snapshot, step execution.Step) error {
 
 	msg, err := e.getTransaction(step.Current)
