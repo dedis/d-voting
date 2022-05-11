@@ -15,6 +15,9 @@ export const editDKGActors = (ElectionID: string) => `/evoting/services/dkg/acto
 // Init nodes
 export const dkgActors = `${process.env.REACT_APP_PROXY}/evoting/services/dkg/actors`;
 
+export const getDKGActors = (ElectionID: string) =>
+  `${process.env.REACT_APP_PROXY}/evoting/services/dkg/actors/${ElectionID}`;
+
 // public information can be directly fetched from dela nodes
 export const election = (ElectionID: string) =>
   `${process.env.REACT_APP_PROXY}/evoting/elections/${ElectionID}`;

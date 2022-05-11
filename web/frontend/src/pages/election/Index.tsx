@@ -56,7 +56,7 @@ const ElectionIndex: FC = () => {
       };
       const fetchData = async (election: LightElectionInfo) => {
         try {
-          const response = await fetch(endpoints.editDKGActors(election.ElectionID), req);
+          const response = await fetch(endpoints.getDKGActors(election.ElectionID), req);
           if (!response.ok) {
             // The node is not initialized
             if (response.status === 404) {

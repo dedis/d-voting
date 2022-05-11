@@ -33,7 +33,7 @@ const ElectionShow: FC = () => {
     method: 'GET',
   };
   const [dkgStatus, dkgLoading, dkgError] = useFetchCall(
-    endpoints.editDKGActors(electionId),
+    endpoints.getDKGActors(electionId),
     request
   );
   const ongoingItem = 'ongoingAction' + electionID;
