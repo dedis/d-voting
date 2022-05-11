@@ -101,6 +101,8 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 		ShuffleThreshold: threshold.ByzantineThreshold(roster.Len()),
 	}
 
+	PromElectionStatus.WithLabelValues(election.ElectionID).Set(float64(election.Status))
+
 	electionBuf, err := election.Serialize(e.context)
 	if err != nil {
 		return xerrors.Errorf("failed to marshal Election : %v", err)
@@ -168,6 +170,7 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) e
 	}
 
 	election.Status = types.Open
+	PromElectionStatus.WithLabelValues(election.ElectionID).Set(float64(election.Status))
 
 	if election.Pubkey != nil {
 		return xerrors.Errorf("pubkey is already set: %s", election.Pubkey)
@@ -236,6 +239,8 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
+
+	PromElectionBallots.WithLabelValues(election.ElectionID).Set(float64(len(election.Suffragia.Ciphervotes)))
 
 	return nil
 }
@@ -385,9 +390,12 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 
 	election.ShuffleInstances = append(election.ShuffleInstances, currentShuffleInstance)
 
+	PromElectionShufflingInstances.WithLabelValues(election.ElectionID).Set(float64(len(election.ShuffleInstances)))
+
 	// in case we have enough shuffled ballots, we update the status
 	if len(election.ShuffleInstances) >= election.ShuffleThreshold {
 		election.Status = types.ShuffledBallots
+		PromElectionStatus.WithLabelValues(election.ElectionID).Set(float64(election.Status))
 	}
 
 	electionBuf, err := election.Serialize(e.context)
@@ -463,6 +471,7 @@ func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) 
 	}
 
 	election.Status = types.Closed
+	PromElectionStatus.WithLabelValues(election.ElectionID).Set(float64(election.Status))
 
 	electionBuf, err := election.Serialize(e.context)
 	if err != nil {
@@ -547,28 +556,33 @@ func (e evotingCommand) registerPubshares(snap store.Snapshot, step execution.St
 		}
 	}
 
+	units := &election.PubsharesUnits
+
 	// Check the node hasn't made any other submissions
-	for _, key := range election.PubsharesUnits.PubKeys {
+	for _, key := range units.PubKeys {
 		if bytes.Equal(key, tx.PublicKey) {
 			return xerrors.Errorf("'%x' already made a submission", key)
 		}
 	}
 
-	for _, index := range election.PubsharesUnits.Indexes {
+	for _, index := range units.Indexes {
 		if index == tx.Index {
 			return xerrors.Errorf("a submission has already been made for index %d", index)
 		}
 	}
 
 	// Add the pubshares to the election
-	election.PubsharesUnits.Pubshares = append(election.PubsharesUnits.Pubshares, tx.Pubshares)
-	election.PubsharesUnits.PubKeys = append(election.PubsharesUnits.PubKeys, tx.PublicKey)
-	election.PubsharesUnits.Indexes = append(election.PubsharesUnits.Indexes, tx.Index)
+	units.Pubshares = append(units.Pubshares, tx.Pubshares)
+	units.PubKeys = append(units.PubKeys, tx.PublicKey)
+	units.Indexes = append(units.Indexes, tx.Index)
 
-	nbrSubmissions := len(election.PubsharesUnits.Pubshares)
+	nbrSubmissions := len(units.Pubshares)
+
+	PromElectionPubShares.WithLabelValues(election.ElectionID).Set(float64(nbrSubmissions))
 
 	if nbrSubmissions >= election.ShuffleThreshold {
 		election.Status = types.PubSharesSubmitted
+		PromElectionStatus.WithLabelValues(election.ElectionID).Set(float64(election.Status))
 	}
 
 	electionBuf, err := election.Serialize(e.context)
@@ -642,6 +656,7 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 	election.DecryptedBallots = decryptedBallots
 
 	election.Status = types.ResultAvailable
+	PromElectionStatus.WithLabelValues(election.ElectionID).Set(float64(election.Status))
 
 	electionBuf, err := election.Serialize(e.context)
 	if err != nil {
@@ -675,6 +690,7 @@ func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step)
 	}
 
 	election.Status = types.Canceled
+	PromElectionStatus.WithLabelValues(election.ElectionID).Set(float64(election.Status))
 
 	electionBuf, err := election.Serialize(e.context)
 	if err != nil {

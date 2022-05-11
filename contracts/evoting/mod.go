@@ -1,8 +1,10 @@
 package evoting
 
 import (
+	dvoting "github.com/dedis/d-voting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/dkg"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/execution"
 	"go.dedis.ch/dela/core/execution/native"
@@ -17,6 +19,36 @@ import (
 
 	// Register the JSON format for the election
 	_ "github.com/dedis/d-voting/contracts/evoting/json"
+)
+
+var (
+	PromElectionStatus = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "dvoting_status",
+		Help: "status of election",
+	},
+		[]string{"election"},
+	)
+
+	PromElectionBallots = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "dvoting_ballots_total",
+		Help: "number of cast ballots",
+	},
+		[]string{"election"},
+	)
+
+	PromElectionShufflingInstances = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "dvoting_shufflings_total",
+		Help: "number of shuffling instances",
+	},
+		[]string{"election"},
+	)
+
+	PromElectionPubShares = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "dvoting_pubshares_total",
+		Help: "published public shares",
+	},
+		[]string{"election"},
+	)
 )
 
 const (
@@ -215,4 +247,12 @@ func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 	}
 
 	return nil
+}
+
+func init() {
+	dvoting.PromCollectors = append(dvoting.PromCollectors,
+		PromElectionStatus,
+		PromElectionBallots,
+		PromElectionShufflingInstances,
+		PromElectionPubShares)
 }
