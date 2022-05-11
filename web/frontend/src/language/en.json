@@ -38,6 +38,7 @@
     "add": "Add",
     "exportElecJSON": "Export as JSON",
     "delete": "Delete",
+    "combine": "Combine shares",
     "createElec": "Create election",
     "clearElec": "Clear election",
     "upload": "Choose a json file from your computer:",

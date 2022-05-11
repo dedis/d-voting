@@ -158,6 +158,14 @@ export const handlers = [
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
+  rest.delete(endpoints.editElection(':ElectionID'), async (req, res, ctx) => {
+    const { ElectionID } = req.params;
+    mockElections.delete(ElectionID as string);
+    await new Promise((r) => setTimeout(r, 1000));
+
+    return res(ctx.status(200), ctx.text('Election deleted'));
+  }),
+
   rest.put(endpoints.editShuffle(':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
     mockElections.set(ElectionID as string, {
