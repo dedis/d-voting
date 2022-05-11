@@ -49,13 +49,6 @@ var (
 	},
 		[]string{"election"},
 	)
-
-	PromDkgStatus = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "evoting_dkg_status",
-		Help: "status of DKG",
-	},
-		[]string{"election"},
-	)
 )
 
 const (
@@ -251,6 +244,5 @@ func init() {
 		PromElectionStatus,
 		PromElectionBallots,
 		PromElectionShufflingInstances,
-		PromElectionPubShares,
-		PromDkgStatus)
+		PromElectionPubShares)
 }
