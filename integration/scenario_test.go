@@ -135,7 +135,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
 	// ##################################### OPEN ELECTION #####################
-
+	time.Sleep(time.Second * 5)
 	randomproxy := proxyArray[rand.Intn(len(proxyArray))]
 	t.Logf("Open election send to proxy %v", randomproxy)
 
@@ -144,7 +144,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	// ##################################### GET ELECTION INFO #################
 
 	proxyAddr1 := proxyArray[0]
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * 5)
 
 	getElectionResponse := getElectionInfo(proxyAddr1, electionID, t)
 	electionpubkey := getElectionResponse.Pubkey
@@ -491,7 +491,7 @@ func updateElection(secret kyber.Scalar, proxyAddr, electionIDHex, action string
 		return 0, xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
 
-	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
+	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp)
 
 	return 0, nil
 }
