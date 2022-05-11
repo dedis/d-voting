@@ -43,7 +43,7 @@ var (
 		[]string{"election"},
 	)
 
-	PromElectionPubShares = prometheus.NewCounterVec(prometheus.CounterOpts{
+	PromElectionPubShares = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "dvoting_pubshares_total",
 		Help: "published public shares",
 	},

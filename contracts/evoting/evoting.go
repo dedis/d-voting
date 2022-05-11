@@ -578,7 +578,7 @@ func (e evotingCommand) registerPubshares(snap store.Snapshot, step execution.St
 
 	nbrSubmissions := len(units.Pubshares)
 
-	PromElectionPubShares.WithLabelValues(election.ElectionID).Add(float64(nbrSubmissions))
+	PromElectionPubShares.WithLabelValues(election.ElectionID).Set(float64(nbrSubmissions))
 
 	if nbrSubmissions >= election.ShuffleThreshold {
 		election.Status = types.PubSharesSubmitted

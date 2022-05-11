@@ -924,7 +924,7 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 
 	err = cmd.registerPubshares(snap, makeStep(t, ElectionArg, string(data)))
 	require.NoError(t, err)
-	require.Equal(t, float64(2), testutil.ToFloat64(PromElectionPubShares))
+	require.Equal(t, float64(1), testutil.ToFloat64(PromElectionPubShares))
 
 	res, err := snap.Get(dummyElectionIDBuff)
 	require.NoError(t, err)
