@@ -30,6 +30,16 @@ const { mockElections, mockResults } = setupMockElection();
 
 var mockUserDB = setupMockUserDB();
 
+const checkUserRole = (roles: ROLE[]): boolean => {
+  const id = sessionStorage.getItem('id');
+  const userRole = mockUserDB.find(({ sciper }) => sciper === id).role;
+
+  if (roles.includes(userRole)) {
+    return true;
+  }
+  return false;
+};
+
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, async (req, res, ctx) => {
     const isLogged = sessionStorage.getItem('is-authenticated') === 'true';
@@ -91,12 +101,9 @@ export const handlers = [
   rest.post(endpoints.newElection, async (req, res, ctx) => {
     const body = req.body as NewElectionBody;
 
-    const id = sessionStorage.getItem('id');
-    const userRole = mockUserDB.find(({ sciper }) => sciper === id).role;
-
     await new Promise((r) => setTimeout(r, 1000));
 
-    if (userRole !== ROLE.Admin && userRole !== ROLE.Operator) {
+    if (!checkUserRole([ROLE.Admin, ROLE.Operator])) {
       return res(
         ctx.status(403),
         ctx.json({ message: 'You are not authorized to create an election' })
@@ -142,17 +149,15 @@ export const handlers = [
   rest.put(endpoints.editElection(':ElectionID'), async (req, res, ctx) => {
     const body = req.body as EditElectionBody;
     const { ElectionID } = req.params;
-    const id = sessionStorage.getItem('id');
-    const userRole = mockUserDB.find(({ sciper }) => sciper === id).role;
 
     let Status = STATUS.Initial;
 
     await new Promise((r) => setTimeout(r, 1000));
 
-    if (userRole !== ROLE.Admin && userRole !== ROLE.Operator) {
+    if (!checkUserRole([ROLE.Admin, ROLE.Operator])) {
       return res(
         ctx.status(403),
-        ctx.json({ message: 'You are not authorized to create an election' })
+        ctx.json({ message: 'You are not authorized to update an election' })
       );
     }
 
@@ -182,15 +187,13 @@ export const handlers = [
 
   rest.put(endpoints.editShuffle(':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
-    const id = sessionStorage.getItem('id');
-    const userRole = mockUserDB.find(({ sciper }) => sciper === id).role;
 
     await new Promise((r) => setTimeout(r, 1000));
 
-    if (userRole !== ROLE.Admin && userRole !== ROLE.Operator) {
+    if (!checkUserRole([ROLE.Admin, ROLE.Operator])) {
       return res(
         ctx.status(403),
-        ctx.json({ message: 'You are not authorized to create an election' })
+        ctx.json({ message: 'You are not authorized to update an election' })
       );
     }
 
@@ -204,15 +207,13 @@ export const handlers = [
 
   rest.put(endpoints.editDKGActors(':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
-    const id = sessionStorage.getItem('id');
-    const userRole = mockUserDB.find(({ sciper }) => sciper === id).role;
 
     await new Promise((r) => setTimeout(r, 1000));
 
-    if (userRole !== ROLE.Admin && userRole !== ROLE.Operator) {
+    if (!checkUserRole([ROLE.Admin, ROLE.Operator])) {
       return res(
         ctx.status(403),
-        ctx.json({ message: 'You are not authorized to create an election' })
+        ctx.json({ message: 'You are not authorized to update an election' })
       );
     }
 
@@ -226,15 +227,12 @@ export const handlers = [
   }),
 
   rest.get(endpoints.ENDPOINT_USER_RIGHTS, async (req, res, ctx) => {
-    const id = sessionStorage.getItem('id');
-    const userRole = mockUserDB.find(({ sciper }) => sciper === id).role;
-
     await new Promise((r) => setTimeout(r, 1000));
 
-    if (userRole !== ROLE.Admin) {
+    if (!checkUserRole([ROLE.Admin])) {
       return res(
         ctx.status(403),
-        ctx.json({ message: 'You are not authorized to create an election' })
+        ctx.json({ message: 'You are not authorized to get users rights' })
       );
     }
 
@@ -243,16 +241,11 @@ export const handlers = [
 
   rest.post(endpoints.ENDPOINT_ADD_ROLE, async (req, res, ctx) => {
     const body = req.body as NewUserRole;
-    const id = sessionStorage.getItem('id');
-    const userRole = mockUserDB.find(({ sciper }) => sciper === id).role;
 
     await new Promise((r) => setTimeout(r, 1000));
 
-    if (userRole !== ROLE.Admin) {
-      return res(
-        ctx.status(403),
-        ctx.json({ message: 'You are not authorized to create an election' })
-      );
+    if (!checkUserRole([ROLE.Admin])) {
+      return res(ctx.status(403), ctx.json({ message: 'You are not authorized to add a role' }));
     }
 
     mockUserDB.push({ id: uid(), ...body });
@@ -262,16 +255,10 @@ export const handlers = [
 
   rest.post(endpoints.ENDPOINT_REMOVE_ROLE, async (req, res, ctx) => {
     const body = req.body as RemoveUserRole;
-    const id = sessionStorage.getItem('id');
-    const userRole = mockUserDB.find(({ sciper }) => sciper === id).role;
-
     await new Promise((r) => setTimeout(r, 1000));
 
-    if (userRole !== ROLE.Admin) {
-      return res(
-        ctx.status(403),
-        ctx.json({ message: 'You are not authorized to create an election' })
-      );
+    if (!checkUserRole([ROLE.Admin])) {
+      return res(ctx.status(403), ctx.json({ message: 'You are not authorized to remove a role' }));
     }
     mockUserDB = mockUserDB.filter((user) => user.sciper !== body.sciper);
 

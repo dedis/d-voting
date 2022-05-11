@@ -30,7 +30,13 @@ import NotFound from './NotFound';
 import { ROLE } from 'types/userRole';
 
 const App = () => {
-  const RequireAuth = ({ children, roles }: { children: any; roles?: string[] }): any => {
+  const RequireAuth = ({
+    children,
+    roles,
+  }: {
+    children: JSX.Element;
+    roles?: string[];
+  }): JSX.Element => {
     let location = useLocation();
 
     const authCtx = useContext(AuthContext);
