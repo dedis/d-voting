@@ -240,7 +240,7 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
 
-	PromElectionBallots.WithLabelValues(election.ElectionID).Inc()
+	PromElectionBallots.WithLabelValues(election.ElectionID).Set(float64(len(election.Suffragia.Ciphervotes)))
 
 	return nil
 }

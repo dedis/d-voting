@@ -29,7 +29,7 @@ var (
 		[]string{"election"},
 	)
 
-	PromElectionBallots = prometheus.NewCounterVec(prometheus.CounterOpts{
+	PromElectionBallots = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "evoting_ballots_total",
 		Help: "number of cast ballots",
 	},

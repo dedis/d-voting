@@ -305,7 +305,7 @@ func TestCommand_CastVote(t *testing.T) {
 	require.True(t, castVote.Ballot.Equal(election.Suffragia.Ciphervotes[0]))
 
 	require.Equal(t, castVote.UserID, election.Suffragia.UserIDs[0])
-	require.Equal(t, float64(1), testutil.ToFloat64(PromElectionBallots))
+	require.Equal(t, float64(len(election.Suffragia.Ciphervotes)), testutil.ToFloat64(PromElectionBallots))
 }
 
 func TestCommand_CloseElection(t *testing.T) {
