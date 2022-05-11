@@ -18,7 +18,8 @@ import {
 import DownloadButton from 'components/buttons/DownloadButton';
 import { useTranslation } from 'react-i18next';
 import saveAs from 'file-saver';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import TextButton from '../../components/buttons/TextButton';
 import useElection from 'components/utils/useElection';
 import { useConfigurationOnly } from 'components/utils/useConfiguration';
@@ -32,6 +33,7 @@ import Loading from 'pages/Loading';
 // Functional component that displays the result of the votes
 const ElectionResult: FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { electionId } = useParams();
 
   const { loading, result, configObj } = useElection(electionId);
@@ -204,9 +206,9 @@ const ElectionResult: FC = () => {
             {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
           </div>
           <div className="flex my-4">
-            <Link to={'/elections/' + electionId}>
+            <div onClick={() => navigate(-1)}>
               <TextButton>{t('back')}</TextButton>
-            </Link>
+            </div>
             <DownloadButton exportData={exportData}>{t('exportResJSON')}</DownloadButton>
           </div>
         </div>
