@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import ElectionTable from './components/ElectionTable';
 import useFetchCall from 'components/utils/useFetchCall';
 import * as endpoints from 'components/utils/Endpoints';
-import './Index.css';
+import Loading from 'pages/Loading';
 
 const ElectionIndex: FC = () => {
   const { t } = useTranslation();
@@ -19,31 +19,32 @@ const ElectionIndex: FC = () => {
 
   /*Show all the elections retrieved if any */
   const showElection = () => {
-    return (
-      <div>
-        {data.Elections.length > 0 ? (
-          <div className="election-box">
-            <div className="click-info">{t('clickElection')}</div>
-            <div className="election-table-wrapper">
-              <ElectionTable elections={data.Elections} />
-            </div>
-          </div>
-        ) : (
-          <div className="no-election">{t('noElection')}</div>
-        )}
-      </div>
+    return data.Elections.length > 0 ? (
+      <>
+        <div className="pb-8">
+          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+            {t('elections')}
+          </h2>
+          <div>{t('listElection')}</div>
+          <div>{t('clickElection')}</div>
+        </div>
+        <div>
+          <ElectionTable elections={data.Elections} />
+        </div>
+      </>
+    ) : (
+      <div>{t('noElection')}</div>
     );
   };
 
   return (
-    <div className="election-wrapper">
-      {t('listElection')}
+    <div className="w-[60rem] font-sans px-4 py-4">
       {!loading ? (
         showElection()
       ) : error === null ? (
-        <p className="loading">{t('loading')} </p>
+        <Loading />
       ) : (
-        <div className="error-retrieving">
+        <div>
           {t('errorRetrievingElection')} - {error.toString()}
         </div>
       )}

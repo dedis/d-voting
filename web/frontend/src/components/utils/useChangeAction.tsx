@@ -11,6 +11,8 @@ import CancelButton from './CancelButton';
 import OpenButton from './OpenButton';
 import DecryptButton from './DecryptButton';
 import ResultButton from './ResultButton';
+import VoteButton from './VoteButton';
+import CombineButton from './CombineButton';
 
 const useChangeAction = (
   status: STATUS,
@@ -158,18 +160,32 @@ const useChangeAction = (
 
   const handleDecrypt = async () => {
     const decryptSuccess = await electionUpdate(
-      'beginDecryption',
+      'computePubshares',
       endpoints.editDKGActors(electionID.toString())
     );
     if (decryptSuccess && postError === null) {
       // TODO : setResultAvailable is undefined when the decryption is clicked
-      if (setResultAvailable !== null && setResultAvailable !== undefined) {
-        setResultAvailable(true);
-      }
-      setStatus(STATUS.ResultAvailable);
+      // if (setResultAvailable !== null && setResultAvailable !== undefined) {
+      //   setResultAvailable(true);
+      // }
+      setStatus(STATUS.DecryptedBallots);
     } else {
       setShowModalError(true);
       setIsDecrypting(false);
+    }
+    setPostError(null);
+  };
+
+  const handleCombine = async () => {
+    const combineSuccess = await electionUpdate(
+      'combineShares',
+      endpoints.editElection(electionID.toString())
+    );
+    if (combineSuccess && postError === null) {
+      setStatus(STATUS.ResultAvailable);
+    } else {
+      setShowModalError(true);
+      setIsOpening(false);
     }
     setPostError(null);
   };
@@ -188,6 +204,7 @@ const useChangeAction = (
           <span>
             <CloseButton status={status} handleClose={handleClose} />
             <CancelButton status={status} handleCancel={handleCancel} />
+            <VoteButton status={status} electionID={electionID} />
           </span>
         );
       case STATUS.Closed:
@@ -210,6 +227,12 @@ const useChangeAction = (
             />
           </span>
         );
+      case STATUS.DecryptedBallots:
+        return (
+          <span>
+            <CombineButton status={status} handleCombine={handleCombine} />
+          </span>
+        );
       case STATUS.ResultAvailable:
         return (
           <span>
@@ -217,7 +240,7 @@ const useChangeAction = (
           </span>
         );
       case STATUS.Canceled:
-        return <span> --- </span>;
+        return <span> </span>;
       default:
         return <span> --- </span>;
     }

@@ -3,8 +3,6 @@ import PropTypes from 'prop-types';
 
 import { Dialog, Transition } from '@headlessui/react';
 
-import './Modal.css';
-
 const Modal = ({ showModal, setShowModal, textModal, buttonRightText }) => {
   const closeModal = () => {
     setShowModal(false);

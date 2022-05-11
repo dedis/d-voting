@@ -7,7 +7,6 @@ import { ENDPOINT_LOGOUT } from '../components/utils/Endpoints';
 import {
   ROUTE_ABOUT,
   ROUTE_ADMIN,
-  ROUTE_BALLOT_INDEX,
   ROUTE_ELECTION_CREATE,
   ROUTE_ELECTION_INDEX,
   ROUTE_HOME,
@@ -68,15 +67,6 @@ const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
                     </Popover.Button>
                   </NavLink>
                 }
-                {authCtx.isLogged && (
-                  <NavLink to={ROUTE_BALLOT_INDEX}>
-                    <Popover.Button className=" w-full -m-3 p-3 flex items-center rounded-md hover:bg-gray-50">
-                      <span className="ml-3 text-base font-medium text-gray-900">
-                        {t('navBarVote')}
-                      </span>
-                    </Popover.Button>
-                  </NavLink>
-                )}
                 {authCtx.isLogged && (authCtx.role === 'admin' || authCtx.role === 'operator') && (
                   <NavLink to={ROUTE_ADMIN}>
                     <Popover.Button className=" w-full -m-3 p-3 flex items-center rounded-md hover:bg-gray-50">
@@ -187,24 +177,14 @@ const LeftSideNavBar = ({ authCtx, t }) => (
           className={'text-black text-lg hover:text-indigo-700'}>
           {t('navBarStatus')}
         </NavLink>
-        {authCtx.isLogged && (authCtx.role === 'admin' || authCtx.role === 'operator') && (
-          <NavLink
-            title={t('navBarVote')}
-            to={ROUTE_BALLOT_INDEX}
-            className={'text-black text-lg hover:text-indigo-700'}>
-            {t('navBarVote')}
-          </NavLink>
-        )}
         {authCtx.role === 'admin' && authCtx.isLogged && (
           <NavLink to={ROUTE_ADMIN} className={'text-black text-lg hover:text-indigo-700'}>
             Admin
           </NavLink>
         )}
-        {!authCtx.isLogged && (
-          <NavLink to={ROUTE_ABOUT} className={'text-black text-lg hover:text-indigo-700'}>
-            {t('navBarAbout')}
-          </NavLink>
-        )}
+        <NavLink to={ROUTE_ABOUT} className={'text-black text-lg hover:text-indigo-700'}>
+          {t('navBarAbout')}
+        </NavLink>
       </div>
     </div>
   </div>
