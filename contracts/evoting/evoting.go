@@ -556,25 +556,28 @@ func (e evotingCommand) registerPubshares(snap store.Snapshot, step execution.St
 		}
 	}
 
+	units := &election.PubsharesUnits
+
 	// Check the node hasn't made any other submissions
-	for _, key := range election.PubsharesUnits.PubKeys {
+	for _, key := range units.PubKeys {
 		if bytes.Equal(key, tx.PublicKey) {
 			return xerrors.Errorf("'%x' already made a submission", key)
 		}
 	}
 
-	for _, index := range election.PubsharesUnits.Indexes {
+	for _, index := range units.Indexes {
 		if index == tx.Index {
 			return xerrors.Errorf("a submission has already been made for index %d", index)
 		}
 	}
 
 	// Add the pubshares to the election
-	election.PubsharesUnits.Pubshares = append(election.PubsharesUnits.Pubshares, tx.Pubshares)
-	election.PubsharesUnits.PubKeys = append(election.PubsharesUnits.PubKeys, tx.PublicKey)
-	election.PubsharesUnits.Indexes = append(election.PubsharesUnits.Indexes, tx.Index)
+	units.Pubshares = append(units.Pubshares, tx.Pubshares)
+	units.PubKeys = append(units.PubKeys, tx.PublicKey)
+	units.Indexes = append(units.Indexes, tx.Index)
 
-	nbrSubmissions := len(election.PubsharesUnits.Pubshares)
+	nbrSubmissions := len(units.Pubshares)
+
 	PromElectionPubShares.WithLabelValues(election.ElectionID).Add(float64(nbrSubmissions))
 
 	if nbrSubmissions >= election.ShuffleThreshold {
