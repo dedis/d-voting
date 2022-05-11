@@ -225,6 +225,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 		t.Log("Response body: " + string(body))
 
 	}
+	time.Sleep(time.Second * 5)
 
 	// ############################# CLOSE ELECTION FOR REAL ###################
 	randomproxy = proxyArray[rand.Intn(len(proxyArray))]
@@ -491,7 +492,7 @@ func updateElection(secret kyber.Scalar, proxyAddr, electionIDHex, action string
 		return 0, xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
 
-	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp)
+	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
 	return 0, nil
 }
