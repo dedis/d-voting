@@ -883,6 +883,7 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 
 	err = cmd.registerPubshares(snap, makeStep(t, ElectionArg, string(data)))
 	require.NoError(t, err)
+	require.Equal(t, float64(1), testutil.ToFloat64(PromElectionPubShares))
 
 	// With the public key already used:
 	election.PubsharesUnits.PubKeys = append(election.PubsharesUnits.PubKeys,
@@ -923,6 +924,7 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 
 	err = cmd.registerPubshares(snap, makeStep(t, ElectionArg, string(data)))
 	require.NoError(t, err)
+	require.Equal(t, float64(2), testutil.ToFloat64(PromElectionPubShares))
 
 	res, err := snap.Get(dummyElectionIDBuff)
 	require.NoError(t, err)
@@ -937,8 +939,6 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 
 	require.Equal(t, resultElection.PubsharesUnits.PubKeys[0], registerPubShares.PublicKey)
 	require.Equal(t, resultElection.PubsharesUnits.Indexes[0], registerPubShares.Index)
-
-	require.Equal(t, float64(len(election.PubsharesUnits.Indexes)), testutil.ToFloat64(PromElectionPubShares))
 }
 
 func TestCommand_DecryptBallots(t *testing.T) {
