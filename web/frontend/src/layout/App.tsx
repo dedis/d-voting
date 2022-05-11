@@ -9,6 +9,7 @@ import {
   ROUTE_ELECTION_INDEX,
   ROUTE_LOGGED,
   ROUTE_LOGIN,
+  ROUTE_UNAUTHORIZED,
 } from '../Routes';
 import Login from '../pages/session/Login';
 import Home from '../pages/Home';
@@ -27,6 +28,7 @@ import { AuthContext } from '..';
 import Logged from 'pages/session/Logged';
 import Flash from './Flash';
 import NotFound from './NotFound';
+import Unauthorized from './Unauthorized';
 import { ROLE } from 'types/userRole';
 
 const App = () => {
@@ -42,10 +44,10 @@ const App = () => {
     const authCtx = useContext(AuthContext);
 
     if (!authCtx.isLogged) {
-      return <Navigate to="/login" state={{ from: location }} replace />;
+      return <Navigate to={ROUTE_LOGIN} state={{ from: location }} replace />;
     } else {
       if (roles && !roles.includes(authCtx.role)) {
-        return <Navigate to="/notfound" state={{ from: location }} replace />;
+        return <Navigate to={ROUTE_UNAUTHORIZED} state={{ from: location }} replace />;
       }
     }
 
@@ -93,6 +95,7 @@ const App = () => {
               <Route path={ROUTE_ELECTION_INDEX} element={<ElectionIndex />} />
               <Route path={ROUTE_LOGIN} element={<Login />} />
               <Route path={ROUTE_LOGGED} element={<Logged />} />
+              <Route path={ROUTE_UNAUTHORIZED} element={<Unauthorized />} />
               <Route path="/" element={<Home />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
