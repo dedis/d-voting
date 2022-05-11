@@ -34,10 +34,9 @@ jobs:
 
       - name: Start 3 nodes
         run: |
-          pk=adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3 &&
-          ./memcoin --config /tmp/node1 start --postinstall --promaddr :9100 --proxyaddr :9080 --proxykey $pk --listen tcp://0.0.0.0:2001 --public //localhost:2001 &
-          ./memcoin --config /tmp/node2 start --postinstall --promaddr :9101 --proxyaddr :9081 --proxykey $pk --listen tcp://0.0.0.0:2002 --public //localhost:2002 &
-          ./memcoin --config /tmp/node3 start --postinstall --promaddr :9102 --proxyaddr :9082 --proxykey $pk --listen tcp://0.0.0.0:2003 --public //localhost:2003 &
+          ./memcoin --config /tmp/node1 start --postinstall --promaddr :9100 --proxyaddr :9080 --proxykey adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3 --listen tcp://0.0.0.0:2001 --public //localhost:2001 &
+          ./memcoin --config /tmp/node2 start --postinstall --promaddr :9101 --proxyaddr :9081 --proxykey adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3 --listen tcp://0.0.0.0:2002 --public //localhost:2002 &
+          ./memcoin --config /tmp/node3 start --postinstall --promaddr :9102 --proxyaddr :9082 --proxykey adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3 --listen tcp://0.0.0.0:2003 --public //localhost:2003 &
 
       - name: Run the setup
         run: ./setupnNode.sh 3
