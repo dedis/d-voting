@@ -134,9 +134,9 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		err = actor.ComputePubshares()
 		require.NoError(t, err)
 
+		// ##### DECRYPT BALLOTS #####
 		time.Sleep(time.Millisecond * 5000 * time.Duration(numNodes))
 
-		// ##### DECRYPT BALLOTS #####
 		t.Logf("decrypting")
 
 		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
