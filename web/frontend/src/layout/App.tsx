@@ -27,8 +27,7 @@ import './App.css';
 import { AuthContext } from '..';
 import Logged from 'pages/session/Logged';
 import Flash from './Flash';
-import NotFound from './NotFound';
-import Unauthorized from './Unauthorized';
+import ClientError from './ClientError';
 import { ROLE } from 'types/userRole';
 
 const App = () => {
@@ -95,9 +94,9 @@ const App = () => {
               <Route path={ROUTE_ELECTION_INDEX} element={<ElectionIndex />} />
               <Route path={ROUTE_LOGIN} element={<Login />} />
               <Route path={ROUTE_LOGGED} element={<Logged />} />
-              <Route path={ROUTE_UNAUTHORIZED} element={<Unauthorized />} />
+              <Route path={ROUTE_UNAUTHORIZED} element={<ClientError statusCode={403} />} />
               <Route path="/" element={<Home />} />
-              <Route path="*" element={<NotFound />} />
+              <Route path="*" element={<ClientError statusCode={404} />} />
             </Routes>
           </div>
           <div>

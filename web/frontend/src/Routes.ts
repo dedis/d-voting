@@ -1,7 +1,7 @@
 export const ROUTE_HOME = '/';
 export const ROUTE_LOGIN = '/login';
 export const ROUTE_LOGGED = '/logged';
-export const ROUTE_UNAUTHORIZED = '/unauthorized';
+export const ROUTE_UNAUTHORIZED = '/403';
 export const ROUTE_ADMIN = '/admin';
 export const ROUTE_ABOUT = '/about';
 
