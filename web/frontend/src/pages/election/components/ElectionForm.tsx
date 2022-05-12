@@ -16,6 +16,8 @@ import { marshalConfig } from '../../../types/JSONparser';
 import DownloadButton from 'components/buttons/DownloadButton';
 import SpinnerIcon from 'components/utils/SpinnerIcon';
 import RedirectToModal from 'components/modal/RedirectToModal';
+import { Disclosure } from '@headlessui/react';
+import { ChevronUpIcon, DotsVerticalIcon } from '@heroicons/react/outline';
 
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
@@ -115,16 +117,8 @@ const ElectionForm: FC<ElectionFormProps> = () => {
     });
   };
 
-  return (
-    <>
-      <RedirectToModal
-        showModal={showModal}
-        setShowModal={setShowModal}
-        title={t('notification')}
-        buttonRightText={t('close')}
-        navigateDestination={navigateDestination}>
-        {textModal}
-      </RedirectToModal>
+  const displayElectionForm = () => {
+    return (
       <div className="w-screen px-4 md:px-0 md:w-auto">
         <div className="flex flex-col shadow-lg rounded-md">
           <UploadFile setConf={setConf} setShowModal={setShowModal} setTextModal={setTextModal} />
@@ -175,6 +169,72 @@ const ElectionForm: FC<ElectionFormProps> = () => {
           </button>
           <DownloadButton exportData={exportData}>{t('exportElecJSON')}</DownloadButton>
         </div>
+      </div>
+    );
+  };
+
+  const SubjectAccordion = () => {
+    return (
+      <Disclosure>
+        {({ open }) => (
+          <>
+            <div className="flex flex-row border justify-between w-full h-24 bg-gray-100  ">
+              <div className="flex flex-col pl-2">
+                <div>Subject Title</div>
+                <div>Subject</div>
+                <div>
+                  <Disclosure.Button className="text-left text-sm font-medium rounded-full text-gray-900">
+                    <ChevronUpIcon
+                      className={`${!open ? 'rotate-180 transform' : ''} h-5 w-5 text-gray-600`}
+                    />
+                  </Disclosure.Button>
+                </div>
+              </div>
+              <div>
+                <div></div>
+                <button>
+                  <DotsVerticalIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            <Disclosure.Panel className="px-4  py-2 text-sm text-gray-500 bg-gray-100">
+              <div>Elements of subject</div>
+            </Disclosure.Panel>
+          </>
+        )}
+      </Disclosure>
+    );
+  };
+
+  const displayPreviewElection = () => {
+    return (
+      <div className="border rounded-md">
+        <div className="flex flex-col">
+          <SubjectAccordion />
+          <SubjectAccordion />
+          <SubjectAccordion />
+          <button className="flex w-full h-12 justify-between bg-gray-50 px-4 py-2 text-left text-sm font-medium hover:bg-gray-100">
+            Add element
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <>
+      <RedirectToModal
+        showModal={showModal}
+        setShowModal={setShowModal}
+        title={t('notification')}
+        buttonRightText={t('close')}
+        navigateDestination={navigateDestination}>
+        {textModal}
+      </RedirectToModal>
+      <div className="hidden md:grid grid-cols-2 gap-1">
+        {displayElectionForm()}
+        {displayPreviewElection()}
       </div>
     </>
   );

@@ -7,7 +7,7 @@ const ElectionCreate: FC = () => {
   const { t } = useTranslation();
 
   return (
-    <div className="font-sans">
+    <div className="w-[70rem] font-sans px-4 py-4">
       <div className="px-4 py-4">
         <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
           {t('navBarCreate')}
