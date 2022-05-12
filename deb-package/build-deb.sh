@@ -38,7 +38,7 @@ mkdir -p deb/var/log/dedis/dvoting
 find deb ! -perm -a+r -exec chmod a+r {} \;
 
 # get version from git without v prefix
-GITVERSION=$(git describe --abbrev=0)
+GITVERSION=$(git describe --abbrev=0 --tags)
 VERSION=${GITVERSION:1}
 if [[ -z "${ITERATION}" ]]
 then
