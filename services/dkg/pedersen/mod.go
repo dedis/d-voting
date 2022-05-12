@@ -12,6 +12,7 @@ import (
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
 
+	"github.com/dedis/d-voting/contracts/evoting"
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 
 	"github.com/dedis/d-voting/internal/tracing"
@@ -134,6 +135,8 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, pool pool.Pool, txmngr txn.Man
 		status:      dkg.Status{Status: dkg.Initialized},
 	}
 
+	evoting.PromElectionDkgStatus.WithLabelValues(electionID).Set(float64(dkg.Initialized))
+
 	s.Lock()
 	defer s.Unlock()
 	s.actors[electionID] = a
@@ -169,6 +172,8 @@ func (a *Actor) setErr(err error, args map[string]interface{}) {
 		Err:    err,
 		Args:   args,
 	}
+
+	evoting.PromElectionDkgStatus.WithLabelValues(a.electionID).Set(float64(dkg.Failed))
 }
 
 // Setup implements dkg.Actor. It initializes the DKG protocol across all
@@ -297,6 +302,7 @@ func (a *Actor) Setup() (kyber.Point, error) {
 	}
 
 	a.status = dkg.Status{Status: dkg.Setup}
+	evoting.PromElectionDkgStatus.WithLabelValues(a.electionID).Set(float64(dkg.Setup))
 
 	return dkgPubKeys[0], nil
 }
