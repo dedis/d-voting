@@ -173,6 +173,22 @@ Public key: `adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3`
 
 Secret key: `28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409`
 
+## Run the scenario test with docker 
+Use the following commands to launch and set up nodes, and start the scenario test with user defined number of nodes.
+
+First time you need to create a docker network(only run once): `docker network create --driver bridge evoting-net`.
+
+Afterwards use the following commands:
+
+```sh
+./launch_containers.sh $NBNode
+./setup_containers.sh $NBNode
+
+go test -v -run ^TestScenario$ github.com/dedis/d-voting/integration -count=1
+```
+
+To end the session, run `./kill_test.sh`.
+
 # Use the frontend
 
 See README in `web/`.
