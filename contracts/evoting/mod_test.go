@@ -10,6 +10,7 @@ import (
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/execution"
@@ -109,6 +110,8 @@ func TestExecute(t *testing.T) {
 }
 
 func TestCommand_CreateElection(t *testing.T) {
+	initMetrics()
+
 	fakeActor := fakeDkgActor{
 		publicKey: suite.Point(),
 		err:       nil,
@@ -167,6 +170,7 @@ func TestCommand_CreateElection(t *testing.T) {
 	require.True(t, ok)
 
 	require.Equal(t, types.Initial, election.Status)
+	require.Equal(t, float64(types.Initial), testutil.ToFloat64(PromElectionStatus))
 }
 
 func TestCommand_OpenElection(t *testing.T) {
@@ -174,6 +178,8 @@ func TestCommand_OpenElection(t *testing.T) {
 }
 
 func TestCommand_CastVote(t *testing.T) {
+	initMetrics()
+
 	castVote := types.CastVote{
 		ElectionID: fakeElectionID,
 		UserID:     "dummyUserId",
@@ -298,11 +304,13 @@ func TestCommand_CastVote(t *testing.T) {
 	require.Len(t, election.Suffragia.Ciphervotes, 1)
 	require.True(t, castVote.Ballot.Equal(election.Suffragia.Ciphervotes[0]))
 
-	require.Equal(t, castVote.UserID,
-		election.Suffragia.UserIDs[0])
+	require.Equal(t, castVote.UserID, election.Suffragia.UserIDs[0])
+	require.Equal(t, float64(len(election.Suffragia.Ciphervotes)), testutil.ToFloat64(PromElectionBallots))
 }
 
 func TestCommand_CloseElection(t *testing.T) {
+	initMetrics()
+
 	closeElection := types.CloseElection{
 		ElectionID: fakeElectionID,
 		UserID:     "dummyUserId",
@@ -349,6 +357,7 @@ func TestCommand_CloseElection(t *testing.T) {
 	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(data)))
 	require.EqualError(t, err, fmt.Sprintf("the election is not open, "+
 		"current status: %d", types.Initial))
+	require.Equal(t, 0, testutil.CollectAndCount(PromElectionStatus))
 
 	dummyElection.Status = types.Open
 
@@ -372,6 +381,7 @@ func TestCommand_CloseElection(t *testing.T) {
 
 	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(data)))
 	require.NoError(t, err)
+	require.Equal(t, float64(types.Closed), testutil.ToFloat64(PromElectionStatus))
 
 	res, err := snap.Get(dummyElectionIDBuff)
 	require.NoError(t, err)
@@ -383,6 +393,7 @@ func TestCommand_CloseElection(t *testing.T) {
 	require.True(t, ok)
 
 	require.Equal(t, types.Closed, election.Status)
+	require.Equal(t, float64(types.Closed), testutil.ToFloat64(PromElectionStatus))
 }
 
 func TestCommand_ShuffleBallotsCannotShuffleTwice(t *testing.T) {
@@ -429,6 +440,8 @@ func TestCommand_ShuffleBallotsCannotShuffleTwice(t *testing.T) {
 }
 
 func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
+	initMetrics()
+
 	k := 3
 
 	// Simple Shuffle from round 0 :
@@ -454,6 +467,7 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 
 	err = cmd.shuffleBallots(snap, step)
 	require.NoError(t, err)
+	require.Equal(t, float64(1), testutil.ToFloat64(PromElectionShufflingInstances))
 
 	// Valid Shuffle is over :
 	shuffleBallots.Round = k
@@ -483,6 +497,7 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 
 	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
 	require.NoError(t, err)
+	require.Equal(t, float64(k+1), testutil.ToFloat64(PromElectionShufflingInstances))
 
 	// Check the shuffle is over:
 	electionTxIDBuff, err := hex.DecodeString(election.ElectionID)
@@ -497,7 +512,8 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 	election, ok := message.(types.Election)
 	require.True(t, ok)
 
-	require.Equal(t, election.Status, types.ShuffledBallots)
+	require.Equal(t, types.ShuffledBallots, election.Status)
+	require.Equal(t, float64(types.ShuffledBallots), testutil.ToFloat64(PromElectionStatus))
 }
 
 func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
@@ -867,6 +883,7 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 
 	err = cmd.registerPubshares(snap, makeStep(t, ElectionArg, string(data)))
 	require.NoError(t, err)
+	require.Equal(t, float64(1), testutil.ToFloat64(PromElectionPubShares))
 
 	// With the public key already used:
 	election.PubsharesUnits.PubKeys = append(election.PubsharesUnits.PubKeys,
@@ -907,6 +924,7 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 
 	err = cmd.registerPubshares(snap, makeStep(t, ElectionArg, string(data)))
 	require.NoError(t, err)
+	require.Equal(t, float64(1), testutil.ToFloat64(PromElectionPubShares))
 
 	res, err := snap.Get(dummyElectionIDBuff)
 	require.NoError(t, err)
@@ -1019,7 +1037,7 @@ func TestCommand_DecryptBallots(t *testing.T) {
 
 	require.Equal(t, types.Ballot{}, election.DecryptedBallots[0])
 	require.Equal(t, types.ResultAvailable, election.Status)
-
+	require.Equal(t, float64(types.ResultAvailable), testutil.ToFloat64(PromElectionStatus))
 }
 
 func TestCommand_CancelElection(t *testing.T) {
@@ -1079,7 +1097,7 @@ func TestCommand_CancelElection(t *testing.T) {
 	require.True(t, ok)
 
 	require.Equal(t, types.Canceled, election.Status)
-
+	require.Equal(t, float64(types.Canceled), testutil.ToFloat64(PromElectionStatus))
 }
 
 func TestRegisterContract(t *testing.T) {
@@ -1088,6 +1106,13 @@ func TestRegisterContract(t *testing.T) {
 
 // -----------------------------------------------------------------------------
 // Utility functions
+
+func initMetrics() {
+	PromElectionStatus.Reset()
+	PromElectionBallots.Reset()
+	PromElectionShufflingInstances.Reset()
+	PromElectionPubShares.Reset()
+}
 
 func initElectionAndContract() (types.Election, Contract) {
 	fakeDkg := fakeDKG{
@@ -1343,6 +1368,10 @@ func (c fakeCmd) combineShares(snap store.Snapshot, step execution.Step) error {
 }
 
 func (c fakeCmd) cancelElection(snap store.Snapshot, step execution.Step) error {
+	return c.err
+}
+
+func (c fakeCmd) deleteElection(snap store.Snapshot, step execution.Step) error {
 	return c.err
 }
 

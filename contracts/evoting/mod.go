@@ -1,8 +1,10 @@
 package evoting
 
 import (
+	dvoting "github.com/dedis/d-voting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/services/dkg"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/execution"
 	"go.dedis.ch/dela/core/execution/native"
@@ -17,6 +19,36 @@ import (
 
 	// Register the JSON format for the election
 	_ "github.com/dedis/d-voting/contracts/evoting/json"
+)
+
+var (
+	PromElectionStatus = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "dvoting_status",
+		Help: "status of election",
+	},
+		[]string{"election"},
+	)
+
+	PromElectionBallots = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "dvoting_ballots_total",
+		Help: "number of cast ballots",
+	},
+		[]string{"election"},
+	)
+
+	PromElectionShufflingInstances = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "dvoting_shufflings_total",
+		Help: "number of shuffling instances",
+	},
+		[]string{"election"},
+	)
+
+	PromElectionPubShares = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "dvoting_pubshares_total",
+		Help: "published public shares",
+	},
+		[]string{"election"},
+	)
 )
 
 const (
@@ -55,6 +87,7 @@ type commands interface {
 	registerPubshares(snap store.Snapshot, step execution.Step) error
 	combineShares(snap store.Snapshot, step execution.Step) error
 	cancelElection(snap store.Snapshot, step execution.Step) error
+	deleteElection(snap store.Snapshot, step execution.Step) error
 }
 
 // Command defines a type of command for the value contract
@@ -72,12 +105,16 @@ const (
 	// CmdShuffleBallots is the command to shuffle ballots
 	CmdShuffleBallots Command = "SHUFFLE_BALLOTS"
 
+	// CmdRegisterPubShares is the command to register the pubshares
 	CmdRegisterPubShares Command = "REGISTER_PUB_SHARES"
 
 	// CmdCombineShares is the command to decrypt ballots
 	CmdCombineShares Command = "COMBINE_SHARES"
 	// CmdCancelElection is the command to cancel an election
 	CmdCancelElection Command = "CANCEL_ELECTION"
+
+	// CmdDeleteElection is the command to delete an election
+	CmdDeleteElection Command = "DELETE_ELECTION"
 )
 
 // NewCreds creates new credentials for a evoting contract execution. We might
@@ -200,9 +237,22 @@ func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 		if err != nil {
 			return xerrors.Errorf("failed to cancel election: %v", err)
 		}
+	case CmdDeleteElection:
+		err := c.cmd.deleteElection(snap, step)
+		if err != nil {
+			return xerrors.Errorf("failed to delete election: %v", err)
+		}
 	default:
 		return xerrors.Errorf("unknown command: %s", cmd)
 	}
 
 	return nil
+}
+
+func init() {
+	dvoting.PromCollectors = append(dvoting.PromCollectors,
+		PromElectionStatus,
+		PromElectionBallots,
+		PromElectionShufflingInstances,
+		PromElectionPubShares)
 }

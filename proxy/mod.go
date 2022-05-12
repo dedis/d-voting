@@ -32,6 +32,8 @@ type Election interface {
 	Elections(http.ResponseWriter, *http.Request)
 	// GET /elections/{electionID}
 	Election(http.ResponseWriter, *http.Request)
+	// DELETE /elections/{electionID}
+	DeleteElection(http.ResponseWriter, *http.Request)
 }
 
 // DKG defines the public HTTP API of the DKG service
@@ -98,6 +100,11 @@ func InternalError(w http.ResponseWriter, r *http.Request, err error, args map[s
 // BadRequestError sets an bad request error
 func BadRequestError(w http.ResponseWriter, r *http.Request, err error, args map[string]interface{}) {
 	httpErr(w, r, err, http.StatusBadRequest, "bad request", args)
+}
+
+// ForbiddenError sets a forbidden error error
+func ForbiddenError(w http.ResponseWriter, r *http.Request, err error, args map[string]interface{}) {
+	httpErr(w, r, err, http.StatusForbidden, "not authorized / forbidden", args)
 }
 
 func httpErr(w http.ResponseWriter, r *http.Request, err error, code uint, title string, args map[string]interface{}) {
