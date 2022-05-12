@@ -151,7 +151,7 @@ app.get('/api/personal_info', (req, res) => {
   }
 });
 
-// This call allow a user that is admin to get the list of the poeple that have
+// This call allow a user that is admin to get the list of the people that have
 // a special role (not a voter).
 app.get('/api/user_rights', (req, res) => {
   const sciper = req.session.userid;

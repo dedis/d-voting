@@ -1,5 +1,5 @@
-import ResultButton from 'components/utils/ResultButton';
-import VoteButton from 'components/utils/VoteButton';
+import ResultButton from 'components/buttons/ResultButton';
+import VoteButton from 'components/buttons/VoteButton';
 import React, { FC } from 'react';
 import { ID } from 'types/configuration';
 import { Status } from 'types/election';

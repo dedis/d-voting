@@ -1,10 +1,10 @@
 import { CogIcon } from '@heroicons/react/outline';
+import { IndigoSpinnerIcon } from 'components/utils/SpinnerIcon';
 import { AuthContext } from 'index';
 import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OngoingAction, Status } from 'types/election';
 import { UserRole } from 'types/userRole';
-import { IndigoSpinnerIcon } from './SpinnerIcon';
 
 const SetupButton = ({ status, handleSetup, ongoingAction }) => {
   const authCtx = useContext(AuthContext);

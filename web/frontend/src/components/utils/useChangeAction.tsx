@@ -7,17 +7,17 @@ import { ID } from 'types/configuration';
 import { Action, NodeStatus, OngoingAction, Status } from 'types/election';
 import { poll } from './usePolling';
 import AddProxyAddressesModal from 'components/modal/AddProxyAddressesModal';
-import InitializeButton from './InitializeButton';
-import SetupButton from './SetupButton';
-import OpenButton from './OpenButton';
-import CloseButton from './CloseButton';
-import CancelButton from './CancelButton';
-import VoteButton from './VoteButton';
-import ShuffleButton from './ShuffleButton';
-import DecryptButton from './DecryptButton';
-import CombineButton from './CombineButton';
-import ResultButton from './ResultButton';
-import NoActionAvailable from './NoActionAvailable';
+import InitializeButton from 'components/buttons/InitializeButton';
+import SetupButton from 'components/buttons/SetupButton';
+import OpenButton from 'components/buttons/OpenButton';
+import CloseButton from 'components/buttons/CloseButton';
+import CancelButton from 'components/buttons/CancelButton';
+import VoteButton from 'components/buttons/VoteButton';
+import ShuffleButton from 'components/buttons/ShuffleButton';
+import DecryptButton from 'components/buttons/DecryptButton';
+import CombineButton from 'components/buttons/CombineButton';
+import ResultButton from 'components/buttons/ResultButton';
+import NoActionAvailable from 'components/buttons/NoActionAvailable';
 
 const useChangeAction = (
   status: Status,
@@ -159,6 +159,8 @@ const useChangeAction = (
 
     switch (ongoingAction) {
       case OngoingAction.Initializing:
+        // TODO poll for each of the proxy addresses
+        // error if != 404
         pollStatus(
           endpoints.getDKGActors(electionID),
           NodeStatus.Initialized,
@@ -169,6 +171,7 @@ const useChangeAction = (
         );
         break;
       case OngoingAction.SettingUp:
+        // TODO poll on one of the proxy address
         pollStatus(
           endpoints.getDKGActors(electionID),
           NodeStatus.Setup,

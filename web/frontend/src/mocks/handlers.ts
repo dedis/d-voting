@@ -29,7 +29,7 @@ import { mockRoster } from './mockData';
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;
 
-const { mockElections, mockResults, mockDKG } = setupMockElection();
+const { mockElections, mockResults, mockDKG, mockNodeProxy } = setupMockElection();
 
 var mockUserDB = setupMockUserDB();
 
@@ -212,6 +212,12 @@ export const handlers = [
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
+  // TODO change mock DKG to contain Map<ID, NodeStatus[]>
+  // on post keep to NotInitialized
+  // on poll change to Initialized
+  // on keep in Initialized
+  // on poll change to setup
+  // respond with mockDKG.get(ID)
   rest.get(endpoints.getDKGActors(':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
     const election = mockElections.get(ElectionID as string);
@@ -291,5 +297,12 @@ export const handlers = [
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200));
+  }),
+
+  rest.get(endpoints.getProxiesAddresses(':ElectionID'), async (req, res, ctx) => {
+    const { ElectionID } = req.params;
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
+
+    return res(ctx.status(200), ctx.json(mockNodeProxy.get(ElectionID as string)));
   }),
 ];

@@ -1,6 +1,10 @@
 import { Results } from 'types/election';
 
-const mockRoster: string[] = ['//localhost:2001', '//localhost:2002', '//localhost:2003'];
+const mockRoster: string[] = [
+  'http://localhost:2001',
+  'http://localhost:2002',
+  'http://localhost:2003',
+];
 
 const mockElection1: any = {
   MainTitle: 'Life on the campus',

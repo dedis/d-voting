@@ -19,6 +19,9 @@ export const dkgActors = `/api/evoting/services/dkg/actors`;
 export const getDKGActors = (ElectionID: string) =>
   `${process.env.REACT_APP_PROXY}/evoting/services/dkg/actors/${ElectionID}`;
 
+// get the proxies' addresses from the web backend
+export const getProxiesAddresses = (ElectionID: string) => `/api/elections/${ElectionID}/proxies`;
+
 // public information can be directly fetched from dela nodes
 export const election = (ElectionID: string) =>
   `${process.env.REACT_APP_PROXY}/evoting/elections/${ElectionID}`;

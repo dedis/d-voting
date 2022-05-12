@@ -19,6 +19,10 @@ const setupMockElection = () => {
   // true if the handler must respond with the updated value (as the handler
   // cannot know when we poll if we have already started setting up or not)
   const mockDKG: Map<ID, [NodeStatus, boolean]> = new Map();
+  // Mock the response of the web backend
+  const mockNodeProxy: Map<ID, Map<string, string>> = new Map();
+  const mockAddresses: Map<string, string> = new Map();
+  mockRoster.forEach((node) => mockAddresses.set(node, node));
 
   const electionID1 = '36kSJ0tH';
   const electionID2 = 'Bnq9gLmf';
@@ -35,14 +39,14 @@ const setupMockElection = () => {
   });
 
   mockResults.set(electionID1, [mockElectionResult11, mockElectionResult12]);
-
   mockDKG.set(electionID1, [NodeStatus.NotInitialized, false]);
+  mockNodeProxy.set(electionID1, mockAddresses);
 
   mockElections.set(electionID2, {
     ElectionID: electionID2,
     Status: Status.ResultAvailable,
     Pubkey: 'XL4V6EMIICW',
-    Result: [mockElectionResult21, mockElectionResult22, mockElectionResult23],
+    Result: [],
     Roster: mockRoster,
     Configuration: unmarshalConfig(mockElection2),
     BallotSize: 174,
@@ -51,6 +55,7 @@ const setupMockElection = () => {
 
   mockResults.set(electionID2, [mockElectionResult21, mockElectionResult22, mockElectionResult23]);
   mockDKG.set(electionID2, [NodeStatus.Initialized, true]);
+  mockNodeProxy.set(electionID2, mockAddresses);
 
   for (let j = 0; j < 5; j++) {
     let electionID11 = '36kSJ0t' + (j as number);
@@ -68,12 +73,13 @@ const setupMockElection = () => {
     });
 
     mockResults.set(electionID11, [mockElectionResult11, mockElectionResult12]);
+    mockNodeProxy.set(electionID11, mockAddresses);
 
     mockElections.set(electionID22, {
       ElectionID: electionID22,
       Status: j as Status,
       Pubkey: 'XL4V6EMIICW',
-      Result: [mockElectionResult21, mockElectionResult22, mockElectionResult23],
+      Result: [],
       Roster: mockRoster,
       Configuration: unmarshalConfig(mockElection2),
       BallotSize: 174,
@@ -85,6 +91,7 @@ const setupMockElection = () => {
       mockElectionResult22,
       mockElectionResult23,
     ]);
+    mockNodeProxy.set(electionID22, mockAddresses);
 
     if (j >= Status.Open) {
       mockDKG.set(electionID11, [NodeStatus.Initialized, true]);
@@ -95,7 +102,7 @@ const setupMockElection = () => {
     }
   }
 
-  return { mockElections, mockResults, mockDKG };
+  return { mockElections, mockResults, mockDKG, mockNodeProxy };
 };
 
 const toLightElectionInfo = (
