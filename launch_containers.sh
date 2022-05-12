@@ -49,6 +49,7 @@ do
   --promaddr :9100 --proxyaddr :9080 --proxykey $pk --listen tcp://0.0.0.0:2001 --public //$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' node$i):2001 | tee ./log/node$i.log" C-m
 done
 
+tmux new-window -t $TMUX_SESSION_NAME
 
 tmux a
 
