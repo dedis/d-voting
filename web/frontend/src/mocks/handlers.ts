@@ -30,7 +30,7 @@ const { mockElections, mockResults } = setupMockElection();
 
 var mockUserDB = setupMockUserDB();
 
-const checkUserRole = (roles: ROLE[]): boolean => {
+const isAuthorized = (roles: ROLE[]): boolean => {
   const id = sessionStorage.getItem('id');
   const userRole = mockUserDB.find(({ sciper }) => sciper === id).role;
 
@@ -103,7 +103,7 @@ export const handlers = [
 
     await new Promise((r) => setTimeout(r, 1000));
 
-    if (!checkUserRole([ROLE.Admin, ROLE.Operator])) {
+    if (!isAuthorized([ROLE.Admin, ROLE.Operator])) {
       return res(
         ctx.status(403),
         ctx.json({ message: 'You are not authorized to create an election' })
@@ -154,7 +154,7 @@ export const handlers = [
 
     await new Promise((r) => setTimeout(r, 1000));
 
-    if (!checkUserRole([ROLE.Admin, ROLE.Operator])) {
+    if (!isAuthorized([ROLE.Admin, ROLE.Operator])) {
       return res(
         ctx.status(403),
         ctx.json({ message: 'You are not authorized to update an election' })
@@ -190,7 +190,7 @@ export const handlers = [
 
     await new Promise((r) => setTimeout(r, 1000));
 
-    if (!checkUserRole([ROLE.Admin, ROLE.Operator])) {
+    if (!isAuthorized([ROLE.Admin, ROLE.Operator])) {
       return res(
         ctx.status(403),
         ctx.json({ message: 'You are not authorized to update an election' })
@@ -210,7 +210,7 @@ export const handlers = [
 
     await new Promise((r) => setTimeout(r, 1000));
 
-    if (!checkUserRole([ROLE.Admin, ROLE.Operator])) {
+    if (!isAuthorized([ROLE.Admin, ROLE.Operator])) {
       return res(
         ctx.status(403),
         ctx.json({ message: 'You are not authorized to update an election' })
@@ -229,7 +229,7 @@ export const handlers = [
   rest.get(endpoints.ENDPOINT_USER_RIGHTS, async (req, res, ctx) => {
     await new Promise((r) => setTimeout(r, 1000));
 
-    if (!checkUserRole([ROLE.Admin])) {
+    if (!isAuthorized([ROLE.Admin])) {
       return res(
         ctx.status(403),
         ctx.json({ message: 'You are not authorized to get users rights' })
@@ -244,7 +244,7 @@ export const handlers = [
 
     await new Promise((r) => setTimeout(r, 1000));
 
-    if (!checkUserRole([ROLE.Admin])) {
+    if (!isAuthorized([ROLE.Admin])) {
       return res(ctx.status(403), ctx.json({ message: 'You are not authorized to add a role' }));
     }
 
@@ -257,7 +257,7 @@ export const handlers = [
     const body = req.body as RemoveUserRole;
     await new Promise((r) => setTimeout(r, 1000));
 
-    if (!checkUserRole([ROLE.Admin])) {
+    if (!isAuthorized([ROLE.Admin])) {
       return res(ctx.status(403), ctx.json({ message: 'You are not authorized to remove a role' }));
     }
     mockUserDB = mockUserDB.filter((user) => user.sciper !== body.sciper);
