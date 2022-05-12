@@ -15,7 +15,7 @@ import CancelButton from './CancelButton';
 import VoteButton from './VoteButton';
 import ShuffleButton from './ShuffleButton';
 import DecryptButton from './DecryptButton';
-import CombineButton from './CombnieButton';
+import CombineButton from './CombineButton';
 import ResultButton from './ResultButton';
 import NoActionAvailable from './NoActionAvailable';
 
@@ -133,7 +133,7 @@ const useChangeAction = (
       // when the component is unmounted, we ignore those
       if (!(error instanceof DOMException)) {
         if (setGetError !== null && setGetError !== undefined) {
-          setGetError(error.message);
+          setGetError(error);
         }
         setOngoingAction(OngoingAction.None);
         setStatus(previousStatus);
@@ -160,7 +160,7 @@ const useChangeAction = (
     switch (ongoingAction) {
       case OngoingAction.Initializing:
         pollStatus(
-          endpoints.editDKGActors(electionID),
+          endpoints.getDKGActors(electionID),
           NodeStatus.Initialized,
           Status.Initial,
           Status.Initialized,
@@ -170,7 +170,7 @@ const useChangeAction = (
         break;
       case OngoingAction.SettingUp:
         pollStatus(
-          endpoints.editDKGActors(electionID),
+          endpoints.getDKGActors(electionID),
           NodeStatus.Setup,
           Status.Initialized,
           Status.Setup,
@@ -330,11 +330,10 @@ const useChangeAction = (
   }, [isInitializing, userConfirmedAddProxy]);
 
   const handleInitialize = () => {
-    console.log(proxyAddresses);
-    // initialize state
+    // initialize the address of the proxies with the address of the node
     if (proxyAddresses.size === 0) {
       const initProxAddresses = new Map(proxyAddresses);
-      roster.forEach((node) => initProxAddresses.set(node, ''));
+      roster.forEach((node) => initProxAddresses.set(node, node));
       setProxyAddresses(initProxAddresses);
     }
 

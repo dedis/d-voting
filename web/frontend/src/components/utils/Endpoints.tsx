@@ -10,10 +10,10 @@ export const newElection = '/api/evoting/elections';
 export const editElection = (ElectionID: string) => `/api/evoting/elections/${ElectionID}`;
 export const newElectionVote = (ElectionID: string) => `/api/evoting/elections/${ElectionID}/vote`;
 export const editShuffle = (ElectionID: string) => `/api/evoting/services/shuffle/${ElectionID}`;
-// Setup and Decrypt
+// setup and decrypt
 export const editDKGActors = (ElectionID: string) =>
   `/api/evoting/services/dkg/actors/${ElectionID}`;
-// Init nodes
+// initialize the nodes
 export const dkgActors = `/api/evoting/services/dkg/actors`;
 
 export const getDKGActors = (ElectionID: string) =>

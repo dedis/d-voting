@@ -48,7 +48,6 @@ const ElectionShow: FC = () => {
 
   useEffect(() => {
     if (getError !== null) {
-      console.log(getError);
       setTextModalError(getError);
       setShowModalError(true);
       setGetError(null);

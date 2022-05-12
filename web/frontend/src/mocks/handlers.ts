@@ -192,7 +192,6 @@ export const handlers = [
 
     switch (body.Action) {
       case Action.Setup:
-        console.log('updating node status to Setup');
         mockDKG.set(ElectionID as string, [NodeStatus.Setup, false]);
         break;
       case Action.BeginDecryption:
@@ -213,7 +212,7 @@ export const handlers = [
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
-  rest.get(endpoints.editDKGActors(':ElectionID'), async (req, res, ctx) => {
+  rest.get(endpoints.getDKGActors(':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
     const election = mockElections.get(ElectionID as string);
 
@@ -230,7 +229,6 @@ export const handlers = [
           }, INIT_TIMER);
         }
         if (currentNodeStatus === NodeStatus.Setup && !response) {
-          console.log(mockDKG);
           status = NodeStatus.Initialized;
           setTimeout(() => {
             mockDKG.set(ElectionID as string, [NodeStatus.Setup, true]);

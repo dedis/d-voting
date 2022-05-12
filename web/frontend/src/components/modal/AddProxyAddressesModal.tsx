@@ -63,7 +63,7 @@ const AddProxyAddressesModal: FC<AddProxyAddressesModalProps> = ({
             />
           </div>
         ))}
-        <div className="text-red-600 text-sm py-2 sm:pl-2 pl-1">{error}</div>
+        <div className="text-red-600 text-sm py-2">{error}</div>
       </div>
     );
   };
