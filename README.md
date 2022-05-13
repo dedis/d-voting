@@ -178,13 +178,13 @@ Use the following commands to launch and set up nodes, and start the scenario te
 
 First time you need to create a docker network(only run once): `docker network create --driver bridge evoting-net`.
 
-Afterwards use the following commands:
+Afterwards use the following commands, replace 4 by the desired nb of nodes :
 
 ```sh
-./launch_containers.sh $NBNode
-./setup_containers.sh $NBNode
+./launch_containers.sh 4
+./setup_containers.sh 4
 
-go test -v -run ^TestScenario$ github.com/dedis/d-voting/integration -count=1
+DVOTING_NB_NODE=4 go test -v -run ^TestScenario$ github.com/dedis/d-voting/integration -count=1
 ```
 
 To end the session, run `./kill_test.sh`.
