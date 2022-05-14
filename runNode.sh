@@ -12,7 +12,7 @@ pk=adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3
 # Launch session
 s="d-voting-test"
 
-tmux list-sessions | rg "^$TMUX_SESSION_NAME:" >/dev/null 2>&1 && { echo >&2 "A session with the name $TMUX_SESSION_NAME already exists; kill it and try again"; exit 1; }
+tmux list-sessions | rg "^$s:" >/dev/null 2>&1 && { echo >&2 "A session with the name $s already exists; kill it and try again"; exit 1; }
 
 tmux new-session -d -s $s
 
@@ -30,5 +30,6 @@ tmux send-keys -t $s:$window "LLVL=info ./memcoin --config /tmp/node$from start 
 
 done
 
+tmux new-window -t $s
 
 tmux a
