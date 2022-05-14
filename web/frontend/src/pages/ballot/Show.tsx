@@ -23,9 +23,11 @@ import { Status } from 'types/election';
 import ElectionClosed from './components/ElectionClosed';
 import Loading from 'pages/Loading';
 import { CloudUploadIcon } from '@heroicons/react/solid';
+import { SpinnerIcon } from 'components/utils/SpinnerIcon';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
+
   const { electionId } = useParams();
   const UserID = sessionStorage.getItem('id');
   const { loading, configObj, electionID, status, pubKey, ballotSize, chunksPerBallot } =
@@ -33,20 +35,12 @@ const Ballot: FC = () => {
   const { configuration, answers, setAnswers } = useConfiguration(configObj);
   const [userErrors, setUserErrors] = useState('');
   const edCurve = kyber.curve.newCurve('edwards25519');
-  const [postRequest, setPostRequest] = useState(null);
   const [postError, setPostError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [modalText, setModalText] = useState(t('voteSuccess') as string);
   const [modalTitle, setModalTitle] = useState('');
-  const [navigateDest, setNavigateDest] = useState(null);
+  const [castVoteLoading, setCastVoteLoading] = useState(false);
   const sendFetchRequest = usePostCall(setPostError);
-
-  useEffect(() => {
-    if (postRequest !== null) {
-      sendFetchRequest(endpoints.newElectionVote(electionID.toString()), postRequest, setShowModal);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [postRequest]);
 
   useEffect(() => {
     if (postError !== null) {
@@ -57,7 +51,6 @@ const Ballot: FC = () => {
       }
       setModalTitle(t('errorTitle'));
     } else {
-      setNavigateDest('/');
       setModalText(t('voteSuccess'));
       setModalTitle(t('voteSuccessful'));
     }
@@ -66,7 +59,7 @@ const Ballot: FC = () => {
   const hexToBytes = (hex: string) => {
     const bytes: number[] = [];
     for (let c = 0; c < hex.length; c += 2) {
-      bytes.push(parseInt(hex.substr(c, 2), 16));
+      bytes.push(parseInt(hex.substring(c, c + 2), 16));
     }
     return new Uint8Array(bytes);
   };
@@ -96,7 +89,11 @@ const Ballot: FC = () => {
           'Content-Type': 'Application/json',
         },
       };
-      setPostRequest(newRequest);
+      await sendFetchRequest(
+        endpoints.newElectionVote(electionID.toString()),
+        newRequest,
+        setShowModal
+      );
     } catch (e) {
       console.log(e);
       setModalText(t('ballotFailure'));
@@ -104,6 +101,7 @@ const Ballot: FC = () => {
 
       setShowModal(true);
     }
+    setCastVoteLoading(false);
   };
 
   const handleClick = () => {
@@ -111,6 +109,7 @@ const Ballot: FC = () => {
       setUserErrors(t('incompleteBallot'));
       return;
     }
+    setCastVoteLoading(true);
 
     setUserErrors('');
     sendBallot();
@@ -166,7 +165,11 @@ const Ballot: FC = () => {
                 type="button"
                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
                 onClick={handleClick}>
-                <CloudUploadIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                {castVoteLoading ? (
+                  <SpinnerIcon />
+                ) : (
+                  <CloudUploadIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                )}
                 {t('castVote')}
               </button>
             </div>
@@ -183,7 +186,7 @@ const Ballot: FC = () => {
         setShowModal={setShowModal}
         title={modalTitle}
         buttonRightText={t('close')}
-        navigateDestination={navigateDest}>
+        navigateDestination={-1}>
         {modalText}
       </RedirectToModal>
       {loading ? (

@@ -15,6 +15,7 @@ import { emptyConfiguration, newSubject } from '../../../types/getObjectType';
 import { marshalConfig } from '../../../types/JSONparser';
 import DownloadButton from 'components/buttons/DownloadButton';
 import { SpinnerIcon } from 'components/utils/SpinnerIcon';
+import RedirectToModal from 'components/modal/RedirectToModal';
 
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
@@ -22,18 +23,18 @@ import { SpinnerIcon } from 'components/utils/SpinnerIcon';
 // removeSubject is used by the subject child to notify the
 // parent when the "removeSubject" button has been clicked.
 
-type ElectionFormProps = {
-  setShowModal(modal: any): void;
-  setTextModal(text: string): void;
-};
+type ElectionFormProps = {};
 
-const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => {
+const ElectionForm: FC<ElectionFormProps> = () => {
   // conf is the configuration object containing MainTitle and Scaffold which
   // contains an array of subject.
   const { t } = useTranslation();
   const emptyConf: Configuration = emptyConfiguration();
   const [conf, setConf] = useState<Configuration>(emptyConf);
   const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [textModal, setTextModal] = useState('');
+  const [navigateDestination, setNavigateDestination] = useState(null);
   const { MainTitle, Scaffold } = conf;
 
   async function createHandler() {
@@ -49,9 +50,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
     try {
       await configurationSchema.validate(data.Configuration);
     } catch (err) {
-      setTextModal(
-        'Incorrect election configuration, please fill it completely: ' + err.errors.join(',')
-      );
+      setTextModal(t('errorIncorrectConfSchema') + err.errors.join(','));
       setShowModal(true);
       return;
     }
@@ -65,7 +64,8 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
         setShowModal(true);
       } else {
         const response = await res.json();
-        setTextModal(`Success creating an election ! ElectionID : ${response.ElectionID}`);
+        setNavigateDestination('/elections/' + response.ElectionID);
+        setTextModal(`${t('successCreateElection')} ${response.ElectionID}`);
         setShowModal(true);
         setConf(emptyConf);
       }
@@ -84,9 +84,7 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
     try {
       await configurationSchema.validate(data);
     } catch (err) {
-      setTextModal(
-        'Incorrect election configuration, please fill it completely: ' + err.errors.join(',')
-      );
+      setTextModal(t('errorIncorrectConfSchema') + err.errors.join(','));
       setShowModal(true);
       return;
     }
@@ -118,57 +116,67 @@ const ElectionForm: FC<ElectionFormProps> = ({ setShowModal, setTextModal }) => 
   };
 
   return (
-    <div className="w-screen px-4 md:px-0 md:w-auto">
-      <div className="flex flex-col shadow-lg rounded-md">
-        <UploadFile setConf={setConf} setShowModal={setShowModal} setTextModal={setTextModal} />
-        <div className="hidden sm:block">
-          <div className="py-3 px-4">
-            <div className="border-t border-gray-200" />
+    <>
+      <RedirectToModal
+        showModal={showModal}
+        setShowModal={setShowModal}
+        title={t('notification')}
+        buttonRightText={t('close')}
+        navigateDestination={navigateDestination}>
+        {textModal}
+      </RedirectToModal>
+      <div className="w-screen px-4 md:px-0 md:w-auto">
+        <div className="flex flex-col shadow-lg rounded-md">
+          <UploadFile setConf={setConf} setShowModal={setShowModal} setTextModal={setTextModal} />
+          <div className="hidden sm:block">
+            <div className="py-3 px-4">
+              <div className="border-t border-gray-200" />
+            </div>
+          </div>
+          <input
+            value={MainTitle}
+            onChange={(e) => setConf({ ...conf, MainTitle: e.target.value })}
+            name="MainTitle"
+            type="text"
+            placeholder="Enter the Main title"
+            className="ml-3 mt-4 w-60 mb-2 text-lg border rounded-md"
+          />
+          {Scaffold.map((subject) => (
+            <SubjectComponent
+              notifyParent={notifyParent}
+              subjectObject={subject}
+              removeSubject={removeSubject(subject.ID)}
+              nestedLevel={0}
+              key={subject.ID}
+            />
+          ))}
+          <div className="flex justify-end pr-2">
+            <AddButton onClick={addSubject}>Subject</AddButton>
           </div>
         </div>
-        <input
-          value={MainTitle}
-          onChange={(e) => setConf({ ...conf, MainTitle: e.target.value })}
-          name="MainTitle"
-          type="text"
-          placeholder="Enter the Main title"
-          className="ml-3 mt-4 w-60 mb-2 text-lg border rounded-md"
-        />
-        {Scaffold.map((subject) => (
-          <SubjectComponent
-            notifyParent={notifyParent}
-            subjectObject={subject}
-            removeSubject={removeSubject(subject.ID)}
-            nestedLevel={0}
-            key={subject.ID}
-          />
-        ))}
-        <div className="flex justify-end pr-2">
-          <AddButton onClick={addSubject}>Subject</AddButton>
+        <div className="my-2">
+          <button
+            type="button"
+            className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
+            onClick={createHandler}>
+            {loading ? (
+              <SpinnerIcon />
+            ) : (
+              <CloudUploadIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+            )}
+            {t('createElec')}
+          </button>
+          <button
+            type="button"
+            className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+            onClick={() => setConf(emptyConf)}>
+            <TrashIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+            {t('clearElec')}
+          </button>
+          <DownloadButton exportData={exportData}>{t('exportElecJSON')}</DownloadButton>
         </div>
       </div>
-      <div className="my-2">
-        <button
-          type="button"
-          className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
-          onClick={createHandler}>
-          {loading ? (
-            <SpinnerIcon />
-          ) : (
-            <CloudUploadIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-          )}
-          {t('createElec')}
-        </button>
-        <button
-          type="button"
-          className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
-          onClick={() => setConf(emptyConf)}>
-          <TrashIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-          {t('clearElec')}
-        </button>
-        <DownloadButton exportData={exportData}>{t('exportElecJSON')}</DownloadButton>
-      </div>
-    </div>
+    </>
   );
 };
 

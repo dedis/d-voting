@@ -1,5 +1,5 @@
 import { FC, Fragment } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { To, useNavigate } from 'react-router-dom';
 import { Dialog, Transition } from '@headlessui/react';
 
 type RedirectToModalProps = {
@@ -8,7 +8,7 @@ type RedirectToModalProps = {
   title: string;
   children: string;
   buttonRightText: string;
-  navigateDestination?: string;
+  navigateDestination?: To | number;
 };
 
 const RedirectToModal: FC<RedirectToModalProps> = ({
@@ -23,7 +23,7 @@ const RedirectToModal: FC<RedirectToModalProps> = ({
 
   const closeModal = () => {
     if (navigateDestination) {
-      navigate(navigateDestination);
+      navigate(navigateDestination as To);
     }
     setShowModal(false);
   };

@@ -29,26 +29,34 @@ type ElectionsMetadata struct {
 // ElectionIDs is a slice of hex-encoded election IDs
 type ElectionIDs []string
 
-// Contains checks if el is present
-func (e ElectionIDs) Contains(el string) bool {
-	for _, e1 := range e {
+// Contains checks if el is present. Return < 0 if not.
+func (e ElectionIDs) Contains(el string) int {
+	for i, e1 := range e {
 		if e1 == el {
-			return true
+			return i
 		}
 	}
 
-	return false
+	return -1
 }
 
 // Add adds an election ID or returns an error if already present
 func (e *ElectionIDs) Add(id string) error {
-	if e.Contains(id) {
+	if e.Contains(id) >= 0 {
 		return xerrors.Errorf("id %q already exist", id)
 	}
 
 	*e = append(*e, id)
 
 	return nil
+}
+
+// Remove removes an election ID from the list, if it exists
+func (e *ElectionIDs) Remove(id string) {
+	i := e.Contains(id)
+	if i >= 0 {
+		*e = append((*e)[:i], (*e)[i+1:]...)
+	}
 }
 
 // TransactionFactory provides the mean to deserialize a transaction.
@@ -257,6 +265,26 @@ type CancelElection struct {
 
 // Serialize implements serde.Message
 func (ce CancelElection) Serialize(ctx serde.Context) ([]byte, error) {
+	format := transactionFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, ce)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to encode cancel election: %v", err)
+	}
+
+	return data, nil
+}
+
+// DeleteElection defines the transaction to delete the election
+//
+// - implements serde.Message
+type DeleteElection struct {
+	// ElectionID is hex-encoded
+	ElectionID string
+}
+
+// Serialize implements serde.Message
+func (ce DeleteElection) Serialize(ctx serde.Context) ([]byte, error) {
 	format := transactionFormats.Get(ctx.GetFormat())
 
 	data, err := format.Encode(ctx, ce)

@@ -317,6 +317,7 @@ func (a *RegisterHandlersAction) Execute(ctx node.Context) error {
 	ep := eproxy.NewDKG(mngr, dkg, proxykey)
 
 	router.HandleFunc("/evoting/services/dkg/actors", ep.NewDKGActor).Methods("POST")
+	router.HandleFunc("/evoting/services/dkg/actors", eproxy.AllowCORS).Methods("OPTIONS")
 	router.HandleFunc("/evoting/services/dkg/actors/{electionID}", ep.Actor).Methods("GET")
 	router.HandleFunc("/evoting/services/dkg/actors/{electionID}", ep.EditDKGActor).Methods("PUT")
 	router.HandleFunc("/evoting/services/dkg/actors/{electionID}", eproxy.AllowCORS).Methods("OPTIONS")

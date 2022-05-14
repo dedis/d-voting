@@ -141,7 +141,7 @@ const ElectionShow: FC = () => {
   // Update the status of the election if necessary
   useEffect(() => {
     if (DKGStatuses !== null) {
-      if (status == Status.Initial) {
+      if (status === Status.Initial) {
         const statuses = Array.from(DKGStatuses.values());
 
         if (!statuses.includes(NodeStatus.NotInitialized)) {
