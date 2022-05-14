@@ -12,7 +12,7 @@ const ProgressBar: FC<ProgressBarProps> = ({ isBest, children }) => {
         <div
           className="bg-gray-300 px-1 text-xs font-medium text-white p-0.5 leading-none rounded-full"
           style={{ width: `100%` }}>
-          {children}
+          {`${children}%`}
         </div>
       ) : (
         <div
@@ -20,7 +20,7 @@ const ProgressBar: FC<ProgressBarProps> = ({ isBest, children }) => {
             isBest && 'bg-indigo-600'
           } text-xs font-medium text-white text-center p-0.5 leading-none rounded-full`}
           style={{ width: `${children}%` }}>
-          {children}
+          {`${children}%`}
         </div>
       )}
     </div>

@@ -114,7 +114,7 @@ const ElectionResult: FC = () => {
 
   const displayResults = (subject: Subject) => {
     return (
-      <div key={subject.ID} className="px-8 pt-4">
+      <div key={subject.ID} className="pt-4">
         <h2 className="text-lg font-bold">{subject.Title}</h2>
         {subject.Order.map((id: ID) => (
           <div key={id}>
@@ -141,7 +141,7 @@ const ElectionResult: FC = () => {
           const rank = element as RankQuestion;
           res = countRankResult(rankResult.get(id), element as RankQuestion).resultsInPercent.map(
             (percent, index) => {
-              return { Candidate: rank.Choices[index], Percentage: percent };
+              return { Candidate: rank.Choices[index], Percentage: `${percent}%` };
             }
           );
           dataToDownload.push({ ID: id, Title: element.Title, Results: res });
@@ -150,7 +150,7 @@ const ElectionResult: FC = () => {
         case SELECT:
           const select = element as SelectQuestion;
           res = countSelectResult(selectResult.get(id)).resultsInPercent.map((percent, index) => {
-            return { Candidate: select.Choices[index], Percentage: percent };
+            return { Candidate: select.Choices[index], Percentage: `${percent}%` };
           });
           dataToDownload.push({ ID: id, Title: element.Title, Results: res });
           break;
@@ -161,7 +161,7 @@ const ElectionResult: FC = () => {
 
         case TEXT:
           res = Array.from(countTextResult(textResult.get(id)).resultsInPercent).map((r) => {
-            return { Candidate: r[0], Percentage: r[1] };
+            return { Candidate: r[0], Percentage: `${r[1]}%` };
           });
           dataToDownload.push({ ID: id, Title: element.Title, Results: res });
           break;
@@ -191,18 +191,40 @@ const ElectionResult: FC = () => {
     saveAs(fileToSave, fileName);
   };
 
+  const exportCSVData = () => {
+    const fileName = 'result.json';
+
+    const dataToDownload: DownloadedResults[] = [];
+
+    configuration.Scaffold.forEach((subject: Subject) => {
+      getResultData(subject, dataToDownload);
+    });
+
+    const data = {
+      Title: configuration.MainTitle,
+      NumberOfVotes: result.length,
+      Results: dataToDownload,
+    };
+
+    const fileToSave = new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json',
+    });
+
+    saveAs(fileToSave, fileName);
+  };
+
   return (
     <div>
       {!loading ? (
-        <div>
+        <div className="w-[60rem] font-sans px-4 py-8">
           <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-            Results
+            {t('navBarResult')}
           </h1>
-          <div className="shadow-lg rounded-md w-full px-4 pb-4 my-0 sm:my-4">
+          <div className="w-full pb-4 my-0 sm:my-4">
             <h3 className="py-6 uppercase text-2xl text-center text-gray-700">
               {configuration.MainTitle}
             </h3>
-            <h2 className="px-8 text-lg">Total number of votes : {result.length}</h2>
+            <h2 className="text-lg">Total number of votes : {result.length}</h2>
             {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
           </div>
           <div className="flex my-4">
@@ -210,6 +232,7 @@ const ElectionResult: FC = () => {
               <TextButton>{t('back')}</TextButton>
             </div>
             <DownloadButton exportData={exportData}>{t('exportResJSON')}</DownloadButton>
+            <DownloadButton exportData={exportCSVData}>{t('exportResCSV')}</DownloadButton>
           </div>
         </div>
       ) : (
