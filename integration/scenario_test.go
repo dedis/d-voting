@@ -10,6 +10,7 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -33,7 +34,16 @@ var suite = suites.MustFind("Ed25519")
 
 // Check the shuffled votes versus the cast votes on a few nodes
 func TestScenario(t *testing.T) {
-	t.Run("Basic configuration", getScenarioTest(3, 3, 1))
+	val, ok := os.LookupEnv("DVOTING_NB_NODE")
+	var numNodes int
+	var err error
+	if !ok {
+		numNodes = 3
+	} else {
+		numNodes, err = strconv.Atoi(val)
+		require.NoError(t, err, "Env var DVOTING_NB_NODE is not configurated")
+	}
+	t.Run("Basic configuration", getScenarioTest(numNodes, 3, 1))
 }
 
 func getScenarioTest(numNodes int, numVotes int, numElection int) func(*testing.T) {
