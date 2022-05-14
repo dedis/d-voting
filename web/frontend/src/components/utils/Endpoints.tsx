@@ -16,11 +16,14 @@ export const editDKGActors = (ElectionID: string) =>
 // initialize the nodes
 export const dkgActors = `/api/evoting/services/dkg/actors`;
 
-export const getDKGActors = (ElectionID: string) =>
-  `${process.env.REACT_APP_PROXY}/evoting/services/dkg/actors/${ElectionID}`;
+export const getDKGActors = (Proxy: string, ElectionID: string) =>
+  encodeURI(`${Proxy}/evoting/services/dkg/actors/${ElectionID}`);
 
 // get the proxies' addresses from the web backend
 export const getProxiesAddresses = (ElectionID: string) => `/api/elections/${ElectionID}/proxies`;
+export const getProxyAddress = (ElectionID: string, Node: string) =>
+  `/api/elections/${ElectionID}/proxies/${Node}`;
+export const editProxiesAddresses = (ElectionID: string) => `/api/elections/${ElectionID}/proxies`;
 
 // public information can be directly fetched from dela nodes
 export const election = (ElectionID: string) =>

@@ -15,26 +15,28 @@ import {
   NewDKGBody,
   NewElectionBody,
   NewElectionVoteBody,
+  NewProxyAddress,
   NewUserRole,
   RemoveUserRole,
 } from '../types/frontendRequestBody';
 
 import { ID } from 'types/configuration';
-import { Action, NodeStatus, Status } from 'types/election';
+import { Action, Status } from 'types/election';
 import { setupMockElection, toLightElectionInfo } from './setupMockElections';
 import setupMockUserDB from './setupMockUserDB';
 import { UserRole } from 'types/userRole';
 import { mockRoster } from './mockData';
+import { NodeStatus } from 'types/node';
 
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;
 
-const { mockElections, mockResults, mockDKG, mockNodeProxy } = setupMockElection();
+const { mockElections, mockResults, mockDKG, mockNodeProxyAddresses } = setupMockElection();
 
 var mockUserDB = setupMockUserDB();
 
 const RESPONSE_TIME = 200;
-const CHANGE_STATUS_TIMER = 1000;
+const CHANGE_STATUS_TIMER = 2000;
 const INIT_TIMER = 4000;
 const SETUP_TIMER = 4000;
 const SHUFFLE_TIMER = 2000;
@@ -104,7 +106,10 @@ export const handlers = [
 
     const createElection = (configuration: any) => {
       const newElectionID = uid();
-      mockDKG.set(newElectionID, [NodeStatus.NotInitialized, false]);
+      mockDKG.set(newElectionID, NodeStatus.NotInitialized);
+      const newNodeProxyAddresses = new Map();
+      mockRoster.forEach((node) => newNodeProxyAddresses.set(node, node));
+      mockNodeProxyAddresses.set(newElectionID, newNodeProxyAddresses);
 
       mockElections.set(newElectionID, {
         ElectionID: newElectionID,
@@ -152,6 +157,8 @@ export const handlers = [
         break;
       case Action.Close:
         status = Status.Closed;
+        //return res(ctx.status(500), ctx.text('Oh oh'));
+
         break;
       case Action.CombineShares:
         status = Status.ResultAvailable;
@@ -159,6 +166,8 @@ export const handlers = [
         break;
       case Action.Cancel:
         status = Status.Canceled;
+        //return res(ctx.status(500), ctx.text('Oh oh'));
+
         break;
       default:
         break;
@@ -174,14 +183,12 @@ export const handlers = [
       CHANGE_STATUS_TIMER
     );
 
-    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
-
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
   rest.post(endpoints.dkgActors, (req, res, ctx) => {
     const body = req.body as NewDKGBody;
-    mockDKG.set(body.ElectionID, [NodeStatus.Initialized, false]);
+    setTimeout(() => mockDKG.set(body.ElectionID, NodeStatus.Initialized), INIT_TIMER);
 
     return res(ctx.status(200));
   }),
@@ -192,7 +199,7 @@ export const handlers = [
 
     switch (body.Action) {
       case Action.Setup:
-        mockDKG.set(ElectionID as string, [NodeStatus.Setup, false]);
+        setTimeout(() => mockDKG.set(ElectionID as string, NodeStatus.Setup), SETUP_TIMER);
         break;
       case Action.BeginDecryption:
         setTimeout(
@@ -212,54 +219,39 @@ export const handlers = [
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
-  // TODO change mock DKG to contain Map<ID, NodeStatus[]>
-  // on post keep to NotInitialized
-  // on poll change to Initialized
-  // on keep in Initialized
-  // on poll change to setup
-  // respond with mockDKG.get(ID)
-  rest.get(endpoints.getDKGActors(':ElectionID'), async (req, res, ctx) => {
+  rest.get(endpoints.getDKGActors('*', ':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
+    const proxy = req.params[0];
     const election = mockElections.get(ElectionID as string);
-
-    var status = NodeStatus.NotInitialized;
 
     switch (election.Status) {
       case Status.Initial:
-        const currentNodeStatus = mockDKG.get(ElectionID as string)[0];
-        const response = mockDKG.get(ElectionID as string)[1];
+        const currentNodeStatus = mockDKG.get(ElectionID as string);
 
-        if (currentNodeStatus === NodeStatus.Initialized && !response) {
-          setTimeout(() => {
-            mockDKG.set(ElectionID as string, [NodeStatus.Initialized, true]);
-          }, INIT_TIMER);
+        if (currentNodeStatus === NodeStatus.Initialized) {
+          //return res(ctx.status(500), ctx.json('Oh oh'));
+          return res(ctx.status(200), ctx.json({ Status: currentNodeStatus, Error: {} }));
+        } else if (currentNodeStatus === NodeStatus.Setup) {
+          //mock a node setup failure
+          /*return res(
+            ctx.status(200),
+            ctx.json({
+              Status: NodeStatus.Failed,
+              Error: {
+                Title: 'Node could not be initialized',
+                Code: '<uint>',
+                Message: 'Failed to setup the node',
+                Args: {},
+              },
+            })
+          );*/
+          return res(ctx.status(200), ctx.json({ Status: currentNodeStatus, Error: {} }));
+        } else {
+          return res(ctx.status(404), ctx.json(`Election ${ElectionID} does not exist`));
         }
-        if (currentNodeStatus === NodeStatus.Setup && !response) {
-          status = NodeStatus.Initialized;
-          setTimeout(() => {
-            mockDKG.set(ElectionID as string, [NodeStatus.Setup, true]);
-          }, SETUP_TIMER);
-        }
-        break;
       default:
-        break;
+        return res(ctx.status(200), ctx.json({ Status: NodeStatus.Setup, Error: {} }));
     }
-
-    if (mockDKG.get(ElectionID as string)[1]) {
-      status = mockDKG.get(ElectionID as string)[0];
-    }
-
-    if (mockDKG.get(ElectionID as string)[0] === NodeStatus.NotInitialized) {
-      return res(ctx.status(404), ctx.json('election does not exist'));
-    }
-
-    // mock a node initialization failure
-    // return res(
-    //   ctx.status(200),
-    //   ctx.json({ Status: NodeStatus.Failed, Error: { message: 'Failed to Initialize the node' } })
-    // );
-
-    return res(ctx.status(200), ctx.json({ Status: status, Error: {} }));
   }),
 
   rest.put(endpoints.editShuffle(':ElectionID'), async (req, res, ctx) => {
@@ -303,6 +295,41 @@ export const handlers = [
     const { ElectionID } = req.params;
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    return res(ctx.status(200), ctx.json(mockNodeProxy.get(ElectionID as string)));
+    console.log(mockNodeProxyAddresses);
+    const response = [];
+    mockNodeProxyAddresses
+      .get(ElectionID as string)
+      .forEach((proxy, node) => response.push({ [node]: proxy }));
+
+    return res(ctx.status(200), ctx.json({ Proxies: response }));
+  }),
+
+  rest.put(endpoints.editProxiesAddresses(':ElectionID'), async (req, res, ctx) => {
+    const { ElectionID } = req.params;
+    const body = req.body as NewProxyAddress;
+
+    const newNodeProxyAddresses = new Map();
+
+    body.Proxies.forEach((value) => {
+      Object.entries(value).forEach((v) => newNodeProxyAddresses.set(v[0], v[1]));
+    });
+
+    mockNodeProxyAddresses.set(ElectionID as string, newNodeProxyAddresses);
+    console.log(mockNodeProxyAddresses);
+
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
+
+    return res(ctx.status(200), ctx.text('Action successfully done'));
+  }),
+
+  rest.get(endpoints.getProxyAddress(':ElectionID', '*'), async (req, res, ctx) => {
+    const { ElectionID } = req.params;
+
+    const node0 = mockRoster[0];
+    const proxy = mockNodeProxyAddresses.get(ElectionID as string).get(node0);
+
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
+
+    return res(ctx.status(200), ctx.json({ [node0]: proxy }));
   }),
 ];

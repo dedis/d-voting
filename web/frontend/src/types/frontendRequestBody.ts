@@ -31,12 +31,17 @@ interface RemoveUserRole {
   sciper: string;
 }
 
+interface NewProxyAddress {
+  Proxies: [];
+}
+
 export type {
   NewElectionVoteBody,
   NewElectionBody,
   EditElectionBody,
   EditDKGActorBody,
   NewDKGBody,
+  NewProxyAddress,
   NewUserRole,
   RemoveUserRole,
 };

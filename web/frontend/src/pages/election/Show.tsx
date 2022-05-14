@@ -5,13 +5,15 @@ import { useTranslation } from 'react-i18next';
 
 import useElection from 'components/utils/useElection';
 import useGetResults from 'components/utils/useGetResults';
-import { NodeStatus, OngoingAction, Status } from 'types/election';
+import { OngoingAction, Status } from 'types/election';
 import Modal from 'components/modal/Modal';
 import StatusTimeline from './components/StatusTimeline';
 import Loading from 'pages/Loading';
 import * as endpoints from '../../components/utils/Endpoints';
 import useFetchCall from '../../components/utils/useFetchCall';
 import Action from './components/Action';
+import { NodeStatus } from 'types/node';
+import DKGTable from './components/DKGTable';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
@@ -24,18 +26,22 @@ const ElectionShow: FC = () => {
   const [isResultAvailable, setIsResultAvailable] = useState(false);
   const { getResults } = useGetResults();
 
-  const [getError, setGetError] = useState(null);
   const [textModalError, setTextModalError] = useState(null);
   const [showModalError, setShowModalError] = useState(false);
 
   const [ongoingAction, setOngoingAction] = useState(OngoingAction.None);
+
   const request = {
     method: 'GET',
   };
-  const [dkgStatus, dkgLoading, dkgError] = useFetchCall(
-    endpoints.getDKGActors(electionId),
+  const [nodeProxyObject, nodeProxyLoading, nodeProxyError] = useFetchCall(
+    endpoints.getProxiesAddresses(electionId),
     request
   );
+  const [nodeProxyAddresses, setNodeProxyAddresses] = useState<Map<string, string>>(null);
+  // The status of each node
+  const [DKGStatuses, setDKGStatuses] = useState<Map<string, NodeStatus>>(null);
+
   const ongoingItem = 'ongoingAction' + electionID;
 
   // Fetch result when available after a status change
@@ -45,14 +51,6 @@ const ElectionShow: FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isResultAvailable, status]);
-
-  useEffect(() => {
-    if (getError !== null) {
-      setTextModalError(getError);
-      setShowModalError(true);
-      setGetError(null);
-    }
-  }, [getError, setTextModalError]);
 
   // Clean up the storage when it's not needed anymore
   useEffect(() => {
@@ -70,31 +68,93 @@ const ElectionShow: FC = () => {
     }
   }, []);
 
-  // Set the ongoingAction in the storage
+  // Store the ongoingAction in the local storage
   useEffect(() => {
     window.localStorage.setItem(ongoingItem, ongoingAction.toString());
   }, [ongoingAction]);
 
+  // Set the mapping of the node and proxy addresses
+  useEffect(() => {
+    if (nodeProxyError !== null) {
+      setTextModalError(nodeProxyError.message);
+      setShowModalError(true);
+    }
+
+    if (nodeProxyObject !== null) {
+      const newNodeProxyAddresses = new Map();
+
+      nodeProxyObject.Proxies.forEach((value) => {
+        Object.entries(value).forEach((v) => {
+          newNodeProxyAddresses.set(v[0], v[1]);
+          console.log(v[0]);
+        });
+      });
+
+      setNodeProxyAddresses(newNodeProxyAddresses);
+    }
+  }, [nodeProxyObject, nodeProxyError]);
+
   // Fetch the status of the nodes
   useEffect(() => {
-    if (dkgError !== null) {
-      // Ignore error 404 when node is not initialized
-      if (!dkgError.message.includes('election does not exist')) {
-        setTextModalError(dkgError.message + ' show');
+    const fetchData = async (node: string) => {
+      try {
+        console.log(nodeProxyAddresses.get(node));
+        const response = await fetch(
+          endpoints.getDKGActors(nodeProxyAddresses.get(node), electionId),
+          request
+        );
+        if (!response.ok) {
+          if (response.status === 404) {
+            return { id: node, status: NodeStatus.NotInitialized };
+          } else {
+            const js = await response.json();
+            throw new Error(JSON.stringify(js));
+          }
+        } else {
+          let dataReceived = await response.json();
+          return { id: node, status: dataReceived.Status };
+        }
+      } catch (e) {
+        setTextModalError(e.message);
         setShowModalError(true);
       }
-    } else {
+    };
+
+    if (nodeProxyAddresses !== null) {
+      const promises: Promise<{
+        id: string;
+        status: any;
+      }>[] = Array.from(nodeProxyAddresses.keys()).map((node) => {
+        return fetchData(node);
+      });
+
+      Promise.all(promises).then((values) => {
+        const newDKGStatuses = new Map();
+        values.forEach((v) => newDKGStatuses.set(v.id, v.status));
+        setDKGStatuses(newDKGStatuses);
+      });
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodeProxyAddresses]);
+
+  // Update the status of the election if necessary
+  useEffect(() => {
+    if (DKGStatuses !== null) {
       if (status == Status.Initial) {
-        if ((dkgStatus.Status as NodeStatus) === NodeStatus.Initialized) {
-          setStatus(Status.Initialized);
-        }
-        if ((dkgStatus.Status as NodeStatus) === NodeStatus.Setup) {
-          setStatus(Status.Setup);
+        const statuses = Array.from(DKGStatuses.values());
+
+        if (!statuses.includes(NodeStatus.NotInitialized)) {
+          if (statuses.includes(NodeStatus.Setup)) {
+            setStatus(Status.Setup);
+          } else {
+            setStatus(Status.Initialized);
+          }
         }
         // Status Failed is handled by useChangeAction
       }
     }
-  }, [dkgStatus, status, dkgError, ongoingAction]);
+  }, [DKGStatuses, status]);
 
   return (
     <div className="w-[60rem] font-sans px-4 py-4">
@@ -125,14 +185,33 @@ const ElectionShow: FC = () => {
                 status={status}
                 electionID={electionID}
                 roster={roster}
+                nodeProxyAddresses={nodeProxyAddresses}
                 setStatus={setStatus}
                 setResultAvailable={setIsResultAvailable}
-                setGetError={setGetError}
                 setTextModalError={setTextModalError}
                 setShowModalError={setShowModalError}
                 ongoingAction={ongoingAction}
                 setOngoingAction={setOngoingAction}
+                DKGStatuses={DKGStatuses}
+                setDKGStatuses={setDKGStatuses}
               />
+            </div>
+          </div>
+          <div className="py-4 pl-2 pb-8">
+            <div className="font-bold uppercase text-lg text-gray-700 pb-2">{t('DKGStatuses')}</div>
+            <div className="px-2">
+              <>
+                {!nodeProxyLoading ? (
+                  <DKGTable
+                    nodeProxyAddresses={nodeProxyAddresses}
+                    setNodeProxyAddresses={setNodeProxyAddresses}
+                    DKGStatuses={DKGStatuses}
+                    electionID={electionId}
+                    setTextModalError={setTextModalError}
+                    setShowModalError={setShowModalError}
+                  />
+                ) : null}
+              </>
             </div>
           </div>
         </>

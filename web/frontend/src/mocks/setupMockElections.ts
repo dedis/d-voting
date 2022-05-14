@@ -1,6 +1,7 @@
 import { ID } from 'types/configuration';
-import { ElectionInfo, LightElectionInfo, NodeStatus, Results, Status } from 'types/election';
+import { ElectionInfo, LightElectionInfo, Results, Status } from 'types/election';
 import { unmarshalConfig } from 'types/JSONparser';
+import { NodeStatus } from 'types/node';
 import {
   mockElection1,
   mockElection2,
@@ -15,14 +16,16 @@ import {
 const setupMockElection = () => {
   const mockElections: Map<ID, ElectionInfo> = new Map();
   const mockResults: Map<ID, Results[]> = new Map();
-  // NodeStatus contains the current status of the nodes, the boolean is set to
-  // true if the handler must respond with the updated value (as the handler
-  // cannot know when we poll if we have already started setting up or not)
-  const mockDKG: Map<ID, [NodeStatus, boolean]> = new Map();
-  // Mock the response of the web backend
-  const mockNodeProxy: Map<ID, Map<string, string>> = new Map();
+
+  // Mock of the status of the nodes
+  const mockDKG: Map<ID, NodeStatus> = new Map();
+  // Mock of the node proxy mapping
+  const mockNodeProxyAddresses: Map<ID, Map<string, string>> = new Map();
   const mockAddresses: Map<string, string> = new Map();
-  mockRoster.forEach((node) => mockAddresses.set(node, node));
+
+  mockRoster.forEach((node) => {
+    mockAddresses.set(node, node);
+  });
 
   const electionID1 = '36kSJ0tH';
   const electionID2 = 'Bnq9gLmf';
@@ -39,8 +42,9 @@ const setupMockElection = () => {
   });
 
   mockResults.set(electionID1, [mockElectionResult11, mockElectionResult12]);
-  mockDKG.set(electionID1, [NodeStatus.NotInitialized, false]);
-  mockNodeProxy.set(electionID1, mockAddresses);
+
+  mockDKG.set(electionID1, NodeStatus.NotInitialized);
+  mockNodeProxyAddresses.set(electionID1, mockAddresses);
 
   mockElections.set(electionID2, {
     ElectionID: electionID2,
@@ -54,8 +58,8 @@ const setupMockElection = () => {
   });
 
   mockResults.set(electionID2, [mockElectionResult21, mockElectionResult22, mockElectionResult23]);
-  mockDKG.set(electionID2, [NodeStatus.Initialized, true]);
-  mockNodeProxy.set(electionID2, mockAddresses);
+  mockDKG.set(electionID2, NodeStatus.Setup);
+  mockNodeProxyAddresses.set(electionID2, mockAddresses);
 
   for (let j = 0; j < 5; j++) {
     let electionID11 = '36kSJ0t' + (j as number);
@@ -73,7 +77,7 @@ const setupMockElection = () => {
     });
 
     mockResults.set(electionID11, [mockElectionResult11, mockElectionResult12]);
-    mockNodeProxy.set(electionID11, mockAddresses);
+    mockNodeProxyAddresses.set(electionID11, mockAddresses);
 
     mockElections.set(electionID22, {
       ElectionID: electionID22,
@@ -91,18 +95,18 @@ const setupMockElection = () => {
       mockElectionResult22,
       mockElectionResult23,
     ]);
-    mockNodeProxy.set(electionID22, mockAddresses);
+    mockNodeProxyAddresses.set(electionID22, mockAddresses);
 
     if (j >= Status.Open) {
-      mockDKG.set(electionID11, [NodeStatus.Initialized, true]);
-      mockDKG.set(electionID22, [NodeStatus.Initialized, true]);
+      mockDKG.set(electionID11, NodeStatus.Setup);
+      mockDKG.set(electionID22, NodeStatus.Setup);
     } else {
-      mockDKG.set(electionID11, [NodeStatus.NotInitialized, false]);
-      mockDKG.set(electionID22, [NodeStatus.NotInitialized, false]);
+      mockDKG.set(electionID11, NodeStatus.NotInitialized);
+      mockDKG.set(electionID22, NodeStatus.NotInitialized);
     }
   }
 
-  return { mockElections, mockResults, mockDKG, mockNodeProxy };
+  return { mockElections, mockResults, mockDKG, mockNodeProxyAddresses };
 };
 
 const toLightElectionInfo = (

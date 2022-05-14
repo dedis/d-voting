@@ -1,9 +1,9 @@
 import { Results } from 'types/election';
 
 const mockRoster: string[] = [
-  'http://localhost:2001',
-  'http://localhost:2002',
-  'http://localhost:2003',
+  'https://localhost:8001',
+  'https://localhost:8002',
+  'https://localhost:8003',
 ];
 
 const mockElection1: any = {

@@ -1,50 +1,53 @@
 import React, { FC } from 'react';
 import PropTypes from 'prop-types';
-import { useTranslation } from 'react-i18next';
 
-//import Modal from 'components/modal/Modal';
 import { ID } from 'types/configuration';
 import { OngoingAction, Status } from 'types/election';
 import useChangeAction from 'components/utils/useChangeAction';
+import { NodeStatus } from 'types/node';
 
 type ActionProps = {
   status: Status;
   electionID: ID;
   roster: string[];
+  nodeProxyAddresses: Map<string, string>;
   setStatus: (status: Status) => void;
   setResultAvailable?: (available: boolean) => void | null;
-  setGetError: (error: string) => void;
   setTextModalError: (text: string) => void;
   setShowModalError: (show: boolean) => void;
   ongoingAction: OngoingAction;
   setOngoingAction: (action: OngoingAction) => void;
+  DKGStatuses: Map<string, NodeStatus>;
+  setDKGStatuses: (dkgStatuses: Map<string, NodeStatus>) => void;
 };
 
 const Action: FC<ActionProps> = ({
   status,
   electionID,
   roster,
+  nodeProxyAddresses,
   setStatus,
   setResultAvailable,
-  setGetError,
   setTextModalError,
   setShowModalError,
   ongoingAction,
   setOngoingAction,
+  DKGStatuses,
+  setDKGStatuses,
 }) => {
-  const { t } = useTranslation();
-
-  const { getAction, modalClose, modalCancel, modalAddProxyAddresses } = useChangeAction(
+  const { getAction, modalClose, modalCancel } = useChangeAction(
     status,
     electionID,
     roster,
+    nodeProxyAddresses,
     setStatus,
     setResultAvailable,
     setTextModalError,
     setShowModalError,
-    setGetError,
     ongoingAction,
-    setOngoingAction
+    setOngoingAction,
+    DKGStatuses,
+    setDKGStatuses
   );
 
   return (
@@ -52,7 +55,6 @@ const Action: FC<ActionProps> = ({
       {getAction()}
       {modalClose}
       {modalCancel}
-      {modalAddProxyAddresses}
     </span>
   );
 };

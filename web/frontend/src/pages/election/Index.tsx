@@ -5,10 +5,11 @@ import ElectionTable from './components/ElectionTable';
 import useFetchCall from 'components/utils/useFetchCall';
 import * as endpoints from 'components/utils/Endpoints';
 import Loading from 'pages/Loading';
-import { LightElectionInfo, NodeStatus, Status } from 'types/election';
+import { LightElectionInfo, Status } from 'types/election';
 import ElectionTableFilter from './components/ElectionTableFilter';
 import { FlashContext, FlashLevel } from 'index';
 import { ID } from 'types/configuration';
+import { NodeStatus } from 'types/node';
 
 const ElectionIndex: FC = () => {
   const { t } = useTranslation();
@@ -54,9 +55,13 @@ const ElectionIndex: FC = () => {
       const req = {
         method: 'GET',
       };
-      const fetchData = async (election: LightElectionInfo) => {
+
+      const fetchData = async (election: LightElectionInfo, proxyAddress: string) => {
         try {
-          const response = await fetch(endpoints.getDKGActors(election.ElectionID), req);
+          const response = await fetch(
+            endpoints.getDKGActors(proxyAddress, election.ElectionID),
+            req
+          );
           if (!response.ok) {
             // The node is not initialized
             if (response.status === 404) {
@@ -81,13 +86,33 @@ const ElectionIndex: FC = () => {
         }
       };
 
+      // Fetches only the status of the first node for each election
+      const fetchProxies = async (election: LightElectionInfo) => {
+        try {
+          const response = await fetch(
+            endpoints.getProxyAddress(election.ElectionID, '0'),
+            request
+          );
+          if (!response.ok) {
+            const js = await response.json();
+            throw new Error(JSON.stringify(js));
+          } else {
+            let dataReceived = await response.json();
+            const nodeProxy = Object.entries(dataReceived)[0];
+            return await fetchData(election, nodeProxy[1] as string);
+          }
+        } catch (e) {
+          fctx.addMessage(e.message, FlashLevel.Error);
+        }
+      };
+
       const newDKGStatuses = new Map(DKGStatuses);
 
       const promises: Promise<{
         ID: string;
         Status: Status;
       }>[] = elections.map((election) => {
-        return fetchData(election);
+        return fetchProxies(election);
       });
 
       Promise.all(promises).then((values) => {

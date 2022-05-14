@@ -21,17 +21,6 @@ export const enum Status {
   Canceled = 6,
 }
 
-export const enum NodeStatus {
-  // Internal Status when the actor hasn't been initialized yet
-  NotInitialized = -1,
-  // Initialized is when the actor has been initialized
-  Initialized,
-  // Setup is when the actor was set up
-  Setup,
-  // Failed is when the actor failed to set up
-  Failed,
-}
-
 export const enum Action {
   Initialize = 'initialize',
   Setup = 'setup',
@@ -94,11 +83,6 @@ interface DownloadedResults {
   Results?: { Candidate: string; Percentage: string }[];
 }
 
-interface DKGInfo {
-  Status: NodeStatus;
-  Error: { Title: string; Code: number; Message: string; Args: string[] };
-}
-
 export type {
   LightElectionInfo,
   ElectionInfo,
@@ -107,5 +91,4 @@ export type {
   TextResults,
   SelectResults,
   DownloadedResults,
-  DKGInfo,
 };
