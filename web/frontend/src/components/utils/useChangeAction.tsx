@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ConfirmModal from '../modal/ConfirmModal';
 import usePostCall from './usePostCall';
@@ -16,8 +16,11 @@ import ShuffleButton from 'components/buttons/ShuffleButton';
 import DecryptButton from 'components/buttons/DecryptButton';
 import CombineButton from 'components/buttons/CombineButton';
 import ResultButton from 'components/buttons/ResultButton';
-import NoActionAvailable from 'components/buttons/NoActionAvailable';
 import { NodeStatus } from 'types/node';
+import DeleteButton from 'components/buttons/DeleteButton';
+import { FlashContext, FlashLevel } from 'index';
+import { useNavigate } from 'react-router';
+import { ROUTE_ELECTION_INDEX } from 'Routes';
 
 const useChangeAction = (
   status: Status,
@@ -38,15 +41,21 @@ const useChangeAction = (
   const [isPosting, setIsPosting] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showModalClose, setShowModalClose] = useState(false);
   const [showModalCancel, setShowModalCancel] = useState(false);
+  const [showModalDelete, setShowModalDelete] = useState(false);
   const [userConfirmedClosing, setUserConfirmedClosing] = useState(false);
   const [userConfirmedCanceling, setUserConfirmedCanceling] = useState(false);
+  const [userConfirmedDeleting, setUserConfirmedDeleting] = useState(false);
   const [proxyAddresses, setProxyAddresses] = useState<Map<string, string>>(new Map());
   const [initializedNodes, setInitializedNodes] = useState<Map<string, boolean>>(new Map());
   const [getError, setGetError] = useState(null);
   const [postError, setPostError] = useState(null);
   const sendFetchRequest = usePostCall(setPostError);
+
+  const fctx = useContext(FlashContext);
+  const navigate = useNavigate();
 
   const modalClose = (
     <ConfirmModal
@@ -62,6 +71,14 @@ const useChangeAction = (
       setShowModal={setShowModalCancel}
       textModal={t('confirmCancelElection')}
       setUserConfirmedAction={setUserConfirmedCanceling}
+    />
+  );
+  const modalDelete = (
+    <ConfirmModal
+      showModal={showModalDelete}
+      setShowModal={setShowModalDelete}
+      textModal={t('confirmDeleteElection')}
+      setUserConfirmedAction={setUserConfirmedDeleting}
     />
   );
 
@@ -289,6 +306,30 @@ const useChangeAction = (
   }, [isCanceling, sendFetchRequest, setShowModalError, setStatus, userConfirmedCanceling]);
 
   useEffect(() => {
+    if (isDeleting && userConfirmedDeleting) {
+      const deleteElection = async () => {
+        const request = {
+          method: 'DELETE',
+        };
+
+        const res = await fetch(`/api/evoting/elections/${electionID}`, request);
+        if (!res.ok) {
+          const txt = await res.text();
+          fctx.addMessage(`failed to send delete request: ${txt}`, FlashLevel.Error);
+          return;
+        }
+
+        fctx.addMessage('election deleted', FlashLevel.Info);
+        navigate(ROUTE_ELECTION_INDEX);
+      };
+
+      deleteElection();
+      setIsDeleting(false);
+      setUserConfirmedDeleting(false);
+    }
+  });
+
+  useEffect(() => {
     if (isInitializing) {
       const initialize = async () => {
         proxyAddresses.forEach(async (address) => {
@@ -374,33 +415,41 @@ const useChangeAction = (
     }
   };
 
+  const handleDelete = () => {
+    setShowModalDelete(true);
+    setIsDeleting(true);
+  };
+
   const getAction = () => {
     switch (status) {
       case Status.Initial:
         return (
-          <span>
+          <>
             <InitializeButton
               status={status}
               handleInitialize={handleInitialize}
               ongoingAction={ongoingAction}
             />
-          </span>
+            <DeleteButton handleDelete={handleDelete} />
+          </>
         );
       case Status.Initialized:
         return (
-          <span>
+          <>
             <SetupButton status={status} handleSetup={handleSetup} ongoingAction={ongoingAction} />
-          </span>
+            <DeleteButton handleDelete={handleDelete} />
+          </>
         );
       case Status.Setup:
         return (
-          <span>
+          <>
             <OpenButton status={status} handleOpen={handleOpen} ongoingAction={ongoingAction} />
-          </span>
+            <DeleteButton handleDelete={handleDelete} />
+          </>
         );
       case Status.Open:
         return (
-          <span>
+          <>
             <CloseButton status={status} handleClose={handleClose} ongoingAction={ongoingAction} />
             <CancelButton
               status={status}
@@ -408,57 +457,64 @@ const useChangeAction = (
               ongoingAction={ongoingAction}
             />
             <VoteButton status={status} electionID={electionID} />
-          </span>
+            <DeleteButton handleDelete={handleDelete} />
+          </>
         );
       case Status.Closed:
         return (
-          <span>
+          <>
             <ShuffleButton
               status={status}
               handleShuffle={handleShuffle}
               ongoingAction={ongoingAction}
             />
-          </span>
+            <DeleteButton handleDelete={handleDelete} />
+          </>
         );
       case Status.ShuffledBallots:
         return (
-          <span>
+          <>
             <DecryptButton
               status={status}
               handleDecrypt={handleDecrypt}
               ongoingAction={ongoingAction}
             />
-          </span>
+            <DeleteButton handleDelete={handleDelete} />
+          </>
         );
       case Status.PubSharesSubmitted:
         return (
-          <CombineButton
-            status={status}
-            handleCombine={handleCombine}
-            ongoingAction={ongoingAction}
-          />
+          <>
+            <CombineButton
+              status={status}
+              handleCombine={handleCombine}
+              ongoingAction={ongoingAction}
+            />
+            <DeleteButton handleDelete={handleDelete} />
+          </>
         );
       case Status.ResultAvailable:
         return (
-          <span>
+          <>
             <ResultButton status={status} electionID={electionID} />
-          </span>
+            <DeleteButton handleDelete={handleDelete} />
+          </>
         );
       case Status.Canceled:
         return (
-          <span>
-            <NoActionAvailable />
-          </span>
+          <>
+            <DeleteButton handleDelete={handleDelete} />
+          </>
         );
       default:
         return (
-          <span>
-            <NoActionAvailable />
-          </span>
+          <>
+            <DeleteButton handleDelete={handleDelete} />
+          </>
         );
     }
   };
-  return { getAction, modalClose, modalCancel };
+  return { getAction, modalClose, modalCancel, modalDelete };
 };
 
 export default useChangeAction;

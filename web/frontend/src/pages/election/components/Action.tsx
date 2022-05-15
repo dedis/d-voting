@@ -1,13 +1,10 @@
-import React, { FC, useContext } from 'react';
+import React, { FC } from 'react';
 import PropTypes from 'prop-types';
 
 import { ID } from 'types/configuration';
 import { OngoingAction, Status } from 'types/election';
 import useChangeAction from 'components/utils/useChangeAction';
 import { NodeStatus } from 'types/node';
-import DeleteButton from 'components/buttons/DeleteButton';
-import { FlashContext, FlashLevel } from 'index';
-import { useNavigate } from 'react-router-dom';
 
 type ActionProps = {
   status: Status;
@@ -38,9 +35,7 @@ const Action: FC<ActionProps> = ({
   DKGStatuses,
   setDKGStatuses,
 }) => {
-  const fctx = useContext(FlashContext);
-  const navigate = useNavigate();
-  const { getAction, modalClose, modalCancel } = useChangeAction(
+  const { getAction, modalClose, modalCancel, modalDelete } = useChangeAction(
     status,
     electionID,
     roster,
@@ -55,29 +50,13 @@ const Action: FC<ActionProps> = ({
     setDKGStatuses
   );
 
-  const deleteElection = async () => {
-    const request = {
-      method: 'DELETE',
-    };
-
-    const res = await fetch(`/api/evoting/elections/${electionID}`, request);
-    if (!res.ok) {
-      const txt = await res.text();
-      fctx.addMessage(`failed to send delete request: ${txt}`, FlashLevel.Error);
-      return;
-    }
-
-    fctx.addMessage('election deleted', FlashLevel.Info);
-    navigate('/');
-  };
-
   return (
-    <span>
+    <>
       {getAction()}
       {modalClose}
       {modalCancel}
-      <DeleteButton status={status} handleDelete={deleteElection} />
-    </span>
+      {modalDelete}
+    </>
   );
 };
 

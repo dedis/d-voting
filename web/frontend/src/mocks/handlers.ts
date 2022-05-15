@@ -216,7 +216,7 @@ export const handlers = [
   rest.delete(endpoints.editElection(':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
     mockElections.delete(ElectionID as string);
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200), ctx.text('Election deleted'));
   }),
