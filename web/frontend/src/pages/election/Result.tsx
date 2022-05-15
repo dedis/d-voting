@@ -42,6 +42,7 @@ const ElectionResult: FC = () => {
   const [rankResult, setRankResult] = useState<RankResults>(null);
   const [selectResult, setSelectResult] = useState<SelectResults>(null);
   const [textResult, setTextResult] = useState<TextResults>(null);
+  const [downloadedResults, setDownloadedResults] = useState(null);
 
   // Group the different results by the ID of the question,
   const groupByID = (
@@ -169,9 +170,7 @@ const ElectionResult: FC = () => {
     });
   };
 
-  const exportData = () => {
-    const fileName = 'result.json';
-
+  /*const exportData = () => {
     const dataToDownload: DownloadedResults[] = [];
 
     configuration.Scaffold.forEach((subject: Subject) => {
@@ -184,7 +183,31 @@ const ElectionResult: FC = () => {
       Results: dataToDownload,
     };
 
-    const fileToSave = new Blob([JSON.stringify(data, null, 2)], {
+    setDataToDownload(data);
+  };*/
+
+  useEffect(() => {
+    if (result !== null) {
+      const dataToDownload: DownloadedResults[] = [];
+
+      configuration.Scaffold.forEach((subject: Subject) => {
+        getResultData(subject, dataToDownload);
+      });
+
+      const data = {
+        Title: configuration.MainTitle,
+        NumberOfVotes: result.length,
+        Results: dataToDownload,
+      };
+
+      setDownloadedResults(data);
+    }
+  }, [result]);
+
+  const exportJSONData = () => {
+    const fileName = 'result.json';
+
+    const fileToSave = new Blob([JSON.stringify(downloadedResults, null, 2)], {
       type: 'application/json',
     });
 
@@ -194,23 +217,18 @@ const ElectionResult: FC = () => {
   const exportCSVData = () => {
     const fileName = 'result.json';
 
-    const dataToDownload: DownloadedResults[] = [];
+    const { Parser } = require('json2csv');
 
-    configuration.Scaffold.forEach((subject: Subject) => {
-      getResultData(subject, dataToDownload);
-    });
+    const fields = ['Candidate', 'Percentage'];
+    const opts = { fields };
 
-    const data = {
-      Title: configuration.MainTitle,
-      NumberOfVotes: result.length,
-      Results: dataToDownload,
-    };
-
-    const fileToSave = new Blob([JSON.stringify(data, null, 2)], {
-      type: 'application/json',
-    });
-
-    saveAs(fileToSave, fileName);
+    try {
+      const parser = new Parser(opts);
+      const csv = parser.parse(downloadedResults);
+      console.log(csv);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -231,7 +249,7 @@ const ElectionResult: FC = () => {
             <div onClick={() => navigate(-1)}>
               <TextButton>{t('back')}</TextButton>
             </div>
-            <DownloadButton exportData={exportData}>{t('exportResJSON')}</DownloadButton>
+            <DownloadButton exportData={exportJSONData}>{t('exportResJSON')}</DownloadButton>
             <DownloadButton exportData={exportCSVData}>{t('exportResCSV')}</DownloadButton>
           </div>
         </div>
