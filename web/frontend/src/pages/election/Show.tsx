@@ -41,6 +41,7 @@ const ElectionShow: FC = () => {
   const [nodeProxyAddresses, setNodeProxyAddresses] = useState<Map<string, string>>(null);
   // The status of each node
   const [DKGStatuses, setDKGStatuses] = useState<Map<string, NodeStatus>>(null);
+  const [DKGLoading, setDKGLoading] = useState(true);
 
   const ongoingItem = 'ongoingAction' + electionID;
 
@@ -128,11 +129,13 @@ const ElectionShow: FC = () => {
         return fetchData(node);
       });
 
-      Promise.all(promises).then((values) => {
-        const newDKGStatuses = new Map();
-        values.forEach((v) => newDKGStatuses.set(v.id, v.status));
-        setDKGStatuses(newDKGStatuses);
-      });
+      Promise.all(promises)
+        .then((values) => {
+          const newDKGStatuses = new Map();
+          values.forEach((v) => newDKGStatuses.set(v.id, v.status));
+          setDKGStatuses(newDKGStatuses);
+        })
+        .finally(() => setDKGLoading(false));
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -158,7 +161,7 @@ const ElectionShow: FC = () => {
 
   return (
     <div className="w-[60rem] font-sans px-4 py-4">
-      {!loading ? (
+      {!loading && !DKGLoading ? (
         <>
           <Modal
             showModal={showModalError}

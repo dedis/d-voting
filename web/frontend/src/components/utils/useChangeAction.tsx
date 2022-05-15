@@ -175,49 +175,52 @@ const useChangeAction = (
 
     switch (ongoingAction) {
       case OngoingAction.Initializing:
-        // Initialize each of the node participating in the election
-        const promises: Promise<unknown>[] = Array.from(nodeProxyAddresses.values()).map(
-          (proxy) => {
-            return pollDKGStatus(proxy, NodeStatus.Initialized, signal);
-          }
-        );
+        if (nodeProxyAddresses !== null) {
+          // Initialize each of the node participating in the election
+          const promises: Promise<unknown>[] = Array.from(nodeProxyAddresses.values()).map(
+            (proxy) => {
+              return pollDKGStatus(proxy, NodeStatus.Initialized, signal);
+            }
+          );
 
-        Promise.all(promises).then(
-          () => {
-            onFullFilled(Status.Initialized);
-            const newDKGStatuses = new Map(DKGStatuses);
-            nodeProxyAddresses.forEach((_proxy, node) =>
-              newDKGStatuses.set(node, NodeStatus.Initialized)
-            );
-            setDKGStatuses(newDKGStatuses);
-          },
-          (reason: any) => onRejected(reason, Status.Initial)
-        );
-
+          Promise.all(promises).then(
+            () => {
+              onFullFilled(Status.Initialized);
+              const newDKGStatuses = new Map(DKGStatuses);
+              nodeProxyAddresses.forEach((_proxy, node) =>
+                newDKGStatuses.set(node, NodeStatus.Initialized)
+              );
+              setDKGStatuses(newDKGStatuses);
+            },
+            (reason: any) => onRejected(reason, Status.Initial)
+          );
+        }
         break;
       case OngoingAction.SettingUp:
         // Setup the first node in the roster
-        const node = roster[0];
-        pollDKGStatus(nodeProxyAddresses.get(node), NodeStatus.Setup, signal)
-          .then(
-            () => {
-              onFullFilled(Status.Setup);
-              const newDKGStatuses = new Map(DKGStatuses);
-              newDKGStatuses.set(node, NodeStatus.Setup);
-              setDKGStatuses(newDKGStatuses);
-            },
-            (reason: any) => {
-              onRejected(reason, Status.Initialized);
-              const newDKGStatuses = new Map(DKGStatuses);
-              newDKGStatuses.set(node, NodeStatus.Failed);
-              setDKGStatuses(newDKGStatuses);
-            }
-          )
-          .catch((e) => {
-            setStatus(Status.Initialized);
-            setGetError(e.message);
-            setShowModalError(true);
-          });
+        if (nodeProxyAddresses !== null) {
+          const node = roster[0];
+          pollDKGStatus(nodeProxyAddresses.get(node), NodeStatus.Setup, signal)
+            .then(
+              () => {
+                onFullFilled(Status.Setup);
+                const newDKGStatuses = new Map(DKGStatuses);
+                newDKGStatuses.set(node, NodeStatus.Setup);
+                setDKGStatuses(newDKGStatuses);
+              },
+              (reason: any) => {
+                onRejected(reason, Status.Initialized);
+                const newDKGStatuses = new Map(DKGStatuses);
+                newDKGStatuses.set(node, NodeStatus.Failed);
+                setDKGStatuses(newDKGStatuses);
+              }
+            )
+            .catch((e) => {
+              setStatus(Status.Initialized);
+              setGetError(e.message);
+              setShowModalError(true);
+            });
+        }
         break;
       case OngoingAction.Opening:
         pollElectionStatus(Status.Setup, Status.Open, signal);
@@ -245,7 +248,7 @@ const useChangeAction = (
     return () => {
       abortController.abort();
     };
-  }, [ongoingAction]);
+  }, [ongoingAction, nodeProxyAddresses]);
 
   useEffect(() => {
     if (postError !== null) {

@@ -17,6 +17,7 @@ const ElectionIndex: FC = () => {
   const [statusToKeep, setStatusToKeep] = useState<Status>(null);
   const [elections, setElections] = useState<LightElectionInfo[]>(null);
   const [DKGStatuses, setDKGStatuses] = useState<Map<ID, Status>>(new Map());
+  const [DKGLoading, setDKGLoading] = useState(true);
   const [electionStatuses, setElectionsStatuses] = useState<Map<ID, Status>>(new Map());
 
   const request = {
@@ -107,7 +108,6 @@ const ElectionIndex: FC = () => {
       };
 
       const newDKGStatuses = new Map(DKGStatuses);
-
       const promises: Promise<{
         ID: string;
         Status: Status;
@@ -115,10 +115,12 @@ const ElectionIndex: FC = () => {
         return fetchProxies(election);
       });
 
-      Promise.all(promises).then((values) => {
-        values.forEach((v) => newDKGStatuses.set(v.ID, v.Status));
-        setDKGStatuses(newDKGStatuses);
-      });
+      Promise.all(promises)
+        .then((values) => {
+          values.forEach((v) => newDKGStatuses.set(v.ID, v.Status));
+          setDKGStatuses(newDKGStatuses);
+        })
+        .finally(() => setDKGLoading(false));
     }
   }, [elections]);
 
@@ -142,7 +144,7 @@ const ElectionIndex: FC = () => {
 
   return (
     <div className="w-[60rem] font-sans px-4 py-4">
-      {!loading ? (
+      {!loading && !DKGLoading ? (
         <div className="py-8">
           <h2 className="pb-2 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
             {t('elections')}
