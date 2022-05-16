@@ -175,7 +175,7 @@ LLVL=info memcoin --config /tmp/node1 e-voting scenarioTest --secretkey $sk
 
 You can also run scenario_test.go, by running in the integration folder this command:
 ```sh
-DVOTING_NB_NODE=3 go test -v scenario_test.go
+NNODES=3 go test -v scenario_test.go
 ```
 
 
