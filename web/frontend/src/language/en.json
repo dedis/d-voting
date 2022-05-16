@@ -148,6 +148,8 @@
     "end": "The end",
     "en": "🇺🇸 English",
     "fr": "🇫🇷 French",
-    "de": "🇩🇪 German"
+    "de": "🇩🇪 German",
+    "resultExplanation": "Results for select and text question are given in percentage of the number of votes for a candidate divided by the number of ballots cast.",
+    "rankResultExplanation": "Results of rank question corresponds to the percentage of the score a candidate has. Each voter gives candidates points by ranking them (lower is better). The score corresponds to the sum of the points a candidate got and is divided by the total number of points attributed across all ballots."
   }
 }

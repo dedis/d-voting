@@ -170,22 +170,6 @@ const ElectionResult: FC = () => {
     });
   };
 
-  /*const exportData = () => {
-    const dataToDownload: DownloadedResults[] = [];
-
-    configuration.Scaffold.forEach((subject: Subject) => {
-      getResultData(subject, dataToDownload);
-    });
-
-    const data = {
-      Title: configuration.MainTitle,
-      NumberOfVotes: result.length,
-      Results: dataToDownload,
-    };
-
-    setDataToDownload(data);
-  };*/
-
   useEffect(() => {
     if (result !== null) {
       const dataToDownload: DownloadedResults[] = [];
@@ -215,11 +199,13 @@ const ElectionResult: FC = () => {
   };
 
   const exportCSVData = () => {
+    // TODO: The data can be adapted to a csv format using json2csv,
+    // react-csv could then be used to create the .csv file
     const fileName = 'result.json';
 
     const { Parser } = require('json2csv');
 
-    const fields = ['Candidate', 'Percentage'];
+    const fields = ['field1', 'field2', 'field3'];
     const opts = { fields };
 
     try {
@@ -238,6 +224,12 @@ const ElectionResult: FC = () => {
           <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
             {t('navBarResult')}
           </h1>
+          <div className="mt-2 flex items-center text-sm text-gray-500">
+            {t('resultExplanation')}
+          </div>
+          <div className="flex items-center text-sm text-gray-500">
+            {t('rankResultExplanation')}
+          </div>
           <div className="w-full pb-4 my-0 sm:my-4">
             <h3 className="py-6 uppercase text-2xl text-center text-gray-700">
               {configuration.MainTitle}
