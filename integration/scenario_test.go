@@ -34,7 +34,7 @@ var suite = suites.MustFind("Ed25519")
 const defaultNodes = 3
 // Check the shuffled votes versus the cast votes on a few nodes
 func TestScenario(t *testing.T) {
-	n, ok := os.LookupEnv("NNODES")
+	n, ok := os.LookupEnv("NODES")
 	numNodes := defaultNodes
 	var err error
 	if ok {
