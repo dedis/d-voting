@@ -20,13 +20,14 @@ for i in "${vals[@]}"
 do
     eval docker exec node$i memcoin --config /tmp/node$i minogrpc join \
     --address //$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' node1):2001 $conn_token
+    sleep 1  
+
 done
 
 
 echo "${GREEN}[2/4]${NC} create a chain"
 vals=($(seq 1 1 $N_NODE))
 ARRAY=""
-foo+=" World"
 for i in "${vals[@]}"
 do
     ARRAY+="--member "
@@ -46,6 +47,7 @@ for i in "${vals[@]}"
 do
     docker exec node$i memcoin --config /tmp/node$i access add \
     --identity $access_token
+    sleep 1  
 done
 
 
@@ -62,6 +64,8 @@ docker exec node1 memcoin --config /tmp/node1 pool add\
     --args access:identity --args $access_token\
     --args access:command --args GRANT
 
+sleep 1  
+
 for i in "${vals[@]}"
 do
     access_token_tmp=$(docker exec node$i crypto bls signer read --path /tmp/node$i/private.key --format BASE64_PUBKEY)
@@ -73,6 +77,7 @@ do
         --args access:grant_command --args all\
         --args access:identity --args $access_token_tmp\
         --args access:command --args GRANT
+    sleep 1  
 done
 
 
