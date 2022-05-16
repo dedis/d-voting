@@ -151,7 +151,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	// Wait for DKG setup
 	timeTable := make([]float64, 4)
 	oldTime := time.Now()
-	waitForDKG(proxyArray[0], electionID, time.Second*20, t)
+	waitForDKG(proxyArray[0], electionID, time.Second*100, t)
 	currentTime := time.Now()
 	diff := currentTime.Sub(oldTime)
 	timeTable[0] = diff.Seconds()
@@ -304,8 +304,9 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	getElectionResponse = getElectionInfo(proxyAddr1, electionID, t)
 	electionStatus = getElectionResponse.Status
 
+	waitForStatus(proxyAddr1, electionID, uint16(3), time.Second*100, t)
 	t.Logf("Status of the election : %v", electionStatus)
-	// require.Equal(t, uint16(3), electionStatus)
+	require.Equal(t, uint16(3), electionStatus)
 
 	// ###################################### REQUEST PUBLIC SHARES ############
 	time.Sleep(time.Second * 5)
@@ -329,6 +330,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	getElectionResponse = getElectionInfo(proxyAddr1, electionID, t)
 	electionStatus = getElectionResponse.Status
 
+	waitForStatus(proxyAddr1, electionID, uint16(4), time.Second*100, t)
 	t.Logf("Status of the election : %v", electionStatus)
 	require.Equal(t, uint16(4), electionStatus)
 
@@ -354,6 +356,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	getElectionResponse = getElectionInfo(proxyAddr1, electionID, t)
 	electionStatus = getElectionResponse.Status
 
+	waitForStatus(proxyAddr1, electionID, uint16(5), time.Second*100, t)
 	t.Logf("Status of the election : %v", electionStatus)
 	require.Equal(t, uint16(5), electionStatus)
 
@@ -548,7 +551,7 @@ func updateDKG(secret kyber.Scalar, proxyAddr, electionIDHex, action string, t *
 }
 
 func getElectionInfo(proxyAddr, electionID string, t *testing.T) ptypes.GetElectionResponse {
-	t.Log("Get election info")
+	// t.Log("Get election info")
 
 	resp, err := http.Get(proxyAddr + "/evoting/elections" + "/" + electionID)
 	require.NoError(t, err, "failed to get the election: %v", err)
@@ -618,6 +621,31 @@ func waitForDKG(proxyAddr, electionID string, timeOut time.Duration, t *testing.
 		// t.Logf("status is %v", infoDKG.Status)
 		if infoDKG.Status != 1 {
 			t.Logf("Node %v status is %v", proxyAddr, infoDKG.Status)
+			return false
+		}
+		return true
+	}
+
+	for !isOK() {
+		time.Sleep(time.Millisecond * 100)
+	}
+
+	timer.Stop()
+}
+
+func waitForStatus(proxyAddr, electionID string, status uint16, timeOut time.Duration, t *testing.T) {
+	// set up a timer to fail the test in case we never reach the status
+	timer := time.NewTimer(timeOut)
+	go func() {
+		<-timer.C
+		t.Errorf("timed out while waiting for enter status %v", status)
+	}()
+
+	isOK := func() bool {
+		infoElection := getElectionInfo(proxyAddr, electionID, t)
+		// t.Logf("status is %v", infoDKG.Status)
+		if infoElection.Status != status {
+			t.Logf("Node %v status is %v", proxyAddr, infoElection.Status)
 			return false
 		}
 		return true
