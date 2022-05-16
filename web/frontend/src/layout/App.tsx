@@ -9,6 +9,7 @@ import {
   ROUTE_ELECTION_INDEX,
   ROUTE_LOGGED,
   ROUTE_LOGIN,
+  ROUTE_UNAUTHORIZED,
 } from '../Routes';
 import Login from '../pages/session/Login';
 import Home from '../pages/Home';
@@ -26,16 +27,27 @@ import './App.css';
 import { AuthContext } from '..';
 import Logged from 'pages/session/Logged';
 import Flash from './Flash';
-import NotFound from './NotFound';
+import ClientError from './ClientError';
+import { ROLE } from 'types/userRole';
 
 const App = () => {
-  const RequireAuth = ({ children }) => {
+  const RequireAuth = ({
+    children,
+    roles,
+  }: {
+    children: JSX.Element;
+    roles?: string[];
+  }): JSX.Element => {
     let location = useLocation();
 
     const authCtx = useContext(AuthContext);
 
     if (!authCtx.isLogged) {
-      return <Navigate to="/login" state={{ from: location }} replace />;
+      return <Navigate to={ROUTE_LOGIN} state={{ from: location }} replace />;
+    } else {
+      if (roles && !roles.includes(authCtx.role)) {
+        return <Navigate to={ROUTE_UNAUTHORIZED} state={{ from: location }} replace />;
+      }
     }
 
     return children;
@@ -55,7 +67,7 @@ const App = () => {
               <Route
                 path={ROUTE_ELECTION_CREATE}
                 element={
-                  <RequireAuth>
+                  <RequireAuth roles={[ROLE.Admin, ROLE.Operator]}>
                     <ElectionCreate />
                   </RequireAuth>
                 }
@@ -65,7 +77,7 @@ const App = () => {
               <Route
                 path={ROUTE_BALLOT_SHOW + '/:electionId'}
                 element={
-                  <RequireAuth>
+                  <RequireAuth roles={null}>
                     <BallotShow />
                   </RequireAuth>
                 }
@@ -73,7 +85,7 @@ const App = () => {
               <Route
                 path={ROUTE_ADMIN}
                 element={
-                  <RequireAuth>
+                  <RequireAuth roles={[ROLE.Admin]}>
                     <Admin />
                   </RequireAuth>
                 }
@@ -82,8 +94,9 @@ const App = () => {
               <Route path={ROUTE_ELECTION_INDEX} element={<ElectionIndex />} />
               <Route path={ROUTE_LOGIN} element={<Login />} />
               <Route path={ROUTE_LOGGED} element={<Logged />} />
+              <Route path={ROUTE_UNAUTHORIZED} element={<ClientError statusCode={403} />} />
               <Route path="/" element={<Home />} />
-              <Route path="*" element={<NotFound />} />
+              <Route path="*" element={<ClientError statusCode={404} />} />
             </Routes>
           </div>
           <div>

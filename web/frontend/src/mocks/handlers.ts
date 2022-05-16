@@ -30,6 +30,16 @@ const { mockElections, mockResults } = setupMockElection();
 
 var mockUserDB = setupMockUserDB();
 
+const isAuthorized = (roles: ROLE[]): boolean => {
+  const id = sessionStorage.getItem('id');
+  const userRole = mockUserDB.find(({ sciper }) => sciper === id).role;
+
+  if (roles.includes(userRole)) {
+    return true;
+  }
+  return false;
+};
+
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, async (req, res, ctx) => {
     const isLogged = sessionStorage.getItem('is-authenticated') === 'true';
@@ -56,7 +66,8 @@ export const handlers = [
   rest.get(ENDPOINT_GET_TEQ_KEY, async (req, res, ctx) => {
     const url = ROUTE_LOGGED;
     sessionStorage.setItem('is-authenticated', 'true');
-    sessionStorage.setItem('id', '283205');
+    sessionStorage.setItem('id', mockUserID.toString());
+
     await new Promise((r) => setTimeout(r, 1000));
 
     return res(ctx.status(200), ctx.json({ url: url }));
@@ -91,6 +102,13 @@ export const handlers = [
     const body = req.body as NewElectionBody;
 
     await new Promise((r) => setTimeout(r, 1000));
+
+    if (!isAuthorized([ROLE.Admin, ROLE.Operator])) {
+      return res(
+        ctx.status(403),
+        ctx.json({ message: 'You are not authorized to create an election' })
+      );
+    }
 
     const createElection = (configuration: any) => {
       const newElectionID = uid();
@@ -131,7 +149,17 @@ export const handlers = [
   rest.put(endpoints.editElection(':ElectionID'), async (req, res, ctx) => {
     const body = req.body as EditElectionBody;
     const { ElectionID } = req.params;
-    var Status = STATUS.Initial;
+
+    let Status = STATUS.Initial;
+
+    await new Promise((r) => setTimeout(r, 1000));
+
+    if (!isAuthorized([ROLE.Admin, ROLE.Operator])) {
+      return res(
+        ctx.status(403),
+        ctx.json({ message: 'You are not authorized to update an election' })
+      );
+    }
 
     switch (body.Action) {
       case 'open':
@@ -153,7 +181,6 @@ export const handlers = [
       ...mockElections.get(ElectionID as string),
       Status,
     });
-    await new Promise((r) => setTimeout(r, 1000));
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
@@ -168,23 +195,41 @@ export const handlers = [
 
   rest.put(endpoints.editShuffle(':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
+
+    await new Promise((r) => setTimeout(r, 1000));
+
+    if (!isAuthorized([ROLE.Admin, ROLE.Operator])) {
+      return res(
+        ctx.status(403),
+        ctx.json({ message: 'You are not authorized to update an election' })
+      );
+    }
+
     mockElections.set(ElectionID as string, {
       ...mockElections.get(ElectionID as string),
       Status: STATUS.ShuffledBallots,
     });
-    await new Promise((r) => setTimeout(r, 1000));
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
   rest.put(endpoints.editDKGActors(':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
+
+    await new Promise((r) => setTimeout(r, 1000));
+
+    if (!isAuthorized([ROLE.Admin, ROLE.Operator])) {
+      return res(
+        ctx.status(403),
+        ctx.json({ message: 'You are not authorized to update an election' })
+      );
+    }
+
     mockElections.set(ElectionID as string, {
       ...mockElections.get(ElectionID as string),
       Result: mockResults.get(ElectionID as string),
       Status: STATUS.ResultAvailable,
     });
-    await new Promise((r) => setTimeout(r, 1000));
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
@@ -192,21 +237,38 @@ export const handlers = [
   rest.get(endpoints.ENDPOINT_USER_RIGHTS, async (req, res, ctx) => {
     await new Promise((r) => setTimeout(r, 1000));
 
+    if (!isAuthorized([ROLE.Admin])) {
+      return res(
+        ctx.status(403),
+        ctx.json({ message: 'You are not authorized to get users rights' })
+      );
+    }
+
     return res(ctx.status(200), ctx.json(mockUserDB.filter((user) => user.role !== 'voter')));
   }),
 
   rest.post(endpoints.ENDPOINT_ADD_ROLE, async (req, res, ctx) => {
     const body = req.body as NewUserRole;
-    mockUserDB.push({ id: uid(), ...body });
+
     await new Promise((r) => setTimeout(r, 1000));
+
+    if (!isAuthorized([ROLE.Admin])) {
+      return res(ctx.status(403), ctx.json({ message: 'You are not authorized to add a role' }));
+    }
+
+    mockUserDB.push({ id: uid(), ...body });
 
     return res(ctx.status(200));
   }),
 
   rest.post(endpoints.ENDPOINT_REMOVE_ROLE, async (req, res, ctx) => {
     const body = req.body as RemoveUserRole;
-    mockUserDB = mockUserDB.filter((user) => user.sciper !== body.sciper);
     await new Promise((r) => setTimeout(r, 1000));
+
+    if (!isAuthorized([ROLE.Admin])) {
+      return res(ctx.status(403), ctx.json({ message: 'You are not authorized to remove a role' }));
+    }
+    mockUserDB = mockUserDB.filter((user) => user.sciper !== body.sciper);
 
     return res(ctx.status(200));
   }),

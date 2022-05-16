@@ -163,7 +163,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
       />
       {components.map((component) => component)}
 
-      <div className="flex hidden justify-between overflow-x-auto sm:flex sm:pr-2">
+      <div className="hidden justify-between overflow-x-auto sm:flex sm:pr-2">
         <div>
           <AddButton onClick={() => addQuestion(newRank())}>Rank</AddButton>
           <AddButton onClick={() => addQuestion(newSelect())}>Select</AddButton>
