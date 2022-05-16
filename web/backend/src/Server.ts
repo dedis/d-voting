@@ -222,9 +222,8 @@ app.post('/api/remove_role', (req, res) => {
     });
 });
 
-// sendToDela signs the message and sends it to the dela proxy. It makes no
-// authentication check.
-function sendToDela(dataStr: string, req: express.Request, res: express.Response) {
+// get payload creates a payload with a signature on it
+function getPayload(dataStr: string) {
   let dataStrB64 = Buffer.from(dataStr).toString('base64url');
   while (dataStrB64.length % 4 !== 0) {
     dataStrB64 += '=';
@@ -250,8 +249,25 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
     Signature: sign.toString('hex'),
   };
 
+  return payload;
+}
+
+// sendToDela signs the message and sends it to the dela proxy. It makes no
+// authentication check.
+function sendToDela(dataStr: string, req: express.Request, res: express.Response) {
+  let payload = getPayload(dataStr);
+
   // we strip the `/api` part: /api/election/xxx => /election/xxx
-  const uri = config.DELA_NODE_URL + xss(req.baseUrl.slice(4));
+  let uri = config.DELA_NODE_URL + req.baseUrl.slice(4);
+
+  // in case this is a DKG  init request, we must extract the proxy addr and
+  // update the payload.
+  const regex = /\/evoting\/services\/dkg\/actors$/;
+  if (uri.match(regex)) {
+    const dataStr2 = JSON.stringify({ ElectionID: req.body.ElectionID });
+    payload = getPayload(dataStr2);
+    uri = req.body.ProxyAddress + req.baseUrl.slice(4);
+  }
 
   console.log('sending payload:', JSON.stringify(payload), 'to', uri);
 
