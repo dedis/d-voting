@@ -98,7 +98,7 @@ const ElectionResult: FC = () => {
 
   const SubjectElementResultDisplay = (element: SubjectElement) => {
     return (
-      <div className="px-4 pb-4">
+      <div className="pl-4 pb-4">
         <h2 className="text-lg pb-2">{element.Title}</h2>
         {element.Type === RANK && (
           <RankResult rank={element as RankQuestion} rankResult={rankResult.get(element.ID)} />
@@ -121,7 +121,7 @@ const ElectionResult: FC = () => {
         {subject.Order.map((id: ID) => (
           <div key={id}>
             {subject.Elements.get(id).Type === SUBJECT ? (
-              <div className="px-4">{displayResults(subject.Elements.get(id) as Subject)}</div>
+              <div className="pl-4">{displayResults(subject.Elements.get(id) as Subject)}</div>
             ) : (
               SubjectElementResultDisplay(subject.Elements.get(id))
             )}
@@ -213,12 +213,15 @@ const ElectionResult: FC = () => {
           </div>
 
           <div className="w-full pb-4 my-0 sm:my-4">
+            <h2 className="text-lg">{t('totalNumberOfVotes', { votes: result.length })}</h2>
             <h3 className="py-6 uppercase text-2xl text-center text-gray-700">
               {configuration.MainTitle}
             </h3>
-            <h2 className="text-lg">{t('totalNumberOfVotes', { votes: result.length })}</h2>
-            <div className="flex-col items-center">
-              {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
+
+            <div className="flex flex-col items-center">
+              <div className="min-w-[80%]">
+                {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
+              </div>
             </div>
           </div>
           <div className="flex my-4">

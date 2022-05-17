@@ -28,7 +28,7 @@ const SelectResult: FC<SelectResultProps> = ({ select, selectResult }) => {
   };
 
   return (
-    <div className="grid [grid-template-columns:_min-content_auto] gap-1 items-center w-4/5">
+    <div className="grid [grid-template-columns:_min-content_auto] gap-1 items-center">
       {displayResults()}
     </div>
   );
