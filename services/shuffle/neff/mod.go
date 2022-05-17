@@ -138,7 +138,8 @@ func (a *Actor) Shuffle(electionID []byte) error {
 	errs := sender.Send(message, addrs...)
 	err = <-errs
 	if err != nil {
-		return xerrors.Errorf("failed to start shuffle: %v", err)
+		dela.Logger.Warn().Msgf("failed to start shuffle: %v", err)
+		//return xerrors.Errorf("failed to start shuffle: %v", err)
 	}
 
 	err = a.waitAndCheckShuffling(message.GetElectionId(), election.Roster.Len())

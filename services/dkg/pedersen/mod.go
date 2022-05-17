@@ -364,7 +364,8 @@ func (a *Actor) ComputePubshares() error {
 
 	err = <-sender.Send(message, addrs...)
 	if err != nil {
-		return xerrors.Errorf("failed to send decrypt request: %v", err)
+		dela.Logger.Warn().Msgf("failed to send decrypt request: %v", err)
+		//return xerrors.Errorf("failed to send decrypt request: %v", err)
 	}
 
 	return nil
