@@ -1,12 +1,10 @@
-import { FC, useState } from 'react';
+import { FC, Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import { newElection } from 'components/utils/Endpoints';
 
-import { CloudUploadIcon, TrashIcon } from '@heroicons/react/solid';
+import { CloudUploadIcon, PencilIcon, TrashIcon } from '@heroicons/react/solid';
 
 import SubjectComponent from './SubjectComponent';
-import AddButton from './AddButton';
 import UploadFile from './UploadFile';
 
 import configurationSchema from '../../../schema/configurationValidation';
@@ -16,8 +14,7 @@ import { marshalConfig } from '../../../types/JSONparser';
 import DownloadButton from 'components/buttons/DownloadButton';
 import SpinnerIcon from 'components/utils/SpinnerIcon';
 import RedirectToModal from 'components/modal/RedirectToModal';
-import { Disclosure } from '@headlessui/react';
-import { ChevronUpIcon, DotsVerticalIcon } from '@heroicons/react/outline';
+import { CheckIcon, PlusSmIcon } from '@heroicons/react/outline';
 
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
@@ -33,9 +30,10 @@ const ElectionForm: FC<ElectionFormProps> = () => {
   const { t } = useTranslation();
   const emptyConf: Configuration = emptyConfiguration();
   const [conf, setConf] = useState<Configuration>(emptyConf);
-  const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [textModal, setTextModal] = useState('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [textModal, setTextModal] = useState<string>('');
+  const [titleChanging, setTitleChanging] = useState<boolean>(true);
   const [navigateDestination, setNavigateDestination] = useState(null);
   const { MainTitle, Scaffold } = conf;
 
@@ -120,21 +118,43 @@ const ElectionForm: FC<ElectionFormProps> = () => {
   const displayElectionForm = () => {
     return (
       <div className="w-screen px-4 md:px-0 md:w-auto">
-        <div className="flex flex-col shadow-lg rounded-md">
+        <div className="flex flex-col border rounded-md">
           <UploadFile setConf={setConf} setShowModal={setShowModal} setTextModal={setTextModal} />
           <div className="hidden sm:block">
             <div className="py-3 px-4">
               <div className="border-t border-gray-200" />
             </div>
           </div>
-          <input
-            value={MainTitle}
-            onChange={(e) => setConf({ ...conf, MainTitle: e.target.value })}
-            name="MainTitle"
-            type="text"
-            placeholder="Enter the Main title"
-            className="ml-3 mt-4 w-60 mb-2 text-lg border rounded-md"
-          />
+
+          {titleChanging ? (
+            <div className="flex mb-2">
+              <input
+                value={MainTitle}
+                onChange={(e) => setConf({ ...conf, MainTitle: e.target.value })}
+                name="MainTitle"
+                type="text"
+                placeholder="Enter the Main title"
+                className="ml-3 w-60 text-lg border rounded-md"
+              />
+              <div className="ml-1">
+                <button className="border p-1 rounded-md" onClick={() => setTitleChanging(false)}>
+                  <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex mb-2">
+              <div className="mt-1 ml-3">{MainTitle.length ? MainTitle : 'No Main title'}</div>
+              <div className="ml-1">
+                <button
+                  className="hover:text-indigo-500 p-1 rounded-md"
+                  onClick={() => setTitleChanging(true)}>
+                  <PencilIcon className="m-1 h-3 w-3" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {Scaffold.map((subject) => (
             <SubjectComponent
               notifyParent={notifyParent}
@@ -144,14 +164,17 @@ const ElectionForm: FC<ElectionFormProps> = () => {
               key={subject.ID}
             />
           ))}
-          <div className="flex justify-end pr-2">
-            <AddButton onClick={addSubject}>Subject</AddButton>
-          </div>
+          <button
+            onClick={addSubject}
+            className="flex w-full h-12  border-t  px-4 py-3 text-left text-sm font-medium hover:bg-gray-50">
+            <PlusSmIcon className="mr-2 h-5 w-5" aria-hidden="true" />
+            Add Subject
+          </button>
         </div>
         <div className="my-2">
           <button
             type="button"
-            className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
+            className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md  text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
             onClick={createHandler}>
             {loading ? (
               <SpinnerIcon />
@@ -162,7 +185,7 @@ const ElectionForm: FC<ElectionFormProps> = () => {
           </button>
           <button
             type="button"
-            className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+            className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700"
             onClick={() => setConf(emptyConf)}>
             <TrashIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
             {t('clearElec')}
@@ -173,51 +196,10 @@ const ElectionForm: FC<ElectionFormProps> = () => {
     );
   };
 
-  const SubjectAccordion = () => {
-    return (
-      <Disclosure>
-        {({ open }) => (
-          <>
-            <div className="flex flex-row border justify-between w-full h-24 bg-gray-100  ">
-              <div className="flex flex-col pl-2">
-                <div>Subject Title</div>
-                <div>Subject</div>
-                <div>
-                  <Disclosure.Button className="text-left text-sm font-medium rounded-full text-gray-900">
-                    <ChevronUpIcon
-                      className={`${!open ? 'rotate-180 transform' : ''} h-5 w-5 text-gray-600`}
-                    />
-                  </Disclosure.Button>
-                </div>
-              </div>
-              <div>
-                <div></div>
-                <button>
-                  <DotsVerticalIcon className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-
-            <Disclosure.Panel className="px-4  py-2 text-sm text-gray-500 bg-gray-100">
-              <div>Elements of subject</div>
-            </Disclosure.Panel>
-          </>
-        )}
-      </Disclosure>
-    );
-  };
-
   const displayPreviewElection = () => {
     return (
       <div className="border rounded-md">
-        <div className="flex flex-col">
-          <SubjectAccordion />
-          <SubjectAccordion />
-          <SubjectAccordion />
-          <button className="flex w-full h-12 justify-between bg-gray-50 px-4 py-2 text-left text-sm font-medium hover:bg-gray-100">
-            Add element
-          </button>
-        </div>
+        <div className="h-[calc(100vh-265px)] ml-2">preview</div>
       </div>
     );
   };
@@ -232,17 +214,15 @@ const ElectionForm: FC<ElectionFormProps> = () => {
         navigateDestination={navigateDestination}>
         {textModal}
       </RedirectToModal>
-      <div className="hidden md:grid grid-cols-2 gap-1">
+      <div className="hidden md:grid grid-cols-2 gap-2">
         {displayElectionForm()}
         {displayPreviewElection()}
       </div>
+      <div className="flex md:hidden">{displayElectionForm()}</div>
     </>
   );
 };
 
-ElectionForm.propTypes = {
-  setShowModal: PropTypes.func.isRequired,
-  setTextModal: PropTypes.func.isRequired,
-};
+ElectionForm.propTypes = {};
 
 export default ElectionForm;

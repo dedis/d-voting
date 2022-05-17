@@ -18,6 +18,7 @@
     "notFoundLink": "Go to home page",
     "results": "results",
     "showing": "Showing",
+    "importFile": "Import JSON file",
     "enterSciper": "Please give the sciper of the user",
     "adminDetails": "Add or remove roles of users from the admin table",
     "navBarCreateElection": "Create election",
