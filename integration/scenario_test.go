@@ -271,8 +271,8 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Log("shuffle ballots")
 
 	// Kill a node
-	// proxyArray = killNode(proxyArray, 2, t)
-	// time.Sleep((time.Second) * 3)
+	proxyArray = killNode(proxyArray, 2, t)
+	time.Sleep((time.Second) * 3)
 
 	shuffleBallotsRequest := ptypes.UpdateShuffle{
 		Action: "shuffle",
@@ -518,8 +518,8 @@ func updateElection(secret kyber.Scalar, proxyAddr, electionIDHex, action string
 	if err != nil {
 		return 0, xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
-
-	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
+	body, _ := io.ReadAll(resp.Body)
+	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", body)
 
 	return 0, nil
 }
