@@ -16,8 +16,8 @@ const ProgressBar: FC<ProgressBarProps> = ({ isBest, children }) => {
         </div>
       ) : (
         <div
-          className={`${!isBest && 'bg-indigo-400'} ${
-            isBest && 'bg-indigo-600'
+          className={`${!isBest && 'bg-indigo-300'} ${
+            isBest && 'bg-indigo-500'
           } text-xs font-medium text-white text-center p-0.5 leading-none rounded-full`}
           style={{ width: `${children}%` }}>
           {`${children}%`}

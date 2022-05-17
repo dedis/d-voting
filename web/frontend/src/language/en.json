@@ -130,6 +130,7 @@
     "shuffle": "Shuffle",
     "decrypt": "Decrypt",
     "seeResult": "See results",
+    "totalNumberOfVotes": "Total number of votes : {{votes}}",
     "notEnoughBallot": "The operation failed because less than two ballots have been casted.",
     "operationFailure": "The operation failed. Try refreshing the page.",
     "shuffleFail": "The shuffle operation failed.",
@@ -149,7 +150,6 @@
     "en": "🇺🇸 English",
     "fr": "🇫🇷 French",
     "de": "🇩🇪 German",
-    "resultExplanation": "Results for select and text question are given in percentage of the number of votes for a candidate divided by the number of ballots cast.",
-    "rankResultExplanation": "Results of rank question corresponds to the percentage of the score a candidate has. Each voter gives candidates points by ranking them (lower is better). The score corresponds to the sum of the points a candidate got and is divided by the total number of points attributed across all ballots."
+    "resultExplanation": "Results for select and text question are given in percentage of the number of votes for a candidate divided by the number of ballots cast. Results of rank question corresponds to the percentage of the score a candidate has. Each voter gives candidates points by ranking them (lower is better). The score corresponds to the sum of the points a candidate got and is divided by the total number of points attributed across all ballots."
   }
 }

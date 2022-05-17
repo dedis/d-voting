@@ -29,6 +29,7 @@ import {
   countTextResult,
 } from './components/utils/countResult';
 import Loading from 'pages/Loading';
+import ResultExplanation from './components/ResultExplanation';
 
 // Functional component that displays the result of the votes
 const ElectionResult: FC = () => {
@@ -198,51 +199,33 @@ const ElectionResult: FC = () => {
     saveAs(fileToSave, fileName);
   };
 
-  const exportCSVData = () => {
-    // TODO: The data can be adapted to a csv format using json2csv,
-    // react-csv could then be used to create the .csv file
-    const fileName = 'result.json';
-
-    const { Parser } = require('json2csv');
-
-    const fields = ['field1', 'field2', 'field3'];
-    const opts = { fields };
-
-    try {
-      const parser = new Parser(opts);
-      const csv = parser.parse(downloadedResults);
-      console.log(csv);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   return (
-    <div>
+    <div className="w-[60rem] font-sans px-4 py-8">
       {!loading ? (
-        <div className="w-[60rem] font-sans px-4 py-8">
-          <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-            {t('navBarResult')}
-          </h1>
-          <div className="mt-2 flex items-center text-sm text-gray-500">
-            {t('resultExplanation')}
+        <div>
+          <div className="flex items-center">
+            <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+              {t('navBarResult')}
+            </h1>
+            <div className="pt-1.5">
+              <ResultExplanation />
+            </div>
           </div>
-          <div className="flex items-center text-sm text-gray-500">
-            {t('rankResultExplanation')}
-          </div>
+
           <div className="w-full pb-4 my-0 sm:my-4">
             <h3 className="py-6 uppercase text-2xl text-center text-gray-700">
               {configuration.MainTitle}
             </h3>
-            <h2 className="text-lg">Total number of votes : {result.length}</h2>
-            {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
+            <h2 className="text-lg">{t('totalNumberOfVotes', { votes: result.length })}</h2>
+            <div className="flex-col items-center">
+              {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
+            </div>
           </div>
           <div className="flex my-4">
             <div onClick={() => navigate(-1)}>
               <TextButton>{t('back')}</TextButton>
             </div>
             <DownloadButton exportData={exportJSONData}>{t('exportResJSON')}</DownloadButton>
-            <DownloadButton exportData={exportCSVData}>{t('exportResCSV')}</DownloadButton>
           </div>
         </div>
       ) : (
