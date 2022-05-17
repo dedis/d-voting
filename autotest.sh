@@ -2,14 +2,13 @@
 
 RUN_TIMES=5
 N_NODE=15
-
 vals=($(seq 1 1 $RUN_TIMES))
 
 
 for i in "${vals[@]}"
 do
     echo "Test $i with $N_NODE nodes"
-    ./launch_containers.sh $N_NODE
+    ./launch_containers.sh $N_NODE false
     sleep 3
     ./setup_containers.sh $N_NODE
     sleep 3

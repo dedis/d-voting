@@ -51,5 +51,6 @@ done
 
 tmux new-window -t $TMUX_SESSION_NAME
 
-tmux a
+#tmux a
+
 
