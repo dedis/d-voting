@@ -164,6 +164,7 @@
     "save": "Save",
     "nodeSetup": "Node setup",
     "inputNodeSetup": "Choose which node to start the setup on:",
+    "inputProxyAddressError": "Error: the address of a proxy cannot be empty.",
     "node": "Node",
     "nodes": "Nodes",
     "DKGStatuses": "DKG Statuses",

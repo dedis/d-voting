@@ -186,12 +186,9 @@ export const handlers = [
     switch (body.Action) {
       case Action.Open:
         status = Status.Open;
-        return res(ctx.status(500), ctx.text('Oh oh'));
         break;
       case Action.Close:
         status = Status.Closed;
-        //return res(ctx.status(500), ctx.text('Oh oh'));
-
         break;
       case Action.CombineShares:
         status = Status.ResultAvailable;
@@ -199,8 +196,6 @@ export const handlers = [
         break;
       case Action.Cancel:
         status = Status.Canceled;
-        //return res(ctx.status(500), ctx.text('Oh oh'));
-
         break;
       default:
         break;
@@ -284,43 +279,20 @@ export const handlers = [
   rest.get(endpoints.getDKGActors('*', ':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
     const proxy = req.params[0];
-    const election = mockElections.get(ElectionID as string);
+    var node = '';
+    mockNodeProxyAddresses.get(ElectionID as string).forEach((_proxy, _node) => {
+      if (proxy === _proxy) {
+        node = _node;
+      }
+    });
+    const currentNodeStatus = mockDKG.get(ElectionID as string).get(node);
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    switch (election.Status) {
-      case Status.Initial:
-        var node = '';
-        mockNodeProxyAddresses.get(ElectionID as string).forEach((_proxy, _node) => {
-          if (proxy === _proxy) {
-            node = _node;
-          }
-        });
-        const currentNodeStatus = mockDKG.get(ElectionID as string).get(node);
-
-        if (currentNodeStatus === NodeStatus.Initialized) {
-          //return res(ctx.status(500), ctx.json('Oh oh'));
-          return res(ctx.status(200), ctx.json({ Status: currentNodeStatus, Error: {} }));
-        } else if (currentNodeStatus === NodeStatus.Setup) {
-          //mock a node setup failure
-          /*return res(
-            ctx.status(200),
-            ctx.json({
-              Status: NodeStatus.Failed,
-              Error: {
-                Title: 'Node could not be initialized',
-                Code: '<uint>',
-                Message: 'Failed to setup the node',
-                Args: {},
-              },
-            })
-          );*/
-          return res(ctx.status(200), ctx.json({ Status: currentNodeStatus, Error: {} }));
-        } else {
-          return res(ctx.status(404), ctx.json(`Election ${ElectionID} does not exist`));
-        }
-      default:
-        return res(ctx.status(200), ctx.json({ Status: NodeStatus.Setup, Error: {} }));
+    if (currentNodeStatus === NodeStatus.NotInitialized) {
+      return res(ctx.status(404), ctx.json(`Election ${ElectionID} does not exist`));
+    } else {
+      return res(ctx.status(200), ctx.json({ Status: currentNodeStatus, Error: {} }));
     }
   }),
 

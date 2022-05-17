@@ -202,7 +202,7 @@ const ElectionShow: FC = () => {
             <div className="font-bold uppercase text-lg text-gray-700 pb-2">{t('DKGStatuses')}</div>
             <div className="px-2">
               <>
-                {!nodeProxyLoading ? (
+                {!nodeProxyLoading && (
                   <DKGTable
                     nodeProxyAddresses={nodeProxyAddresses}
                     setNodeProxyAddresses={setNodeProxyAddresses}
@@ -211,7 +211,7 @@ const ElectionShow: FC = () => {
                     setTextModalError={setTextModalError}
                     setShowModalError={setShowModalError}
                   />
-                ) : null}
+                )}
               </>
             </div>
           </div>

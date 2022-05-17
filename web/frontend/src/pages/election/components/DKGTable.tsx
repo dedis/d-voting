@@ -63,7 +63,7 @@ const DKGTable: FC<DKGTableProps> = ({
       setPrevProxyAddress(nodeProxyAddresses);
       const newIsEdit = new Map();
       const newErrors = new Map();
-      nodeProxyAddresses.forEach((proxy, node) => {
+      nodeProxyAddresses.forEach((_proxy, node) => {
         newIsEdit.set(node, false);
         newErrors.set(node, null);
       });
@@ -158,9 +158,9 @@ const DKGTable: FC<DKGTableProps> = ({
                             value={proxyAddresses.get(node)}
                           />
                           <>
-                            {errors.get(node) !== null ? (
+                            {errors.get(node) !== null && (
                               <div className="text-red-600 text-sm py-2">{errors.get(node)}</div>
-                            ) : null}
+                            )}
                           </>
                         </>
                       ) : (

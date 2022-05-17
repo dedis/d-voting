@@ -28,9 +28,11 @@ const setupMockElection = () => {
 
   mockRoster.forEach((node) => {
     mockAddresses.set(node, node);
-    mockDKGSetup.set(node, NodeStatus.Setup);
+    mockDKGSetup.set(node, NodeStatus.Initialized);
     mockDKGNotInitialized.set(node, NodeStatus.NotInitialized);
   });
+
+  mockDKGSetup.set(mockRoster[0], NodeStatus.Setup);
 
   const electionID1 = '36kSJ0tH';
   const electionID2 = 'Bnq9gLmf';

@@ -22,7 +22,7 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections, electionStatuses }) 
   const [electionsToDisplay, setElectionsToDisplay] = useState<LightElectionInfo[]>([]);
 
   const partitionArray = (array: LightElectionInfo[], size: number) =>
-    array.map((v, i) => (i % size === 0 ? array.slice(i, i + size) : null)).filter((v) => v);
+    array.map((_v, i) => (i % size === 0 ? array.slice(i, i + size) : null)).filter((v) => v);
 
   useEffect(() => {
     if (elections !== null) {
