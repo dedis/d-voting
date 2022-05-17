@@ -16,7 +16,7 @@ const ElectionIndex: FC = () => {
   const fctx = useContext(FlashContext);
   const [statusToKeep, setStatusToKeep] = useState<Status>(null);
   const [elections, setElections] = useState<LightElectionInfo[]>(null);
-  const [DKGStatuses, setDKGStatuses] = useState<Map<ID, Status>>(new Map());
+  const [DKGStatuses, setDKGStatuses] = useState<Map<ID, Map<string, NodeStatus>>>(null);
   const [DKGLoading, setDKGLoading] = useState(true);
   const [electionStatuses, setElectionsStatuses] = useState<Map<ID, Status>>(new Map());
 
@@ -50,23 +50,16 @@ const ElectionIndex: FC = () => {
     }
   }, [data, statusToKeep]);
 
-  // Get the node status for each election
+  // Fetch the NodeStatus for each node of each election
   useEffect(() => {
     if (elections !== null) {
-      const req = {
-        method: 'GET',
-      };
-
-      const fetchData = async (election: LightElectionInfo, proxyAddress: string) => {
+      const fetchDKGStatus = async (id: ID, node: string, proxyAddress: string) => {
         try {
-          const response = await fetch(
-            endpoints.getDKGActors(proxyAddress, election.ElectionID),
-            req
-          );
+          const response = await fetch(endpoints.getDKGActors(proxyAddress, id), request);
           if (!response.ok) {
             // The node is not initialized
             if (response.status === 404) {
-              return { ID: election.ElectionID, Status: Status.Initial };
+              return { ID: id, Node: node, Status: NodeStatus.NotInitialized };
             } else {
               const js = await response.json();
               fctx.addMessage(JSON.stringify(js), FlashLevel.Error);
@@ -74,67 +67,94 @@ const ElectionIndex: FC = () => {
           } else {
             let dkgStatus = await response.json();
 
-            if ((dkgStatus.Status as NodeStatus) === NodeStatus.Initialized) {
-              return { ID: election.ElectionID, Status: Status.Initialized };
-            }
-            if ((dkgStatus.Status as NodeStatus) === NodeStatus.Setup) {
-              return { ID: election.ElectionID, Status: Status.Setup };
-            }
-            // NodeStatus Failed is handled in useChangeAction
+            return { ID: id, Node: node, Status: dkgStatus.Status as NodeStatus };
           }
         } catch (e) {
           fctx.addMessage(e.message, FlashLevel.Error);
         }
       };
 
-      // Fetches only the status of the first node for each election
       const fetchProxies = async (election: LightElectionInfo) => {
         try {
-          const response = await fetch(
-            endpoints.getProxyAddress(election.ElectionID, '0'),
-            request
-          );
+          const response = await fetch(endpoints.getProxiesAddresses(election.ElectionID), request);
           if (!response.ok) {
             const js = await response.json();
             throw new Error(JSON.stringify(js));
           } else {
             let dataReceived = await response.json();
-            const nodeProxy = Object.entries(dataReceived)[0];
-            return await fetchData(election, nodeProxy[1] as string);
+
+            const newNodeProxyAddresses = new Map<string, string>();
+            dataReceived.Proxies.forEach((value) => {
+              Object.entries(value).forEach(([node, proxy]) => {
+                newNodeProxyAddresses.set(node, proxy as string);
+              });
+            });
+
+            return { ID: election.ElectionID, NodeProxy: newNodeProxyAddresses };
           }
         } catch (e) {
           fctx.addMessage(e.message, FlashLevel.Error);
         }
       };
 
-      const newDKGStatuses = new Map(DKGStatuses);
-      const promises: Promise<{
-        ID: string;
-        Status: Status;
-      }>[] = elections.map((election) => {
-        return fetchProxies(election);
-      });
+      const promises = elections
+        .filter((election) => election.Status === Status.Initial)
+        .map((election) => {
+          return fetchProxies(election);
+        });
 
       Promise.all(promises)
+        .then((value) => {
+          const newNodeProxyAddresses: Map<ID, Map<string, string>> = new Map();
+          value.forEach((v) => {
+            newNodeProxyAddresses.set(v.ID, v.NodeProxy);
+          });
+          return newNodeProxyAddresses;
+        })
+        .then((newNodeProxyAddresses) => {
+          return Promise.all(
+            Array.from(newNodeProxyAddresses).map(([id, nodeProxy]) => {
+              return Promise.all(
+                Array.from(nodeProxy).map(([node, proxy]) => {
+                  return fetchDKGStatus(id, node, proxy);
+                })
+              );
+            })
+          );
+        })
         .then((values) => {
-          values.forEach((v) => newDKGStatuses.set(v.ID, v.Status));
+          const newDKGStatuses: Map<ID, Map<string, NodeStatus>> = new Map();
+
+          values.forEach((val) => {
+            const newDKGStatus: Map<string, NodeStatus> = new Map();
+
+            val.forEach((v) => {
+              newDKGStatus.set(v.Node, v.Status);
+              newDKGStatuses.set(v.ID, newDKGStatus);
+            });
+          });
+
           setDKGStatuses(newDKGStatuses);
         })
         .finally(() => setDKGLoading(false));
     }
   }, [elections]);
 
-  // Set the node status for each election
   useEffect(() => {
-    if (data !== null) {
+    if (elections !== null && DKGStatuses !== null) {
       const newElectionStatuses = new Map(electionStatuses);
 
       elections.forEach((election) => {
         newElectionStatuses.set(election.ElectionID, election.Status);
 
-        if (election.Status === Status.Initial) {
-          if (DKGStatuses.get(election.ElectionID)) {
-            newElectionStatuses.set(election.ElectionID, DKGStatuses.get(election.ElectionID));
+        if (DKGStatuses.get(election.ElectionID)) {
+          const dkgStatuses = Array.from(DKGStatuses.get(election.ElectionID).values());
+
+          if (!dkgStatuses.includes(NodeStatus.NotInitialized)) {
+            newElectionStatuses.set(election.ElectionID, Status.Initialized);
+          }
+          if (dkgStatuses.includes(NodeStatus.Setup)) {
+            newElectionStatuses.set(election.ElectionID, Status.Setup);
           }
         }
       });

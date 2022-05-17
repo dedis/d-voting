@@ -16,10 +16,12 @@ interface EditElectionBody {
 
 interface EditDKGActorBody {
   Action: Action.Setup | Action.BeginDecryption;
+  Proxy: string;
 }
 
 interface NewDKGBody {
   ElectionID: ID;
+  Proxy: string;
 }
 
 interface NewUserRole {

@@ -139,51 +139,51 @@ const DKGTable: FC<DKGTableProps> = ({
         <tbody>
           <>
             {proxyAddresses !== null && DKGStatuses !== null
-              ? Array.from(proxyAddresses).map((node, index) => (
-                  <tr key={node[0]} className="bg-white border-b">
+              ? Array.from(proxyAddresses).map(([node, _proxy], index) => (
+                  <tr key={node} className="bg-white border-b">
                     <td
                       scope="row"
                       className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                      {t('node')} {index}:
+                      {t('node')} {index} ({node})
                     </td>
-                    <td className="px-6 py-4">{<DKGStatus status={DKGStatuses.get(node[0])} />}</td>
+                    <td className="px-6 py-4">{<DKGStatus status={DKGStatuses.get(node)} />}</td>
                     <td className="px-6 py-4">
-                      {isEditMode.get(node[0]) ? (
+                      {isEditMode.get(node) ? (
                         <>
                           <input
                             type="text"
                             className="flex-auto sm:text-md border rounded-md text-gray-600"
-                            onChange={(e) => handleTextInput(e, node[0])}
-                            placeholder={proxyAddresses.get(node[0]) === '' ? 'https:// ...' : ''}
-                            value={proxyAddresses.get(node[0])}
+                            onChange={(e) => handleTextInput(e, node)}
+                            placeholder={proxyAddresses.get(node) === '' ? 'https:// ...' : ''}
+                            value={proxyAddresses.get(node)}
                           />
                           <>
-                            {errors.get(node[0]) !== null ? (
-                              <div className="text-red-600 text-sm py-2">{errors.get(node[0])}</div>
+                            {errors.get(node) !== null ? (
+                              <div className="text-red-600 text-sm py-2">{errors.get(node)}</div>
                             ) : null}
                           </>
                         </>
                       ) : (
-                        <>{proxyAddresses.get(node[0])}</>
+                        <>{proxyAddresses.get(node)}</>
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      {isEditMode.get(node[0]) ? (
+                      {isEditMode.get(node) ? (
                         <div>
                           <button
-                            onClick={() => handleSave(node[0])}
+                            onClick={() => handleSave(node)}
                             className="font-medium text-indigo-600 hover:underline mx-2">
                             {t('save')}
                           </button>
                           <button
-                            onClick={() => handleCancel(node[0])}
+                            onClick={() => handleCancel(node)}
                             className="font-medium text-indigo-600 hover:underline">
                             {t('cancel')}
                           </button>
                         </div>
                       ) : (
                         <button
-                          onClick={() => handleEdit(node[0])}
+                          onClick={() => handleEdit(node)}
                           className="font-medium text-indigo-600 hover:underline">
                           {t('edit')}
                         </button>

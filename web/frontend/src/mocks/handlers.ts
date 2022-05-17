@@ -35,10 +35,10 @@ const { mockElections, mockResults, mockDKG, mockNodeProxyAddresses } = setupMoc
 
 var mockUserDB = setupMockUserDB();
 
-const RESPONSE_TIME = 200;
+const RESPONSE_TIME = 1000;
 const CHANGE_STATUS_TIMER = 2000;
-const INIT_TIMER = 4000;
-const SETUP_TIMER = 4000;
+const INIT_TIMER = 3000;
+const SETUP_TIMER = 3000;
 const SHUFFLE_TIMER = 2000;
 const DECRYPT_TIMER = 8000;
 
@@ -124,9 +124,14 @@ export const handlers = [
 
     const createElection = (configuration: any) => {
       const newElectionID = uid();
-      mockDKG.set(newElectionID, NodeStatus.NotInitialized);
       const newNodeProxyAddresses = new Map();
-      mockRoster.forEach((node) => newNodeProxyAddresses.set(node, node));
+      const newDKGStatus = new Map();
+      mockRoster.forEach((node) => {
+        newNodeProxyAddresses.set(node, node);
+        newDKGStatus.set(node, NodeStatus.NotInitialized);
+      });
+      mockDKG.set(newElectionID, newDKGStatus);
+
       mockNodeProxyAddresses.set(newElectionID, newNodeProxyAddresses);
 
       mockElections.set(newElectionID, {
@@ -169,7 +174,7 @@ export const handlers = [
     var status = Status.Initial;
     const Result = [];
 
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
       return res(
@@ -181,6 +186,7 @@ export const handlers = [
     switch (body.Action) {
       case Action.Open:
         status = Status.Open;
+        return res(ctx.status(500), ctx.text('Oh oh'));
         break;
       case Action.Close:
         status = Status.Closed;
@@ -221,9 +227,19 @@ export const handlers = [
     return res(ctx.status(200), ctx.text('Election deleted'));
   }),
 
-  rest.post(endpoints.dkgActors, (req, res, ctx) => {
+  rest.post(endpoints.dkgActors, async (req, res, ctx) => {
     const body = req.body as NewDKGBody;
-    setTimeout(() => mockDKG.set(body.ElectionID, NodeStatus.Initialized), INIT_TIMER);
+    const newDKGStatus = new Map(mockDKG.get(body.ElectionID));
+
+    mockNodeProxyAddresses.get(body.ElectionID).forEach((proxy, node) => {
+      newDKGStatus.set(node, NodeStatus.Initialized);
+    });
+
+    setTimeout(() => {
+      mockDKG.set(body.ElectionID, newDKGStatus);
+    }, INIT_TIMER);
+
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200));
   }),
@@ -234,7 +250,16 @@ export const handlers = [
 
     switch (body.Action) {
       case Action.Setup:
-        setTimeout(() => mockDKG.set(ElectionID as string, NodeStatus.Setup), SETUP_TIMER);
+        const newDKGStatus = new Map(mockDKG.get(ElectionID as string));
+        var node = '';
+        mockNodeProxyAddresses.get(ElectionID as string).forEach((proxy, _node) => {
+          if (proxy === body.Proxy) {
+            node = _node;
+          }
+        });
+        newDKGStatus.set(node, NodeStatus.Setup);
+
+        setTimeout(() => mockDKG.set(ElectionID as string, newDKGStatus), SETUP_TIMER);
         break;
       case Action.BeginDecryption:
         setTimeout(
@@ -251,6 +276,8 @@ export const handlers = [
         break;
     }
 
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
+
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
@@ -259,9 +286,17 @@ export const handlers = [
     const proxy = req.params[0];
     const election = mockElections.get(ElectionID as string);
 
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
+
     switch (election.Status) {
       case Status.Initial:
-        const currentNodeStatus = mockDKG.get(ElectionID as string);
+        var node = '';
+        mockNodeProxyAddresses.get(ElectionID as string).forEach((_proxy, _node) => {
+          if (proxy === _proxy) {
+            node = _node;
+          }
+        });
+        const currentNodeStatus = mockDKG.get(ElectionID as string).get(node);
 
         if (currentNodeStatus === NodeStatus.Initialized) {
           //return res(ctx.status(500), ctx.json('Oh oh'));
@@ -307,6 +342,8 @@ export const handlers = [
         }),
       SHUFFLE_TIMER
     );
+
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
@@ -354,7 +391,6 @@ export const handlers = [
     const { ElectionID } = req.params;
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    console.log(mockNodeProxyAddresses);
     const response = [];
     mockNodeProxyAddresses
       .get(ElectionID as string)
@@ -374,21 +410,9 @@ export const handlers = [
     });
 
     mockNodeProxyAddresses.set(ElectionID as string, newNodeProxyAddresses);
-    console.log(mockNodeProxyAddresses);
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
-  }),
-
-  rest.get(endpoints.getProxyAddress(':ElectionID', '*'), async (req, res, ctx) => {
-    const { ElectionID } = req.params;
-
-    const node0 = mockRoster[0];
-    const proxy = mockNodeProxyAddresses.get(ElectionID as string).get(node0);
-
-    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
-
-    return res(ctx.status(200), ctx.json({ [node0]: proxy }));
   }),
 ];

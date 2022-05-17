@@ -35,7 +35,7 @@ const Action: FC<ActionProps> = ({
   DKGStatuses,
   setDKGStatuses,
 }) => {
-  const { getAction, modalClose, modalCancel, modalDelete } = useChangeAction(
+  const { getAction, modalClose, modalCancel, modalDelete, modalSetup } = useChangeAction(
     status,
     electionID,
     roster,
@@ -56,6 +56,7 @@ const Action: FC<ActionProps> = ({
       {modalClose}
       {modalCancel}
       {modalDelete}
+      {modalSetup}
     </>
   );
 };

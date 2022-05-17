@@ -21,6 +21,7 @@ import DeleteButton from 'components/buttons/DeleteButton';
 import { FlashContext, FlashLevel } from 'index';
 import { useNavigate } from 'react-router';
 import { ROUTE_ELECTION_INDEX } from 'Routes';
+import ChooseProxyModal from 'components/modal/ChooseProxyModal';
 
 const useChangeAction = (
   status: Status,
@@ -39,20 +40,21 @@ const useChangeAction = (
   const { t } = useTranslation();
   const [isInitializing, setIsInitializing] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
-  const [isCanceling, setIsCanceling] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [showModalProxySetup, setShowModalProxySetup] = useState(false);
   const [showModalClose, setShowModalClose] = useState(false);
   const [showModalCancel, setShowModalCancel] = useState(false);
   const [showModalDelete, setShowModalDelete] = useState(false);
+  const [userConfirmedProxySetup, setUserConfirmedProxySetup] = useState(false);
   const [userConfirmedClosing, setUserConfirmedClosing] = useState(false);
   const [userConfirmedCanceling, setUserConfirmedCanceling] = useState(false);
   const [userConfirmedDeleting, setUserConfirmedDeleting] = useState(false);
   const [proxyAddresses, setProxyAddresses] = useState<Map<string, string>>(new Map());
-  const [initializedNodes, setInitializedNodes] = useState<Map<string, boolean>>(new Map());
+  const [nodeToSetup, setNodeToSetup] = useState<[string, string]>(['', '']);
   const [getError, setGetError] = useState(null);
   const [postError, setPostError] = useState(null);
   const sendFetchRequest = usePostCall(setPostError);
+  const abortController = new AbortController();
+  const signal = abortController.signal;
 
   const fctx = useContext(FlashContext);
   const navigate = useNavigate();
@@ -82,6 +84,17 @@ const useChangeAction = (
     />
   );
 
+  const modalSetup = (
+    <ChooseProxyModal
+      showModal={showModalProxySetup}
+      nodeProxyAddresses={nodeProxyAddresses}
+      nodeToSetup={nodeToSetup}
+      setNodeToSetup={setNodeToSetup}
+      setShowModal={setShowModalProxySetup}
+      setUserConfirmedAction={setUserConfirmedProxySetup}
+    />
+  );
+
   const electionUpdate = async (action: string, endpoint: string) => {
     const req = {
       method: 'PUT',
@@ -95,18 +108,18 @@ const useChangeAction = (
     return sendFetchRequest(endpoint, req, setIsPosting);
   };
 
-  const initializeNode = async (address: string) => {
+  const initializeNode = async (proxy: string) => {
     const request = {
       method: 'POST',
       body: JSON.stringify({
         ElectionID: electionID,
-        Proxy: address,
+        Proxy: proxy,
       }),
       headers: {
         'Content-Type': 'application/json',
       },
     };
-    return sendFetchRequest(endpoints.dkgActors, request, setIsClosing);
+    return sendFetchRequest(endpoints.dkgActors, request, setIsPosting);
   };
 
   const onFullFilled = (nextStatus: Status) => {
@@ -132,7 +145,7 @@ const useChangeAction = (
 
   // The previous status is used if there's an error,in which case the election
   // status is set back to this value.
-  const pollElectionStatus = (previousStatus: Status, nextStatus: Status, signal: AbortSignal) => {
+  const pollElectionStatus = (previousStatus: Status, nextStatus: Status) => {
     // polling interval
     const interval = 1000;
 
@@ -154,7 +167,7 @@ const useChangeAction = (
       });
   };
 
-  const pollDKGStatus = (proxy: string, statusToMatch: NodeStatus, signal: AbortSignal) => {
+  const pollDKGStatus = (proxy: string, statusToMatch: NodeStatus) => {
     const interval = 1000;
 
     const request = {
@@ -170,18 +183,13 @@ const useChangeAction = (
   // Start to poll when there is an ongoingAction
   useEffect(() => {
     // use an abortController to stop polling when the component is unmounted
-    const abortController = new AbortController();
-    const signal = abortController.signal;
 
     switch (ongoingAction) {
       case OngoingAction.Initializing:
         if (nodeProxyAddresses !== null) {
-          // Initialize each of the node participating in the election
-          const promises: Promise<unknown>[] = Array.from(nodeProxyAddresses.values()).map(
-            (proxy) => {
-              return pollDKGStatus(proxy, NodeStatus.Initialized, signal);
-            }
-          );
+          const promises = Array.from(nodeProxyAddresses.values()).map((proxy) => {
+            return pollDKGStatus(proxy, NodeStatus.Initialized);
+          });
 
           Promise.all(promises).then(
             () => {
@@ -197,21 +205,19 @@ const useChangeAction = (
         }
         break;
       case OngoingAction.SettingUp:
-        // Setup the first node in the roster
         if (nodeProxyAddresses !== null) {
-          const node = roster[0];
-          pollDKGStatus(nodeProxyAddresses.get(node), NodeStatus.Setup, signal)
+          pollDKGStatus(nodeToSetup[1], NodeStatus.Setup)
             .then(
               () => {
                 onFullFilled(Status.Setup);
                 const newDKGStatuses = new Map(DKGStatuses);
-                newDKGStatuses.set(node, NodeStatus.Setup);
+                newDKGStatuses.set(nodeToSetup[0], NodeStatus.Setup);
                 setDKGStatuses(newDKGStatuses);
               },
               (reason: any) => {
                 onRejected(reason, Status.Initialized);
                 const newDKGStatuses = new Map(DKGStatuses);
-                newDKGStatuses.set(node, NodeStatus.Failed);
+                newDKGStatuses.set(nodeToSetup[0], NodeStatus.Failed);
                 setDKGStatuses(newDKGStatuses);
               }
             )
@@ -223,22 +229,22 @@ const useChangeAction = (
         }
         break;
       case OngoingAction.Opening:
-        pollElectionStatus(Status.Setup, Status.Open, signal);
+        pollElectionStatus(Status.Setup, Status.Open);
         break;
       case OngoingAction.Closing:
-        pollElectionStatus(Status.Open, Status.Closed, signal);
+        pollElectionStatus(Status.Open, Status.Closed);
         break;
       case OngoingAction.Canceling:
-        pollElectionStatus(Status.Open, Status.Canceled, signal);
+        pollElectionStatus(Status.Open, Status.Canceled);
         break;
       case OngoingAction.Shuffling:
-        pollElectionStatus(Status.Closed, Status.ShuffledBallots, signal);
+        pollElectionStatus(Status.Closed, Status.ShuffledBallots);
         break;
       case OngoingAction.Decrypting:
-        pollElectionStatus(Status.ShuffledBallots, Status.PubSharesSubmitted, signal);
+        pollElectionStatus(Status.ShuffledBallots, Status.PubSharesSubmitted);
         break;
       case OngoingAction.Combining:
-        pollElectionStatus(Status.PubSharesSubmitted, Status.ResultAvailable, signal);
+        pollElectionStatus(Status.PubSharesSubmitted, Status.ResultAvailable);
         setResultAvailable(true);
         break;
       default:
@@ -252,27 +258,39 @@ const useChangeAction = (
 
   useEffect(() => {
     if (postError !== null) {
-      setTextModalError(postError);
+      setTextModalError(t('errorAction', { error: postError }));
       setShowModalError(true);
       setPostError(null);
+      abortController.abort();
     }
   }, [postError]);
 
   useEffect(() => {
     if (getError !== null) {
-      setTextModalError(getError);
+      setTextModalError(t('errorAction', { error: getError }));
       setShowModalError(true);
       setGetError(null);
     }
   }, [getError]);
 
   useEffect(() => {
+    if (nodeProxyAddresses !== null) {
+      const node = roster[0];
+      setNodeToSetup([node, nodeProxyAddresses.get(node)]);
+    }
+  }, [nodeProxyAddresses]);
+
+  useEffect(() => {
     //check if close button was clicked and the user validated the confirmation window
-    if (isClosing && userConfirmedClosing) {
+    if (userConfirmedClosing) {
       const close = async () => {
+        setOngoingAction(OngoingAction.Closing);
+
         const closeSuccess = await electionUpdate(Action.Close, endpoints.editElection(electionID));
-        if (closeSuccess) {
-          setOngoingAction(OngoingAction.Closing);
+
+        if (!closeSuccess) {
+          setStatus(Status.Open);
+          setOngoingAction(OngoingAction.None);
         }
 
         setUserConfirmedClosing(false);
@@ -281,24 +299,21 @@ const useChangeAction = (
       close();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    isClosing,
-    sendFetchRequest,
-    setShowModalError,
-    setStatus,
-    showModalClose,
-    userConfirmedClosing,
-  ]);
+  }, [userConfirmedClosing]);
 
   useEffect(() => {
-    if (isCanceling && userConfirmedCanceling) {
+    if (userConfirmedCanceling) {
       const cancel = async () => {
+        setOngoingAction(OngoingAction.Canceling);
+
         const cancelSuccess = await electionUpdate(
           Action.Cancel,
           endpoints.editElection(electionID)
         );
-        if (cancelSuccess) {
-          setOngoingAction(OngoingAction.Canceling);
+
+        if (!cancelSuccess) {
+          setStatus(Status.Open);
+          setOngoingAction(OngoingAction.None);
         }
         setUserConfirmedCanceling(false);
       };
@@ -306,10 +321,10 @@ const useChangeAction = (
       cancel();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCanceling, sendFetchRequest, setShowModalError, setStatus, userConfirmedCanceling]);
+  }, [userConfirmedCanceling]);
 
   useEffect(() => {
-    if (isDeleting && userConfirmedDeleting) {
+    if (userConfirmedDeleting) {
       const deleteElection = async () => {
         const request = {
           method: 'DELETE',
@@ -327,34 +342,64 @@ const useChangeAction = (
       };
 
       deleteElection();
-      setIsDeleting(false);
       setUserConfirmedDeleting(false);
     }
-  });
+  }, [userConfirmedDeleting]);
 
   useEffect(() => {
     if (isInitializing) {
-      const initialize = async () => {
-        proxyAddresses.forEach(async (address) => {
-          const initSuccess = await initializeNode(address);
+      const initialize = async (proxy: string) => {
+        setOngoingAction(OngoingAction.Initializing);
+        const initSuccess = await initializeNode(proxy);
 
-          if (initSuccess) {
-            const initNodes = new Map(initializedNodes);
-            initNodes.set(address, true);
-            setInitializedNodes(initNodes);
-
-            // All post request to initialize the nodes have been sent
-            if (!Array.from(initializedNodes.values()).includes(false)) {
-              setIsInitializing(false);
-              setOngoingAction(OngoingAction.Initializing);
-            }
-          }
-        });
+        if (!initSuccess) {
+          setStatus(Status.Initial);
+          setOngoingAction(OngoingAction.None);
+        }
       };
 
-      initialize();
+      const promises = Array.from(nodeProxyAddresses.values()).map((proxy) => {
+        return initialize(proxy);
+      });
+
+      Promise.all(promises).then(() => {
+        setIsInitializing(false);
+      });
     }
   }, [isInitializing]);
+
+  useEffect(() => {
+    if (userConfirmedProxySetup) {
+      const setup = async () => {
+        setOngoingAction(OngoingAction.SettingUp);
+
+        const request = {
+          method: 'PUT',
+          body: JSON.stringify({
+            Action: Action.Setup,
+            Proxy: nodeToSetup[1],
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        };
+
+        const setupSuccess = await sendFetchRequest(
+          endpoints.editDKGActors(electionID),
+          request,
+          setIsPosting
+        );
+
+        if (!setupSuccess) {
+          setStatus(Status.Initialized);
+          setOngoingAction(OngoingAction.None);
+        }
+        setUserConfirmedProxySetup(false);
+      };
+
+      setup();
+    }
+  }, [userConfirmedProxySetup]);
 
   const handleInitialize = () => {
     // initialize the address of the proxies with the address of the node
@@ -366,61 +411,67 @@ const useChangeAction = (
     setIsInitializing(true);
   };
 
-  const handleSetup = async () => {
-    const setupSuccess = await electionUpdate(Action.Setup, endpoints.editDKGActors(electionID));
-
-    if (setupSuccess) {
-      setOngoingAction(OngoingAction.SettingUp);
-    }
+  const handleSetup = () => {
+    setShowModalProxySetup(true);
   };
 
   const handleOpen = async () => {
+    setOngoingAction(OngoingAction.Opening);
     const openSuccess = await electionUpdate(Action.Open, endpoints.editElection(electionID));
-    if (openSuccess) {
-      setOngoingAction(OngoingAction.Opening);
+
+    if (!openSuccess) {
+      setStatus(Status.Setup);
+      setOngoingAction(OngoingAction.None);
     }
   };
 
   const handleClose = () => {
     setShowModalClose(true);
-    setIsClosing(true);
   };
 
   const handleCancel = () => {
     setShowModalCancel(true);
-    setIsCanceling(true);
   };
 
   const handleShuffle = async () => {
+    setOngoingAction(OngoingAction.Shuffling);
     const shuffleSuccess = await electionUpdate(Action.Shuffle, endpoints.editShuffle(electionID));
-    if (shuffleSuccess) {
-      setOngoingAction(OngoingAction.Shuffling);
+
+    if (!shuffleSuccess) {
+      setStatus(Status.Closed);
+      setOngoingAction(OngoingAction.None);
     }
   };
 
   const handleDecrypt = async () => {
+    setOngoingAction(OngoingAction.Decrypting);
+
     const decryptSuccess = await electionUpdate(
       Action.BeginDecryption,
       endpoints.editDKGActors(electionID)
     );
-    if (decryptSuccess) {
-      setOngoingAction(OngoingAction.Decrypting);
+
+    if (!decryptSuccess) {
+      setStatus(Status.ShuffledBallots);
+      setOngoingAction(OngoingAction.None);
     }
   };
 
   const handleCombine = async () => {
+    setOngoingAction(OngoingAction.Combining);
     const combineSuccess = await electionUpdate(
       Action.CombineShares,
       endpoints.editElection(electionID.toString())
     );
-    if (combineSuccess && postError === null) {
-      setOngoingAction(OngoingAction.Combining);
+
+    if (!combineSuccess) {
+      setStatus(Status.PubSharesSubmitted);
+      setOngoingAction(OngoingAction.None);
     }
   };
 
   const handleDelete = () => {
     setShowModalDelete(true);
-    setIsDeleting(true);
   };
 
   const getAction = () => {
@@ -517,7 +568,7 @@ const useChangeAction = (
         );
     }
   };
-  return { getAction, modalClose, modalCancel, modalDelete };
+  return { getAction, modalClose, modalCancel, modalDelete, modalSetup };
 };
 
 export default useChangeAction;

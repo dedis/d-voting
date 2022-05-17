@@ -17,14 +17,19 @@ const setupMockElection = () => {
   const mockElections: Map<ID, ElectionInfo> = new Map();
   const mockResults: Map<ID, Results[]> = new Map();
 
-  // Mock of the status of the nodes
-  const mockDKG: Map<ID, NodeStatus> = new Map();
+  // Mock of the DKGStatuses
+  const mockDKG: Map<ID, Map<string, NodeStatus>> = new Map();
+  const mockDKGSetup: Map<string, NodeStatus> = new Map();
+  const mockDKGNotInitialized: Map<string, NodeStatus> = new Map();
+
   // Mock of the node proxy mapping
   const mockNodeProxyAddresses: Map<ID, Map<string, string>> = new Map();
   const mockAddresses: Map<string, string> = new Map();
 
   mockRoster.forEach((node) => {
     mockAddresses.set(node, node);
+    mockDKGSetup.set(node, NodeStatus.Setup);
+    mockDKGNotInitialized.set(node, NodeStatus.NotInitialized);
   });
 
   const electionID1 = '36kSJ0tH';
@@ -43,7 +48,7 @@ const setupMockElection = () => {
 
   mockResults.set(electionID1, [mockElectionResult11, mockElectionResult12]);
 
-  mockDKG.set(electionID1, NodeStatus.NotInitialized);
+  mockDKG.set(electionID1, mockDKGNotInitialized);
   mockNodeProxyAddresses.set(electionID1, mockAddresses);
 
   mockElections.set(electionID2, {
@@ -58,7 +63,7 @@ const setupMockElection = () => {
   });
 
   mockResults.set(electionID2, [mockElectionResult21, mockElectionResult22, mockElectionResult23]);
-  mockDKG.set(electionID2, NodeStatus.Setup);
+  mockDKG.set(electionID2, mockDKGSetup);
   mockNodeProxyAddresses.set(electionID2, mockAddresses);
 
   for (let j = 0; j < 5; j++) {
@@ -98,11 +103,11 @@ const setupMockElection = () => {
     mockNodeProxyAddresses.set(electionID22, mockAddresses);
 
     if (j >= Status.Open) {
-      mockDKG.set(electionID11, NodeStatus.Setup);
-      mockDKG.set(electionID22, NodeStatus.Setup);
+      mockDKG.set(electionID11, mockDKGSetup);
+      mockDKG.set(electionID22, mockDKGSetup);
     } else {
-      mockDKG.set(electionID11, NodeStatus.NotInitialized);
-      mockDKG.set(electionID22, NodeStatus.NotInitialized);
+      mockDKG.set(electionID11, mockDKGNotInitialized);
+      mockDKG.set(electionID22, mockDKGNotInitialized);
     }
   }
 

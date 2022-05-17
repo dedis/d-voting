@@ -21,8 +21,7 @@ export const getDKGActors = (Proxy: string, ElectionID: string) =>
 
 // get the proxies' addresses from the web backend
 export const getProxiesAddresses = (ElectionID: string) => `/api/elections/${ElectionID}/proxies`;
-export const getProxyAddress = (ElectionID: string, Node: string) =>
-  `/api/elections/${ElectionID}/proxies/${Node}`;
+
 export const editProxiesAddresses = (ElectionID: string) => `/api/elections/${ElectionID}/proxies`;
 
 // public information can be directly fetched from dela nodes

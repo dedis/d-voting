@@ -1,70 +1,62 @@
 import { Dialog, Transition } from '@headlessui/react';
-import { CubeTransparentIcon } from '@heroicons/react/outline';
-import { FC, Fragment, useRef, useState } from 'react';
+import { CogIcon } from '@heroicons/react/outline';
+import { FC, Fragment, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
-type AddProxyAddressesModalProps = {
-  roster: string[];
+type ChooseProxyModalProps = {
   showModal: boolean;
-  proxyAddresses: Map<string, string>;
-  setProxyAddresses: (addresses: Map<string, string>) => void;
+  nodeProxyAddresses: Map<string, string>;
+  nodeToSetup: [string, string];
+  setNodeToSetup: (node: [string, string]) => void;
   setShowModal: (show: boolean) => void;
   setUserConfirmedAction: (confirm: boolean) => void;
 };
 
-const AddProxyAddressesModal: FC<AddProxyAddressesModalProps> = ({
-  roster,
+const ChooseProxyModal: FC<ChooseProxyModalProps> = ({
   showModal,
-  proxyAddresses,
-  setProxyAddresses,
+  nodeProxyAddresses,
+  nodeToSetup,
+  setNodeToSetup,
   setShowModal,
   setUserConfirmedAction,
 }) => {
   const { t } = useTranslation();
   const cancelButtonRef = useRef(null);
-  const [error, setError] = useState(null);
 
   const closeModal = () => {
-    setError(null);
     setShowModal(false);
   };
 
   const confirmChoice = () => {
-    setError(null);
-    if (proxyAddresses && !Array.from(proxyAddresses.values()).includes('')) {
-      setProxyAddresses(proxyAddresses);
-      setUserConfirmedAction(true);
-      closeModal();
-    } else {
-      setError(t('inputProxyAddressesError'));
-    }
+    setUserConfirmedAction(true);
+    closeModal();
   };
 
-  const handleTextInput = (e: React.ChangeEvent<HTMLInputElement>, node: string) => {
-    const newAddresses = new Map(proxyAddresses);
-    newAddresses.set(node, e.target.value);
-
-    setProxyAddresses(newAddresses);
+  const handleCheck = (node: string, proxy: string) => {
+    setNodeToSetup([node, proxy]);
   };
 
-  const proxyInputField = () => {
+  const proxyCheckbox = () => {
     return (
-      <div>
-        {roster.map((node) => (
-          <div key={node} className="flex justify-between py-2">
-            <label htmlFor={node}>Proxy: </label>
+      <>
+        {Array.from(nodeProxyAddresses).map(([node, proxy], index) => (
+          <div className="flex items-center my-4 ml-4" key={node}>
             <input
-              id={node}
-              type="text"
-              className="flex-auto ml-4 sm:text-md border rounded-md text-gray-600"
-              onChange={(e) => handleTextInput(e, node)}
-              placeholder={proxyAddresses.get(node) === '' ? 'https:// ...' : ''}
-              value={proxyAddresses.get(node)}
+              id={proxy}
+              type="radio"
+              className="w-4 h-4 border-gray-300 focus:ring-2 focus:ring-blue-300 cursor-pointer"
+              checked={node === nodeToSetup[0]}
+              onChange={() => handleCheck(node, proxy)}
             />
+            <label
+              htmlFor={proxy}
+              className="block ml-2 text-sm font-medium text-gray-900 cursor-pointer"
+              onChange={() => handleCheck(node, proxy)}>
+              Node {index} ({node})
+            </label>
           </div>
         ))}
-        <div className="text-red-600 text-sm py-2">{error}</div>
-      </div>
+      </>
     );
   };
 
@@ -101,16 +93,16 @@ const AddProxyAddressesModal: FC<AddProxyAddressesModalProps> = ({
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="sm:flex sm:items-start">
                   <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10">
-                    <CubeTransparentIcon className="h-6 w-6 text-indigo-600" aria-hidden="true" />
+                    <CogIcon className="h-6 w-6 text-indigo-600" aria-hidden="true" />
                   </div>
                   <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                     <Dialog.Title as="h3" className="text-lg leading-6 font-medium text-gray-900">
-                      {t('nodeInitialization')}
+                      {t('nodeSetup')}
                     </Dialog.Title>
                     <div className="mt-2">
-                      <p className="text-sm text-gray-500">{t('inputProxyAddresses')}</p>
+                      <p className="text-sm text-gray-500">{t('inputNodeSetup')}</p>
                     </div>
-                    {proxyInputField()}
+                    {proxyCheckbox()}
                   </div>
                 </div>
               </div>
@@ -119,7 +111,7 @@ const AddProxyAddressesModal: FC<AddProxyAddressesModalProps> = ({
                   type="button"
                   className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
                   onClick={confirmChoice}>
-                  {t('initializeNode')}
+                  {t('setupNode')}
                 </button>
                 <button
                   type="button"
@@ -137,4 +129,4 @@ const AddProxyAddressesModal: FC<AddProxyAddressesModalProps> = ({
   );
 };
 
-export default AddProxyAddressesModal;
+export default ChooseProxyModal;

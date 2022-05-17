@@ -85,9 +85,8 @@ const ElectionShow: FC = () => {
       const newNodeProxyAddresses = new Map();
 
       nodeProxyObject.Proxies.forEach((value) => {
-        Object.entries(value).forEach((v) => {
-          newNodeProxyAddresses.set(v[0], v[1]);
-          console.log(v[0]);
+        Object.entries(value).forEach(([node, proxy]) => {
+          newNodeProxyAddresses.set(node, proxy);
         });
       });
 
@@ -99,7 +98,6 @@ const ElectionShow: FC = () => {
   useEffect(() => {
     const fetchData = async (node: string) => {
       try {
-        console.log(nodeProxyAddresses.get(node));
         const response = await fetch(
           endpoints.getDKGActors(nodeProxyAddresses.get(node), electionId),
           request
