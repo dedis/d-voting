@@ -13,7 +13,7 @@ const useChangeDKGStatus = (status: NodeStatus) => {
         return (
           <div className="flex">
             <div>
-              <MinusIcon className="-ml-1 mr-2 h-5 w-5 text-gray-600" aria-hidden="true" />
+              <MinusIcon className="ml-2 mr-2 h-5 w-5 text-gray-600" aria-hidden="true" />
             </div>
           </div>
         );

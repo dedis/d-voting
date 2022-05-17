@@ -35,7 +35,7 @@ const { mockElections, mockResults, mockDKG, mockNodeProxyAddresses } = setupMoc
 
 var mockUserDB = setupMockUserDB();
 
-const RESPONSE_TIME = 1000;
+const RESPONSE_TIME = 500;
 const CHANGE_STATUS_TIMER = 2000;
 const INIT_TIMER = 3000;
 const SETUP_TIMER = 3000;

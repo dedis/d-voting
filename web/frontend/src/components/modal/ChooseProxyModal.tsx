@@ -50,7 +50,7 @@ const ChooseProxyModal: FC<ChooseProxyModalProps> = ({
             />
             <label
               htmlFor={proxy}
-              className="block ml-2 text-sm font-medium text-gray-900 cursor-pointer"
+              className="block ml-2 text-sm font-medium text-gray-700 cursor-pointer"
               onChange={() => handleCheck(node, proxy)}>
               Node {index} ({node})
             </label>

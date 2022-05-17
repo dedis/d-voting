@@ -1,10 +1,12 @@
 import usePostCall from 'components/utils/usePostCall';
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NodeStatus } from 'types/node';
 import DKGStatus from './DKGStatus';
 import * as endpoints from '../../../components/utils/Endpoints';
 import { ID } from 'types/configuration';
+import { AuthContext } from 'index';
+import { UserRole } from 'types/userRole';
 
 type DKGTableProps = {
   nodeProxyAddresses: Map<string, string>;
@@ -24,6 +26,8 @@ const DKGTable: FC<DKGTableProps> = ({
   setShowModalError,
 }) => {
   const { t } = useTranslation();
+  const authCtx = useContext(AuthContext);
+
   const [proxyAddresses, setProxyAddresses] = useState<Map<string, string>>(null);
   const [prevProxyAddress, setPrevProxyAddress] = useState<Map<string, string>>(null);
   const [isEditMode, setIsEditMode] = useState<Map<string, boolean>>(null);
@@ -31,6 +35,8 @@ const DKGTable: FC<DKGTableProps> = ({
   const [isPosting, setIsPosting] = useState(false);
   const [postError, setPostError] = useState(null);
   const sendFetchRequest = usePostCall(setPostError);
+
+  const isAuthorized = authCtx.role === UserRole.Admin || authCtx.role === UserRole.Operator;
 
   const proxyAddressUpdate = async () => {
     const newAddresses = [];
@@ -143,7 +149,7 @@ const DKGTable: FC<DKGTableProps> = ({
                   <tr key={node} className="bg-white border-b">
                     <td
                       scope="row"
-                      className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                      className="px-6 py-4 font-medium text-gray-600 whitespace-nowrap">
                       {t('node')} {index} ({node})
                     </td>
                     <td className="px-6 py-4">{<DKGStatus status={DKGStatuses.get(node)} />}</td>
@@ -168,25 +174,29 @@ const DKGTable: FC<DKGTableProps> = ({
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      {isEditMode.get(node) ? (
-                        <div>
-                          <button
-                            onClick={() => handleSave(node)}
-                            className="font-medium text-indigo-600 hover:underline mx-2">
-                            {t('save')}
-                          </button>
-                          <button
-                            onClick={() => handleCancel(node)}
-                            className="font-medium text-indigo-600 hover:underline">
-                            {t('cancel')}
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => handleEdit(node)}
-                          className="font-medium text-indigo-600 hover:underline">
-                          {t('edit')}
-                        </button>
+                      {isAuthorized && (
+                        <>
+                          {isEditMode.get(node) ? (
+                            <div>
+                              <button
+                                onClick={() => handleSave(node)}
+                                className="font-medium text-indigo-600 hover:underline mx-2">
+                                {t('save')}
+                              </button>
+                              <button
+                                onClick={() => handleCancel(node)}
+                                className="font-medium text-indigo-600 hover:underline">
+                                {t('cancel')}
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleEdit(node)}
+                              className="font-medium text-indigo-600 hover:underline">
+                              {t('edit')}
+                            </button>
+                          )}
+                        </>
                       )}
                     </td>
                   </tr>
