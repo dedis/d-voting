@@ -200,7 +200,7 @@ const ElectionResult: FC = () => {
   };
 
   return (
-    <div className="w-[60rem] font-sans px-4 py-8">
+    <div className="w-[60rem] font-sans px-4 pt-8 pb-4">
       {!loading ? (
         <div>
           <div className="flex items-center">
@@ -214,9 +214,7 @@ const ElectionResult: FC = () => {
 
           <div className="w-full pb-4 my-0 sm:my-4">
             <h2 className="text-lg">{t('totalNumberOfVotes', { votes: result.length })}</h2>
-            <h3 className="py-6 uppercase text-2xl text-center text-gray-700">
-              {configuration.MainTitle}
-            </h3>
+            <h3 className="py-6 text-2xl text-center text-gray-700">{configuration.MainTitle}</h3>
 
             <div className="flex flex-col items-center">
               <div className="min-w-[80%]">

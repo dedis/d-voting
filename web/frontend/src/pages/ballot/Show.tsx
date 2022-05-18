@@ -117,7 +117,7 @@ const Ballot: FC = () => {
 
   const SubjectElementDisplay = (element: types.SubjectElement) => {
     return (
-      <div>
+      <div className="pl-4">
         {element.Type === RANK && <Rank rank={element as types.RankQuestion} answers={answers} />}
         {element.Type === SELECT && (
           <Select
@@ -135,16 +135,12 @@ const Ballot: FC = () => {
 
   const SubjectTree = (subject: types.Subject) => {
     return (
-      <div className="sm:px-8 pl-2" key={subject.ID}>
+      <div className="" key={subject.ID}>
+        <h3 className="text-xl font-bold text-gray-600">{subject.Title}</h3>
         {subject.Order.map((id: ID) => (
           <div key={id}>
             {subject.Elements.get(id).Type === SUBJECT ? (
-              <div>
-                <h3 className="text-lg font-bold text-gray-600">
-                  {subject.Elements.get(id).Title}
-                </h3>
-                {SubjectTree(subject.Elements.get(id) as types.Subject)}
-              </div>
+              <div className="pl-4">{SubjectTree(subject.Elements.get(id) as types.Subject)}</div>
             ) : (
               SubjectElementDisplay(subject.Elements.get(id))
             )}
@@ -156,15 +152,21 @@ const Ballot: FC = () => {
 
   const ballotDisplay = () => {
     return (
-      <DragDropContext onDragEnd={(dropRes) => handleOnDragEnd(dropRes, answers, setAnswers)}>
-        <div className="shadow-lg rounded-md my-0 sm:my-4 py-8 w-full">
-          <h3 className="font-bold uppercase py-4 text-2xl text-center text-gray-600">
-            {configuration.MainTitle}
-          </h3>
-          <div>
-            {configuration.Scaffold.map((subject: types.Subject) => SubjectTree(subject))}
-            <div className="sm:mx-8 mx-4 text-red-600 text-sm pt-3 pb-5">{userErrors}</div>
-            <div className="flex sm:mx-8 mx-4">
+      <div className="w-[60rem] font-sans px-4 pt-8 pb-4">
+        <DragDropContext onDragEnd={(dropRes) => handleOnDragEnd(dropRes, answers, setAnswers)}>
+          <div className="flex items-center">
+            <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+              {t('vote')}
+            </h2>
+          </div>
+
+          <div className="w-full pb-4 my-0 sm:my-4">
+            <h3 className="py-6 text-2xl text-center text-gray-700">{configuration.MainTitle}</h3>
+            <div className="flex flex-col">
+              {configuration.Scaffold.map((subject: types.Subject) => SubjectTree(subject))}
+              <div className="text-red-600 text-sm pt-3 pb-1">{userErrors}</div>
+            </div>
+            <div className="flex mt-4">
               <button
                 type="button"
                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
@@ -178,13 +180,13 @@ const Ballot: FC = () => {
               </button>
             </div>
           </div>
-        </div>
-      </DragDropContext>
+        </DragDropContext>
+      </div>
     );
   };
 
   return (
-    <div>
+    <>
       <RedirectToModal
         showModal={showModal}
         setShowModal={setShowModal}
@@ -193,12 +195,8 @@ const Ballot: FC = () => {
         navigateDestination={-1}>
         {modalText}
       </RedirectToModal>
-      {loading ? (
-        <Loading />
-      ) : (
-        <div>{status === STATUS.Open ? ballotDisplay() : <ElectionClosed />}</div>
-      )}
-    </div>
+      {loading ? <Loading /> : <>{status === STATUS.Open ? ballotDisplay() : <ElectionClosed />}</>}
+    </>
   );
 };
 
