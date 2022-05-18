@@ -17,6 +17,7 @@ import {
   XIcon,
 } from '@heroicons/react/outline';
 import { PencilIcon } from '@heroicons/react/solid';
+import AddQuestionModal from './AddQuestionModal';
 
 const MAX_NESTED_SUBJECT = 1;
 
@@ -34,9 +35,13 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
   nestedLevel,
 }) => {
   const [subject, setSubject] = useState<types.Subject>(subjectObject);
+  const [currentQuestion, setCurrentQuestion] = useState<
+    types.RankQuestion | types.SelectQuestion | types.TextQuestion | null
+  >();
   const isSubjectMounted = useRef<boolean>(false);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [titleChanging, setTitleChanging] = useState<boolean>(true);
+  const [openModal, setOpenModal] = useState<boolean>(false);
 
   const [components, setComponents] = useState<ReactElement[]>([]);
 
@@ -169,40 +174,51 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
     }
   }, [components]);
 
+  useEffect(() => {
+    // When the modal is closed we reset the current question sent to the
+    // question modal
+    if (isOpen === false) {
+      setCurrentQuestion(null);
+    }
+  }, [isOpen]);
+
   const dropdownContent = [
     {
-      name: 'Add rank',
+      name: 'addRank',
       icon: <SwitchVerticalIcon className="mr-2 h-5 w-5" aria-hidden="true" />,
       onClick: () => {
         setIsOpen(true);
-        addQuestion(newRank());
+        setOpenModal(true);
+        setCurrentQuestion(newRank());
       },
     },
     {
-      name: 'Add select',
+      name: 'addSelect',
       icon: <CursorClickIcon className="mr-2 h-5 w-5" aria-hidden="true" />,
       onClick: () => {
         setIsOpen(true);
-        addQuestion(newSelect());
+        setOpenModal(true);
+        setCurrentQuestion(newSelect());
       },
     },
     {
-      name: 'Add text',
+      name: 'addText',
       icon: <MenuAlt1Icon className="mr-2 h-5 w-5" aria-hidden="true" />,
       onClick: () => {
         setIsOpen(true);
-        addQuestion(newText());
+        setOpenModal(true);
+        setCurrentQuestion(newText());
       },
     },
     {
-      name: 'Remove subject',
+      name: 'removeSubject',
       icon: <XIcon className="mr-2 h-5 w-5" aria-hidden="true" />,
       onClick: removeSubject,
     },
   ];
   if (nestedLevel < MAX_NESTED_SUBJECT) {
     dropdownContent.splice(3, 0, {
-      name: 'Add subject',
+      name: 'addSubject',
       icon: <FolderIcon className="mr-2 h-5 w-5" aria-hidden="true" />,
       onClick: () => {
         setIsOpen(true);
@@ -211,10 +227,22 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
     });
   }
 
+  const QuestionModal = () => {
+    return currentQuestion ? (
+      <AddQuestionModal
+        open={openModal}
+        setOpen={setOpenModal}
+        notifyParent={addQuestion}
+        question={currentQuestion}
+      />
+    ) : null;
+  };
+
   return (
     <div className={`${nestedLevel === 0 ? 'border-t' : 'pl-3'} `}>
+      <QuestionModal />
       <div className="flex flex-row justify-between w-full h-24 ">
-        <div className="flex flex-col pl-2">
+        <div className="flex flex-col max-w-full pl-2">
           <div className="mt-3 flex">
             <div className="h-9 w-9 rounded-full bg-gray-100 mr-2 ml-1">
               <FolderIcon className="m-2 h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -238,9 +266,9 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="flex mb-2">
-                <div className="pt-1.5">{Title.length ? Title : 'No Subject title'}</div>
-                <div className="ml-1">
+              <div className="flex mb-2 max-w-md truncate">
+                <div className="pt-1.5 truncate">{Title.length ? Title : 'No Subject title'}</div>
+                <div className="ml-1 pr-10">
                   <button
                     className="hover:text-indigo-500 p-1 rounded-md"
                     onClick={() => setTitleChanging(true)}>
