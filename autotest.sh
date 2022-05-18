@@ -1,6 +1,6 @@
 #! /bin/sh
 
-RUN_TIMES=5
+RUN_TIMES=15
 N_NODE=15
 vals=($(seq 1 1 $RUN_TIMES))
 

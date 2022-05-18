@@ -51,6 +51,9 @@ done
 
 tmux new-window -t $TMUX_SESSION_NAME
 
-#tmux a
 
+if test -z "$2" 
+then
+      tmux a
+fi
 
