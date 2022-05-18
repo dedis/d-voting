@@ -8,18 +8,16 @@ import { Status } from 'types/election';
 import { UserRole } from 'types/userRole';
 
 const VoteButton = ({ status, electionID }) => {
-  const authCtx = useContext(AuthContext);
+  const { role, isLogged } = useContext(AuthContext);
   const { t } = useTranslation();
 
   const isAuthorized =
-    authCtx.role === UserRole.Admin ||
-    authCtx.role === UserRole.Operator ||
-    authCtx.role === UserRole.Voter;
+    role === UserRole.Admin || role === UserRole.Operator || role === UserRole.Voter;
 
   return (
     isAuthorized &&
     status === Status.Open &&
-    authCtx.isLogged && (
+    isLogged && (
       <Link to={ROUTE_BALLOT_SHOW + '/' + electionID}>
         <button>
           <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-1 mr-2 border border-gray-300 text-sm rounded-full font-medium text-gray-700 hover:text-indigo-500">

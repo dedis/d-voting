@@ -31,23 +31,24 @@ const ElectionIndex: FC = () => {
 
   // Apply the filter statusToKeep
   useEffect(() => {
-    if (data !== null) {
-      if (statusToKeep !== null) {
-        const filteredElectionsID = [];
-        electionStatuses.forEach((status, id) => {
-          if (status === statusToKeep) {
-            filteredElectionsID.push(id);
-          }
-        });
+    if (data === null) return;
 
-        const filteredElections = (data.Elections as LightElectionInfo[]).filter((election) =>
-          filteredElectionsID.includes(election.ElectionID)
-        );
-        setElections(filteredElections);
-      } else {
-        setElections(data.Elections);
-      }
+    if (statusToKeep === null) {
+      setElections(data.Elections);
+      return;
     }
+
+    const filteredElectionsID = [];
+    electionStatuses.forEach((status, id) => {
+      if (status === statusToKeep) {
+        filteredElectionsID.push(id);
+      }
+    });
+
+    const filteredElections = (data.Elections as LightElectionInfo[]).filter((election) =>
+      filteredElectionsID.includes(election.ElectionID)
+    );
+    setElections(filteredElections);
   }, [data, statusToKeep]);
 
   // Fetch the NodeStatus for each node of each election
@@ -56,19 +57,19 @@ const ElectionIndex: FC = () => {
       const fetchDKGStatus = async (id: ID, node: string, proxyAddress: string) => {
         try {
           const response = await fetch(endpoints.getDKGActors(proxyAddress, id), request);
-          if (!response.ok) {
-            // The node is not initialized
-            if (response.status === 404) {
-              return { ID: id, Node: node, Status: NodeStatus.NotInitialized };
-            } else {
-              const js = await response.json();
-              fctx.addMessage(JSON.stringify(js), FlashLevel.Error);
-            }
-          } else {
-            let dkgStatus = await response.json();
 
-            return { ID: id, Node: node, Status: dkgStatus.Status as NodeStatus };
+          // The node is not initialized
+          if (response.status === 404) {
+            return { ID: id, Node: node, Status: NodeStatus.NotInitialized };
           }
+
+          if (!response.ok) {
+            const js = await response.json();
+            throw new Error(JSON.stringify(js));
+          }
+
+          let dkgStatus = await response.json();
+          return { ID: id, Node: node, Status: dkgStatus.Status as NodeStatus };
         } catch (e) {
           fctx.addMessage(e.message, FlashLevel.Error);
         }
@@ -77,21 +78,22 @@ const ElectionIndex: FC = () => {
       const fetchProxies = async (election: LightElectionInfo) => {
         try {
           const response = await fetch(endpoints.getProxiesAddresses(election.ElectionID), request);
+
           if (!response.ok) {
             const js = await response.json();
             throw new Error(JSON.stringify(js));
-          } else {
-            let dataReceived = await response.json();
-
-            const newNodeProxyAddresses = new Map<string, string>();
-            dataReceived.Proxies.forEach((value) => {
-              Object.entries(value).forEach(([node, proxy]) => {
-                newNodeProxyAddresses.set(node, proxy as string);
-              });
-            });
-
-            return { ID: election.ElectionID, NodeProxy: newNodeProxyAddresses };
           }
+
+          let dataReceived = await response.json();
+          const newNodeProxyAddresses = new Map<string, string>();
+
+          dataReceived.Proxies.forEach((value) => {
+            Object.entries(value).forEach(([node, proxy]) => {
+              newNodeProxyAddresses.set(node, proxy as string);
+            });
+          });
+
+          return { ID: election.ElectionID, NodeProxy: newNodeProxyAddresses };
         } catch (e) {
           fctx.addMessage(e.message, FlashLevel.Error);
         }
@@ -103,40 +105,30 @@ const ElectionIndex: FC = () => {
           return fetchProxies(election);
         });
 
-      Promise.all(promises)
-        .then((value) => {
-          const newNodeProxyAddresses: Map<ID, Map<string, string>> = new Map();
-          value.forEach((v) => {
-            newNodeProxyAddresses.set(v.ID, v.NodeProxy);
-          });
-          return newNodeProxyAddresses;
-        })
-        .then((newNodeProxyAddresses) => {
-          return Promise.all(
-            Array.from(newNodeProxyAddresses).map(([id, nodeProxy]) => {
-              return Promise.all(
-                Array.from(nodeProxy).map(([node, proxy]) => {
-                  return fetchDKGStatus(id, node, proxy);
-                })
-              );
-            })
-          );
-        })
-        .then((values) => {
-          const newDKGStatuses: Map<ID, Map<string, NodeStatus>> = new Map();
-
-          values.forEach((val) => {
+      promises.forEach((promise) => {
+        promise
+          .then((value) => {
+            return Promise.all(
+              Array.from(value.NodeProxy).map(([node, proxy]) => {
+                return fetchDKGStatus(value.ID, node, proxy);
+              })
+            );
+          })
+          .then((nodeProxy) => {
+            const newDKGStatuses: Map<ID, Map<string, NodeStatus>> = new Map();
             const newDKGStatus: Map<string, NodeStatus> = new Map();
 
-            val.forEach((v) => {
-              newDKGStatus.set(v.Node, v.Status);
-              newDKGStatuses.set(v.ID, newDKGStatus);
+            nodeProxy.forEach((value) => {
+              newDKGStatus.set(value.Node, value.Status);
+              newDKGStatuses.set(value.ID, newDKGStatus);
             });
-          });
 
-          setDKGStatuses(newDKGStatuses);
-        })
-        .finally(() => setDKGLoading(false));
+            setDKGStatuses(newDKGStatuses);
+          })
+          .finally(() => {
+            setDKGLoading(false);
+          });
+      });
     }
   }, [elections]);
 
@@ -153,6 +145,7 @@ const ElectionIndex: FC = () => {
           if (!dkgStatuses.includes(NodeStatus.NotInitialized)) {
             newElectionStatuses.set(election.ElectionID, Status.Initialized);
           }
+
           if (dkgStatuses.includes(NodeStatus.Setup)) {
             newElectionStatuses.set(election.ElectionID, Status.Setup);
           }

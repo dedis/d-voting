@@ -96,46 +96,45 @@ const ElectionShow: FC = () => {
 
   // Fetch the status of the nodes
   useEffect(() => {
-    const fetchData = async (node: string) => {
-      try {
-        const response = await fetch(
-          endpoints.getDKGActors(nodeProxyAddresses.get(node), electionId),
-          request
-        );
-        if (!response.ok) {
+    if (nodeProxyAddresses !== null) {
+      const fetchData = async (node: string) => {
+        try {
+          const response = await fetch(
+            endpoints.getDKGActors(nodeProxyAddresses.get(node), electionId),
+            request
+          );
+
           if (response.status === 404) {
             return { id: node, status: NodeStatus.NotInitialized };
-          } else {
+          }
+
+          if (!response.ok) {
             const js = await response.json();
             throw new Error(JSON.stringify(js));
           }
-        } else {
+
           let dataReceived = await response.json();
           return { id: node, status: dataReceived.Status };
+        } catch (e) {
+          setTextModalError(e.message);
+          setShowModalError(true);
         }
-      } catch (e) {
-        setTextModalError(e.message);
-        setShowModalError(true);
+      };
+
+      if (nodeProxyAddresses !== null) {
+        const promises = Array.from(nodeProxyAddresses.keys()).map((node) => {
+          return fetchData(node);
+        });
+
+        Promise.all(promises)
+          .then((values) => {
+            const newDKGStatuses = new Map();
+            values.forEach((v) => newDKGStatuses.set(v.id, v.status));
+            setDKGStatuses(newDKGStatuses);
+          })
+          .finally(() => setDKGLoading(false));
       }
-    };
-
-    if (nodeProxyAddresses !== null) {
-      const promises: Promise<{
-        id: string;
-        status: any;
-      }>[] = Array.from(nodeProxyAddresses.keys()).map((node) => {
-        return fetchData(node);
-      });
-
-      Promise.all(promises)
-        .then((values) => {
-          const newDKGStatuses = new Map();
-          values.forEach((v) => newDKGStatuses.set(v.id, v.status));
-          setDKGStatuses(newDKGStatuses);
-        })
-        .finally(() => setDKGLoading(false));
     }
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeProxyAddresses]);
 
@@ -145,12 +144,12 @@ const ElectionShow: FC = () => {
       if (status === Status.Initial) {
         const statuses = Array.from(DKGStatuses.values());
 
-        if (!statuses.includes(NodeStatus.NotInitialized)) {
-          if (statuses.includes(NodeStatus.Setup)) {
-            setStatus(Status.Setup);
-          } else {
-            setStatus(Status.Initialized);
-          }
+        if (statuses.includes(NodeStatus.NotInitialized)) return;
+
+        if (statuses.includes(NodeStatus.Setup)) {
+          setStatus(Status.Setup);
+        } else {
+          setStatus(Status.Initialized);
         }
         // Status Failed is handled by useChangeAction
       }

@@ -15,11 +15,13 @@ const pollElection = (
 
       if (!response.ok) {
         return reject(new Error(JSON.stringify(result)));
-      } else if (validate(result.Status)) {
-        return resolve(result);
-      } else {
-        setTimeout(executePoll, interval, resolve, reject);
       }
+
+      if (validate(result.Status)) {
+        return resolve(result);
+      }
+
+      setTimeout(executePoll, interval, resolve, reject);
     } catch (e) {
       return reject(e);
     }
@@ -38,21 +40,26 @@ const pollDKG = (
     try {
       const response = await fetch(endpoint, request);
       const result: DKGInfo = await response.json();
+      // If not initialized yet continue polling
+
+      if (response.status === 404) {
+        setTimeout(executePoll, interval, resolve, reject);
+        return;
+      }
 
       if (!response.ok) {
-        // If not initialized yet continue polling
-        if (response.status == 404) {
-          setTimeout(executePoll, interval, resolve, reject);
-        } else {
-          return reject(new Error(JSON.stringify(result)));
-        }
-      } else if (validate(result.Status)) {
-        return resolve(result);
-      } else if ((result.Status as NodeStatus) === NodeStatus.Failed) {
-        return reject(new Error(JSON.stringify(result.Error.Message)));
-      } else {
-        setTimeout(executePoll, interval, resolve, reject);
+        return reject(new Error(JSON.stringify(result)));
       }
+
+      if (validate(result.Status)) {
+        return resolve(result);
+      }
+
+      if ((result.Status as NodeStatus) === NodeStatus.Failed) {
+        return reject(new Error(JSON.stringify(result.Error.Message)));
+      }
+
+      setTimeout(executePoll, interval, resolve, reject);
     } catch (e) {
       return reject(new Error(JSON.stringify(e.message)));
     }
