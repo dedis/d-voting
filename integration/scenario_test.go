@@ -149,7 +149,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 
 	// ##################################### OPEN ELECTION #####################
 	// Wait for DKG setup
-	timeTable := make([]float64, 4)
+	timeTable := make([]float64, 5)
 	oldTime := time.Now()
 	waitForDKG(proxyArray[0], electionID, time.Second*100, t)
 	currentTime := time.Now()
@@ -240,7 +240,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
 		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected status: %s", resp.Status)
 
-		body, err = io.ReadAll(resp.Body)
+		_, err = io.ReadAll(resp.Body)
 		require.NoError(t, err, "failed to read the response of castVoteRequest: %v", err)
 
 		resp.Body.Close()
@@ -271,7 +271,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Log("shuffle ballots")
 
 	// Kill a node
-	proxyArray = killNode(proxyArray, 2, t)
+	proxyArray = killNode(proxyArray, 3, t)
 	time.Sleep((time.Second) * 3)
 
 	shuffleBallotsRequest := ptypes.UpdateShuffle{
@@ -330,7 +330,13 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	getElectionResponse = getElectionInfo(proxyAddr1, electionID, t)
 	electionStatus = getElectionResponse.Status
 
-	waitForStatus(proxyAddr1, electionID, uint16(4), time.Second*100, t)
+	oldTime = time.Now()
+	waitForStatus(proxyAddr1, electionID, uint16(4), time.Second*300, t)
+	currentTime = time.Now()
+	diff = currentTime.Sub(oldTime)
+	timeTable[4] = diff.Seconds()
+	t.Logf("Status goes to 4 takes: %v sec", diff.Seconds())
+
 	t.Logf("Status of the election : %v", electionStatus)
 	require.Equal(t, uint16(4), electionStatus)
 
@@ -385,6 +391,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Logf("DKG setup time : %v", timeTable[0])
 	t.Logf("shuffle time : %v", timeTable[1])
 	t.Logf("Public share time : %v", timeTable[2])
+	t.Logf("Status goes to 4 takes: %v sec", diff.Seconds())
 	t.Logf("decryption time : %v", timeTable[3])
 }
 
@@ -571,23 +578,16 @@ func getElectionInfo(proxyAddr, electionID string, t *testing.T) ptypes.GetElect
 //
 
 func killNode(proxyArray []string, nodeNub int, t *testing.T) []string {
-	numNodes := len(proxyArray)
-	proxyList := make([]string, numNodes-1)
-	for i := 0; i < numNodes; i++ {
-		if i < (nodeNub - 1) {
-			proxyList[i] = fmt.Sprintf("http://localhost:%v", 9081+i)
-			t.Log(proxyList[i])
-		} else if i > (nodeNub - 1) {
-			proxyList[i-1] = fmt.Sprintf("http://localhost:%v", 9081+i)
-			t.Log(proxyList[i-1])
-		}
-	}
+
+	proxyArray[nodeNub-1] = proxyArray[len(proxyArray)-1]
+	proxyArray[len(proxyArray)-1] = ""
+	proxyArray = proxyArray[:len(proxyArray)-1]
 
 	cmd := exec.Command("docker", "kill", fmt.Sprintf("node%v", nodeNub))
 	err := cmd.Run()
 	require.NoError(t, err, "failed to kill node number %v", nodeNub)
 
-	return proxyList
+	return proxyArray
 }
 
 func getDKGInfo(proxyAddr, electionID string, t *testing.T) ptypes.GetActorInfo {
