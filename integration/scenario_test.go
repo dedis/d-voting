@@ -33,18 +33,19 @@ import (
 
 var suite = suites.MustFind("Ed25519")
 
+const defaultNodes = 3
+
 // Check the shuffled votes versus the cast votes on a few nodes
 func TestScenario(t *testing.T) {
-	val, ok := os.LookupEnv("DVOTING_NB_NODE")
-	var numNodes int
 	var err error
-	if !ok {
-		numNodes = 3
-	} else {
-		numNodes, err = strconv.Atoi(val)
-		require.NoError(t, err, "Env var DVOTING_NB_NODE is not configurated")
+	numNodes := defaultNodes
+
+	n, ok := os.LookupEnv("NNODES")
+	if ok {
+		numNodes, err = strconv.Atoi(n)
+		require.NoError(t, err)
 	}
-	t.Run("Basic configuration", getScenarioTest(numNodes, 3, 1))
+	t.Run("Basic configuration", getScenarioTest(numNodes, numNodes, 1))
 }
 
 func getScenarioTest(numNodes int, numVotes int, numElection int) func(*testing.T) {

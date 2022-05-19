@@ -4,12 +4,12 @@ import { Navigate, Route, BrowserRouter as Router, Routes, useLocation } from 'r
 import {
   ROUTE_ABOUT,
   ROUTE_ADMIN,
-  ROUTE_BALLOT_INDEX,
   ROUTE_BALLOT_SHOW,
   ROUTE_ELECTION_CREATE,
   ROUTE_ELECTION_INDEX,
   ROUTE_LOGGED,
   ROUTE_LOGIN,
+  ROUTE_UNAUTHORIZED,
 } from '../Routes';
 import Login from '../pages/session/Login';
 import Home from '../pages/Home';
@@ -19,7 +19,6 @@ import ElectionIndex from '../pages/election/Index';
 import ElectionCreate from '../pages/election/New';
 import ElectionResult from '../pages/election/Result';
 import ElectionShow from '../pages/election/Show';
-import BallotIndex from '../pages/ballot/Index';
 import BallotShow from '../pages/ballot/Show';
 import NavBar from './NavBar';
 import Footer from './Footer';
@@ -28,17 +27,27 @@ import './App.css';
 import { AuthContext } from '..';
 import Logged from 'pages/session/Logged';
 import Flash from './Flash';
-
-const NotFound = () => <div>404 not found</div>;
+import ClientError from './ClientError';
+import { ROLE } from 'types/userRole';
 
 const App = () => {
-  const RequireAuth = ({ children }) => {
+  const RequireAuth = ({
+    children,
+    roles,
+  }: {
+    children: JSX.Element;
+    roles?: string[];
+  }): JSX.Element => {
     let location = useLocation();
 
     const authCtx = useContext(AuthContext);
 
     if (!authCtx.isLogged) {
-      return <Navigate to="/login" state={{ from: location }} replace />;
+      return <Navigate to={ROUTE_LOGIN} state={{ from: location }} replace />;
+    } else {
+      if (roles && !roles.includes(authCtx.role)) {
+        return <Navigate to={ROUTE_UNAUTHORIZED} state={{ from: location }} replace />;
+      }
     }
 
     return children;
@@ -48,28 +57,27 @@ const App = () => {
     <Suspense fallback="...loading app">
       <Router>
         <div className="App flex flex-col h-screen justify-between">
-          <div className="app-nav">
+          <div>
             <NavBar />
           </div>
           <div
             data-testid="content"
-            className="app-page mb-auto flex flex-row justify-center items-center w-full">
+            className=" mb-auto max-w-[80rem] mx-auto flex flex-row justify-center items-center w-full">
             <Routes>
               <Route
                 path={ROUTE_ELECTION_CREATE}
                 element={
-                  <RequireAuth>
+                  <RequireAuth roles={[ROLE.Admin, ROLE.Operator]}>
                     <ElectionCreate />
                   </RequireAuth>
                 }
               />
               <Route path={'/elections/:electionId'} element={<ElectionShow />} />
               <Route path={'/elections/:electionId/result'} element={<ElectionResult />} />
-              <Route path={ROUTE_BALLOT_INDEX} element={<BallotIndex />} />
               <Route
                 path={ROUTE_BALLOT_SHOW + '/:electionId'}
                 element={
-                  <RequireAuth>
+                  <RequireAuth roles={null}>
                     <BallotShow />
                   </RequireAuth>
                 }
@@ -77,7 +85,7 @@ const App = () => {
               <Route
                 path={ROUTE_ADMIN}
                 element={
-                  <RequireAuth>
+                  <RequireAuth roles={[ROLE.Admin]}>
                     <Admin />
                   </RequireAuth>
                 }
@@ -86,8 +94,9 @@ const App = () => {
               <Route path={ROUTE_ELECTION_INDEX} element={<ElectionIndex />} />
               <Route path={ROUTE_LOGIN} element={<Login />} />
               <Route path={ROUTE_LOGGED} element={<Logged />} />
+              <Route path={ROUTE_UNAUTHORIZED} element={<ClientError statusCode={403} />} />
               <Route path="/" element={<Home />} />
-              <Route path="*" element={<NotFound />} />
+              <Route path="*" element={<ClientError statusCode={404} />} />
             </Routes>
           </div>
           <div>

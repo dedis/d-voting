@@ -21,12 +21,18 @@ const mockUser3 = {
   role: ROLE.Voter,
 };
 
+const user = {
+  id: uid(),
+  sciper: '561934',
+  role: ROLE.Admin,
+};
+
 const setupMockUserDB = () => {
   const userDB = [];
   userDB.push(mockUser1);
   userDB.push(mockUser2);
   userDB.push(mockUser3);
-
+  userDB.push(user);
   return userDB;
 };
 

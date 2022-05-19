@@ -48,13 +48,15 @@ SC5:Close         │              │
     │             │          NS2:Shuffle
     │             │
     │             ▼
-    │         DK4:BeginDecryption
+    │         DK4:ComputePubshares
     │
     ▼
 SC6:CombineShares
     │
     ▼
 SC2:ElectionGetInfo
+
+
 
 ```
 
@@ -267,6 +269,30 @@ Return:
 
 ```
 
+# SC?: Election delete
+
+|         |                                   |
+| ------- | --------------------------------- |
+| URL     | `/evoting/elections/{ElectionID}` |
+| Method  | `DELETE`                          |
+| Input   |                                   |
+| Headers | {Authorization: `<token>`}        |
+
+The `<token>` value must be the hex-encoded signature of the hex-encoded
+electionID:
+
+```
+<token> = hex( sig( hex( electionID ) ) )
+```
+
+Return:
+
+`200 OK` `text/plain`
+
+```
+
+```
+
 # SC?: Election get all infos
 
 |        |                      |
@@ -370,7 +396,7 @@ Return:
 
 ```json
 {
-  "Action": "beginDecryption"
+  "Action": "computePubshares"
 }
 ```
 

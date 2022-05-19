@@ -222,9 +222,8 @@ app.post('/api/remove_role', (req, res) => {
     });
 });
 
-// sendToDela signs the message and sends it to the dela proxy. It makes no
-// authentication check.
-function sendToDela(dataStr: string, req: express.Request, res: express.Response) {
+// get payload creates a payload with a signature on it
+function getPayload(dataStr: string) {
   let dataStrB64 = Buffer.from(dataStr).toString('base64url');
   while (dataStrB64.length % 4 !== 0) {
     dataStrB64 += '=';
@@ -250,8 +249,25 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
     Signature: sign.toString('hex'),
   };
 
+  return payload;
+}
+
+// sendToDela signs the message and sends it to the dela proxy. It makes no
+// authentication check.
+function sendToDela(dataStr: string, req: express.Request, res: express.Response) {
+  let payload = getPayload(dataStr);
+
   // we strip the `/api` part: /api/election/xxx => /election/xxx
-  const uri = config.DELA_NODE_URL + req.baseUrl.slice(4);
+  let uri = config.DELA_NODE_URL + req.baseUrl.slice(4);
+
+  // in case this is a DKG  init request, we must extract the proxy addr and
+  // update the payload.
+  const regex = /\/evoting\/services\/dkg\/actors$/;
+  if (uri.match(regex)) {
+    const dataStr2 = JSON.stringify({ ElectionID: req.body.ElectionID });
+    payload = getPayload(dataStr2);
+    uri = req.body.ProxyAddress + req.baseUrl.slice(4);
+  }
 
   console.log('sending payload:', JSON.stringify(payload), 'to', uri);
 
@@ -287,12 +303,64 @@ app.use('/api/evoting/*', (req, res, next) => {
   }
 });
 
+// https://stackoverflow.com/a/1349426
+function makeid(length: number) {
+  let result = '';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i += 1) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
+app.delete('/api/evoting/elections/:electionID', (req, res) => {
+  const { electionID } = req.params;
+
+  const edCurve = kyber.curve.newCurve('edwards25519');
+
+  const priv = Buffer.from(config.PRIVATE_KEY, 'hex');
+  const pub = Buffer.from(config.PUBLIC_KEY, 'hex');
+
+  const scalar = edCurve.scalar();
+  scalar.unmarshalBinary(priv);
+
+  const point = edCurve.point();
+  point.unmarshalBinary(pub);
+
+  const sign = kyber.sign.schnorr.sign(edCurve, scalar, Buffer.from(electionID));
+
+  // we strip the `/api` part: /api/election/xxx => /election/xxx
+  const uri = config.DELA_NODE_URL + xss(req.url.slice(4));
+
+  axios({
+    method: req.method as Method,
+    url: uri,
+    headers: {
+      Authorization: sign.toString('hex'),
+    },
+  })
+    .then((resp) => {
+      res.status(200).send(resp.data);
+    })
+    .catch((error: AxiosError) => {
+      let resp = '';
+      if (error.response) {
+        resp = JSON.stringify(error.response.data);
+      }
+
+      res
+        .status(500)
+        .send(`failed to proxy request: ${req.method} ${uri} - ${error.message} - ${resp}`);
+    });
+});
+
 // This API call is used redirect all the calls for DELA to the DELAs nodes.
 // During this process the data are processed : the user is authenticated and
 // controlled. Once this is done the data are signed before the are sent to the
 // DELA node To make this work, react has to redirect to this backend all the
 // request that needs to go the DELA nodes
-app.use('/api/evoting/*', (req, res, next) => {
+app.use('/api/evoting/*', (req, res) => {
   if (!req.session.userid) {
     res.status(400).send('Unauthorized');
     return;
@@ -300,26 +368,16 @@ app.use('/api/evoting/*', (req, res, next) => {
 
   const bodyData = req.body;
 
-  const dataStr = JSON.stringify(bodyData);
-
   // special case for voting
   const regex = /\/api\/evoting\/elections\/.*\/vote/;
   if (req.baseUrl.match(regex)) {
-    // will be handled by the next matcher, just bellow
-    next();
-  } else {
-    sendToDela(dataStr, req, res);
+    // We must set the UserID to know who this ballot is associated to. This is
+    // only needed to allow users to cast multiple ballots, where only the last
+    // ballot is taken into account. To preserve anonymity the web-backend could
+    // translate UserIDs to another random ID.
+    // bodyData.UserID = req.session.userid.toString();
+    bodyData.UserID = makeid(10);
   }
-});
-
-app.post('/api/evoting/elections/:electionID/vote', (req, res) => {
-  const bodyData = req.body;
-
-  // We must set the UserID to know who this ballot is associated to. This is
-  // only needed to allow users to cast multiple ballots, where only the last
-  // ballot is taken into account. To preserve anonymity the web-backend could
-  // translate UserIDs to another random ID.
-  bodyData.UserID = req.session.userid;
 
   const dataStr = JSON.stringify(bodyData);
 
