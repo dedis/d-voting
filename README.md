@@ -196,7 +196,7 @@ Afterwards use the following commands, replace 4 by the desired nb of nodes :
 ./launch_containers.sh 4
 ./setup_containers.sh 4
 
-DVOTING_NB_NODE=4 go test -v -run ^TestScenario$ github.com/dedis/d-voting/integration -count=1
+NNODES=4 go test -v -run ^TestScenario$ github.com/dedis/d-voting/integration -count=1
 ```
 
 To end the session, run `./kill_test.sh`.
