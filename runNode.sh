@@ -16,6 +16,7 @@ tmux list-sessions | rg "^$s:" >/dev/null 2>&1 && { echo >&2 "A session with the
 
 tmux new-session -d -s $s
 
+make build
 
 from=1
 to=$1
@@ -25,7 +26,7 @@ do
 echo $from
 tmux new-window -t $s
 window=$from
-tmux send-keys -t $s:$window "LLVL=info ./memcoin --config /tmp/node$from start --postinstall --promaddr :$((9099 + $from)) --proxyaddr :$((9079 + $from)) --proxykey $pk --listen tcp://0.0.0.0:$((2000 + $from)) --public //localhost:$((2000 + $from))" C-m
+tmux send-keys -t $s:$window "PROXY_LOG=info LLVL=info ./memcoin --config /tmp/node$from start --postinstall --promaddr :$((9099 + $from)) --proxyaddr :$((9079 + $from)) --proxykey $pk --listen tcp://0.0.0.0:$((2000 + $from)) --public //localhost:$((2000 + $from))" C-m
 ((from++))
 
 done

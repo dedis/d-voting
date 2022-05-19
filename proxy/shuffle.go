@@ -9,6 +9,7 @@ import (
 	shuffleSrv "github.com/dedis/d-voting/services/shuffle"
 	"github.com/gorilla/mux"
 	"go.dedis.ch/kyber/v3"
+	"golang.org/x/xerrors"
 )
 
 // NewShuffle returns a new initialized shuffle
@@ -65,5 +66,8 @@ func (s shuffle) EditShuffle(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "failed to shuffle: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+	default:
+		BadRequestError(w, r, xerrors.Errorf("invalid action: %s", req.Action), nil)
+		return
 	}
 }
