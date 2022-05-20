@@ -44,14 +44,12 @@ const ElectionRow: FC<ElectionRowProps> = ({
   // Fetch the NodeStatus of each node
   useEffect(() => {
     if (election !== null) {
-      // Only fetch if the nodes haven't been setup yet
-      if (election.Status === Status.Initial) {
-        // Has already fetched once and updated it's status
-        if (initialElectionStatuses.get(election.ElectionID) !== undefined) {
-          setDKGLoading(false);
-          return;
-        }
-
+      // Only fetch if the nodes haven't been setup yet and the row
+      // hasn't updated its status yet
+      if (
+        election.Status === Status.Initial &&
+        initialElectionStatuses.get(election.ElectionID) === undefined
+      ) {
         const request = {
           method: 'GET',
           headers: {

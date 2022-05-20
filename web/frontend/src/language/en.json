@@ -66,6 +66,7 @@
     "open": "Open",
     "close": "Close",
     "cancel": "Cancel",
+    "canceled": "Canceled",
     "action": "Action",
     "login": "Login",
     "loggedIn": "You are logged in.",

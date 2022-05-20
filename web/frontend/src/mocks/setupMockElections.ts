@@ -85,8 +85,8 @@ const setupMockElection = () => {
   mockNodeProxyAddresses.set(electionID3, mockAddresses);
 
   for (let j = 0; j < 5; j++) {
-    let electionID11 = '36kSJ0t' + (j as number);
-    let electionID22 = 'Bnq9gLm' + (j as number);
+    let electionID11 = '36kSJ0t' + j;
+    let electionID22 = 'Bnq9gLm' + j;
 
     mockElections.set(electionID11, {
       ElectionID: electionID11,

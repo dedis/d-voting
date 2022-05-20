@@ -192,7 +192,10 @@ const Ballot: FC = () => {
       {loading ? (
         <Loading />
       ) : (
-        <div>{status === Status.Open ? ballotDisplay() : <ElectionClosed />}</div>
+        <div>
+          {status === Status.Open && ballotDisplay()}
+          {status !== Status.Open && <ElectionClosed />}
+        </div>
       )}
     </div>
   );

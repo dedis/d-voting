@@ -226,7 +226,7 @@ export const handlers = [
     const body = req.body as NewDKGBody;
     const newDKGStatus = new Map(mockDKG.get(body.ElectionID));
 
-    mockNodeProxyAddresses.get(body.ElectionID).forEach((proxy, node) => {
+    mockNodeProxyAddresses.get(body.ElectionID).forEach((_proxy, node) => {
       newDKGStatus.set(node, NodeStatus.Initialized);
     });
 

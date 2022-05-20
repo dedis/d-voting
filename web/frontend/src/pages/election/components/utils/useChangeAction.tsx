@@ -556,12 +556,6 @@ const useChangeAction = (
             <DeleteButton handleDelete={handleDelete} />
           </>
         );
-      case Status.Canceled:
-        return (
-          <>
-            <DeleteButton handleDelete={handleDelete} />
-          </>
-        );
       default:
         return (
           <>

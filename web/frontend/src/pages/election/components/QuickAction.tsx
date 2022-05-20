@@ -9,7 +9,6 @@ type QuickActionProps = {
   electionID: ID;
 };
 
-// TODO fetch the results
 const QuickAction: FC<QuickActionProps> = ({ status, electionID }) => {
   return (
     <div>
