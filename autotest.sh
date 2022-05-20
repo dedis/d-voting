@@ -14,10 +14,10 @@ for i in "${vals[@]}"
 do
     echo "Test $i with $N_NODE nodes"
     # Launch nodes
-    ./launch_containers.sh $N_NODE false
+    ./runNode.sh -n $N_NODE -a false -d true
     sleep 3
     # Setup block chain
-    ./setup_containers.sh $N_NODE
+    ./setupnNode.sh -n $N_NODE -d true
     sleep 3
     # Start scenario test and keep logs 
     NNODES=$N_NODE go test -v -run ^TestScenario$ github.com/dedis/d-voting/integration -count=1 | tee ./log/gotest.log
