@@ -55,6 +55,7 @@ const ElectionIndex: FC = () => {
     const filteredElections = (data.Elections as LightElectionInfo[]).filter((election) =>
       filteredElectionsID.includes(election.ElectionID)
     );
+
     setElections(filteredElections);
   }, [data, statusToKeep]);
 
@@ -67,14 +68,12 @@ const ElectionIndex: FC = () => {
           </h2>
           <div>{t('listElection')}</div>
           <div>{t('clickElection')}</div>
-          {<ElectionTableFilter setStatusToKeep={setStatusToKeep} />}
-          {
-            <ElectionTable
-              elections={elections}
-              electionStatuses={electionStatuses}
-              setElectionsStatuses={setElectionsStatuses}
-            />
-          }
+          <ElectionTableFilter setStatusToKeep={setStatusToKeep} />
+          <ElectionTable
+            elections={elections}
+            electionStatuses={electionStatuses}
+            setElectionsStatuses={setElectionsStatuses}
+          />
         </div>
       ) : error === null ? (
         <Loading />

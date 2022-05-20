@@ -41,21 +41,17 @@ const ElectionRow: FC<ElectionRowProps> = ({
     setInitialElectionStatuses(newElectionStatuses);
   };
 
-  // Fetch the NodeStatus if the election has the status Initial
+  // Fetch the NodeStatus of each node
   useEffect(() => {
     if (election !== null) {
       // Only fetch if the nodes haven't been setup yet
       if (election.Status === Status.Initial) {
         // Has already fetched once and updated it's status
-        if (
-          electionStatuses.get(election.ElectionID) !== Status.Initial ||
-          initialElectionStatuses.get(election.ElectionID) === Status.Initial
-        ) {
+        if (initialElectionStatuses.get(election.ElectionID) !== undefined) {
           setDKGLoading(false);
           return;
         }
 
-        console.log('Fetching ! ' + election.ElectionID);
         const request = {
           method: 'GET',
           headers: {
@@ -135,18 +131,17 @@ const ElectionRow: FC<ElectionRowProps> = ({
     }
   }, [election]);
 
-  // Get back the status from electionsStatuses
+  // Update de status
   useEffect(() => {
     if (election !== null) {
       var newStatus = election.Status;
 
       if (election.Status === Status.Initial) {
-        if (
-          electionStatuses.get(election.ElectionID) !== undefined &&
-          electionStatuses.get(election.ElectionID) !== Status.Initial
-        ) {
-          newStatus = electionStatuses.get(election.ElectionID);
-        } else if (DKGStatuses !== null) {
+        if (initialElectionStatuses.get(election.ElectionID) !== undefined) {
+          newStatus = initialElectionStatuses.get(election.ElectionID);
+        }
+
+        if (DKGStatuses !== null) {
           const dkgStatuses = Array.from(DKGStatuses.values());
 
           if (!dkgStatuses.includes(NodeStatus.NotInitialized)) {
