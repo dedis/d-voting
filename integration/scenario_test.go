@@ -54,7 +54,7 @@ func getScenarioTest(numNodes int, numVotes int, numElection int) func(*testing.
 		proxyList := make([]string, numNodes)
 
 		for i := 0; i < numNodes; i++ {
-			proxyList[i] = fmt.Sprintf("http://localhost:%v", 9081+i)
+			proxyList[i] = fmt.Sprintf("http://localhost:%v", 9080+i)
 			t.Log(proxyList[i])
 		}
 
@@ -272,8 +272,8 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Log("shuffle ballots")
 
 	// Kill a node
-	proxyArray = killNode(proxyArray, 3, t)
-	time.Sleep((time.Second) * 3)
+	// proxyArray = killNode(proxyArray, 3, t)
+	// time.Sleep((time.Second) * 3)
 
 	shuffleBallotsRequest := ptypes.UpdateShuffle{
 		Action: "shuffle",
