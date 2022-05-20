@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-
-import useChangeStatus from 'components/utils/useChangeStatus';
+import useChangeStatus from './utils/useChangeStatus';
 
 // ElectionStatus is a class that acts as a container for the display of the
 // status of an election

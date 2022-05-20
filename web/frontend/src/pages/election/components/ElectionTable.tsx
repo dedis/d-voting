@@ -1,25 +1,31 @@
 import React, { FC, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { LightElectionInfo, Status } from 'types/election';
-import ElectionStatus from './ElectionStatus';
-import QuickAction from './QuickAction';
+import ElectionRow from './ElectionRow';
 import { ID } from 'types/configuration';
 
 type ElectionTableProps = {
   elections: LightElectionInfo[];
   electionStatuses: Map<ID, Status>;
+  setElectionsStatuses: (status: Map<ID, Status>) => void;
 };
 
 // Returns a table where each line corresponds to an election with
 // its name, status and a quickAction if available
 const ELECTION_PER_PAGE = 10;
 
-const ElectionTable: FC<ElectionTableProps> = ({ elections, electionStatuses }) => {
+const ElectionTable: FC<ElectionTableProps> = ({
+  elections,
+  electionStatuses,
+  setElectionsStatuses,
+}) => {
   const { t } = useTranslation();
   const [pageIndex, setPageIndex] = useState(0);
   const [electionsToDisplay, setElectionsToDisplay] = useState<LightElectionInfo[]>([]);
+  const [initialElectionStatuses, setInitialElectionStatuses] = useState<Map<ID, Status>>(
+    new Map()
+  );
 
   const partitionArray = (array: LightElectionInfo[], size: number) =>
     array.map((_v, i) => (i % size === 0 ? array.slice(i, i + size) : null)).filter((v) => v);
@@ -63,23 +69,15 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections, electionStatuses }) 
             <>
               {electionsToDisplay
                 ? electionsToDisplay.map((election) => (
-                    <tr key={election.ElectionID} className="bg-white border-b hover:bg-gray-50 ">
-                      <td
-                        scope="row"
-                        className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                        <Link
-                          className="election-link text-gray-700 hover:text-indigo-500"
-                          to={`/elections/${election.ElectionID}`}>
-                          {election.Title}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4">
-                        <ElectionStatus status={electionStatuses.get(election.ElectionID)} />
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <QuickAction status={election.Status} electionID={election.ElectionID} />
-                      </td>
-                    </tr>
+                    <React.Fragment key={election.ElectionID}>
+                      <ElectionRow
+                        election={election}
+                        electionStatuses={electionStatuses}
+                        setElectionsStatuses={setElectionsStatuses}
+                        initialElectionStatuses={initialElectionStatuses}
+                        setInitialElectionStatuses={setInitialElectionStatuses}
+                      />
+                    </React.Fragment>
                   ))
                 : null}
             </>

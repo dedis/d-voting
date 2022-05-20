@@ -1,27 +1,29 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import ConfirmModal from '../modal/ConfirmModal';
-import usePostCall from './usePostCall';
-import * as endpoints from './Endpoints';
+
+import * as endpoints from 'components/utils/Endpoints';
 import { ID } from 'types/configuration';
 import { Action, OngoingAction, Status } from 'types/election';
 import { pollDKG, pollElection } from './PollStatus';
-import InitializeButton from 'components/buttons/InitializeButton';
-import SetupButton from 'components/buttons/SetupButton';
-import OpenButton from 'components/buttons/OpenButton';
-import CloseButton from 'components/buttons/CloseButton';
-import CancelButton from 'components/buttons/CancelButton';
-import VoteButton from 'components/buttons/VoteButton';
-import ShuffleButton from 'components/buttons/ShuffleButton';
-import DecryptButton from 'components/buttons/DecryptButton';
-import CombineButton from 'components/buttons/CombineButton';
-import ResultButton from 'components/buttons/ResultButton';
 import { NodeStatus } from 'types/node';
-import DeleteButton from 'components/buttons/DeleteButton';
 import { FlashContext, FlashLevel } from 'index';
 import { useNavigate } from 'react-router';
 import { ROUTE_ELECTION_INDEX } from 'Routes';
+
 import ChooseProxyModal from 'components/modal/ChooseProxyModal';
+import ConfirmModal from 'components/modal/ConfirmModal';
+import usePostCall from 'components/utils/usePostCall';
+import InitializeButton from '../ActionButtons/InitializeButton';
+import DeleteButton from '../ActionButtons/DeleteButton';
+import SetupButton from '../ActionButtons/SetupButton';
+import CancelButton from '../ActionButtons/CancelButton';
+import CloseButton from '../ActionButtons/CloseButton';
+import CombineButton from '../ActionButtons/CombineButton';
+import DecryptButton from '../ActionButtons/DecryptButton';
+import OpenButton from '../ActionButtons/OpenButton';
+import ResultButton from '../ActionButtons/ResultButton';
+import ShuffleButton from '../ActionButtons/ShuffleButton';
+import VoteButton from '../ActionButtons/VoteButton';
 
 const useChangeAction = (
   status: Status,
@@ -154,7 +156,7 @@ const useChangeAction = (
       signal: signal,
     };
     // We stop polling when the status has changed
-    const match = (s: Status) => s !== previousStatus;
+    const match = (s: Status) => s === nextStatus;
 
     pollElection(endpoints.election(electionID), request, match, interval)
       .then(

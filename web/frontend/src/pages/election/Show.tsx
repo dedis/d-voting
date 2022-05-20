@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import useElection from 'components/utils/useElection';
-import useGetResults from 'components/utils/useGetResults';
 import { OngoingAction, Status } from 'types/election';
 import Modal from 'components/modal/Modal';
 import StatusTimeline from './components/StatusTimeline';
@@ -14,6 +13,7 @@ import useFetchCall from '../../components/utils/useFetchCall';
 import Action from './components/Action';
 import { NodeStatus } from 'types/node';
 import DKGTable from './components/DKGTable';
+import useGetResults from './components/utils/useGetResults';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
@@ -64,14 +64,16 @@ const ElectionShow: FC = () => {
   useEffect(() => {
     const storedOngoingAction = JSON.parse(window.localStorage.getItem(ongoingItem));
 
-    if (storedOngoingAction) {
+    if (storedOngoingAction !== null) {
       setOngoingAction(storedOngoingAction);
     }
   }, []);
 
   // Store the ongoingAction in the local storage
   useEffect(() => {
-    window.localStorage.setItem(ongoingItem, ongoingAction.toString());
+    if (status !== Status.ResultAvailable) {
+      window.localStorage.setItem(ongoingItem, ongoingAction.toString());
+    }
   }, [ongoingAction]);
 
   // Set the mapping of the node and proxy addresses

@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 
 import { ID } from 'types/configuration';
 import { OngoingAction, Status } from 'types/election';
-import useChangeAction from 'components/utils/useChangeAction';
 import { NodeStatus } from 'types/node';
+import useChangeAction from './utils/useChangeAction';
 
 type ActionProps = {
   status: Status;

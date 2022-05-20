@@ -23,7 +23,7 @@ import { Status } from 'types/election';
 import ElectionClosed from './components/ElectionClosed';
 import Loading from 'pages/Loading';
 import { CloudUploadIcon } from '@heroicons/react/solid';
-import { SpinnerIcon } from 'components/utils/SpinnerIcon';
+import SpinnerIcon from 'components/utils/SpinnerIcon';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();

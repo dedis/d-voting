@@ -3,7 +3,7 @@ import { ENDPOINT_REMOVE_ROLE } from '../utils/Endpoints';
 import PropTypes from 'prop-types';
 import { Dialog, Transition } from '@headlessui/react';
 import { UserRemoveIcon } from '@heroicons/react/outline';
-import { SpinnerIcon } from 'components/utils/SpinnerIcon';
+import SpinnerIcon from 'components/utils/SpinnerIcon';
 import { useTranslation } from 'react-i18next';
 import { FlashContext, FlashLevel } from 'index';
 

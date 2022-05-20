@@ -1,14 +1,15 @@
-import ResultButton from 'components/buttons/ResultButton';
-import VoteButton from 'components/buttons/VoteButton';
 import React, { FC } from 'react';
 import { ID } from 'types/configuration';
 import { Status } from 'types/election';
+import ResultButton from './ActionButtons/ResultButton';
+import VoteButton from './ActionButtons/VoteButton';
 
 type QuickActionProps = {
   status: Status;
   electionID: ID;
 };
 
+// TODO fetch the results
 const QuickAction: FC<QuickActionProps> = ({ status, electionID }) => {
   return (
     <div>

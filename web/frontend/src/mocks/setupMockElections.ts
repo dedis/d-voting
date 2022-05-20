@@ -57,7 +57,7 @@ const setupMockElection = () => {
     ElectionID: electionID2,
     Status: Status.ResultAvailable,
     Pubkey: 'XL4V6EMIICW',
-    Result: [],
+    Result: [mockElectionResult21, mockElectionResult22, mockElectionResult23],
     Roster: mockRoster,
     Configuration: unmarshalConfig(mockElection2),
     BallotSize: 174,
@@ -67,6 +67,22 @@ const setupMockElection = () => {
   mockResults.set(electionID2, [mockElectionResult21, mockElectionResult22, mockElectionResult23]);
   mockDKG.set(electionID2, mockDKGSetup);
   mockNodeProxyAddresses.set(electionID2, mockAddresses);
+
+  const electionID3 = 'BnFGHgLmf';
+  mockElections.set(electionID3, {
+    ElectionID: electionID3,
+    Status: Status.Initial,
+    Pubkey: 'XL4V6EMIICW',
+    Result: [],
+    Roster: mockRoster,
+    Configuration: unmarshalConfig(mockElection2),
+    BallotSize: 174,
+    ChunksPerBallot: 6,
+  });
+
+  mockResults.set(electionID3, [mockElectionResult21, mockElectionResult22, mockElectionResult23]);
+  mockDKG.set(electionID3, mockDKGSetup);
+  mockNodeProxyAddresses.set(electionID3, mockAddresses);
 
   for (let j = 0; j < 5; j++) {
     let electionID11 = '36kSJ0t' + (j as number);
