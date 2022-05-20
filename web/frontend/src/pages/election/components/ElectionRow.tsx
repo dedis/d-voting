@@ -52,9 +52,6 @@ const ElectionRow: FC<ElectionRowProps> = ({
       ) {
         const request = {
           method: 'GET',
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-          },
         };
 
         const fetchDKGStatus = async (node: string, proxyAddress: string) => {
