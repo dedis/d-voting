@@ -152,7 +152,7 @@ rm -rf /tmp/node{1,2,3}
 ## Automate the previous setup using `tmux`
 
 If you have `tmux` installed, you can start a `tmux` session that will
-execute the above setup by running in the project root `./runNode.sh 3`. This
+execute the above setup by running in the project root `./runNode.sh -n 3 -a true -d false`. This
 command takes as argument the number of nodes. 
 Once the session is started, you can move around the panes with
 `Ctrl+B` followed by arrow keys or by `N`. You can also have an overview of the windows 
@@ -188,13 +188,13 @@ Secret key: `28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409`
 ## Run the scenario test with docker 
 Use the following commands to launch and set up nodes, and start the scenario test with user defined number of nodes.
 
-First time you need to create a docker network(only run once): `docker network create --driver bridge evoting-net`.
+First build the docker image `docker build -t node .`
 
 Afterwards use the following commands, replace 4 by the desired nb of nodes :
 
 ```sh
-./launch_containers.sh 4
-./setup_containers.sh 4
+./runNode.sh -n 4 -a true -d true
+./setupnNode.sh -n 4 -d true
 
 NNODES=4 go test -v -run ^TestScenario$ github.com/dedis/d-voting/integration -count=1
 ```
