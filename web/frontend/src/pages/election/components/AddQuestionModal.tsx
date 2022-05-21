@@ -109,140 +109,147 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
             leave="ease-in duration-200"
             leaveFrom="opacity-100 translate-y-0 sm:scale-100"
             leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
-            <div className="inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all my-8 align-middle max-w-lg w-full p-6">
-              <div className="flex">
+            <div className="inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all my-8 align-middle max-w-lg w-full md:min-h-[25rem] md:max-w-2xl md:w-[60rem]">
+              <div className="flex bg-gray-50 pt-3 pl-3 pb-2 mb-4">
                 <div className="rounded-full bg-gray-100 mr-2 ml-1">
                   <DisplayTypeIcon Type={Type} />
                 </div>
                 <Dialog.Title
                   as="h3"
-                  className="text-lg pt-1.5 leading-6 font-medium text-gray-900">
+                  className="text-lg pt-1.5 leading-6 font-medium text-gray-500">
                   {t(`addQuestion${Type}`)}
                 </Dialog.Title>
               </div>
-              <div className="grid sm:grid-row-2 sm:grid-flow-col gap-4">
-                <div className="flex flex-col pt-4">
-                  <div>
-                    <label className="block text-md mt font-medium text-gray-500">Title</label>
-                    <input
-                      value={Title}
-                      onChange={handleChange}
-                      name="Title"
-                      type="text"
-                      placeholder="Enter your Title"
-                      className="my-1 w-60 ml-1 border rounded-md"
-                    />
-                  </div>
-                  <label className="flex pt-2 text-md font-medium text-gray-500">
-                    Choices
-                    {Choices.length === 0 && (
-                      <button
-                        key="addChoice"
-                        type="button"
-                        className="inline-flex items-center border border-transparent rounded-full font-medium text-green-600 hover:text-green-800"
-                        onClick={addChoice}>
-                        <PlusCircleIcon className="h-5 w-5" aria-hidden="true" />
-                      </button>
-                    )}
-                  </label>
-                  {Choices.map((choice: string, idx: number) => (
-                    <div className="flex" key={`${ID}wrapper${idx}`}>
+              <div className="pb-6 pr-6 pl-6">
+                <div className="grid sm:grid-row-2 sm:grid-flow-col gap-4 sm:min-h-[18rem] ">
+                  <div className="flex flex-col ">
+                    <div className="pb-4">Main properties </div>
+                    <div>
+                      <label className="block text-md mt font-medium text-gray-500">Title</label>
                       <input
-                        key={`${ID}choice${idx}`}
-                        value={choice}
-                        onChange={updateChoice(idx)}
-                        name="Choice"
+                        value={Title}
+                        onChange={handleChange}
+                        name="Title"
                         type="text"
-                        placeholder="Enter your choice"
+                        placeholder="Enter your Title"
                         className="my-1 w-60 ml-1 border rounded-md"
                       />
-                      <div className="flex ml-1 mt-1.5">
-                        <button
-                          key={`${ID}deleteChoice${idx}`}
-                          type="button"
-                          className="inline-flex items-center border border-transparent rounded-full font-medium text-gray-300 hover:text-gray-400"
-                          onClick={deleteChoice(idx)}>
-                          <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
-                        </button>
-                        {idx === Choices.length - 1 && Choices.length > 0 && (
-                          <button
-                            key={`${ID}addChoice${idx}`}
-                            type="button"
-                            className="inline-flex items-center border border-transparent rounded-full font-medium text-green-600 hover:text-green-800"
-                            onClick={addChoice}>
-                            <PlusCircleIcon className="h-5 w-5" aria-hidden="true" />
-                          </button>
-                        )}
-                      </div>
                     </div>
-                  ))}
-                </div>
-                <div>
-                  <div>Additional </div>
-                  <div>
-                    <label className="block text-md font-medium text-gray-500">MaxN</label>
-                    <input
-                      value={MaxN}
-                      onChange={handleChange}
-                      name="MaxN"
-                      min={MinN}
-                      type="number"
-                      placeholder="Enter the MaxN"
-                      className="my-1 w-32 ml-1 border rounded-md"
-                    />
-                    <label className="block text-md font-medium text-gray-500">MinN</label>
-
-                    <input
-                      value={MinN}
-                      onChange={handleChange}
-                      name="MinN"
-                      max={MaxN < MAX_MINN ? MaxN : MAX_MINN}
-                      min="0"
-                      type="number"
-                      placeholder="Enter the MinN"
-                      className="my-1 w-32 ml-1 border rounded-md"
-                    />
+                    <label className="flex pt-2 text-md font-medium text-gray-500">
+                      Choices
+                      {Choices.length === 0 && (
+                        <button
+                          key="addChoice"
+                          type="button"
+                          className="inline-flex items-center border border-transparent rounded-full font-medium text-green-600 hover:text-green-800"
+                          onClick={addChoice}>
+                          <PlusCircleIcon className="h-5 w-5" aria-hidden="true" />
+                        </button>
+                      )}
+                    </label>
+                    {Choices.map((choice: string, idx: number) => (
+                      <div className="flex w-60" key={`${ID}wrapper${idx}`}>
+                        <input
+                          key={`${ID}choice${idx}`}
+                          value={choice}
+                          onChange={updateChoice(idx)}
+                          name="Choice"
+                          type="text"
+                          placeholder="Enter your choice"
+                          className="my-1 w-60 ml-2 border rounded-md"
+                        />
+                        <div className="flex ml-1 mt-1.5">
+                          <button
+                            key={`${ID}deleteChoice${idx}`}
+                            type="button"
+                            className="inline-flex items-center border border-transparent rounded-full font-medium text-gray-300 hover:text-gray-400"
+                            onClick={deleteChoice(idx)}>
+                            <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
+                          </button>
+                          {idx === Choices.length - 1 && Choices.length > 0 && (
+                            <button
+                              key={`${ID}addChoice${idx}`}
+                              type="button"
+                              className="inline-flex items-center border border-transparent rounded-full font-medium text-green-600 hover:text-green-800"
+                              onClick={addChoice}>
+                              <PlusCircleIcon className="h-5 w-5" aria-hidden="true" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  {Type === TEXT && (
-                    <>
-                      <label className="block text-md font-medium text-gray-500">MaxLength</label>
+                  <div>
+                    <div className="pb-4">Additional properties </div>
+                    <div>
+                      <label className="block text-md font-medium text-gray-500">
+                        Max number of choices
+                      </label>
                       <input
-                        value={textQuestion.MaxLength}
+                        value={MaxN}
                         onChange={handleChange}
-                        name="MaxLength"
+                        name="MaxN"
+                        min={MinN}
+                        type="number"
+                        placeholder="Enter the MaxN"
+                        className="my-1 w-32 ml-1 border rounded-md"
+                      />
+                      <label className="block text-md font-medium text-gray-500">
+                        Min number of choices
+                      </label>
+
+                      <input
+                        value={MinN}
+                        onChange={handleChange}
+                        name="MinN"
+                        max={MaxN < MAX_MINN ? MaxN : MAX_MINN}
                         min="0"
                         type="number"
-                        placeholder="Enter the MaxLength"
+                        placeholder="Enter the MinN"
                         className="my-1 w-32 ml-1 border rounded-md"
                       />
-                      <label className="block text-md font-medium text-gray-500">Regex</label>
-                      <input
-                        value={textQuestion.Regex}
-                        onChange={handleChange}
-                        name="Regex"
-                        type="text"
-                        placeholder="Enter your Regex"
-                        className="my-1 w-32 ml-1 border rounded-md"
-                      />
-                    </>
-                  )}
+                    </div>
+                    {Type === TEXT && (
+                      <>
+                        <label className="block text-md font-medium text-gray-500">MaxLength</label>
+                        <input
+                          value={textQuestion.MaxLength}
+                          onChange={handleChange}
+                          name="MaxLength"
+                          min="0"
+                          type="number"
+                          placeholder="Enter the MaxLength"
+                          className="my-1 w-32 ml-1 border rounded-md"
+                        />
+                        <label className="block text-md font-medium text-gray-500">Regex</label>
+                        <input
+                          value={textQuestion.Regex}
+                          onChange={handleChange}
+                          name="Regex"
+                          type="text"
+                          placeholder="Enter your Regex"
+                          className="my-1 w-32 ml-1 border rounded-md"
+                        />
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-                <button
-                  type="button"
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm"
-                  onClick={handleSave}>
-                  <CheckIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                  {t('saveQuestion')}
-                </button>
-                <button
-                  type="button"
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
-                  onClick={handleClose}
-                  ref={cancelButtonRef}>
-                  {t('cancel')}
-                </button>
+                <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                  <button
+                    type="button"
+                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm"
+                    onClick={handleSave}>
+                    <CheckIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                    {t('saveQuestion')}
+                  </button>
+                  <button
+                    type="button"
+                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
+                    onClick={handleClose}
+                    ref={cancelButtonRef}>
+                    {t('cancel')}
+                  </button>
+                </div>
               </div>
             </div>
           </Transition.Child>
