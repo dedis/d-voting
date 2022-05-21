@@ -119,41 +119,41 @@ const ElectionForm: FC<ElectionFormProps> = () => {
     return (
       <div className="w-screen px-4 md:px-0 md:w-auto">
         <div className="flex flex-col border rounded-md">
-          <UploadFile setConf={setConf} setShowModal={setShowModal} setTextModal={setTextModal} />
-          <div className="hidden sm:block">
-            <div className="py-3 px-4">
-              <div className="border-t border-gray-200" />
-            </div>
+          <div className="flex mt-3 mb-2">
+            {titleChanging ? (
+              <>
+                <input
+                  value={MainTitle}
+                  onChange={(e) => setConf({ ...conf, MainTitle: e.target.value })}
+                  name="MainTitle"
+                  type="text"
+                  placeholder={t('enterMainTitle')}
+                  className="ml-3 w-60 text-lg border rounded-md"
+                />
+                <div className="ml-1">
+                  <button
+                    className={`border p-1 rounded-md ${
+                      MainTitle.length === 0 ? 'bg-gray-100' : ' '
+                    }`}
+                    disabled={MainTitle.length === 0}
+                    onClick={() => setTitleChanging(false)}>
+                    <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mt-1 ml-3">{MainTitle}</div>
+                <div className="ml-1">
+                  <button
+                    className="hover:text-indigo-500 p-1 rounded-md"
+                    onClick={() => setTitleChanging(true)}>
+                    <PencilIcon className="m-1 h-3 w-3" aria-hidden="true" />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
-
-          {titleChanging ? (
-            <div className="flex mb-2">
-              <input
-                value={MainTitle}
-                onChange={(e) => setConf({ ...conf, MainTitle: e.target.value })}
-                name="MainTitle"
-                type="text"
-                placeholder="Enter the Main title"
-                className="ml-3 w-60 text-lg border rounded-md"
-              />
-              <div className="ml-1">
-                <button className="border p-1 rounded-md" onClick={() => setTitleChanging(false)}>
-                  <CheckIcon className="h-5 w-5" aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex mb-2">
-              <div className="mt-1 ml-3">{MainTitle.length ? MainTitle : 'No Main title'}</div>
-              <div className="ml-1">
-                <button
-                  className="hover:text-indigo-500 p-1 rounded-md"
-                  onClick={() => setTitleChanging(true)}>
-                  <PencilIcon className="m-1 h-3 w-3" aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-          )}
 
           {Scaffold.map((subject) => (
             <SubjectComponent
@@ -186,7 +186,10 @@ const ElectionForm: FC<ElectionFormProps> = () => {
           <button
             type="button"
             className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700"
-            onClick={() => setConf(emptyConf)}>
+            onClick={() => {
+              setTitleChanging(true);
+              setConf(emptyConf);
+            }}>
             <TrashIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
             {t('clearElec')}
           </button>
@@ -206,6 +209,18 @@ const ElectionForm: FC<ElectionFormProps> = () => {
 
   return (
     <>
+      <div className="px-4 py-4 flex">
+        {t('createElecDesc')}{' '}
+        <UploadFile
+          updateForm={(config: Configuration) => {
+            setTitleChanging(false);
+            setConf(config);
+          }}
+          setShowModal={setShowModal}
+          setTextModal={setTextModal}
+        />{' '}
+      </div>
+
       <RedirectToModal
         showModal={showModal}
         setShowModal={setShowModal}

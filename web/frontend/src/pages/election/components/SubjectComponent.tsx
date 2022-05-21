@@ -18,6 +18,7 @@ import {
 } from '@heroicons/react/outline';
 import { PencilIcon } from '@heroicons/react/solid';
 import AddQuestionModal from './AddQuestionModal';
+import { useTranslation } from 'react-i18next';
 
 const MAX_NESTED_SUBJECT = 1;
 
@@ -34,13 +35,17 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
   subjectObject,
   nestedLevel,
 }) => {
+  const { t } = useTranslation();
+
   const [subject, setSubject] = useState<types.Subject>(subjectObject);
   const [currentQuestion, setCurrentQuestion] = useState<
     types.RankQuestion | types.SelectQuestion | types.TextQuestion | null
   >();
   const isSubjectMounted = useRef<boolean>(false);
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [titleChanging, setTitleChanging] = useState<boolean>(true);
+  const [titleChanging, setTitleChanging] = useState<boolean>(
+    subjectObject.Title.length ? false : true
+  );
   const [openModal, setOpenModal] = useState<boolean>(false);
 
   const [components, setComponents] = useState<ReactElement[]>([]);
@@ -187,6 +192,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
       name: 'addRank',
       icon: <SwitchVerticalIcon className="mr-2 h-5 w-5" aria-hidden="true" />,
       onClick: () => {
+        // TODO : Refactor these lines
         setIsOpen(true);
         setOpenModal(true);
         setCurrentQuestion(newRank());
@@ -234,6 +240,10 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
         setOpen={setOpenModal}
         notifyParent={addQuestion}
         question={currentQuestion}
+        handleClose={() => {
+          setIsOpen(false);
+          setOpenModal(false);
+        }}
       />
     ) : null;
   };
@@ -254,20 +264,23 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                   onChange={(e) => setSubject({ ...subject, Title: e.target.value })}
                   name="Title"
                   type="text"
-                  placeholder="Enter the Subject Title"
+                  placeholder={t('enterSubjectTitle')}
                   className={`w-60  border rounded-md ${
                     nestedLevel === 0 ? 'text-lg' : 'text-md'
                   } `}
                 />
                 <div className="ml-1">
-                  <button className="border p-1 rounded-md" onClick={() => setTitleChanging(false)}>
+                  <button
+                    className={`border p-1 rounded-md ${Title.length === 0 ? 'bg-gray-100' : ' '}`}
+                    disabled={Title.length === 0}
+                    onClick={() => setTitleChanging(false)}>
                     <CheckIcon className="h-5 w-5" aria-hidden="true" />
                   </button>
                 </div>
               </div>
             ) : (
               <div className="flex mb-2 max-w-md truncate">
-                <div className="pt-1.5 truncate">{Title.length ? Title : 'No Subject title'}</div>
+                <div className="pt-1.5 truncate">{Title}</div>
                 <div className="ml-1 pr-10">
                   <button
                     className="hover:text-indigo-500 p-1 rounded-md"

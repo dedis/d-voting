@@ -1,24 +1,12 @@
 import { FC, useState } from 'react';
 
-import {
-  CursorClickIcon,
-  MenuAlt1Icon,
-  PencilAltIcon,
-  SwitchVerticalIcon,
-  XIcon,
-} from '@heroicons/react/outline';
+import { PencilAltIcon, XIcon } from '@heroicons/react/outline';
 
 import PropTypes from 'prop-types';
-import {
-  RANK,
-  RankQuestion,
-  SELECT,
-  SelectQuestion,
-  TEXT,
-  TextQuestion,
-} from 'types/configuration';
+import { RankQuestion, SelectQuestion, TextQuestion } from 'types/configuration';
 import SubjectDropdown from './SubjectDropdown';
 import AddQuestionModal from './AddQuestionModal';
+import DisplayTypeIcon from './DisplayTypeIcon';
 
 type QuestionProps = {
   question: RankQuestion | SelectQuestion | TextQuestion;
@@ -45,19 +33,6 @@ const Question: FC<QuestionProps> = ({ question, notifyParent, removeQuestion })
     },
   ];
 
-  const DisplayTypeIcon = () => {
-    switch (Type) {
-      case RANK:
-        return <SwitchVerticalIcon className="m-2 h-5 w-5 text-gray-400" aria-hidden="true" />;
-      case SELECT:
-        return <CursorClickIcon className="m-2 h-5 w-5 text-gray-400" aria-hidden="true" />;
-      case TEXT:
-        return <MenuAlt1Icon className="m-2 h-5 w-5 text-gray-400" aria-hidden="true" />;
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className="pl-3">
       <AddQuestionModal
@@ -65,12 +40,13 @@ const Question: FC<QuestionProps> = ({ question, notifyParent, removeQuestion })
         setOpen={setOpenModal}
         notifyParent={notifyParent}
         question={question}
+        handleClose={() => setOpenModal(false)}
       />
       <div className="flex flex-row justify-between w-full h-24 ">
         <div className="flex flex-col max-w-full pl-2">
           <div className="mt-3 flex">
             <div className="h-9 w-9 rounded-full bg-gray-100 mr-2 ml-1">
-              <DisplayTypeIcon />
+              <DisplayTypeIcon Type={Type} />
             </div>
             <div className="pt-1.5 max-w-md pr-8 truncate">
               {Title.length ? Title : `Enter ${Type} title`}
