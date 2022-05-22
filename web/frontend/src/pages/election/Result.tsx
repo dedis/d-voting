@@ -20,7 +20,6 @@ import { useTranslation } from 'react-i18next';
 import saveAs from 'file-saver';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router';
-import TextButton from '../../components/buttons/TextButton';
 import useElection from 'components/utils/useElection';
 import { useConfigurationOnly } from 'components/utils/useConfiguration';
 import {
@@ -96,41 +95,6 @@ const ElectionResult: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result]);
 
-  const SubjectElementResultDisplay = (element: SubjectElement) => {
-    return (
-      <div className="pl-4 pb-4">
-        <h2 className="text-lg pb-2">{element.Title}</h2>
-        {element.Type === RANK && (
-          <RankResult rank={element as RankQuestion} rankResult={rankResult.get(element.ID)} />
-        )}
-        {element.Type === SELECT && (
-          <SelectResult
-            select={element as SelectQuestion}
-            selectResult={selectResult.get(element.ID)}
-          />
-        )}
-        {element.Type === TEXT && <TextResult textResult={textResult.get(element.ID)} />}
-      </div>
-    );
-  };
-
-  const displayResults = (subject: Subject) => {
-    return (
-      <div key={subject.ID} className="pt-4">
-        <h2 className="text-lg font-bold">{subject.Title}</h2>
-        {subject.Order.map((id: ID) => (
-          <div key={id}>
-            {subject.Elements.get(id).Type === SUBJECT ? (
-              <div className="pl-4">{displayResults(subject.Elements.get(id) as Subject)}</div>
-            ) : (
-              SubjectElementResultDisplay(subject.Elements.get(id))
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   const getResultData = (subject: Subject, dataToDownload: DownloadedResults[]) => {
     dataToDownload.push({ ID: subject.ID, Title: subject.Title });
 
@@ -199,6 +163,45 @@ const ElectionResult: FC = () => {
     saveAs(fileToSave, fileName);
   };
 
+  const SubjectElementResultDisplay = (element: SubjectElement) => {
+    return (
+      <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
+        <h2 className="text-lg pb-2">{element.Title}</h2>
+        {element.Type === RANK && (
+          <RankResult rank={element as RankQuestion} rankResult={rankResult.get(element.ID)} />
+        )}
+        {element.Type === SELECT && (
+          <SelectResult
+            select={element as SelectQuestion}
+            selectResult={selectResult.get(element.ID)}
+          />
+        )}
+        {element.Type === TEXT && <TextResult textResult={textResult.get(element.ID)} />}
+      </div>
+    );
+  };
+
+  const displayResults = (subject: Subject) => {
+    return (
+      <div key={subject.ID}>
+        <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
+          {subject.Title}
+        </h2>
+        {subject.Order.map((id: ID) => (
+          <div key={id}>
+            {subject.Elements.get(id).Type === SUBJECT ? (
+              <div className="pl-4 sm:pl-6">
+                {displayResults(subject.Elements.get(id) as Subject)}
+              </div>
+            ) : (
+              SubjectElementResultDisplay(subject.Elements.get(id))
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="w-[60rem] font-sans px-4 pt-8 pb-4">
       {!loading ? (
@@ -213,19 +216,25 @@ const ElectionResult: FC = () => {
           </div>
 
           <div className="w-full pb-4 my-0 sm:my-4">
-            <h2 className="text-lg">{t('totalNumberOfVotes', { votes: result.length })}</h2>
-            <h3 className="py-6 text-2xl text-center text-gray-700">{configuration.MainTitle}</h3>
+            <h2 className="text-lg mt-2 sm:mt-4 sm:mb-6 mb-4">
+              {t('totalNumberOfVotes', { votes: result.length })}
+            </h2>
+            <h3 className="py-6 border-t-2 text-2xl text-center text-gray-700">
+              {configuration.MainTitle}
+            </h3>
 
-            <div className="flex flex-col items-center">
-              <div className="min-w-[80%]">
-                {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
-              </div>
+            <div className="flex flex-col">
+              {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
             </div>
           </div>
           <div className="flex my-4">
-            <div onClick={() => navigate(-1)}>
-              <TextButton>{t('back')}</TextButton>
-            </div>
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="text-gray-700 my-2 mr-2 items-center px-4 py-2 border rounded-md text-sm hover:text-indigo-500">
+              {t('back')}
+            </button>
+
             <DownloadButton exportData={exportJSONData}>{t('exportResJSON')}</DownloadButton>
           </div>
         </div>

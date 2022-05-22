@@ -7,19 +7,19 @@ type ProgressBarProps = {
 
 const ProgressBar: FC<ProgressBarProps> = ({ isBest, children }) => {
   return (
-    <div className="ml-4">
-      <div className="h-min bg-gray-300 rounded-full">
+    <div className="ml-1 md:ml-2">
+      <div className="h-min bg-gray-200 rounded-full">
         {children === '0.00' ? (
           <div
-            className="bg-gray-300 px-1 text-xs font-medium text-white p-0.5 leading-none rounded-full"
+            className="bg-gray-200 px-1 md:py-[0.2rem] text-xs font-medium text-white p-0.5 leading-none rounded-full"
             style={{ width: `100%` }}>
             {`${children}%`}
           </div>
         ) : (
           <div
-            className={`${!isBest && 'bg-indigo-300'} ${
+            className={`${!isBest && 'bg-indigo-200'} ${
               isBest && 'bg-indigo-500'
-            } text-xs font-medium text-white text-center p-0.5 leading-none rounded-full`}
+            } text-xs font-medium text-white md:py-[0.2rem] text-center p-0.5 leading-none rounded-full`}
             style={{ width: `${children}%` }}>
             {`${children}%`}
           </div>

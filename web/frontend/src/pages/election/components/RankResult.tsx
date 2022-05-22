@@ -19,7 +19,7 @@ const RankResult: FC<RankResultProps> = ({ rank, rankResult }) => {
       return (
         <React.Fragment key={index}>
           <div className="px-4 break-words max-w-xs w-max">
-            <span className={`${isBest && 'font-bold'}`}>{rank.Choices[index]}</span>:
+            <span>{rank.Choices[index]}</span>:
           </div>
           <ProgressBar isBest={isBest}>{percent}</ProgressBar>
         </React.Fragment>

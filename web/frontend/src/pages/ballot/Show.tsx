@@ -11,19 +11,12 @@ import * as endpoints from 'components/utils/Endpoints';
 import { encryptVote } from './components/VoteEncrypt';
 import { voteEncode } from './components/VoteEncode';
 import { useConfiguration } from 'components/utils/useConfiguration';
-import * as types from 'types/configuration';
-import { ID, RANK, SELECT, SUBJECT, TEXT } from 'types/configuration';
-import { DragDropContext } from 'react-beautiful-dnd';
-import RedirectToModal from 'components/modal/RedirectToModal';
-import Select from './components/Select';
-import Rank, { handleOnDragEnd } from './components/Rank';
-import Text from './components/Text';
-import { ballotIsValid } from './components/ValidateAnswers';
 import { STATUS } from 'types/election';
+import { ballotIsValid } from './components/ValidateAnswers';
+import BallotDisplay from './components/BallotDisplay';
 import ElectionClosed from './components/ElectionClosed';
 import Loading from 'pages/Loading';
-import { CloudUploadIcon } from '@heroicons/react/solid';
-import SpinnerIcon from 'components/utils/SpinnerIcon';
+import RedirectToModal from 'components/modal/RedirectToModal';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
@@ -115,76 +108,6 @@ const Ballot: FC = () => {
     sendBallot();
   };
 
-  const SubjectElementDisplay = (element: types.SubjectElement) => {
-    return (
-      <div className="pl-4">
-        {element.Type === RANK && <Rank rank={element as types.RankQuestion} answers={answers} />}
-        {element.Type === SELECT && (
-          <Select
-            select={element as types.SelectQuestion}
-            answers={answers}
-            setAnswers={setAnswers}
-          />
-        )}
-        {element.Type === TEXT && (
-          <Text text={element as types.TextQuestion} answers={answers} setAnswers={setAnswers} />
-        )}
-      </div>
-    );
-  };
-
-  const SubjectTree = (subject: types.Subject) => {
-    return (
-      <div className="" key={subject.ID}>
-        <h3 className="text-xl font-bold text-gray-600">{subject.Title}</h3>
-        {subject.Order.map((id: ID) => (
-          <div key={id}>
-            {subject.Elements.get(id).Type === SUBJECT ? (
-              <div className="pl-4">{SubjectTree(subject.Elements.get(id) as types.Subject)}</div>
-            ) : (
-              SubjectElementDisplay(subject.Elements.get(id))
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const ballotDisplay = () => {
-    return (
-      <div className="w-[60rem] font-sans px-4 pt-8 pb-4">
-        <DragDropContext onDragEnd={(dropRes) => handleOnDragEnd(dropRes, answers, setAnswers)}>
-          <div className="flex items-center">
-            <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-              {t('vote')}
-            </h2>
-          </div>
-
-          <div className="w-full pb-4 my-0 sm:my-4">
-            <h3 className="py-6 text-2xl text-center text-gray-700">{configuration.MainTitle}</h3>
-            <div className="flex flex-col">
-              {configuration.Scaffold.map((subject: types.Subject) => SubjectTree(subject))}
-              <div className="text-red-600 text-sm pt-3 pb-1">{userErrors}</div>
-            </div>
-            <div className="flex mt-4">
-              <button
-                type="button"
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
-                onClick={handleClick}>
-                {castVoteLoading ? (
-                  <SpinnerIcon />
-                ) : (
-                  <CloudUploadIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                )}
-                {t('castVote')}
-              </button>
-            </div>
-          </div>
-        </DragDropContext>
-      </div>
-    );
-  };
-
   return (
     <>
       <RedirectToModal
@@ -195,7 +118,23 @@ const Ballot: FC = () => {
         navigateDestination={-1}>
         {modalText}
       </RedirectToModal>
-      {loading ? <Loading /> : <>{status === STATUS.Open ? ballotDisplay() : <ElectionClosed />}</>}
+      {loading ? (
+        <Loading />
+      ) : (
+        <>
+          {status === STATUS.Open && (
+            <BallotDisplay
+              configuration={configuration}
+              answers={answers}
+              setAnswers={setAnswers}
+              userErrors={userErrors}
+              handleClick={handleClick}
+              castVoteLoading={castVoteLoading}
+            />
+          )}
+          {status !== STATUS.Open && <ElectionClosed />}
+        </>
+      )}
     </>
   );
 };

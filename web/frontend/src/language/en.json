@@ -121,6 +121,7 @@
     "pluralAnswers": "answers",
     "rankRange": "Answer must be between 1 and {{max}}. ",
     "castVote": "Cast vote",
+    "voteExplanation": "You may cast a ballot as many time as you want while the election is open. Only your last vote will be taken into account.", 
     "noVote": "There is currently nothing to vote on.",
     "voteAllowed": "You are allowed to vote on the election(s) below. Click on an election title to display its ballot and vote.",
     "displayResults": "The results of the election(s) listed below are available. Click on an election title to access them.",
