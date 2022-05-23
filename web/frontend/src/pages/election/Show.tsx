@@ -207,7 +207,7 @@ const ElectionShow: FC = () => {
                 {!nodeProxyLoading && (
                   <>
                     {Array.from(nodeProxyAddresses).map(([node, _proxy], index) => (
-                      <div className="flex flex-col pb-6">
+                      <div className="flex flex-col pb-6" key={node}>
                         {t('node')} {index} ({node})
                         <DKGStatus status={DKGStatuses.get(node)} />
                       </div>
