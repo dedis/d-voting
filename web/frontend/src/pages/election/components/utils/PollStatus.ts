@@ -55,6 +55,11 @@ const pollDKG = (
         return resolve(result);
       }
 
+      // TODO: define the error code for the case when a node is already setup
+      if (result.Error.Message.includes('already setup')) {
+        return resolve(result);
+      }
+
       if ((result.Status as NodeStatus) === NodeStatus.Failed) {
         return reject(new Error(JSON.stringify(result.Error.Message)));
       }

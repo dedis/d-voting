@@ -12,8 +12,9 @@ import * as endpoints from '../../components/utils/Endpoints';
 import useFetchCall from '../../components/utils/useFetchCall';
 import Action from './components/Action';
 import { NodeStatus } from 'types/node';
-import DKGTable from './components/DKGTable';
+//import DKGTable from './components/DKGTable';
 import useGetResults from './components/utils/useGetResults';
+import DKGStatus from './components/DKGStatus';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
@@ -204,14 +205,14 @@ const ElectionShow: FC = () => {
             <div className="px-2">
               <>
                 {!nodeProxyLoading && (
-                  <DKGTable
-                    nodeProxyAddresses={nodeProxyAddresses}
-                    setNodeProxyAddresses={setNodeProxyAddresses}
-                    DKGStatuses={DKGStatuses}
-                    electionID={electionId}
-                    setTextModalError={setTextModalError}
-                    setShowModalError={setShowModalError}
-                  />
+                  <>
+                    {Array.from(nodeProxyAddresses).map(([node, _proxy], index) => (
+                      <div className="flex flex-col pb-6">
+                        {t('node')} {index} ({node})
+                        <DKGStatus status={DKGStatuses.get(node)} />
+                      </div>
+                    ))}
+                  </>
                 )}
               </>
             </div>
@@ -229,3 +230,14 @@ ElectionShow.propTypes = {
 };
 
 export default ElectionShow;
+
+/*               
+<DKGTable
+  nodeProxyAddresses={nodeProxyAddresses}
+  setNodeProxyAddresses={setNodeProxyAddresses}
+  DKGStatuses={DKGStatuses}
+  electionID={electionId}
+  setTextModalError={setTextModalError}
+  setShowModalError={setShowModalError}
+/>
+*/
