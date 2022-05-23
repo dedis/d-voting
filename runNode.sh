@@ -52,6 +52,14 @@ tmux list-sessions | rg "^$s:" >/dev/null 2>&1 && { echo >&2 "A session with the
 
 tmux new-session -d -s $s
 
+# Clean logs
+if [ -d "./log/log" ] 
+then
+    rm -rf ./log/log
+    mkdir -p ./log/log
+else
+    mkdir -p ./log/log
+fi
 
 if [ "$DOCKER" == false ]; then
     make build
@@ -63,15 +71,6 @@ else
 
     rm -rf ./nodedata    
     mkdir nodedata
-
-    # Clean logs
-    if [ -d "./log" ] 
-    then
-        rm -rf ./log
-        mkdir log
-    else
-        mkdir log
-    fi
 
     # Create docker network (only run once)
     docker network create --driver bridge evoting-net || true
@@ -88,11 +87,11 @@ tmux new-window -t $s
 window=$from
 
 if [ "$DOCKER" == false ]; then
-    tmux send-keys -t $s:$window "PROXY_LOG=info LLVL=info ./memcoin --config /tmp/node$from start --postinstall --promaddr :$((9099 + $from)) --proxyaddr :$((9079 + $from)) --proxykey $pk --listen tcp://0.0.0.0:$((2000 + $from)) --public //localhost:$((2000 + $from))" C-m
+    tmux send-keys -t $s:$window "PROXY_LOG=info LLVL=info ./memcoin --config /tmp/node$from start --postinstall --promaddr :$((9099 + $from)) --proxyaddr :$((9079 + $from)) --proxykey $pk --listen tcp://0.0.0.0:$((2000 + $from)) --public //localhost:$((2000 + $from))| tee ./log/log/node$from.log" C-m
 else
     docker run -d -it --env LLVL=info --name node$from --network evoting-net -v "$(pwd)"/nodedata:/tmp  --publish $(( 9079+$from )):9080 node
     tmux send-keys -t $s:$window "eval docker exec node$from memcoin --config /tmp/node$from start --postinstall \
-  --promaddr :9100 --proxyaddr :9080 --proxykey $pk --listen tcp://0.0.0.0:2001 --public //$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' node$from):2001 | tee ./log/node$from.log" C-m
+  --promaddr :9100 --proxyaddr :9080 --proxykey $pk --listen tcp://0.0.0.0:2001 --public //$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' node$from):2001 | tee ./log/log/node$from.log" C-m
 fi
 
 ((from++))
