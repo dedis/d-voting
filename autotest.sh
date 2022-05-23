@@ -28,3 +28,5 @@ do
     mv log logkill$i
     mkdir log
 done
+
+echo "Test $RUN_TIMES times test and succeeded $(grep -c ok  ./log*/gotest.log| awk 'BEGIN{FS=":"}{x+=$2}END{print x}') times"
