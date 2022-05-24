@@ -12,9 +12,8 @@ import * as endpoints from '../../components/utils/Endpoints';
 import useFetchCall from '../../components/utils/useFetchCall';
 import Action from './components/Action';
 import { NodeStatus } from 'types/node';
-//import DKGTable from './components/DKGTable';
 import useGetResults from './components/utils/useGetResults';
-import DKGStatus from './components/DKGStatus';
+import DKGStatus from 'components/utils/DKGStatus';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
@@ -230,14 +229,3 @@ ElectionShow.propTypes = {
 };
 
 export default ElectionShow;
-
-/*               
-<DKGTable
-  nodeProxyAddresses={nodeProxyAddresses}
-  setNodeProxyAddresses={setNodeProxyAddresses}
-  DKGStatuses={DKGStatuses}
-  electionID={electionId}
-  setTextModalError={setTextModalError}
-  setShowModalError={setShowModalError}
-/>
-*/

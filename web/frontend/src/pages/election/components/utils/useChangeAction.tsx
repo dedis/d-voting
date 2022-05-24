@@ -155,7 +155,7 @@ const useChangeAction = (
       method: 'GET',
       signal: signal,
     };
-    // We stop polling when the status has changed
+    // We stop polling when the status has changed to nextStatus
     const match = (s: Status) => s === nextStatus;
 
     pollElection(endpoints.election(electionID), request, match, interval)

@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import useChangeDKGStatus from './utils/useChangeDKGStatus';
+import useChangeDKGStatus from './useChangeDKGStatus';
 
 // DKGStatus is a class that acts as a container for the display of the
 // status of a node
