@@ -44,6 +44,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
   } = useQuestionForm(question);
 
   const { Title, MaxN, MinN, Choices } = values;
+  const [errors, setErrors] = useState([]);
   const [textQuestion, setTextQuestion] = useState<TextQuestion>(question as TextQuestion);
 
   useEffect(() => {
@@ -57,24 +58,21 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
     try {
       switch (Type) {
         case TEXT:
-          await textsSchema.validate(values);
+          await textsSchema.validate(values, { abortEarly: false });
           break;
         case RANK:
-          await ranksSchema.validate(values);
+          await ranksSchema.validate(values, { abortEarly: false });
           break;
         case SELECT:
-          await selectsSchema.validate(values);
+          await selectsSchema.validate(values, { abortEarly: false });
           break;
         default:
       }
+      notifyParent(values);
+      setOpen(false);
     } catch (err) {
-      console.log(err.errors);
-      // setTextModal(t('errorIncorrectConfSchema') + err.errors.join(','));
-      // setShowModal(true);
-      // return;
+      setErrors(err.errors);
     }
-    notifyParent(values);
-    setOpen(false);
   };
   const cancelButtonRef = useRef(null);
 
@@ -121,8 +119,9 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                 </Dialog.Title>
               </div>
               <div className="pb-6 pr-6 pl-6">
-                <div className="grid sm:grid-row-2 sm:grid-flow-col gap-4 sm:min-h-[18rem] ">
-                  <div className="flex flex-col ">
+                {/* <div className="grid sm:grid-row-2 sm:grid-flow-col gap-4 sm:min-h-[18rem] "> */}
+                <div className="flex flex-col sm:flex-row sm:min-h-[18rem] ">
+                  <div className="flex flex-col w-[55%]">
                     <div className="pb-4">Main properties </div>
                     <div>
                       <label className="block text-md mt font-medium text-gray-500">Title</label>
@@ -135,51 +134,58 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                         className="my-1 w-60 ml-1 border rounded-md"
                       />
                     </div>
-                    <label className="flex pt-2 text-md font-medium text-gray-500">
-                      Choices
-                      {Choices.length === 0 && (
-                        <button
-                          key="addChoice"
-                          type="button"
-                          className="inline-flex items-center border border-transparent rounded-full font-medium text-green-600 hover:text-green-800"
-                          onClick={addChoice}>
-                          <PlusCircleIcon className="h-5 w-5" aria-hidden="true" />
-                        </button>
-                      )}
-                    </label>
-                    {Choices.map((choice: string, idx: number) => (
-                      <div className="flex w-60" key={`${ID}wrapper${idx}`}>
-                        <input
-                          key={`${ID}choice${idx}`}
-                          value={choice}
-                          onChange={updateChoice(idx)}
-                          name="Choice"
-                          type="text"
-                          placeholder="Enter your choice"
-                          className="my-1 w-60 ml-2 border rounded-md"
-                        />
-                        <div className="flex ml-1 mt-1.5">
-                          <button
-                            key={`${ID}deleteChoice${idx}`}
-                            type="button"
-                            className="inline-flex items-center border border-transparent rounded-full font-medium text-gray-300 hover:text-gray-400"
-                            onClick={deleteChoice(idx)}>
-                            <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
-                          </button>
-                          {idx === Choices.length - 1 && Choices.length > 0 && (
-                            <button
-                              key={`${ID}addChoice${idx}`}
-                              type="button"
-                              className="inline-flex items-center border border-transparent rounded-full font-medium text-green-600 hover:text-green-800"
-                              onClick={addChoice}>
-                              <PlusCircleIcon className="h-5 w-5" aria-hidden="true" />
-                            </button>
-                          )}
+                    <div className="text-red-600">
+                      {errors
+                        .filter((err) => err.startsWith('Title'))
+                        .map((v, i) => (
+                          <div key={i}>{v}</div>
+                        ))}
+                    </div>
+                    <label className="flex pt-2 text-md font-medium text-gray-500">Choices</label>
+                    <div className="pb-2">
+                      {Choices.map((choice: string, idx: number) => (
+                        <div className="flex w-60" key={`${ID}wrapper${idx}`}>
+                          <input
+                            key={`${ID}choice${idx}`}
+                            value={choice}
+                            onChange={updateChoice(idx)}
+                            name="Choice"
+                            type="text"
+                            placeholder="Enter your choice"
+                            className="my-1 w-60 ml-2 border rounded-md"
+                          />
+                          <div className="flex ml-1 mt-1.2">
+                            {Choices.length > 1 && (
+                              <button
+                                key={`${ID}deleteChoice${idx}`}
+                                type="button"
+                                className="inline-flex items-center border border-transparent rounded-full font-medium text-gray-300 hover:text-gray-400"
+                                onClick={deleteChoice(idx)}>
+                                <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
+                              </button>
+                            )}
+                            {idx === Choices.length - 1 && (
+                              <button
+                                key={`${ID}addChoice${idx}`}
+                                type="button"
+                                className="inline-flex items-center border border-transparent rounded-full font-medium text-green-600 hover:text-green-800"
+                                onClick={addChoice}>
+                                <PlusCircleIcon className="h-5 w-5" aria-hidden="true" />
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                    <div className="text-red-600">
+                      {errors
+                        .filter((err) => err.startsWith('Choices'))
+                        .map((v, i) => (
+                          <div key={i}>{v}</div>
+                        ))}
+                    </div>
                   </div>
-                  <div>
+                  <div className="w-[45%]">
                     <div className="pb-4">Additional properties </div>
                     <div>
                       <label className="block text-md font-medium text-gray-500">
@@ -194,6 +200,13 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                         placeholder="Enter the MaxN"
                         className="my-1 w-32 ml-1 border rounded-md"
                       />
+                      <div className="text-red-600">
+                        {errors
+                          .filter((err) => err.startsWith('Max'))
+                          .map((v, i) => (
+                            <div key={i}>{v}</div>
+                          ))}
+                      </div>
                       <label className="block text-md font-medium text-gray-500">
                         Min number of choices
                       </label>
@@ -208,6 +221,13 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                         placeholder="Enter the MinN"
                         className="my-1 w-32 ml-1 border rounded-md"
                       />
+                      <div className="text-red-600">
+                        {errors
+                          .filter((err) => err.startsWith('Min'))
+                          .map((v, i) => (
+                            <div key={i}>{v}</div>
+                          ))}
+                      </div>
                     </div>
                     {Type === TEXT && (
                       <>
@@ -216,7 +236,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                           value={textQuestion.MaxLength}
                           onChange={handleChange}
                           name="MaxLength"
-                          min="0"
+                          min="1"
                           type="number"
                           placeholder="Enter the MaxLength"
                           className="my-1 w-32 ml-1 border rounded-md"
@@ -228,7 +248,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                           name="Regex"
                           type="text"
                           placeholder="Enter your Regex"
-                          className="my-1 w-32 ml-1 border rounded-md"
+                          className="my-1 w-40 ml-1 border rounded-md"
                         />
                       </>
                     )}

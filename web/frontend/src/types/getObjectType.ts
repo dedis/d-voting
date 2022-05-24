@@ -24,7 +24,7 @@ const newRank = (): types.RankQuestion => {
     Title: '',
     MaxN: 0,
     MinN: 0,
-    Choices: [],
+    Choices: [''],
     Type: RANK,
   };
 };
@@ -35,7 +35,7 @@ const newSelect = (): types.SelectQuestion => {
     Title: '',
     MaxN: 0,
     MinN: 0,
-    Choices: [],
+    Choices: [''],
     Type: SELECT,
   };
 };
@@ -48,7 +48,7 @@ const newText = (): types.TextQuestion => {
     MinN: 0,
     MaxLength: 50,
     Regex: '',
-    Choices: [],
+    Choices: [''],
     Type: TEXT,
   };
 };
