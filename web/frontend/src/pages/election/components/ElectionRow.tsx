@@ -29,6 +29,8 @@ const ElectionRow: FC<ElectionRowProps> = ({
   const [DKGStatuses, setDKGStatuses] = useState<Map<string, NodeStatus>>(null);
   const [DKGLoading, setDKGLoading] = useState(true);
   const [electionStatus, setElectionStatus] = useState<Status>(null);
+  const abortController = new AbortController();
+  const signal = abortController.signal;
 
   const notifyParent = (newStatus: Status) => {
     const newElectionStatuses = new Map(electionStatuses);
@@ -52,6 +54,7 @@ const ElectionRow: FC<ElectionRowProps> = ({
       ) {
         const request = {
           method: 'GET',
+          signal: signal,
         };
 
         const fetchDKGStatus = async (node: string, proxyAddress: string) => {
@@ -74,7 +77,10 @@ const ElectionRow: FC<ElectionRowProps> = ({
             let dkgStatus = await response.json();
             return { Node: node, Status: dkgStatus.Status as NodeStatus };
           } catch (e) {
-            fctx.addMessage(e.message, FlashLevel.Error);
+            if (!(e instanceof DOMException)) {
+              fctx.addMessage(e.message, FlashLevel.Error);
+            }
+            return Promise.reject();
           }
         };
 
@@ -101,29 +107,42 @@ const ElectionRow: FC<ElectionRowProps> = ({
 
             return newNodeProxyAddresses;
           } catch (e) {
-            fctx.addMessage(e.message, FlashLevel.Error);
+            if (!(e instanceof DOMException)) {
+              fctx.addMessage(e.message, FlashLevel.Error);
+            }
+            return Promise.reject();
           }
         };
 
-        fetchProxies().then((nodeProxy) => {
-          const promises = Array.from(nodeProxy).map(([node, proxy]) => {
-            return fetchDKGStatus(node, proxy);
-          });
+        fetchProxies().then(
+          (nodeProxy) => {
+            const promises = Array.from(nodeProxy).map(([node, proxy]) => {
+              return fetchDKGStatus(node, proxy);
+            });
 
-          Promise.all(promises)
-            .then((value) => {
-              const newDKGStatuses: Map<string, NodeStatus> = new Map();
-              value.forEach((v) => {
-                newDKGStatuses.set(v.Node, v.Status);
-              });
-              setDKGStatuses(newDKGStatuses);
-            })
-            .finally(() => setDKGLoading(false));
-        });
+            Promise.all(promises)
+              .then(
+                (value) => {
+                  const newDKGStatuses: Map<string, NodeStatus> = new Map();
+                  value.forEach((v) => {
+                    newDKGStatuses.set(v.Node, v.Status);
+                  });
+                  setDKGStatuses(newDKGStatuses);
+                },
+                () => ({})
+              )
+              .finally(() => setDKGLoading(false));
+          },
+          () => ({})
+        );
       } else {
         setDKGLoading(false);
       }
     }
+
+    return () => {
+      abortController.abort();
+    };
   }, [election]);
 
   // Update de status
