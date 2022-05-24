@@ -272,8 +272,8 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Log("shuffle ballots")
 
 	// Kill a node
-	// proxyArray = killNode(proxyArray, 3, t)
-	// time.Sleep((time.Second) * 3)
+	proxyArray = killNode(proxyArray, 3, t)
+	time.Sleep((time.Second) * 3)
 
 	shuffleBallotsRequest := ptypes.UpdateShuffle{
 		Action: "shuffle",
