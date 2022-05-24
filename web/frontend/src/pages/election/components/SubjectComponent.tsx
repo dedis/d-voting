@@ -187,33 +187,34 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
     }
   }, [isOpen]);
 
+  const handleAddQuestion = (
+    question: types.TextQuestion | types.RankQuestion | types.SelectQuestion
+  ) => {
+    setIsOpen(true);
+    setOpenModal(true);
+    setCurrentQuestion(question);
+  };
+
   const dropdownContent = [
     {
       name: 'addRank',
       icon: <SwitchVerticalIcon className="mr-2 h-5 w-5" aria-hidden="true" />,
       onClick: () => {
-        // TODO : Refactor these lines
-        setIsOpen(true);
-        setOpenModal(true);
-        setCurrentQuestion(newRank());
+        handleAddQuestion(newRank());
       },
     },
     {
       name: 'addSelect',
       icon: <CursorClickIcon className="mr-2 h-5 w-5" aria-hidden="true" />,
       onClick: () => {
-        setIsOpen(true);
-        setOpenModal(true);
-        setCurrentQuestion(newSelect());
+        handleAddQuestion(newSelect());
       },
     },
     {
       name: 'addText',
       icon: <MenuAlt1Icon className="mr-2 h-5 w-5" aria-hidden="true" />,
       onClick: () => {
-        setIsOpen(true);
-        setOpenModal(true);
-        setCurrentQuestion(newText());
+        handleAddQuestion(newText());
       },
     },
     {
