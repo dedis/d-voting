@@ -11,7 +11,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"os/exec"
 	"reflect"
 	"strconv"
 	"strings"
@@ -272,8 +271,8 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Log("shuffle ballots")
 
 	// Kill a node
-	proxyArray = killNode(proxyArray, 3, t)
-	time.Sleep((time.Second) * 3)
+	// proxyArray = killNode(proxyArray, 3, t)
+	// time.Sleep((time.Second) * 3)
 
 	shuffleBallotsRequest := ptypes.UpdateShuffle{
 		Action: "shuffle",
@@ -578,18 +577,18 @@ func getElectionInfo(proxyAddr, electionID string, t *testing.T) ptypes.GetElect
 
 //
 
-func killNode(proxyArray []string, nodeNub int, t *testing.T) []string {
+// func killNode(proxyArray []string, nodeNub int, t *testing.T) []string {
 
-	proxyArray[nodeNub-1] = proxyArray[len(proxyArray)-1]
-	proxyArray[len(proxyArray)-1] = ""
-	proxyArray = proxyArray[:len(proxyArray)-1]
+// 	proxyArray[nodeNub-1] = proxyArray[len(proxyArray)-1]
+// 	proxyArray[len(proxyArray)-1] = ""
+// 	proxyArray = proxyArray[:len(proxyArray)-1]
 
-	cmd := exec.Command("docker", "kill", fmt.Sprintf("node%v", nodeNub))
-	err := cmd.Run()
-	require.NoError(t, err, "failed to kill node number %v", nodeNub)
+// 	cmd := exec.Command("docker", "kill", fmt.Sprintf("node%v", nodeNub))
+// 	err := cmd.Run()
+// 	require.NoError(t, err, "failed to kill node number %v", nodeNub)
 
-	return proxyArray
-}
+// 	return proxyArray
+// }
 
 func getDKGInfo(proxyAddr, electionID string, t *testing.T) ptypes.GetActorInfo {
 	// t.Log("Get DKG info")
