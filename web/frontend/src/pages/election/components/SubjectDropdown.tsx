@@ -3,6 +3,8 @@ import { DotsVerticalIcon } from '@heroicons/react/outline';
 import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 
+const removeElementNames = ['removeSubject', 'removeselect', 'removerank', 'removetext'];
+
 const SubjectDropdown = ({ dropdownContent }) => {
   const { t } = useTranslation();
 
@@ -24,21 +26,42 @@ const SubjectDropdown = ({ dropdownContent }) => {
           leaveTo="transform opacity-0 scale-95">
           <Menu.Items className="z-30 absolute right-0 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
             <div className="px-1 py-1 ">
-              {dropdownContent.map(({ name, icon, onClick }) => (
-                <Menu.Item key={name}>
-                  {({ active }) => (
-                    <button
-                      key={name}
-                      onClick={onClick}
-                      className={`${
-                        active ? 'bg-violet-500 text-white' : 'text-gray-900'
-                      } group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
-                      {icon}
-                      {t(name)}
-                    </button>
-                  )}
-                </Menu.Item>
-              ))}
+              {dropdownContent
+                .filter(({ name }) => !removeElementNames.includes(name))
+                .map(({ name, icon, onClick }) => (
+                  <Menu.Item key={name}>
+                    {({ active }) => (
+                      <button
+                        key={name}
+                        onClick={onClick}
+                        className={`${
+                          active ? 'bg-violet-500 text-white' : 'text-gray-900'
+                        } group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
+                        {icon}
+                        {t(name)}
+                      </button>
+                    )}
+                  </Menu.Item>
+                ))}
+            </div>
+            <div className="px-1 py-1 ">
+              {dropdownContent
+                .filter(({ name }) => removeElementNames.includes(name))
+                .map(({ name, icon, onClick }) => (
+                  <Menu.Item key={name}>
+                    {({ active }) => (
+                      <button
+                        key={name}
+                        onClick={onClick}
+                        className={`${
+                          active ? 'bg-violet-500 text-white' : 'text-gray-900'
+                        } group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
+                        {icon}
+                        {t(name)}
+                      </button>
+                    )}
+                  </Menu.Item>
+                ))}
             </div>
           </Menu.Items>
         </Transition>
