@@ -1,21 +1,21 @@
-import { useContext, useEffect, useState } from 'react';
-
-import { ENDPOINT_USER_RIGHTS } from 'components/utils/Endpoints';
+import { FC, useEffect, useState } from 'react';
 
 import AddAdminUserModal from 'components/modal/AddAdminUserModal';
 import { useTranslation } from 'react-i18next';
 import RemoveAdminUserModal from 'components/modal/RemoveAdminUserModal';
-import Loading from './Loading';
-import { FlashContext, FlashLevel } from 'index';
+
+import { User } from 'types/userRole';
 
 const SCIPERS_PER_PAGE = 10;
 
-const Admin = () => {
-  const { t } = useTranslation();
-  const fctx = useContext(FlashContext);
+type AdminTableProps = {
+  users: User[];
+  setUsers: (users: User[]) => void;
+};
 
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+const AdminTable: FC<AdminTableProps> = ({ users, setUsers }) => {
+  const { t } = useTranslation();
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [newUserOpen, setNewUserOpen] = useState(false);
   const [scipersToDisplay, setScipersToDisplay] = useState([]);
@@ -24,29 +24,7 @@ const Admin = () => {
 
   const openModal = () => setNewUserOpen(true);
 
-  useEffect(() => {
-    setLoading(true);
-    fetch(ENDPOINT_USER_RIGHTS)
-      .then((resp) => {
-        setLoading(false);
-        if (resp.status === 200) {
-          const jsonData = resp.json();
-          jsonData.then((result) => {
-            setUsers(result);
-          });
-        } else {
-          setUsers([]);
-          fctx.addMessage(t('errorFetchingUsers'), FlashLevel.Error);
-        }
-      })
-      .catch((error) => {
-        setLoading(false);
-        fctx.addMessage(`${t('errorFetchingUsers')}: ${error.message}`, FlashLevel.Error);
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const partitionArray = (array: any[], size: number) =>
+  const partitionArray = (array: User[], size: number) =>
     array.map((v, i) => (i % size === 0 ? array.slice(i, i + size) : null)).filter((v) => v);
 
   useEffect(() => {
@@ -65,21 +43,23 @@ const Admin = () => {
       setPageIndex(pageIndex - 1);
     }
   };
+
   const handleNext = (): void => {
     if (partitionArray(users, SCIPERS_PER_PAGE).length > pageIndex + 1) {
       setPageIndex(pageIndex + 1);
     }
   };
 
-  const handleAddRoleUser = (user: object): void => {
+  const handleAddRoleUser = (user: User): void => {
     setUsers([...users, user]);
   };
+
   const handleRemoveRoleUser = (): void => {
-    setUsers(users.filter((user) => user.sciper !== sciperToDelete));
+    setUsers(users.filter((user) => user.sciper !== sciperToDelete.toString()));
   };
 
-  return !loading ? (
-    <div className="w-[60rem] font-sans px-4 py-8">
+  return (
+    <div>
       <AddAdminUserModal
         open={newUserOpen}
         setOpen={setNewUserOpen}
@@ -91,15 +71,15 @@ const Admin = () => {
         sciper={sciperToDelete}
         handleRemoveRoleUser={handleRemoveRoleUser}
       />
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex-1 min-w-0">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-            {t('admin')}
-          </h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 py-6 pl-2">
+        <div>
+          <div className="font-bold uppercase text-lg text-gray-700">{t('roles')}</div>
+
           <div className="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
             <div className="mt-2 flex items-center text-sm text-gray-500">{t('adminDetails')}</div>
           </div>
         </div>
+
         <div className="mt-5 flex lg:mt-0 lg:ml-4">
           <span className="sm:ml-3">
             <button
@@ -186,8 +166,6 @@ const Admin = () => {
         </div>
       </div>
     </div>
-  ) : (
-    <Loading />
   );
 };
-export default Admin;
+export default AdminTable;
