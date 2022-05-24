@@ -6,12 +6,14 @@ import Ajv from 'ajv';
 import configurationJSONSchema from '../../../schema/election_conf.json';
 import { unmarshalConfig } from '../../../types/JSONparser';
 import { Configuration } from 'types/configuration';
+import { useTranslation } from 'react-i18next';
 
 const ajv = new Ajv({
   schemas: [configurationJSONSchema],
 });
 
 const UploadFile = ({ updateForm, setShowModal, setTextModal }) => {
+  const { t } = useTranslation();
   const validateJSONSchema = ajv.getSchema('configurationSchema');
 
   const handleDrop = (file) => {
@@ -53,7 +55,7 @@ const UploadFile = ({ updateForm, setShowModal, setTextModal }) => {
   return (
     <div {...getRootProps()}>
       <div className="ml-1 cursor-pointer font-medium text-indigo-600 hover:text-indigo-500">
-        <span> or by uploading a JSON file</span>
+        <span> {t('uploadJSON')}</span>
         <input {...getInputProps()} />
       </div>
     </div>

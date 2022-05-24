@@ -22,8 +22,8 @@ const newRank = (): types.RankQuestion => {
   return {
     ID: uid(),
     Title: '',
-    MaxN: 0,
-    MinN: 0,
+    MaxN: 2,
+    MinN: 2,
     Choices: [''],
     Type: RANK,
   };
