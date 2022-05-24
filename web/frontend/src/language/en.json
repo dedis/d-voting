@@ -127,7 +127,6 @@
     "displayResults": "The results of the election(s) listed below are available. Click on an election title to access them.",
     "noResultsAvailable": "There is currently no available results.",
     "exportResJSON": "Export as JSON",
-    "exportResCSV": "Export as CSV",
     "shuffle": "Shuffle",
     "decrypt": "Decrypt",
     "seeResult": "See results",

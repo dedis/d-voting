@@ -2,10 +2,11 @@ import React, { FC } from 'react';
 import { Answers, Configuration, ID, RANK, SELECT, SUBJECT, TEXT } from 'types/configuration';
 import * as types from 'types/configuration';
 import Rank from './Rank';
-import { useTranslation } from 'react-i18next';
 import Select from './Select';
 import Text from './Text';
 
+// Pass a props preview=true to display the ballot without all the logic
+// of handling the answers
 type BallotDisplayProps = {
   configuration: Configuration;
   answers?: Answers;
@@ -21,8 +22,6 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
   userErrors,
   preview = false,
 }) => {
-  const { t } = useTranslation();
-
   const SubjectElementDisplay = (element: types.SubjectElement) => {
     return (
       <div className="pl-4 sm:pl-6">

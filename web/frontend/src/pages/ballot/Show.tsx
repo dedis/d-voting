@@ -167,8 +167,6 @@ const Ballot: FC = () => {
                   {t('back')}
                 </button>
               </div>
-
-              <BallotDisplay configuration={configuration} preview={true} />
             </div>
           )}
           {status !== STATUS.Open && <ElectionClosed />}
