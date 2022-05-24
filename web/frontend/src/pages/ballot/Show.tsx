@@ -5,6 +5,10 @@ import kyber from '@dedis/kyber';
 import PropTypes from 'prop-types';
 import { Buffer } from 'buffer';
 
+import SpinnerIcon from 'components/utils/SpinnerIcon';
+import { MailIcon } from '@heroicons/react/outline';
+import { useNavigate } from 'react-router';
+
 import useElection from 'components/utils/useElection';
 import usePostCall from 'components/utils/usePostCall';
 import * as endpoints from 'components/utils/Endpoints';
@@ -17,6 +21,8 @@ import BallotDisplay from './components/BallotDisplay';
 import ElectionClosed from './components/ElectionClosed';
 import Loading from 'pages/Loading';
 import RedirectToModal from 'components/modal/RedirectToModal';
+import { DragDropContext } from 'react-beautiful-dnd';
+import { handleOnDragEnd } from './components/Rank';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
@@ -34,6 +40,8 @@ const Ballot: FC = () => {
   const [modalTitle, setModalTitle] = useState('');
   const [castVoteLoading, setCastVoteLoading] = useState(false);
   const sendFetchRequest = usePostCall(setPostError);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (postError !== null) {
@@ -123,14 +131,45 @@ const Ballot: FC = () => {
       ) : (
         <>
           {status === STATUS.Open && (
-            <BallotDisplay
-              configuration={configuration}
-              answers={answers}
-              setAnswers={setAnswers}
-              userErrors={userErrors}
-              handleClick={handleClick}
-              castVoteLoading={castVoteLoading}
-            />
+            <div className="w-[60rem] font-sans px-4 pt-8 pb-4">
+              <div className="pb-2">
+                <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                  {t('vote')}
+                </h2>
+                <div className="mt-2 text-sm text-gray-500">{t('voteExplanation')}</div>
+              </div>
+              <DragDropContext
+                onDragEnd={(dropRes) => handleOnDragEnd(dropRes, answers, setAnswers)}>
+                <BallotDisplay
+                  configuration={configuration}
+                  answers={answers}
+                  setAnswers={setAnswers}
+                  userErrors={userErrors}
+                />
+              </DragDropContext>
+
+              <div className="flex mb-4 sm:mb-6">
+                <button
+                  type="button"
+                  className="inline-flex items-center mr-2 sm:mr-4 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
+                  onClick={handleClick}>
+                  {castVoteLoading ? (
+                    <SpinnerIcon />
+                  ) : (
+                    <MailIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                  )}
+                  {t('castVote')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate(-1)}
+                  className=" text-gray-700 mr-2 items-center px-4 py-2 border rounded-md text-sm hover:text-indigo-500">
+                  {t('back')}
+                </button>
+              </div>
+
+              <BallotDisplay configuration={configuration} preview={true} />
+            </div>
           )}
           {status !== STATUS.Open && <ElectionClosed />}
         </>

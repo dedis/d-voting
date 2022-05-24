@@ -5,11 +5,12 @@ import { answersFrom } from 'types/getObjectType';
 
 type SelectProps = {
   select: SelectQuestion;
-  answers: Answers;
-  setAnswers: React.Dispatch<React.SetStateAction<Answers>>;
+  answers?: Answers;
+  setAnswers?: (answers: Answers) => void;
+  preview: boolean;
 };
 
-const Select: FC<SelectProps> = ({ select, answers, setAnswers }) => {
+const Select: FC<SelectProps> = ({ select, answers, setAnswers, preview }) => {
   const { t } = useTranslation();
 
   const handleChecks = (e: React.ChangeEvent<HTMLInputElement>, choiceIndex: number) => {
@@ -64,7 +65,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers }) => {
           type="checkbox"
           value={choice}
           checked={isChecked}
-          onChange={(e) => handleChecks(e, choiceIndex)}
+          onChange={(e) => !preview && handleChecks(e, choiceIndex)}
         />
         <label htmlFor={choice} className="pl-2 text-gray-600 cursor-pointer">
           {choice}
@@ -78,12 +79,16 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers }) => {
       <h3 className="text-lg text-gray-600">{select.Title}</h3>
       {hintDisplay()}
       <div className="sm:pl-8 pl-6">
-        {Array.from(answers.SelectAnswers.get(select.ID).entries()).map(
-          ([choiceIndex, isChecked]) =>
-            choiceDisplay(isChecked, select.Choices[choiceIndex], choiceIndex)
-        )}
+        {!preview
+          ? Array.from(answers.SelectAnswers.get(select.ID).entries()).map(
+              ([choiceIndex, isChecked]) =>
+                choiceDisplay(isChecked, select.Choices[choiceIndex], choiceIndex)
+            )
+          : select.Choices.map((choice, index) => choiceDisplay(false, choice, index))}
       </div>
-      <div className="text-red-600 text-sm py-2 sm:pl-4 pl-2">{answers.Errors.get(select.ID)}</div>
+      <div className="text-red-600 text-sm py-2 sm:pl-4 pl-2">
+        {!preview && answers.Errors.get(select.ID)}
+      </div>
     </div>
   );
 };

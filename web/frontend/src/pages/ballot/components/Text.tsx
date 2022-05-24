@@ -5,11 +5,12 @@ import { answersFrom } from 'types/getObjectType';
 
 type TextProps = {
   text: TextQuestion;
-  answers: Answers;
-  setAnswers: React.Dispatch<React.SetStateAction<Answers>>;
+  answers?: Answers;
+  setAnswers?: (answers: Answers) => void;
+  preview: boolean;
 };
 
-const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
+const Text: FC<TextProps> = ({ text, answers, setAnswers, preview }) => {
   const { t } = useTranslation();
   const [charCounts, setCharCounts] = useState(new Array<number>(text.Choices.length).fill(0));
 
@@ -70,10 +71,12 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
   };
 
   useEffect(() => {
-    const newCount = new Array<number>();
-    answers.TextAnswers.get(text.ID).map((answer) => newCount.push(answer.length));
-    setCharCounts(newCount);
-  }, [answers]);
+    if (!preview) {
+      const newCount = new Array<number>();
+      answers.TextAnswers.get(text.ID).map((answer) => newCount.push(answer.length));
+      setCharCounts(newCount);
+    }
+  }, [answers, preview]);
 
   const choiceDisplay = (choice: string, choiceIndex: number) => {
     return (
@@ -86,7 +89,7 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
           type="text"
           className="mx-2 sm:text-md border rounded-md text-gray-600"
           size={text.MaxLength}
-          onChange={(e) => handleTextInput(e, choiceIndex)}
+          onChange={(e) => !preview && handleTextInput(e, choiceIndex)}
         />
         {charCountDisplay(choiceIndex)}
       </div>
@@ -100,7 +103,9 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
       <div className="sm:pl-8 mt-2 pl-6">
         {text.Choices.map((choice, index) => choiceDisplay(choice, index))}
       </div>
-      <div className="text-red-600 text-sm py-2 sm:pl-2 pl-1">{answers.Errors.get(text.ID)}</div>
+      <div className="text-red-600 text-sm py-2 sm:pl-2 pl-1">
+        {!preview && answers.Errors.get(text.ID)}
+      </div>
     </div>
   );
 };

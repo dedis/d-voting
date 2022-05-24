@@ -6,7 +6,7 @@ import { answersFrom } from 'types/getObjectType';
 export const handleOnDragEnd = (
   result: DropResult,
   answers: Answers,
-  setAnswers: React.Dispatch<React.SetStateAction<Answers>>
+  setAnswers: (answers: Answers) => void
 ) => {
   if (!result.destination) {
     return;
@@ -25,10 +25,11 @@ export const handleOnDragEnd = (
 
 type RankProps = {
   rank: RankQuestion;
-  answers: Answers;
+  answers?: Answers;
+  preview: boolean;
 };
 
-const Rank: FC<RankProps> = ({ rank, answers }) => {
+const Rank: FC<RankProps> = ({ rank, answers, preview }) => {
   const RankListIcon = () => {
     return (
       <svg
@@ -76,20 +77,47 @@ const Rank: FC<RankProps> = ({ rank, answers }) => {
     );
   };
 
+  const rankPreview = () => {
+    return (
+      <ul className={rank.ID}>
+        {rank.Choices.map((choice, index) => (
+          <li
+            key={choice}
+            className="mb-2 rounded-lg border bg-white border-gray-200 shadow-md hover:bg-gray-100">
+            <div className="flex justify-between py-4 text-sm text-gray-900">
+              <p className="flex-none mx-5 rounded text-center text-gray-400">{index + 1}</p>
+              <div className="flex-auto w-80 overflow-y-auto break-words pr-4 text-gray-600">
+                {choice}
+              </div>
+              <RankListIcon />
+            </div>
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
   return (
     <div className="mb-6">
       <h3 className="text-lg text-gray-600">{rank.Title}</h3>
       <div className="mt-5 px-4 max-w-[300px] sm:pl-8 sm:max-w-md">
-        <Droppable droppableId={String(rank.ID)}>
-          {(provided) => (
-            <ul className={rank.ID} {...provided.droppableProps} ref={provided.innerRef}>
-              {Array.from(answers.RankAnswers.get(rank.ID).entries()).map(
-                ([rankIndex, choiceIndex]) => choiceDisplay(rank.Choices[choiceIndex], rankIndex)
+        <>
+          {preview ? (
+            rankPreview()
+          ) : (
+            <Droppable droppableId={String(rank.ID)}>
+              {(provided) => (
+                <ul className={rank.ID} {...provided.droppableProps} ref={provided.innerRef}>
+                  {Array.from(answers.RankAnswers.get(rank.ID).entries()).map(
+                    ([rankIndex, choiceIndex]) =>
+                      choiceDisplay(rank.Choices[choiceIndex], rankIndex)
+                  )}
+                  {provided.placeholder}
+                </ul>
               )}
-              {provided.placeholder}
-            </ul>
+            </Droppable>
           )}
-        </Droppable>
+        </>
       </div>
     </div>
   );

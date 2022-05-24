@@ -219,7 +219,7 @@ const ElectionResult: FC = () => {
             <h2 className="text-lg mt-2 sm:mt-4 sm:mb-6 mb-4">
               {t('totalNumberOfVotes', { votes: result.length })}
             </h2>
-            <h3 className="py-6 border-t-2 text-2xl text-center text-gray-700">
+            <h3 className="py-6 border-t text-2xl text-center text-gray-700">
               {configuration.MainTitle}
             </h3>
 
