@@ -173,7 +173,8 @@ func (a *Actor) waitAndCheckShuffling(electionID string, rosterLen int) error {
 		}
 
 		dela.Logger.Info().Msgf("waiting a while before checking election: %d", i)
-		time.Sleep(time.Second * time.Duration(rosterLen/2+1))
+		sleepTime := rosterLen / 2
+		time.Sleep(time.Duration(sleepTime) * time.Second)
 	}
 
 	return xerrors.Errorf("threshold of shuffling not reached: %d < %d",

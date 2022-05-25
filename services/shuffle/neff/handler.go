@@ -26,7 +26,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const watchTimeout = time.Second * 6
+// const watchTimeout = time.Second * 4
 
 var suite = suites.MustFind("Ed25519")
 
@@ -115,8 +115,8 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 		if err != nil {
 			return xerrors.Errorf("failed to make tx: %v", err)
 		}
-
-		watchCtx, cancel := context.WithTimeout(context.Background(), watchTimeout)
+		watchTimeout := 4 + rand.Intn(election.ShuffleThreshold)
+		watchCtx, cancel := context.WithTimeout(context.Background(), time.Duration(watchTimeout)*time.Second)
 		defer cancel()
 
 		events := h.service.Watch(watchCtx)
