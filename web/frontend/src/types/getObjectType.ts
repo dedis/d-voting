@@ -33,8 +33,8 @@ const newSelect = (): types.SelectQuestion => {
   return {
     ID: uid(),
     Title: '',
-    MaxN: 0,
-    MinN: 0,
+    MaxN: 1,
+    MinN: 1,
     Choices: [''],
     Type: SELECT,
   };
@@ -44,7 +44,7 @@ const newText = (): types.TextQuestion => {
   return {
     ID: uid(),
     Title: '',
-    MaxN: 0,
+    MaxN: 1,
     MinN: 0,
     MaxLength: 50,
     Regex: '',

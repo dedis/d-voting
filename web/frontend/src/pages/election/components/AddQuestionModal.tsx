@@ -164,7 +164,9 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                           <div key={i}>{v}</div>
                         ))}
                     </div>
-                    <label className="flex pt-2 text-md font-medium text-gray-500">Choices</label>
+                    <label className="flex pt-2 text-md font-medium text-gray-500">
+                      {Type !== TEXT ? 'Choices' : 'Answers'}
+                    </label>
                     <div className="pb-2">
                       {Choices.map((choice: string, idx: number) => (
                         <div className="flex w-60" key={`${ID}wrapper${idx}`}>
@@ -174,7 +176,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                             onChange={updateChoice(idx)}
                             name="Choice"
                             type="text"
-                            placeholder="Enter your choice"
+                            placeholder={Type !== TEXT ? `Choice ${idx + 1}` : `Answer ${idx + 1}`}
                             className="my-1 w-60 ml-2 border rounded-md"
                           />
                           <div className="flex ml-1 mt-1.2">
