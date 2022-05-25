@@ -117,7 +117,7 @@ const ElectionForm: FC<ElectionFormProps> = () => {
     });
   };
 
-  const DisplayElectionForm = () => {
+  const displayElectionForm = () => {
     return (
       <div className="w-screen px-4 md:px-0 md:w-auto">
         <div className="flex flex-col border rounded-md">
@@ -145,7 +145,9 @@ const ElectionForm: FC<ElectionFormProps> = () => {
               </>
             ) : (
               <>
-                <div className="mt-1 ml-3">{MainTitle}</div>
+                <div className="mt-1 ml-3" onClick={() => setTitleChanging(true)}>
+                  {MainTitle}
+                </div>
                 <div className="ml-1">
                   <button
                     className="hover:text-indigo-500 p-1 rounded-md"
@@ -201,7 +203,7 @@ const ElectionForm: FC<ElectionFormProps> = () => {
     );
   };
 
-  const DisplayPreviewElection = () => {
+  const displayPreviewElection = () => {
     return (
       <div className="border mx-4 sm:mx-0 mb-4 rounded-md">
         <div className="h-[calc(100vh-265px)]  ml-2">preview</div>
@@ -209,12 +211,12 @@ const ElectionForm: FC<ElectionFormProps> = () => {
     );
   };
 
-  const SwitchTabs = () => {
+  const switchTabs = () => {
     switch (currentTab) {
       case 'electionForm':
-        return <DisplayElectionForm />;
+        return displayElectionForm();
       case 'previewForm':
-        return <DisplayPreviewElection />;
+        return displayPreviewElection();
         break;
     }
   };
@@ -240,12 +242,12 @@ const ElectionForm: FC<ElectionFormProps> = () => {
       />
 
       <div className="hidden md:grid grid-cols-2 gap-2">
-        <DisplayElectionForm />
-        <DisplayPreviewElection />
+        {displayElectionForm()}
+        {displayPreviewElection()}
       </div>
       <div className="flex flex-col md:hidden">
         <Tabs currentTab={currentTab} setCurrentTab={setCurrentTab} />
-        <SwitchTabs />
+        {switchTabs()}
       </div>
     </>
   );

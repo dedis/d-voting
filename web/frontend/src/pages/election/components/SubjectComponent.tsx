@@ -272,7 +272,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                 />
                 <div className="ml-1">
                   <button
-                    className={`border p-1 rounded-md ${Title.length === 0 ? 'bg-gray-100' : ' '}`}
+                    className={`border p-1 rounded-md ${Title.length === 0 && 'bg-gray-100'}`}
                     disabled={Title.length === 0}
                     onClick={() => setTitleChanging(false)}>
                     <CheckIcon className="h-5 w-5" aria-hidden="true" />
@@ -281,7 +281,9 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
               </div>
             ) : (
               <div className="flex mb-2 max-w-md truncate">
-                <div className="pt-1.5 truncate">{Title}</div>
+                <div className="pt-1.5 truncate" onClick={() => setTitleChanging(true)}>
+                  {Title}
+                </div>
                 <div className="ml-1 pr-10">
                   <button
                     className="hover:text-indigo-500 p-1 rounded-md"
