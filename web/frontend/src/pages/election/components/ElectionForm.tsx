@@ -16,6 +16,7 @@ import SpinnerIcon from 'components/utils/SpinnerIcon';
 import RedirectToModal from 'components/modal/RedirectToModal';
 import { CheckIcon, PlusSmIcon } from '@heroicons/react/outline';
 import Tabs from './Tabs';
+import RemoveElementModal from './RemoveElementModal';
 
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
@@ -33,8 +34,10 @@ const ElectionForm: FC<ElectionFormProps> = () => {
   const [conf, setConf] = useState<Configuration>(emptyConf);
   const [loading, setLoading] = useState<boolean>(false);
   const [showModal, setShowModal] = useState<boolean>(false);
+  const [showRemoveSubjectModal, setShowRemoveSubjectModal] = useState<boolean>(false);
   const [textModal, setTextModal] = useState<string>('');
   const [currentTab, setCurrentTab] = useState<string>('electionForm');
+  const [subjectIdToRemove, setSubjectIdToRemove] = useState<ID>('');
   const [titleChanging, setTitleChanging] = useState<boolean>(true);
   const [navigateDestination, setNavigateDestination] = useState(null);
   const { MainTitle, Scaffold } = conf;
@@ -110,11 +113,12 @@ const ElectionForm: FC<ElectionFormProps> = () => {
     setConf({ ...conf, Scaffold: newSubjects });
   };
 
-  const removeSubject = (subjectID: ID) => () => {
+  const handleConfirmRemoveSubject = () => {
     setConf({
       ...conf,
-      Scaffold: Scaffold.filter((subject) => subject.ID !== subjectID),
+      Scaffold: Scaffold.filter((subject) => subject.ID !== subjectIdToRemove),
     });
+    setSubjectIdToRemove('');
   };
 
   const displayElectionForm = () => {
@@ -163,7 +167,10 @@ const ElectionForm: FC<ElectionFormProps> = () => {
             <SubjectComponent
               notifyParent={notifyParent}
               subjectObject={subject}
-              removeSubject={removeSubject(subject.ID)}
+              removeSubject={() => {
+                setSubjectIdToRemove(subject.ID);
+                setShowRemoveSubjectModal(true);
+              }}
               nestedLevel={0}
               key={subject.ID}
             />
@@ -225,6 +232,12 @@ const ElectionForm: FC<ElectionFormProps> = () => {
 
   return (
     <>
+      <RemoveElementModal
+        showModal={showRemoveSubjectModal}
+        setShowModal={setShowRemoveSubjectModal}
+        textModal={t('confirmRemovesubject')}
+        handleConfirm={handleConfirmRemoveSubject}
+      />
       <RedirectToModal
         showModal={showModal}
         setShowModal={setShowModal}

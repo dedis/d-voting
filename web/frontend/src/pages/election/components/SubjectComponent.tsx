@@ -19,6 +19,7 @@ import {
 import { PencilIcon } from '@heroicons/react/solid';
 import AddQuestionModal from './AddQuestionModal';
 import { useTranslation } from 'react-i18next';
+import RemoveElementModal from './RemoveElementModal';
 
 const MAX_NESTED_SUBJECT = 1;
 
@@ -36,6 +37,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
   nestedLevel,
 }) => {
   const { t } = useTranslation();
+  const emptyElementToRemove = { ID: '', Type: '' };
 
   const [subject, setSubject] = useState<types.Subject>(subjectObject);
   const [currentQuestion, setCurrentQuestion] = useState<
@@ -47,7 +49,9 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
     subjectObject.Title.length ? false : true
   );
   const [openModal, setOpenModal] = useState<boolean>(false);
-
+  const [showRemoveElementModal, setShowRemoveElementModal] = useState<boolean>(false);
+  const [textRemoveElementModal, setTextRemoveElementModal] = useState<string>('');
+  const [elementToRemove, setElementToRemove] = useState(emptyElementToRemove);
   const [components, setComponents] = useState<ReactElement[]>([]);
 
   const { Title, Order, Elements } = subject;
@@ -100,14 +104,26 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
     });
   };
 
-  const removeChildQuestion = (question: types.SubjectElement) => () => {
+  const removeChildQuestion = (questionID: types.ID) => () => {
     const newElements = new Map(Elements);
-    newElements.delete(question.ID);
+    newElements.delete(questionID);
     setSubject({
       ...subject,
       Elements: newElements,
-      Order: Order.filter((id) => id !== question.ID),
+      Order: Order.filter((id) => id !== questionID),
     });
+  };
+
+  const handleConfirmRemoveElement = () => {
+    switch (elementToRemove.Type) {
+      case SUBJECT:
+        localRemoveSubject(elementToRemove.ID)();
+        break;
+      default:
+        removeChildQuestion(elementToRemove.ID)();
+        break;
+    }
+    setElementToRemove(emptyElementToRemove);
   };
 
   // Sorts the questions components & sub-subjects according to their Order into
@@ -130,7 +146,11 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
               key={`text${text.ID}`}
               question={text}
               notifyParent={notifySubject}
-              removeQuestion={removeChildQuestion(text)}
+              removeQuestion={() => {
+                setElementToRemove({ ID: text.ID, Type: TEXT });
+                setTextRemoveElementModal(t(`confirmRemove${found.Type}`));
+                setShowRemoveElementModal(true);
+              }}
             />
           );
         case SUBJECT:
@@ -138,7 +158,11 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
           return (
             <SubjectComponent
               notifyParent={localNotifyParent}
-              removeSubject={localRemoveSubject(sub.ID)}
+              removeSubject={() => {
+                setElementToRemove({ ID: sub.ID, Type: SUBJECT });
+                setTextRemoveElementModal(t(`confirmRemove${found.Type}`));
+                setShowRemoveElementModal(true);
+              }}
               subjectObject={sub}
               nestedLevel={nestedLevel + 1}
               key={sub.ID}
@@ -151,7 +175,11 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
               key={`rank${rank.ID}`}
               question={rank}
               notifyParent={notifySubject}
-              removeQuestion={removeChildQuestion(rank)}
+              removeQuestion={() => {
+                setElementToRemove({ ID: rank.ID, Type: RANK });
+                setTextRemoveElementModal(t(`confirmRemove${found.Type}`));
+                setShowRemoveElementModal(true);
+              }}
             />
           );
         case SELECT:
@@ -161,7 +189,11 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
               key={`select${select.ID}`}
               question={select}
               notifyParent={notifySubject}
-              removeQuestion={removeChildQuestion(select)}
+              removeQuestion={() => {
+                setElementToRemove({ ID: select.ID, Type: SELECT });
+                setTextRemoveElementModal(t(`confirmRemove${found.Type}`));
+                setShowRemoveElementModal(true);
+              }}
             />
           );
       }
@@ -251,6 +283,13 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
 
   return (
     <div className={`${nestedLevel === 0 ? 'border-t' : 'pl-3'} `}>
+      <RemoveElementModal
+        showModal={showRemoveElementModal}
+        setShowModal={setShowRemoveElementModal}
+        textModal={textRemoveElementModal}
+        handleConfirm={handleConfirmRemoveElement}
+      />
+
       <QuestionModal />
       <div className="flex flex-row justify-between w-full h-24 ">
         <div className="flex flex-col max-w-full pl-2">
