@@ -205,8 +205,10 @@ const ElectionForm: FC<ElectionFormProps> = () => {
 
   const displayPreviewElection = () => {
     return (
-      <div className="border mx-4 sm:mx-0 mb-4 rounded-md">
-        <div className="h-[calc(100vh-265px)]  ml-2">preview</div>
+      <div className="w-screen px-4 md:px-0 mb-4 md:w-auto">
+        <div className="border rounded-md">
+          <div className="h-[calc(100vh-265px)] ml-2">preview</div>
+        </div>
       </div>
     );
   };
