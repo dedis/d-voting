@@ -1,4 +1,4 @@
-import { FC, Fragment, useEffect, useRef, useState } from 'react';
+import { FC, Fragment, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Dialog, Transition } from '@headlessui/react';
 
@@ -46,14 +46,6 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
 
   const { Title, MaxN, MinN, Choices } = values;
   const [errors, setErrors] = useState([]);
-  const [textQuestion, setTextQuestion] = useState<TextQuestion>(question as TextQuestion);
-
-  useEffect(() => {
-    if (Type === TEXT) {
-      setTextQuestion(values as TextQuestion);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values]);
 
   const handleSave = async () => {
     try {
@@ -76,6 +68,38 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
     }
   };
   const cancelButtonRef = useRef(null);
+
+  const displayExtraFields = () => {
+    switch (Type) {
+      case TEXT:
+        const tq = question as TextQuestion;
+        return (
+          <>
+            <label className="block text-md font-medium text-gray-500">MaxLength</label>
+            <input
+              value={tq.MaxLength}
+              onChange={handleChange}
+              name="MaxLength"
+              min="1"
+              type="number"
+              placeholder="Enter the MaxLength"
+              className="my-1 w-32 ml-1 border rounded-md"
+            />
+            <label className="block text-md font-medium text-gray-500">Regex</label>
+            <input
+              value={tq.Regex}
+              onChange={handleChange}
+              name="Regex"
+              type="text"
+              placeholder="Enter your Regex"
+              className="my-1 w-40 ml-1 border rounded-md"
+            />
+          </>
+        );
+      default:
+        return;
+    }
+  };
 
   return (
     <Transition.Root show={open} as={Fragment}>
@@ -262,29 +286,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                         </>
                       )}
                     </div>
-                    {Type === TEXT && (
-                      <>
-                        <label className="block text-md font-medium text-gray-500">MaxLength</label>
-                        <input
-                          value={textQuestion.MaxLength}
-                          onChange={handleChange}
-                          name="MaxLength"
-                          min="1"
-                          type="number"
-                          placeholder="Enter the MaxLength"
-                          className="my-1 w-32 ml-1 border rounded-md"
-                        />
-                        <label className="block text-md font-medium text-gray-500">Regex</label>
-                        <input
-                          value={textQuestion.Regex}
-                          onChange={handleChange}
-                          name="Regex"
-                          type="text"
-                          placeholder="Enter your Regex"
-                          className="my-1 w-40 ml-1 border rounded-md"
-                        />
-                      </>
-                    )}
+                    {displayExtraFields()}
                   </div>
                 </div>
                 <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">

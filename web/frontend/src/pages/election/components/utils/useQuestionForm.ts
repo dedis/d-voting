@@ -20,7 +20,7 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
 
   // depending on the type of question, the form state is updated accordingly
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // e.persist();
+    e.persist();
     switch (e.target.type) {
       case 'number':
         setState({ ...state, [e.target.name]: Number(e.target.value) });
