@@ -6,3 +6,7 @@ web/app/node_modules
 .idea
 
 memcoin
+
+*.log
+
+nodedata/
