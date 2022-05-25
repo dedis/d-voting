@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script is creating d voting nodes needed to run
+# This script is creating n dela voting nodes needed to run
 # an evoting system. User can pass number of nodes, window attach mode useful for autotest,
 # and docker usage.
 
@@ -8,6 +8,15 @@ POSITIONAL_ARGS=()
 
 while [[ $# -gt 0 ]]; do
   case $1 in
+    -h|--help)
+      echo      "This script is creating n dela voting nodes"
+      echo      "Options:"
+      echo      "-h  |  --help     program help (this file)"
+      echo      "-n  |  --node     number of d-voting nodes"
+      echo      "-a  |  --attach   attach tmux window to current shell true/false"
+      echo      "-d  |  --docker   launch nodes on docker containers true/false"
+      exit 0
+      ;;
     -n|--node)
       N_NODE="$2"
       shift # past argument
@@ -35,7 +44,6 @@ while [[ $# -gt 0 ]]; do
 done
 
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
-
 
 set -o errexit
 

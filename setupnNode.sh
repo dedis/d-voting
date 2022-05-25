@@ -10,6 +10,14 @@ POSITIONAL_ARGS=()
 
 while [[ $# -gt 0 ]]; do
   case $1 in
+    -h|--help)
+      echo      "This script is setting n dela voting nodes and granting access on block chain"
+      echo      "Options:"
+      echo      "-h  |  --help     program help (this file)"
+      echo      "-n  |  --node     number of d-voting nodes"
+      echo      "-d  |  --docker   launch nodes on docker containers true/false"
+      exit 0
+      ;;
     -n|--node)
       N_NODE="$2"
       shift # past argument

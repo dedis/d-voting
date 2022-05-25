@@ -1,15 +1,47 @@
 #! /bin/sh
 
-# This script uses launch_containers.sh, setup_containers.sh, kill_test.sh to launch multiple 
+# This script uses runNode.sh, setupnNode.sh, kill_test.sh to launch multiple 
 # times of scenario test with user defined number of nodes. The results of log are kept in directory named logkill$i
 
-# Set how many times we want to run the test
-RUN_TIMES=15
-# Set the number of nodes in the test, currently this number is fixed for all tests
-N_NODE=15
+
+POSITIONAL_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -h|--help)
+      echo      "This script uses runNode.sh, setupnNode.sh, kill_test.sh to launch multiple times of scenario test with user defined number of nodes. The results of log are kept in directory named logkill "
+      echo      ""
+      echo      "Options:"
+      echo      "-h  |  --help       program help (this file)"
+      echo      "-n  |  --node       number of d-voting nodes"
+      echo      "-r  |  --run_time   set how many times we want to run the test"
+      exit 0
+      ;;
+    -n|--node)
+      N_NODE="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    -r|--run_time)
+      RUN_TIMES="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    -*|--*)
+      echo "Unknown option $1"
+      exit 1
+      ;;
+    *)
+      POSITIONAL_ARGS+=("$1") # save positional arg
+      shift # past argument
+      ;;
+  esac
+done
+
+set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
+
+
 vals=($(seq 1 1 $RUN_TIMES))
-
-
 for i in "${vals[@]}"
 do
     echo "Test $i with $N_NODE nodes"
