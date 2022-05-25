@@ -201,7 +201,15 @@ NNODES=4 go test -v -run ^TestScenario$ github.com/dedis/d-voting/integration -c
 
 To end the session, run `./kill_test.sh`.
 
-To launch multiple test and get statistics, run `./autotest.sh`.
+To launch multiple test and get statistics, run `./autotest.sh -n 10 -r 15`.
+
+N.B. run following commands to get help
+```sh
+./runNode.sh -h
+./setupnNode.sh -h
+./autotest.sh -h
+```
+
 
 # Use the frontend
 
