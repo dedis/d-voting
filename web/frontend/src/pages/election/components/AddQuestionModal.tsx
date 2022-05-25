@@ -72,7 +72,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
   const displayExtraFields = () => {
     switch (Type) {
       case TEXT:
-        const tq = question as TextQuestion;
+        const tq = values as TextQuestion;
         return (
           <>
             <label className="block text-md font-medium text-gray-500">MaxLength</label>
