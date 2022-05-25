@@ -1,4 +1,3 @@
-import { useDropzone } from 'react-dropzone';
 import configurationSchema from '../../../schema/configurationValidation';
 
 import Ajv from 'ajv';
@@ -46,18 +45,21 @@ const UploadFile = ({ updateForm, setShowModal, setTextModal }) => {
     reader.readAsText(file);
   };
 
-  const { getRootProps, getInputProps } = useDropzone({
-    onDrop: (files) => handleDrop(files[0]),
-    accept: '.json',
-    maxFiles: 1,
-  });
-
   return (
-    <div {...getRootProps()}>
-      <div className="ml-1 cursor-pointer font-medium text-indigo-600 hover:text-indigo-500">
-        <span> {t('uploadJSON')}</span>
-        <input {...getInputProps()} />
-      </div>
+    <div className="px-4 py-4">
+      {t('createElecDesc')}
+      <input
+        className="hidden"
+        type={'file'}
+        accept=".json"
+        id="uploadJSON"
+        onChange={(e) => handleDrop(e.target.files[0])}
+      />
+      <label
+        className="ml-1 cursor-pointer font-medium text-indigo-600 hover:text-indigo-500"
+        htmlFor="uploadJSON">
+        {t('uploadJSON')}
+      </label>
     </div>
   );
 };

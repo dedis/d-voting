@@ -209,17 +209,14 @@ const ElectionForm: FC<ElectionFormProps> = () => {
 
   return (
     <>
-      <div className="px-4 py-4 flex">
-        {t('createElecDesc')}{' '}
-        <UploadFile
-          updateForm={(config: Configuration) => {
-            setTitleChanging(false);
-            setConf(config);
-          }}
-          setShowModal={setShowModal}
-          setTextModal={setTextModal}
-        />{' '}
-      </div>
+      <UploadFile
+        updateForm={(config: Configuration) => {
+          setTitleChanging(false);
+          setConf(config);
+        }}
+        setShowModal={setShowModal}
+        setTextModal={setTextModal}
+      />
 
       <RedirectToModal
         showModal={showModal}
