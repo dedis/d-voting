@@ -15,6 +15,7 @@ import DownloadButton from 'components/buttons/DownloadButton';
 import SpinnerIcon from 'components/utils/SpinnerIcon';
 import RedirectToModal from 'components/modal/RedirectToModal';
 import { CheckIcon, PlusSmIcon } from '@heroicons/react/outline';
+import Tabs from './Tabs';
 
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
@@ -33,6 +34,7 @@ const ElectionForm: FC<ElectionFormProps> = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [textModal, setTextModal] = useState<string>('');
+  const [currentTab, setCurrentTab] = useState<string>('electionForm');
   const [titleChanging, setTitleChanging] = useState<boolean>(true);
   const [navigateDestination, setNavigateDestination] = useState(null);
   const { MainTitle, Scaffold } = conf;
@@ -115,7 +117,7 @@ const ElectionForm: FC<ElectionFormProps> = () => {
     });
   };
 
-  const displayElectionForm = () => {
+  const DisplayElectionForm = () => {
     return (
       <div className="w-screen px-4 md:px-0 md:w-auto">
         <div className="flex flex-col border rounded-md">
@@ -199,16 +201,35 @@ const ElectionForm: FC<ElectionFormProps> = () => {
     );
   };
 
-  const displayPreviewElection = () => {
+  const DisplayPreviewElection = () => {
     return (
-      <div className="border rounded-md">
-        <div className="h-[calc(100vh-265px)] ml-2">preview</div>
+      <div className="border mx-4 sm:mx-0 mb-4 rounded-md">
+        <div className="h-[calc(100vh-265px)]  ml-2">preview</div>
       </div>
     );
   };
 
+  const SwitchTabs = () => {
+    switch (currentTab) {
+      case 'electionForm':
+        return <DisplayElectionForm />;
+      case 'previewForm':
+        return <DisplayPreviewElection />;
+        break;
+    }
+  };
+
   return (
     <>
+      <RedirectToModal
+        showModal={showModal}
+        setShowModal={setShowModal}
+        title={t('notification')}
+        buttonRightText={t('close')}
+        navigateDestination={navigateDestination}>
+        {textModal}
+      </RedirectToModal>
+
       <UploadFile
         updateForm={(config: Configuration) => {
           setTitleChanging(false);
@@ -218,19 +239,14 @@ const ElectionForm: FC<ElectionFormProps> = () => {
         setTextModal={setTextModal}
       />
 
-      <RedirectToModal
-        showModal={showModal}
-        setShowModal={setShowModal}
-        title={t('notification')}
-        buttonRightText={t('close')}
-        navigateDestination={navigateDestination}>
-        {textModal}
-      </RedirectToModal>
       <div className="hidden md:grid grid-cols-2 gap-2">
-        {displayElectionForm()}
-        {displayPreviewElection()}
+        <DisplayElectionForm />
+        <DisplayPreviewElection />
       </div>
-      <div className="flex md:hidden">{displayElectionForm()}</div>
+      <div className="flex flex-col md:hidden">
+        <Tabs currentTab={currentTab} setCurrentTab={setCurrentTab} />
+        <SwitchTabs />
+      </div>
     </>
   );
 };
