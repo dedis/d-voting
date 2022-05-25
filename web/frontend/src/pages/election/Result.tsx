@@ -235,7 +235,7 @@ const ElectionResult: FC = () => {
               {t('back')}
             </button>
 
-            <DownloadButton exportData={exportJSONData}>{t('exportResJSON')}</DownloadButton>
+            <DownloadButton exportData={exportJSONData}>{t('exportJSON')}</DownloadButton>
           </div>
         </div>
       ) : (
