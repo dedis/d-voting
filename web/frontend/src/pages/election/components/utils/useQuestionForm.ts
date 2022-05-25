@@ -18,37 +18,46 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
     }
   }, [MinN, Choices, state]);
 
-  // depending on the type of question, the form state is updated accordingly
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.persist();
-    switch (e.target.type) {
-      case 'number':
-        setState({ ...state, [e.target.name]: Number(e.target.value) });
+  // depending on the type of the Exception in the question, the form state is
+  // updated accordingly
+  const handleChange = (Exception?: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value, type, name } = e.target;
+    switch (Exception) {
+      case 'RankMinMax':
+        if (Number(value) >= 2 && Number(value) < MAX_MINN) {
+          if (state.Choices.length > Number(value)) {
+            const choicesArray = [...state.Choices];
+            choicesArray.length = Number(value);
+
+            setState({
+              ...state,
+              Choices: choicesArray,
+              MinN: Number(value),
+              MaxN: Number(value),
+            });
+            return;
+          }
+          setState({ ...state, MinN: Number(value), MaxN: Number(value) });
+        }
         break;
-      case 'text':
-        setState({ ...state, [e.target.name]: e.target.value });
+      case 'TextMaxLength':
+        if (Number(value) >= 1) {
+          setState({ ...state, MaxLength: Number(value) });
+        }
         break;
       default:
+        e.persist();
+        switch (type) {
+          case 'number':
+            setState({ ...state, [name]: Number(value) });
+            break;
+          case 'text':
+            setState({ ...state, [name]: value });
+            break;
+          default:
+            break;
+        }
         break;
-    }
-  };
-
-  const handleChangeRank = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.target;
-    if (Number(value) >= 2 && Number(value) < MAX_MINN) {
-      if (state.Choices.length > Number(value)) {
-        const choicesArray = [...state.Choices];
-        choicesArray.length = Number(value);
-
-        setState({
-          ...state,
-          Choices: choicesArray,
-          MinN: Number(value),
-          MaxN: Number(value),
-        });
-        return;
-      }
-      setState({ ...state, MinN: Number(value), MaxN: Number(value) });
     }
   };
 
@@ -82,7 +91,7 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
     });
   };
 
-  return { state, handleChange, addChoice, deleteChoice, updateChoice, handleChangeRank };
+  return { state, handleChange, addChoice, deleteChoice, updateChoice };
 };
 
 export default useQuestionForm;

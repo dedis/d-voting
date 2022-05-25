@@ -41,7 +41,6 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
     addChoice,
     deleteChoice,
     updateChoice,
-    handleChangeRank,
   } = useQuestionForm(question);
 
   const { Title, MaxN, MinN, Choices } = values;
@@ -78,7 +77,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
             <label className="block text-md font-medium text-gray-500">MaxLength</label>
             <input
               value={tq.MaxLength}
-              onChange={handleChange}
+              onChange={handleChange('TextMaxLength')}
               name="MaxLength"
               min="1"
               type="number"
@@ -88,7 +87,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
             <label className="block text-md font-medium text-gray-500">Regex</label>
             <input
               value={tq.Regex}
-              onChange={handleChange}
+              onChange={handleChange()}
               name="Regex"
               type="text"
               placeholder="Enter your Regex"
@@ -144,15 +143,14 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                 </Dialog.Title>
               </div>
               <div className="pb-6 pr-6 pl-6">
-                {/* <div className="grid sm:grid-row-2 sm:grid-flow-col gap-4 sm:min-h-[18rem] "> */}
                 <div className="flex flex-col sm:flex-row sm:min-h-[18rem] ">
                   <div className="flex flex-col w-[55%]">
-                    <div className="pb-4">Main properties </div>
+                    <div className="pb-4">Main properties</div>
                     <div>
                       <label className="block text-md mt font-medium text-gray-500">Title</label>
                       <input
                         value={Title}
-                        onChange={handleChange}
+                        onChange={handleChange()}
                         name="Title"
                         type="text"
                         placeholder="Enter your Title"
@@ -220,7 +218,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                           </label>
                           <input
                             value={MaxN}
-                            onChange={handleChange}
+                            onChange={handleChange()}
                             name="MaxN"
                             min={MinN}
                             type="number"
@@ -239,7 +237,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                           </label>
                           <input
                             value={MinN}
-                            onChange={handleChange}
+                            onChange={handleChange()}
                             name="MinN"
                             max={MaxN < MAX_MINN ? MaxN : MAX_MINN}
                             min="0"
@@ -262,7 +260,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                           </label>
                           <input
                             value={MaxN}
-                            onChange={handleChangeRank}
+                            onChange={handleChange('RankMinMax')}
                             name="MinMax"
                             min={2}
                             type="number"
