@@ -41,6 +41,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
     addChoice,
     deleteChoice,
     updateChoice,
+    handleChangeRank,
   } = useQuestionForm(question);
 
   const { Title, MaxN, MinN, Choices } = values;
@@ -155,7 +156,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                             className="my-1 w-60 ml-2 border rounded-md"
                           />
                           <div className="flex ml-1 mt-1.2">
-                            {Choices.length > 1 && (
+                            {Type !== RANK && Choices.length > 1 && (
                               <button
                                 key={`${ID}deleteChoice${idx}`}
                                 type="button"
@@ -164,7 +165,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                                 <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
                               </button>
                             )}
-                            {idx === Choices.length - 1 && (
+                            {Type !== RANK && idx === Choices.length - 1 && (
                               <button
                                 key={`${ID}addChoice${idx}`}
                                 type="button"
@@ -188,46 +189,78 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                   <div className="w-[45%]">
                     <div className="pb-4">Additional properties </div>
                     <div>
-                      <label className="block text-md font-medium text-gray-500">
-                        Max number of choices
-                      </label>
-                      <input
-                        value={MaxN}
-                        onChange={handleChange}
-                        name="MaxN"
-                        min={MinN}
-                        type="number"
-                        placeholder="Enter the MaxN"
-                        className="my-1 w-32 ml-1 border rounded-md"
-                      />
-                      <div className="text-red-600">
-                        {errors
-                          .filter((err) => err.startsWith('Max'))
-                          .map((v, i) => (
-                            <div key={i}>{v}</div>
-                          ))}
-                      </div>
-                      <label className="block text-md font-medium text-gray-500">
-                        Min number of choices
-                      </label>
-
-                      <input
-                        value={MinN}
-                        onChange={handleChange}
-                        name="MinN"
-                        max={MaxN < MAX_MINN ? MaxN : MAX_MINN}
-                        min="0"
-                        type="number"
-                        placeholder="Enter the MinN"
-                        className="my-1 w-32 ml-1 border rounded-md"
-                      />
-                      <div className="text-red-600">
-                        {errors
-                          .filter((err) => err.startsWith('Min'))
-                          .map((v, i) => (
-                            <div key={i}>{v}</div>
-                          ))}
-                      </div>
+                      {Type !== RANK ? (
+                        <>
+                          <label className="block text-md font-medium text-gray-500">
+                            Max number of choices
+                          </label>
+                          <input
+                            value={MaxN}
+                            onChange={handleChange}
+                            name="MaxN"
+                            min={MinN}
+                            type="number"
+                            placeholder="Enter the MaxN"
+                            className="my-1 w-32 ml-1 border rounded-md"
+                          />
+                          <div className="text-red-600">
+                            {errors
+                              .filter((err) => err.startsWith('Max'))
+                              .map((v, i) => (
+                                <div key={i}>{v}</div>
+                              ))}
+                          </div>
+                          <label className="block text-md font-medium text-gray-500">
+                            Min number of choices
+                          </label>
+                          <input
+                            value={MinN}
+                            onChange={handleChange}
+                            name="MinN"
+                            max={MaxN < MAX_MINN ? MaxN : MAX_MINN}
+                            min="0"
+                            type="number"
+                            placeholder="Enter the MinN"
+                            className="my-1 w-32 ml-1 border rounded-md"
+                          />
+                          <div className="text-red-600">
+                            {errors
+                              .filter((err) => err.startsWith('Min'))
+                              .map((v, i) => (
+                                <div key={i}>{v}</div>
+                              ))}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <label className="block text-md font-medium text-gray-500">
+                            Number of choices
+                          </label>
+                          <input
+                            value={MaxN}
+                            onChange={handleChangeRank}
+                            name="MinMax"
+                            min={2}
+                            type="number"
+                            placeholder="Enter the MaxN"
+                            className="my-1 w-32 ml-1 border rounded-md"
+                          />
+                          <div className="text-red-600">
+                            {errors
+                              .filter((err) => err.startsWith('Max'))
+                              .map((v, i) => (
+                                <div key={i}>{v}</div>
+                              ))}
+                          </div>
+                          <div className="text-red-600">
+                            {errors
+                              .filter((err) => err.startsWith('Min'))
+                              .map((v, i) => (
+                                <div key={i}>{v}</div>
+                              ))}
+                          </div>
+                        </>
+                      )}
                     </div>
                     {Type === TEXT && (
                       <>

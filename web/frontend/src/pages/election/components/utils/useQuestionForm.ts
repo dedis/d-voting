@@ -19,8 +19,8 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
   }, [MinN, Choices, state]);
 
   // depending on the type of question, the form state is updated accordingly
-  const handleChange = (e) => {
-    e.persist();
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // e.persist();
     switch (e.target.type) {
       case 'number':
         setState({ ...state, [e.target.name]: Number(e.target.value) });
@@ -33,13 +33,32 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
     }
   };
 
+  const handleChangeRank = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    if (Number(value) >= 2 && Number(value) < MAX_MINN) {
+      if (state.Choices.length > Number(value)) {
+        const choicesArray = [...state.Choices];
+        choicesArray.length = Number(value);
+
+        setState({
+          ...state,
+          Choices: choicesArray,
+          MinN: Number(value),
+          MaxN: Number(value),
+        });
+        return;
+      }
+      setState({ ...state, MinN: Number(value), MaxN: Number(value) });
+    }
+  };
+
   // updates the choices array when the user adds a new choice
   const addChoice: () => void = () => {
     setState({ ...state, Choices: [...state.Choices, ''] });
   };
 
   // remove a choice from the choices array
-  const deleteChoice = (index) => (e) => {
+  const deleteChoice = (index: number) => (e) => {
     e.persist();
     if (state.Choices.length > MinN) {
       setState({
@@ -50,7 +69,7 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
   };
 
   // update the choice at the given index
-  const updateChoice = (index) => (e) => {
+  const updateChoice = (index: number) => (e) => {
     e.persist();
     setState({
       ...state,
@@ -63,7 +82,7 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
     });
   };
 
-  return { state, handleChange, addChoice, deleteChoice, updateChoice };
+  return { state, handleChange, addChoice, deleteChoice, updateChoice, handleChangeRank };
 };
 
 export default useQuestionForm;
