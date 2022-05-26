@@ -21,8 +21,6 @@ import BallotDisplay from './components/BallotDisplay';
 import ElectionClosed from './components/ElectionClosed';
 import Loading from 'pages/Loading';
 import RedirectToModal from 'components/modal/RedirectToModal';
-import { DragDropContext } from 'react-beautiful-dnd';
-import { handleOnDragEnd } from './components/Rank';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
@@ -32,6 +30,7 @@ const Ballot: FC = () => {
   const { loading, configObj, electionID, status, pubKey, ballotSize, chunksPerBallot } =
     useElection(electionId);
   const { configuration, answers, setAnswers } = useConfiguration(configObj);
+
   const [userErrors, setUserErrors] = useState('');
   const edCurve = kyber.curve.newCurve('edwards25519');
   const [postError, setPostError] = useState('');
@@ -138,15 +137,13 @@ const Ballot: FC = () => {
                 </h2>
                 <div className="mt-2 text-sm text-gray-500">{t('voteExplanation')}</div>
               </div>
-              <DragDropContext
-                onDragEnd={(dropRes) => handleOnDragEnd(dropRes, answers, setAnswers)}>
-                <BallotDisplay
-                  configuration={configuration}
-                  answers={answers}
-                  setAnswers={setAnswers}
-                  userErrors={userErrors}
-                />
-              </DragDropContext>
+
+              <BallotDisplay
+                configuration={configuration}
+                answers={answers}
+                setAnswers={setAnswers}
+                userErrors={userErrors}
+              />
 
               <div className="flex mb-4 sm:mb-6">
                 <button

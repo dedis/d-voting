@@ -1,18 +1,16 @@
 import React, { FC } from 'react';
 import { Answers, Configuration, ID, RANK, SELECT, SUBJECT, TEXT } from 'types/configuration';
 import * as types from 'types/configuration';
-import Rank from './Rank';
+import Rank, { handleOnDragEnd } from './Rank';
 import Select from './Select';
 import Text from './Text';
+import { DragDropContext } from 'react-beautiful-dnd';
 
-// Pass a props preview=true to display the ballot without all the logic
-// of handling the answers
 type BallotDisplayProps = {
   configuration: Configuration;
-  answers?: Answers;
-  setAnswers?: (answers: Answers) => void;
-  userErrors?: string;
-  preview?: boolean;
+  answers: Answers;
+  setAnswers: (answers: Answers) => void;
+  userErrors: string;
 };
 
 const BallotDisplay: FC<BallotDisplayProps> = ({
@@ -20,29 +18,20 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
   answers,
   setAnswers,
   userErrors,
-  preview = false,
 }) => {
   const SubjectElementDisplay = (element: types.SubjectElement) => {
     return (
       <div className="pl-4 sm:pl-6">
-        {element.Type === RANK && (
-          <Rank rank={element as types.RankQuestion} answers={answers} preview={preview} />
-        )}
+        {element.Type === RANK && <Rank rank={element as types.RankQuestion} answers={answers} />}
         {element.Type === SELECT && (
           <Select
             select={element as types.SelectQuestion}
             answers={answers}
             setAnswers={setAnswers}
-            preview={preview}
           />
         )}
         {element.Type === TEXT && (
-          <Text
-            text={element as types.TextQuestion}
-            answers={answers}
-            setAnswers={setAnswers}
-            preview={preview}
-          />
+          <Text text={element as types.TextQuestion} answers={answers} setAnswers={setAnswers} />
         )}
       </div>
     );
@@ -70,7 +59,7 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
   };
 
   return (
-    <>
+    <DragDropContext onDragEnd={(dropRes) => handleOnDragEnd(dropRes, answers, setAnswers)}>
       <div className="w-full mb-0 sm:mb-4 mt-4 sm:mt-6">
         <h3 className="py-6 border-t text-2xl text-center text-gray-700">
           {configuration.MainTitle}
@@ -80,7 +69,7 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
           <div className="text-red-600 text-sm pt-3 pb-1">{userErrors}</div>
         </div>
       </div>
-    </>
+    </DragDropContext>
   );
 };
 

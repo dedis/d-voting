@@ -16,7 +16,7 @@ const TextResult: FC<TextResultProps> = ({ textResult }) => {
 
       return (
         <React.Fragment key={textAnswer}>
-          <div className="px-4 break-words max-w-xs w-max">
+          <div className="px-2 sm:px-4 break-words max-w-xs w-max">
             <span>{textAnswer}</span>:
           </div>
           <ProgressBar isBest={isBest}>{result}</ProgressBar>

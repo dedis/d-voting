@@ -5,12 +5,11 @@ import { answersFrom } from 'types/getObjectType';
 
 type TextProps = {
   text: TextQuestion;
-  answers?: Answers;
-  setAnswers?: (answers: Answers) => void;
-  preview: boolean;
+  answers: Answers;
+  setAnswers: (answers: Answers) => void;
 };
 
-const Text: FC<TextProps> = ({ text, answers, setAnswers, preview }) => {
+const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
   const { t } = useTranslation();
   const [charCounts, setCharCounts] = useState(new Array<number>(text.Choices.length).fill(0));
 
@@ -71,12 +70,10 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, preview }) => {
   };
 
   useEffect(() => {
-    if (!preview) {
-      const newCount = new Array<number>();
-      answers.TextAnswers.get(text.ID).map((answer) => newCount.push(answer.length));
-      setCharCounts(newCount);
-    }
-  }, [answers, preview]);
+    const newCount = new Array<number>();
+    answers.TextAnswers.get(text.ID).map((answer) => newCount.push(answer.length));
+    setCharCounts(newCount);
+  }, [answers]);
 
   const choiceDisplay = (choice: string, choiceIndex: number) => {
     const columns = text.MaxLength > 50 ? 50 : text.MaxLength;
@@ -93,7 +90,7 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, preview }) => {
           //rows={text.MaxLength > 0 ? Math.ceil(text.MaxLength / columns) : 1}
           cols={columns}
           style={{ resize: 'none' }}
-          onChange={(e) => !preview && handleTextInput(e, choiceIndex)}></textarea>
+          onChange={(e) => handleTextInput(e, choiceIndex)}></textarea>
         <div className="self-end">{charCountDisplay(choiceIndex)}</div>
       </div>
     );
@@ -106,9 +103,7 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, preview }) => {
       <div className="sm:pl-8 mt-2 pl-6">
         {text.Choices.map((choice, index) => choiceDisplay(choice, index))}
       </div>
-      <div className="text-red-600 text-sm py-2 sm:pl-2 pl-1">
-        {!preview && answers.Errors.get(text.ID)}
-      </div>
+      <div className="text-red-600 text-sm py-2 sm:pl-2 pl-1">{answers.Errors.get(text.ID)}</div>
     </div>
   );
 };
