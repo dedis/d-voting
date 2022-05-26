@@ -213,19 +213,22 @@ Return:
 
 `200 OK` `application/json`
 
-## Create the node-proxy address map
+## Create a node-proxy mapping
+This endpoint is used to create a mapping between the address of a node and 
+the address of a proxy.
+
 | | |
 |-|-|
-|URL|`/api/elections/{ElectionID}/proxies`|
+|URL|`/api/proxies/`|
 |Method|`POST`|
 |Input|`application/json`|
 
 ```json
 
-{"Proxies": [
-  {"123.456.78.9:9000": "https://example.com/"},
-  {"111.222.333.444:9000": "https://blabla.ch/"}
-]}
+{
+    "NodeAddr": "123.456.78.9:9000",
+    "Proxy": "https://example.com/"
+}
 
 ```
 
@@ -238,12 +241,12 @@ Return:
 ```
 
 
-## Get the node-proxy address map
-This endpoint is used to get the mapping of the address of the node and its associated proxy, for each node participating in the given election.  
+## Get a node-proxy mapping
+This endpoint is used to get the mapping of the address of a node and its associated proxy.  
 
 | | |
 |-|-|
-|URL|`/api/elections/{ElectionID}/proxies`|
+|URL|`/api/proxies/{NodeAddr}`|
 |Method|`GET`|
 |Input||
 
@@ -254,19 +257,20 @@ Return:
 
 ```json
 
-{"Proxies": [
-  {"123.456.78.9:9000": "https://example.com/"},
-  {"111.222.333.444:9000": "https://blabla.ch/"}
-]}
+{
+    "NodeAddr": "123.456.78.9:9000",
+    "Proxy": "https://example.com/"
+}
 
 ```
 
-## Update the node-proxy address map
+## Get all the node-proxy mappings
+
 | | |
 |-|-|
-|URL|`/api/elections/{ElectionID}/proxies`|
-|Method|`PUT`|
-|Input|`application/json`|
+|URL|`/api/proxies/`|
+|Method|`GET`|
+|Input||
 
 ```json
 
@@ -274,6 +278,21 @@ Return:
   {"123.456.78.9:9000": "https://example.com/"},
   {"111.222.333.444:9000": "https://blabla.ch/"}
 ]}
+
+```
+
+## Update a node-proxy mapping
+| | |
+|-|-|
+|URL|`/api/proxies/{NodeAddr}`|
+|Method|`PUT`|
+|Input||
+
+```json
+
+{
+    "Proxy": "https://blabla.ch/"
+}
 
 ```
 
@@ -288,7 +307,7 @@ Return:
 ## Delete the node-proxy address map
 | | |
 |-|-|
-|URL|`/api/elections/{ElectionID}/proxies`|
+|URL|`/api/proxies/{NodeAddr}`|
 |Method|`DELETE`|
 |Input||
 

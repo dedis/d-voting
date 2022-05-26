@@ -9,16 +9,14 @@ import Modal from 'components/modal/Modal';
 import StatusTimeline from './components/StatusTimeline';
 import Loading from 'pages/Loading';
 import * as endpoints from '../../components/utils/Endpoints';
-import useFetchCall from '../../components/utils/useFetchCall';
 import Action from './components/Action';
-import { NodeStatus } from 'types/node';
+import { NodeProxyAddress, NodeStatus } from 'types/node';
 import useGetResults from './components/utils/useGetResults';
 import DKGStatus from 'components/utils/DKGStatus';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
   const { electionId } = useParams();
-
   const { loading, electionID, status, setStatus, roster, setResult, configObj, setIsResultSet } =
     useElection(electionId);
 
@@ -31,17 +29,16 @@ const ElectionShow: FC = () => {
 
   const [ongoingAction, setOngoingAction] = useState(OngoingAction.None);
 
-  const request = {
-    method: 'GET',
-  };
-  const [nodeProxyObject, nodeProxyLoading, nodeProxyError] = useFetchCall(
-    endpoints.getProxiesAddresses(electionId),
-    request
-  );
   const [nodeProxyAddresses, setNodeProxyAddresses] = useState<Map<string, string>>(null);
   // The status of each node
   const [DKGStatuses, setDKGStatuses] = useState<Map<string, NodeStatus>>(null);
   const [DKGLoading, setDKGLoading] = useState(true);
+  const request = {
+    method: 'GET',
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+    },
+  };
 
   const ongoingItem = 'ongoingAction' + electionID;
 
@@ -78,36 +75,49 @@ const ElectionShow: FC = () => {
 
   // Set the mapping of the node and proxy addresses
   useEffect(() => {
-    if (nodeProxyError !== null) {
-      setTextModalError(nodeProxyError.message);
-      setShowModalError(true);
-    }
+    if (roster !== null) {
+      const fetchNodeProxy = async (node: string) => {
+        try {
+          const response = await fetch(endpoints.getProxyAddress(node), request);
+          if (!response.ok) {
+            const js = await response.json();
+            throw new Error(JSON.stringify(js));
+          } else {
+            let dataReceived = await response.json();
+            console.log(dataReceived);
+            return dataReceived as NodeProxyAddress;
+          }
+        } catch (e) {
+          setTextModalError(e.message);
+          setShowModalError(true);
+        }
+      };
 
-    if (nodeProxyObject !== null) {
-      const newNodeProxyAddresses = new Map();
-
-      nodeProxyObject.Proxies.forEach((value) => {
-        Object.entries(value).forEach(([node, proxy]) => {
-          newNodeProxyAddresses.set(node, proxy);
-        });
+      const promise = roster.map((node) => {
+        return fetchNodeProxy(node);
       });
 
-      setNodeProxyAddresses(newNodeProxyAddresses);
+      Promise.all(promise).then((nodeProxies) => {
+        const newAddresses: Map<string, string> = new Map();
+
+        nodeProxies.forEach((nodeProxy) => {
+          newAddresses.set(nodeProxy.NodeAddr, nodeProxy.Proxy);
+        });
+
+        setNodeProxyAddresses(newAddresses);
+      });
     }
-  }, [nodeProxyObject, nodeProxyError]);
+  }, [roster]);
 
   // Fetch the status of the nodes
   useEffect(() => {
     if (nodeProxyAddresses !== null) {
-      const fetchData = async (node: string) => {
+      const fetchDKGStatus = async (node: string, proxy: string) => {
         try {
-          const response = await fetch(
-            endpoints.getDKGActors(nodeProxyAddresses.get(node), electionId),
-            request
-          );
+          const response = await fetch(endpoints.getDKGActors(proxy, electionId), request);
 
           if (response.status === 404) {
-            return { id: node, status: NodeStatus.NotInitialized };
+            return { NodeAddr: node, Status: NodeStatus.NotInitialized };
           }
 
           if (!response.ok) {
@@ -116,26 +126,24 @@ const ElectionShow: FC = () => {
           }
 
           let dataReceived = await response.json();
-          return { id: node, status: dataReceived.Status };
+          return { NodeAddr: node, Status: dataReceived.Status };
         } catch (e) {
           setTextModalError(e.message);
           setShowModalError(true);
         }
       };
 
-      if (nodeProxyAddresses !== null) {
-        const promises = Array.from(nodeProxyAddresses.keys()).map((node) => {
-          return fetchData(node);
-        });
+      const promises = Array.from(nodeProxyAddresses).map(([node, proxy]) => {
+        return fetchDKGStatus(node, proxy);
+      });
 
-        Promise.all(promises)
-          .then((values) => {
-            const newDKGStatuses = new Map();
-            values.forEach((v) => newDKGStatuses.set(v.id, v.status));
-            setDKGStatuses(newDKGStatuses);
-          })
-          .finally(() => setDKGLoading(false));
-      }
+      Promise.all(promises)
+        .then((values) => {
+          const newDKGStatuses = new Map();
+          values.forEach((v) => newDKGStatuses.set(v.NodeAddr, v.Status));
+          setDKGStatuses(newDKGStatuses);
+        })
+        .finally(() => setDKGLoading(false));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeProxyAddresses]);
@@ -202,18 +210,12 @@ const ElectionShow: FC = () => {
           <div className="py-4 pl-2 pb-8">
             <div className="font-bold uppercase text-lg text-gray-700 pb-2">{t('DKGStatuses')}</div>
             <div className="px-2">
-              <>
-                {!nodeProxyLoading && (
-                  <>
-                    {Array.from(nodeProxyAddresses).map(([node, _proxy], index) => (
-                      <div className="flex flex-col pb-6" key={node}>
-                        {t('node')} {index} ({node})
-                        <DKGStatus status={DKGStatuses.get(node)} />
-                      </div>
-                    ))}
-                  </>
-                )}
-              </>
+              {Array.from(nodeProxyAddresses).map(([node, _proxy], index) => (
+                <div className="flex flex-col pb-6" key={node}>
+                  {t('node')} {index} ({node})
+                  <DKGStatus status={DKGStatuses.get(node)} />
+                </div>
+              ))}
             </div>
           </div>
         </>

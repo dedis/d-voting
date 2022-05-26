@@ -54,6 +54,9 @@ const ElectionRow: FC<ElectionRowProps> = ({
       ) {
         const request = {
           method: 'GET',
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+          },
           signal: signal,
         };
 
@@ -87,7 +90,8 @@ const ElectionRow: FC<ElectionRowProps> = ({
         const fetchProxies = async () => {
           try {
             const response = await fetch(
-              endpoints.getProxiesAddresses(election.ElectionID),
+              //endpoints.getProxiesAddresses(election.ElectionID),
+              endpoints.getProxiesAddresses,
               request
             );
 

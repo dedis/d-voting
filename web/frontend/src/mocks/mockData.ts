@@ -1,10 +1,6 @@
 import { Results } from 'types/election';
 
-const mockRoster: string[] = [
-  'https://localhost:8001',
-  'https://localhost:8002',
-  'https://localhost:8003',
-];
+const mockRoster: string[] = ['123.456.78.9:9000', '123.456.78.9:9001', '123.456.78.9:9002'];
 
 const mockElection1: any = {
   MainTitle: 'Life on the campus',

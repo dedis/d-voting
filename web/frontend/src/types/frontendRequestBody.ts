@@ -34,7 +34,12 @@ interface RemoveUserRole {
 }
 
 interface NewProxyAddress {
-  Proxies: [];
+  NodeAddr: string;
+  Proxy: string;
+}
+
+interface UpdateProxyAddress {
+  Proxy: string;
 }
 
 export type {
@@ -44,6 +49,7 @@ export type {
   EditDKGActorBody,
   NewDKGBody,
   NewProxyAddress,
+  UpdateProxyAddress,
   NewUserRole,
   RemoveUserRole,
 };
