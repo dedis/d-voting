@@ -17,8 +17,17 @@ import DKGStatus from 'components/utils/DKGStatus';
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
   const { electionId } = useParams();
-  const { loading, electionID, status, setStatus, roster, setResult, configObj, setIsResultSet } =
-    useElection(electionId);
+  const {
+    loading,
+    electionID,
+    status,
+    setStatus,
+    roster,
+    setResult,
+    configObj,
+    setIsResultSet,
+    error,
+  } = useElection(electionId);
 
   const [, setError] = useState(null);
   const [isResultAvailable, setIsResultAvailable] = useState(false);
@@ -30,6 +39,7 @@ const ElectionShow: FC = () => {
   const [ongoingAction, setOngoingAction] = useState(OngoingAction.None);
 
   const [nodeProxyAddresses, setNodeProxyAddresses] = useState<Map<string, string>>(null);
+  const [nodeToSetup, setNodeToSetup] = useState<[string, string]>(null);
   // The status of each node
   const [DKGStatuses, setDKGStatuses] = useState<Map<string, NodeStatus>>(null);
   const [DKGLoading, setDKGLoading] = useState(true);
@@ -41,6 +51,7 @@ const ElectionShow: FC = () => {
   };
 
   const ongoingItem = 'ongoingAction' + electionID;
+  const nodeToSetupItem = 'nodeToSetup' + electionID;
 
   // Fetch result when available after a status change
   useEffect(() => {
@@ -55,23 +66,48 @@ const ElectionShow: FC = () => {
     if (status === Status.ResultAvailable) {
       window.localStorage.removeItem(ongoingItem);
     }
+
+    if (status === Status.Setup) {
+      window.localStorage.removeItem(nodeToSetupItem);
+    }
   }, [status]);
 
-  // Get the ongoingAction from the storage
+  // Get the ongoingAction and the nodeToSetup from the storage
   useEffect(() => {
     const storedOngoingAction = JSON.parse(window.localStorage.getItem(ongoingItem));
 
     if (storedOngoingAction !== null) {
       setOngoingAction(storedOngoingAction);
     }
+
+    const storedNodeToSetup = JSON.parse(window.localStorage.getItem(nodeToSetupItem));
+
+    if (storedNodeToSetup !== null) {
+      setNodeToSetup([storedNodeToSetup[0], storedNodeToSetup[1]]);
+    }
   }, []);
 
-  // Store the ongoingAction in the local storage
+  // Store the ongoingAction and the nodeToSetup in the local storage
   useEffect(() => {
     if (status !== Status.ResultAvailable) {
       window.localStorage.setItem(ongoingItem, ongoingAction.toString());
     }
   }, [ongoingAction]);
+
+  useEffect(() => {
+    if (nodeToSetup !== null) {
+      window.localStorage.setItem(nodeToSetupItem, JSON.stringify(nodeToSetup));
+    }
+  }, [nodeToSetup]);
+
+  useEffect(() => {
+    if (nodeProxyAddresses !== null) {
+      if (nodeToSetup === null) {
+        const node = roster[0];
+        setNodeToSetup([node, nodeProxyAddresses.get(node)]);
+      }
+    }
+  }, [nodeProxyAddresses, nodeToSetup]);
 
   // Set the mapping of the node and proxy addresses
   useEffect(() => {
@@ -79,17 +115,18 @@ const ElectionShow: FC = () => {
       const fetchNodeProxy = async (node: string) => {
         try {
           const response = await fetch(endpoints.getProxyAddress(node), request);
+
           if (!response.ok) {
             const js = await response.json();
             throw new Error(JSON.stringify(js));
           } else {
             let dataReceived = await response.json();
-            console.log(dataReceived);
             return dataReceived as NodeProxyAddress;
           }
         } catch (e) {
-          setTextModalError(e.message);
+          setTextModalError(t('errorRetrievingProxy') + e.message);
           setShowModalError(true);
+          return Promise.reject();
         }
       };
 
@@ -97,15 +134,20 @@ const ElectionShow: FC = () => {
         return fetchNodeProxy(node);
       });
 
-      Promise.all(promise).then((nodeProxies) => {
-        const newAddresses: Map<string, string> = new Map();
+      Promise.all(promise).then(
+        (nodeProxies) => {
+          const newAddresses: Map<string, string> = new Map();
 
-        nodeProxies.forEach((nodeProxy) => {
-          newAddresses.set(nodeProxy.NodeAddr, nodeProxy.Proxy);
-        });
+          nodeProxies.forEach((nodeProxy) => {
+            newAddresses.set(nodeProxy.NodeAddr, nodeProxy.Proxy);
+          });
 
-        setNodeProxyAddresses(newAddresses);
-      });
+          setNodeProxyAddresses(newAddresses);
+        },
+        () => {
+          setDKGLoading(false);
+        }
+      );
     }
   }, [roster]);
 
@@ -128,8 +170,10 @@ const ElectionShow: FC = () => {
           let dataReceived = await response.json();
           return { NodeAddr: node, Status: dataReceived.Status };
         } catch (e) {
-          setTextModalError(e.message);
+          setTextModalError(t('errorRetrievingNodes') + e.message);
           setShowModalError(true);
+
+          return Promise.reject();
         }
       };
 
@@ -138,11 +182,16 @@ const ElectionShow: FC = () => {
       });
 
       Promise.all(promises)
-        .then((values) => {
-          const newDKGStatuses = new Map();
-          values.forEach((v) => newDKGStatuses.set(v.NodeAddr, v.Status));
-          setDKGStatuses(newDKGStatuses);
-        })
+        .then(
+          (values) => {
+            const newDKGStatuses = new Map();
+            values.forEach((v) => newDKGStatuses.set(v.NodeAddr, v.Status));
+            setDKGStatuses(newDKGStatuses);
+          },
+          () => {
+            setDKGLoading(false);
+          }
+        )
         .finally(() => setDKGLoading(false));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -166,16 +215,24 @@ const ElectionShow: FC = () => {
     }
   }, [DKGStatuses, status]);
 
+  useEffect(() => {
+    if (error !== null) {
+      setTextModalError(t('errorRetrievingElection') + error.message);
+      setShowModalError(true);
+      setError(null);
+    }
+  }, [error]);
+
   return (
     <div className="w-[60rem] font-sans px-4 py-4">
+      <Modal
+        showModal={showModalError}
+        setShowModal={setShowModalError}
+        textModal={textModalError === null ? '' : textModalError}
+        buttonRightText={t('close')}
+      />
       {!loading && !DKGLoading ? (
         <>
-          <Modal
-            showModal={showModalError}
-            setShowModal={setShowModalError}
-            textModal={textModalError === null ? '' : textModalError}
-            buttonRightText={t('close')}
-          />
           <h2 className="pt-8 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
             {configObj.MainTitle}
           </h2>
@@ -202,6 +259,8 @@ const ElectionShow: FC = () => {
                 setShowModalError={setShowModalError}
                 ongoingAction={ongoingAction}
                 setOngoingAction={setOngoingAction}
+                nodeToSetup={nodeToSetup}
+                setNodeToSetup={setNodeToSetup}
                 DKGStatuses={DKGStatuses}
                 setDKGStatuses={setDKGStatuses}
               />
@@ -210,10 +269,14 @@ const ElectionShow: FC = () => {
           <div className="py-4 pl-2 pb-8">
             <div className="font-bold uppercase text-lg text-gray-700 pb-2">{t('DKGStatuses')}</div>
             <div className="px-2">
-              {Array.from(nodeProxyAddresses).map(([node, _proxy], index) => (
+              {roster.map((node, index) => (
                 <div className="flex flex-col pb-6" key={node}>
                   {t('node')} {index} ({node})
-                  <DKGStatus status={DKGStatuses.get(node)} />
+                  {nodeProxyAddresses !== null && DKGStatuses !== null ? (
+                    <DKGStatus status={DKGStatuses.get(node)} />
+                  ) : (
+                    <DKGStatus status={NodeStatus.NotInitialized} />
+                  )}
                 </div>
               ))}
             </div>

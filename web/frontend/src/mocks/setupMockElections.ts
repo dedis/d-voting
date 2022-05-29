@@ -10,6 +10,7 @@ import {
   mockElectionResult21,
   mockElectionResult22,
   mockElectionResult23,
+  mockNodes,
   mockRoster,
 } from './mockData';
 
@@ -25,8 +26,11 @@ const setupMockElection = () => {
   // Mock of the node proxy mapping
   const mockNodeProxyAddresses: Map<string, string> = new Map();
 
+  mockNodes.forEach((node, index) => {
+    mockNodeProxyAddresses.set(node, 'https://example' + index + '.com');
+  });
+
   mockRoster.forEach((node) => {
-    mockNodeProxyAddresses.set(node, node);
     mockDKGSetup.set(node, NodeStatus.Initialized);
     mockDKGNotInitialized.set(node, NodeStatus.NotInitialized);
   });

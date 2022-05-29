@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import ElectionTable from './components/ElectionTable';
@@ -7,14 +7,15 @@ import * as endpoints from 'components/utils/Endpoints';
 import Loading from 'pages/Loading';
 import { LightElectionInfo, Status } from 'types/election';
 import ElectionTableFilter from './components/ElectionTableFilter';
-import { ID } from 'types/configuration';
+import { FlashContext, FlashLevel } from 'index';
 
 const ElectionIndex: FC = () => {
   const { t } = useTranslation();
+  const fctx = useContext(FlashContext);
 
   const [statusToKeep, setStatusToKeep] = useState<Status>(null);
   const [elections, setElections] = useState<LightElectionInfo[]>(null);
-  const [electionStatuses, setElectionsStatuses] = useState<Map<ID, Status>>(new Map());
+  const [loading, setLoading] = useState(true);
 
   const request = {
     method: 'GET',
@@ -23,18 +24,14 @@ const ElectionIndex: FC = () => {
     },
   };
 
-  const [data, loading, error] = useFetchCall(endpoints.elections, request);
+  const [data, dataLoading, error] = useFetchCall(endpoints.elections, request);
 
   useEffect(() => {
-    if (data !== null) {
-      const newStatuses = new Map(electionStatuses);
-      (data.Elections as LightElectionInfo[]).forEach((election) => {
-        newStatuses.set(election.ElectionID, election.Status);
-      });
-
-      setElectionsStatuses(newStatuses);
+    if (error !== null) {
+      fctx.addMessage(t('errorRetrievingElections') + error.message, FlashLevel.Error);
+      setLoading(false);
     }
-  }, [data]);
+  }, [error]);
 
   // Apply the filter statusToKeep
   useEffect(() => {
@@ -45,19 +42,18 @@ const ElectionIndex: FC = () => {
       return;
     }
 
-    const filteredElectionsID = [];
-    electionStatuses.forEach((status, id) => {
-      if (status === statusToKeep) {
-        filteredElectionsID.push(id);
-      }
-    });
-
-    const filteredElections = (data.Elections as LightElectionInfo[]).filter((election) =>
-      filteredElectionsID.includes(election.ElectionID)
+    const filteredElections = (data.Elections as LightElectionInfo[]).filter(
+      (election) => election.Status === statusToKeep
     );
 
     setElections(filteredElections);
   }, [data, statusToKeep]);
+
+  useEffect(() => {
+    if (dataLoading !== null) {
+      setLoading(dataLoading);
+    }
+  }, [dataLoading]);
 
   return (
     <div className="w-[60rem] font-sans px-4 py-4">
@@ -66,21 +62,16 @@ const ElectionIndex: FC = () => {
           <h2 className="pb-2 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
             {t('elections')}
           </h2>
-          <div>{t('listElection')}</div>
-          <div>{t('clickElection')}</div>
+          <div className="mt-1 flex flex-col sm:mt-0">
+            <div className="mt-2 flex items-center text-sm text-gray-500">{t('listElection')}</div>
+            <div className="mt-1 flex items-center text-sm text-gray-500">{t('clickElection')}</div>
+          </div>
+
           <ElectionTableFilter setStatusToKeep={setStatusToKeep} />
-          <ElectionTable
-            elections={elections}
-            electionStatuses={electionStatuses}
-            setElectionsStatuses={setElectionsStatuses}
-          />
+          <ElectionTable elections={elections} />
         </div>
-      ) : error === null ? (
-        <Loading />
       ) : (
-        <div>
-          {t('errorRetrievingElection')} - {error.toString()}
-        </div>
+        <Loading />
       )}
     </div>
   );

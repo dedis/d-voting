@@ -36,22 +36,27 @@ const useChangeAction = (
   setShowModalError: (willShow: boolean) => void,
   ongoingAction: OngoingAction,
   setOngoingAction: (action: OngoingAction) => void,
+  nodeToSetup: [string, string],
+  setNodeToSetup: ([node, proxy]: [string, string]) => void,
   DKGStatuses: Map<string, NodeStatus>,
   setDKGStatuses: (dkgStatuses: Map<string, NodeStatus>) => void
 ) => {
   const { t } = useTranslation();
   const [isInitializing, setIsInitializing] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+
   const [showModalProxySetup, setShowModalProxySetup] = useState(false);
   const [showModalClose, setShowModalClose] = useState(false);
   const [showModalCancel, setShowModalCancel] = useState(false);
   const [showModalDelete, setShowModalDelete] = useState(false);
+
   const [userConfirmedProxySetup, setUserConfirmedProxySetup] = useState(false);
   const [userConfirmedClosing, setUserConfirmedClosing] = useState(false);
   const [userConfirmedCanceling, setUserConfirmedCanceling] = useState(false);
   const [userConfirmedDeleting, setUserConfirmedDeleting] = useState(false);
+
   const [proxyAddresses, setProxyAddresses] = useState<Map<string, string>>(new Map());
-  const [nodeToSetup, setNodeToSetup] = useState<[string, string]>(['', '']);
+
   const [getError, setGetError] = useState(null);
   const [postError, setPostError] = useState(null);
   const sendFetchRequest = usePostCall(setPostError);
@@ -218,9 +223,12 @@ const useChangeAction = (
               },
               (reason: any) => {
                 onRejected(reason, Status.Initialized);
-                const newDKGStatuses = new Map(DKGStatuses);
-                newDKGStatuses.set(nodeToSetup[0], NodeStatus.Failed);
-                setDKGStatuses(newDKGStatuses);
+
+                if (!(reason instanceof DOMException)) {
+                  const newDKGStatuses = new Map(DKGStatuses);
+                  newDKGStatuses.set(nodeToSetup[0], NodeStatus.Failed);
+                  setDKGStatuses(newDKGStatuses);
+                }
               }
             )
             .catch((e) => {
@@ -274,13 +282,6 @@ const useChangeAction = (
       setGetError(null);
     }
   }, [getError]);
-
-  useEffect(() => {
-    if (nodeProxyAddresses !== null) {
-      const node = roster[0];
-      setNodeToSetup([node, nodeProxyAddresses.get(node)]);
-    }
-  }, [nodeProxyAddresses]);
 
   useEffect(() => {
     //check if close button was clicked and the user validated the confirmation window

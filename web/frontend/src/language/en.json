@@ -48,7 +48,10 @@
     "create": "Create a new election by filling out the information below or by uploading a json file",
     "errorCandidates": "You must add at least one candidate!",
     "errorNewCandidate": "Are you sure you don't want to add ",
-    "errorRetrievingElection": "An error seems to have occurred while retrieving all the elections from our server. Contact the administrator of this website.",
+    "errorRetrievingElections": "An error seems to have occurred while retrieving all the elections from our server. Contact the administrator of this website.",
+    "errorRetrievingElection": "An error seems to have occurred while retrieving the election from our server. Contact the administrator of this website.",
+    "errorRetrievingProxy": "An error seems to have occurred while retrieving the addresses of the proxies from our server. Contact the administrator of this website.",
+    "errorRetrievingNodes": "An error seems to have occurred while retrieving the status of the nodes from our server. Contact the administrator of this website.",
     "errorRetrievingKey": "An error seems to have occurred while retrieving the public key from our server. Contact the administrator of this website.",
     "errorServerDown": "One of our servers seems to be down. Contact the administrator of this website.",
     "electionSuccess": "Your election was successfully submitted!",
@@ -172,6 +175,7 @@
     "proxies": "Proxies",
     "filterByStatus": "Filter by status",
     "all": "All",
-    "resetFilter": "Reset filter"
+    "resetFilter": "Reset filter",
+    "showingNOverMOfXResults": "Showing {{n}}/{{m}} of {{x}} results."
   }
 }

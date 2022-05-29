@@ -39,7 +39,7 @@ var mockUserDB = setupMockUserDB();
 const RESPONSE_TIME = 500;
 const CHANGE_STATUS_TIMER = 2000;
 const INIT_TIMER = 3000;
-const SETUP_TIMER = 3000;
+const SETUP_TIMER = 4000;
 const SHUFFLE_TIMER = 2000;
 const DECRYPT_TIMER = 8000;
 
@@ -276,9 +276,11 @@ export const handlers = [
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
-  rest.get(endpoints.getDKGActors(':Proxy', ':ElectionID'), async (req, res, ctx) => {
-    const { Proxy, ElectionID } = req.params;
+  rest.get(endpoints.getDKGActors('*', ':ElectionID'), async (req, res, ctx) => {
+    const { ElectionID } = req.params;
+    const Proxy = req.params[0];
     var node = '';
+
     mockElections.get(ElectionID as string).Roster.forEach((n) => {
       const p = mockNodeProxyAddresses.get(n);
       if (p === Proxy) {
@@ -377,10 +379,9 @@ export const handlers = [
 
   rest.get(endpoints.getProxyAddress(':NodeAddr'), async (req, res, ctx) => {
     const { NodeAddr } = req.params;
-    console.log(NodeAddr);
-    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
-
     const proxy = mockNodeProxyAddresses.get(NodeAddr as string);
+
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200), ctx.json({ NodeAddr: NodeAddr, Proxy: proxy }));
   }),
