@@ -33,7 +33,7 @@ const ResultExplanation = () => {
               <Popover.Panel className="absolute z-10 mt-3 ml-28 w-screen max-w-sm -translate-x-1/2 transform px-4 sm:px-0">
                 <div className="overflow-hidden rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
                   <div className="relative bg-white p-7 text-sm text-justify">
-                    {t('resultExplanation')}
+                    {t('resultExplanation1') + t('resultExplanation2') + t('resultExplanation3')}
                   </div>
                 </div>
               </Popover.Panel>
