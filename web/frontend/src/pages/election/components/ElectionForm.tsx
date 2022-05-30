@@ -226,7 +226,6 @@ const ElectionForm: FC<ElectionFormProps> = () => {
         return displayElectionForm();
       case 'previewForm':
         return displayPreviewElection();
-        break;
     }
   };
 
