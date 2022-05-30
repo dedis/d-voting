@@ -1,12 +1,10 @@
-import { FC, useState } from 'react';
+import { FC, Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import { newElection } from 'components/utils/Endpoints';
 
-import { CloudUploadIcon, TrashIcon } from '@heroicons/react/solid';
+import { CloudUploadIcon, PencilIcon, TrashIcon } from '@heroicons/react/solid';
 
 import SubjectComponent from './SubjectComponent';
-import AddButton from './AddButton';
 import UploadFile from './UploadFile';
 
 import configurationSchema from '../../../schema/configurationValidation';
@@ -16,6 +14,9 @@ import { marshalConfig } from '../../../types/JSONparser';
 import DownloadButton from 'components/buttons/DownloadButton';
 import SpinnerIcon from 'components/utils/SpinnerIcon';
 import RedirectToModal from 'components/modal/RedirectToModal';
+import { CheckIcon, PlusSmIcon } from '@heroicons/react/outline';
+import Tabs from './Tabs';
+import RemoveElementModal from './RemoveElementModal';
 
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
@@ -31,9 +32,13 @@ const ElectionForm: FC<ElectionFormProps> = () => {
   const { t } = useTranslation();
   const emptyConf: Configuration = emptyConfiguration();
   const [conf, setConf] = useState<Configuration>(emptyConf);
-  const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [textModal, setTextModal] = useState('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [showRemoveSubjectModal, setShowRemoveSubjectModal] = useState<boolean>(false);
+  const [textModal, setTextModal] = useState<string>('');
+  const [currentTab, setCurrentTab] = useState<string>('electionForm');
+  const [subjectIdToRemove, setSubjectIdToRemove] = useState<ID>('');
+  const [titleChanging, setTitleChanging] = useState<boolean>(true);
   const [navigateDestination, setNavigateDestination] = useState(null);
   const { MainTitle, Scaffold } = conf;
 
@@ -108,56 +113,79 @@ const ElectionForm: FC<ElectionFormProps> = () => {
     setConf({ ...conf, Scaffold: newSubjects });
   };
 
-  const removeSubject = (subjectID: ID) => () => {
+  const handleConfirmRemoveSubject = () => {
     setConf({
       ...conf,
-      Scaffold: Scaffold.filter((subject) => subject.ID !== subjectID),
+      Scaffold: Scaffold.filter((subject) => subject.ID !== subjectIdToRemove),
     });
+    setSubjectIdToRemove('');
   };
 
-  return (
-    <>
-      <RedirectToModal
-        showModal={showModal}
-        setShowModal={setShowModal}
-        title={t('notification')}
-        buttonRightText={t('close')}
-        navigateDestination={navigateDestination}>
-        {textModal}
-      </RedirectToModal>
+  const displayElectionForm = () => {
+    return (
       <div className="w-screen px-4 md:px-0 md:w-auto">
-        <div className="flex flex-col shadow-lg rounded-md">
-          <UploadFile setConf={setConf} setShowModal={setShowModal} setTextModal={setTextModal} />
-          <div className="hidden sm:block">
-            <div className="py-3 px-4">
-              <div className="border-t border-gray-200" />
-            </div>
+        <div className="flex flex-col border rounded-md">
+          <div className="flex mt-3 mb-2">
+            {titleChanging ? (
+              <>
+                <input
+                  value={MainTitle}
+                  onChange={(e) => setConf({ ...conf, MainTitle: e.target.value })}
+                  name="MainTitle"
+                  type="text"
+                  placeholder={t('enterMainTitle')}
+                  className="ml-3 px-1 w-60 text-lg border rounded-md"
+                />
+                <div className="ml-1">
+                  <button
+                    className={`border p-1 rounded-md ${
+                      MainTitle.length === 0 ? 'bg-gray-100' : ' '
+                    }`}
+                    disabled={MainTitle.length === 0}
+                    onClick={() => setTitleChanging(false)}>
+                    <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mt-1 ml-3" onClick={() => setTitleChanging(true)}>
+                  {MainTitle}
+                </div>
+                <div className="ml-1">
+                  <button
+                    className="hover:text-indigo-500 p-1 rounded-md"
+                    onClick={() => setTitleChanging(true)}>
+                    <PencilIcon className="m-1 h-3 w-3" aria-hidden="true" />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
-          <input
-            value={MainTitle}
-            onChange={(e) => setConf({ ...conf, MainTitle: e.target.value })}
-            name="MainTitle"
-            type="text"
-            placeholder="Enter the Main title"
-            className="ml-3 mt-4 w-60 mb-2 text-lg border rounded-md"
-          />
+
           {Scaffold.map((subject) => (
             <SubjectComponent
               notifyParent={notifyParent}
               subjectObject={subject}
-              removeSubject={removeSubject(subject.ID)}
+              removeSubject={() => {
+                setSubjectIdToRemove(subject.ID);
+                setShowRemoveSubjectModal(true);
+              }}
               nestedLevel={0}
               key={subject.ID}
             />
           ))}
-          <div className="flex justify-end pr-2">
-            <AddButton onClick={addSubject}>Subject</AddButton>
-          </div>
+          <button
+            onClick={addSubject}
+            className="flex w-full h-12  border-t  px-4 py-3 text-left text-sm font-medium hover:bg-gray-50">
+            <PlusSmIcon className="mr-2 h-5 w-5" aria-hidden="true" />
+            {t('addSubject')}
+          </button>
         </div>
         <div className="my-2">
           <button
             type="button"
-            className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
+            className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md  text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
             onClick={createHandler}>
             {loading ? (
               <SpinnerIcon />
@@ -168,21 +196,77 @@ const ElectionForm: FC<ElectionFormProps> = () => {
           </button>
           <button
             type="button"
-            className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
-            onClick={() => setConf(emptyConf)}>
+            className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+            onClick={() => {
+              setTitleChanging(true);
+              setConf(emptyConf);
+            }}>
             <TrashIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
             {t('clearElection')}
           </button>
           <DownloadButton exportData={exportData}>{t('exportJSON')}</DownloadButton>
         </div>
       </div>
+    );
+  };
+
+  const displayPreviewElection = () => {
+    return (
+      <div className="w-screen px-4 md:px-0 mb-4 md:w-auto">
+        <div className="border rounded-md">
+          <div className="h-[calc(100vh-265px)] ml-2">preview</div>
+        </div>
+      </div>
+    );
+  };
+
+  const switchTabs = () => {
+    switch (currentTab) {
+      case 'electionForm':
+        return displayElectionForm();
+      case 'previewForm':
+        return displayPreviewElection();
+    }
+  };
+
+  return (
+    <>
+      <RemoveElementModal
+        showModal={showRemoveSubjectModal}
+        setShowModal={setShowRemoveSubjectModal}
+        textModal={t('confirmRemovesubject')}
+        handleConfirm={handleConfirmRemoveSubject}
+      />
+      <RedirectToModal
+        showModal={showModal}
+        setShowModal={setShowModal}
+        title={t('notification')}
+        buttonRightText={t('close')}
+        navigateDestination={navigateDestination}>
+        {textModal}
+      </RedirectToModal>
+
+      <UploadFile
+        updateForm={(config: Configuration) => {
+          setTitleChanging(false);
+          setConf(config);
+        }}
+        setShowModal={setShowModal}
+        setTextModal={setTextModal}
+      />
+
+      <div className="hidden md:grid grid-cols-2 gap-2">
+        {displayElectionForm()}
+        {displayPreviewElection()}
+      </div>
+      <div className="flex flex-col md:hidden">
+        <Tabs currentTab={currentTab} setCurrentTab={setCurrentTab} />
+        {switchTabs()}
+      </div>
     </>
   );
 };
 
-ElectionForm.propTypes = {
-  setShowModal: PropTypes.func.isRequired,
-  setTextModal: PropTypes.func.isRequired,
-};
+ElectionForm.propTypes = {};
 
 export default ElectionForm;

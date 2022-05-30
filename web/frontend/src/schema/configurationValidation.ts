@@ -1,7 +1,7 @@
 import * as yup from 'yup';
 
 const idSchema = yup.string().min(1).required();
-const titleSchema = yup.string().min(1).required();
+const titleSchema = yup.string().required();
 
 const selectsSchema = yup.object({
   ID: yup.lazy(() => idSchema),
@@ -18,28 +18,28 @@ const selectsSchema = yup.object({
         if (!Number.isInteger(MaxN)) {
           return this.createError({
             path,
-            message: `Max should be an integer in selects, in object ID: ${ID}`,
+            message: `Max should be an integer in selects [objectID: ${ID}]`,
           });
         }
 
         if (MaxN < 1) {
           return this.createError({
             path,
-            message: `Max should be higher or equal to 1 in selects, in object ID: ${ID}`,
+            message: `Max should be higher or equal to 1 in selects [objectID: ${ID}]`,
           });
         }
 
         if (MaxN < MinN) {
           return this.createError({
             path,
-            message: `Max should be higher or equal than min in selects, in object ID: ${ID}`,
+            message: `Max should be higher or equal than min in selects [objectID: ${ID}]`,
           });
         }
 
         if (MaxN > Choices.length) {
           return this.createError({
             path,
-            message: `MaxN should be less or equal to Choices length in selects, in object ID: ${ID}`,
+            message: `MaxN should be less or equal to Choices length in selects [objectID: ${ID}]`,
           });
         }
         return true;
@@ -59,14 +59,14 @@ const selectsSchema = yup.object({
         if (!Number.isInteger(MinN)) {
           return this.createError({
             path,
-            message: `Min should be an integer in selects, in object ID: ${ID}`,
+            message: `Min should be an integer in selects [objectID: ${ID}]`,
           });
         }
 
         if (MinN < 0) {
           return this.createError({
             path,
-            message: `Min should be higher or equal to 0 in selects, in object ID: ${ID}`,
+            message: `Min should be higher or equal to 0 in selects [objectID: ${ID}]`,
           });
         }
         return true;
@@ -86,13 +86,13 @@ const selectsSchema = yup.object({
         if (Choices.length < MaxN) {
           return this.createError({
             path,
-            message: `Choices array length should be at least equal to Max in selects, in object ID: ${ID}`,
+            message: `Choices array length should be at least equal to Max in selects [objectID: ${ID}]`,
           });
         }
         if (Choices.includes('')) {
           return this.createError({
             path,
-            message: `Choices array should not contain empty strings in selects, in object ID: ${ID}`,
+            message: `Choices should not be empty in selects [objectID: ${ID}]`,
           });
         }
         return true;
@@ -116,21 +116,21 @@ const ranksSchema = yup.object({
         if (!Number.isInteger(MaxN)) {
           return this.createError({
             path,
-            message: `Max should be an integer in ranks, in object ID: ${ID}`,
+            message: `Max should be an integer in ranks [objectID: ${ID}]`,
           });
         }
 
         if (MaxN < 2) {
           return this.createError({
             path,
-            message: `Max should be higher or equal to 2 in ranks, in object ID: ${ID}`,
+            message: `Max should be higher or equal to 2 in ranks [objectID: ${ID}]`,
           });
         }
 
         if (MaxN !== MinN) {
           return this.createError({
             path,
-            message: `Max and Min Should be equal in ranks, in object ID: ${ID}`,
+            message: `Max and Min Should be equal in ranks [objectID: ${ID}]`,
           });
         }
         return true;
@@ -149,21 +149,21 @@ const ranksSchema = yup.object({
         if (!Number.isInteger(MinN)) {
           return this.createError({
             path,
-            message: `Min should be an integer in ranks, in object ID: ${ID}`,
+            message: `Min should be an integer in ranks [objectID: ${ID}]`,
           });
         }
 
         if (MinN < 2) {
           return this.createError({
             path,
-            message: `Min should be higher or equal to 2 in ranks, in object ID: ${ID}`,
+            message: `Min should be higher or equal to 2 in ranks [objectID: ${ID}]`,
           });
         }
 
         if (MinN !== MaxN) {
           return this.createError({
             path,
-            message: `Min and Max Should be equal in ranks, in object ID: ${ID}`,
+            message: `Min and Max Should be equal in ranks [objectID: ${ID}]`,
           });
         }
         return true;
@@ -183,13 +183,13 @@ const ranksSchema = yup.object({
         if (Choices.length !== MaxN || Choices.length !== MinN) {
           return this.createError({
             path,
-            message: `Choices array length should be equal to MaxN and MinN in ranks, in object ID: ${ID}`,
+            message: `Choices array length should be equal to MaxN and MinN in ranks [objectID: ${ID}]`,
           });
         }
         if (Choices.includes('')) {
           return this.createError({
             path,
-            message: `Choices array should not contain empty strings in ranks, in object ID: ${ID}`,
+            message: `Choices should not be empty in ranks [objectID: ${ID}]`,
           });
         }
         return true;
@@ -213,21 +213,21 @@ const textsSchema = yup.object({
         if (!Number.isInteger(MaxN)) {
           return this.createError({
             path,
-            message: `Max should be an integer in texts, in object ID: ${ID}`,
+            message: `Max should be an integer in texts [objectID: ${ID}]`,
           });
         }
 
         if (MaxN < 1) {
           return this.createError({
             path,
-            message: `Max should be higher or equal to 1 in texts, in object ID: ${ID}`,
+            message: `Max should be higher or equal to 1 in texts [objectID: ${ID}]`,
           });
         }
 
         if (MaxN < MinN) {
           return this.createError({
             path,
-            message: `Max should be greater than Min in texts, in object ID: ${ID}`,
+            message: `Max should be greater than Min in texts [objectID: ${ID}]`,
           });
         }
         return true;
@@ -245,19 +245,19 @@ const textsSchema = yup.object({
         if (!Number.isInteger(MinN)) {
           return this.createError({
             path,
-            message: `Min should be an integer in texts, in object ID: ${ID}`,
+            message: `Min should be an integer in texts [objectID: ${ID}]`,
           });
         }
-        if (MinN < 1) {
+        if (MinN < 0) {
           return this.createError({
             path,
-            message: `Min should be higher or equal to 1 in texts, in object ID: ${ID}`,
+            message: `Min should be higher or equal to 0 in texts [objectID: ${ID}]`,
           });
         }
         if (MinN > MaxN) {
           return this.createError({
             path,
-            message: `Min should be smaller than Max in texts, in object ID: ${ID}`,
+            message: `Min should be smaller than Max in texts [objectID: ${ID}]`,
           });
         }
         return true;
@@ -275,13 +275,13 @@ const textsSchema = yup.object({
         if (!Number.isInteger(MaxLength)) {
           return this.createError({
             path,
-            message: `MaxLength should be an integer in texts, in object ID: ${ID}`,
+            message: `MaxLength should be an integer in texts [objectID: ${ID}]`,
           });
         }
         if (MaxLength < 0) {
           return this.createError({
             path,
-            message: `MaxLength should be at least equal to 1 in texts, in object ID: ${ID}`,
+            message: `MaxLength should be at least equal to 1 in texts [objectID: ${ID}]`,
           });
         }
         return true;
@@ -302,13 +302,7 @@ const textsSchema = yup.object({
         if (Choices.length !== MaxN) {
           return this.createError({
             path,
-            message: `Choices array length should be equal to MaxN in texts, in object ID: ${ID}`,
-          });
-        }
-        if (Choices.includes('')) {
-          return this.createError({
-            path,
-            message: `Choices array should not contain empty strings in texts, in object ID: ${ID}`,
+            message: `Choices array length should be equal to the number of choices [objectID: ${ID}]`,
           });
         }
         return true;
@@ -347,7 +341,7 @@ const subjectSchema = yup.object({
         if (Subjects.length + Ranks.length + Selects.length + Texts.length !== Order.length) {
           return this.createError({
             path,
-            message: `Order array length is incoherent with the other fields, in object ID: ${ID}`,
+            message: `Order array length is incoherent with the other fields [objectID: ${ID}]`,
           });
         }
 
@@ -355,7 +349,7 @@ const subjectSchema = yup.object({
         if (allTypesUniqueID.length !== Order.length) {
           return this.createError({
             path,
-            message: `Order array has duplicate IDs, in object ID: ${ID}`,
+            message: `Order array has duplicate IDs [objectID: ${ID}]`,
           });
         }
 
@@ -369,7 +363,7 @@ const subjectSchema = yup.object({
           ) {
             return this.createError({
               path,
-              message: `The ID: ${id} doesn't match any of the subjects or question object, in object ID: ${ID}`,
+              message: `The ID: ${id} doesn't match any of the subjects or question object [objectID: ${ID}]`,
             });
           }
         }
