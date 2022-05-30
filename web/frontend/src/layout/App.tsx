@@ -28,7 +28,7 @@ import { AuthContext } from '..';
 import Logged from 'pages/session/Logged';
 import Flash from './Flash';
 import ClientError from './ClientError';
-import { ROLE } from 'types/userRole';
+import { UserRole } from 'types/userRole';
 
 const App = () => {
   const RequireAuth = ({
@@ -67,7 +67,7 @@ const App = () => {
               <Route
                 path={ROUTE_ELECTION_CREATE}
                 element={
-                  <RequireAuth roles={[ROLE.Admin, ROLE.Operator]}>
+                  <RequireAuth roles={[UserRole.Admin, UserRole.Operator]}>
                     <ElectionCreate />
                   </RequireAuth>
                 }
@@ -85,7 +85,7 @@ const App = () => {
               <Route
                 path={ROUTE_ADMIN}
                 element={
-                  <RequireAuth roles={[ROLE.Admin]}>
+                  <RequireAuth roles={[UserRole.Admin]}>
                     <Admin />
                   </RequireAuth>
                 }

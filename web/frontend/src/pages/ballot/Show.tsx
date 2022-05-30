@@ -19,7 +19,7 @@ import Select from './components/Select';
 import Rank, { handleOnDragEnd } from './components/Rank';
 import Text from './components/Text';
 import { ballotIsValid } from './components/ValidateAnswers';
-import { STATUS } from 'types/election';
+import { Status } from 'types/election';
 import ElectionClosed from './components/ElectionClosed';
 import Loading from 'pages/Loading';
 import { CloudUploadIcon } from '@heroicons/react/solid';
@@ -117,7 +117,7 @@ const Ballot: FC = () => {
 
   const SubjectElementDisplay = (element: types.SubjectElement) => {
     return (
-      <div>
+      <div className="pl-4">
         {element.Type === RANK && <Rank rank={element as types.RankQuestion} answers={answers} />}
         {element.Type === SELECT && (
           <Select
@@ -136,15 +136,11 @@ const Ballot: FC = () => {
   const SubjectTree = (subject: types.Subject) => {
     return (
       <div className="sm:px-8 pl-2" key={subject.ID}>
+        <h3 className="text-lg font-bold text-gray-600">{subject.Title}</h3>
         {subject.Order.map((id: ID) => (
           <div key={id}>
             {subject.Elements.get(id).Type === SUBJECT ? (
-              <div>
-                <h3 className="text-lg font-bold text-gray-600">
-                  {subject.Elements.get(id).Title}
-                </h3>
-                {SubjectTree(subject.Elements.get(id) as types.Subject)}
-              </div>
+              <div>{SubjectTree(subject.Elements.get(id) as types.Subject)}</div>
             ) : (
               SubjectElementDisplay(subject.Elements.get(id))
             )}
@@ -196,7 +192,10 @@ const Ballot: FC = () => {
       {loading ? (
         <Loading />
       ) : (
-        <div>{status === STATUS.Open ? ballotDisplay() : <ElectionClosed />}</div>
+        <div>
+          {status === Status.Open && ballotDisplay()}
+          {status !== Status.Open && <ElectionClosed />}
+        </div>
       )}
     </div>
   );
