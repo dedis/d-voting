@@ -3,7 +3,7 @@ import { Navigate, Route, BrowserRouter as Router, Routes, useLocation } from 'r
 
 import {
   ROUTE_ABOUT,
-  ROUTE_ADMIN_INDEX,
+  ROUTE_ADMIN,
   ROUTE_BALLOT_SHOW,
   ROUTE_ELECTION_CREATE,
   ROUTE_ELECTION_INDEX,
@@ -14,7 +14,7 @@ import {
 import Login from '../pages/session/Login';
 import Home from '../pages/Home';
 import About from '../pages/About';
-import AdminIndex from 'pages/admin/Index';
+import Admin from 'pages/admin/Admin';
 import ElectionIndex from '../pages/election/Index';
 import ElectionCreate from '../pages/election/New';
 import ElectionResult from '../pages/election/Result';
@@ -83,10 +83,10 @@ const App = () => {
                 }
               />
               <Route
-                path={ROUTE_ADMIN_INDEX}
+                path={ROUTE_ADMIN}
                 element={
                   <RequireAuth roles={[UserRole.Admin]}>
-                    <AdminIndex />
+                    <Admin />
                   </RequireAuth>
                 }
               />
