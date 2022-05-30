@@ -134,7 +134,7 @@ const ElectionForm: FC<ElectionFormProps> = () => {
                   name="MainTitle"
                   type="text"
                   placeholder={t('enterMainTitle')}
-                  className="ml-3 w-60 text-lg border rounded-md"
+                  className="ml-3 px-1 w-60 text-lg border rounded-md"
                 />
                 <div className="ml-1">
                   <button
@@ -179,7 +179,7 @@ const ElectionForm: FC<ElectionFormProps> = () => {
             onClick={addSubject}
             className="flex w-full h-12  border-t  px-4 py-3 text-left text-sm font-medium hover:bg-gray-50">
             <PlusSmIcon className="mr-2 h-5 w-5" aria-hidden="true" />
-            Add Subject
+            {t('addSubject')}
           </button>
         </div>
         <div className="my-2">

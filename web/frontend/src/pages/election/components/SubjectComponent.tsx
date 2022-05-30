@@ -309,7 +309,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                   name="Title"
                   type="text"
                   placeholder={t('enterSubjectTitle')}
-                  className={`w-60  border rounded-md ${
+                  className={`w-60 px-1 border rounded-md ${
                     nestedLevel === 0 ? 'text-lg' : 'text-md'
                   } `}
                 />
@@ -349,7 +349,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                 } `}
               />
             </button>
-            <div className="ml-2">Subject</div>
+            <div className="ml-2">{t('subject')}</div>
           </div>
         </div>
         <div className="relative">

@@ -106,8 +106,8 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
               name="MaxLength"
               min="1"
               type="number"
-              placeholder="Enter the MaxLength"
-              className="my-1 w-32 ml-1 border rounded-md"
+              placeholder={t('enterMaxLength')}
+              className="my-1 px-1 w-32 ml-1 border rounded-md"
             />
             <label className="block text-md font-medium text-gray-500">Regex</label>
             <input
@@ -115,8 +115,8 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
               onChange={handleChange()}
               name="Regex"
               type="text"
-              placeholder="Enter your Regex"
-              className="my-1 w-40 ml-1 border rounded-md"
+              placeholder={t('enterRegex')}
+              className="my-1 px-1 w-40 ml-1 border rounded-md"
             />
           </>
         );
@@ -170,7 +170,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
               <div className="pb-6 pr-6 pl-6">
                 <div className="flex flex-col sm:flex-row sm:min-h-[18rem] ">
                   <div className="flex flex-col w-[55%]">
-                    <div className="pb-4">Main properties</div>
+                    <div className="pb-4">{t('mainProperties')} </div>
                     <div>
                       <label className="block text-md mt font-medium text-gray-500">Title</label>
                       <input
@@ -178,8 +178,8 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                         onChange={handleChange()}
                         name="Title"
                         type="text"
-                        placeholder="Enter your Title"
-                        className="my-1 w-60 ml-1 border rounded-md"
+                        placeholder={t('enterTitle')}
+                        className="my-1 px-1 w-60 ml-1 border rounded-md"
                       />
                     </div>
                     <div className="text-red-600">
@@ -190,7 +190,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                         ))}
                     </div>
                     <label className="flex pt-2 text-md font-medium text-gray-500">
-                      {Type !== TEXT ? 'Choices' : 'Answers'}
+                      {Type !== TEXT ? t('choices') : t('answers')}
                     </label>
                     <div className="pb-2">
                       {Choices.map((choice: string, idx: number) => (
@@ -202,7 +202,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                             name="Choice"
                             type="text"
                             placeholder={Type !== TEXT ? `Choice ${idx + 1}` : `Answer ${idx + 1}`}
-                            className="my-1 w-60 ml-2 border rounded-md"
+                            className="my-1 px-1 w-60 ml-2 border rounded-md"
                           />
                           <div className="flex ml-1 mt-1.2">
                             {Choices.length > 1 && (
@@ -238,9 +238,9 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                   <div className="w-[45%]">
                     {Type !== RANK && (
                       <>
-                        <div className="pb-4">Additional properties </div>
+                        <div className="pb-4">{t('additionalProperties')} </div>
                         <label className="block text-md font-medium text-gray-500">
-                          Max number of choices
+                          {t('maxChoices')}
                         </label>
                         <input
                           value={MaxN}
@@ -248,8 +248,8 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                           name="MaxN"
                           min="1"
                           type="number"
-                          placeholder="Enter the MaxN"
-                          className="my-1 w-32 ml-1 border rounded-md"
+                          placeholder={t('enterMaxN')}
+                          className="my-1 px-1 w-32 ml-1 border rounded-md"
                         />
                         <div className="text-red-600">
                           {errors
@@ -259,7 +259,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                             ))}
                         </div>
                         <label className="block text-md font-medium text-gray-500">
-                          Min number of choices
+                          {t('minChoices')}
                         </label>
                         <input
                           value={MinN}
@@ -268,8 +268,8 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                           max={MaxN < MAX_MINN ? MaxN : MAX_MINN}
                           min="0"
                           type="number"
-                          placeholder="Enter the MinN"
-                          className="my-1 w-32 ml-1 border rounded-md"
+                          placeholder={t('enterMinN')}
+                          className="my-1 px-1 w-32 ml-1 border rounded-md"
                         />
                         <div className="text-red-600">
                           {errors
