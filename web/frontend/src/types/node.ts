@@ -14,4 +14,9 @@ interface DKGInfo {
   Error: { Title: string; Code: number; Message: string; Args: string[] };
 }
 
-export type { DKGInfo };
+interface NodeProxyAddress {
+  NodeAddr: string;
+  Proxy: string;
+}
+
+export type { DKGInfo, NodeProxyAddress };

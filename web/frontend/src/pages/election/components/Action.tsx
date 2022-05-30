@@ -17,6 +17,8 @@ type ActionProps = {
   setShowModalError: (show: boolean) => void;
   ongoingAction: OngoingAction;
   setOngoingAction: (action: OngoingAction) => void;
+  nodeToSetup: [string, string];
+  setNodeToSetup: ([node, proxy]: [string, string]) => void;
   DKGStatuses: Map<string, NodeStatus>;
   setDKGStatuses: (dkgStatuses: Map<string, NodeStatus>) => void;
 };
@@ -32,6 +34,8 @@ const Action: FC<ActionProps> = ({
   setShowModalError,
   ongoingAction,
   setOngoingAction,
+  nodeToSetup,
+  setNodeToSetup,
   DKGStatuses,
   setDKGStatuses,
 }) => {
@@ -46,6 +50,8 @@ const Action: FC<ActionProps> = ({
     setShowModalError,
     ongoingAction,
     setOngoingAction,
+    nodeToSetup,
+    setNodeToSetup,
     DKGStatuses,
     setDKGStatuses
   );

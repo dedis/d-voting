@@ -66,7 +66,7 @@ const pollDKG = (
 
       setTimeout(executePoll, interval, resolve, reject);
     } catch (e) {
-      return reject(new Error(JSON.stringify(e.message)));
+      return reject(e);
     }
   };
 

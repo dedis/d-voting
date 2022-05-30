@@ -1,10 +1,19 @@
 import { Results } from 'types/election';
 
-const mockRoster: string[] = [
-  'https://localhost:8001',
-  'https://localhost:8002',
-  'https://localhost:8003',
+const mockNodes: string[] = [
+  '123.456.78.9:9000',
+  '123.456.78.9:9001',
+  '123.456.78.9:9002',
+  '123.456.78.9:9003',
+  '123.456.78.9:9004',
+  '123.456.78.9:9005',
+  '123.456.78.9:9006',
+  '123.456.78.9:9007',
+  '123.456.78.9:9008',
+  '123.456.78.9:9009',
 ];
+
+const mockRoster: string[] = ['123.456.78.9:9000', '123.456.78.9:9001', '123.456.78.9:9002'];
 
 const mockElection1: any = {
   MainTitle: 'Life on the campus',
@@ -220,4 +229,5 @@ export {
   mockElectionResult22,
   mockElectionResult23,
   mockRoster,
+  mockNodes,
 };

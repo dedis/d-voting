@@ -10,6 +10,7 @@ import {
   mockElectionResult21,
   mockElectionResult22,
   mockElectionResult23,
+  mockNodes,
   mockRoster,
 } from './mockData';
 
@@ -23,11 +24,13 @@ const setupMockElection = () => {
   const mockDKGNotInitialized: Map<string, NodeStatus> = new Map();
 
   // Mock of the node proxy mapping
-  const mockNodeProxyAddresses: Map<ID, Map<string, string>> = new Map();
-  const mockAddresses: Map<string, string> = new Map();
+  const mockNodeProxyAddresses: Map<string, string> = new Map();
+
+  mockNodes.forEach((node, index) => {
+    mockNodeProxyAddresses.set(node, 'https://example' + index + '.com');
+  });
 
   mockRoster.forEach((node) => {
-    mockAddresses.set(node, node);
     mockDKGSetup.set(node, NodeStatus.Initialized);
     mockDKGNotInitialized.set(node, NodeStatus.NotInitialized);
   });
@@ -51,7 +54,6 @@ const setupMockElection = () => {
   mockResults.set(electionID1, [mockElectionResult11, mockElectionResult12]);
 
   mockDKG.set(electionID1, mockDKGNotInitialized);
-  mockNodeProxyAddresses.set(electionID1, mockAddresses);
 
   mockElections.set(electionID2, {
     ElectionID: electionID2,
@@ -66,7 +68,6 @@ const setupMockElection = () => {
 
   mockResults.set(electionID2, [mockElectionResult21, mockElectionResult22, mockElectionResult23]);
   mockDKG.set(electionID2, mockDKGSetup);
-  mockNodeProxyAddresses.set(electionID2, mockAddresses);
 
   const electionID3 = 'BnFGHgLmf';
   mockElections.set(electionID3, {
@@ -82,7 +83,6 @@ const setupMockElection = () => {
 
   mockResults.set(electionID3, [mockElectionResult21, mockElectionResult22, mockElectionResult23]);
   mockDKG.set(electionID3, mockDKGSetup);
-  mockNodeProxyAddresses.set(electionID3, mockAddresses);
 
   for (let j = 0; j < 5; j++) {
     let electionID11 = '36kSJ0t' + j;
@@ -100,7 +100,6 @@ const setupMockElection = () => {
     });
 
     mockResults.set(electionID11, [mockElectionResult11, mockElectionResult12]);
-    mockNodeProxyAddresses.set(electionID11, mockAddresses);
 
     mockElections.set(electionID22, {
       ElectionID: electionID22,
@@ -118,7 +117,6 @@ const setupMockElection = () => {
       mockElectionResult22,
       mockElectionResult23,
     ]);
-    mockNodeProxyAddresses.set(electionID22, mockAddresses);
 
     if (j >= Status.Open) {
       mockDKG.set(electionID11, mockDKGSetup);

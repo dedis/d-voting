@@ -39,23 +39,24 @@ const ChooseProxyModal: FC<ChooseProxyModalProps> = ({
   const proxyCheckbox = () => {
     return (
       <>
-        {Array.from(nodeProxyAddresses).map(([node, proxy], index) => (
-          <div className="flex items-center my-4 ml-4" key={node}>
-            <input
-              id={proxy}
-              type="radio"
-              className="w-4 h-4 border-gray-300 focus:ring-2 focus:ring-blue-300 cursor-pointer"
-              checked={node === nodeToSetup[0]}
-              onChange={() => handleCheck(node, proxy)}
-            />
-            <label
-              htmlFor={proxy}
-              className="block ml-2 text-sm font-medium text-gray-700 cursor-pointer"
-              onChange={() => handleCheck(node, proxy)}>
-              Node {index} ({node})
-            </label>
-          </div>
-        ))}
+        {nodeProxyAddresses !== null &&
+          Array.from(nodeProxyAddresses).map(([node, proxy], index) => (
+            <div className="flex items-center my-4 ml-4" key={node}>
+              <input
+                id={proxy}
+                type="radio"
+                className="w-4 h-4 border-gray-300 focus:ring-2 focus:ring-blue-300 cursor-pointer"
+                checked={node === nodeToSetup[0]}
+                onChange={() => handleCheck(node, proxy)}
+              />
+              <label
+                htmlFor={proxy}
+                className="block ml-2 text-sm font-medium text-gray-700 cursor-pointer"
+                onChange={() => handleCheck(node, proxy)}>
+                Node {index} ({node})
+              </label>
+            </div>
+          ))}
       </>
     );
   };

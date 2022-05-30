@@ -1,34 +1,31 @@
 import React, { FC, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { LightElectionInfo, Status } from 'types/election';
+import { LightElectionInfo } from 'types/election';
 import ElectionRow from './ElectionRow';
-import { ID } from 'types/configuration';
 
 type ElectionTableProps = {
   elections: LightElectionInfo[];
-  electionStatuses: Map<ID, Status>;
-  setElectionsStatuses: (status: Map<ID, Status>) => void;
 };
 
 // Returns a table where each line corresponds to an election with
 // its name, status and a quickAction if available
 const ELECTION_PER_PAGE = 10;
 
-const ElectionTable: FC<ElectionTableProps> = ({
-  elections,
-  electionStatuses,
-  setElectionsStatuses,
-}) => {
+const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
   const { t } = useTranslation();
   const [pageIndex, setPageIndex] = useState(0);
   const [electionsToDisplay, setElectionsToDisplay] = useState<LightElectionInfo[]>([]);
-  const [initialElectionStatuses, setInitialElectionStatuses] = useState<Map<ID, Status>>(
-    new Map()
-  );
 
-  const partitionArray = (array: LightElectionInfo[], size: number) =>
-    array.map((_v, i) => (i % size === 0 ? array.slice(i, i + size) : null)).filter((v) => v);
+  const partitionArray = (array: LightElectionInfo[], size: number) => {
+    if (array !== null) {
+      return array
+        .map((_v, i) => (i % size === 0 ? array.slice(i, i + size) : null))
+        .filter((v) => v);
+    }
+
+    return [];
+  };
 
   useEffect(() => {
     if (elections !== null) {
@@ -66,34 +63,23 @@ const ElectionTable: FC<ElectionTableProps> = ({
             </tr>
           </thead>
           <tbody>
-            <>
-              {electionsToDisplay
-                ? electionsToDisplay.map((election) => (
-                    <React.Fragment key={election.ElectionID}>
-                      <ElectionRow
-                        election={election}
-                        electionStatuses={electionStatuses}
-                        setElectionsStatuses={setElectionsStatuses}
-                        initialElectionStatuses={initialElectionStatuses}
-                        setInitialElectionStatuses={setInitialElectionStatuses}
-                      />
-                    </React.Fragment>
-                  ))
-                : null}
-            </>
+            {electionsToDisplay !== undefined &&
+              electionsToDisplay.map((election) => (
+                <React.Fragment key={election.ElectionID}>
+                  <ElectionRow election={election} />
+                </React.Fragment>
+              ))}
           </tbody>
         </table>
         <nav
           className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6"
           aria-label="Pagination">
-          <div className="hidden sm:block">
-            <p className="text-sm text-gray-700">
-              {t('showing')} <span className="font-medium">{pageIndex + 1}</span> /{' '}
-              <span className="font-medium">
-                {partitionArray(elections, ELECTION_PER_PAGE).length}
-              </span>{' '}
-              {t('of')} <span className="font-medium">{elections.length}</span> {t('results')}
-            </p>
+          <div className="hidden sm:block text-sm text-gray-700">
+            {t('showingNOverMOfXResults', {
+              n: pageIndex + 1,
+              m: partitionArray(elections, ELECTION_PER_PAGE).length,
+              x: `${elections !== null ? elections.length : 0}`,
+            })}
           </div>
           <div className="flex-1 flex justify-between sm:justify-end">
             <button
