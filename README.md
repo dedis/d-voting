@@ -137,7 +137,7 @@ Then you should be able to run the setup script:
 With this other script you can choose the number of nodes that you want to set up:
 
 ```sh
-./setupnNode.sh 3
+./setupnNode.sh -n 3 -d false
 ```
 
 This script will setup the nodes and services. If you restart do not forget to
