@@ -302,13 +302,7 @@ const textsSchema = yup.object({
         if (Choices.length !== MaxN) {
           return this.createError({
             path,
-            message: `Choices array length should be equal to MaxN in texts [objectID: ${ID}]`,
-          });
-        }
-        if (Choices.includes('')) {
-          return this.createError({
-            path,
-            message: `Choices should not be empty in texts [objectID: ${ID}]`,
+            message: `Choices array length should be equal to the number of choices [objectID: ${ID}]`,
           });
         }
         return true;

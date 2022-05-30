@@ -24,7 +24,7 @@ const newRank = (): types.RankQuestion => {
     Title: '',
     MaxN: 2,
     MinN: 2,
-    Choices: [''],
+    Choices: ['', ''],
     Type: RANK,
   };
 };
