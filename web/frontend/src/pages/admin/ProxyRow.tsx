@@ -12,6 +12,8 @@ type ProxyRowProps = {
 };
 
 const ProxyRow: FC<ProxyRowProps> = ({ node, proxy, index }) => {
+  // TODO: add delete button
+
   const { t } = useTranslation();
   const fctx = useContext(FlashContext);
   const authCtx = useContext(AuthContext);
@@ -81,8 +83,10 @@ const ProxyRow: FC<ProxyRowProps> = ({ node, proxy, index }) => {
     setError(null);
   };
 
+  const handleDelete = () => {};
+
   return (
-    <tr key={node} className="bg-white border-b">
+    <tr key={node} className="bg-white border-b hover:bg-gray-50">
       <td scope="row" className="px-6 py-4 font-medium text-gray-600 whitespace-nowrap">
         {t('node')} {index} ({node})
       </td>
@@ -109,21 +113,28 @@ const ProxyRow: FC<ProxyRowProps> = ({ node, proxy, index }) => {
               <div>
                 <button
                   onClick={() => handleSave()}
-                  className="font-medium text-indigo-600 hover:underline mx-2">
+                  className="font-medium text-indigo-600 hover:underline mr-2">
                   {t('save')}
                 </button>
                 <button
                   onClick={() => handleCancel()}
-                  className="font-medium text-indigo-600 hover:underline">
+                  className="font-medium text-indigo-600 hover:underline mr-2">
                   {t('cancel')}
+                </button>
+                <button
+                  onClick={() => handleDelete()}
+                  className="font-medium text-indigo-600 hover:underline">
+                  {t('delete')}
                 </button>
               </div>
             ) : (
-              <button
-                onClick={() => handleEdit()}
-                className="font-medium text-indigo-600 hover:underline">
-                {t('edit')}
-              </button>
+              <div>
+                <button
+                  onClick={() => handleEdit()}
+                  className="font-medium text-indigo-600 hover:underline">
+                  {t('edit')}
+                </button>
+              </div>
             )}
           </>
         )}

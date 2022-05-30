@@ -1,53 +1,44 @@
-import React, { FC, useContext, useEffect, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ProxyRow from './ProxyRow';
-import * as endpoints from 'components/utils/Endpoints';
-import useFetchCall from 'components/utils/useFetchCall';
-import { FlashContext, FlashLevel } from 'index';
-import Loading from 'pages/Loading';
 
-const DKGTable: FC = () => {
+const NODE_PROXY_PER_PAGE = 5;
+
+type DKGTableProps = {
+  nodeProxyAddresses: Map<string, string>;
+};
+
+const DKGTable: FC<DKGTableProps> = ({ nodeProxyAddresses }) => {
   const { t } = useTranslation();
-  const fcxt = useContext(FlashContext);
+  const [nodeProxyToDisplay, setNodeProxyToDisplay] = useState<Array<[string, string]>>([]);
+  const [pageIndex, setPageIndex] = useState(0);
 
-  const abortController = new AbortController();
-  const signal = abortController.signal;
-
-  const request = {
-    method: 'GET',
-    signal: signal,
+  const partitionMap = (nodeProxy: Map<string, string>, size: number): [string, string][][] => {
+    const array: [string, string][] = Array.from(nodeProxy);
+    return array
+      .map((_value, index) => (index % size === 0 ? array.slice(index, index + size) : null))
+      .filter((v) => v);
   };
 
-  const [nodeProxyObject, nodeProxyLoading, nodeProxyError] = useFetchCall(
-    endpoints.getProxiesAddresses,
-    request
-  );
-
-  const [nodeProxyAddresses, setNodeProxyAddresses] = useState(null);
-
   useEffect(() => {
-    if (nodeProxyError !== null) {
-      fcxt.addMessage(nodeProxyError.message, FlashLevel.Error);
+    if (nodeProxyAddresses.size) {
+      setNodeProxyToDisplay(partitionMap(nodeProxyAddresses, NODE_PROXY_PER_PAGE)[pageIndex]);
     }
+  }, [nodeProxyAddresses, pageIndex]);
 
-    if (nodeProxyObject !== null) {
-      const newNodeProxyAddresses = new Map();
-
-      nodeProxyObject.Proxies.forEach((value) => {
-        Object.entries(value).forEach(([node, proxy]) => {
-          newNodeProxyAddresses.set(node, proxy);
-        });
-      });
-
-      setNodeProxyAddresses(newNodeProxyAddresses);
+  const handlePrevious = (): void => {
+    if (pageIndex > 0) {
+      setPageIndex(pageIndex - 1);
     }
+  };
 
-    return () => {
-      abortController.abort();
-    };
-  }, [nodeProxyObject, nodeProxyError]);
+  const handleNext = (): void => {
+    if (partitionMap(nodeProxyAddresses, NODE_PROXY_PER_PAGE).length > pageIndex + 1) {
+      setPageIndex(pageIndex + 1);
+    }
+  };
 
-  return !nodeProxyLoading ? (
+  return (
     <div className="relative divide-y overflow-x-auto shadow-md sm:rounded-lg mt-2">
       <table className="w-full text-sm text-left text-gray-500">
         <thead className="text-xs text-gray-700 uppercase bg-gray-50">
@@ -64,17 +55,39 @@ const DKGTable: FC = () => {
           </tr>
         </thead>
         <tbody>
-          <>
-            {nodeProxyAddresses !== null &&
-              Array.from(nodeProxyAddresses).map(([node, proxy], index) => (
-                <ProxyRow node={node} proxy={proxy} index={index} />
-              ))}
-          </>
+          {nodeProxyToDisplay !== undefined &&
+            nodeProxyToDisplay.map(([node, proxy], index) => (
+              <ProxyRow node={node} proxy={proxy} index={index} />
+            ))}
         </tbody>
       </table>
+
+      <nav
+        className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6"
+        aria-label="Pagination">
+        <div className="hidden sm:block text-sm text-gray-700">
+          {t('showingNOverMOfXResults', {
+            n: pageIndex + 1,
+            m: partitionMap(nodeProxyAddresses, NODE_PROXY_PER_PAGE).length,
+            x: `${nodeProxyAddresses !== null ? nodeProxyAddresses.size : 0}`,
+          })}
+        </div>
+        <div className="flex-1 flex justify-between sm:justify-end">
+          <button
+            disabled={pageIndex === 0}
+            onClick={handlePrevious}
+            className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            {t('previous')}
+          </button>
+          <button
+            disabled={partitionMap(nodeProxyAddresses, NODE_PROXY_PER_PAGE).length <= pageIndex + 1}
+            onClick={handleNext}
+            className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            {t('next')}
+          </button>
+        </div>
+      </nav>
     </div>
-  ) : (
-    <Loading />
   );
 };
 

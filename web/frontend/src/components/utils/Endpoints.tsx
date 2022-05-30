@@ -20,8 +20,9 @@ export const getDKGActors = (Proxy: string, ElectionID: string) =>
   encodeURI(`${Proxy}/evoting/services/dkg/actors/${ElectionID}`);
 
 export const newProxyAddress = '/api/proxies/';
-export const editProxyAddress = (NodeAddr: string) => encodeURI(`/api/proxies/${NodeAddr}`);
-export const getProxyAddress = (NodeAddr: string) => encodeURI(`/api/proxies/${NodeAddr}`);
+export const editProxyAddress = (NodeAddr: string) =>
+  `/api/proxies/${encodeURIComponent(NodeAddr)}`;
+export const getProxyAddress = (NodeAddr: string) => `/api/proxies/${encodeURIComponent(NodeAddr)}`;
 export const getProxiesAddresses = '/api/proxies';
 
 // public information can be directly fetched from dela nodes

@@ -377,13 +377,17 @@ export const handlers = [
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
-  rest.get(endpoints.getProxyAddress(':NodeAddr'), async (req, res, ctx) => {
-    const { NodeAddr } = req.params;
-    const proxy = mockNodeProxyAddresses.get(NodeAddr as string);
+  rest.get(endpoints.getProxyAddress('*'), async (req, res, ctx) => {
+    const NodeAddr = req.params[0];
+    console.log(NodeAddr);
+    const proxy = mockNodeProxyAddresses.get(decodeURIComponent(NodeAddr as string));
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    return res(ctx.status(200), ctx.json({ NodeAddr: NodeAddr, Proxy: proxy }));
+    return res(
+      ctx.status(200),
+      ctx.json({ NodeAddr: decodeURIComponent(NodeAddr as string), Proxy: proxy })
+    );
   }),
 
   rest.get(endpoints.getProxiesAddresses, async (req, res, ctx) => {
@@ -395,11 +399,11 @@ export const handlers = [
     return res(ctx.status(200), ctx.json({ Proxies: response }));
   }),
 
-  rest.put(endpoints.editProxyAddress(':NodeAddr'), async (req, res, ctx) => {
-    const { NodeAddr } = req.params;
+  rest.put(endpoints.editProxyAddress('*'), async (req, res, ctx) => {
+    const NodeAddr = req.params[0];
     const body = req.body as UpdateProxyAddress;
 
-    mockNodeProxyAddresses.set(NodeAddr as string, body.Proxy);
+    mockNodeProxyAddresses.set(decodeURIComponent(NodeAddr as string) as string, body.Proxy);
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
