@@ -53,6 +53,15 @@ const newText = (): types.TextQuestion => {
   };
 };
 
+const newAnswer = (): types.Answers => {
+  return {
+    SelectAnswers: new Map<ID, boolean[]>(),
+    RankAnswers: new Map<ID, number[]>(),
+    TextAnswers: new Map<ID, string[]>(),
+    Errors: new Map<ID, string>(),
+  };
+};
+
 // Create a deep copy of the answers
 const answersFrom = (answers: types.Answers): types.Answers => {
   return {
@@ -98,6 +107,7 @@ const toArraysOfSubjectElement = (
 
 export {
   emptyConfiguration,
+  newAnswer,
   newSubject,
   newRank,
   newSelect,

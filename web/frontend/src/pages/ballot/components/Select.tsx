@@ -6,7 +6,7 @@ import { answersFrom } from 'types/getObjectType';
 type SelectProps = {
   select: SelectQuestion;
   answers: Answers;
-  setAnswers: React.Dispatch<React.SetStateAction<Answers>>;
+  setAnswers: (answers: Answers) => void;
 };
 
 const Select: FC<SelectProps> = ({ select, answers, setAnswers }) => {
@@ -52,7 +52,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers }) => {
       hint = t('selectBetween', { minSelect: min, maxSelect: max });
     }
 
-    return <div className="text-sm pl-2 pb-2 text-gray-400">{hint}</div>;
+    return <div className="text-sm pl-2 pb-2 sm:pl-4 text-gray-400">{hint}</div>;
   };
 
   const choiceDisplay = (isChecked: boolean, choice: string, choiceIndex: number) => {
@@ -83,7 +83,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers }) => {
             choiceDisplay(isChecked, select.Choices[choiceIndex], choiceIndex)
         )}
       </div>
-      <div className="text-red-600 text-sm py-2 sm:pl-2 pl-1">{answers.Errors.get(select.ID)}</div>
+      <div className="text-red-600 text-sm py-2 sm:pl-4 pl-2">{answers.Errors.get(select.ID)}</div>
     </div>
   );
 };

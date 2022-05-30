@@ -164,16 +164,16 @@ const ElectionForm: FC<ElectionFormProps> = () => {
             ) : (
               <CloudUploadIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
             )}
-            {t('createElec')}
+            {t('createElection')}
           </button>
           <button
             type="button"
             className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
             onClick={() => setConf(emptyConf)}>
             <TrashIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-            {t('clearElec')}
+            {t('clearElection')}
           </button>
-          <DownloadButton exportData={exportData}>{t('exportElecJSON')}</DownloadButton>
+          <DownloadButton exportData={exportData}>{t('exportJSON')}</DownloadButton>
         </div>
       </div>
     </>

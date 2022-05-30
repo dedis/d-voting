@@ -150,7 +150,7 @@ const RightSideNavBar = ({ authCtx, handleLogout, fctx, t }) => (
   <div className="absolute hidden inset-y-0 right-0 flex items-center pr-2 md:static md:inset-auto md:flex md:ml-6 md:pr-0">
     {authCtx.isLogged && (authCtx.role === 'admin' || authCtx.role === 'operator') && (
       <NavLink title={t('navBarCreateElection')} to={ROUTE_ELECTION_CREATE}>
-        <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+        <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border-2 border-indigo-500 rounded-md shadow-sm text-base font-medium text-indigo-500 bg-white hover:bg-indigo-500 hover:text-white">
           <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
           {t('navBarCreateElection')}
         </div>
