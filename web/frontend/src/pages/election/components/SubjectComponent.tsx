@@ -227,7 +227,11 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
     setCurrentQuestion(question);
   };
 
-  const dropdownContent = [
+  const dropdownContent: {
+    name: string;
+    icon: JSX.Element;
+    onClick: () => void;
+  }[] = [
     {
       name: 'addRank',
       icon: <SwitchVerticalIcon className="mr-2 h-5 w-5" aria-hidden="true" />,

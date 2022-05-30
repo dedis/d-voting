@@ -1,11 +1,22 @@
 import { Menu, Transition } from '@headlessui/react';
 import { DotsVerticalIcon } from '@heroicons/react/outline';
-import { Fragment } from 'react';
+import PropTypes from 'prop-types';
+import { FC, Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const removeElementNames = ['removeSubject', 'removeselect', 'removerank', 'removetext'];
 
-const SubjectDropdown = ({ dropdownContent }) => {
+interface DropdownElement {
+  name?: string;
+  icon?: JSX.Element;
+  onClick?: () => void;
+}
+
+interface SubjectDropdownProps {
+  dropdownContent: DropdownElement[];
+}
+
+const SubjectDropdown: FC<SubjectDropdownProps> = ({ dropdownContent }) => {
   const { t } = useTranslation();
 
   return (
@@ -68,6 +79,16 @@ const SubjectDropdown = ({ dropdownContent }) => {
       </Menu>
     </div>
   );
+};
+
+SubjectDropdown.propTypes = {
+  dropdownContent: PropTypes.arrayOf(
+    PropTypes.shape({
+      name: PropTypes.string.isRequired,
+      icon: PropTypes.element.isRequired,
+      onClick: PropTypes.func.isRequired,
+    }).isRequired
+  ).isRequired,
 };
 
 export default SubjectDropdown;

@@ -18,7 +18,11 @@ const Question: FC<QuestionProps> = ({ question, notifyParent, removeQuestion })
   const { Title, Type } = question;
   const [openModal, setOpenModal] = useState<boolean>(false);
 
-  const dropdownContent = [
+  const dropdownContent: {
+    name: string;
+    icon: JSX.Element;
+    onClick: () => void;
+  }[] = [
     {
       name: `edit${Type}`,
       icon: <PencilAltIcon className="mr-2 h-5 w-5" aria-hidden="true" />,
