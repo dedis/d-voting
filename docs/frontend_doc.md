@@ -264,6 +264,10 @@ Return:
 
 ```
 
+`NodeAddr` MUST be URL encoded. For example `123.456.9:9000` MUST become
+`123.456.9%3A9000`. The native javascript functions `decodeURIComponent` and
+`encodeURIComponent` can be used.
+
 ## Get all the node-proxy mappings
 
 | | |
@@ -304,6 +308,10 @@ Return:
 
 ```
 
+`NodeAddr` MUST be URL encoded. For example `123.456.9:9000` MUST become
+`123.456.9%3A9000`. The native javascript functions `decodeURIComponent` and
+`encodeURIComponent` can be used.
+
 ## Delete the node-proxy address map
 | | |
 |-|-|
@@ -319,6 +327,10 @@ Return:
 ```
 
 ```
+
+`NodeAddr` MUST be URL encoded. For example `123.456.9:9000` MUST become
+`123.456.9%3A9000`. The native javascript functions `decodeURIComponent` and
+`encodeURIComponent` can be used.
 
 # Production settings
 
