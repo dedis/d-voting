@@ -10,27 +10,40 @@ import {
 import * as endpoints from '../components/utils/Endpoints';
 
 import {
+  EditDKGActorBody,
   EditElectionBody,
+  NewDKGBody,
   NewElectionBody,
   NewElectionVoteBody,
+  NewProxyAddress,
   NewUserRole,
   RemoveUserRole,
+  UpdateProxyAddress,
 } from '../types/frontendRequestBody';
 
 import { ID } from 'types/configuration';
-import { STATUS } from 'types/election';
+import { Action, Status } from 'types/election';
 import { setupMockElection, toLightElectionInfo } from './setupMockElections';
 import setupMockUserDB from './setupMockUserDB';
-import { ROLE } from 'types/userRole';
+import { UserRole } from 'types/userRole';
+import { mockRoster } from './mockData';
+import { NodeStatus } from 'types/node';
 
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;
 
-const { mockElections, mockResults } = setupMockElection();
+const { mockElections, mockResults, mockDKG, mockNodeProxyAddresses } = setupMockElection();
 
 var mockUserDB = setupMockUserDB();
 
-const isAuthorized = (roles: ROLE[]): boolean => {
+const RESPONSE_TIME = 500;
+const CHANGE_STATUS_TIMER = 2000;
+const INIT_TIMER = 3000;
+const SETUP_TIMER = 4000;
+const SHUFFLE_TIMER = 2000;
+const DECRYPT_TIMER = 8000;
+
+const isAuthorized = (roles: UserRole[]): boolean => {
   const id = sessionStorage.getItem('id');
   const userRole = mockUserDB.find(({ sciper }) => sciper === id).role;
 
@@ -48,11 +61,11 @@ export const handlers = [
       ? {
           lastname: 'Bobster',
           firstname: 'Alice',
-          role: ROLE.Admin,
+          role: UserRole.Admin,
           sciper: userId,
         }
       : {};
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(
       ctx.status(200),
@@ -68,7 +81,7 @@ export const handlers = [
     sessionStorage.setItem('is-authenticated', 'true');
     sessionStorage.setItem('id', mockUserID.toString());
 
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200), ctx.json({ url: url }));
   }),
@@ -79,7 +92,7 @@ export const handlers = [
   }),
 
   rest.get(endpoints.elections, async (req, res, ctx) => {
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(
       ctx.status(200),
@@ -93,7 +106,7 @@ export const handlers = [
 
   rest.get(endpoints.election(':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200), ctx.json(mockElections.get(ElectionID as ID)));
   }),
@@ -101,9 +114,9 @@ export const handlers = [
   rest.post(endpoints.newElection, async (req, res, ctx) => {
     const body = req.body as NewElectionBody;
 
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([ROLE.Admin, ROLE.Operator])) {
+    if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
       return res(
         ctx.status(403),
         ctx.json({ message: 'You are not authorized to create an election' })
@@ -112,12 +125,18 @@ export const handlers = [
 
     const createElection = (configuration: any) => {
       const newElectionID = uid();
+      const newDKGStatus = new Map();
+      mockRoster.forEach((node) => {
+        newDKGStatus.set(node, NodeStatus.NotInitialized);
+      });
+      mockDKG.set(newElectionID, newDKGStatus);
 
       mockElections.set(newElectionID, {
         ElectionID: newElectionID,
-        Status: STATUS.Open,
+        Status: Status.Initial,
         Pubkey: 'DEAEV6EMII',
         Result: [],
+        Roster: mockRoster,
         Configuration: configuration,
         BallotSize: 290,
         ChunksPerBallot: 10,
@@ -136,7 +155,7 @@ export const handlers = [
 
   rest.post(endpoints.newElectionVote(':ElectionID'), async (req, res, ctx) => {
     const { Ballot }: NewElectionVoteBody = req.body as NewElectionVoteBody;
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(
       ctx.status(200),
@@ -149,12 +168,12 @@ export const handlers = [
   rest.put(endpoints.editElection(':ElectionID'), async (req, res, ctx) => {
     const body = req.body as EditElectionBody;
     const { ElectionID } = req.params;
+    var status = Status.Initial;
+    const Result = [];
 
-    let Status = STATUS.Initial;
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    await new Promise((r) => setTimeout(r, 1000));
-
-    if (!isAuthorized([ROLE.Admin, ROLE.Operator])) {
+    if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
       return res(
         ctx.status(403),
         ctx.json({ message: 'You are not authorized to update an election' })
@@ -162,25 +181,32 @@ export const handlers = [
     }
 
     switch (body.Action) {
-      case 'open':
-        Status = STATUS.Open;
+      case Action.Open:
+        status = Status.Open;
         break;
-      case 'close':
-        Status = STATUS.Closed;
+      case Action.Close:
+        status = Status.Closed;
         break;
-      case 'combineShares':
-        Status = STATUS.DecryptedBallots;
+      case Action.CombineShares:
+        status = Status.ResultAvailable;
+        mockResults.get(ElectionID as string).forEach((result) => Result.push(result));
         break;
-      case 'cancel':
-        Status = STATUS.Canceled;
+      case Action.Cancel:
+        status = Status.Canceled;
         break;
       default:
         break;
     }
-    mockElections.set(ElectionID as string, {
-      ...mockElections.get(ElectionID as string),
-      Status,
-    });
+
+    setTimeout(
+      () =>
+        mockElections.set(ElectionID as string, {
+          ...mockElections.get(ElectionID as string),
+          Status: status,
+          Result,
+        }),
+      CHANGE_STATUS_TIMER
+    );
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
@@ -188,56 +214,125 @@ export const handlers = [
   rest.delete(endpoints.editElection(':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
     mockElections.delete(ElectionID as string);
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200), ctx.text('Election deleted'));
+  }),
+
+  rest.post(endpoints.dkgActors, async (req, res, ctx) => {
+    const body = req.body as NewDKGBody;
+    const newDKGStatus = new Map(mockDKG.get(body.ElectionID));
+
+    mockElections.get(body.ElectionID).Roster.forEach((node) => {
+      newDKGStatus.set(node, NodeStatus.Initialized);
+    });
+
+    setTimeout(() => {
+      mockDKG.set(body.ElectionID, newDKGStatus);
+    }, INIT_TIMER);
+
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
+
+    return res(ctx.status(200));
+  }),
+
+  rest.put(endpoints.editDKGActors(':ElectionID'), async (req, res, ctx) => {
+    const { ElectionID } = req.params;
+    const body = req.body as EditDKGActorBody;
+
+    switch (body.Action) {
+      case Action.Setup:
+        const newDKGStatus = new Map(mockDKG.get(ElectionID as string));
+        var node = '';
+
+        mockElections.get(ElectionID as string).Roster.forEach((n) => {
+          const p = mockNodeProxyAddresses.get(n);
+          if (p === body.Proxy) {
+            node = n;
+          }
+        });
+
+        newDKGStatus.set(node, NodeStatus.Setup);
+
+        setTimeout(() => mockDKG.set(ElectionID as string, newDKGStatus), SETUP_TIMER);
+        break;
+      case Action.BeginDecryption:
+        setTimeout(
+          () =>
+            mockElections.set(ElectionID as string, {
+              ...mockElections.get(ElectionID as string),
+              Status: Status.PubSharesSubmitted,
+            }),
+          DECRYPT_TIMER
+        );
+
+        break;
+      default:
+        break;
+    }
+
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
+
+    return res(ctx.status(200), ctx.text('Action successfully done'));
+  }),
+
+  rest.get(endpoints.getDKGActors('*', ':ElectionID'), async (req, res, ctx) => {
+    const { ElectionID } = req.params;
+    const Proxy = req.params[0];
+    var node = '';
+
+    mockElections.get(ElectionID as string).Roster.forEach((n) => {
+      const p = mockNodeProxyAddresses.get(n);
+      if (p === Proxy) {
+        node = n;
+      }
+    });
+
+    const currentNodeStatus = mockDKG.get(ElectionID as string).get(node);
+
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
+
+    if (currentNodeStatus === NodeStatus.NotInitialized) {
+      return res(ctx.status(404), ctx.json(`Election ${ElectionID} does not exist`));
+    } else {
+      return res(
+        ctx.status(200),
+        ctx.json({
+          Status: currentNodeStatus,
+          Error: { Title: '', Code: 0, Message: '', Args: {} },
+        })
+      );
+    }
   }),
 
   rest.put(endpoints.editShuffle(':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
 
-    await new Promise((r) => setTimeout(r, 1000));
-
-    if (!isAuthorized([ROLE.Admin, ROLE.Operator])) {
+    if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
       return res(
         ctx.status(403),
         ctx.json({ message: 'You are not authorized to update an election' })
       );
     }
 
-    mockElections.set(ElectionID as string, {
-      ...mockElections.get(ElectionID as string),
-      Status: STATUS.ShuffledBallots,
-    });
+    setTimeout(
+      () =>
+        mockElections.set(ElectionID as string, {
+          ...mockElections.get(ElectionID as string),
+          Status: Status.ShuffledBallots,
+        }),
+      SHUFFLE_TIMER
+    );
 
-    return res(ctx.status(200), ctx.text('Action successfully done'));
-  }),
-
-  rest.put(endpoints.editDKGActors(':ElectionID'), async (req, res, ctx) => {
-    const { ElectionID } = req.params;
-
-    await new Promise((r) => setTimeout(r, 1000));
-
-    if (!isAuthorized([ROLE.Admin, ROLE.Operator])) {
-      return res(
-        ctx.status(403),
-        ctx.json({ message: 'You are not authorized to update an election' })
-      );
-    }
-
-    mockElections.set(ElectionID as string, {
-      ...mockElections.get(ElectionID as string),
-      Result: mockResults.get(ElectionID as string),
-      Status: STATUS.ResultAvailable,
-    });
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
   rest.get(endpoints.ENDPOINT_USER_RIGHTS, async (req, res, ctx) => {
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([ROLE.Admin])) {
+    if (!isAuthorized([UserRole.Admin])) {
       return res(
         ctx.status(403),
         ctx.json({ message: 'You are not authorized to get users rights' })
@@ -250,9 +345,9 @@ export const handlers = [
   rest.post(endpoints.ENDPOINT_ADD_ROLE, async (req, res, ctx) => {
     const body = req.body as NewUserRole;
 
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([ROLE.Admin])) {
+    if (!isAuthorized([UserRole.Admin])) {
       return res(ctx.status(403), ctx.json({ message: 'You are not authorized to add a role' }));
     }
 
@@ -263,13 +358,51 @@ export const handlers = [
 
   rest.post(endpoints.ENDPOINT_REMOVE_ROLE, async (req, res, ctx) => {
     const body = req.body as RemoveUserRole;
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([ROLE.Admin])) {
+    if (!isAuthorized([UserRole.Admin])) {
       return res(ctx.status(403), ctx.json({ message: 'You are not authorized to remove a role' }));
     }
     mockUserDB = mockUserDB.filter((user) => user.sciper !== body.sciper);
 
     return res(ctx.status(200));
+  }),
+
+  rest.post(endpoints.newProxyAddress, async (req, res, ctx) => {
+    const body = req.body as NewProxyAddress;
+
+    mockNodeProxyAddresses.set(body.NodeAddr, body.Proxy);
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
+
+    return res(ctx.status(200), ctx.text('Action successfully done'));
+  }),
+
+  rest.get(endpoints.getProxyAddress(':NodeAddr'), async (req, res, ctx) => {
+    const { NodeAddr } = req.params;
+    const proxy = mockNodeProxyAddresses.get(NodeAddr as string);
+
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
+
+    return res(ctx.status(200), ctx.json({ NodeAddr: NodeAddr, Proxy: proxy }));
+  }),
+
+  rest.get(endpoints.getProxiesAddresses, async (req, res, ctx) => {
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
+
+    const response = [];
+    mockNodeProxyAddresses.forEach((proxy, node) => response.push({ [node]: proxy }));
+
+    return res(ctx.status(200), ctx.json({ Proxies: response }));
+  }),
+
+  rest.put(endpoints.editProxyAddress(':NodeAddr'), async (req, res, ctx) => {
+    const { NodeAddr } = req.params;
+    const body = req.body as UpdateProxyAddress;
+
+    mockNodeProxyAddresses.set(NodeAddr as string, body.Proxy);
+
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
+
+    return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 ];

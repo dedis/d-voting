@@ -1,6 +1,6 @@
 import { ID } from 'types/configuration';
 import { Results } from 'types/election';
-import * as endpoints from './Endpoints';
+import * as endpoints from 'components/utils/Endpoints';
 
 const useGetResults = () => {
   async function getResults(

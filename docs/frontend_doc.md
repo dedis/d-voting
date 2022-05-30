@@ -213,7 +213,112 @@ Return:
 
 `200 OK` `application/json`
 
+## Create a node-proxy mapping
+This endpoint is used to create a mapping between the address of a node and 
+the address of a proxy.
 
+| | |
+|-|-|
+|URL|`/api/proxies/`|
+|Method|`POST`|
+|Input|`application/json`|
+
+```json
+
+{
+    "NodeAddr": "123.456.78.9:9000",
+    "Proxy": "https://example.com/"
+}
+
+```
+
+Return:
+
+`200 OK` `text/plain`
+
+```
+
+```
+
+
+## Get a node-proxy mapping
+This endpoint is used to get the mapping of the address of a node and its associated proxy.  
+
+| | |
+|-|-|
+|URL|`/api/proxies/{NodeAddr}`|
+|Method|`GET`|
+|Input||
+
+
+Return:
+
+`200 OK` `application/json`
+
+```json
+
+{
+    "NodeAddr": "123.456.78.9:9000",
+    "Proxy": "https://example.com/"
+}
+
+```
+
+## Get all the node-proxy mappings
+
+| | |
+|-|-|
+|URL|`/api/proxies/`|
+|Method|`GET`|
+|Input||
+
+```json
+
+{"Proxies": [
+  {"123.456.78.9:9000": "https://example.com/"},
+  {"111.222.333.444:9000": "https://blabla.ch/"}
+]}
+
+```
+
+## Update a node-proxy mapping
+| | |
+|-|-|
+|URL|`/api/proxies/{NodeAddr}`|
+|Method|`PUT`|
+|Input||
+
+```json
+
+{
+    "Proxy": "https://blabla.ch/"
+}
+
+```
+
+Return:
+
+`200 OK` `text/plain`
+
+```
+
+```
+
+## Delete the node-proxy address map
+| | |
+|-|-|
+|URL|`/api/proxies/{NodeAddr}`|
+|Method|`DELETE`|
+|Input||
+
+
+Return:
+
+`200 OK` `text/plain`
+
+```
+
+```
 
 # Production settings
 

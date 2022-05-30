@@ -15,7 +15,7 @@ import * as endpoints from 'components/utils/Endpoints';
 import { encryptVote } from './components/VoteEncrypt';
 import { voteEncode } from './components/VoteEncode';
 import { useConfiguration } from 'components/utils/useConfiguration';
-import { STATUS } from 'types/election';
+import { Status } from 'types/election';
 import { ballotIsValid } from './components/ValidateAnswers';
 import BallotDisplay from './components/BallotDisplay';
 import ElectionClosed from './components/ElectionClosed';
@@ -129,7 +129,7 @@ const Ballot: FC = () => {
         <Loading />
       ) : (
         <>
-          {status === STATUS.Open && (
+          {status === Status.Open && (
             <div className="w-[60rem] font-sans px-4 pt-8 pb-4">
               <div className="pb-2">
                 <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
@@ -166,7 +166,7 @@ const Ballot: FC = () => {
               </div>
             </div>
           )}
-          {status !== STATUS.Open && <ElectionClosed />}
+          {status !== Status.Open && <ElectionClosed />}
         </>
       )}
     </>
