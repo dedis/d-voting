@@ -14,10 +14,12 @@ import (
 	"go.dedis.ch/dela/core/validation"
 	"golang.org/x/xerrors"
 
+	"github.com/dedis/d-voting/contracts/evoting"
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/store/kv"
@@ -46,12 +48,15 @@ func init() {
 // If you get the persistent data from an actor and then recreate an actor
 // from that data, the persistent data should be the same in both actors.
 func TestActor_MarshalJSON(t *testing.T) {
+	initMetrics()
+
 	p := NewPedersen(fake.Mino{}, &fake.Service{}, &fake.Pool{}, fake.Factory{}, fake.Signer{})
 
 	// Create new actor
 	actor1, err := p.NewActor([]byte("deadbeef"), &fake.Pool{},
 		fake.Manager{}, NewHandlerData())
 	require.NoError(t, err)
+	require.Equal(t, float64(dkg.Initialized), testutil.ToFloat64(evoting.PromElectionDkgStatus))
 
 	// Serialize its persistent data
 	actor1Buf, err := actor1.MarshalJSON()
@@ -62,8 +67,11 @@ func TestActor_MarshalJSON(t *testing.T) {
 	err = handlerData.UnmarshalJSON(actor1Buf)
 	require.NoError(t, err)
 
+	initMetrics()
+
 	actor2, err := p.NewActor([]byte("beefdead"), &fake.Pool{}, fake.Manager{}, handlerData)
 	require.NoError(t, err)
+	require.Equal(t, float64(dkg.Initialized), testutil.ToFloat64(evoting.PromElectionDkgStatus))
 
 	// Check that the persistent data is the same for both actors
 	requireActorsEqual(t, actor1, actor2)
@@ -72,6 +80,8 @@ func TestActor_MarshalJSON(t *testing.T) {
 // After initializing a Pedersen when dkgMap is not empty, the actors map should
 // contain the same information as dkgMap
 func TestPedersen_InitNonEmptyMap(t *testing.T) {
+	initMetrics()
+
 	// Create a new DKG map and fill it with data
 	dkgMap := fake.NewInMemoryDB()
 
@@ -141,8 +151,13 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 
 			_, err = p.NewActor(electionIDBuf, &fake.Pool{}, fake.Manager{}, handlerData)
 			if err != nil {
+				require.Equal(t, float64(dkg.Failed), testutil.ToFloat64(evoting.PromElectionDkgStatus))
 				return err
+			} else {
+				require.Equal(t, float64(dkg.Initialized), testutil.ToFloat64(evoting.PromElectionDkgStatus))
 			}
+
+			initMetrics()
 
 			return nil
 		})
@@ -301,6 +316,8 @@ func TestPedersen_TwoListens(t *testing.T) {
 }
 
 func TestPedersen_Setup(t *testing.T) {
+	initMetrics()
+
 	electionID := "d3adbeef"
 
 	service := fake.NewService(electionID, etypes.Election{
@@ -325,6 +342,9 @@ func TestPedersen_Setup(t *testing.T) {
 
 	_, err := actor.Setup()
 	require.EqualError(t, err, "failed to get election: election does not exist: <nil>")
+	require.Equal(t, float64(dkg.Failed), testutil.ToFloat64(evoting.PromElectionDkgStatus))
+
+	initMetrics()
 
 	actor.electionID = electionID
 
@@ -333,6 +353,7 @@ func TestPedersen_Setup(t *testing.T) {
 
 	_, err = actor.Setup()
 	require.EqualError(t, err, fake.Err("failed to stream"))
+	require.Equal(t, float64(dkg.Failed), testutil.ToFloat64(evoting.PromElectionDkgStatus))
 
 	// RPC is bogus 2
 	actor.rpc = fake.NewRPC()
@@ -396,6 +417,7 @@ func TestPedersen_Setup(t *testing.T) {
 	// We test that particular behaviour later.
 	_, err = actor.Setup()
 	require.NoError(t, err)
+	require.Equal(t, float64(dkg.Setup), testutil.ToFloat64(evoting.PromElectionDkgStatus))
 }
 
 func TestPedersen_GetPublicKey(t *testing.T) {
@@ -622,6 +644,10 @@ func TestPedersen_ComputePubshares_OK(t *testing.T) {
 
 // -----------------------------------------------------------------------------
 // Utility functions
+
+func initMetrics() {
+	evoting.PromElectionDkgStatus.Reset()
+}
 
 // actorsEqual checks that two actors hold the same data
 func requireActorsEqual(t require.TestingT, actor1, actor2 dkg.Actor) {

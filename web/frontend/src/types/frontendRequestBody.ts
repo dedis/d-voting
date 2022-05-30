@@ -1,4 +1,6 @@
-import { ROLE } from './userRole';
+import { ID } from './configuration';
+import { Action } from './election';
+import { UserRole } from './userRole';
 
 interface NewElectionBody {
   Configuration: any;
@@ -9,16 +11,45 @@ interface NewElectionVoteBody {
 }
 
 interface EditElectionBody {
-  Action: 'open' | 'close' | 'combineShares' | 'cancel';
+  Action: Action.Open | Action.Close | Action.CombineShares | Action.Cancel;
+}
+
+interface EditDKGActorBody {
+  Action: Action.Setup | Action.BeginDecryption;
+  Proxy: string;
+}
+
+interface NewDKGBody {
+  ElectionID: ID;
+  Proxy: string;
 }
 
 interface NewUserRole {
   sciper: string;
-  role: ROLE.Admin | ROLE.Operator;
+  role: UserRole.Admin | UserRole.Operator;
 }
 
 interface RemoveUserRole {
   sciper: string;
 }
 
-export type { NewElectionVoteBody, NewElectionBody, EditElectionBody, NewUserRole, RemoveUserRole };
+interface NewProxyAddress {
+  NodeAddr: string;
+  Proxy: string;
+}
+
+interface UpdateProxyAddress {
+  Proxy: string;
+}
+
+export type {
+  NewElectionVoteBody,
+  NewElectionBody,
+  EditElectionBody,
+  EditDKGActorBody,
+  NewDKGBody,
+  NewProxyAddress,
+  UpdateProxyAddress,
+  NewUserRole,
+  RemoveUserRole,
+};

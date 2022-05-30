@@ -107,6 +107,11 @@ func ForbiddenError(w http.ResponseWriter, r *http.Request, err error, args map[
 	httpErr(w, r, err, http.StatusForbidden, "not authorized / forbidden", args)
 }
 
+// NotFoundErr sets a not found error
+func NotFoundErr(w http.ResponseWriter, r *http.Request, err error, args map[string]interface{}) {
+	httpErr(w, r, err, http.StatusNotFound, "not found", args)
+}
+
 func httpErr(w http.ResponseWriter, r *http.Request, err error, code uint, title string, args map[string]interface{}) {
 	if args == nil {
 		args = make(map[string]interface{})
@@ -127,7 +132,7 @@ func httpErr(w http.ResponseWriter, r *http.Request, err error, code uint, title
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(http.StatusInternalServerError)
+	w.WriteHeader(int(code))
 	fmt.Fprintln(w, string(buf))
 }
 

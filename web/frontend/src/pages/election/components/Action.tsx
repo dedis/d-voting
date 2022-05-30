@@ -1,69 +1,69 @@
-import React, { FC, useContext, useState } from 'react';
+import React, { FC } from 'react';
 import PropTypes from 'prop-types';
-import { useTranslation } from 'react-i18next';
 
-import Modal from 'components/modal/Modal';
 import { ID } from 'types/configuration';
-import useChangeAction from 'components/utils/useChangeAction';
-import { STATUS } from 'types/election';
-import DeleteButton from 'components/utils/DeleteButton';
-import { FlashContext, FlashLevel } from 'index';
-import { useNavigate } from 'react-router-dom';
+import { OngoingAction, Status } from 'types/election';
+import { NodeStatus } from 'types/node';
+import useChangeAction from './utils/useChangeAction';
 
 type ActionProps = {
-  status: STATUS;
+  status: Status;
   electionID: ID;
-  setStatus: (status: STATUS) => void;
+  roster: string[];
+  nodeProxyAddresses: Map<string, string>;
+  setStatus: (status: Status) => void;
   setResultAvailable?: (available: boolean) => void | null;
+  setTextModalError: (text: string) => void;
+  setShowModalError: (show: boolean) => void;
+  ongoingAction: OngoingAction;
+  setOngoingAction: (action: OngoingAction) => void;
+  nodeToSetup: [string, string];
+  setNodeToSetup: ([node, proxy]: [string, string]) => void;
+  DKGStatuses: Map<string, NodeStatus>;
+  setDKGStatuses: (dkgStatuses: Map<string, NodeStatus>) => void;
 };
 
-const Action: FC<ActionProps> = ({ status, electionID, setStatus, setResultAvailable }) => {
-  const { t } = useTranslation();
-  const fctx = useContext(FlashContext);
-  const navigate = useNavigate();
-
-  const [textModalError, setTextModalError] = useState(null);
-  const [showModalError, setShowModalError] = useState(false);
-  const { getAction, modalClose, modalCancel } = useChangeAction(
+const Action: FC<ActionProps> = ({
+  status,
+  electionID,
+  roster,
+  nodeProxyAddresses,
+  setStatus,
+  setResultAvailable,
+  setTextModalError,
+  setShowModalError,
+  ongoingAction,
+  setOngoingAction,
+  nodeToSetup,
+  setNodeToSetup,
+  DKGStatuses,
+  setDKGStatuses,
+}) => {
+  const { getAction, modalClose, modalCancel, modalDelete, modalSetup } = useChangeAction(
     status,
     electionID,
+    roster,
+    nodeProxyAddresses,
     setStatus,
     setResultAvailable,
     setTextModalError,
-    setShowModalError
+    setShowModalError,
+    ongoingAction,
+    setOngoingAction,
+    nodeToSetup,
+    setNodeToSetup,
+    DKGStatuses,
+    setDKGStatuses
   );
 
-  const deleteElection = async () => {
-    const request = {
-      method: 'DELETE',
-    };
-
-    const res = await fetch(`/api/evoting/elections/${electionID}`, request);
-    if (!res.ok) {
-      const txt = await res.text();
-      fctx.addMessage(`failed to send delete request: ${txt}`, FlashLevel.Error);
-      return;
-    }
-
-    fctx.addMessage('election deleted', FlashLevel.Info);
-    navigate('/');
-  };
-
   return (
-    <span>
+    <>
       {getAction()}
       {modalClose}
       {modalCancel}
-      <DeleteButton status={status} handleDelete={deleteElection} />
-      {
-        <Modal
-          showModal={showModalError}
-          setShowModal={setShowModalError}
-          textModal={textModalError === null ? '' : textModalError}
-          buttonRightText={t('close')}
-        />
-      }
-    </span>
+      {modalDelete}
+      {modalSetup}
+    </>
   );
 };
 

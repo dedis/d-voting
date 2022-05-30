@@ -192,7 +192,7 @@ const ElectionForm: FC<ElectionFormProps> = () => {
             ) : (
               <CloudUploadIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
             )}
-            {t('createElec')}
+            {t('createElection')}
           </button>
           <button
             type="button"
@@ -202,9 +202,9 @@ const ElectionForm: FC<ElectionFormProps> = () => {
               setConf(emptyConf);
             }}>
             <TrashIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-            {t('clearElec')}
+            {t('clearElection')}
           </button>
-          <DownloadButton exportData={exportData}>{t('exportElecJSON')}</DownloadButton>
+          <DownloadButton exportData={exportData}>{t('exportJSON')}</DownloadButton>
         </div>
       </div>
     );

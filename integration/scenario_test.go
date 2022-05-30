@@ -10,6 +10,7 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -31,9 +32,19 @@ import (
 
 var suite = suites.MustFind("Ed25519")
 
+const defaultNodes = 3
+
 // Check the shuffled votes versus the cast votes on a few nodes
 func TestScenario(t *testing.T) {
-	t.Run("Basic configuration", getScenarioTest(3, 3, 1))
+	var err error
+	numNodes := defaultNodes
+
+	n, ok := os.LookupEnv("NNODES")
+	if ok {
+		numNodes, err = strconv.Atoi(n)
+		require.NoError(t, err)
+	}
+	t.Run("Basic configuration", getScenarioTest(numNodes, numNodes, 1))
 }
 
 func getScenarioTest(numNodes int, numVotes int, numElection int) func(*testing.T) {
@@ -135,7 +146,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
 	// ##################################### OPEN ELECTION #####################
-
+	time.Sleep(time.Second * 5)
 	randomproxy := proxyArray[rand.Intn(len(proxyArray))]
 	t.Logf("Open election send to proxy %v", randomproxy)
 
@@ -144,7 +155,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	// ##################################### GET ELECTION INFO #################
 
 	proxyAddr1 := proxyArray[0]
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * 5)
 
 	getElectionResponse := getElectionInfo(proxyAddr1, electionID, t)
 	electionpubkey := getElectionResponse.Pubkey
@@ -225,6 +236,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 		t.Log("Response body: " + string(body))
 
 	}
+	time.Sleep(time.Second * 5)
 
 	// ############################# CLOSE ELECTION FOR REAL ###################
 	randomproxy = proxyArray[rand.Intn(len(proxyArray))]
