@@ -360,7 +360,13 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
   if (uri.match(regex)) {
     const dataStr2 = JSON.stringify({ ElectionID: req.body.ElectionID });
     payload = getPayload(dataStr2);
-    uri = req.body.ProxyAddress + req.baseUrl.slice(4);
+
+    const proxy = req.body.Proxy;
+    if (proxy === undefined) {
+      res.status(400).send('proxy undefined in body');
+      return;
+    }
+    uri = proxy + req.baseUrl.slice(4);
   }
 
   console.log('sending payload:', JSON.stringify(payload), 'to', uri);
