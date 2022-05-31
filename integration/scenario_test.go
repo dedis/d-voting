@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"os/exec"
 	"reflect"
 	"strconv"
 	"strings"
@@ -249,14 +250,15 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	}
 	time.Sleep(time.Second * 5)
 
-	// Kill and restart the node
-	// Kill a node
-	// proxyArray = killNode(proxyArray, 3, t)
-	// time.Sleep(time.Second * 3)
+	// Kill and restart the node, change false to true when we want to use
+	if false {
+		proxyArray = killNode(proxyArray, 3, t)
+		time.Sleep(time.Second * 3)
 
-	// t.Log("Restart node")
-	// restartNode(3, t)
-	// t.Log("Finished to restart node")
+		t.Log("Restart node")
+		restartNode(3, t)
+		t.Log("Finished to restart node")
+	}
 
 	// ############################# CLOSE ELECTION FOR REAL ###################
 	randomproxy = proxyArray[rand.Intn(len(proxyArray))]
@@ -583,33 +585,33 @@ func getElectionInfo(proxyAddr, electionID string, t *testing.T) ptypes.GetElect
 
 }
 
-// func killNode(proxyArray []string, nodeNub int, t *testing.T) []string {
+func killNode(proxyArray []string, nodeNub int, t *testing.T) []string {
 
-// 	proxyArray[nodeNub-1] = proxyArray[len(proxyArray)-1]
-// 	proxyArray[len(proxyArray)-1] = ""
-// 	proxyArray = proxyArray[:len(proxyArray)-1]
+	proxyArray[nodeNub-1] = proxyArray[len(proxyArray)-1]
+	proxyArray[len(proxyArray)-1] = ""
+	proxyArray = proxyArray[:len(proxyArray)-1]
 
-// 	cmd := exec.Command("docker", "kill", fmt.Sprintf("node%v", nodeNub))
-// 	err := cmd.Run()
-// 	require.NoError(t, err)
+	cmd := exec.Command("docker", "kill", fmt.Sprintf("node%v", nodeNub))
+	err := cmd.Run()
+	require.NoError(t, err)
 
-// 	return proxyArray
-// }
+	return proxyArray
+}
 
-// func restartNode(nodeNub int, t *testing.T) {
-// 	cmd := exec.Command("docker", "restart", fmt.Sprintf("node%v", nodeNub))
-// 	err := cmd.Run()
-// 	require.NoError(t, err)
+func restartNode(nodeNub int, t *testing.T) {
+	cmd := exec.Command("docker", "restart", fmt.Sprintf("node%v", nodeNub))
+	err := cmd.Run()
+	require.NoError(t, err)
 
-// 	// Replace the relative path
-// 	cmd = exec.Command("rm", fmt.Sprintf("/Users/jean-baptistezhang/EPFL_cours/semestre_2/d-voting/nodedata/node%v/daemon.sock", nodeNub))
-// 	err = cmd.Run()
-// 	require.NoError(t, err)
+	// Replace the relative path
+	cmd = exec.Command("rm", fmt.Sprintf("/Users/jean-baptistezhang/EPFL_cours/semestre_2/d-voting/nodedata/node%v/daemon.sock", nodeNub))
+	err = cmd.Run()
+	require.NoError(t, err)
 
-// 	cmd = exec.Command("bash", "-c", fmt.Sprintf("docker exec -d node%v memcoin --config /tmp/node%v start --postinstall --promaddr :9100 --proxyaddr :9080 --proxykey adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3 --listen tcp://0.0.0.0:2001 --public //172.18.0.%v:2001", nodeNub, nodeNub, nodeNub+1))
-// 	err = cmd.Run()
-// 	require.NoError(t, err)
-// }
+	cmd = exec.Command("bash", "-c", fmt.Sprintf("docker exec -d node%v memcoin --config /tmp/node%v start --postinstall --promaddr :9100 --proxyaddr :9080 --proxykey adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3 --listen tcp://0.0.0.0:2001 --public //172.18.0.%v:2001", nodeNub, nodeNub, nodeNub+1))
+	err = cmd.Run()
+	require.NoError(t, err)
+}
 
 func getDKGInfo(proxyAddr, electionID string, t *testing.T) ptypes.GetActorInfo {
 	// t.Log("Get DKG info")
