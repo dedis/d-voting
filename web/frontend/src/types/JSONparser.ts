@@ -1,6 +1,6 @@
 import { ID, RANK, SELECT, SUBJECT, TEXT } from 'types/configuration';
 import * as types from 'types/configuration';
-import { toArraysOfSubjectElement } from './getObjectType';
+import { newAnswer, toArraysOfSubjectElement } from './getObjectType';
 
 const unmarshalText = (text: any): types.TextQuestion => {
   return {
@@ -106,12 +106,7 @@ const unmarshalConfigAndCreateAnswers = (
   configObj: any
 ): { newConfiguration: types.Configuration; newAnswers: types.Answers } => {
   const scaffold = new Array<types.Subject>();
-  const newAnswers: types.Answers = {
-    SelectAnswers: new Map<ID, boolean[]>(),
-    RankAnswers: new Map<ID, number[]>(),
-    TextAnswers: new Map<ID, string[]>(),
-    Errors: new Map<ID, string>(),
-  };
+  const newAnswers: types.Answers = newAnswer();
 
   for (const subjectObj of configObj.Scaffold) {
     let subject = unmarshalSubjectAndCreateAnswers(subjectObj, newAnswers);
@@ -170,4 +165,9 @@ const marshalConfig = (configuration: types.Configuration): any => {
   return conf;
 };
 
-export { marshalConfig, unmarshalConfig, unmarshalConfigAndCreateAnswers };
+export {
+  marshalConfig,
+  unmarshalConfig,
+  unmarshalConfigAndCreateAnswers,
+  unmarshalSubjectAndCreateAnswers,
+};

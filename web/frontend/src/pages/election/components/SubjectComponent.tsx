@@ -5,11 +5,23 @@ import * as types from '../../../types/configuration';
 import { RANK, SELECT, SUBJECT, TEXT } from '../../../types/configuration';
 import { newRank, newSelect, newSubject, newText } from '../../../types/getObjectType';
 
-import AddButton from './AddButton';
 import Question from './Question';
-import DeleteButton from './DeleteButton';
+import SubjectDropdown from './SubjectDropdown';
+import {
+  CheckIcon,
+  ChevronUpIcon,
+  CursorClickIcon,
+  FolderIcon,
+  MenuAlt1Icon,
+  SwitchVerticalIcon,
+  XIcon,
+} from '@heroicons/react/outline';
+import { PencilIcon } from '@heroicons/react/solid';
+import AddQuestionModal from './AddQuestionModal';
+import { useTranslation } from 'react-i18next';
+import RemoveElementModal from './RemoveElementModal';
 
-const MAX_NESTED_SUBJECT = 2;
+const MAX_NESTED_SUBJECT = 1;
 
 type SubjectComponentProps = {
   notifyParent: (subject: types.Subject) => void;
@@ -24,8 +36,22 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
   subjectObject,
   nestedLevel,
 }) => {
+  const { t } = useTranslation();
+  const emptyElementToRemove = { ID: '', Type: '' };
+
   const [subject, setSubject] = useState<types.Subject>(subjectObject);
-  const isSubjectMounted = useRef<Boolean>(false);
+  const [currentQuestion, setCurrentQuestion] = useState<
+    types.RankQuestion | types.SelectQuestion | types.TextQuestion | null
+  >();
+  const isSubjectMounted = useRef<boolean>(false);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [titleChanging, setTitleChanging] = useState<boolean>(
+    subjectObject.Title.length ? false : true
+  );
+  const [openModal, setOpenModal] = useState<boolean>(false);
+  const [showRemoveElementModal, setShowRemoveElementModal] = useState<boolean>(false);
+  const [textRemoveElementModal, setTextRemoveElementModal] = useState<string>('');
+  const [elementToRemove, setElementToRemove] = useState(emptyElementToRemove);
   const [components, setComponents] = useState<ReactElement[]>([]);
 
   const { Title, Order, Elements } = subject;
@@ -78,14 +104,26 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
     });
   };
 
-  const removeChildQuestion = (question: types.SubjectElement) => () => {
+  const removeChildQuestion = (questionID: types.ID) => () => {
     const newElements = new Map(Elements);
-    newElements.delete(question.ID);
+    newElements.delete(questionID);
     setSubject({
       ...subject,
       Elements: newElements,
-      Order: Order.filter((id) => id !== question.ID),
+      Order: Order.filter((id) => id !== questionID),
     });
+  };
+
+  const handleConfirmRemoveElement = () => {
+    switch (elementToRemove.Type) {
+      case SUBJECT:
+        localRemoveSubject(elementToRemove.ID)();
+        break;
+      default:
+        removeChildQuestion(elementToRemove.ID)();
+        break;
+    }
+    setElementToRemove(emptyElementToRemove);
   };
 
   // Sorts the questions components & sub-subjects according to their Order into
@@ -108,7 +146,11 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
               key={`text${text.ID}`}
               question={text}
               notifyParent={notifySubject}
-              removeQuestion={removeChildQuestion(text)}
+              removeQuestion={() => {
+                setElementToRemove({ ID: text.ID, Type: TEXT });
+                setTextRemoveElementModal(t(`confirmRemove${found.Type}`));
+                setShowRemoveElementModal(true);
+              }}
             />
           );
         case SUBJECT:
@@ -116,7 +158,11 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
           return (
             <SubjectComponent
               notifyParent={localNotifyParent}
-              removeSubject={localRemoveSubject(sub.ID)}
+              removeSubject={() => {
+                setElementToRemove({ ID: sub.ID, Type: SUBJECT });
+                setTextRemoveElementModal(t(`confirmRemove${found.Type}`));
+                setShowRemoveElementModal(true);
+              }}
               subjectObject={sub}
               nestedLevel={nestedLevel + 1}
               key={sub.ID}
@@ -129,7 +175,11 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
               key={`rank${rank.ID}`}
               question={rank}
               notifyParent={notifySubject}
-              removeQuestion={removeChildQuestion(rank)}
+              removeQuestion={() => {
+                setElementToRemove({ ID: rank.ID, Type: RANK });
+                setTextRemoveElementModal(t(`confirmRemove${found.Type}`));
+                setShowRemoveElementModal(true);
+              }}
             />
           );
         case SELECT:
@@ -139,7 +189,11 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
               key={`select${select.ID}`}
               question={select}
               notifyParent={notifySubject}
-              removeQuestion={removeChildQuestion(select)}
+              removeQuestion={() => {
+                setElementToRemove({ ID: select.ID, Type: SELECT });
+                setTextRemoveElementModal(t(`confirmRemove${found.Type}`));
+                setShowRemoveElementModal(true);
+              }}
             />
           );
       }
@@ -150,33 +204,163 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [Title, Elements, Order, nestedLevel]);
 
-  return (
-    <div className="ml-4 mb-4 mr-2 shadow-lg rounded-md">
-      <DeleteButton onClick={removeSubject}>Subject</DeleteButton>
-      <input
-        value={Title}
-        onChange={(e) => setSubject({ ...subject, Title: e.target.value })}
-        name="Title"
-        type="text"
-        placeholder="Enter the Subject Title"
-        className="ml-2 mt-2 mb-2 border rounded-md text-md w-60"
-      />
-      {components.map((component) => component)}
+  useEffect(() => {
+    if (components.length === 0) {
+      // resets the icon state if there are no questions
+      setIsOpen(false);
+    }
+  }, [components]);
 
-      <div className="hidden justify-between overflow-x-auto sm:flex sm:pr-2">
-        <div>
-          <AddButton onClick={() => addQuestion(newRank())}>Rank</AddButton>
-          <AddButton onClick={() => addQuestion(newSelect())}>Select</AddButton>
-          <AddButton onClick={() => addQuestion(newText())}>Text</AddButton>
+  useEffect(() => {
+    // When the modal is closed we reset the current question sent to the
+    // question modal
+    if (isOpen === false) {
+      setCurrentQuestion(null);
+    }
+  }, [isOpen]);
+
+  const handleAddQuestion = (
+    question: types.TextQuestion | types.RankQuestion | types.SelectQuestion
+  ) => {
+    setIsOpen(true);
+    setOpenModal(true);
+    setCurrentQuestion(question);
+  };
+
+  const dropdownContent: {
+    name: string;
+    icon: JSX.Element;
+    onClick: () => void;
+  }[] = [
+    {
+      name: 'addRank',
+      icon: <SwitchVerticalIcon className="mr-2 h-5 w-5" aria-hidden="true" />,
+      onClick: () => {
+        handleAddQuestion(newRank());
+      },
+    },
+    {
+      name: 'addSelect',
+      icon: <CursorClickIcon className="mr-2 h-5 w-5" aria-hidden="true" />,
+      onClick: () => {
+        handleAddQuestion(newSelect());
+      },
+    },
+    {
+      name: 'addText',
+      icon: <MenuAlt1Icon className="mr-2 h-5 w-5" aria-hidden="true" />,
+      onClick: () => {
+        handleAddQuestion(newText());
+      },
+    },
+    {
+      name: 'removeSubject',
+      icon: <XIcon className="mr-2 h-5 w-5" aria-hidden="true" />,
+      onClick: removeSubject,
+    },
+  ];
+  if (nestedLevel < MAX_NESTED_SUBJECT) {
+    dropdownContent.splice(3, 0, {
+      name: 'addSubject',
+      icon: <FolderIcon className="mr-2 h-5 w-5" aria-hidden="true" />,
+      onClick: () => {
+        setIsOpen(true);
+        addSubject();
+      },
+    });
+  }
+
+  const QuestionModal = () => {
+    return currentQuestion ? (
+      <AddQuestionModal
+        open={openModal}
+        setOpen={setOpenModal}
+        notifyParent={addQuestion}
+        question={currentQuestion}
+        handleClose={() => {
+          setIsOpen(false);
+          setOpenModal(false);
+        }}
+      />
+    ) : null;
+  };
+
+  return (
+    <div className={`${nestedLevel === 0 ? 'border-t' : 'pl-3'} `}>
+      <RemoveElementModal
+        showModal={showRemoveElementModal}
+        setShowModal={setShowRemoveElementModal}
+        textModal={textRemoveElementModal}
+        handleConfirm={handleConfirmRemoveElement}
+      />
+
+      <QuestionModal />
+      <div className="flex flex-row justify-between w-full h-24 ">
+        <div className="flex flex-col max-w-full pl-2">
+          <div className="mt-3 flex">
+            <div className="h-9 w-9 rounded-full bg-gray-100 mr-2 ml-1">
+              <FolderIcon className="m-2 h-5 w-5 text-gray-400" aria-hidden="true" />
+            </div>
+            {titleChanging ? (
+              <div className="flex mb-2">
+                <input
+                  value={Title}
+                  onChange={(e) => setSubject({ ...subject, Title: e.target.value })}
+                  name="Title"
+                  type="text"
+                  placeholder={t('enterSubjectTitle')}
+                  className={`w-60 px-1 border rounded-md ${
+                    nestedLevel === 0 ? 'text-lg' : 'text-md'
+                  } `}
+                />
+                <div className="ml-1">
+                  <button
+                    className={`border p-1 rounded-md ${Title.length === 0 && 'bg-gray-100'}`}
+                    disabled={Title.length === 0}
+                    onClick={() => setTitleChanging(false)}>
+                    <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex mb-2 max-w-md truncate">
+                <div className="pt-1.5 truncate" onClick={() => setTitleChanging(true)}>
+                  {Title}
+                </div>
+                <div className="ml-1 pr-10">
+                  <button
+                    className="hover:text-indigo-500 p-1 rounded-md"
+                    onClick={() => setTitleChanging(true)}>
+                    <PencilIcon className="m-1 h-3 w-3" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex mt-2 ml-2">
+            <button
+              disabled={!(components.length > 0)}
+              onClick={() => setIsOpen(!isOpen)}
+              className="text-left text-sm font-medium rounded-full text-gray-900">
+              <ChevronUpIcon
+                className={`${!isOpen ? 'rotate-180 transform' : ''} h-5 w-5 ${
+                  components.length > 0 ? 'text-gray-600' : 'text-gray-300'
+                } `}
+              />
+            </button>
+            <div className="ml-2">{t('subject')}</div>
+          </div>
         </div>
-        {nestedLevel < MAX_NESTED_SUBJECT && <AddButton onClick={addSubject}>Subject</AddButton>}
+        <div className="relative">
+          <div className="-mr-2 flex absolute right-3">
+            <SubjectDropdown dropdownContent={dropdownContent} />
+          </div>
+        </div>
       </div>
-      <div className="flex visible overflow-x-auto sm:hidden">
-        <AddButton onClick={() => addQuestion(newRank())}>Rank</AddButton>
-        <AddButton onClick={() => addQuestion(newSelect())}>Select</AddButton>
-        <AddButton onClick={() => addQuestion(newText())}>Text</AddButton>
-        {nestedLevel < MAX_NESTED_SUBJECT && <AddButton onClick={addSubject}>Subject</AddButton>}
-      </div>
+      {components.length > 0 && isOpen && (
+        <div className="text-sm bg-gray-50">{components.map((component) => component)}</div>
+      )}
     </div>
   );
 };

@@ -11,15 +11,15 @@ const TextResult: FC<TextResultProps> = ({ textResult }) => {
   const { resultsInPercent, maxKey } = countTextResult(textResult);
 
   const displayResults = () => {
-    return Array.from(resultsInPercent).map((res) => {
-      const isBest = maxKey.includes(res[0]);
+    return Array.from(resultsInPercent).map(([textAnswer, result]) => {
+      const isBest = maxKey.includes(textAnswer);
 
       return (
-        <React.Fragment key={res[0]}>
-          <div className="px-4 break-words max-w-xs w-max">
-            <span className={`${isBest && 'font-bold'}`}>{res[0]}</span>:
+        <React.Fragment key={textAnswer}>
+          <div className="px-2 sm:px-4 break-words max-w-xs w-max">
+            <span>{textAnswer}</span>:
           </div>
-          <ProgressBar isBest={isBest}>{res[1]}</ProgressBar>
+          <ProgressBar isBest={isBest}>{result}</ProgressBar>
         </React.Fragment>
       );
     });

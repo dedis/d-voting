@@ -18,8 +18,8 @@ const SelectResult: FC<SelectResultProps> = ({ select, selectResult }) => {
 
       return (
         <React.Fragment key={index}>
-          <div className="px-4 break-words max-w-xs w-max">
-            <span className={`${isBest && 'font-bold'}`}>{select.Choices[index]}</span>:
+          <div className="px-2 sm:px-4 break-words max-w-xs w-max">
+            <span>{select.Choices[index]}</span>:
           </div>
           <ProgressBar isBest={isBest}>{percent}</ProgressBar>
         </React.Fragment>

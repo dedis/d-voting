@@ -16,6 +16,7 @@ const countRankResult = (rankResult: number[][], rank: RankQuestion) => {
     });
   });
 
+  // Total number of "points" attributed
   const total = results.reduceRight((a, b) => {
     min = a < min ? a : min;
     min = b < min ? b : min;
@@ -36,8 +37,9 @@ const countRankResult = (rankResult: number[][], rank: RankQuestion) => {
   return { resultsInPercent, minIndices };
 };
 
-// Count the number of vote for a candidate and returns the counts and
-// which candidate(s) in the select.Choices has the most votes
+// Count the number of vote for a candidate and returns the counts as a
+// percentage of the total number of votes and which candidate(s) in the
+// select.Choices has the most votes
 const countSelectResult = (selectResult: number[][]) => {
   const resultsInPercent: string[] = [];
   const maxIndices: number[] = [];

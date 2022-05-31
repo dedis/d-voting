@@ -20,7 +20,6 @@ import { useTranslation } from 'react-i18next';
 import saveAs from 'file-saver';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router';
-import TextButton from '../../components/buttons/TextButton';
 import useElection from 'components/utils/useElection';
 import { useConfigurationOnly } from 'components/utils/useConfiguration';
 import {
@@ -29,6 +28,7 @@ import {
   countTextResult,
 } from './components/utils/countResult';
 import Loading from 'pages/Loading';
+import ResultExplanation from './components/ResultExplanation';
 
 // Functional component that displays the result of the votes
 const ElectionResult: FC = () => {
@@ -42,6 +42,7 @@ const ElectionResult: FC = () => {
   const [rankResult, setRankResult] = useState<RankResults>(null);
   const [selectResult, setSelectResult] = useState<SelectResults>(null);
   const [textResult, setTextResult] = useState<TextResults>(null);
+  const [downloadedResults, setDownloadedResults] = useState(null);
 
   // Group the different results by the ID of the question,
   const groupByID = (
@@ -94,9 +95,77 @@ const ElectionResult: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result]);
 
+  const getResultData = (subject: Subject, dataToDownload: DownloadedResults[]) => {
+    dataToDownload.push({ ID: subject.ID, Title: subject.Title });
+
+    subject.Order.forEach((id: ID) => {
+      const element = subject.Elements.get(id);
+      let res = undefined;
+
+      switch (element.Type) {
+        case RANK:
+          const rank = element as RankQuestion;
+          res = countRankResult(rankResult.get(id), element as RankQuestion).resultsInPercent.map(
+            (percent, index) => {
+              return { Candidate: rank.Choices[index], Percentage: `${percent}%` };
+            }
+          );
+          dataToDownload.push({ ID: id, Title: element.Title, Results: res });
+          break;
+
+        case SELECT:
+          const select = element as SelectQuestion;
+          res = countSelectResult(selectResult.get(id)).resultsInPercent.map((percent, index) => {
+            return { Candidate: select.Choices[index], Percentage: `${percent}%` };
+          });
+          dataToDownload.push({ ID: id, Title: element.Title, Results: res });
+          break;
+
+        case SUBJECT:
+          getResultData(element as Subject, dataToDownload);
+          break;
+
+        case TEXT:
+          res = Array.from(countTextResult(textResult.get(id)).resultsInPercent).map((r) => {
+            return { Candidate: r[0], Percentage: `${r[1]}%` };
+          });
+          dataToDownload.push({ ID: id, Title: element.Title, Results: res });
+          break;
+      }
+    });
+  };
+
+  useEffect(() => {
+    if (result !== null) {
+      const dataToDownload: DownloadedResults[] = [];
+
+      configuration.Scaffold.forEach((subject: Subject) => {
+        getResultData(subject, dataToDownload);
+      });
+
+      const data = {
+        Title: configuration.MainTitle,
+        NumberOfVotes: result.length,
+        Results: dataToDownload,
+      };
+
+      setDownloadedResults(data);
+    }
+  }, [result]);
+
+  const exportJSONData = () => {
+    const fileName = 'result.json';
+
+    const fileToSave = new Blob([JSON.stringify(downloadedResults, null, 2)], {
+      type: 'application/json',
+    });
+
+    saveAs(fileToSave, fileName);
+  };
+
   const SubjectElementResultDisplay = (element: SubjectElement) => {
     return (
-      <div className="px-4 pb-4">
+      <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
         <h2 className="text-lg pb-2">{element.Title}</h2>
         {element.Type === RANK && (
           <RankResult rank={element as RankQuestion} rankResult={rankResult.get(element.ID)} />
@@ -114,12 +183,16 @@ const ElectionResult: FC = () => {
 
   const displayResults = (subject: Subject) => {
     return (
-      <div key={subject.ID} className="px-8 pt-4">
-        <h2 className="text-lg font-bold">{subject.Title}</h2>
+      <div key={subject.ID}>
+        <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
+          {subject.Title}
+        </h2>
         {subject.Order.map((id: ID) => (
           <div key={id}>
             {subject.Elements.get(id).Type === SUBJECT ? (
-              <div className="px-4">{displayResults(subject.Elements.get(id) as Subject)}</div>
+              <div className="pl-4 sm:pl-6">
+                {displayResults(subject.Elements.get(id) as Subject)}
+              </div>
             ) : (
               SubjectElementResultDisplay(subject.Elements.get(id))
             )}
@@ -129,87 +202,40 @@ const ElectionResult: FC = () => {
     );
   };
 
-  const getResultData = (subject: Subject, dataToDownload: DownloadedResults[]) => {
-    dataToDownload.push({ ID: subject.ID, Title: subject.Title });
-
-    subject.Order.forEach((id: ID) => {
-      const element = subject.Elements.get(id);
-      let res = undefined;
-
-      switch (element.Type) {
-        case RANK:
-          const rank = element as RankQuestion;
-          res = countRankResult(rankResult.get(id), element as RankQuestion).resultsInPercent.map(
-            (percent, index) => {
-              return { Candidate: rank.Choices[index], Percentage: percent };
-            }
-          );
-          dataToDownload.push({ ID: id, Title: element.Title, Results: res });
-          break;
-
-        case SELECT:
-          const select = element as SelectQuestion;
-          res = countSelectResult(selectResult.get(id)).resultsInPercent.map((percent, index) => {
-            return { Candidate: select.Choices[index], Percentage: percent };
-          });
-          dataToDownload.push({ ID: id, Title: element.Title, Results: res });
-          break;
-
-        case SUBJECT:
-          getResultData(element as Subject, dataToDownload);
-          break;
-
-        case TEXT:
-          res = Array.from(countTextResult(textResult.get(id)).resultsInPercent).map((r) => {
-            return { Candidate: r[0], Percentage: r[1] };
-          });
-          dataToDownload.push({ ID: id, Title: element.Title, Results: res });
-          break;
-      }
-    });
-  };
-
-  const exportData = () => {
-    const fileName = 'result.json';
-
-    const dataToDownload: DownloadedResults[] = [];
-
-    configuration.Scaffold.forEach((subject: Subject) => {
-      getResultData(subject, dataToDownload);
-    });
-
-    const data = {
-      Title: configuration.MainTitle,
-      NumberOfVotes: result.length,
-      Results: dataToDownload,
-    };
-
-    const fileToSave = new Blob([JSON.stringify(data, null, 2)], {
-      type: 'application/json',
-    });
-
-    saveAs(fileToSave, fileName);
-  };
-
   return (
-    <div>
+    <div className="w-[60rem] font-sans px-4 pt-8 pb-4">
       {!loading ? (
         <div>
-          <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-            Results
-          </h1>
-          <div className="shadow-lg rounded-md w-full px-4 pb-4 my-0 sm:my-4">
-            <h3 className="py-6 uppercase text-2xl text-center text-gray-700">
+          <div className="flex items-center">
+            <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+              {t('navBarResult')}
+            </h1>
+            <div className="pt-1.5">
+              <ResultExplanation />
+            </div>
+          </div>
+
+          <div className="w-full pb-4 my-0 sm:my-4">
+            <h2 className="text-lg mt-2 sm:mt-4 sm:mb-6 mb-4">
+              {t('totalNumberOfVotes', { votes: result.length })}
+            </h2>
+            <h3 className="py-6 border-t text-2xl text-center text-gray-700">
               {configuration.MainTitle}
             </h3>
-            <h2 className="px-8 text-lg">Total number of votes : {result.length}</h2>
-            {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
+
+            <div className="flex flex-col">
+              {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
+            </div>
           </div>
           <div className="flex my-4">
-            <div onClick={() => navigate(-1)}>
-              <TextButton>{t('back')}</TextButton>
-            </div>
-            <DownloadButton exportData={exportData}>{t('exportResJSON')}</DownloadButton>
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="text-gray-700 my-2 mr-2 items-center px-4 py-2 border rounded-md text-sm hover:text-indigo-500">
+              {t('back')}
+            </button>
+
+            <DownloadButton exportData={exportJSONData}>{t('exportJSON')}</DownloadButton>
           </div>
         </div>
       ) : (

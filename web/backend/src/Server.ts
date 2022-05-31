@@ -151,7 +151,7 @@ app.get('/api/personal_info', (req, res) => {
   }
 });
 
-// This call allow a user that is admin to get the list of the poeple that have
+// This call allow a user that is admin to get the list of the people that have
 // a special role (not a voter).
 app.get('/api/user_rights', (req, res) => {
   const sciper = req.session.userid;
@@ -222,6 +222,100 @@ app.post('/api/remove_role', (req, res) => {
     });
 });
 
+// ---
+// Proxies
+// ---
+
+const proxiesDB = lmdb.open<string, string>({ path: 'proxies' });
+
+app.get('/api/proxies', (req, res) => {
+  const output = new Map<string, string>();
+  proxiesDB.getRange({}).forEach((entry) => {
+    output.set(entry.key, entry.value);
+  });
+
+  res.status(200).json(Object.fromEntries(output));
+});
+
+app.get('/api/proxies/:nodeAddr', (req, res) => {
+  const { nodeAddr } = req.params;
+
+  const proxy = proxiesDB.get(decodeURIComponent(nodeAddr));
+
+  if (proxy === undefined) {
+    res.status(404).send('not found');
+    return;
+  }
+
+  res.status(200).json({
+    NodeAddr: nodeAddr,
+    Proxy: proxy,
+  });
+});
+
+app.post('/api/proxies', (req, res) => {
+  try {
+    const bodydata = req.body;
+    proxiesDB.put(bodydata.NodeAddr, bodydata.Proxy);
+    console.log('put', bodydata.NodeAddr, '=>', bodydata.Proxy);
+    res.status(200).send('ok');
+  } catch (error: any) {
+    res.status(500).send(error.toString());
+  }
+});
+
+app.put('/api/proxies/:nodeAddr', (req, res) => {
+  let { nodeAddr } = req.params;
+
+  nodeAddr = decodeURIComponent(nodeAddr);
+
+  const proxy = proxiesDB.get(nodeAddr);
+
+  if (proxy === undefined) {
+    res.status(404).send('not found');
+    return;
+  }
+
+  try {
+    const bodydata = req.body;
+    if (bodydata.Proxy === undefined) {
+      res.status(400).send('bad request, proxy is undefined');
+      return;
+    }
+
+    proxiesDB.put(nodeAddr, bodydata.Proxy);
+    console.log('put', nodeAddr, '=>', bodydata.Proxy);
+    res.status(200).send('ok');
+  } catch (error: any) {
+    res.status(500).send(error.toString());
+  }
+});
+
+app.delete('/api/proxies/:nodeAddr', (req, res) => {
+  let { nodeAddr } = req.params;
+
+  nodeAddr = decodeURIComponent(nodeAddr);
+
+  const proxy = proxiesDB.get(nodeAddr);
+
+  if (proxy === undefined) {
+    res.status(404).send('not found');
+    return;
+  }
+
+  try {
+    proxiesDB.remove(nodeAddr);
+    console.log('remove', nodeAddr, '=>', proxy);
+    res.status(200).send('ok');
+  } catch (error: any) {
+    res.status(500).send(error.toString());
+  }
+});
+
+// ---
+// end of proxies
+// ---
+
 // get payload creates a payload with a signature on it
 function getPayload(dataStr: string) {
   let dataStrB64 = Buffer.from(dataStr).toString('base64url');
@@ -266,7 +360,13 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
   if (uri.match(regex)) {
     const dataStr2 = JSON.stringify({ ElectionID: req.body.ElectionID });
     payload = getPayload(dataStr2);
-    uri = req.body.ProxyAddress + req.baseUrl.slice(4);
+
+    const proxy = req.body.Proxy;
+    if (proxy === undefined) {
+      res.status(400).send('proxy undefined in body');
+      return;
+    }
+    uri = proxy + req.baseUrl.slice(4);
   }
 
   console.log('sending payload:', JSON.stringify(payload), 'to', uri);

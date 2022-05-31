@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Answers, Configuration } from 'types/configuration';
-import { emptyConfiguration } from 'types/getObjectType';
-import { unmarshalConfig, unmarshalConfigAndCreateAnswers } from 'types/JSONparser';
+import { emptyConfiguration, newAnswer } from 'types/getObjectType';
+import {
+  unmarshalConfig,
+  unmarshalConfigAndCreateAnswers,
+  unmarshalSubjectAndCreateAnswers,
+} from 'types/JSONparser';
 
 // Returns a Configuration and the initialized Answers
 const useConfiguration = (configObj: any) => {
   const [configuration, setConfiguration] = useState<Configuration>(emptyConfiguration());
-
-  const [answers, setAnswers]: [Answers, React.Dispatch<React.SetStateAction<Answers>>] =
-    useState(null);
+  const [answers, setAnswers] = useState<Answers>(null);
 
   useEffect(() => {
     if (configObj !== null) {
@@ -38,4 +40,23 @@ const useConfigurationOnly = (configObj: any) => {
   return configuration;
 };
 
-export { useConfiguration, useConfigurationOnly };
+// Custom hook to create answers from a Configuration.
+const useAnswers = (configuration: Configuration) => {
+  const [answers, setAnswers] = useState<Answers>(null);
+
+  useEffect(() => {
+    if (configuration !== null) {
+      const newAnswers: Answers = newAnswer();
+
+      for (const subjectObj of configuration.Scaffold) {
+        unmarshalSubjectAndCreateAnswers(subjectObj, newAnswers);
+      }
+
+      setAnswers(newAnswers);
+    }
+  }, [configuration]);
+
+  return { answers, setAnswers };
+};
+
+export { useConfiguration, useConfigurationOnly, useAnswers };
