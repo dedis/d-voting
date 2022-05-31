@@ -18,18 +18,6 @@ sudo apt install rubygems build-essential git
 git clone --branch packaging https://github.com/dedis/d-voting.git --recursive 
 ```
 
-## Build the Unikernel
-
-Follow instructions from the `contracts/evoting/unikernel/apps/combine_shares`.
-In summary:
-
-```sh
-cd contracts/evoting/unikernel/apps/combine_shares
-git submodule update --init --recursive 
-make menuconfig
-make
-```
-
 ## Build the deb package
 
 from the root folder, use make:
@@ -44,7 +32,7 @@ The resulting .deb can be found in the `dist/` folder.
 
 ## Things to do after install
 
-### EPFL
+### Leader's node
 
 Get the token and certificate (24h * 30 = 720):
 
