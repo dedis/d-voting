@@ -76,9 +76,9 @@ fi
 if [ "$DOCKER" == false ]; then
     make build
 else
-    # Clean containers and tmp dir
-    if [[ $(docker ps -a -q) ]]; then
-        docker rm -f $(docker ps -a -q)
+    # Clean created containers and tmp dir
+    if [[ $(docker ps -a -q --filter ancestor=node) ]]; then
+        docker rm -f $(docker ps -a -q --filter ancestor=node)
     fi
 
     rm -rf ./nodedata    
