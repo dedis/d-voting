@@ -80,11 +80,11 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 
 	const contentType = "application/json"
 	secretkeyBuf, err := hex.DecodeString("28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409")
-	require.NoError(t, err, "failed to decode key: %v", err)
+	require.NoError(t, err)
 
 	secret := suite.Scalar()
 	err = secret.UnmarshalBinary(secretkeyBuf)
-	require.NoError(t, err, "failed to Unmarshal key: %v", err)
+	require.NoError(t, err)
 
 	// ###################################### CREATE SIMPLE ELECTION ######
 
@@ -98,14 +98,14 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	}
 
 	signed, err := createSignedRequest(secret, createSimpleElectionRequest)
-	require.NoError(t, err, "failed to create signature")
+	require.NoError(t, err)
 
 	resp, err := http.Post(proxyArray[0]+"/evoting/elections", contentType, bytes.NewBuffer(signed))
-	require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
+	require.NoError(t, err)
 	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
 	body, err := io.ReadAll(resp.Body)
-	require.NoError(t, err, "failed to read the response body: %v", err)
+	require.NoError(t, err)
 
 	t.Log("response body:", string(body))
 	resp.Body.Close()
@@ -113,7 +113,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	var createElectionResponse ptypes.CreateElectionResponse
 
 	err = json.Unmarshal(body, &createElectionResponse)
-	require.NoError(t, err, "failed to parse the response body from js: %v", err)
+	require.NoError(t, err)
 
 	electionID := createElectionResponse.ElectionID
 
@@ -127,7 +127,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 		t.Log("Node" + strconv.Itoa(i+1))
 		t.Log(proxyArray[i])
 		err = initDKG(secret, proxyArray[i], electionID, t)
-		require.NoError(t, err, "failed to init dkg: %v", err)
+		require.NoError(t, err)
 		// time.Sleep((time.Second) * 10)
 
 	}
@@ -138,13 +138,13 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 		Action: "setup",
 	}
 	signed, err = createSignedRequest(secret, msg)
-	require.NoError(t, err, "failed to sign: %v", err)
+	require.NoError(t, err)
 
 	req, err := http.NewRequest(http.MethodPut, proxyArray[0]+"/evoting/services/dkg/actors/"+electionID, bytes.NewBuffer(signed))
-	require.NoError(t, err, "failed to create request: %v", err)
+	require.NoError(t, err)
 
 	resp, err = http.DefaultClient.Do(req)
-	require.NoError(t, err, "failed to setup dkg on node 1: %v", err)
+	require.NoError(t, err)
 	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
 	// ##################################### OPEN ELECTION #####################
@@ -162,7 +162,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Logf("Open election send to proxy %v", randomproxy)
 
 	_, err = updateElection(secret, randomproxy, electionID, "open", t)
-	require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
+	require.NoError(t, err)
 	// ##################################### GET ELECTION INFO #################
 
 	proxyAddr1 := proxyArray[0]
@@ -177,13 +177,13 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Logf("Publickey of the election : " + electionpubkey)
 	t.Logf("Status of the election : %v", electionStatus)
 
-	require.NoError(t, err, "failed to unmarshal pubkey: %v", err)
+	require.NoError(t, err)
 	t.Logf("BallotSize of the election : %v", BallotSize)
 	t.Logf("Chunksperballot of the election : %v", Chunksperballot)
 
 	// Get election public key
 	pubKey, err := encoding.StringHexToPoint(suite, electionpubkey)
-	require.NoError(t, err, "failed to Unmarshal key: %v", err)
+	require.NoError(t, err)
 
 	// ##################################### CAST BALLOTS ######################
 	t.Log("cast ballots")
@@ -211,7 +211,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 		}
 
 		err = bMarshal.Unmarshal(ballotList[i], election)
-		require.NoError(t, err, "failed to unmarshal ballot : %v", err)
+		require.NoError(t, err)
 
 		votesfrontend[i] = bMarshal
 	}
@@ -220,7 +220,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 		// t.Logf("ballot in str is: %v", ballotList[i])
 
 		ballot, err := marshallBallotManual(ballotList[i], pubKey, Chunksperballot)
-		require.NoError(t, err, "failed to encrypt ballot : %v", err)
+		require.NoError(t, err)
 
 		// t.Logf("ballot is: %v", ballot)
 
@@ -234,14 +234,14 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 
 		// t.Logf("vote is: %v", castVoteRequest)
 		signed, err = createSignedRequest(secret, castVoteRequest)
-		require.NoError(t, err, "failed to sign: %v", err)
+		require.NoError(t, err)
 
 		resp, err = http.Post(randomproxy+"/evoting/elections/"+electionID+"/vote", contentType, bytes.NewBuffer(signed))
-		require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
+		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected status: %s", resp.Status)
 
 		_, err = io.ReadAll(resp.Body)
-		require.NoError(t, err, "failed to read the response of castVoteRequest: %v", err)
+		require.NoError(t, err)
 
 		resp.Body.Close()
 		// t.Log("Response body: " + string(body))
@@ -264,7 +264,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Logf("Close election (for real) send to proxy %v", randomproxy)
 
 	_, err = updateElection(secret, randomproxy, electionID, "close", t)
-	require.NoError(t, err, "failed to set marshall types.CloseElectionRequest : %v", err)
+	require.NoError(t, err)
 
 	time.Sleep(time.Second * 3)
 
@@ -284,16 +284,16 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	}
 
 	signed, err = createSignedRequest(secret, shuffleBallotsRequest)
-	require.NoError(t, err, "failed to set marshall types.SimpleElection : %v", err)
+	require.NoError(t, err)
 
 	randomproxy = proxyArray[rand.Intn(len(proxyArray))]
 
 	req, err = http.NewRequest(http.MethodPut, randomproxy+"/evoting/services/shuffle/"+electionID, bytes.NewBuffer(signed))
-	require.NoError(t, err, "failed retrieve the decryption from the server: %v", err)
+	require.NoError(t, err)
 	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
 	resp, err = http.DefaultClient.Do(req)
-	require.NoError(t, err, "failed to execute the shuffle query: %v", err)
+	require.NoError(t, err)
 
 	currentTime = time.Now()
 	diff = currentTime.Sub(oldTime)
@@ -301,7 +301,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Logf("Shuffle takes: %v sec", diff.Seconds())
 
 	body, err = io.ReadAll(resp.Body)
-	require.NoError(t, err, "failed to read the response body: %v", err)
+	require.NoError(t, err)
 
 	t.Log("Response body: " + string(body))
 	resp.Body.Close()
@@ -322,7 +322,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	oldTime = time.Now()
 
 	_, err = updateDKG(secret, randomproxy, electionID, "computePubshares", t)
-	require.NoError(t, err, "failed to set marshall types.SimpleElection : %v", err)
+	require.NoError(t, err)
 
 	currentTime = time.Now()
 	diff = currentTime.Sub(oldTime)
@@ -354,7 +354,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	oldTime = time.Now()
 
 	_, err = updateElection(secret, randomproxy, electionID, "combineShares", t)
-	require.NoError(t, err, "failed to combine shares: %v", err)
+	require.NoError(t, err)
 
 	currentTime = time.Now()
 	diff = currentTime.Sub(oldTime)
@@ -505,7 +505,7 @@ func initDKG(secret kyber.Scalar, proxyAddr, electionIDHex string, t *testing.T)
 	}
 
 	signed, err := createSignedRequest(secret, setupDKG)
-	require.NoError(t, err, "failed to create signature")
+	require.NoError(t, err)
 
 	resp, err := http.Post(proxyAddr+"/evoting/services/dkg/actors", "application/json", bytes.NewBuffer(signed))
 	if err != nil {
@@ -522,7 +522,7 @@ func updateElection(secret kyber.Scalar, proxyAddr, electionIDHex, action string
 	}
 
 	signed, err := createSignedRequest(secret, msg)
-	require.NoError(t, err, "failed to create signature")
+	require.NoError(t, err)
 
 	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/elections/"+electionIDHex, bytes.NewBuffer(signed))
 	if err != nil {
@@ -545,7 +545,7 @@ func updateDKG(secret kyber.Scalar, proxyAddr, electionIDHex, action string, t *
 	}
 
 	signed, err := createSignedRequest(secret, msg)
-	require.NoError(t, err, "failed to create signature")
+	require.NoError(t, err)
 
 	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/services/dkg/actors/"+electionIDHex, bytes.NewBuffer(signed))
 	if err != nil {
@@ -566,13 +566,13 @@ func getElectionInfo(proxyAddr, electionID string, t *testing.T) ptypes.GetElect
 	// t.Log("Get election info")
 
 	resp, err := http.Get(proxyAddr + "/evoting/elections" + "/" + electionID)
-	require.NoError(t, err, "failed to get the election: %v", err)
+	require.NoError(t, err)
 
 	var infoElection ptypes.GetElectionResponse
 	decoder := json.NewDecoder(resp.Body)
 
 	err = decoder.Decode(&infoElection)
-	require.NoError(t, err, "failed to decode getInfoElection: %v", err)
+	require.NoError(t, err)
 
 	resp.Body.Close()
 
@@ -588,7 +588,7 @@ func getElectionInfo(proxyAddr, electionID string, t *testing.T) ptypes.GetElect
 
 // 	cmd := exec.Command("docker", "kill", fmt.Sprintf("node%v", nodeNub))
 // 	err := cmd.Run()
-// 	require.NoError(t, err, "failed to kill node number %v", nodeNub)
+// 	require.NoError(t, err)
 
 // 	return proxyArray
 // }
@@ -596,29 +596,29 @@ func getElectionInfo(proxyAddr, electionID string, t *testing.T) ptypes.GetElect
 // func restartNode(nodeNub int, t *testing.T) {
 // 	cmd := exec.Command("docker", "restart", fmt.Sprintf("node%v", nodeNub))
 // 	err := cmd.Run()
-// 	require.NoError(t, err, "failed to restart node number %v", nodeNub)
+// 	require.NoError(t, err)
 
 // 	// Replace the relative path
 // 	cmd = exec.Command("rm", fmt.Sprintf("/Users/jean-baptistezhang/EPFL_cours/semestre_2/d-voting/nodedata/node%v/daemon.sock", nodeNub))
 // 	err = cmd.Run()
-// 	require.NoError(t, err, "failed to rm node number %v socket", nodeNub)
+// 	require.NoError(t, err)
 
 // 	cmd = exec.Command("bash", "-c", fmt.Sprintf("docker exec -d node%v memcoin --config /tmp/node%v start --postinstall --promaddr :9100 --proxyaddr :9080 --proxykey adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3 --listen tcp://0.0.0.0:2001 --public //172.18.0.%v:2001", nodeNub, nodeNub, nodeNub+1))
 // 	err = cmd.Run()
-// 	require.NoError(t, err, "failed to resetup node number %v", nodeNub)
+// 	require.NoError(t, err)
 // }
 
 func getDKGInfo(proxyAddr, electionID string, t *testing.T) ptypes.GetActorInfo {
 	// t.Log("Get DKG info")
 
 	resp, err := http.Get(proxyAddr + "/evoting/services/dkg/actors" + "/" + electionID)
-	require.NoError(t, err, "failed to get the DKG setup: %v", err)
+	require.NoError(t, err)
 
 	var infoDKG ptypes.GetActorInfo
 	decoder := json.NewDecoder(resp.Body)
 
 	err = decoder.Decode(&infoDKG)
-	require.NoError(t, err, "failed to decode getDKGElection: %v", err)
+	require.NoError(t, err)
 
 	resp.Body.Close()
 
