@@ -533,7 +533,10 @@ func updateElection(secret kyber.Scalar, proxyAddr, electionIDHex, action string
 	if err != nil {
 		return 0, xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, xerrors.Errorf("failed to read response body: %v", err)
+	}
 	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", body)
 
 	return 0, nil
