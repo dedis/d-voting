@@ -246,9 +246,6 @@ func makeTx(ctx serde.Context, election *etypes.Election, manager txn.Manager,
 		Key:   evoting.ElectionArg,
 		Value: data,
 	}
-	rand.Seed(0)
-	timeWait := rand.Intn(10)
-	time.Sleep(time.Second * time.Duration(timeWait))
 
 	tx, err := manager.Make(args...)
 	if err != nil {
