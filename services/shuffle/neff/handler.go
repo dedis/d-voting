@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"math/rand"
 	"time"
 
 	"go.dedis.ch/kyber/v3"
@@ -25,8 +24,6 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 )
-
-// const watchTimeout = time.Second * 4
 
 var suite = suites.MustFind("Ed25519")
 
@@ -115,7 +112,7 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 		if err != nil {
 			return xerrors.Errorf("failed to make tx: %v", err)
 		}
-		watchTimeout := 4 + rand.Intn(election.ShuffleThreshold)
+		watchTimeout := 4 + election.ShuffleThreshold/2
 		watchCtx, cancel := context.WithTimeout(context.Background(), time.Duration(watchTimeout)*time.Second)
 		defer cancel()
 
