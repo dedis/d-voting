@@ -13,6 +13,7 @@ const useConfiguration = (configObj: any) => {
   const [answers, setAnswers] = useState<Answers>(null);
 
   useEffect(() => {
+    console.log(configObj);
     if (configObj !== null) {
       const { newConfiguration, newAnswers } = unmarshalConfigAndCreateAnswers(configObj);
       setConfiguration(newConfiguration);

@@ -6,15 +6,16 @@ import ElectionRow from './ElectionRow';
 
 type ElectionTableProps = {
   elections: LightElectionInfo[];
+  setPageIndex: (index: number) => void;
+  pageIndex: number;
 };
 
 // Returns a table where each line corresponds to an election with
 // its name, status and a quickAction if available
 const ELECTION_PER_PAGE = 10;
 
-const ElectionTable: FC<ElectionTableProps> = ({ elections }) => {
+const ElectionTable: FC<ElectionTableProps> = ({ elections, pageIndex, setPageIndex }) => {
   const { t } = useTranslation();
-  const [pageIndex, setPageIndex] = useState(0);
   const [electionsToDisplay, setElectionsToDisplay] = useState<LightElectionInfo[]>([]);
 
   const partitionArray = (array: LightElectionInfo[], size: number) => {

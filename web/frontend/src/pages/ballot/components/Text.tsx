@@ -73,23 +73,23 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
     const newCount = new Array<number>();
     answers.TextAnswers.get(text.ID).map((answer) => newCount.push(answer.length));
     setCharCounts(newCount);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answers]);
 
   const choiceDisplay = (choice: string, choiceIndex: number) => {
     const columns = text.MaxLength > 50 ? 50 : text.MaxLength;
     return (
-      <div className="flex mb-2 " key={choice}>
-        <label htmlFor={choice} className="text-gray-600 text-md">
-          {choice == '' ? '' : choice + ': '}
+      <div className="flex mb-2  md:flex-row flex-col" key={choice}>
+        <label htmlFor={choice} className="text-gray-600 mr-2 w-24 break-words text-md">
+          {choice + ': '}
         </label>
 
         <textarea
           id={choice}
-          className="mx-2 sm:text-md border rounded-md text-gray-600 "
+          className="mx-2 w-[50%] sm:text-md resize-none border rounded-md text-gray-600 "
           rows={charCounts[choiceIndex] > 0 ? Math.ceil(charCounts[choiceIndex] / columns) : 1}
           //rows={text.MaxLength > 0 ? Math.ceil(text.MaxLength / columns) : 1}
           cols={columns}
-          style={{ resize: 'none' }}
           onChange={(e) => handleTextInput(e, choiceIndex)}></textarea>
         <div className="self-end">{charCountDisplay(choiceIndex)}</div>
       </div>
@@ -98,7 +98,7 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
 
   return (
     <div>
-      <h3 className="text-lg text-gray-600">{text.Title}</h3>
+      <h3 className="text-lg break-words text-gray-600">{text.Title}</h3>
       {hintDisplay()}
       <div className="sm:pl-8 mt-2 pl-6">
         {text.Choices.map((choice, index) => choiceDisplay(choice, index))}

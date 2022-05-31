@@ -1,4 +1,4 @@
-import { FC, Fragment, useState } from 'react';
+import { FC, Fragment, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { newElection } from 'components/utils/Endpoints';
 
@@ -17,6 +17,8 @@ import RedirectToModal from 'components/modal/RedirectToModal';
 import { CheckIcon, PlusSmIcon } from '@heroicons/react/outline';
 import Tabs from './Tabs';
 import RemoveElementModal from './RemoveElementModal';
+import { useConfiguration } from 'components/utils/useConfiguration';
+import BallotDisplay from 'pages/ballot/components/BallotDisplay';
 
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
@@ -40,7 +42,14 @@ const ElectionForm: FC<ElectionFormProps> = () => {
   const [subjectIdToRemove, setSubjectIdToRemove] = useState<ID>('');
   const [titleChanging, setTitleChanging] = useState<boolean>(true);
   const [navigateDestination, setNavigateDestination] = useState(null);
+  const [marshalledConf, setMarshalledConf] = useState<any>(marshalConfig(conf));
+  const { configuration: previewConf, answers, setAnswers } = useConfiguration(marshalledConf);
+
   const { MainTitle, Scaffold } = conf;
+
+  useEffect(() => {
+    setMarshalledConf(marshalConfig(conf));
+  }, [conf]);
 
   async function createHandler() {
     const data = {
@@ -149,7 +158,9 @@ const ElectionForm: FC<ElectionFormProps> = () => {
               </>
             ) : (
               <>
-                <div className="mt-1 ml-3" onClick={() => setTitleChanging(true)}>
+                <div
+                  className="mt-1 ml-3 w-[90%] break-words"
+                  onClick={() => setTitleChanging(true)}>
                   {MainTitle}
                 </div>
                 <div className="ml-1">
@@ -214,7 +225,14 @@ const ElectionForm: FC<ElectionFormProps> = () => {
     return (
       <div className="w-screen px-4 md:px-0 mb-4 md:w-auto">
         <div className="border rounded-md">
-          <div className="h-[calc(100vh-265px)] ml-2">preview</div>
+          <div className="ml-2 w-[95%]">
+            <BallotDisplay
+              configuration={previewConf}
+              answers={answers}
+              setAnswers={setAnswers}
+              userErrors=""
+            />
+          </div>
         </div>
       </div>
     );
