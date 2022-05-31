@@ -137,7 +137,7 @@ Then you should be able to run the setup script:
 With this other script you can choose the number of nodes that you want to set up:
 
 ```sh
-./setupnNode.sh -n 3 -d false
+./setupnNode.sh -n 3 
 ```
 
 This script will setup the nodes and services. If you restart do not forget to
@@ -152,7 +152,7 @@ rm -rf /tmp/node{1,2,3}
 ## Automate the previous setup using `tmux`
 
 If you have `tmux` installed, you can start a `tmux` session that will
-execute the above setup by running in the project root `./runNode.sh -n 3 -a true -d false`. This
+execute the above setup by running in the project root `./runNode.sh -n 3`. This
 command takes as argument the number of nodes. 
 Once the session is started, you can move around the panes with
 `Ctrl+B` followed by arrow keys or by `N`. You can also have an overview of the windows 
@@ -165,7 +165,7 @@ then delete the node data (i.e. the files `/tmp/node{1,2,3}`).
 
 ## Run the scenario test
 
-If nodes are running and `setup.sh` or `setupnNode.sh 3` has been called, you can run a test
+If nodes are running and `setup.sh` or `./setupnNode.sh -n 3` has been called, you can run a test
 scenario:
 
 ```sh
