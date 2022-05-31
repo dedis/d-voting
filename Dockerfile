@@ -5,16 +5,6 @@
 ##
 FROM golang:1.17.7-alpine AS build
 
-RUN apk add --update \
-        coreutils \
-        curl \
-        git \
-        gcc \
-        g++ \
-        make \
-        libc-dev && \
-    rm -rf /var/cache/apk/*
-
 ENV PATH="${GOPATH}/bin:${PATH}"
 ENV LLVL=info
 
