@@ -129,10 +129,8 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 		t.Log(proxyArray[i])
 		err = initDKG(secret, proxyArray[i], electionID, t)
 		require.NoError(t, err)
-		// time.Sleep((time.Second) * 10)
 
 	}
-	// time.Sleep((time.Second) * 10)
 	t.Log("Setup DKG")
 
 	msg := ptypes.UpdateDKG{
@@ -157,7 +155,6 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	diff := currentTime.Sub(oldTime)
 	timeTable[0] = diff.Seconds()
 	t.Logf("DKG setup takes: %v sec", diff.Seconds())
-	// time.Sleep(time.Second * 5)
 
 	randomproxy := "http://localhost:9081"
 	t.Logf("Open election send to proxy %v", randomproxy)
@@ -200,7 +197,6 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	votesfrontend := make([]types.Ballot, numVotes)
 
 	fakeConfiguration := fake.BasicConfiguration
-	// t.Logf("configuration is: %v", fakeConfiguration)
 
 	for i := 0; i < numVotes; i++ {
 
@@ -245,7 +241,6 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 		require.NoError(t, err)
 
 		resp.Body.Close()
-		// t.Log("Response body: " + string(body))
 
 	}
 	time.Sleep(time.Second * 5)
@@ -614,7 +609,6 @@ func restartNode(nodeNub int, t *testing.T) {
 }
 
 func getDKGInfo(proxyAddr, electionID string, t *testing.T) ptypes.GetActorInfo {
-	// t.Log("Get DKG info")
 
 	resp, err := http.Get(proxyAddr + "/evoting/services/dkg/actors" + "/" + electionID)
 	require.NoError(t, err)
