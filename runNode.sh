@@ -6,6 +6,7 @@
 
 # by default run on local
 DOCKER=false
+ATTACH=true
 
 POSITIONAL_ARGS=()
 
@@ -16,8 +17,8 @@ while [[ $# -gt 0 ]]; do
       echo      "Options:"
       echo      "-h  |  --help     program help (this file)"
       echo      "-n  |  --node     number of d-voting nodes"
-      echo      "-a  |  --attach   attach tmux window to current shell true/false"
-      echo      "-d  |  --docker   launch nodes on docker containers true/false"
+      echo      "-a  |  --attach   attach tmux window to current shell true/false, by default true"
+      echo      "-d  |  --docker   launch nodes on docker containers true/false, by default false"
       exit 0
       ;;
     -n|--node)

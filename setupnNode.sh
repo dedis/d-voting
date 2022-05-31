@@ -18,7 +18,7 @@ while [[ $# -gt 0 ]]; do
       echo      "Options:"
       echo      "-h  |  --help     program help (this file)"
       echo      "-n  |  --node     number of d-voting nodes"
-      echo      "-d  |  --docker   launch nodes on docker containers true/false"
+      echo      "-d  |  --docker   launch nodes on docker containers true/false, by default false"
       exit 0
       ;;
     -n|--node)
