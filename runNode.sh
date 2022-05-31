@@ -65,13 +65,11 @@ tmux list-sessions | rg "^$s:" >/dev/null 2>&1 && { echo >&2 "A session with the
 tmux new-session -d -s $s
 
 # Clean logs
-if [ -d "./log/log" ] 
-then
-    rm -rf ./log/log
-    mkdir -p ./log/log
-else
-    mkdir -p ./log/log
-fi
+rm -rf ./log/log
+mkdir -p ./log/log
+
+
+
 
 if [ "$DOCKER" == false ]; then
     make build
