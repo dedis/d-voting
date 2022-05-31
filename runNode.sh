@@ -100,7 +100,7 @@ if [ "$DOCKER" == false ]; then
     tmux send-keys -t $s:$window "PROXY_LOG=info LLVL=info ./memcoin --config /tmp/node$from start --postinstall --promaddr :$((9099 + $from)) --proxyaddr :$((9079 + $from)) --proxykey $pk --listen tcp://0.0.0.0:$((2000 + $from)) --public //localhost:$((2000 + $from))| tee ./log/log/node$from.log" C-m
 else
     docker run -d -it --env LLVL=info --name node$from --network evoting-net -v "$(pwd)"/nodedata:/tmp  --publish $(( 9079+$from )):9080 node
-    tmux send-keys -t $s:$window "eval docker exec node$from memcoin --config /tmp/node$from start --postinstall \
+    tmux send-keys -t $s:$window "docker exec node$from memcoin --config /tmp/node$from start --postinstall \
   --promaddr :9100 --proxyaddr :9080 --proxykey $pk --listen tcp://0.0.0.0:2001 --public //$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' node$from):2001 | tee ./log/log/node$from.log" C-m
 fi
 

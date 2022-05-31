@@ -127,7 +127,7 @@ else
 
     for i in "${vals[@]}"
     do
-        eval docker exec node$i memcoin --config /tmp/node$i minogrpc join \
+        docker exec node$i memcoin --config /tmp/node$i minogrpc join \
         --address //$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' node1):2001 $conn_token
 
     done
