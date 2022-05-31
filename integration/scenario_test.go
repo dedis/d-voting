@@ -53,7 +53,7 @@ func getScenarioTest(numNodes int, numVotes int, numElection int) func(*testing.
 		proxyList := make([]string, numNodes)
 
 		for i := 0; i < numNodes; i++ {
-			proxyList[i] = fmt.Sprintf("http://localhost:%v", 9080+i)
+			proxyList[i] = fmt.Sprintf("http://localhost:%d", 9080+i)
 			t.Log(proxyList[i])
 		}
 
