@@ -6,6 +6,9 @@
 # that the "memcoin" binary is at the root. You can build it with:
 #   go build ./cli/memcoin
 
+# by default run on local
+DOCKER=false
+
 POSITIONAL_ARGS=()
 
 while [[ $# -gt 0 ]]; do

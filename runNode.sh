@@ -4,6 +4,9 @@
 # an evoting system. User can pass number of nodes, window attach mode useful for autotest,
 # and docker usage.
 
+# by default run on local
+DOCKER=false
+
 POSITIONAL_ARGS=()
 
 while [[ $# -gt 0 ]]; do
