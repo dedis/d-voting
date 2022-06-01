@@ -20,9 +20,7 @@
     "noEmit": false,
   },
   "ts-node": {
-    "compilerOptions": {
-      "module": "CommonJS"
-    }
+    "esm": true
   },
   "include": [
     "src/Server.ts",

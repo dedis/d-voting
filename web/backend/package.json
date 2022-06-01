@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "src/Server.ts",
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "start": "ts-node -r dotenv/config src/Server.ts dotenv_config_path=config.env",
     "dev": "./node_modules/.bin/nodemon",
