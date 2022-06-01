@@ -40,7 +40,7 @@ export dela_public="//localhost:9000"
 ```
 with the node's public address:
 ```sh
-`export dela_public="//172.16.253.150:9000"`
+export dela_public="//172.16.253.150:9000"
 ```
 
 ### Leader's node
