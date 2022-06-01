@@ -32,6 +32,17 @@ The resulting .deb can be found in the `dist/` folder.
 
 ## Things to do after install
 
+### Network config
+
+Ensure that the public address is correct. For instance, in `network.env`, replace:
+```sh
+export dela_public="//localhost:9000"
+```
+with the node's public address:
+```sh
+`export dela_public="//172.16.253.150:9000"`
+```
+
 ### Leader's node
 
 Get the token and certificate (24h * 30 = 720):
@@ -58,6 +69,8 @@ be re-done in case the DB is reset.
 sudo memcoin --config /var/opt/dedis/dvoting/data/dela minogrpc join \
     --address <MASTER NODE ADDRESS> --token <TOKEN> --cert-hash <CERT HASH>
 ```
+
+Example of `<MASTER NODE ADDRESS>`: `'//172.16.253.150:9000'`
 
 Get the node's address and public key:
 
@@ -87,7 +100,7 @@ sudo memcoin --config /var/opt/dedis/dvoting/data/dela ordering setup \
 ```sh
 PK=<> # taken from the "ordering export", the part after ":"
 sudo memcoin --config /var/opt/dedis/dvoting/data/dela pool add \
-    --key /home/user/master_key.key \
+    --key /home/user/master.key \
     --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access \
     --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 \
     --args access:grant_contract --args go.dedis.ch/dela.Evoting \
