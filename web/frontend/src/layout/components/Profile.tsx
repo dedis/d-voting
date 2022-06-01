@@ -38,8 +38,10 @@ const Profile: FC<ProfileProps> = ({ authCtx, handleLogout, handleLogin, fctx })
               Logged as {authCtx.firstname} {authCtx.lastname}
             </p>
           </Menu.Item>
-          <Menu.Item onClick={handleLogout}>
-            <div className={'cursor-pointer block px-4 py-2 text-sm text-gray-700'}>
+          <Menu.Item>
+            <div
+              onClick={handleLogout}
+              className={'cursor-pointer block px-4 py-2 text-sm text-gray-700'}>
               {t('logout')}
             </div>
           </Menu.Item>
