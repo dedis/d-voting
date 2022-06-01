@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "src/Server.ts",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
-    "start": "ts-node src/Server.ts",
+    "start": "source config.env && ts-node src/Server.ts",
     "dev": "./node_modules/.bin/nodemon",
     "eslint": "./node_modules/.bin/eslint .",
     "eslint-fix": "./node_modules/.bin/eslint . --fix",

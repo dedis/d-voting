@@ -10,10 +10,10 @@
 
 # production
 /build
+/dist
 
 #config
-config.js
-config.json
+config.env
 .env
 
 # misc

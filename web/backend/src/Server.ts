@@ -8,8 +8,6 @@ import crypto from 'crypto';
 import lmdb, { RangeOptions } from 'lmdb';
 import xss from 'xss';
 
-import config from '../config.json' assert { type: "json" };
-
 const app = express();
 
 app.use(morgan('tiny'));
@@ -30,7 +28,7 @@ app.use(cookieParser());
 const oneDay = 1000 * 60 * 60 * 24;
 app.use(
   session({
-    secret: config.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET as string,
     saveUninitialized: true,
     cookie: { maxAge: oneDay },
     resave: false,
@@ -62,7 +60,7 @@ const usersDB = lmdb.open({ path: './dvoting-users' });
 // This is via this endpoint that the client request the tequila key, this key
 // will then be used for redirection on the tequila server
 app.get('/api/get_teq_key', (req, res) => {
-  const body = `urlaccess=${config.FRONT_END_URL}/api/control_key\nservice=Evoting\nrequest=name,firstname,email,uniqueid,allunits`;
+  const body = `urlaccess=${process.env.FRONT_END_URL}/api/control_key\nservice=Evoting\nrequest=name,firstname,email,uniqueid,allunits`;
   axios
     .post('https://tequila.epfl.ch/cgi-bin/tequila/createrequest', body)
     .then((response) => {
@@ -327,8 +325,8 @@ function getPayload(dataStr: string) {
 
   const edCurve = kyber.curve.newCurve('edwards25519');
 
-  const priv = Buffer.from(config.PRIVATE_KEY, 'hex');
-  const pub = Buffer.from(config.PUBLIC_KEY, 'hex');
+  const priv = Buffer.from(process.env.PRIVATE_KEY as string, 'hex');
+  const pub = Buffer.from(process.env.PUBLIC_KEY as string, 'hex');
 
   const scalar = edCurve.scalar();
   scalar.unmarshalBinary(priv);
@@ -352,7 +350,7 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
   let payload = getPayload(dataStr);
 
   // we strip the `/api` part: /api/election/xxx => /election/xxx
-  let uri = config.DELA_NODE_URL + req.baseUrl.slice(4);
+  let uri = process.env.DELA_NODE_URL + req.baseUrl.slice(4);
 
   // in case this is a DKG  init request, we must extract the proxy addr and
   // update the payload.
@@ -419,8 +417,8 @@ app.delete('/api/evoting/elections/:electionID', (req, res) => {
 
   const edCurve = kyber.curve.newCurve('edwards25519');
 
-  const priv = Buffer.from(config.PRIVATE_KEY, 'hex');
-  const pub = Buffer.from(config.PUBLIC_KEY, 'hex');
+  const priv = Buffer.from(process.env.PRIVATE_KEY as string, 'hex');
+  const pub = Buffer.from(process.env.PUBLIC_KEY as string, 'hex');
 
   const scalar = edCurve.scalar();
   scalar.unmarshalBinary(priv);
@@ -431,7 +429,7 @@ app.delete('/api/evoting/elections/:electionID', (req, res) => {
   const sign = kyber.sign.schnorr.sign(edCurve, scalar, Buffer.from(electionID));
 
   // we strip the `/api` part: /api/election/xxx => /election/xxx
-  const uri = config.DELA_NODE_URL + xss(req.url.slice(4));
+  const uri = process.env.DELA_NODE_URL + xss(req.url.slice(4));
 
   axios({
     method: req.method as Method,
