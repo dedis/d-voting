@@ -246,7 +246,13 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	time.Sleep(time.Second * 5)
 
 	// Kill and restart the node, change false to true when we want to use
-	if false {
+	KILLNODE := false
+	tmp, ok := os.LookupEnv("KILLNODE")
+	if ok {
+		KILLNODE, err = strconv.ParseBool(tmp)
+		require.NoError(t, err)
+	}
+	if KILLNODE {
 		proxyArray = killNode(proxyArray, 3, t)
 		time.Sleep(time.Second * 3)
 

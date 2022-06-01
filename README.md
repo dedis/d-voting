@@ -196,8 +196,10 @@ Afterwards use the following commands, replace 4 by the desired nb of nodes :
 ./runNode.sh -n 4 -a true -d true
 ./setupnNode.sh -n 4 -d true
 
-NNODES=4 go test -v -run ^TestScenario$ github.com/dedis/d-voting/integration -count=1
+NNODES=4 KILLNODE=true go test -v -run ^TestScenario$ github.com/dedis/d-voting/integration -count=1
 ```
+
+Here we set KILLNODE=true or false to decide whether kill and restart a node during the election process. By default, it's set to false.
 
 To end the session, run `./kill_test.sh`.
 
