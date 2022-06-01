@@ -58,7 +58,6 @@ do
     ./kill_test.sh
     # move log to a new directory named logkill
     mv log/log log/logkill$i
-    mkdir -p log/log
 done
 
-echo "Test $RUN_TIMES times test and succeeded $(grep -c ok  ./log*/gotest.log| awk 'BEGIN{FS=":"}{x+=$2}END{print x}') times"
+echo "Test $RUN_TIMES times test and succeeded $(grep -c ok  ./log/log*/gotest.log| awk 'BEGIN{FS=":"}{x+=$2}END{print x}') times"
