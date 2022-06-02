@@ -7,6 +7,19 @@ import kyber from '@dedis/kyber';
 import crypto from 'crypto';
 import lmdb, { RangeOptions } from 'lmdb';
 import xss from 'xss';
+import createMemoryStore from 'memorystore';
+
+const MemoryStore = createMemoryStore(session);
+
+// store is used to store the session
+const store = new MemoryStore({
+  checkPeriod: 86400000, // prune expired entries every 24h
+});
+
+// Keeps an in-memory mapping between a SCIPER (userid) and its opened session
+// IDs. Needed to invalidate the sessions of a used when its role changes. The
+// value is a bag of sessions IDs.
+const sess2sciper = new Map<number, Map<string, undefined>>();
 
 const app = express();
 
@@ -32,6 +45,7 @@ app.use(
     saveUninitialized: true,
     cookie: { maxAge: oneDay },
     resave: false,
+    store: store,
   })
 );
 
@@ -100,6 +114,11 @@ app.get('/api/control_key', (req, res) => {
       req.session.lastname = lastname;
       req.session.firstname = firstname;
       req.session.role = role;
+
+      const a = sess2sciper.get(req.session.userid) || new Map<string, undefined>();
+      a.set(req.sessionID, undefined);
+      sess2sciper.set(sciper, a);
+
       res.redirect('/logged');
     })
     .catch((error) => {
@@ -110,7 +129,16 @@ app.get('/api/control_key', (req, res) => {
 
 // This endpoint serves to logout from the app by clearing the session.
 app.post('/api/logout', (req, res) => {
+  if (req.session.userid === undefined) {
+    res.status(400).send('not logged in');
+  }
+
   req.session.destroy(() => {
+    const a = sess2sciper.get(req.session.userid as number);
+    if (a !== undefined) {
+      a.delete(req.sessionID);
+      sess2sciper.set(req.session.userid as number, a);
+    }
     res.redirect('/');
   });
 });
@@ -198,6 +226,13 @@ app.post('/api/remove_role', (req, res) => {
   usersDB
     .remove(sciper)
     .then(() => {
+      const sessionIDs = sess2sciper.get(sciper);
+      if (sessionIDs !== undefined) {
+        sessionIDs.forEach((_, sessionID) => {
+          store.destroy(sessionID);
+        });
+      }
+
       res.status(200).send('Removed');
     })
     .catch((error) => {
