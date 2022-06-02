@@ -1,0 +1,17 @@
+[Unit]
+Description=D-Voting Node Service
+After=network.target
+
+[Service]
+User=dvoting
+
+ExecStartPre=/bin/rm -f /var/opt/dedis/dvoting/data/dela/daemon.sock
+ExecStart=/opt/dedis/dvoting/bin/start-dvoting
+
+KillSignal=SIGINT
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

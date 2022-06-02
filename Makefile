@@ -23,3 +23,7 @@ test_integration:
 
 build:
 	go build -ldflags="-X $(versionFlag) -X $(timeFlag)" ./cli/memcoin
+
+deb:
+	GOOS=linux GOARCH=amd64 make build
+	cd deb-package; ./build-deb.sh; cd ..

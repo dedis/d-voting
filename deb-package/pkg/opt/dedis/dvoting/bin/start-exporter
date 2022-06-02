@@ -1,0 +1,5 @@
+#!/bin/bash
+
+source /etc/dedis/dvoting/network.env
+
+/opt/exporter/node_exporter --web.listen-address=${node_exporter_addr} --collector.systemd
