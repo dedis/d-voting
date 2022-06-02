@@ -55,7 +55,7 @@ app.use(express.urlencoded({ extended: true }));
 //   }
 // });
 
-const usersDB = lmdb.open({ path: './dvoting-users' });
+const usersDB = lmdb.open({ path: `${process.env.DB_PATH}dvoting-users` });
 
 // This is via this endpoint that the client request the tequila key, this key
 // will then be used for redirection on the tequila server
@@ -224,7 +224,7 @@ app.post('/api/remove_role', (req, res) => {
 // Proxies
 // ---
 
-const proxiesDB = lmdb.open<string, string>({ path: './proxies' });
+const proxiesDB = lmdb.open<string, string>({ path: `${process.env.DB_PATH}proxies` });
 
 app.get('/api/proxies', (req, res) => {
   const output = new Map<string, string>();
