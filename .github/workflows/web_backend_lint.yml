@@ -15,15 +15,16 @@ jobs:
         working-directory: ./web/backend
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
       with:
-          node-version: '17.x'
+          node-version: '16'
 
     - name: Instal dependencies
       run: npm install
 
     - name: Adds config file
-      run: mv config.json.template config.json
+      run: mv config.env.template config.env
 
     - name: run eslint
       run: npm run eslint
