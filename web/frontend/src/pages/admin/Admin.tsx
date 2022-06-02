@@ -86,12 +86,12 @@ const Admin: FC = () => {
       </div>
 
       <AdminTable users={users} setUsers={setUsers} />
-
-      <div className="py-6 pl-2">
-        <div className="font-bold uppercase text-lg text-gray-700">{t('DKGStatuses')}</div>
+      <div className="mt-4 mb-6">
+        <DKGTable
+          nodeProxyAddresses={nodeProxyAddresses}
+          setNodeProxyAddresses={setNodeProxyAddresses}
+        />
       </div>
-
-      <DKGTable nodeProxyAddresses={nodeProxyAddresses} />
     </div>
   ) : (
     <Loading />

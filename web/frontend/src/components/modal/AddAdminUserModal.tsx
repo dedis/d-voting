@@ -9,6 +9,7 @@ import SpinnerIcon from 'components/utils/SpinnerIcon';
 import { UserAddIcon } from '@heroicons/react/outline';
 import ShortUniqueId from 'short-unique-id';
 import { FlashContext, FlashLevel } from 'index';
+import { UserRole } from 'types/userRole';
 
 const uid = new ShortUniqueId({ length: 8 });
 
@@ -18,7 +19,7 @@ type AddAdminUserModalProps = {
   handleAddRoleUser(user: object): void;
 };
 
-const roles = ['Admin', 'Operator'];
+const roles = [UserRole.Admin, UserRole.Operator];
 
 const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen, handleAddRoleUser }) => {
   const { t } = useTranslation();
