@@ -1,7 +1,7 @@
 import express from 'express';
 import axios, { AxiosError, Method } from 'axios';
 import cookieParser from 'cookie-parser';
-import session from 'express-session';
+import session, { SessionData } from 'express-session';
 import morgan from 'morgan';
 import kyber from '@dedis/kyber';
 import crypto from 'crypto';
@@ -55,7 +55,9 @@ app.use(express.urlencoded({ extended: true }));
 //   }
 // });
 
-const usersDB = lmdb.open({ path: `${process.env.DB_PATH}dvoting-users` });
+const usersDB = lmdb.open<'admin' | 'operator', number>({
+  path: `${process.env.DB_PATH}dvoting-users`,
+});
 
 // This is via this endpoint that the client request the tequila key, this key
 // will then be used for redirection on the tequila server
@@ -92,24 +94,12 @@ app.get('/api/control_key', (req, res) => {
       const lastname = resa.data.split('\nname=')[1].split('\n')[0];
       const firstname = resa.data.split('\nfirstname=')[1].split('\n')[0];
 
-      const user = usersDB.get(sciper) || {};
-      if (user.role === undefined || user.role === '') {
-        user.role = 'voter';
-        user.lastname = lastname;
-        user.firstname = firstname;
-        user.loggedin = false;
-      }
-      console.log('sciper:', sciper);
-      if (sciper === '228271') {
-        user.role = 'admin';
-      }
-      return usersDB.put(sciper, user).then(() => [sciper, user]);
-    })
-    .then(([sciper, user]) => {
+      const role = usersDB.get(sciper) || "";
+
       req.session.userid = parseInt(sciper, 10);
-      req.session.lastname = user.lastname;
-      req.session.firstname = user.firstname;
-      req.session.role = user.role;
+      req.session.lastname = lastname;
+      req.session.firstname = firstname;
+      req.session.role = role;
       res.redirect('/logged');
     })
     .catch((error) => {
@@ -149,61 +139,51 @@ app.get('/api/personal_info', (req, res) => {
   }
 });
 
+// ---
+// Users role
+// ---
+
 // This call allow a user that is admin to get the list of the people that have
 // a special role (not a voter).
 app.get('/api/user_rights', (req, res) => {
-  const sciper = req.session.userid;
-
-  if (!sciper) {
-    res.status(400).send('Not logged in');
+  if (!isAuthorized(['admin'], req)) {
+    res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
 
-  const user = usersDB.get(sciper);
 
-  if (user.role !== 'admin') {
-    res.status(400).send('You must be admin to request this');
-    return;
-  }
 
   const opts: RangeOptions = {};
-  const users = Array.from(usersDB.getRange(opts).map(({ value }) => value));
+  const users = Array.from(
+    usersDB.getRange(opts).map(
+      ({key, value}) => ( {id: "0", sciper: key, role: value} )
+    )
+  );
   res.json(users);
 });
 
 // This call (only for admins) allow an admin to add a role to a voter.
 app.post('/api/add_role', (req, res) => {
-  if (!req.session.userid) {
-    res.status(400).send('Not logged in');
+  if (!isAuthorized(['admin'], req)) {
+    res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
 
-  const requester = usersDB.get(req.session.userid);
-  if (requester.role !== 'admin') {
-    res.status(400).send('You must be admin to request this');
-    return;
-  }
+  // {sciper: xxx, role: xxx}
 
   const { sciper } = req.body;
   const { role } = req.body;
-  const user = usersDB.get(sciper);
-  user.role = role;
 
-  usersDB.put(sciper, user).catch((error) => {
-    res.status(500).send('Add role failed');
+  usersDB.put(sciper, role).catch((error) => {
+    res.status(500).send('Failed to add role');
     console.log(error);
   });
 });
 
 // This call (only for admins) allow an admin to remove a role to a user.
 app.post('/api/remove_role', (req, res) => {
-  if (!req.session.userid) {
-    res.status(400).send('Not logged in');
-    return;
-  }
-
-  if (req.session.role !== 'admin') {
-    res.status(400).send('You must be admin to request this');
+  if (!isAuthorized(['admin'], req)) {
+    res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
 
@@ -219,6 +199,10 @@ app.post('/api/remove_role', (req, res) => {
       console.log(error);
     });
 });
+
+// ---
+// end of users role
+// ---
 
 // ---
 // Proxies
@@ -252,6 +236,11 @@ app.get('/api/proxies/:nodeAddr', (req, res) => {
 });
 
 app.post('/api/proxies', (req, res) => {
+  if (!isAuthorized(['admin', 'operator'], req)) {
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
+  }
+
   try {
     const bodydata = req.body;
     proxiesDB.put(bodydata.NodeAddr, bodydata.Proxy);
@@ -263,6 +252,11 @@ app.post('/api/proxies', (req, res) => {
 });
 
 app.put('/api/proxies/:nodeAddr', (req, res) => {
+  if (!isAuthorized(['admin', 'operator'], req)) {
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
+  }
+
   let { nodeAddr } = req.params;
 
   nodeAddr = decodeURIComponent(nodeAddr);
@@ -290,6 +284,11 @@ app.put('/api/proxies/:nodeAddr', (req, res) => {
 });
 
 app.delete('/api/proxies/:nodeAddr', (req, res) => {
+  if (!isAuthorized(['admin', 'operator'], req)) {
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
+  }
+
   let { nodeAddr } = req.params;
 
   nodeAddr = decodeURIComponent(nodeAddr);
@@ -344,6 +343,16 @@ function getPayload(dataStr: string) {
   return payload;
 }
 
+function isAuthorized(roles: string[], req: express.Request): boolean {
+  if (!req.session || !req.session.userid) {
+    return false;
+  }
+
+  const {role} = req.session;
+
+  return roles.includes(role as string);
+}
+
 // sendToDela signs the message and sends it to the dela proxy. It makes no
 // authentication check.
 function sendToDela(dataStr: string, req: express.Request, res: express.Response) {
@@ -392,13 +401,15 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
     });
 }
 
+// Secure /api/evoting to admins and operators
 app.use('/api/evoting/*', (req, res, next) => {
-  if (req.session.role !== 'admin') {
+  if (!isAuthorized(['admin', 'operator'], req)) {
     console.log('role is:', req.session.role);
-    res.status(400).send('Unauthorized');
-  } else {
-    next();
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
   }
+
+  next();
 });
 
 // https://stackoverflow.com/a/1349426

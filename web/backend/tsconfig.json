@@ -33,6 +33,7 @@
     "jest.config.js",
     ".eslintrc",
     "dist",
+    "add_user.js"
   ],
   "typedocOptions": {
     "entryPoints": ["src/Server.ts"],
