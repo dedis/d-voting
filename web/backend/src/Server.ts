@@ -94,7 +94,7 @@ app.get('/api/control_key', (req, res) => {
       const lastname = resa.data.split('\nname=')[1].split('\n')[0];
       const firstname = resa.data.split('\nfirstname=')[1].split('\n')[0];
 
-      const role = usersDB.get(sciper) || "";
+      const role = usersDB.get(sciper) || '';
 
       req.session.userid = parseInt(sciper, 10);
       req.session.lastname = lastname;
@@ -151,13 +151,9 @@ app.get('/api/user_rights', (req, res) => {
     return;
   }
 
-
-
   const opts: RangeOptions = {};
   const users = Array.from(
-    usersDB.getRange(opts).map(
-      ({key, value}) => ( {id: "0", sciper: key, role: value} )
-    )
+    usersDB.getRange(opts).map(({ key, value }) => ({ id: '0', sciper: key, role: value }))
   );
   res.json(users);
 });
@@ -348,7 +344,7 @@ function isAuthorized(roles: string[], req: express.Request): boolean {
     return false;
   }
 
-  const {role} = req.session;
+  const { role } = req.session;
 
   return roles.includes(role as string);
 }

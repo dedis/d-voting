@@ -10,33 +10,36 @@
 const lmdb = require('lmdb');
 
 const addAdmin = (dbPath, sciper) => {
-    const usersDB = lmdb.open({ path: dbPath });
+  const usersDB = lmdb.open({ path: dbPath });
 
-    usersDB.put(String(sciper), "admin").then(() => {
-        console.log("ok");
-    }).catch((error) => {
-        console.log(error);
+  usersDB
+    .put(String(sciper), 'admin')
+    .then(() => {
+      console.log('ok');
+    })
+    .catch((error) => {
+      console.log(error);
     });
-}
+};
 
 const listEls = (dbPath) => {
-    const db = lmdb.open({ path: dbPath });
+  const db = lmdb.open({ path: dbPath });
 
-    db.getRange({}).forEach(
-        ({ key, value }) => { console.log(`'${key}' => '${value}' \t | \t  (${typeof key}) => (${typeof key})`) }
-    )
-}
+  db.getRange({}).forEach(({ key, value }) => {
+    console.log(`'${key}' => '${value}' \t | \t  (${typeof key}) => (${typeof key})`);
+  });
+};
 
 const removeEl = (dbPath, key) => {
-    const db = lmdb.open({ path: dbPath });
+  const db = lmdb.open({ path: dbPath });
 
-    db.remove(String(key))
-        .then(() => {
-            console.log(`key '${key}' removed`)
-        })
-        .catch((error) => {
-            console.log(`error: ${error}`);
-        });
-}
+  db.remove(String(key))
+    .then(() => {
+      console.log(`key '${key}' removed`);
+    })
+    .catch((error) => {
+      console.log(`error: ${error}`);
+    });
+};
 
-module.exports = { addAdmin, listEls, removeEl }
+module.exports = { addAdmin, listEls, removeEl };
