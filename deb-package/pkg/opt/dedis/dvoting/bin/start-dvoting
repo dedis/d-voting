@@ -7,6 +7,4 @@ source /etc/dedis/dvoting/network.env
 
 echo "Starting ${dela_bin} on ${dela_listen} using folder ${dela_data} ..."
 
-pk=3c07e93b9d99032366f7d92697f8dc1337bf8bb617b3faa6389e94d18e3d0e40
-
-LLVL=info ${dela_bin} --config ${dela_data} start --postinstall --promaddr ${prometheus_addr} --proxyaddr ${proxy_addr} --listen ${dela_listen} --public ${dela_public} --proxykey ${pk}
+LLVL=info ${dela_bin} --config ${dela_data} start --postinstall --promaddr ${prometheus_addr} --proxyaddr ${proxy_addr} --listen ${dela_listen} --public ${dela_public} --proxykey ${dela_pk}
