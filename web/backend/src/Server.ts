@@ -1,7 +1,7 @@
 import express from 'express';
 import axios, { AxiosError, Method } from 'axios';
 import cookieParser from 'cookie-parser';
-import session, { SessionData } from 'express-session';
+import session from 'express-session';
 import morgan from 'morgan';
 import kyber from '@dedis/kyber';
 import crypto from 'crypto';
@@ -138,6 +138,16 @@ app.get('/api/personal_info', (req, res) => {
     });
   }
 });
+
+function isAuthorized(roles: string[], req: express.Request): boolean {
+  if (!req.session || !req.session.userid) {
+    return false;
+  }
+
+  const { role } = req.session;
+
+  return roles.includes(role as string);
+}
 
 // ---
 // Users role
@@ -337,16 +347,6 @@ function getPayload(dataStr: string) {
   };
 
   return payload;
-}
-
-function isAuthorized(roles: string[], req: express.Request): boolean {
-  if (!req.session || !req.session.userid) {
-    return false;
-  }
-
-  const { role } = req.session;
-
-  return roles.includes(role as string);
 }
 
 // sendToDela signs the message and sends it to the dela proxy. It makes no
