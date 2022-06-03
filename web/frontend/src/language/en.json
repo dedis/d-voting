@@ -228,6 +228,7 @@
     "addNodeProxyError": "An error occurred while trying to add the node and proxy addresses. Error: ",
     "editProxyError": "An error occurred while trying to edit the proxy address. Error: ",
     "removeProxyError": "An error occurred while trying to remove the node and proxy addresses. Error: ",
-    "enterNodeProxy": "Please enter the addresses of the node and the proxy"
+    "enterNodeProxy": "Please enter the addresses of the node and the proxy",
+    "invalidProxyError": "Error: the address you entered is not a valid URL."
   }
 }

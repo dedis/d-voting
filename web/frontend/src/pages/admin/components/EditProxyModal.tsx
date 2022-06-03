@@ -27,7 +27,7 @@ const EditProxyModal: FC<EditProxyModalProps> = ({
   const [currentProxy, setCurrentProxy] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isPosting, setIsPosting] = useState(false);
+  const [, setIsPosting] = useState(false);
   const [postError, setPostError] = useState(null);
   const cancelButtonRef = useRef(null);
 
@@ -69,17 +69,22 @@ const EditProxyModal: FC<EditProxyModalProps> = ({
     setLoading(true);
 
     if (currentProxy !== '') {
-      setError(null);
-      const response = await proxyAddressUpdate();
+      try {
+        new URL(currentProxy);
+        setError(null);
+        const response = await proxyAddressUpdate();
 
-      if (response) {
-        const newNodeProxy = new Map(nodeProxy);
-        newNodeProxy.set(node, currentProxy);
-        setNodeProxy(newNodeProxy);
-        fctx.addMessage(t('proxySuccessfullyEdited'), FlashLevel.Info);
+        if (response) {
+          const newNodeProxy = new Map(nodeProxy);
+          newNodeProxy.set(node, currentProxy);
+          setNodeProxy(newNodeProxy);
+          fctx.addMessage(t('proxySuccessfullyEdited'), FlashLevel.Info);
+        }
+
+        setOpen(false);
+      } catch {
+        setError(t('invalidProxyError'));
       }
-
-      setOpen(false);
     } else {
       setError(t('inputProxyAddressError'));
     }

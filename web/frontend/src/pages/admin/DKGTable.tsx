@@ -1,8 +1,8 @@
-import AddProxyModal from 'components/modal/AddProxyModal';
-import EditProxyModal from 'components/modal/EditProxyModal';
-import RemoveProxyModal from 'components/modal/RemoveProxyModal';
 import React, { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import AddProxyModal from './components/AddProxyModal';
+import EditProxyModal from './components/EditProxyModal';
+import RemoveProxyModal from './components/RemoveProxyModal';
 import ProxyRow from './ProxyRow';
 
 export const NODE_PROXY_PER_PAGE = 5;
@@ -50,7 +50,8 @@ const DKGTable: FC<DKGTableProps> = ({ nodeProxyAddresses, setNodeProxyAddresses
     const newNodeProxy = new Map(nodeProxyAddresses);
     newNodeProxy.set(node, proxy);
     setNodeProxyAddresses(newNodeProxy);
-    setPageIndex(Math.floor(newNodeProxy.size / NODE_PROXY_PER_PAGE));
+
+    setPageIndex(partitionMap(newNodeProxy, NODE_PROXY_PER_PAGE).length - 1);
   };
 
   const handleDeleteProxy = () => {

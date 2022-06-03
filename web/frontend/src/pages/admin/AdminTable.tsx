@@ -1,10 +1,9 @@
 import { FC, useEffect, useState } from 'react';
-
-import AddAdminUserModal from 'components/modal/AddAdminUserModal';
 import { useTranslation } from 'react-i18next';
-import RemoveAdminUserModal from 'components/modal/RemoveAdminUserModal';
 
 import { User } from 'types/userRole';
+import AddAdminUserModal from './components/AddAdminUserModal';
+import RemoveAdminUserModal from './components/RemoveAdminUserModal';
 
 const SCIPERS_PER_PAGE = 5;
 
@@ -51,8 +50,9 @@ const AdminTable: FC<AdminTableProps> = ({ users, setUsers }) => {
   };
 
   const handleAddRoleUser = (user: User): void => {
-    setUsers([...users, user]);
-    setPageIndex(Math.floor(users.length / SCIPERS_PER_PAGE));
+    const newUsers = [...users, user];
+    setUsers(newUsers);
+    setPageIndex(partitionArray(newUsers, SCIPERS_PER_PAGE).length - 1);
   };
 
   const handleRemoveRoleUser = (): void => {

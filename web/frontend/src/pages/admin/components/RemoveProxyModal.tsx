@@ -1,59 +1,59 @@
-import React, { FC, Fragment, useContext, useRef, useState } from 'react';
-import { ENDPOINT_REMOVE_ROLE } from '../utils/Endpoints';
-import PropTypes from 'prop-types';
+import { MinusCircleIcon } from '@heroicons/react/outline';
 import { Dialog, Transition } from '@headlessui/react';
-import { UserRemoveIcon } from '@heroicons/react/outline';
 import SpinnerIcon from 'components/utils/SpinnerIcon';
-import { useTranslation } from 'react-i18next';
 import { FlashContext, FlashLevel } from 'index';
+import React, { FC, Fragment, useContext, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import usePostCall from 'components/utils/usePostCall';
+import * as endpoints from 'components/utils/Endpoints';
 
-type RemoveAdminUserModalProps = {
+type RemoveProxyModalProps = {
   open: boolean;
-  setOpen(opened: boolean): void;
-  sciper: number;
-  handleRemoveRoleUser(): void;
+  setOpen: (open: boolean) => void;
+  node: string;
+  handleDeleteProxy(): void;
 };
 
-const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({
+const RemoveProxyModal: FC<RemoveProxyModalProps> = ({
   open,
   setOpen,
-  sciper,
-  handleRemoveRoleUser,
+  node,
+  handleDeleteProxy,
 }) => {
   const { t } = useTranslation();
   const fctx = useContext(FlashContext);
 
   const [loading, setLoading] = useState(false);
+  const [postError, setPostError] = useState(null);
+  const [, setIsPosting] = useState(false);
+  const cancelButtonRef = useRef(null);
 
-  const handleClose = () => setOpen(false);
+  const sendFetchRequest = usePostCall(setPostError);
+
+  useEffect(() => {
+    if (postError !== null) {
+      fctx.addMessage(t('removeProxyError') + postError, FlashLevel.Error);
+      setPostError(null);
+    }
+  }, [postError]);
 
   const handleDelete = async () => {
-    const requestOptions = {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sciper: sciper }),
+    setLoading(true);
+
+    const req = {
+      method: 'DELETE',
     };
 
-    try {
-      setLoading(true);
-      const res = await fetch(ENDPOINT_REMOVE_ROLE, requestOptions);
-      if (res.status !== 200) {
-        const response = await res.text();
-        fctx.addMessage(
-          `Error HTTP ${res.status} (${res.statusText}) : ${response}`,
-          FlashLevel.Error
-        );
-      } else {
-        handleRemoveRoleUser();
-        fctx.addMessage(t('successRemoveUser'), FlashLevel.Info);
-      }
-    } catch (error) {
-      fctx.addMessage(`${t('errorRemoveUser')}: ${error.message}`, FlashLevel.Error);
+    const response = await sendFetchRequest(endpoints.editProxyAddress(node), req, setIsPosting);
+
+    if (response) {
+      handleDeleteProxy();
+      fctx.addMessage(t('proxySuccessfullyDeleted'), FlashLevel.Info);
     }
-    setLoading(false);
+
     setOpen(false);
+    setLoading(false);
   };
-  const cancelButtonRef = useRef(null);
 
   return (
     <div>
@@ -91,8 +91,11 @@ const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({
                 <div>
                   <div className="text-center">
                     <Dialog.Title as="h3" className="text-lg leading-6 font-medium text-gray-900">
-                      {t('confirmDeleteUserSciper')} {sciper}
+                      {t('confirmDeleteProxy')}
                     </Dialog.Title>
+                    <div className="my-4">
+                      {t('node')}: {node}
+                    </div>
                   </div>
                 </div>
                 <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
@@ -103,14 +106,14 @@ const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({
                     {loading ? (
                       <SpinnerIcon />
                     ) : (
-                      <UserRemoveIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                      <MinusCircleIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
                     )}
                     {t('delete')}
                   </button>
                   <button
                     type="button"
                     className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
-                    onClick={handleClose}
+                    onClick={() => setOpen(false)}
                     ref={cancelButtonRef}>
                     {t('cancel')}
                   </button>
@@ -124,10 +127,4 @@ const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({
   );
 };
 
-RemoveAdminUserModal.propTypes = {
-  open: PropTypes.bool.isRequired,
-  setOpen: PropTypes.func.isRequired,
-  sciper: PropTypes.number.isRequired,
-};
-
-export default RemoveAdminUserModal;
+export default RemoveProxyModal;

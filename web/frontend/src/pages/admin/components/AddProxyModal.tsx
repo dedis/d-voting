@@ -18,7 +18,7 @@ const AddProxyModal: FC<AddProxyModalProps> = ({ open, setOpen, handleAddProxy }
   const fctx = useContext(FlashContext);
   const [error, setError] = useState(null);
   const [postError, setPostError] = useState(null);
-  const [isPosting, setIsPosting] = useState(false);
+  const [, setIsPosting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [node, setNode] = useState('');
   const [proxy, setProxy] = useState('');
@@ -58,17 +58,23 @@ const AddProxyModal: FC<AddProxyModalProps> = ({ open, setOpen, handleAddProxy }
   const handleAdd = async () => {
     setLoading(true);
     if (node !== '' && proxy !== '') {
-      setError(null);
+      try {
+        new URL(proxy);
+        setError(null);
 
-      const response = await saveMapping();
+        const response = await saveMapping();
 
-      if (response) {
-        handleAddProxy(node, proxy);
-        fctx.addMessage(t('nodeProxySuccessfullyAdded'), FlashLevel.Info);
-        setNode('');
-        setProxy('');
+        if (response) {
+          handleAddProxy(node, proxy);
+          fctx.addMessage(t('nodeProxySuccessfullyAdded'), FlashLevel.Info);
+          setNode('');
+          setProxy('');
+        }
+
+        setOpen(false);
+      } catch {
+        setError(t('invalidProxyError'));
       }
-      setOpen(false);
     } else {
       setError(t('inputNodeProxyError'));
     }
