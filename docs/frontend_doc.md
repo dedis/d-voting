@@ -332,6 +332,24 @@ Return:
 `123.456.9%3A9000`. The native javascript functions `decodeURIComponent` and
 `encodeURIComponent` can be used.
 
+## Get the default proxy address
+
+|        |                 |
+|--------|-----------------|
+| URL    | `/config/proxy` |
+| Method | `GET`           |
+| Input  |                 |
+
+
+Return:
+
+`200 OK` `text/plain`
+
+```
+http://example.com/
+```
+
+
 # Production settings
 
 The two followings things that will be shown here is how to have https on the different webpages and how to make the app run on a on server.

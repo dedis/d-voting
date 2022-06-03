@@ -1,8 +1,12 @@
 import { ID } from 'types/configuration';
 import { Results } from 'types/election';
 import * as endpoints from 'components/utils/Endpoints';
+import { useContext } from 'react';
+import { ProxyContext } from 'index';
 
 const useGetResults = () => {
+  const pctx = useContext(ProxyContext);
+
   async function getResults(
     electionID: ID,
     setError: React.Dispatch<any>,
@@ -14,7 +18,7 @@ const useGetResults = () => {
     };
 
     try {
-      const response = await fetch(endpoints.election(electionID), request);
+      const response = await fetch(endpoints.election(pctx.getProxy(), electionID), request);
 
       if (!response.ok) {
         throw Error(response.statusText);

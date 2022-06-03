@@ -6,7 +6,7 @@ import { ID } from 'types/configuration';
 import { Action, OngoingAction, Status } from 'types/election';
 import { pollDKG, pollElection } from './PollStatus';
 import { NodeStatus } from 'types/node';
-import { FlashContext, FlashLevel } from 'index';
+import { FlashContext, FlashLevel, ProxyContext } from 'index';
 import { useNavigate } from 'react-router';
 import { ROUTE_ELECTION_INDEX } from 'Routes';
 
@@ -65,6 +65,7 @@ const useChangeAction = (
 
   const fctx = useContext(FlashContext);
   const navigate = useNavigate();
+  const pctx = useContext(ProxyContext);
 
   const modalClose = (
     <ConfirmModal
@@ -163,7 +164,7 @@ const useChangeAction = (
     // We stop polling when the status has changed to nextStatus
     const match = (s: Status) => s === nextStatus;
 
-    pollElection(endpoints.election(electionID), request, match, interval)
+    pollElection(endpoints.election(pctx.getProxy(), electionID), request, match, interval)
       .then(
         () => onFullFilled(nextStatus),
         (reason: any) => onRejected(reason, previousStatus)

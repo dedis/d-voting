@@ -71,6 +71,28 @@ class FlashMessage {
 // the flash context handles flash messages across the app
 export const FlashContext = createContext<FlashState>(undefined);
 
+// the proxy state provides the proxy address across all the app
+export interface ProxyState {
+  getProxy(): string;
+  setProxy(p: string);
+}
+
+export class ProxyHolder implements ProxyState {
+  proxy: string;
+
+  getProxy(): string {
+    return this.proxy;
+  }
+
+  setProxy(p: string) {
+    this.proxy = p;
+  }
+}
+
+const defaultProxyState = new ProxyHolder();
+
+export const ProxyContext = createContext<ProxyState>(defaultProxyState);
+
 // A small elements to display that the page is loading, should be something
 // more elegant in the future and be its own component.
 const Loading: FC = () => (
@@ -159,6 +181,22 @@ const AppContainer = () => {
     },
   };
 
+  const setDefaultProxy = async () => {
+    let proxy = sessionStorage.getItem('proxy');
+
+    if (proxy === null) {
+      const response = await fetch('/api/config/proxy');
+      if (!response.ok) {
+        const js = await response.json();
+        throw new Error(`Failed to get the default proxy: ${JSON.stringify(js)}`);
+      }
+
+      proxy = await response.text();
+    }
+
+    defaultProxyState.setProxy(proxy);
+  };
+
   useEffect(() => {
     const req = {
       method: 'GET',
@@ -182,6 +220,9 @@ const AppContainer = () => {
           role: result.role,
         });
 
+        // wait for the default proxy to be set
+        await setDefaultProxy();
+
         setContent(<App />);
       } catch (e) {
         setContent(<Failed>{e.toString()}</Failed>);
@@ -194,7 +235,9 @@ const AppContainer = () => {
 
   return (
     <FlashContext.Provider value={flashState}>
-      <AuthContext.Provider value={auth}>{content}</AuthContext.Provider>
+      <AuthContext.Provider value={auth}>
+        <ProxyContext.Provider value={defaultProxyState}>{content}</ProxyContext.Provider>
+      </AuthContext.Provider>
     </FlashContext.Provider>
   );
 };
