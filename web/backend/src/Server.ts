@@ -18,8 +18,8 @@ const store = new MemoryStore({
 
 // Keeps an in-memory mapping between a SCIPER (userid) and its opened session
 // IDs. Needed to invalidate the sessions of a user when its role changes. The
-// value is a bag of sessions IDs.
-const sess2sciper = new Map<number, Map<string, undefined>>();
+// value is a set of sessions IDs.
+const sess2sciper = new Map<number, Set<string>>();
 
 const app = express();
 
@@ -121,8 +121,8 @@ app.get('/api/control_key', (req, res) => {
       req.session.firstname = firstname;
       req.session.role = role;
 
-      const a = sess2sciper.get(req.session.userid) || new Map<string, undefined>();
-      a.set(req.sessionID, undefined);
+      const a = sess2sciper.get(req.session.userid) || new Set<string>();
+      a.add(req.sessionID);
       sess2sciper.set(sciper, a);
 
       res.redirect('/logged');
