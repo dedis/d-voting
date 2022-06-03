@@ -17,7 +17,7 @@ const store = new MemoryStore({
 });
 
 // Keeps an in-memory mapping between a SCIPER (userid) and its opened session
-// IDs. Needed to invalidate the sessions of a used when its role changes. The
+// IDs. Needed to invalidate the sessions of a user when its role changes. The
 // value is a bag of sessions IDs.
 const sess2sciper = new Map<number, Map<string, undefined>>();
 
@@ -72,7 +72,7 @@ app.use(express.urlencoded({ extended: true }));
 // This endpoint allows anyone to get a "default" proxy. Clients can still use
 // the proxy of their choice thought.
 app.get('/api/config/proxy', (req, res) => {
-  res.status(200).send(process.env.FRONT_END_URL)
+  res.status(200).send(process.env.FRONT_END_URL);
 });
 
 const usersDB = lmdb.open<'admin' | 'operator', number>({
