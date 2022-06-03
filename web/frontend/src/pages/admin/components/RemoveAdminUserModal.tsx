@@ -1,4 +1,4 @@
-import React, { FC, useContext, useRef, useState } from 'react';
+import React, { FC, useContext, useState } from 'react';
 import { ENDPOINT_REMOVE_ROLE } from 'components/utils/Endpoints';
 import PropTypes from 'prop-types';
 import { Dialog } from '@headlessui/react';
