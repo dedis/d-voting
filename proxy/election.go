@@ -243,6 +243,9 @@ func (h *election) EditElection(w http.ResponseWriter, r *http.Request) {
 		h.combineShares(electionID, w, r)
 	case "cancel":
 		h.cancelElection(electionID, w, r)
+	default:
+		BadRequestError(w, r, xerrors.Errorf("invalid action: %s", req.Action), nil)
+		return
 	}
 }
 

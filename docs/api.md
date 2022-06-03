@@ -276,9 +276,9 @@ Return:
 | URL     | `/evoting/elections/{ElectionID}` |
 | Method  | `DELETE`                          |
 | Input   |                                   |
-| Headers | {Authorization: <token>}          |
+| Headers | {Authorization: `<token>`}        |
 
-The <token> value must be the hex-encoded signature of the hex-encoded
+The `<token>` value must be the hex-encoded signature of the hex-encoded
 electionID:
 
 ```

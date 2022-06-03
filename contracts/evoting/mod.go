@@ -49,6 +49,13 @@ var (
 	},
 		[]string{"election"},
 	)
+
+	PromElectionDkgStatus = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "dvoting_dkg_status",
+		Help: "status of distributed key generator",
+	},
+		[]string{"election"},
+	)
 )
 
 const (

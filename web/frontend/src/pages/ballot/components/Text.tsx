@@ -6,7 +6,7 @@ import { answersFrom } from 'types/getObjectType';
 type TextProps = {
   text: TextQuestion;
   answers: Answers;
-  setAnswers: React.Dispatch<React.SetStateAction<Answers>>;
+  setAnswers: (answers: Answers) => void;
 };
 
 const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
@@ -32,7 +32,7 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
     return <div className="text-sm pl-2 pb-2 text-gray-400">{hint}</div>;
   };
 
-  const handleTextInput = (e: React.ChangeEvent<HTMLInputElement>, choiceIndex: number) => {
+  const handleTextInput = (e: React.ChangeEvent<HTMLTextAreaElement>, choiceIndex: number) => {
     const newAnswers = answersFrom(answers);
 
     const textAnswers = newAnswers.TextAnswers.get(text.ID);
@@ -76,19 +76,22 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
   }, [answers]);
 
   const choiceDisplay = (choice: string, choiceIndex: number) => {
+    const columns = text.MaxLength > 50 ? 50 : text.MaxLength;
     return (
-      <div className="flex mb-2 items-center" key={choice}>
+      <div className="flex mb-2 " key={choice}>
         <label htmlFor={choice} className="text-gray-600 text-md">
-          {choice + ': '}
+          {choice == '' ? '' : choice + ': '}
         </label>
-        <input
+
+        <textarea
           id={choice}
-          type="text"
-          className="mx-2 sm:text-md border rounded-md text-gray-600"
-          size={text.MaxLength}
-          onChange={(e) => handleTextInput(e, choiceIndex)}
-        />
-        {charCountDisplay(choiceIndex)}
+          className="mx-2 sm:text-md border rounded-md text-gray-600 "
+          rows={charCounts[choiceIndex] > 0 ? Math.ceil(charCounts[choiceIndex] / columns) : 1}
+          //rows={text.MaxLength > 0 ? Math.ceil(text.MaxLength / columns) : 1}
+          cols={columns}
+          style={{ resize: 'none' }}
+          onChange={(e) => handleTextInput(e, choiceIndex)}></textarea>
+        <div className="self-end">{charCountDisplay(choiceIndex)}</div>
       </div>
     );
   };

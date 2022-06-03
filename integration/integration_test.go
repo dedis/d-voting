@@ -112,7 +112,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		require.NoError(t, err)
 
 		waitForStatus(t, types.Closed, electionFac, electionID, nodes, numNodes,
-			2*time.Second)
+			5*time.Second)
 
 		// ##### SHUFFLE BALLOTS #####
 		t.Logf("initializing shuffle")
@@ -149,7 +149,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		require.NoError(t, err)
 
 		waitForStatus(t, types.ResultAvailable, electionFac, electionID, nodes,
-			numNodes, 500*time.Millisecond*time.Duration(numVotes))
+			numNodes, 1500*time.Millisecond*time.Duration(numVotes))
 
 		t.Logf("get vote proof")
 		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())

@@ -6,7 +6,7 @@ const About: FC = () => {
 
   return (
     <Fragment>
-      <div className="w-[60rem] font-sans px-4 py-4">
+      <div className="w-[60rem] font-sans px-4 py-4 text-justify">
         <div>
           <br />
           {t('about1')}

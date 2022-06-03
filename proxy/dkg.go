@@ -85,7 +85,7 @@ func (d dkg) Actor(w http.ResponseWriter, r *http.Request) {
 
 	actor, found := d.d.GetActor(electionIDBuf)
 	if !found {
-		BadRequestError(w, r, xerrors.New("actor not found"), nil)
+		NotFoundErr(w, r, xerrors.New("actor not found"), nil)
 		return
 	}
 
@@ -168,5 +168,8 @@ func (d dkg) EditDKGActor(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "failed to compute pubshares: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+	default:
+		BadRequestError(w, r, xerrors.Errorf("invalid action: %s", req.Action), nil)
+		return
 	}
 }

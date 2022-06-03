@@ -27,7 +27,7 @@ export const enum Action {
   Open = 'open',
   Close = 'close',
   Shuffle = 'shuffle',
-  BeginDecryption = 'beginDecryption',
+  BeginDecryption = 'computePubshares',
   CombineShares = 'combineShares',
   Cancel = 'cancel',
 }

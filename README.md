@@ -134,6 +134,11 @@ Then you should be able to run the setup script:
 ```sh
 ./setup.sh
 ```
+With this other script you can choose the number of nodes that you want to set up:
+
+```sh
+./setupnNode.sh 3
+```
 
 This script will setup the nodes and services. If you restart do not forget to
 remove the old state:
@@ -147,25 +152,32 @@ rm -rf /tmp/node{1,2,3}
 ## Automate the previous setup using `tmux`
 
 If you have `tmux` installed, you can start a `tmux` session that will
-execute the above setup by running `./start_test.sh` in the project root.
+execute the above setup by running in the project root `./runNode.sh 3`. This
+command takes as argument the number of nodes. 
 Once the session is started, you can move around the panes with
-`Ctrl+B` followed by arrow keys.
+`Ctrl+B` followed by arrow keys or by `N`. You can also have an overview of the windows 
+with `Ctrl+B` followed by `S`.
 
-The top-left pane is for running commands, while the rest are for examining the node states.
 
 To end the session, run `./kill_test.sh`,
-which will kill each pane then the `tmux` session (which you can do manually with `Ctrl+D`),
+which will kill each window then the `tmux` session (which you can do manually with `Ctrl+D`),
 then delete the node data (i.e. the files `/tmp/node{1,2,3}`).
 
 ## Run the scenario test
 
-If nodes are running and `setup.sh` has been called, you can run a test
+If nodes are running and `setup.sh` or `setupnNode.sh 3` has been called, you can run a test
 scenario:
 
 ```sh
 sk=28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409
 LLVL=info memcoin --config /tmp/node1 e-voting scenarioTest --secretkey $sk
 ```
+
+You can also run scenario_test.go, by running in the integration folder this command:
+```sh
+NNODES=3 go test -v scenario_test.go
+```
+
 
 For reference, here is a hex-encoded kyber Ed25519 keypair:
 

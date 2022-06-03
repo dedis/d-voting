@@ -22,9 +22,9 @@ const newRank = (): types.RankQuestion => {
   return {
     ID: uid(),
     Title: '',
-    MaxN: 0,
-    MinN: 0,
-    Choices: [],
+    MaxN: 2,
+    MinN: 2,
+    Choices: ['', ''],
     Type: RANK,
   };
 };
@@ -33,9 +33,9 @@ const newSelect = (): types.SelectQuestion => {
   return {
     ID: uid(),
     Title: '',
-    MaxN: 0,
-    MinN: 0,
-    Choices: [],
+    MaxN: 1,
+    MinN: 1,
+    Choices: [''],
     Type: SELECT,
   };
 };
@@ -44,12 +44,21 @@ const newText = (): types.TextQuestion => {
   return {
     ID: uid(),
     Title: '',
-    MaxN: 0,
+    MaxN: 1,
     MinN: 0,
     MaxLength: 50,
     Regex: '',
-    Choices: [],
+    Choices: [''],
     Type: TEXT,
+  };
+};
+
+const newAnswer = (): types.Answers => {
+  return {
+    SelectAnswers: new Map<ID, boolean[]>(),
+    RankAnswers: new Map<ID, number[]>(),
+    TextAnswers: new Map<ID, string[]>(),
+    Errors: new Map<ID, string>(),
   };
 };
 
@@ -98,6 +107,7 @@ const toArraysOfSubjectElement = (
 
 export {
   emptyConfiguration,
+  newAnswer,
   newSubject,
   newRank,
   newSelect,

@@ -22,6 +22,7 @@ const Login: FC = () => {
     if (state !== null) {
       setContent(t('loginText', { from: state.from.pathname }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
 
   return (

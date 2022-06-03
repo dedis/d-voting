@@ -379,7 +379,6 @@ export const handlers = [
 
   rest.get(endpoints.getProxyAddress('*'), async (req, res, ctx) => {
     const NodeAddr = req.params[0];
-    console.log(NodeAddr);
     const proxy = mockNodeProxyAddresses.get(decodeURIComponent(NodeAddr as string));
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
