@@ -1,28 +1,19 @@
+import React, { FC, Fragment, useContext, useEffect, useRef, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { PlusIcon } from '@heroicons/react/outline';
 import SpinnerIcon from 'components/utils/SpinnerIcon';
 import { FlashContext, FlashLevel } from 'index';
-import React, { FC, Fragment, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as endpoints from 'components/utils/Endpoints';
 import usePostCall from 'components/utils/usePostCall';
-import { NODE_PROXY_PER_PAGE } from 'pages/admin/DKGTable';
 
 type AddProxyModalProps = {
   open: boolean;
   setOpen(opened: boolean): void;
-  nodeProxy: Map<string, string>;
-  setNodeProxy: (nodeProxy: Map<string, string>) => void;
-  setPageIndex: (pageIndex: number) => void;
+  handleAddProxy(node: string, proxy: string): void;
 };
 
-const AddProxyModal: FC<AddProxyModalProps> = ({
-  open,
-  setOpen,
-  nodeProxy,
-  setNodeProxy,
-  setPageIndex,
-}) => {
+const AddProxyModal: FC<AddProxyModalProps> = ({ open, setOpen, handleAddProxy }) => {
   const { t } = useTranslation();
   const fctx = useContext(FlashContext);
   const [error, setError] = useState(null);
@@ -64,7 +55,7 @@ const AddProxyModal: FC<AddProxyModalProps> = ({
     return sendFetchRequest(endpoints.newProxyAddress, request, setIsPosting);
   };
 
-  const handleAddProxy = async () => {
+  const handleAdd = async () => {
     setLoading(true);
     if (node !== '' && proxy !== '') {
       setError(null);
@@ -72,13 +63,10 @@ const AddProxyModal: FC<AddProxyModalProps> = ({
       const response = await saveMapping();
 
       if (response) {
-        const newNodeProxy = new Map(nodeProxy);
-        newNodeProxy.set(node, proxy);
-        setNodeProxy(newNodeProxy);
+        handleAddProxy(node, proxy);
         fctx.addMessage(t('nodeProxySuccessfullyAdded'), FlashLevel.Info);
         setNode('');
         setProxy('');
-        setPageIndex(newNodeProxy.size % NODE_PROXY_PER_PAGE);
       }
       setOpen(false);
     } else {
@@ -164,7 +152,7 @@ const AddProxyModal: FC<AddProxyModalProps> = ({
                 <button
                   type="button"
                   className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm"
-                  onClick={handleAddProxy}>
+                  onClick={handleAdd}>
                   {loading ? (
                     <SpinnerIcon />
                   ) : (

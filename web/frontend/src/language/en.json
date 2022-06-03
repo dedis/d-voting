@@ -187,9 +187,9 @@
     "proxySuccessfullyEdited": "The proxy address was successfully modified !",
     "nodeProxySuccessfullyAdded": "The node and proxy addresses were successfully added !",
     "proxySuccessfullyDeleted": "The node and proxy addresses were successfully deleted !",
-    "addNodeProxyError": "An error occurred while trying to add the node and proxy addresses.",
-    "editProxyError": "An error occurred while trying to edit the proxy address.",
-    "removeProxyError": "An error occurred while trying to remove the node and proxy addresses.",
+    "addNodeProxyError": "An error occurred while trying to add the node and proxy addresses. Error: ",
+    "editProxyError": "An error occurred while trying to edit the proxy address. Error: ",
+    "removeProxyError": "An error occurred while trying to remove the node and proxy addresses. Error: ",
     "enterNodeProxy": "Please enter the addresses of the node and the proxy"
   }
 }

@@ -86,7 +86,7 @@ const Admin: FC = () => {
       </div>
 
       <AdminTable users={users} setUsers={setUsers} />
-      <div className="mt-4 mb-6">
+      <div className="mt-4 mb-8">
         <DKGTable
           nodeProxyAddresses={nodeProxyAddresses}
           setNodeProxyAddresses={setNodeProxyAddresses}

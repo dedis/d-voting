@@ -11,18 +11,14 @@ type RemoveProxyModalProps = {
   open: boolean;
   setOpen: (open: boolean) => void;
   node: string;
-  nodeProxy: Map<string, string>;
-  setNodeProxy: (nodeProxy: Map<string, string>) => void;
-  setPageIndex: (pageIndex: number) => void;
+  handleDeleteProxy(): void;
 };
 
 const RemoveProxyModal: FC<RemoveProxyModalProps> = ({
   open,
   setOpen,
   node,
-  nodeProxy,
-  setNodeProxy,
-  setPageIndex,
+  handleDeleteProxy,
 }) => {
   const { t } = useTranslation();
   const fctx = useContext(FlashContext);
@@ -51,10 +47,7 @@ const RemoveProxyModal: FC<RemoveProxyModalProps> = ({
     const response = await sendFetchRequest(endpoints.editProxyAddress(node), req, setIsPosting);
 
     if (response) {
-      const newNodeProxy = new Map(nodeProxy);
-      newNodeProxy.delete(node);
-      setNodeProxy(newNodeProxy);
-      setPageIndex(0);
+      handleDeleteProxy();
       fctx.addMessage(t('proxySuccessfullyDeleted'), FlashLevel.Info);
     }
 

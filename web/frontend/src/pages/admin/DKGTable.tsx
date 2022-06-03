@@ -46,16 +46,29 @@ const DKGTable: FC<DKGTableProps> = ({ nodeProxyAddresses, setNodeProxyAddresses
     }
   };
 
-  const openModal = () => setShowAddProxy(true);
+  const handleAddProxy = (node: string, proxy: string) => {
+    const newNodeProxy = new Map(nodeProxyAddresses);
+    newNodeProxy.set(node, proxy);
+    setNodeProxyAddresses(newNodeProxy);
+    setPageIndex(Math.floor(newNodeProxy.size / NODE_PROXY_PER_PAGE));
+  };
+
+  const handleDeleteProxy = () => {
+    const newNodeProxy = new Map(nodeProxyAddresses);
+    newNodeProxy.delete(nodeToEdit);
+    setNodeProxyAddresses(newNodeProxy);
+
+    if (newNodeProxy.size % NODE_PROXY_PER_PAGE === 0) {
+      setPageIndex(pageIndex - 1);
+    }
+  };
 
   return (
     <div>
       <AddProxyModal
         open={showAddProxy}
         setOpen={setShowAddProxy}
-        nodeProxy={nodeProxyAddresses}
-        setNodeProxy={setNodeProxyAddresses}
-        setPageIndex={setPageIndex}
+        handleAddProxy={handleAddProxy}
       />
 
       <EditProxyModal
@@ -70,9 +83,7 @@ const DKGTable: FC<DKGTableProps> = ({ nodeProxyAddresses, setNodeProxyAddresses
         open={showDeleteProxy}
         setOpen={setShowDeleteProxy}
         node={nodeToEdit}
-        nodeProxy={nodeProxyAddresses}
-        setNodeProxy={setNodeProxyAddresses}
-        setPageIndex={setPageIndex}
+        handleDeleteProxy={handleDeleteProxy}
       />
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 py-6 pl-2">
@@ -88,7 +99,7 @@ const DKGTable: FC<DKGTableProps> = ({ nodeProxyAddresses, setNodeProxyAddresses
           <span className="sm:ml-3">
             <button
               type="button"
-              onClick={openModal}
+              onClick={() => setShowAddProxy(true)}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
               {t('addProxy')}
             </button>
@@ -101,10 +112,10 @@ const DKGTable: FC<DKGTableProps> = ({ nodeProxyAddresses, setNodeProxyAddresses
           <thead className="text-xs text-gray-700 uppercase bg-gray-50">
             <tr>
               <th scope="col" className="px-6 py-3">
-                {t('nodes')}
+                {t('node')}
               </th>
               <th scope="col" className="px-6 py-3">
-                {t('proxies')}
+                {t('proxy')}
               </th>
               <th scope="col" className="px-6 py-3">
                 <span className="sr-only">{t('edit')}</span>

@@ -399,16 +399,6 @@ export const handlers = [
     return res(ctx.status(200), ctx.json({ Proxies: response }));
   }),
 
-  rest.post(endpoints.newProxyAddress, async (req, res, ctx) => {
-    const body = req.body as NewProxyAddress;
-
-    mockNodeProxyAddresses.set(body.NodeAddr, body.Proxy);
-
-    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
-
-    return res(ctx.status(200), ctx.text('Action successfully done'));
-  }),
-
   rest.put(endpoints.editProxyAddress('*'), async (req, res, ctx) => {
     const NodeAddr = req.params[0];
     const body = req.body as UpdateProxyAddress;

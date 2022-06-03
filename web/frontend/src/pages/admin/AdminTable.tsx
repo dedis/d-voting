@@ -52,10 +52,16 @@ const AdminTable: FC<AdminTableProps> = ({ users, setUsers }) => {
 
   const handleAddRoleUser = (user: User): void => {
     setUsers([...users, user]);
+    setPageIndex(Math.floor(users.length / SCIPERS_PER_PAGE));
   };
 
   const handleRemoveRoleUser = (): void => {
-    setUsers(users.filter((user) => user.sciper !== sciperToDelete.toString()));
+    const newUsers = users.filter((user) => user.sciper !== sciperToDelete.toString());
+    setUsers(newUsers);
+
+    if (newUsers.length % SCIPERS_PER_PAGE === 0) {
+      setPageIndex(pageIndex - 1);
+    }
   };
 
   return (
@@ -108,33 +114,34 @@ const AdminTable: FC<AdminTableProps> = ({ users, setUsers }) => {
             </tr>
           </thead>
           <tbody>
-            {scipersToDisplay.map((user) => (
-              <tr key={user.id} className="bg-white border-b hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {user.sciper}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.role}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div
-                    className="cursor-pointer text-indigo-600 hover:text-indigo-900"
-                    onClick={() => handleDelete(user.sciper)}>
-                    {t('delete')}
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {scipersToDisplay !== undefined &&
+              scipersToDisplay.map((user) => (
+                <tr key={user.id} className="bg-white border-b hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {user.sciper}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.role}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div
+                      className="cursor-pointer text-indigo-600 hover:text-indigo-900"
+                      onClick={() => handleDelete(user.sciper)}>
+                      {t('delete')}
+                    </div>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
 
         <nav
           className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6"
           aria-label="Pagination">
-          <div className="hidden sm:block">
-            <p className="text-sm text-gray-700">
-              {t('showing')} <span className="font-medium">{pageIndex + 1}</span> /{' '}
-              <span className="font-medium">{partitionArray(users, SCIPERS_PER_PAGE).length}</span>{' '}
-              {t('of')} <span className="font-medium">{users.length}</span> {t('results')}
-            </p>
+          <div className="hidden sm:block text-sm text-gray-700">
+            {t('showingNOverMOfXResults', {
+              n: pageIndex + 1,
+              m: partitionArray(users, SCIPERS_PER_PAGE).length,
+              x: users.length,
+            })}
           </div>
           <div className="flex-1 flex justify-between sm:justify-end">
             <button
@@ -152,80 +159,6 @@ const AdminTable: FC<AdminTableProps> = ({ users, setUsers }) => {
           </div>
         </nav>
       </div>
-
-      {/*<div className="flex flex-col">
-        <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-            <div className="overflow-hidden border-gray-200 sm:rounded-lg">
-              <table className="min-w-full divide-y divide-gray-300">
-                <thead className="">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Sciper
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      {t('role')}
-                    </th>
-                    <th scope="col" className="relative px-6 py-3">
-                      <span className="sr-only">{t('edit')}</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {scipersToDisplay.map((user) => (
-                    <tr key={user.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {user.sciper}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.role}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div
-                          className="cursor-pointer text-indigo-600 hover:text-indigo-900"
-                          onClick={() => handleDelete(user.sciper)}>
-                          {t('delete')}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <nav
-                className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6"
-                aria-label="Pagination">
-                <div className="hidden sm:block">
-                  <p className="text-sm text-gray-700">
-                    {t('showing')} <span className="font-medium">{pageIndex + 1}</span> /{' '}
-                    <span className="font-medium">
-                      {partitionArray(users, SCIPERS_PER_PAGE).length}
-                    </span>{' '}
-                    {t('of')} <span className="font-medium">{users.length}</span> {t('results')}
-                  </p>
-                </div>
-                <div className="flex-1 flex justify-between sm:justify-end">
-                  <button
-                    disabled={pageIndex === 0}
-                    onClick={handlePrevious}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                    {t('previous')}
-                  </button>
-                  <button
-                    disabled={partitionArray(users, SCIPERS_PER_PAGE).length <= pageIndex + 1}
-                    onClick={handleNext}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                    {t('next')}
-                  </button>
-                </div>
-              </nav>
-            </div>
-                  </div>
-        </div>
-                  </div> */}
     </div>
   );
 };
