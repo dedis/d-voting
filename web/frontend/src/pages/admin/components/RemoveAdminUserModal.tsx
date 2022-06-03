@@ -54,7 +54,6 @@ const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({
     setLoading(false);
     setOpen(false);
   };
-  const cancelButtonRef = useRef(null);
 
   const modalBody = (
     <Dialog.Title as="h3" className="text-lg leading-6 font-medium text-gray-900">
