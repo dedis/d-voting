@@ -66,7 +66,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers }) => {
           checked={isChecked}
           onChange={(e) => handleChecks(e, choiceIndex)}
         />
-        <label htmlFor={choice} className="pl-2 text-gray-600 cursor-pointer">
+        <label htmlFor={choice} className="pl-2 break-words text-gray-600 cursor-pointer">
           {choice}
         </label>
       </div>
@@ -75,7 +75,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers }) => {
 
   return (
     <div>
-      <h3 className="text-lg text-gray-600">{select.Title}</h3>
+      <h3 className="text-lg break-words text-gray-600">{select.Title}</h3>
       {hintDisplay()}
       <div className="sm:pl-8 pl-6">
         {Array.from(answers.SelectAnswers.get(select.ID).entries()).map(

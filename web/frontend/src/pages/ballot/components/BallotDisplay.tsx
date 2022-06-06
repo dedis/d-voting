@@ -40,7 +40,7 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
   const SubjectTree = (subject: types.Subject) => {
     return (
       <div key={subject.ID}>
-        <h3 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
+        <h3 className="text-xl break-all pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
           {subject.Title}
         </h3>
         {subject.Order.map((id: ID) => (
@@ -61,7 +61,7 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
   return (
     <DragDropContext onDragEnd={(dropRes) => handleOnDragEnd(dropRes, answers, setAnswers)}>
       <div className="w-full mb-0 sm:mb-4 mt-4 sm:mt-6">
-        <h3 className="py-6 border-t text-2xl text-center text-gray-700">
+        <h3 className="pb-6 break-all text-2xl text-center text-gray-700">
           {configuration.MainTitle}
         </h3>
         <div className="flex flex-col">

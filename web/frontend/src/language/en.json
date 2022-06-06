@@ -69,6 +69,7 @@
     "combineShares": "Combine shares",
     "createElec": "Create election",
     "clearElec": "Clear election",
+    "elecName": "Election title",
     "confirmRemovesubject": "Do you really want to remove this subject?",
     "confirmRemovetext": "Do you really want to remove this text?",
     "confirmRemoverank": "Do you really want to remove this rank?",

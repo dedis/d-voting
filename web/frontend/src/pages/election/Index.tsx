@@ -16,6 +16,7 @@ const ElectionIndex: FC = () => {
   const [statusToKeep, setStatusToKeep] = useState<Status>(null);
   const [elections, setElections] = useState<LightElectionInfo[]>(null);
   const [loading, setLoading] = useState(true);
+  const [pageIndex, setPageIndex] = useState(0);
 
   const request = {
     method: 'GET',
@@ -46,6 +47,7 @@ const ElectionIndex: FC = () => {
       (election) => election.Status === statusToKeep
     );
 
+    setPageIndex(0);
     setElections(filteredElections);
   }, [data, statusToKeep]);
 
@@ -68,7 +70,7 @@ const ElectionIndex: FC = () => {
           </div>
 
           <ElectionTableFilter setStatusToKeep={setStatusToKeep} />
-          <ElectionTable elections={elections} />
+          <ElectionTable pageIndex={pageIndex} setPageIndex={setPageIndex} elections={elections} />
         </div>
       ) : (
         <Loading />
