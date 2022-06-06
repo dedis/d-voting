@@ -34,14 +34,14 @@ const mockUserID = 561934;
 
 const { mockElections, mockResults, mockDKG, mockNodeProxyAddresses } = setupMockElection();
 
-var mockUserDB = setupMockUserDB();
+let mockUserDB = setupMockUserDB();
 
 const RESPONSE_TIME = 500;
 const CHANGE_STATUS_TIMER = 2000;
-const INIT_TIMER = 3000;
-const SETUP_TIMER = 4000;
+const INIT_TIMER = 2000;
+const SETUP_TIMER = 3000;
 const SHUFFLE_TIMER = 2000;
-const DECRYPT_TIMER = 8000;
+const DECRYPT_TIMER = 4000;
 
 const isAuthorized = (roles: UserRole[]): boolean => {
   const id = sessionStorage.getItem('id');
@@ -168,7 +168,7 @@ export const handlers = [
   rest.put(endpoints.editElection(':ElectionID'), async (req, res, ctx) => {
     const body = req.body as EditElectionBody;
     const { ElectionID } = req.params;
-    var status = Status.Initial;
+    let status = Status.Initial;
     const Result = [];
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
@@ -243,7 +243,7 @@ export const handlers = [
     switch (body.Action) {
       case Action.Setup:
         const newDKGStatus = new Map(mockDKG.get(ElectionID as string));
-        var node = '';
+        let node = '';
 
         mockElections.get(ElectionID as string).Roster.forEach((n) => {
           const p = mockNodeProxyAddresses.get(n);
@@ -279,7 +279,7 @@ export const handlers = [
   rest.get(endpoints.getDKGActors('*', ':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
     const Proxy = req.params[0];
-    var node = '';
+    let node = '';
 
     mockElections.get(ElectionID as string).Roster.forEach((n) => {
       const p = mockNodeProxyAddresses.get(n);
@@ -403,6 +403,16 @@ export const handlers = [
     const body = req.body as UpdateProxyAddress;
 
     mockNodeProxyAddresses.set(decodeURIComponent(NodeAddr as string), body.Proxy);
+
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
+
+    return res(ctx.status(200), ctx.text('Action successfully done'));
+  }),
+
+  rest.delete(endpoints.editProxyAddress('*'), async (req, res, ctx) => {
+    const NodeAddr = req.params[0];
+
+    mockNodeProxyAddresses.delete(decodeURIComponent(NodeAddr as string));
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 

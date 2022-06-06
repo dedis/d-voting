@@ -60,6 +60,7 @@
     "addCandidate": "Add a candidate",
     "addUser": "Add user",
     "role": "Role",
+    "roles": "Roles",
     "edit": "Edit",
     "nothingToAdd": "There is nothing to add.",
     "duplicateCandidate": "This candidate has already been added.",
@@ -215,6 +216,20 @@
     "filterByStatus": "Filter by status",
     "all": "All",
     "resetFilter": "Reset filter",
-    "showingNOverMOfXResults": "Showing {{n}}/{{m}} of {{x}} results."
+    "showingNOverMOfXResults": "Showing {{n}}/{{m}} of {{x}} results.",
+    "addProxy": "Add proxy",
+    "editProxy": "Edit the proxy address",
+    "proxy": "Proxy",
+    "confirmDeleteProxy": "Do confirm deleting this node address",
+    "nodeDetails": "Add, edit or remove the mapping between a node address and its proxy address.",
+    "inputNodeProxyError": "Error: the address of the node and the proxy cannot be empty.",
+    "proxySuccessfullyEdited": "The proxy address was successfully modified !",
+    "nodeProxySuccessfullyAdded": "The node and proxy addresses were successfully added !",
+    "proxySuccessfullyDeleted": "The node and proxy addresses were successfully deleted !",
+    "addNodeProxyError": "An error occurred while trying to add the node and proxy addresses. Error: ",
+    "editProxyError": "An error occurred while trying to edit the proxy address. Error: ",
+    "removeProxyError": "An error occurred while trying to remove the node and proxy addresses. Error: ",
+    "enterNodeProxy": "Please enter the addresses of the node and the proxy",
+    "invalidProxyError": "Error: the address you entered is not a valid URL."
   }
 }
