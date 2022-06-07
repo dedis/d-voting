@@ -1,6 +1,7 @@
 import { CheckIcon, PencilIcon, RefreshIcon } from '@heroicons/react/outline';
 import { FlashContext, FlashLevel, ProxyContext } from 'index';
 import { ChangeEvent, FC, createRef, useContext, useEffect, useState } from 'react';
+import * as endpoints from './Endpoints';
 
 const proxyKey = 'proxy';
 
@@ -17,7 +18,7 @@ const ProxyInput: FC = () => {
 
   const fetchFromBackend = async () => {
     try {
-      const response = await fetch('/api/config/proxy');
+      const response = await fetch(endpoints.getProxyConfig);
       if (!response.ok) {
         const js = await response.json();
         throw new Error(JSON.stringify(js));

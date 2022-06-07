@@ -7,6 +7,8 @@ import App from 'layout/App';
 import reportWebVitals from 'reportWebVitals';
 import ShortUniqueId from 'short-unique-id';
 
+import * as endpoints from 'components/utils/Endpoints';
+
 const flashTimeout = 4000;
 
 // By default we load the mock messages when not in production. This is handy
@@ -185,7 +187,7 @@ const AppContainer = () => {
     let proxy = sessionStorage.getItem('proxy');
 
     if (proxy === null) {
-      const response = await fetch('/api/config/proxy');
+      const response = await fetch(endpoints.getProxyConfig);
       if (!response.ok) {
         const js = await response.json();
         throw new Error(`Failed to get the default proxy: ${JSON.stringify(js)}`);
