@@ -95,7 +95,7 @@ const ElectionResult: FC = () => {
   }, [result]);
 
   const getResultData = (subject: Subject, dataToDownload: DownloadedResults[]) => {
-    dataToDownload.push({ ID: subject.ID, Title: subject.Title });
+    dataToDownload.push({ Title: subject.Title });
 
     subject.Order.forEach((id: ID) => {
       const element = subject.Elements.get(id);
@@ -109,7 +109,7 @@ const ElectionResult: FC = () => {
               return { Candidate: rank.Choices[index], Percentage: `${percent}%` };
             }
           );
-          dataToDownload.push({ ID: id, Title: element.Title, Results: res });
+          dataToDownload.push({ Title: element.Title, Results: res });
           break;
 
         case SELECT:
@@ -117,7 +117,7 @@ const ElectionResult: FC = () => {
           res = countSelectResult(selectResult.get(id)).resultsInPercent.map((percent, index) => {
             return { Candidate: select.Choices[index], Percentage: `${percent}%` };
           });
-          dataToDownload.push({ ID: id, Title: element.Title, Results: res });
+          dataToDownload.push({ Title: element.Title, Results: res });
           break;
 
         case SUBJECT:
@@ -128,7 +128,7 @@ const ElectionResult: FC = () => {
           res = Array.from(countTextResult(textResult.get(id)).resultsInPercent).map((r) => {
             return { Candidate: r[0], Percentage: `${r[1]}%` };
           });
-          dataToDownload.push({ ID: id, Title: element.Title, Results: res });
+          dataToDownload.push({ Title: element.Title, Results: res });
           break;
       }
     });

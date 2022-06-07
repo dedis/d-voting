@@ -78,7 +78,6 @@ type RankResults = Map<ID, number[][]>;
 type TextResults = Map<ID, string[][]>;
 
 interface DownloadedResults {
-  ID: ID;
   Title: string;
   Results?: { Candidate: string; Percentage: string }[];
 }
