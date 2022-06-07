@@ -26,9 +26,14 @@ export const getProxyAddress = (NodeAddr: string) => `/api/proxies/${encodeURICo
 export const getProxiesAddresses = '/api/proxies';
 
 // public information can be directly fetched from dela nodes
-export const election = (ElectionID: string) =>
-  `${process.env.REACT_APP_PROXY}/evoting/elections/${ElectionID}`;
-export const elections = `${process.env.REACT_APP_PROXY}/evoting/elections`;
+export const election = (proxy: string, ElectionID: string) =>
+  new URL(`/evoting/elections/${ElectionID}`, proxy).href;
+export const elections = (proxy: string) => {
+  return new URL('/evoting/elections', proxy).href;
+};
+
+// get the default proxy address
+export const getProxyConfig = '/api/config/proxy';
 
 // To remove
 export const ENDPOINT_EVOTING_RESULT = '/api/evoting/result';
