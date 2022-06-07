@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "ES2022",
     "lib": [
       "dom",
       "dom.iterable",
@@ -13,11 +13,11 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "module": "es2022",
+    "module": "CommonJS",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
+    "noEmit": false,
   },
   "ts-node": {
     "compilerOptions": {
@@ -25,12 +25,15 @@
     }
   },
   "include": [
-    "src/Server.ts"
+    "src/Server.ts",
+    "config.json"
   ],
   "exclude": [
     "node_modules",
     "jest.config.js",
     ".eslintrc",
+    "dist",
+    "dbUtils.js"
   ],
   "typedocOptions": {
     "entryPoints": ["src/Server.ts"],
