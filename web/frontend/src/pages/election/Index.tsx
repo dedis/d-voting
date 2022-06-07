@@ -7,11 +7,12 @@ import * as endpoints from 'components/utils/Endpoints';
 import Loading from 'pages/Loading';
 import { LightElectionInfo, Status } from 'types/election';
 import ElectionTableFilter from './components/ElectionTableFilter';
-import { FlashContext, FlashLevel } from 'index';
+import { FlashContext, FlashLevel, ProxyContext } from 'index';
 
 const ElectionIndex: FC = () => {
   const { t } = useTranslation();
   const fctx = useContext(FlashContext);
+  const pctx = useContext(ProxyContext);
 
   const [statusToKeep, setStatusToKeep] = useState<Status>(null);
   const [elections, setElections] = useState<LightElectionInfo[]>(null);
@@ -25,7 +26,7 @@ const ElectionIndex: FC = () => {
     },
   };
 
-  const [data, dataLoading, error] = useFetchCall(endpoints.elections, request);
+  const [data, dataLoading, error] = useFetchCall(endpoints.elections(pctx.getProxy()), request);
 
   useEffect(() => {
     if (error !== null) {

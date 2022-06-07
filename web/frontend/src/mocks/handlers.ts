@@ -38,10 +38,12 @@ let mockUserDB = setupMockUserDB();
 
 const RESPONSE_TIME = 500;
 const CHANGE_STATUS_TIMER = 2000;
-const INIT_TIMER = 2000;
-const SETUP_TIMER = 3000;
+const INIT_TIMER = 1000;
+const SETUP_TIMER = 2000;
 const SHUFFLE_TIMER = 2000;
-const DECRYPT_TIMER = 4000;
+const DECRYPT_TIMER = 3000;
+
+const defaultProxy = 'http://localhost/';
 
 const isAuthorized = (roles: UserRole[]): boolean => {
   const id = sessionStorage.getItem('id');
@@ -91,7 +93,7 @@ export const handlers = [
     return res(ctx.status(200));
   }),
 
-  rest.get(endpoints.elections, async (req, res, ctx) => {
+  rest.get(endpoints.elections(defaultProxy), async (req, res, ctx) => {
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(
@@ -104,7 +106,7 @@ export const handlers = [
     );
   }),
 
-  rest.get(endpoints.election(':ElectionID'), async (req, res, ctx) => {
+  rest.get(endpoints.election(defaultProxy, ':ElectionID'), async (req, res, ctx) => {
     const { ElectionID } = req.params;
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
@@ -417,5 +419,13 @@ export const handlers = [
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200), ctx.text('Action successfully done'));
+  }),
+
+  rest.get(endpoints.getProxyConfig, async (req, res, ctx) => {
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
+
+    const response = defaultProxy;
+
+    return res(ctx.status(200), ctx.text(response));
   }),
 ];

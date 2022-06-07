@@ -69,64 +69,6 @@ const setupMockElection = () => {
   mockResults.set(electionID2, [mockElectionResult21, mockElectionResult22, mockElectionResult23]);
   mockDKG.set(electionID2, mockDKGSetup);
 
-  const electionID3 = 'BnFGHgLmf';
-  mockElections.set(electionID3, {
-    ElectionID: electionID3,
-    Status: Status.Initial,
-    Pubkey: 'XL4V6EMIICW',
-    Result: [],
-    Roster: mockRoster,
-    Configuration: unmarshalConfig(mockElection2),
-    BallotSize: 174,
-    ChunksPerBallot: 6,
-  });
-
-  mockResults.set(electionID3, [mockElectionResult21, mockElectionResult22, mockElectionResult23]);
-  mockDKG.set(electionID3, mockDKGSetup);
-
-  for (let j = 0; j < 5; j++) {
-    let electionID11 = '36kSJ0t' + j;
-    let electionID22 = 'Bnq9gLm' + j;
-
-    mockElections.set(electionID11, {
-      ElectionID: electionID11,
-      Status: j as Status,
-      Pubkey: 'XL4V6EMIICW',
-      Result: [],
-      Roster: mockRoster,
-      Configuration: unmarshalConfig(mockElection1),
-      BallotSize: 174,
-      ChunksPerBallot: 6,
-    });
-
-    mockResults.set(electionID11, [mockElectionResult11, mockElectionResult12]);
-
-    mockElections.set(electionID22, {
-      ElectionID: electionID22,
-      Status: j as Status,
-      Pubkey: 'XL4V6EMIICW',
-      Result: [],
-      Roster: mockRoster,
-      Configuration: unmarshalConfig(mockElection2),
-      BallotSize: 174,
-      ChunksPerBallot: 6,
-    });
-
-    mockResults.set(electionID22, [
-      mockElectionResult21,
-      mockElectionResult22,
-      mockElectionResult23,
-    ]);
-
-    if (j >= Status.Open) {
-      mockDKG.set(electionID11, mockDKGSetup);
-      mockDKG.set(electionID22, mockDKGSetup);
-    } else {
-      mockDKG.set(electionID11, mockDKGNotInitialized);
-      mockDKG.set(electionID22, mockDKGNotInitialized);
-    }
-  }
-
   return { mockElections, mockResults, mockDKG, mockNodeProxyAddresses };
 };
 
