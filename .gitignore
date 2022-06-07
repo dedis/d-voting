@@ -10,3 +10,6 @@ memcoin
 *.log
 
 nodedata/
+
+deb-package/dist/**
+

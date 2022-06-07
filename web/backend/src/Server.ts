@@ -7,8 +7,19 @@ import kyber from '@dedis/kyber';
 import crypto from 'crypto';
 import lmdb, { RangeOptions } from 'lmdb';
 import xss from 'xss';
+import createMemoryStore from 'memorystore';
 
-const config = require('../config.json');
+const MemoryStore = createMemoryStore(session);
+
+// store is used to store the session
+const store = new MemoryStore({
+  checkPeriod: 86400000, // prune expired entries every 24h
+});
+
+// Keeps an in-memory mapping between a SCIPER (userid) and its opened session
+// IDs. Needed to invalidate the sessions of a user when its role changes. The
+// value is a set of sessions IDs.
+const sess2sciper = new Map<number, Set<string>>();
 
 const app = express();
 
@@ -30,10 +41,11 @@ app.use(cookieParser());
 const oneDay = 1000 * 60 * 60 * 24;
 app.use(
   session({
-    secret: config.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET as string,
     saveUninitialized: true,
     cookie: { maxAge: oneDay },
     resave: false,
+    store: store,
   })
 );
 
@@ -57,12 +69,20 @@ app.use(express.urlencoded({ extended: true }));
 //   }
 // });
 
-const usersDB = lmdb.open({ path: 'dvoting-users' });
+// This endpoint allows anyone to get a "default" proxy. Clients can still use
+// the proxy of their choice thought.
+app.get('/api/config/proxy', (req, res) => {
+  res.status(200).send(process.env.FRONT_END_URL);
+});
+
+const usersDB = lmdb.open<'admin' | 'operator', number>({
+  path: `${process.env.DB_PATH}dvoting-users`,
+});
 
 // This is via this endpoint that the client request the tequila key, this key
 // will then be used for redirection on the tequila server
 app.get('/api/get_teq_key', (req, res) => {
-  const body = `urlaccess=${config.FRONT_END_URL}/api/control_key\nservice=Evoting\nrequest=name,firstname,email,uniqueid,allunits`;
+  const body = `urlaccess=${process.env.FRONT_END_URL}/api/control_key\nservice=Evoting\nrequest=name,firstname,email,uniqueid,allunits`;
   axios
     .post('https://tequila.epfl.ch/cgi-bin/tequila/createrequest', body)
     .then((response) => {
@@ -94,24 +114,17 @@ app.get('/api/control_key', (req, res) => {
       const lastname = resa.data.split('\nname=')[1].split('\n')[0];
       const firstname = resa.data.split('\nfirstname=')[1].split('\n')[0];
 
-      const user = usersDB.get(sciper) || {};
-      if (user.role === undefined || user.role === '') {
-        user.role = 'voter';
-        user.lastname = lastname;
-        user.firstname = firstname;
-        user.loggedin = false;
-      }
-      console.log('sciper:', sciper);
-      if (sciper === '228271') {
-        user.role = 'admin';
-      }
-      return usersDB.put(sciper, user).then(() => [sciper, user]);
-    })
-    .then(([sciper, user]) => {
+      const role = usersDB.get(sciper) || '';
+
       req.session.userid = parseInt(sciper, 10);
-      req.session.lastname = user.lastname;
-      req.session.firstname = user.firstname;
-      req.session.role = user.role;
+      req.session.lastname = lastname;
+      req.session.firstname = firstname;
+      req.session.role = role;
+
+      const a = sess2sciper.get(req.session.userid) || new Set<string>();
+      a.add(req.sessionID);
+      sess2sciper.set(sciper, a);
+
       res.redirect('/logged');
     })
     .catch((error) => {
@@ -122,7 +135,16 @@ app.get('/api/control_key', (req, res) => {
 
 // This endpoint serves to logout from the app by clearing the session.
 app.post('/api/logout', (req, res) => {
+  if (req.session.userid === undefined) {
+    res.status(400).send('not logged in');
+  }
+
   req.session.destroy(() => {
+    const a = sess2sciper.get(req.session.userid as number);
+    if (a !== undefined) {
+      a.delete(req.sessionID);
+      sess2sciper.set(req.session.userid as number, a);
+    }
     res.redirect('/');
   });
 });
@@ -151,61 +173,57 @@ app.get('/api/personal_info', (req, res) => {
   }
 });
 
+function isAuthorized(roles: string[], req: express.Request): boolean {
+  if (!req.session || !req.session.userid) {
+    return false;
+  }
+
+  const { role } = req.session;
+
+  return roles.includes(role as string);
+}
+
+// ---
+// Users role
+// ---
+
 // This call allow a user that is admin to get the list of the people that have
 // a special role (not a voter).
 app.get('/api/user_rights', (req, res) => {
-  const sciper = req.session.userid;
-
-  if (!sciper) {
-    res.status(400).send('Not logged in');
-    return;
-  }
-
-  const user = usersDB.get(sciper);
-
-  if (user.role !== 'admin') {
-    res.status(400).send('You must be admin to request this');
+  if (!isAuthorized(['admin'], req)) {
+    res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
 
   const opts: RangeOptions = {};
-  const users = Array.from(usersDB.getRange(opts).map(({ value }) => value));
+  const users = Array.from(
+    usersDB.getRange(opts).map(({ key, value }) => ({ id: '0', sciper: key, role: value }))
+  );
   res.json(users);
 });
 
 // This call (only for admins) allow an admin to add a role to a voter.
 app.post('/api/add_role', (req, res) => {
-  if (!req.session.userid) {
-    res.status(400).send('Not logged in');
+  if (!isAuthorized(['admin'], req)) {
+    res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
 
-  const requester = usersDB.get(req.session.userid);
-  if (requester.role !== 'admin') {
-    res.status(400).send('You must be admin to request this');
-    return;
-  }
+  // {sciper: xxx, role: xxx}
 
   const { sciper } = req.body;
   const { role } = req.body;
-  const user = usersDB.get(sciper);
-  user.role = role;
 
-  usersDB.put(sciper, user).catch((error) => {
-    res.status(500).send('Add role failed');
+  usersDB.put(sciper, role).catch((error) => {
+    res.status(500).send('Failed to add role');
     console.log(error);
   });
 });
 
 // This call (only for admins) allow an admin to remove a role to a user.
 app.post('/api/remove_role', (req, res) => {
-  if (!req.session.userid) {
-    res.status(400).send('Not logged in');
-    return;
-  }
-
-  if (req.session.role !== 'admin') {
-    res.status(400).send('You must be admin to request this');
+  if (!isAuthorized(['admin'], req)) {
+    res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
 
@@ -214,6 +232,13 @@ app.post('/api/remove_role', (req, res) => {
   usersDB
     .remove(sciper)
     .then(() => {
+      const sessionIDs = sess2sciper.get(sciper);
+      if (sessionIDs !== undefined) {
+        sessionIDs.forEach((_, sessionID) => {
+          store.destroy(sessionID);
+        });
+      }
+
       res.status(200).send('Removed');
     })
     .catch((error) => {
@@ -223,10 +248,14 @@ app.post('/api/remove_role', (req, res) => {
 });
 
 // ---
+// end of users role
+// ---
+
+// ---
 // Proxies
 // ---
 
-const proxiesDB = lmdb.open<string, string>({ path: 'proxies' });
+const proxiesDB = lmdb.open<string, string>({ path: `${process.env.DB_PATH}proxies` });
 
 app.get('/api/proxies', (req, res) => {
   const output = new Map<string, string>();
@@ -254,6 +283,11 @@ app.get('/api/proxies/:nodeAddr', (req, res) => {
 });
 
 app.post('/api/proxies', (req, res) => {
+  if (!isAuthorized(['admin', 'operator'], req)) {
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
+  }
+
   try {
     const bodydata = req.body;
     proxiesDB.put(bodydata.NodeAddr, bodydata.Proxy);
@@ -265,6 +299,11 @@ app.post('/api/proxies', (req, res) => {
 });
 
 app.put('/api/proxies/:nodeAddr', (req, res) => {
+  if (!isAuthorized(['admin', 'operator'], req)) {
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
+  }
+
   let { nodeAddr } = req.params;
 
   nodeAddr = decodeURIComponent(nodeAddr);
@@ -292,6 +331,11 @@ app.put('/api/proxies/:nodeAddr', (req, res) => {
 });
 
 app.delete('/api/proxies/:nodeAddr', (req, res) => {
+  if (!isAuthorized(['admin', 'operator'], req)) {
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
+  }
+
   let { nodeAddr } = req.params;
 
   nodeAddr = decodeURIComponent(nodeAddr);
@@ -327,8 +371,8 @@ function getPayload(dataStr: string) {
 
   const edCurve = kyber.curve.newCurve('edwards25519');
 
-  const priv = Buffer.from(config.PRIVATE_KEY, 'hex');
-  const pub = Buffer.from(config.PUBLIC_KEY, 'hex');
+  const priv = Buffer.from(process.env.PRIVATE_KEY as string, 'hex');
+  const pub = Buffer.from(process.env.PUBLIC_KEY as string, 'hex');
 
   const scalar = edCurve.scalar();
   scalar.unmarshalBinary(priv);
@@ -352,7 +396,7 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
   let payload = getPayload(dataStr);
 
   // we strip the `/api` part: /api/election/xxx => /election/xxx
-  let uri = config.DELA_NODE_URL + req.baseUrl.slice(4);
+  let uri = process.env.DELA_NODE_URL + req.baseUrl.slice(4);
 
   // in case this is a DKG  init request, we must extract the proxy addr and
   // update the payload.
@@ -394,13 +438,15 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
     });
 }
 
+// Secure /api/evoting to admins and operators
 app.use('/api/evoting/*', (req, res, next) => {
-  if (req.session.role !== 'admin') {
+  if (!isAuthorized(['admin', 'operator'], req)) {
     console.log('role is:', req.session.role);
-    res.status(400).send('Unauthorized');
-  } else {
-    next();
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
   }
+
+  next();
 });
 
 // https://stackoverflow.com/a/1349426
@@ -419,8 +465,8 @@ app.delete('/api/evoting/elections/:electionID', (req, res) => {
 
   const edCurve = kyber.curve.newCurve('edwards25519');
 
-  const priv = Buffer.from(config.PRIVATE_KEY, 'hex');
-  const pub = Buffer.from(config.PUBLIC_KEY, 'hex');
+  const priv = Buffer.from(process.env.PRIVATE_KEY as string, 'hex');
+  const pub = Buffer.from(process.env.PUBLIC_KEY as string, 'hex');
 
   const scalar = edCurve.scalar();
   scalar.unmarshalBinary(priv);
@@ -431,7 +477,7 @@ app.delete('/api/evoting/elections/:electionID', (req, res) => {
   const sign = kyber.sign.schnorr.sign(edCurve, scalar, Buffer.from(electionID));
 
   // we strip the `/api` part: /api/election/xxx => /election/xxx
-  const uri = config.DELA_NODE_URL + xss(req.url.slice(4));
+  const uri = process.env.DELA_NODE_URL + xss(req.url.slice(4));
 
   axios({
     method: req.method as Method,
