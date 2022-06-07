@@ -56,7 +56,7 @@ const pollDKG = (
       }
 
       // TODO: define the error code for the case when a node is already setup
-      if (result.Error.Message.includes('already setup')) {
+      if (result.Error.Message.includes('setup() was already called, only one call is allowed')) {
         return resolve(result);
       }
 
