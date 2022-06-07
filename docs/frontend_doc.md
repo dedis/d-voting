@@ -334,11 +334,11 @@ Return:
 
 ## Get the default proxy address
 
-|        |                 |
-|--------|-----------------|
-| URL    | `/config/proxy` |
-| Method | `GET`           |
-| Input  |                 |
+|        |                     |
+|--------|---------------------|
+| URL    | `/api/config/proxy` |
+| Method | `GET`               |
+| Input  |                     |
 
 
 Return:
