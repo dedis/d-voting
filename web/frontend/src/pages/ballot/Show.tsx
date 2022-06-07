@@ -137,7 +137,7 @@ const Ballot: FC = () => {
                 </h2>
                 <div className="mt-2 text-sm text-gray-500">{t('voteExplanation')}</div>
               </div>
-
+              <div className="border-t mt-3" />
               <BallotDisplay
                 configuration={configuration}
                 answers={answers}

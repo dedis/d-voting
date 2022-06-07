@@ -14,7 +14,7 @@ import {
 import Login from '../pages/session/Login';
 import Home from '../pages/Home';
 import About from '../pages/About';
-import Admin from '../pages/Admin';
+import Admin from 'pages/admin/Admin';
 import ElectionIndex from '../pages/election/Index';
 import ElectionCreate from '../pages/election/New';
 import ElectionResult from '../pages/election/Result';
