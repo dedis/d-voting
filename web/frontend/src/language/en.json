@@ -69,7 +69,7 @@
     "delete": "Delete",
     "combineShares": "Combine shares",
     "createElec": "Create election",
-    "clearElec": "Clear election",
+    "clearElection": "Clear election",
     "elecName": "Election title",
     "confirmRemovesubject": "Do you really want to remove this subject?",
     "confirmRemovetext": "Do you really want to remove this text?",
