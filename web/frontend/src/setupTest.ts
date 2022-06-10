@@ -6,11 +6,6 @@ import '@testing-library/jest-dom';
 
 import { dvotingproxy } from 'mocks/dvotingproxy';
 
-import Enzyme from 'enzyme';
-import Adapter from '@wojtekmaj/enzyme-adapter-react-17';
-
-Enzyme.configure({ adapter: new Adapter() });
-
 jest.mock('react-i18next', () => ({
   // this mock makes sure any components using the translate hook can use it without a warning being shown
   useTranslation: () => {
