@@ -1,5 +1,53 @@
 #!/bin/bash
 
+# This script is creating n dela voting nodes needed to run
+# an evoting system. User can pass number of nodes, window attach mode useful for autotest,
+# and docker usage.
+
+# by default run on local
+DOCKER=false
+ATTACH=true
+
+POSITIONAL_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -h|--help)
+      echo      "This script is creating n dela voting nodes"
+      echo      "Options:"
+      echo      "-h  |  --help     program help (this file)"
+      echo      "-n  |  --node     number of d-voting nodes"
+      echo      "-a  |  --attach   attach tmux window to current shell true/false, by default true"
+      echo      "-d  |  --docker   launch nodes on docker containers true/false, by default false"
+      exit 0
+      ;;
+    -n|--node)
+      N_NODE="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    -a|--attach)
+      ATTACH="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    -d|--docker)
+      DOCKER="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    -*|--*)
+      echo "Unknown option $1"
+      exit 1
+      ;;
+    *)
+      POSITIONAL_ARGS+=("$1") # save positional arg
+      shift # past argument
+      ;;
+  esac
+done
+
+set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
 set -o errexit
 
@@ -16,21 +64,52 @@ tmux list-sessions | rg "^$s:" >/dev/null 2>&1 && { echo >&2 "A session with the
 
 tmux new-session -d -s $s
 
-make build
+# Clean logs
+rm -rf ./log/log
+mkdir -p ./log/log
+
+
+
+
+if [ "$DOCKER" == false ]; then
+    make build
+else
+    # Clean created containers and tmp dir
+    if [[ $(docker ps -a -q --filter ancestor=node) ]]; then
+        docker rm -f $(docker ps -a -q --filter ancestor=node)
+    fi
+
+    rm -rf ./nodedata    
+    mkdir nodedata
+
+    # Create docker network (only run once)
+    docker network create --driver bridge evoting-net || true
+
+fi
 
 from=1
-to=$1
+to=$N_NODE
 while [ $from -le $to ]
 do
 
 echo $from
 tmux new-window -t $s
 window=$from
-tmux send-keys -t $s:$window "PROXY_LOG=info LLVL=info ./memcoin --config /tmp/node$from start --postinstall --promaddr :$((9099 + $from)) --proxyaddr :$((9079 + $from)) --proxykey $pk --listen tcp://0.0.0.0:$((2000 + $from)) --public //localhost:$((2000 + $from))" C-m
-((from++))
 
+if [ "$DOCKER" == false ]; then
+    tmux send-keys -t $s:$window "PROXY_LOG=info LLVL=info ./memcoin --config /tmp/node$from start --postinstall --promaddr :$((9099 + $from)) --proxyaddr :$((9079 + $from)) --proxykey $pk --listen tcp://0.0.0.0:$((2000 + $from)) --public //localhost:$((2000 + $from))| tee ./log/log/node$from.log" C-m
+else
+    docker run -d -it --env LLVL=info --name node$from --network evoting-net -v "$(pwd)"/nodedata:/tmp  --publish $(( 9079+$from )):9080 node
+    tmux send-keys -t $s:$window "docker exec node$from memcoin --config /tmp/node$from start --postinstall \
+  --promaddr :9100 --proxyaddr :9080 --proxykey $pk --listen tcp://0.0.0.0:2001 --public //$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' node$from):2001 | tee ./log/log/node$from.log" C-m
+fi
+
+((from++))
 done
 
 tmux new-window -t $s
 
-tmux a
+
+if [ "$ATTACH" == true ]; then
+    tmux a
+fi

@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -471,8 +472,8 @@ func (h *Handler) handleDecryptRequest(electionID string) error {
 		}
 
 		//TODO: Define in term of size of election ? (same in shuffle)
-		watchTimeout := time.Second * 5
-		watchCtx, cancel := context.WithTimeout(context.Background(), watchTimeout)
+		watchTimeout := 4 + rand.Intn(election.ShuffleThreshold)
+		watchCtx, cancel := context.WithTimeout(context.Background(), time.Duration(watchTimeout)*time.Second)
 		defer cancel()
 
 		events := h.service.Watch(watchCtx)

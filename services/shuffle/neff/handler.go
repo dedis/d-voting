@@ -25,8 +25,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const watchTimeout = time.Second * 6
-
 var suite = suites.MustFind("Ed25519")
 
 // Handler represents the RPC executed on each node
@@ -114,8 +112,8 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 		if err != nil {
 			return xerrors.Errorf("failed to make tx: %v", err)
 		}
-
-		watchCtx, cancel := context.WithTimeout(context.Background(), watchTimeout)
+		watchTimeout := 4 + election.ShuffleThreshold/2
+		watchCtx, cancel := context.WithTimeout(context.Background(), time.Duration(watchTimeout)*time.Second)
 		defer cancel()
 
 		events := h.service.Watch(watchCtx)
