@@ -19,7 +19,7 @@ const store = new MemoryStore({
 // Keeps an in-memory mapping between a SCIPER (userid) and its opened session
 // IDs. Needed to invalidate the sessions of a user when its role changes. The
 // value is a set of sessions IDs.
-const sess2sciper = new Map<number, Set<string>>();
+const sciper2sess = new Map<number, Set<string>>();
 
 const app = express();
 
@@ -121,9 +121,9 @@ app.get('/api/control_key', (req, res) => {
       req.session.firstname = firstname;
       req.session.role = role;
 
-      const a = sess2sciper.get(req.session.userid) || new Set<string>();
+      const a = sciper2sess.get(req.session.userid) || new Set<string>();
       a.add(req.sessionID);
-      sess2sciper.set(sciper, a);
+      sciper2sess.set(sciper, a);
 
       res.redirect('/logged');
     })
@@ -139,11 +139,13 @@ app.post('/api/logout', (req, res) => {
     res.status(400).send('not logged in');
   }
 
+  const { userid } = req.session;
+
   req.session.destroy(() => {
-    const a = sess2sciper.get(req.session.userid as number);
+    const a = sciper2sess.get(userid as number);
     if (a !== undefined) {
       a.delete(req.sessionID);
-      sess2sciper.set(req.session.userid as number, a);
+      sciper2sess.set(userid as number, a);
     }
     res.redirect('/');
   });
@@ -232,7 +234,7 @@ app.post('/api/remove_role', (req, res) => {
   usersDB
     .remove(sciper)
     .then(() => {
-      const sessionIDs = sess2sciper.get(sciper);
+      const sessionIDs = sciper2sess.get(sciper);
       if (sessionIDs !== undefined) {
         sessionIDs.forEach((_, sessionID) => {
           store.destroy(sessionID);
@@ -263,7 +265,7 @@ app.get('/api/proxies', (req, res) => {
     output.set(entry.key, entry.value);
   });
 
-  res.status(200).json(Object.fromEntries(output));
+  res.status(200).json({ Proxies: Object.fromEntries(output) });
 });
 
 app.get('/api/proxies/:nodeAddr', (req, res) => {
