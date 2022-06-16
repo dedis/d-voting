@@ -30,7 +30,7 @@ export function voteEncode(
 
   answers.TextAnswers.forEach((textAnswer, id) => {
     encodedBallot += TEXT + ':' + id + ':';
-    textAnswer.forEach((answer) => (encodedBallot += 'base64("' + answer + '"),'));
+    textAnswer.forEach((answer) => (encodedBallot += Buffer.from(answer).toString('base64') + ','));
     encodedBallot = encodedBallot.slice(0, -1);
     encodedBallot += '\n';
   });
