@@ -6,7 +6,7 @@ export function voteEncode(
   answers: Answers,
   maxBallotSize: number,
   chunksPerBallot: number
-): Uint8Array[] {
+): string[] {
   // contains the special string representation of the result
   let encodedBallot = '';
 
@@ -30,6 +30,7 @@ export function voteEncode(
 
   answers.TextAnswers.forEach((textAnswer, id) => {
     encodedBallot += TEXT + ':' + id + ':';
+    // each answer is first transformed into bytes then encoded in base64
     textAnswer.forEach((answer) => (encodedBallot += Buffer.from(answer).toString('base64') + ','));
     encodedBallot = encodedBallot.slice(0, -1);
     encodedBallot += '\n';
@@ -44,17 +45,16 @@ export function voteEncode(
     encodedBallot += padding();
   }
 
-  let utf8Encode = new TextEncoder();
-  // transform the encodedBallot into an array of bytes
-  const encodedBallotInBytes: Uint8Array = utf8Encode.encode(encodedBallot);
-
-  const ballotChunksInBytes: Uint8Array[] = [];
+  const ballotChunks: string[] = [];
   const chunkSize = maxBallotSize / chunksPerBallot;
 
-  // divide into chunks of 29 bytes
+  // divide into chunks of 29 bytes, where 1 character === 1 byte
   for (let i = 0; i < maxBallotSize; i += chunkSize) {
-    ballotChunksInBytes.push(encodedBallotInBytes.slice(i, i + chunkSize));
+    ballotChunks.push(encodedBallot.substring(i, i + chunkSize));
   }
 
-  return ballotChunksInBytes;
+  console.log(ballotChunks.length == chunksPerBallot);
+  console.log(ballotChunks);
+
+  return ballotChunks;
 }
