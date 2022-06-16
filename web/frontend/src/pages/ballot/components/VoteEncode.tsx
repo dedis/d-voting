@@ -53,8 +53,5 @@ export function voteEncode(
     ballotChunks.push(encodedBallot.substring(i, i + chunkSize));
   }
 
-  console.log(ballotChunks.length == chunksPerBallot);
-  console.log(ballotChunks);
-
   return ballotChunks;
 }
