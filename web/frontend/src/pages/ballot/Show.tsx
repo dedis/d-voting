@@ -75,7 +75,7 @@ const Ballot: FC = () => {
 
   const sendBallot = async () => {
     try {
-      const ballotChunks = voteEncode(answers, ballotSize, chunksPerBallot);
+      const ballotChunks = voteEncode(answers, chunksPerBallot);
       const EGPairs = Array<Buffer[]>();
       ballotChunks.forEach((chunk) =>
         EGPairs.push(encryptVote(chunk, Buffer.from(hexToBytes(pubKey).buffer), edCurve))
