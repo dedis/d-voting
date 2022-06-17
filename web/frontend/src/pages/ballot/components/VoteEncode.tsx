@@ -2,11 +2,7 @@ import { Buffer } from 'buffer';
 import ShortUniqueId from 'short-unique-id';
 import { Answers, RANK, SELECT, TEXT } from 'types/configuration';
 
-export function voteEncode(
-  answers: Answers,
-  maxBallotSize: number,
-  chunksPerBallot: number
-): Uint8Array[] {
+export function voteEncode(answers: Answers, chunksPerBallot: number): string[] {
   // contains the special string representation of the result
   let encodedBallot = '';
 
@@ -30,31 +26,31 @@ export function voteEncode(
 
   answers.TextAnswers.forEach((textAnswer, id) => {
     encodedBallot += TEXT + ':' + id + ':';
-    textAnswer.forEach((answer) => (encodedBallot += 'base64("' + answer + '"),'));
+    // each answer is first transformed into bytes then encoded in base64
+    textAnswer.forEach((answer) => (encodedBallot += Buffer.from(answer).toString('base64') + ','));
     encodedBallot = encodedBallot.slice(0, -1);
     encodedBallot += '\n';
   });
 
   encodedBallot += '\n';
 
-  const ballotSize = Buffer.byteLength(encodedBallot);
+  const chunkSize = 29;
+  // ballot size
+  const ballotSize = chunksPerBallot * chunkSize;
+  const encodedBallotSize = Buffer.byteLength(encodedBallot);
+
   // add padding if necessary
-  if (ballotSize < maxBallotSize) {
-    const padding = new ShortUniqueId({ length: maxBallotSize - ballotSize });
+  if (encodedBallotSize < ballotSize) {
+    const padding = new ShortUniqueId({ length: ballotSize - encodedBallotSize });
     encodedBallot += padding();
   }
 
-  let utf8Encode = new TextEncoder();
-  // transform the encodedBallot into an array of bytes
-  const encodedBallotInBytes: Uint8Array = utf8Encode.encode(encodedBallot);
+  const ballotChunks: string[] = [];
 
-  const ballotChunksInBytes: Uint8Array[] = [];
-  const chunkSize = maxBallotSize / chunksPerBallot;
-
-  // divide into chunks of 29 bytes
-  for (let i = 0; i < maxBallotSize; i += chunkSize) {
-    ballotChunksInBytes.push(encodedBallotInBytes.slice(i, i + chunkSize));
+  // divide into chunks of 29 bytes, where 1 character === 1 byte
+  for (let i = 0; i < ballotSize; i += chunkSize) {
+    ballotChunks.push(encodedBallot.substring(i, i + chunkSize));
   }
 
-  return ballotChunksInBytes;
+  return ballotChunks;
 }

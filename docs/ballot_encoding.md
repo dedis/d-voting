@@ -63,5 +63,5 @@ would then become:
 
 "text:cd13:base64("Noémien"),base64("Pierluca")\n\n" +
 
-" ndtTx5uxmvnllH1T7NgLOREguUWbN"
+"ndtTx5uxmvnllH1T7NgLOREguUWbN"
 ```

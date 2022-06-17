@@ -382,7 +382,8 @@ func (s *Subject) MaxEncodedSize() int {
 		size += len("text::")
 		size += len(text.ID)
 
-		maxTextPerAnswer := base64.StdEncoding.EncodedLen(int(text.MaxLength)) + 1
+		// at most 4 bytes per character + ',' per answer
+		maxTextPerAnswer := 4*int(text.MaxLength) + 1
 		size += maxTextPerAnswer*int(text.MaxN) +
 			int(math.Max(float64(len(text.Choices)-int(text.MaxN)), 0))
 	}
