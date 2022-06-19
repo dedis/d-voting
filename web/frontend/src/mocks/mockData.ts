@@ -181,12 +181,12 @@ const mockElection3: any = {
     {
       ID: '3cVHIxpx',
       Title: 'Choose your lunch',
-      Order: ['PGPhhJlJ'],
+      Order: ['PGP'],
       Ranks: [],
       Selects: [],
       Texts: [
         {
-          ID: 'PGPhhJlJ',
+          ID: 'PGP',
           Title: 'Select what you want',
           MaxN: 4,
           MinN: 0,
@@ -250,7 +250,7 @@ const mockElectionResult31: Results = {
   SelectResult: [],
   RankResultIDs: [],
   RankResult: [],
-  TextResultIDs: ['PGPhhJlJ'],
+  TextResultIDs: ['PGP'],
   TextResult: [['Alice', 'Pizza', 'Ice cold water', '🍒🍒🍒🍒']],
 };
 
@@ -259,7 +259,7 @@ const mockElectionResult32: Results = {
   SelectResult: [],
   RankResultIDs: [],
   RankResult: [],
-  TextResultIDs: ['PGPhhJlJ'],
+  TextResultIDs: ['PGP'],
   TextResult: [['Bob', 'Pizza', 'Coke', '🍒🍒🍒']],
 };
 

@@ -2,7 +2,7 @@ import ShortUniqueId from 'short-unique-id';
 import * as types from './configuration';
 import { ID, RANK, SELECT, SUBJECT, TEXT } from './configuration';
 
-const uid: Function = new ShortUniqueId({ length: 8 });
+const uid: Function = new ShortUniqueId({ length: 3 });
 
 const emptyConfiguration = (): types.Configuration => {
   return { MainTitle: '', Scaffold: [] };

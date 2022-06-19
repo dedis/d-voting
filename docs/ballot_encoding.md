@@ -13,7 +13,7 @@ The answers to questions are encoded in the following way, with one question per
 
 TYPE = "select"|"text"|"rank"
 SEP = ":"
-ID = up to 3 bytes, encoded in base64
+ID = 3 bytes, encoded in base64
 ANSWERS = <answer>[","<answer>]*
 ANSWER = <select_answer>|<text_answer>|<rank_answer>
 SELECT_ANSWER = "0"|"1"
