@@ -175,6 +175,31 @@ const mockElection2: any = {
   ],
 };
 
+const mockElection3: any = {
+  MainTitle: 'Lunch',
+  Scaffold: [
+    {
+      ID: '3cVHIxpx',
+      Title: 'Choose your lunch',
+      Order: ['PGPhhJlJ'],
+      Ranks: [],
+      Selects: [],
+      Texts: [
+        {
+          ID: 'PGPhhJlJ',
+          Title: 'Select what you want',
+          MaxN: 4,
+          MinN: 0,
+          MaxLength: 50,
+          Regex: '',
+          Choices: ['Firstname', 'Main 🍕', 'Drink 🧃', 'Dessert 🍰'],
+        },
+      ],
+      Subjects: [],
+    },
+  ],
+};
+
 const mockElectionResult21: Results = {
   SelectResultIDs: [(0x3fb2).toString(), (0xa319).toString()],
   SelectResult: [
@@ -220,6 +245,33 @@ const mockElectionResult23: Results = {
   TextResult: [['Another Name', 'Jane Doe']],
 };
 
+const mockElectionResult31: Results = {
+  SelectResultIDs: [],
+  SelectResult: [],
+  RankResultIDs: [],
+  RankResult: [],
+  TextResultIDs: ['PGPhhJlJ'],
+  TextResult: [['Alice', 'Pizza', 'Ice cold water', '🍒🍒🍒🍒']],
+};
+
+const mockElectionResult32: Results = {
+  SelectResultIDs: [],
+  SelectResult: [],
+  RankResultIDs: [],
+  RankResult: [],
+  TextResultIDs: ['PGPhhJlJ'],
+  TextResult: [['Bob', 'Pizza', 'Coke', '🍒🍒🍒']],
+};
+
+const mockElectionResult33: Results = {
+  SelectResultIDs: null,
+  SelectResult: null,
+  RankResultIDs: null,
+  RankResult: null,
+  TextResultIDs: null,
+  TextResult: null,
+};
+
 export {
   mockElection1,
   mockElectionResult11,
@@ -227,7 +279,11 @@ export {
   mockElection2,
   mockElectionResult21,
   mockElectionResult22,
+  mockElection3,
   mockElectionResult23,
+  mockElectionResult31,
+  mockElectionResult32,
+  mockElectionResult33,
   mockRoster,
   mockNodes,
 };

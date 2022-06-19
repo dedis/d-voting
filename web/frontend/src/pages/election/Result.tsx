@@ -75,9 +75,15 @@ const ElectionResult: FC = () => {
     let textRes: TextResults = new Map<ID, string[][]>();
 
     result.forEach((res) => {
-      groupByID(selectRes, res.SelectResultIDs, res.SelectResult, true);
-      groupByID(rankRes, res.RankResultIDs, res.RankResult);
-      groupByID(textRes, res.TextResultIDs, res.TextResult);
+      if (
+        res.SelectResultIDs !== null &&
+        res.RankResultIDs !== null &&
+        res.TextResultIDs !== null
+      ) {
+        groupByID(selectRes, res.SelectResultIDs, res.SelectResult, true);
+        groupByID(rankRes, res.RankResultIDs, res.RankResult);
+        groupByID(textRes, res.TextResultIDs, res.TextResult);
+      }
     });
 
     return { rankRes, selectRes, textRes };
@@ -104,20 +110,26 @@ const ElectionResult: FC = () => {
       switch (element.Type) {
         case RANK:
           const rank = element as RankQuestion;
-          res = countRankResult(rankResult.get(id), element as RankQuestion).resultsInPercent.map(
-            (percent, index) => {
-              return { Candidate: rank.Choices[index], Percentage: `${percent}%` };
-            }
-          );
-          dataToDownload.push({ Title: element.Title, Results: res });
+
+          if (rankResult.has(id)) {
+            res = countRankResult(rankResult.get(id), element as RankQuestion).resultsInPercent.map(
+              (percent, index) => {
+                return { Candidate: rank.Choices[index], Percentage: `${percent}%` };
+              }
+            );
+            dataToDownload.push({ Title: element.Title, Results: res });
+          }
           break;
 
         case SELECT:
           const select = element as SelectQuestion;
-          res = countSelectResult(selectResult.get(id)).resultsInPercent.map((percent, index) => {
-            return { Candidate: select.Choices[index], Percentage: `${percent}%` };
-          });
-          dataToDownload.push({ Title: element.Title, Results: res });
+
+          if (selectResult.has(id)) {
+            res = countSelectResult(selectResult.get(id)).resultsInPercent.map((percent, index) => {
+              return { Candidate: select.Choices[index], Percentage: `${percent}%` };
+            });
+            dataToDownload.push({ Title: element.Title, Results: res });
+          }
           break;
 
         case SUBJECT:
@@ -125,10 +137,12 @@ const ElectionResult: FC = () => {
           break;
 
         case TEXT:
-          res = Array.from(countTextResult(textResult.get(id)).resultsInPercent).map((r) => {
-            return { Candidate: r[0], Percentage: `${r[1]}%` };
-          });
-          dataToDownload.push({ Title: element.Title, Results: res });
+          if (textResult.has(id)) {
+            res = Array.from(countTextResult(textResult.get(id)).resultsInPercent).map((r) => {
+              return { Candidate: r[0], Percentage: `${r[1]}%` };
+            });
+            dataToDownload.push({ Title: element.Title, Results: res });
+          }
           break;
       }
     });
@@ -160,16 +174,18 @@ const ElectionResult: FC = () => {
     return (
       <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
         <h2 className="text-lg pb-2">{element.Title}</h2>
-        {element.Type === RANK && (
+        {element.Type === RANK && rankResult.has(element.ID) && (
           <RankResult rank={element as RankQuestion} rankResult={rankResult.get(element.ID)} />
         )}
-        {element.Type === SELECT && (
+        {element.Type === SELECT && selectResult.has(element.ID) && (
           <SelectResult
             select={element as SelectQuestion}
             selectResult={selectResult.get(element.ID)}
           />
         )}
-        {element.Type === TEXT && <TextResult textResult={textResult.get(element.ID)} />}
+        {element.Type === TEXT && textResult.has(element.ID) && (
+          <TextResult textResult={textResult.get(element.ID)} />
+        )}
       </div>
     );
   };

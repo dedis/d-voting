@@ -7,14 +7,14 @@ export function voteEncode(answers: Answers, chunksPerBallot: number): string[] 
   let encodedBallot = '';
 
   answers.SelectAnswers.forEach((selectAnswer, id) => {
-    encodedBallot += SELECT + ':' + id + ':';
+    encodedBallot += SELECT + ':' + Buffer.from(id).toString('base64') + ':';
     selectAnswer.forEach((answer) => (encodedBallot += answer ? '1,' : '0,'));
     encodedBallot = encodedBallot.slice(0, -1);
     encodedBallot += '\n';
   });
 
   answers.RankAnswers.forEach((rankAnswer, id) => {
-    encodedBallot += RANK + ':' + id + ':';
+    encodedBallot += RANK + ':' + Buffer.from(id).toString('base64') + ':';
     const position = Array<number>(rankAnswer.length);
     for (let i = 0; i < rankAnswer.length; i++) {
       position[rankAnswer[i]] = i;
@@ -25,7 +25,7 @@ export function voteEncode(answers: Answers, chunksPerBallot: number): string[] 
   });
 
   answers.TextAnswers.forEach((textAnswer, id) => {
-    encodedBallot += TEXT + ':' + id + ':';
+    encodedBallot += TEXT + ':' + Buffer.from(id).toString('base64') + ':';
     // each answer is first transformed into bytes then encoded in base64
     textAnswer.forEach((answer) => (encodedBallot += Buffer.from(answer).toString('base64') + ','));
     encodedBallot = encodedBallot.slice(0, -1);
