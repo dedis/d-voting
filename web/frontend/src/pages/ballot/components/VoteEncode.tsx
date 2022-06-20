@@ -2,7 +2,11 @@ import { Buffer } from 'buffer';
 import ShortUniqueId from 'short-unique-id';
 import { Answers, RANK, SELECT, TEXT } from 'types/configuration';
 
-export function voteEncode(answers: Answers, chunksPerBallot: number): string[] {
+export function voteEncode(
+  answers: Answers,
+  ballotSize: number,
+  chunksPerBallot: number
+): string[] {
   // contains the special string representation of the result
   let encodedBallot = '';
 
@@ -34,22 +38,23 @@ export function voteEncode(answers: Answers, chunksPerBallot: number): string[] 
 
   encodedBallot += '\n';
 
-  const chunkSize = 29;
-  // ballot size
-  const ballotSize = chunksPerBallot * chunkSize;
   const encodedBallotSize = Buffer.byteLength(encodedBallot);
 
-  // add padding if necessary
+  // add padding if necessary until encodedBallot.length == ballotSize
   if (encodedBallotSize < ballotSize) {
     const padding = new ShortUniqueId({ length: ballotSize - encodedBallotSize });
     encodedBallot += padding();
   }
 
+  const chunkSize = 29;
   const ballotChunks: string[] = [];
 
-  // divide into chunks of 29 bytes, where 1 character === 1 byte
-  for (let i = 0; i < ballotSize; i += chunkSize) {
-    ballotChunks.push(encodedBallot.substring(i, i + chunkSize));
+  // divide into chunksPerBallot chunks, where 1 character === 1 byte
+  for (let i = 0; i < chunksPerBallot; i += 1) {
+    const start = i * chunkSize;
+    // substring(start, start + chunkSize), if (start + chunkSize) > string.length
+    // then (start + chunkSize) is treated as if it was equal to string.length
+    ballotChunks.push(encodedBallot.substring(start, start + chunkSize));
   }
 
   return ballotChunks;

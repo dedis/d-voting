@@ -27,7 +27,7 @@ const Ballot: FC = () => {
 
   const { electionId } = useParams();
   const UserID = sessionStorage.getItem('id');
-  const { loading, configObj, electionID, status, pubKey, chunksPerBallot } =
+  const { loading, configObj, electionID, status, pubKey, ballotSize, chunksPerBallot } =
     useElection(electionId);
   const { configuration, answers, setAnswers } = useConfiguration(configObj);
 
@@ -75,7 +75,7 @@ const Ballot: FC = () => {
 
   const sendBallot = async () => {
     try {
-      const ballotChunks = voteEncode(answers, chunksPerBallot);
+      const ballotChunks = voteEncode(answers, ballotSize, chunksPerBallot);
       const EGPairs = Array<Buffer[]>();
       ballotChunks.forEach((chunk) =>
         EGPairs.push(encryptVote(chunk, Buffer.from(hexToBytes(pubKey).buffer), edCurve))
