@@ -27,7 +27,7 @@ const Ballot: FC = () => {
 
   const { electionId } = useParams();
   const UserID = sessionStorage.getItem('id');
-  const { loading, configObj, electionID, status, pubKey, ballotSize, chunksPerBallot } =
+  const { loading, configObj, electionID, status, pubKey, chunksPerBallot } =
     useElection(electionId);
   const { configuration, answers, setAnswers } = useConfiguration(configObj);
 

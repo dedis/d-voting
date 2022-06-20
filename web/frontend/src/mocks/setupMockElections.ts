@@ -5,11 +5,15 @@ import { NodeStatus } from 'types/node';
 import {
   mockElection1,
   mockElection2,
+  mockElection3,
   mockElectionResult11,
   mockElectionResult12,
   mockElectionResult21,
   mockElectionResult22,
   mockElectionResult23,
+  mockElectionResult31,
+  mockElectionResult32,
+  mockElectionResult33,
   mockNodes,
   mockRoster,
 } from './mockData';
@@ -39,6 +43,7 @@ const setupMockElection = () => {
 
   const electionID1 = '36kSJ0tH';
   const electionID2 = 'Bnq9gLmf';
+  const electionID3 = 'Afdv4ffl';
 
   mockElections.set(electionID1, {
     ElectionID: electionID1,
@@ -68,6 +73,20 @@ const setupMockElection = () => {
 
   mockResults.set(electionID2, [mockElectionResult21, mockElectionResult22, mockElectionResult23]);
   mockDKG.set(electionID2, mockDKGSetup);
+
+  mockElections.set(electionID3, {
+    ElectionID: electionID3,
+    Status: Status.Open,
+    Pubkey: 'XL4V6EMIICW',
+    Result: [],
+    Roster: mockRoster,
+    Configuration: unmarshalConfig(mockElection3),
+    BallotSize: 291,
+    ChunksPerBallot: 11,
+  });
+
+  mockResults.set(electionID3, [mockElectionResult31, mockElectionResult32, mockElectionResult33]);
+  mockDKG.set(electionID3, mockDKGSetup);
 
   return { mockElections, mockResults, mockDKG, mockNodeProxyAddresses };
 };
