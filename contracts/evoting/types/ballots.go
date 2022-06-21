@@ -68,11 +68,10 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 			return xerrors.Errorf("a line in the ballot has length != 3: %s", line)
 		}
 
-		_, err := base64.StdEncoding.DecodeString(question[1])
+		questionID, err := base64.StdEncoding.DecodeString(question[1])
 		if err != nil {
 			return xerrors.Errorf("could not decode question ID: %v", err)
 		}
-		questionID := question[1]
 
 		q := election.Configuration.GetQuestion(ID(questionID))
 
