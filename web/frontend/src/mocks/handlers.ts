@@ -41,7 +41,7 @@ const CHANGE_STATUS_TIMER = 2000;
 const INIT_TIMER = 1000;
 const SETUP_TIMER = 2000;
 const SHUFFLE_TIMER = 2000;
-const DECRYPT_TIMER = 3000;
+const DECRYPT_TIMER = 1000;
 
 const defaultProxy = 'http://localhost/';
 
@@ -140,8 +140,8 @@ export const handlers = [
         Result: [],
         Roster: mockRoster,
         Configuration: configuration,
-        BallotSize: 290,
-        ChunksPerBallot: 10,
+        BallotSize: 291,
+        ChunksPerBallot: 11,
       });
 
       return newElectionID;
