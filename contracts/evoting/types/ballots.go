@@ -54,7 +54,6 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 	b.TextResultIDs = make([]ID, 0)
 	b.TextResult = make([][]string, 0)
 
-	//TODO: Loads of code duplication, can be re-thought
 	for _, line := range lines {
 		if line == "" {
 			// empty line, the valid part of the ballot is over
@@ -86,121 +85,58 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 		case "select":
 			selections := strings.Split(question[2], ",")
 
-			if len(selections) != q.GetChoicesLength() {
+			selectQ := Select{
+				ID:      ID(questionID),
+				MaxN:    q.GetMaxN(),
+				MinN:    q.GetMinN(),
+				Choices: make([]string, q.GetChoicesLength()),
+			}
+
+			results, err := selectQ.unmarshalAnswers(selections)
+			if err != nil {
 				b.invalidate()
-				return fmt.Errorf("question %s has a wrong number of answers: expected %d got %d"+
-					"", questionID, q.GetChoicesLength(), len(selections))
+				return fmt.Errorf("could not unmarshal select answers: %v", err)
 			}
 
 			b.SelectResultIDs = append(b.SelectResultIDs, ID(questionID))
-			b.SelectResult = append(b.SelectResult, make([]bool, 0))
-
-			index := len(b.SelectResult) - 1
-			var selected uint = 0
-
-			for _, selection := range selections {
-				s, err := strconv.ParseBool(selection)
-
-				if err != nil {
-					b.invalidate()
-					return fmt.Errorf("could not parse selection value for Q.%s: %v",
-						questionID, err)
-				}
-
-				if s {
-					selected++
-				}
-
-				b.SelectResult[index] = append(b.SelectResult[index], s)
-			}
-
-			if selected > q.GetMaxN() {
-				b.invalidate()
-				return fmt.Errorf("question %s has too many selected answers", questionID)
-			} else if selected < q.GetMinN() {
-				b.invalidate()
-				return fmt.Errorf("question %s has not enough selected answers", questionID)
-			}
+			b.SelectResult = append(b.SelectResult, results)
 
 		case "rank":
 			ranks := strings.Split(question[2], ",")
 
-			if len(ranks) != q.GetChoicesLength() {
-				b.invalidate()
-				return fmt.Errorf("question %s has a wrong number of answers: expected %d got %d"+
-					"", questionID, q.GetChoicesLength(), len(ranks))
+			rankQ := Rank{
+				ID:      ID(questionID),
+				MaxN:    q.GetMaxN(),
+				MinN:    q.GetMinN(),
+				Choices: make([]string, q.GetChoicesLength()),
 			}
 
+			results, err := rankQ.unmarshalAnswers(ranks)
+			if err != nil {
+				b.invalidate()
+				return fmt.Errorf("could not unmarshal rank answers: %v", err)
+			}
 			b.RankResultIDs = append(b.RankResultIDs, ID(questionID))
-			b.RankResult = append(b.RankResult, make([]int8, 0))
-
-			index := len(b.RankResult) - 1
-			var selected uint = 0
-			for _, rank := range ranks {
-				if len(rank) > 0 {
-					selected++
-
-					r, err := strconv.ParseInt(rank, 10, 8)
-					if err != nil {
-						b.invalidate()
-						return fmt.Errorf("could not parse rank value for Q.%s : %v",
-							questionID, err)
-					}
-
-					if r < 0 || uint(r) >= q.GetMaxN() {
-						b.invalidate()
-						return fmt.Errorf("invalid rank not in range [0, MaxN[")
-					}
-
-					b.RankResult[index] = append(b.RankResult[index], int8(r))
-				} else {
-					b.RankResult[index] = append(b.RankResult[index], int8(-1))
-				}
-			}
-
-			if selected > q.GetMaxN() {
-				b.invalidate()
-				return fmt.Errorf("question %s has too many selected answers", questionID)
-			} else if selected < q.GetMinN() {
-				b.invalidate()
-				return fmt.Errorf("question %s has not enough selected answers", questionID)
-			}
+			b.RankResult = append(b.RankResult, results)
 
 		case "text":
 			texts := strings.Split(question[2], ",")
 
-			if len(texts) != q.GetChoicesLength() {
-				b.invalidate()
-				return fmt.Errorf("question %s has a wrong number of answers: expected %d got %d"+
-					"", questionID, q.GetChoicesLength(), len(texts))
+			textQ := Text{
+				ID:        ID(questionID),
+				MaxN:      q.GetMaxN(),
+				MinN:      q.GetMinN(),
+				MaxLength: 0, // TODO: Should the length check be also done at decryption?
+				Choices:   make([]string, q.GetChoicesLength()),
 			}
 
+			results, err := textQ.unmarshalAnswers(texts)
+			if err != nil {
+				b.invalidate()
+				return fmt.Errorf("could not unmarshal text answers: %v", err)
+			}
 			b.TextResultIDs = append(b.TextResultIDs, ID(questionID))
-			b.TextResult = append(b.TextResult, make([]string, 0))
-
-			index := len(b.TextResult) - 1
-			var selected uint = 0
-
-			for _, text := range texts {
-				if len(text) > 0 {
-					selected++
-				}
-
-				t, err := base64.StdEncoding.DecodeString(text)
-				if err != nil {
-					return fmt.Errorf("could not decode text for Q. %s: %v", questionID, err)
-				}
-
-				b.TextResult[index] = append(b.TextResult[index], string(t))
-			}
-
-			if selected > q.GetMaxN() {
-				b.invalidate()
-				return fmt.Errorf("question %s has too many selected answers", questionID)
-			} else if selected < q.GetMinN() {
-				b.invalidate()
-				return fmt.Errorf("question %s has not enough selected answers", questionID)
-			}
+			b.TextResult = append(b.TextResult, results)
 
 		default:
 			b.invalidate()
@@ -212,6 +148,18 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 	return nil
 }
 
+// checkNumberOfAnswers checks if the given amount of answers is in the accepted
+// range for the given question
+func checkNumberOfAnswers(maxN uint, minN uint, nbrOfAnswers uint, questionID ID) error {
+	if nbrOfAnswers > maxN {
+		return fmt.Errorf("question %s has too many selected answers", questionID)
+	} else if nbrOfAnswers < minN {
+		return fmt.Errorf("question %s has not enough selected answers", questionID)
+	}
+	return nil
+}
+
+// invalidate makes the ballot invalid by putting all field to nil
 func (b *Ballot) invalidate() {
 	b.RankResultIDs = nil
 	b.RankResult = nil
@@ -487,6 +435,38 @@ func (s Select) GetChoicesLength() int {
 	return len(s.Choices)
 }
 
+func (s Select) unmarshalAnswers(selections []string) ([]bool, error) {
+	if len(selections) != len(s.Choices) {
+		return nil, fmt.Errorf("question %s has a wrong number of answers:"+
+			" expected %d got %d", s.ID, len(s.Choices), len(selections))
+	}
+
+	var selected uint = 0
+	results := make([]bool, 0)
+
+	for _, selection := range selections {
+		b, err := strconv.ParseBool(selection)
+
+		if err != nil {
+			return nil, fmt.Errorf("could not parse selection value for Q.%s: %v",
+				s.ID, err)
+		}
+
+		if b {
+			selected++
+		}
+
+		results = append(results, b)
+	}
+
+	err := checkNumberOfAnswers(s.MaxN, s.MinN, selected, s.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
 // Rank describes a "rank" question, which requires the user to rank choices.
 // implements Question
 type Rank struct {
@@ -511,6 +491,43 @@ func (r Rank) GetMinN() uint {
 // GetChoicesLength implements Question
 func (r Rank) GetChoicesLength() int {
 	return len(r.Choices)
+}
+
+func (r Rank) unmarshalAnswers(ranks []string) ([]int8, error) {
+	if len(ranks) != len(r.Choices) {
+		return nil, fmt.Errorf("question %s has a wrong number of answers:"+
+			" expected %d got %d", r.ID, len(r.Choices), len(ranks))
+	}
+
+	var selected uint = 0
+	results := make([]int8, 0)
+
+	for _, rank := range ranks {
+		if len(rank) > 0 {
+			selected++
+
+			rankeValue, err := strconv.ParseInt(rank, 10, 8)
+			if err != nil {
+				return nil, fmt.Errorf("could not parse rank value for Q.%s : %v",
+					r.ID, err)
+			}
+
+			if rankeValue < 0 || uint(rankeValue) >= r.MaxN {
+				return nil, fmt.Errorf("invalid rank not in range [0, MaxN[")
+			}
+
+			results = append(results, int8(rankeValue))
+		} else {
+			results = append(results, int8(-1))
+		}
+	}
+
+	err := checkNumberOfAnswers(r.MaxN, r.MinN, selected, r.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }
 
 // Text describes a "text" question, which allows the user to enter free text.
@@ -539,4 +556,34 @@ func (t Text) GetMinN() uint {
 // GetChoicesLength implements Question
 func (t Text) GetChoicesLength() int {
 	return len(t.Choices)
+}
+
+func (t Text) unmarshalAnswers(texts []string) ([]string, error) {
+	if len(texts) != len(t.Choices) {
+		return nil, fmt.Errorf("question %s has a wrong number of answers:"+
+			" expected %d got %d", t.ID, len(t.Choices), len(texts))
+	}
+
+	var selected uint = 0
+	results := make([]string, 0)
+
+	for _, text := range texts {
+		if len(text) > 0 {
+			selected++
+		}
+
+		textValue, err := base64.StdEncoding.DecodeString(text)
+		if err != nil {
+			return nil, fmt.Errorf("could not decode text for Q. %s: %v", t.ID, err)
+		}
+
+		results = append(results, string(textValue))
+	}
+
+	err := checkNumberOfAnswers(t.MaxN, t.MinN, selected, t.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }
