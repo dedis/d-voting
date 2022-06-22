@@ -435,6 +435,8 @@ func (s Select) GetChoicesLength() int {
 	return len(s.Choices)
 }
 
+// unmarshalAnswers interprets the given raw answers into a slice of bool with
+// the answer for each choice and ensure the answers are correctly formatted
 func (s Select) unmarshalAnswers(selections []string) ([]bool, error) {
 	if len(selections) != len(s.Choices) {
 		return nil, fmt.Errorf("question %s has a wrong number of answers:"+
@@ -493,6 +495,9 @@ func (r Rank) GetChoicesLength() int {
 	return len(r.Choices)
 }
 
+// unmarshalAnswers interprets the given raw answers into a slice of integer
+// representing the ranking of each choice and ensures the answers are correctly
+// formatted
 func (r Rank) unmarshalAnswers(ranks []string) ([]int8, error) {
 	if len(ranks) != len(r.Choices) {
 		return nil, fmt.Errorf("question %s has a wrong number of answers:"+
@@ -558,6 +563,9 @@ func (t Text) GetChoicesLength() int {
 	return len(t.Choices)
 }
 
+// unmarshalAnswers interprets the given raw answers into a slice with the
+// decoded answer corresponding to each choice and ensure the answers are
+// correctly formatted
 func (t Text) unmarshalAnswers(texts []string) ([]string, error) {
 	if len(texts) != len(t.Choices) {
 		return nil, fmt.Errorf("question %s has a wrong number of answers:"+
