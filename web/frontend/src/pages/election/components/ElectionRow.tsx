@@ -11,15 +11,15 @@ type ElectionRowProps = {
 const ElectionRow: FC<ElectionRowProps> = ({ election }) => {
   return (
     <tr className="bg-white border-b hover:bg-gray-50 ">
-      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+      <td className="px-1.5 sm:px-6 py-4 font-medium text-gray-900 whitespace-nowrap truncate">
         <Link
-          className="election-link text-gray-700 hover:text-indigo-500"
+          className="text-gray-700 hover:text-indigo-500"
           to={`/elections/${election.ElectionID}`}>
-          {election.Title}
+          <div className="max-w-[20vw] truncate">{election.Title}</div>
         </Link>
       </td>
-      <td className="px-6 py-4">{<ElectionStatus status={election.Status} />}</td>
-      <td className="px-6 py-4 text-right">
+      <td className="px-1.5 sm:px-6 py-4">{<ElectionStatus status={election.Status} />}</td>
+      <td className="px-1.5 sm:px-6 py-4 text-right">
         <QuickAction status={election.Status} electionID={election.ElectionID} />
       </td>
     </tr>

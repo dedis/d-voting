@@ -52,13 +52,13 @@ const ElectionTable: FC<ElectionTableProps> = ({ elections, pageIndex, setPageIn
         <table className="w-full text-sm text-left text-gray-500">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-3">
+              <th scope="col" className="px-1.5 sm:px-6 py-3">
                 {t('elecName')}
               </th>
-              <th scope="col" className="px-6 py-3">
+              <th scope="col" className="px-1.5 sm:px-6 py-3">
                 {t('status')}
               </th>
-              <th scope="col" className="px-6 py-3">
+              <th scope="col" className="px-1.5 sm:px-6 py-3">
                 <span className="sr-only">Edit</span>
               </th>
             </tr>
