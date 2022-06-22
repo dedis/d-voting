@@ -31,15 +31,25 @@ const ProxyRow: FC<ProxyRowProps> = ({
 
   return (
     <tr className="bg-white border-b hover:bg-gray-50">
-      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{node}</td>
-      <td className="px-6 py-4">{proxy}</td>
-      <td className="px-6 py-4 text-right">
-        <button onClick={handleEdit} className="font-medium text-indigo-600 hover:underline mr-6">
-          {t('edit')}
-        </button>
-        <button onClick={handleDelete} className="font-medium text-red-600 hover:underline">
+      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap break-all">{node}</td>
+      <td className="px-6 py-4 break-all">{proxy}</td>
+
+      <td className="px-2 py-4 text-right">
+        <div className="block sm:hidden">
+          <button onClick={handleEdit} className="font-medium text-indigo-600 hover:underline ">
+            {t('edit')}
+          </button>
+        </div>
+      </td>
+      <td className="sm:flex px-2 py-4 sm:flex-row-reverse">
+        <button onClick={handleDelete} className="font-medium text-red-600 hover:underline mr-2">
           {t('delete')}
         </button>
+        <div className="hidden sm:block">
+          <button onClick={handleEdit} className="font-medium text-indigo-600 hover:underline mr-4">
+            {t('edit')}
+          </button>
+        </div>
       </td>
     </tr>
   );
