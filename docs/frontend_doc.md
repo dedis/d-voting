@@ -278,10 +278,7 @@ Return:
 
 ```json
 
-{"Proxies": [
-  {"123.456.78.9:9000": "https://example.com/"},
-  {"111.222.333.444:9000": "https://blabla.ch/"}
-]}
+{"Proxies": Object { "123.456.78.9:9000": "https://example0.com", "123.456.78.9:9001": "https://example1.com", "123.456.78.9:9002": "https://example2.com", … }}
 
 ```
 
