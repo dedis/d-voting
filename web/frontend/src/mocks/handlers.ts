@@ -394,8 +394,6 @@ export const handlers = [
   rest.get(endpoints.getProxiesAddresses, async (req, res, ctx) => {
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    console.log({ Proxies: Object.fromEntries(mockNodeProxyAddresses) });
-
     return res(ctx.status(200), ctx.json({ Proxies: Object.fromEntries(mockNodeProxyAddresses) }));
   }),
 
