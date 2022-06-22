@@ -152,7 +152,8 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 func checkNumberOfAnswers(maxN uint, minN uint, nbrOfAnswers uint, questionID ID) error {
 	if nbrOfAnswers > maxN {
 		return fmt.Errorf("question %s has too many selected answers", questionID)
-	} else if nbrOfAnswers < minN {
+	}
+	if nbrOfAnswers < minN {
 		return fmt.Errorf("question %s has not enough selected answers", questionID)
 	}
 	return nil
@@ -462,7 +463,7 @@ func (s Select) unmarshalAnswers(selections []string) ([]bool, error) {
 
 	err := checkNumberOfAnswers(s.MaxN, s.MinN, selected, s.ID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to check number of answers: %v", err)
 	}
 
 	return results, nil
@@ -504,31 +505,33 @@ func (r Rank) unmarshalAnswers(ranks []string) ([]int8, error) {
 	}
 
 	var selected uint = 0
-	results := make([]int8, 0)
+	results := make([]int8, 0, len(ranks))
 
 	for _, rank := range ranks {
-		if len(rank) > 0 {
-			selected++
-
-			rankeValue, err := strconv.ParseInt(rank, 10, 8)
-			if err != nil {
-				return nil, fmt.Errorf("could not parse rank value for Q.%s : %v",
-					r.ID, err)
-			}
-
-			if rankeValue < 0 || uint(rankeValue) >= r.MaxN {
-				return nil, fmt.Errorf("invalid rank not in range [0, MaxN[")
-			}
-
-			results = append(results, int8(rankeValue))
-		} else {
+		if len(rank) <= 0 {
 			results = append(results, int8(-1))
+			continue
 		}
+
+		selected++
+
+		rankValue, err := strconv.ParseInt(rank, 10, 8)
+		if err != nil {
+			return nil, fmt.Errorf("could not parse rank value for Q.%s: %v",
+				r.ID, err)
+		}
+
+		if rankValue < 0 || uint(rankValue) >= r.MaxN {
+			return nil, fmt.Errorf("invalid rank not in range [0, MaxN[: %d",
+				rankValue)
+		}
+
+		results = append(results, int8(rankValue))
 	}
 
 	err := checkNumberOfAnswers(r.MaxN, r.MinN, selected, r.ID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to check number of answers: %v", err)
 	}
 
 	return results, nil
@@ -581,7 +584,7 @@ func (t Text) unmarshalAnswers(texts []string) ([]string, error) {
 
 		textValue, err := base64.StdEncoding.DecodeString(text)
 		if err != nil {
-			return nil, fmt.Errorf("could not decode text for Q. %s: %v", t.ID, err)
+			return nil, fmt.Errorf("could not decode text for Q.%s: %v", t.ID, err)
 		}
 
 		results = append(results, string(textValue))
@@ -589,7 +592,7 @@ func (t Text) unmarshalAnswers(texts []string) ([]string, error) {
 
 	err := checkNumberOfAnswers(t.MaxN, t.MinN, selected, t.ID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to check number of answers: %v", err)
 	}
 
 	return results, nil
