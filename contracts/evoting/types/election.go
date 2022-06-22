@@ -1,7 +1,6 @@
 package types
 
 import (
-	"encoding/base64"
 	"io"
 
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
@@ -233,14 +232,6 @@ func (c *Configuration) IsValid() bool {
 
 	for _, subject := range c.Scaffold {
 		if !subject.isValid(uniqueIDs) {
-			return false
-		}
-	}
-
-	// if an id is not encoded in base64
-	for id := range uniqueIDs {
-		_, err := base64.StdEncoding.DecodeString(string(id))
-		if err != nil {
 			return false
 		}
 	}
