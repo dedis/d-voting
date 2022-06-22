@@ -593,5 +593,5 @@ func (t Text) unmarshalAnswers(texts []string) ([]string, error) {
 		return nil, err
 	}
 
-	return nil, nil
+	return results, nil
 }
