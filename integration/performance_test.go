@@ -157,14 +157,14 @@ func createElectionNChunks(m txManager, title string, admin string, numChunks in
 		MainTitle: title,
 		Scaffold: []types.Subject{
 			{
-				ID:       encodeID("aa"),
+				ID:       "aa",
 				Title:    "subject1",
 				Order:    nil,
 				Subjects: nil,
 				Selects:  nil,
 				Ranks:    []types.Rank{},
 				Texts: []types.Text{{
-					ID:        encodeID("bb"),
+					ID:        "bb",
 					Title:     "Enter favorite snack",
 					MaxN:      1,
 					MinN:      0,
