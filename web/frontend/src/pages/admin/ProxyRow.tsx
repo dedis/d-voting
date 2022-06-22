@@ -31,9 +31,7 @@ const ProxyRow: FC<ProxyRowProps> = ({
 
   return (
     <tr className="bg-white border-b hover:bg-gray-50">
-      <td scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-        {node}
-      </td>
+      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{node}</td>
       <td className="px-6 py-4">{proxy}</td>
       <td className="px-6 py-4 text-right">
         <button onClick={handleEdit} className="font-medium text-indigo-600 hover:underline mr-6">

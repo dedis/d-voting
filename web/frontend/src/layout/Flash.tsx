@@ -22,7 +22,7 @@ const Flash = () => {
                       ${msg.getLevel() === FlashLevel.Error && 'bg-red-500'}`}>
           <div
             id={msg.id}
-            className={`flex items-center text-white text-sm font-bold px-4 py-3 max-w-7xl mx-auto px-2 md:px-6 lg:px-8`}
+            className={`flex items-center text-white text-sm font-bold py-3 max-w-7xl mx-auto px-2 md:px-6 lg:px-8`}
             role="alert">
             <div className="px-2">
               {msg.getLevel() === FlashLevel.Info && <InformationCircleIcon className="h-6 w-6" />}

@@ -233,11 +233,11 @@ const ElectionShow: FC = () => {
       />
       {!loading && !DKGLoading ? (
         <>
-          <h2 className="pt-8 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+          <div className="pt-8 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
             {configObj.MainTitle}
-          </h2>
+          </div>
 
-          <h2>Election ID : {electionId}</h2>
+          <div className="break-all">Election ID : {electionId}</div>
           <div className="py-6 pl-2">
             <div className="font-bold uppercase text-lg text-gray-700">{t('status')}</div>
 
