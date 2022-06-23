@@ -52,7 +52,9 @@
     "adminDetails": "Add or remove roles of users from the admin table",
     "navBarCreateElection": "Create election",
     "homeTitle": "Welcome to our e-voting platform!",
-    "homeText": "Use the navigation bar above to reach the the page you want.",
+    "homeWhatsNew": "What's new",
+    "homeJustShippedVersion": "Just shipped version",
+    "homeText": "Use the navigation bar above to reach the page you want.",
     "loginText": "You need to login to access the content of {{from}}",
     "loginCallback": "We are proceeding with the authentication. You should be redirected...",
     "logout": "Logout",
@@ -197,8 +199,9 @@
     "download": "Export results in JSON format",
     "rowsPerPage": "Elections per page",
     "of": " of ",
+    "about0": "The following diagram pictures the d-voting system from a deployment point of view. It describes the components and their interactions.",
     "about1": "This website hosts the interface of an evoting system. This system runs smart contracts, handled by a set of Byzantine fault-tolerant nodes.",
-    "about2": "When an administrator creates an election, the election parameters are saved on a blockchain and so are every following transaction (closing/cancelling election, casting a vote,...). ",
+    "about2": "When an administrator creates an election, the election parameters are saved on a blockchain and so are every following transaction (closing/cancelling election, casting a vote etc...). ",
     "about3": "A distributed key is generated at election creation time so that when a user votes, his/her vote is encrypted with the key guarantying the anonymity of the vote. However the system doesn't enforce the anonymity of the voter.",
     "about4": "When an election is closed, the nodes shuffle the ballots and check its correctness before decrypting the shuffle and publish the result of the election on a smart contract.",
     "end": "The end",
@@ -230,6 +233,9 @@
     "editProxyError": "An error occurred while trying to edit the proxy address. Error: ",
     "removeProxyError": "An error occurred while trying to remove the node and proxy addresses. Error: ",
     "enterNodeProxy": "Please enter the addresses of the node and the proxy",
-    "invalidProxyError": "Error: the address you entered is not a valid URL."
+    "invalidProxyError": "Error: the address you entered is not a valid URL.",
+    "learnMore": "Learn more about D-Voting platform",
+    "aboutPlatform": "About the Platform",
+    "whatMakesUsDifferent": "What makes us different"
   }
 }

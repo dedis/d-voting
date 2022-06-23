@@ -118,8 +118,11 @@ const DKGTable: FC<DKGTableProps> = ({ nodeProxyAddresses, setNodeProxyAddresses
               <th scope="col" className="px-6 py-3">
                 {t('proxy')}
               </th>
-              <th scope="col" className="px-6 py-3">
+              <th scope="col" className=" px-2 py-3">
                 <span className="sr-only">{t('edit')}</span>
+              </th>
+              <th scope="col" className=" px-2 py-3">
+                <span className="sr-only">{t('delete')}</span>
               </th>
             </tr>
           </thead>
