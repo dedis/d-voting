@@ -1,7 +1,6 @@
 package fake
 
 import (
-	"encoding/base64"
 	"strconv"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
@@ -72,13 +71,13 @@ var BasicConfiguration = types.Configuration{
 	MainTitle: "electionTitle",
 	Scaffold: []types.Subject{
 		{
-			ID:       encodeID("aa"),
+			ID:       "aa",
 			Title:    "subject1",
 			Order:    nil,
 			Subjects: nil,
 			Selects: []types.Select{
 				{
-					ID:      encodeID("bb"),
+					ID:      "bb",
 					Title:   "Select your favorite snacks",
 					MaxN:    3,
 					MinN:    0,
@@ -89,7 +88,7 @@ var BasicConfiguration = types.Configuration{
 			Texts: nil,
 		},
 		{
-			ID:       encodeID("dd"),
+			ID:       "dd",
 			Title:    "subject2",
 			Order:    nil,
 			Subjects: nil,
@@ -97,7 +96,7 @@ var BasicConfiguration = types.Configuration{
 			Ranks:    nil,
 			Texts: []types.Text{
 				{
-					ID:        encodeID("ee"),
+					ID:        "ee",
 					Title:     "dissertation",
 					MaxN:      1,
 					MinN:      1,
@@ -108,8 +107,4 @@ var BasicConfiguration = types.Configuration{
 			},
 		},
 	},
-}
-
-func encodeID(ID string) types.ID {
-	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
 }
