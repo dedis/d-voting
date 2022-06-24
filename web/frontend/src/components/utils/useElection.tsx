@@ -29,6 +29,7 @@ const useElection = (electionID: ID) => {
     configObj,
     isResultSet,
     setIsResultSet,
+    voters,
   } = useFillElectionInfo(data);
 
   return {
@@ -45,6 +46,7 @@ const useElection = (electionID: ID) => {
     configObj,
     isResultSet,
     setIsResultSet,
+    voters,
     error,
   };
 };

@@ -11,6 +11,7 @@ const useFillElectionInfo = (electionData: ElectionInfo) => {
   const [chunksPerBallot, setChunksPerBallot] = useState<number>(0);
   const [ballotSize, setBallotSize] = useState<number>(0);
   const [configObj, setConfigObj] = useState(null);
+  const [voters, setVoters] = useState<string[]>(null);
   const [isResultSet, setIsResultSet] = useState<boolean>(false);
 
   useEffect(() => {
@@ -23,6 +24,8 @@ const useFillElectionInfo = (electionData: ElectionInfo) => {
       setChunksPerBallot(electionData.ChunksPerBallot);
       setBallotSize(electionData.BallotSize);
       setConfigObj(electionData.Configuration);
+      setVoters(electionData.Voters);
+
       if (electionData.Result.length > 0) {
         setIsResultSet(true);
       }
@@ -42,6 +45,7 @@ const useFillElectionInfo = (electionData: ElectionInfo) => {
     configObj,
     isResultSet,
     setIsResultSet,
+    voters,
   };
 };
 

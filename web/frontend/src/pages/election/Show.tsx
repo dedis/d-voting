@@ -26,6 +26,7 @@ const ElectionShow: FC = () => {
     setResult,
     configObj,
     setIsResultSet,
+    voters,
     error,
   } = useElection(electionId);
 
@@ -237,7 +238,10 @@ const ElectionShow: FC = () => {
             {configObj.MainTitle}
           </div>
 
-          <div className="break-all">Election ID : {electionId}</div>
+          <div className="pt-2 break-all">Election ID : {electionId}</div>
+          {status >= Status.Open && status <= Status.Canceled && (
+            <div className="break-all">{t('numVotes', { num: voters.length })}</div>
+          )}
           <div className="py-6 pl-2">
             <div className="font-bold uppercase text-lg text-gray-700">{t('status')}</div>
 

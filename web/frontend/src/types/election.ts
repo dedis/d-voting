@@ -53,6 +53,7 @@ interface ElectionInfo {
   ChunksPerBallot: number;
   BallotSize: number;
   Configuration: any;
+  Voters: string[];
 }
 
 interface LightElectionInfo {
