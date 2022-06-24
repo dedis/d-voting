@@ -188,7 +188,7 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
 
   return (
     <tr key={node} className="bg-white border-b hover:bg-gray-50">
-      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+      <td className="px-1.5 sm:px-6 py-4 font-medium text-gray-900 whitespace-nowrap truncate">
         {t('node')} {index} ({node})
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
