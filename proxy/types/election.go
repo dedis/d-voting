@@ -47,6 +47,7 @@ type GetElectionResponse struct {
 	Roster          []string
 	ChunksPerBallot int
 	BallotSize      int
+	Voters          []string
 }
 
 // LightElection represents a light version of the election

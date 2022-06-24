@@ -393,6 +393,7 @@ func (h *election) Election(w http.ResponseWriter, r *http.Request) {
 		Roster:          roster,
 		ChunksPerBallot: election.ChunksPerBallot(),
 		BallotSize:      election.BallotSize,
+		Voters:          election.Suffragia.UserIDs,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
