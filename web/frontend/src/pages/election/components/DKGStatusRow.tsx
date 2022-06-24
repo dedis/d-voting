@@ -89,7 +89,7 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
           setShowModalError(true);
 
           // if we could not retrieve the proxy still resolve the promise
-          // so that promise.all goes to onSuccess() but display the error
+          // so that promise.then() goes to onSuccess() but display the error
           return { NodeAddr: node, Proxy: '' };
         }
       };
@@ -116,7 +116,7 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
     if (proxy !== null) {
       const fetchDKGStatus = async () => {
         // If we were not able to retrieve the proxy address of the node,
-        // still return a resolved promise so that promise.all goes to onSuccess().
+        // still return a resolved promise so that promise.then() goes to onSuccess().
         // Error was already displayed, no need to throw another one.
         if (proxy === '') {
           return NodeStatus.NotInitialized;
@@ -154,7 +154,7 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
           setShowModalError(true);
 
           // if we could not retrieve the proxy still resolve the promise
-          // so that promise.all goes to onSuccess() but display the error
+          // so that promise.then() goes to onSuccess() but display the error
           return NodeStatus.NotInitialized;
         }
       };
