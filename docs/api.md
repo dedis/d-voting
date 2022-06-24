@@ -127,7 +127,8 @@ Return:
   "Roster": ["<string>"],
   "ChunksPerBallot": "<int>",
   "BallotSize": "<int>",
-  "Configuration": {<Configuration>}
+  "Configuration": {<Configuration>},
+  "Voters": ["<string>"]
 }
 ```
 
