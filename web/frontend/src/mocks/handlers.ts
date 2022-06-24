@@ -163,7 +163,7 @@ export const handlers = [
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     const Voters = mockElections.get(ElectionID as string).Voters;
-    Voters.push('newVote');
+    Voters.push('userID' + (Voters.length + 1));
 
     mockElections.set(ElectionID as string, {
       ...mockElections.get(ElectionID as string),

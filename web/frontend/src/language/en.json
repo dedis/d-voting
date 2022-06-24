@@ -88,8 +88,8 @@
     "errorNewCandidate": "Are you sure you don't want to add ",
     "errorRetrievingElections": "An error seems to have occurred while retrieving all the elections from our server. Contact the administrator of this website. Error: ",
     "errorRetrievingElection": "An error seems to have occurred while retrieving the election from our server. Contact the administrator of this website. Error: ",
-    "errorRetrievingProxy": "An error seems to have occurred while retrieving the addresses of the proxies from our server. Contact the administrator of this website. Error: ",
-    "errorRetrievingNodes": "An error seems to have occurred while retrieving the status of the nodes from our server. Contact the administrator of this website. Error: ",
+    "errorRetrievingProxy": "An error seems to have occurred while retrieving the addresses of the proxies from our server. Contact the administrator of this website. ",
+    "errorRetrievingNodes": "An error seems to have occurred while retrieving the status of the nodes from our server. Contact the administrator of this website. ",
     "errorRetrievingKey": "An error seems to have occurred while retrieving the public key from our server. Contact the administrator of this website.",
     "errorServerDown": "One of our servers seems to be down. Contact the administrator of this website.",
     "electionSuccess": "Your election was successfully submitted!",
@@ -237,6 +237,12 @@
     "learnMore": "Learn more about D-Voting platform",
     "aboutPlatform": "About the Platform",
     "whatMakesUsDifferent": "What makes us different",
-    "numVotes": "Number of ballot cast: {{num}}"
+    "numVotes": "Number of ballot cast: {{num}}",
+    "userID": "User ID of voters",
+    "nodeUnreachable": "Timeout: the node ({{node}}) could not be reached. ",
+    "proxyUnreachable": "Timeout: the address of the proxy for the node ({{node}}) could not be resolved. ",
+    "error": "Error: ",
+    "actionLoading": "Action loading...",
+    "statusLoading": "Status loading..."
   }
 }
