@@ -49,7 +49,7 @@ const UserIDTable: FC<UserIDTableProps> = ({ userIDs }) => {
             {userToDisplay !== undefined &&
               userToDisplay.map((user) => (
                 <tr key={user} className="bg-white border-b">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-1.5 sm:px-6 py-4 font-medium text-gray-900 whitespace-nowrap truncate">
                     {user}
                   </td>
                 </tr>
