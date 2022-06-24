@@ -13,7 +13,7 @@ import { NodeStatus } from 'types/node';
 import useGetResults from './components/utils/useGetResults';
 import UserIDTable from './components/UserIDTable';
 import DKGStatusTable from './components/DKGStatusTable';
-import LoadingButton from './components/ActionLoading';
+import LoadingButton from './components/LoadingButton';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
@@ -185,12 +185,12 @@ const ElectionShow: FC = () => {
           )}
           <div className="py-6 pl-2">
             <div className="font-bold uppercase text-lg text-gray-700">{t('status')}</div>
-
-            {DKGLoading ? (
+            {DKGLoading && (
               <div className="px-2 pt-6">
                 <LoadingButton>{t('statusLoading')}</LoadingButton>
               </div>
-            ) : (
+            )}
+            {!DKGLoading && (
               <div className="px-2 pt-6 flex justify-center">
                 <StatusTimeline status={status} ongoingAction={ongoingAction} />
               </div>
@@ -199,9 +199,8 @@ const ElectionShow: FC = () => {
           <div className="py-4 pl-2 pb-8">
             <div className="font-bold uppercase text-lg text-gray-700 pb-2">{t('action')}</div>
             <div className="px-2">
-              {DKGLoading ? (
-                <LoadingButton>{t('actionLoading')}</LoadingButton>
-              ) : (
+              {DKGLoading && <LoadingButton>{t('actionLoading')}</LoadingButton>}{' '}
+              {!DKGLoading && (
                 <Action
                   status={status}
                   electionID={electionID}
