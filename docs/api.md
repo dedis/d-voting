@@ -329,7 +329,8 @@ Return:
 
 ```json
 {
-  "ElectionID": "<hex encoded>"
+  "ElectionID": "<hex encoded>",
+  "Proxy:": ""
 }
 ```
 
@@ -351,7 +352,8 @@ Return:
 
 ```json
 {
-  "Action": "setup"
+  "Action": "setup",
+  "Proxy:": ""
 }
 ```
 
