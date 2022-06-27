@@ -408,7 +408,7 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
   }
 
   // in case this is a DKG setup request, we must update the payload.
-  const dkgSetupRegex = /\/evoting\/services\/dkg\/actors\//;
+  const dkgSetupRegex = /\/evoting\/services\/dkg\/actors\/.*$/;
   if (uri.match(dkgSetupRegex)) {
     const dataStr2 = JSON.stringify({ Action: req.body.Action });
     payload = getPayload(dataStr2);
