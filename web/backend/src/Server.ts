@@ -400,13 +400,6 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
   // we strip the `/api` part: /api/election/xxx => /election/xxx
   let uri = process.env.DELA_NODE_URL + req.baseUrl.slice(4);
 
-  // in case this is a DKG setup request, we must update the payload.
-  const regex = /\/evoting\/services\/dkg\/actors/;
-  if (uri.match(regex)) {
-    const dataStr2 = JSON.stringify({ Action: req.body.Action });
-    payload = getPayload(dataStr2);
-  }
-
   // in case this is a DKG init request, we must also update the payload.
   const dkgInitRegex = /\/evoting\/services\/dkg\/actors$/;
   if (uri.match(dkgInitRegex)) {
@@ -414,8 +407,15 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
     payload = getPayload(dataStr2);
   }
 
+  // in case this is a DKG setup request, we must update the payload.
+  const dkgSetupRegex = /\/evoting\/services\/dkg\/actors\//;
+  if (uri.match(dkgSetupRegex)) {
+    const dataStr2 = JSON.stringify({ Action: req.body.Action });
+    payload = getPayload(dataStr2);
+  }
+
   // in case this is a DKG init or setup request, we must extract the proxy addr
-  if (uri.match(regex)) {
+  if (uri.match(dkgInitRegex) || uri.match(dkgSetupRegex)) {
     const proxy = req.body.Proxy;
 
     if (proxy === undefined) {
