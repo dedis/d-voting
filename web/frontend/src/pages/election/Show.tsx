@@ -180,9 +180,12 @@ const ElectionShow: FC = () => {
           </div>
 
           <div className="pt-2 break-all">Election ID : {electionId}</div>
-          {status >= Status.Open && status <= Status.Canceled && (
-            <div className="break-all">{t('numVotes', { num: voters.length })}</div>
-          )}
+          {status >= Status.Open &&
+            status <= Status.Canceled &&
+            voters !== null &&
+            voters !== undefined && (
+              <div className="break-all">{t('numVotes', { num: voters.length })}</div>
+            )}
           <div className="py-6 pl-2">
             <div className="font-bold uppercase text-lg text-gray-700">{t('status')}</div>
             {DKGLoading && (
@@ -220,7 +223,7 @@ const ElectionShow: FC = () => {
               )}
             </div>
           </div>
-          {voters.length > 0 && (
+          {voters !== null && voters !== undefined && voters.length > 0 && (
             <div className="py-4 pl-2 pb-8">
               <div className="font-bold uppercase text-lg text-gray-700 pb-2">{t('userID')}</div>
               <div className="px-2">
