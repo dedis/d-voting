@@ -5,8 +5,8 @@ const Footer = () => (
     <footer>
       <div className="hidden sm:flex flex-row items-center max-w-7xl mx-auto py-2 px-4 overflow-hidden sm:px-6 lg:px-8">
         <span className="text-gray-400"> &copy; 2022 DEDIS LAB - </span>
-        <a className="text-gray-600" href="https://github.com/dedis/dela">
-          https://github.com/dedis/dela
+        <a className="text-gray-600" href="https://github.com/dedis/d-voting">
+          https://github.com/dedis/d-voting
         </a>
         <div className="px-10">
           <ProxyInput />
@@ -14,8 +14,8 @@ const Footer = () => (
       </div>
       <div className="flex sm:hidden flex-col items-center max-w-7xl mx-auto py-2 px-4 overflow-hidden sm:px-6 lg:px-8">
         <span className="text-gray-400"> &copy; 2022 DEDIS LAB - </span>
-        <a className="text-gray-600" href="https://github.com/dedis/dela">
-          https://github.com/dedis/dela
+        <a className="text-gray-600" href="https://github.com/dedis/d-voting">
+          https://github.com/dedis/d-voting
         </a>
         <div className="pt-2">
           <ProxyInput />

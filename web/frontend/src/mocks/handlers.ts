@@ -142,6 +142,7 @@ export const handlers = [
         Configuration: configuration,
         BallotSize: 291,
         ChunksPerBallot: 11,
+        Voters: [],
       });
 
       return newElectionID;
@@ -157,7 +158,17 @@ export const handlers = [
 
   rest.post(endpoints.newElectionVote(':ElectionID'), async (req, res, ctx) => {
     const { Ballot }: NewElectionVoteBody = req.body as NewElectionVoteBody;
+    const { ElectionID } = req.params;
+
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
+
+    const Voters = mockElections.get(ElectionID as string).Voters;
+    Voters.push('userID' + (Voters.length + 1));
+
+    mockElections.set(ElectionID as string, {
+      ...mockElections.get(ElectionID as string),
+      Voters,
+    });
 
     return res(
       ctx.status(200),

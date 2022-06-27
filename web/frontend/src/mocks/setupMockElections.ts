@@ -54,6 +54,7 @@ const setupMockElection = () => {
     Configuration: unmarshalConfig(mockElection1),
     BallotSize: 174,
     ChunksPerBallot: 6,
+    Voters: [],
   });
 
   mockResults.set(electionID1, [mockElectionResult11, mockElectionResult12]);
@@ -69,6 +70,7 @@ const setupMockElection = () => {
     Configuration: unmarshalConfig(mockElection2),
     BallotSize: 174,
     ChunksPerBallot: 6,
+    Voters: ['aefae', 'ozeivn', 'ovaeop'],
   });
 
   mockResults.set(electionID2, [mockElectionResult21, mockElectionResult22, mockElectionResult23]);
@@ -83,6 +85,7 @@ const setupMockElection = () => {
     Configuration: unmarshalConfig(mockElection3),
     BallotSize: 291,
     ChunksPerBallot: 11,
+    Voters: [],
   });
 
   mockResults.set(electionID3, [mockElectionResult31, mockElectionResult32, mockElectionResult33]);

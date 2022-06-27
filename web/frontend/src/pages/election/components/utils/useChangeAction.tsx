@@ -43,7 +43,7 @@ const useChangeAction = (
 ) => {
   const { t } = useTranslation();
   const [isInitializing, setIsInitializing] = useState(false);
-  const [isPosting, setIsPosting] = useState(false);
+  const [, setIsPosting] = useState(false);
 
   const [showModalProxySetup, setShowModalProxySetup] = useState(false);
   const [showModalClose, setShowModalClose] = useState(false);
@@ -265,6 +265,7 @@ const useChangeAction = (
     return () => {
       abortController.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ongoingAction, nodeProxyAddresses]);
 
   useEffect(() => {
@@ -274,6 +275,7 @@ const useChangeAction = (
       setPostError(null);
       abortController.abort();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postError]);
 
   useEffect(() => {
@@ -282,6 +284,7 @@ const useChangeAction = (
       setShowModalError(true);
       setGetError(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getError]);
 
   useEffect(() => {
@@ -348,6 +351,7 @@ const useChangeAction = (
       deleteElection();
       setUserConfirmedDeleting(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userConfirmedDeleting]);
 
   useEffect(() => {
@@ -370,6 +374,7 @@ const useChangeAction = (
         setIsInitializing(false);
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInitializing]);
 
   useEffect(() => {
@@ -403,6 +408,7 @@ const useChangeAction = (
 
       setup();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userConfirmedProxySetup]);
 
   const handleInitialize = () => {
