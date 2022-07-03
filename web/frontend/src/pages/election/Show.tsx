@@ -103,14 +103,11 @@ const ElectionShow: FC = () => {
   }, [nodeToSetup]);
 
   useEffect(() => {
-    if (nodeProxyAddresses !== null && roster !== null) {
-      if (nodeToSetup === null) {
-        const node = roster[0];
-        setNodeToSetup([node, nodeProxyAddresses.get(node)]);
-      }
+    // Set default node to initialize
+    if (status >= Status.Initialized) {
+      setNodeToSetup(Array.from(nodeProxyAddresses).find(([_node, proxy]) => proxy !== ''));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeProxyAddresses, nodeToSetup, roster]);
+  }, [nodeProxyAddresses, status]);
 
   useEffect(() => {
     if (roster !== null) {

@@ -24,6 +24,7 @@ import OpenButton from '../ActionButtons/OpenButton';
 import ResultButton from '../ActionButtons/ResultButton';
 import ShuffleButton from '../ActionButtons/ShuffleButton';
 import VoteButton from '../ActionButtons/VoteButton';
+import NoActionAvailable from '../ActionButtons/NoActionAvailable';
 
 const useChangeAction = (
   status: Status,
@@ -54,8 +55,6 @@ const useChangeAction = (
   const [userConfirmedClosing, setUserConfirmedClosing] = useState(false);
   const [userConfirmedCanceling, setUserConfirmedCanceling] = useState(false);
   const [userConfirmedDeleting, setUserConfirmedDeleting] = useState(false);
-
-  const [proxyAddresses, setProxyAddresses] = useState<Map<string, string>>(new Map());
 
   const [getError, setGetError] = useState(null);
   const [postError, setPostError] = useState(null);
@@ -213,7 +212,7 @@ const useChangeAction = (
         }
         break;
       case OngoingAction.SettingUp:
-        if (nodeProxyAddresses !== null) {
+        if (nodeToSetup !== null) {
           pollDKGStatus(nodeToSetup[1], NodeStatus.Setup)
             .then(
               () => {
@@ -412,12 +411,6 @@ const useChangeAction = (
   }, [userConfirmedProxySetup]);
 
   const handleInitialize = () => {
-    // initialize the address of the proxies with the address of the node
-    if (proxyAddresses.size === 0) {
-      const initProxAddresses = new Map(proxyAddresses);
-      roster.forEach((node) => initProxAddresses.set(node, node));
-      setProxyAddresses(initProxAddresses);
-    }
     setIsInitializing(true);
   };
 
@@ -485,6 +478,15 @@ const useChangeAction = (
   };
 
   const getAction = () => {
+    if (Array.from(DKGStatuses.values()).includes(NodeStatus.Unreachable)) {
+      return (
+        <>
+          <NoActionAvailable />
+          <DeleteButton handleDelete={handleDelete} />
+        </>
+      );
+    }
+
     switch (status) {
       case Status.Initial:
         return (

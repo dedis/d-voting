@@ -243,6 +243,8 @@
     "proxyUnreachable": "Timeout: the address of the proxy for the node ({{node}}) could not be resolved. ",
     "error": "Error: ",
     "actionLoading": "Action loading...",
-    "statusLoading": "Status loading..."
+    "statusLoading": "Status loading...",
+    "actionNotAvailable": "Action not available",
+    "uninitialized": "Uninitialized"
   }
 }

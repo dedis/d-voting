@@ -51,6 +51,7 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
   };
 
   useEffect(() => {
+    // update status on useChangeAction (i.e. initializing and setting up)
     if (DKGStatuses.has(node)) {
       setStatus(DKGStatuses.get(node));
     }
@@ -119,7 +120,7 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
         // still return a resolved promise so that promise.then() goes to onSuccess().
         // Error was already displayed, no need to throw another one.
         if (proxy === '') {
-          return NodeStatus.NotInitialized;
+          return NodeStatus.Unreachable;
         }
 
         try {
@@ -155,25 +156,27 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
 
           // if we could not retrieve the proxy still resolve the promise
           // so that promise.then() goes to onSuccess() but display the error
-          return NodeStatus.NotInitialized;
+          return NodeStatus.Unreachable;
         }
       };
 
-      fetchDKGStatus()
-        .then((nodeStatus) => {
-          setStatus(nodeStatus);
-
-          // notify parent
-          const newDKGStatuses = new Map(DKGStatuses);
-          newDKGStatuses.set(node, nodeStatus);
-          setDKGStatuses(newDKGStatuses);
-        })
-        .finally(() => {
-          setDKGLoading(false);
-        });
+      fetchDKGStatus().then((nodeStatus) => {
+        setStatus(nodeStatus);
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proxy]);
+
+  useEffect(() => {
+    // UseEffect prevents the race condition on setDKGStatuses
+    if (status !== null) {
+      // notify parent
+      const newDKGStatuses = new Map(DKGStatuses);
+      newDKGStatuses.set(node, status);
+      setDKGStatuses(newDKGStatuses);
+      setDKGLoading(false);
+    }
+  }, [status]);
 
   useEffect(() => {
     // UseEffect prevents the race condition on setLoading

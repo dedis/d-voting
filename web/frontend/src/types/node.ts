@@ -1,4 +1,6 @@
 export const enum NodeStatus {
+  // Internal Status when the proxy and/or its node do not respond
+  Unreachable = -2,
   // Internal Status when the actor hasn't been initialized yet
   NotInitialized = -1,
   // Initialized is when the actor has been initialized

@@ -33,19 +33,21 @@ const ChooseProxyModal: FC<ChooseProxyModalProps> = ({
   };
 
   const handleCheck = (node: string, proxy: string) => {
-    setNodeToSetup([node, proxy]);
+    if (proxy !== '') {
+      setNodeToSetup([node, proxy]);
+    }
   };
 
   const proxyCheckbox = () => {
     return (
       <>
-        {nodeProxyAddresses !== null &&
+        {nodeToSetup !== null &&
           Array.from(nodeProxyAddresses).map(([node, proxy], index) => (
             <div className="flex items-center my-4 ml-4" key={node}>
               <input
                 id={proxy}
                 type="radio"
-                className="w-4 h-4 border-gray-300 focus:ring-2 focus:ring-blue-300 cursor-pointer"
+                className="w-4 h-4 border-gray-300 cursor-pointer"
                 checked={node === nodeToSetup[0]}
                 onChange={() => handleCheck(node, proxy)}
               />

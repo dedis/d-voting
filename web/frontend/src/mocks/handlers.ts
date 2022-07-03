@@ -301,6 +301,10 @@ export const handlers = [
       }
     });
 
+    // if (node === '123.456.78.9:9000') {
+    //   await new Promise((r) => setTimeout(r, 20000));
+    // }
+
     const currentNodeStatus = mockDKG.get(ElectionID as string).get(node);
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));

@@ -13,12 +13,19 @@ const DKGStatus: FC<DKGStatusProps> = ({ status }) => {
 
   const DisplayStatus = () => {
     switch (status) {
-      case NodeStatus.NotInitialized:
+      case NodeStatus.Unreachable:
         return (
           <div className="flex items-center">
             <div>
               <MinusIcon className="ml-2 mr-2 h-5 w-5 text-gray-600" aria-hidden="true" />
             </div>
+          </div>
+        );
+      case NodeStatus.NotInitialized:
+        return (
+          <div className="flex items-center">
+            <div className="block h-4 w-4 bg-gray-500 rounded-full mr-2"></div>
+            <div className="max-w-[16vw] truncate">{t('uninitialized')}</div>
           </div>
         );
       case NodeStatus.Initialized:
@@ -31,7 +38,7 @@ const DKGStatus: FC<DKGStatusProps> = ({ status }) => {
       case NodeStatus.Setup:
         return (
           <div className="flex items-center">
-            <div className="block h-4 w-4 bg-green-500 rounded-full mr-2"></div>
+            <div className="block h-4 w-4 bg-green-700 rounded-full mr-2"></div>
             <div>{t('statusSetup')}</div>
           </div>
         );
