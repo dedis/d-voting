@@ -65,7 +65,6 @@ const pollDKG = (
       }
 
       if (!response.ok) {
-        //return reject(new Error(JSON.stringify(result)));
         throw new Error(JSON.stringify(result));
       }
 
@@ -79,7 +78,6 @@ const pollDKG = (
       }
 
       if ((result.Status as NodeStatus) === NodeStatus.Failed) {
-        //return reject(new Error(JSON.stringify(result.Error.Message)));
         throw new Error(JSON.stringify(result.Error.Message));
       }
 
