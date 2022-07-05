@@ -42,7 +42,6 @@ const ChooseProxyModal: FC<ChooseProxyModalProps> = ({
     return (
       <>
         {nodeToSetup !== null &&
-          nodeToSetup !== undefined &&
           Array.from(nodeProxyAddresses).map(([node, proxy], index) => (
             <div className="flex items-center my-4 ml-4" key={node}>
               <input

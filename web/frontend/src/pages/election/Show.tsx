@@ -81,7 +81,7 @@ const ElectionShow: FC = () => {
 
     const storedNodeToSetup = JSON.parse(window.localStorage.getItem(nodeToSetupItem));
 
-    if (storedNodeToSetup !== null && storedNodeToSetup !== undefined) {
+    if (storedNodeToSetup !== null) {
       setNodeToSetup([storedNodeToSetup[0], storedNodeToSetup[1]]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,7 +96,7 @@ const ElectionShow: FC = () => {
   }, [ongoingAction]);
 
   useEffect(() => {
-    if (nodeToSetup !== null && nodeToSetup !== undefined) {
+    if (nodeToSetup !== null) {
       window.localStorage.setItem(nodeToSetupItem, JSON.stringify(nodeToSetup));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -105,7 +105,10 @@ const ElectionShow: FC = () => {
   useEffect(() => {
     // Set default node to initialize
     if (status >= Status.Initialized) {
-      setNodeToSetup(Array.from(nodeProxyAddresses).find(([_node, proxy]) => proxy !== ''));
+      const node = Array.from(nodeProxyAddresses).find(([_node, proxy]) => proxy !== '');
+      if (node !== undefined) {
+        setNodeToSetup(Array.from(nodeProxyAddresses).find(([_node, proxy]) => proxy !== ''));
+      }
     }
   }, [nodeProxyAddresses, status]);
 
