@@ -81,7 +81,7 @@ const ElectionShow: FC = () => {
 
     const storedNodeToSetup = JSON.parse(window.localStorage.getItem(nodeToSetupItem));
 
-    if (storedNodeToSetup !== null) {
+    if (storedNodeToSetup !== null && storedNodeToSetup !== undefined) {
       setNodeToSetup([storedNodeToSetup[0], storedNodeToSetup[1]]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,7 +96,7 @@ const ElectionShow: FC = () => {
   }, [ongoingAction]);
 
   useEffect(() => {
-    if (nodeToSetup !== null) {
+    if (nodeToSetup !== null && nodeToSetup !== undefined) {
       window.localStorage.setItem(nodeToSetupItem, JSON.stringify(nodeToSetup));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -135,6 +135,8 @@ const ElectionShow: FC = () => {
     if (status === Status.Initial) {
       if (DKGStatuses !== null && !DKGLoading) {
         const statuses = Array.from(DKGStatuses.values());
+
+        if (statuses.includes(NodeStatus.Unreachable)) return;
 
         if (statuses.includes(NodeStatus.NotInitialized)) return;
 
@@ -201,7 +203,6 @@ const ElectionShow: FC = () => {
                 <Action
                   status={status}
                   electionID={electionID}
-                  roster={roster}
                   nodeProxyAddresses={nodeProxyAddresses}
                   setStatus={setStatus}
                   setResultAvailable={setIsResultAvailable}

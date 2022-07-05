@@ -6,11 +6,11 @@ import { ID } from 'types/configuration';
 import { Action, OngoingAction, Status } from 'types/election';
 import { pollDKG, pollElection } from './PollStatus';
 import { NodeStatus } from 'types/node';
-import { FlashContext, FlashLevel, ProxyContext } from 'index';
+import { AuthContext, FlashContext, FlashLevel, ProxyContext } from 'index';
 import { useNavigate } from 'react-router';
 import { ROUTE_ELECTION_INDEX } from 'Routes';
 
-import ChooseProxyModal from 'components/modal/ChooseProxyModal';
+import ChooseProxyModal from 'pages/election/components/ChooseProxyModal';
 import ConfirmModal from 'components/modal/ConfirmModal';
 import usePostCall from 'components/utils/usePostCall';
 import InitializeButton from '../ActionButtons/InitializeButton';
@@ -29,7 +29,6 @@ import NoActionAvailable from '../ActionButtons/NoActionAvailable';
 const useChangeAction = (
   status: Status,
   electionID: ID,
-  roster: string[],
   nodeProxyAddresses: Map<string, string>,
   setStatus: (status: Status) => void,
   setResultAvailable: ((available: boolean) => void | null) | undefined,
@@ -65,6 +64,10 @@ const useChangeAction = (
   const fctx = useContext(FlashContext);
   const navigate = useNavigate();
   const pctx = useContext(ProxyContext);
+  const { isLogged } = useContext(AuthContext);
+
+  const POLLING_INTERVAL = 1000;
+  const MAX_ATTEMPTS = 20;
 
   const modalClose = (
     <ConfirmModal
@@ -153,9 +156,6 @@ const useChangeAction = (
   // The previous status is used if there's an error,in which case the election
   // status is set back to this value.
   const pollElectionStatus = (previousStatus: Status, nextStatus: Status) => {
-    // polling interval
-    const interval = 1000;
-
     const request = {
       method: 'GET',
       signal: signal,
@@ -163,7 +163,13 @@ const useChangeAction = (
     // We stop polling when the status has changed to nextStatus
     const match = (s: Status) => s === nextStatus;
 
-    pollElection(endpoints.election(pctx.getProxy(), electionID), request, match, interval)
+    pollElection(
+      endpoints.election(pctx.getProxy(), electionID),
+      request,
+      match,
+      POLLING_INTERVAL,
+      MAX_ATTEMPTS
+    )
       .then(
         () => onFullFilled(nextStatus),
         (reason: any) => onRejected(reason, previousStatus)
@@ -175,8 +181,6 @@ const useChangeAction = (
   };
 
   const pollDKGStatus = (proxy: string, statusToMatch: NodeStatus) => {
-    const interval = 1000;
-
     const request = {
       method: 'GET',
       signal: signal,
@@ -184,7 +188,13 @@ const useChangeAction = (
 
     const match = (s: NodeStatus) => s === statusToMatch;
 
-    return pollDKG(endpoints.getDKGActors(proxy, electionID), request, match, interval);
+    return pollDKG(
+      endpoints.getDKGActors(proxy, electionID),
+      request,
+      match,
+      POLLING_INTERVAL,
+      MAX_ATTEMPTS
+    );
   };
 
   // Start to poll when there is an ongoingAction
@@ -485,6 +495,10 @@ const useChangeAction = (
           <DeleteButton handleDelete={handleDelete} />
         </>
       );
+    }
+
+    if (!isLogged && status !== Status.ResultAvailable) {
+      return <NoActionAvailable />;
     }
 
     switch (status) {
