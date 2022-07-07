@@ -139,15 +139,19 @@ const ElectionShow: FC = () => {
       if (DKGStatuses !== null && !DKGLoading) {
         const statuses = Array.from(DKGStatuses.values());
 
-        if (statuses.includes(NodeStatus.Unreachable)) return;
-
+        // TODO: can be modified such that if the majority of the node are
+        // initialized than the election status can still be set to initialized
         if (statuses.includes(NodeStatus.NotInitialized)) return;
 
         if (statuses.includes(NodeStatus.Setup)) {
           setStatus(Status.Setup);
-        } else {
-          setStatus(Status.Initialized);
+          return;
         }
+
+        if (statuses.includes(NodeStatus.Unreachable)) return;
+
+        setStatus(Status.Initialized);
+
         // Status Failed is handled by useChangeAction
       }
     }

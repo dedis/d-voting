@@ -247,7 +247,6 @@ export const handlers = [
       const newDKGStatus = new Map(mockDKG.get(body.ElectionID));
       newDKGStatus.set(node, NodeStatus.Initialized);
       mockDKG.set(body.ElectionID, newDKGStatus);
-      console.log(mockDKG);
     }, INIT_TIMER);
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));

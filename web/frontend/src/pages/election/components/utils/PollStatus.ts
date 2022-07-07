@@ -73,7 +73,14 @@ const pollDKG = (
       }
 
       // TODO: define the error code for the case when a node is already setup
+      // Ignore error to "allow" the setup of a node multiple times
       if (result.Error.Message.includes('setup() was already called, only one call is allowed')) {
+        return resolve(result);
+      }
+
+      // TODO: define the error code for the case when a node is already initialized
+      // Ignore error to "allow" the initialization of a node multiple times
+      if (result.Error.Message.includes('actor already exists for electionID')) {
         return resolve(result);
       }
 

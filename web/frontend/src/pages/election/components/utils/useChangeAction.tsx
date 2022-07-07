@@ -99,6 +99,7 @@ const useChangeAction = (
     <ChooseProxyModal
       roster={roster}
       showModal={showModalProxySetup}
+      DKGStatuses={DKGStatuses}
       nodeProxyAddresses={nodeProxyAddresses}
       nodeToSetup={nodeToSetup}
       setNodeToSetup={setNodeToSetup}
@@ -206,6 +207,8 @@ const useChangeAction = (
     switch (ongoingAction) {
       case OngoingAction.Initializing:
         if (nodeProxyAddresses !== null) {
+          // TODO: can be modified such that if the majority of the node are
+          // initialized than the election status can still be set to initialized
           const promises = Array.from(nodeProxyAddresses.values()).map((proxy) => {
             if (proxy !== '') {
               return pollDKGStatus(proxy, NodeStatus.Initialized);
@@ -381,6 +384,8 @@ const useChangeAction = (
         }
       };
 
+      // TODO: can be modified such that if the majority of the node are
+      // initialized than the election status can still be set to initialized
       const promises = Array.from(nodeProxyAddresses.values()).map((proxy) => {
         if (proxy !== '') {
           return initialize(proxy);

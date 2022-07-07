@@ -2,10 +2,12 @@ import { Dialog, Transition } from '@headlessui/react';
 import { CogIcon } from '@heroicons/react/outline';
 import { FC, Fragment, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { NodeStatus } from 'types/node';
 
 type ChooseProxyModalProps = {
   roster: string[];
   showModal: boolean;
+  DKGStatuses: Map<string, NodeStatus>;
   nodeProxyAddresses: Map<string, string>;
   nodeToSetup: [string, string];
   setNodeToSetup: (node: [string, string]) => void;
@@ -16,6 +18,7 @@ type ChooseProxyModalProps = {
 const ChooseProxyModal: FC<ChooseProxyModalProps> = ({
   roster,
   showModal,
+  DKGStatuses,
   nodeProxyAddresses,
   nodeToSetup,
   setNodeToSetup,
@@ -45,6 +48,8 @@ const ChooseProxyModal: FC<ChooseProxyModalProps> = ({
       nodeToSetup !== null &&
       roster.map((node, index) => {
         const proxy = nodeProxyAddresses.get(node);
+        const status = DKGStatuses.get(node);
+        const checkable = proxy !== '' && status === NodeStatus.Initialized;
 
         return (
           <div className="flex items-center my-4 ml-4" key={node}>
@@ -52,17 +57,17 @@ const ChooseProxyModal: FC<ChooseProxyModalProps> = ({
               id={node + index}
               type="radio"
               className={`w-4 h-4 border-gray-300 cursor-pointer ${
-                proxy === '' && 'cursor-not-allowed'
+                !checkable && 'cursor-not-allowed'
               }`}
               checked={node === nodeToSetup[0]}
               onChange={() => handleCheck(node, proxy)}
-              disabled={proxy === ''}
+              disabled={!checkable}
             />
             <label
               htmlFor={node + index}
-              className={`block ml-2 text-sm font-medium ${proxy !== '' && 'text-gray-700'} ${
-                proxy === '' && 'text-gray-400'
-              } cursor-pointer ${proxy === '' && 'cursor-not-allowed'}`}
+              className={`block ml-2 text-sm font-medium ${checkable && 'text-gray-700'} ${
+                !checkable && 'text-gray-400'
+              } cursor-pointer ${!checkable && 'cursor-not-allowed'}`}
               onChange={() => handleCheck(node, proxy)}>
               Node {index} ({node})
             </label>
