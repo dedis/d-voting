@@ -9,6 +9,7 @@ import useChangeAction from './utils/useChangeAction';
 type ActionProps = {
   status: Status;
   electionID: ID;
+  roster: string[];
   nodeProxyAddresses: Map<string, string>;
   setStatus: (status: Status) => void;
   setResultAvailable?: (available: boolean) => void | null;
@@ -25,6 +26,7 @@ type ActionProps = {
 const Action: FC<ActionProps> = ({
   status,
   electionID,
+  roster,
   nodeProxyAddresses,
   setStatus,
   setResultAvailable,
@@ -40,6 +42,7 @@ const Action: FC<ActionProps> = ({
   const { getAction, modalClose, modalCancel, modalDelete, modalSetup } = useChangeAction(
     status,
     electionID,
+    roster,
     nodeProxyAddresses,
     setStatus,
     setResultAvailable,

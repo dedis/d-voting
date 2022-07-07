@@ -29,6 +29,7 @@ import NoActionAvailable from '../ActionButtons/NoActionAvailable';
 const useChangeAction = (
   status: Status,
   electionID: ID,
+  roster: string[],
   nodeProxyAddresses: Map<string, string>,
   setStatus: (status: Status) => void,
   setResultAvailable: ((available: boolean) => void | null) | undefined,
@@ -96,6 +97,7 @@ const useChangeAction = (
 
   const modalSetup = (
     <ChooseProxyModal
+      roster={roster}
       showModal={showModalProxySetup}
       nodeProxyAddresses={nodeProxyAddresses}
       nodeToSetup={nodeToSetup}
@@ -205,16 +207,20 @@ const useChangeAction = (
       case OngoingAction.Initializing:
         if (nodeProxyAddresses !== null) {
           const promises = Array.from(nodeProxyAddresses.values()).map((proxy) => {
-            return pollDKGStatus(proxy, NodeStatus.Initialized);
+            if (proxy !== '') {
+              return pollDKGStatus(proxy, NodeStatus.Initialized);
+            }
           });
 
           Promise.all(promises).then(
             () => {
               onFullFilled(Status.Initialized);
               const newDKGStatuses = new Map(DKGStatuses);
-              nodeProxyAddresses.forEach((_proxy, node) =>
-                newDKGStatuses.set(node, NodeStatus.Initialized)
-              );
+              nodeProxyAddresses.forEach((proxy, node) => {
+                if (proxy !== '') {
+                  newDKGStatuses.set(node, NodeStatus.Initialized);
+                }
+              });
               setDKGStatuses(newDKGStatuses);
             },
             (reason: any) => onRejected(reason, Status.Initial)
@@ -376,7 +382,9 @@ const useChangeAction = (
       };
 
       const promises = Array.from(nodeProxyAddresses.values()).map((proxy) => {
-        return initialize(proxy);
+        if (proxy !== '') {
+          return initialize(proxy);
+        }
       });
 
       Promise.all(promises).then(() => {
@@ -488,15 +496,20 @@ const useChangeAction = (
   };
 
   const getAction = () => {
-    if (Array.from(DKGStatuses.values()).includes(NodeStatus.Unreachable)) {
-      return (
-        <>
-          <NoActionAvailable />
-          <DeleteButton handleDelete={handleDelete} />
-        </>
-      );
+    // Check that more than 2/3 of the nodes are working, if not actions are
+    // disabled, since consensus cannot be achieved
+    const consensus = 2 / 3;
+
+    if (
+      Array.from(DKGStatuses.values()).filter((nodeStatus) => nodeStatus !== NodeStatus.Unreachable)
+        .length <=
+      consensus * roster.length
+    ) {
+      return <NoActionAvailable />;
     }
 
+    // Except for seeing the results, all actions at least require the users
+    // to be logged in
     if (!isLogged && status !== Status.ResultAvailable) {
       return <NoActionAvailable />;
     }

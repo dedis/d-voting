@@ -4,6 +4,7 @@ import { FC, Fragment, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type ChooseProxyModalProps = {
+  roster: string[];
   showModal: boolean;
   nodeProxyAddresses: Map<string, string>;
   nodeToSetup: [string, string];
@@ -13,6 +14,7 @@ type ChooseProxyModalProps = {
 };
 
 const ChooseProxyModal: FC<ChooseProxyModalProps> = ({
+  roster,
   showModal,
   nodeProxyAddresses,
   nodeToSetup,
@@ -40,26 +42,33 @@ const ChooseProxyModal: FC<ChooseProxyModalProps> = ({
 
   const proxyCheckbox = () => {
     return (
-      <>
-        {nodeToSetup !== null &&
-          Array.from(nodeProxyAddresses).map(([node, proxy], index) => (
-            <div className="flex items-center my-4 ml-4" key={node}>
-              <input
-                id={proxy}
-                type="radio"
-                className="w-4 h-4 border-gray-300 cursor-pointer"
-                checked={node === nodeToSetup[0]}
-                onChange={() => handleCheck(node, proxy)}
-              />
-              <label
-                htmlFor={proxy}
-                className="block ml-2 text-sm font-medium text-gray-700 cursor-pointer"
-                onChange={() => handleCheck(node, proxy)}>
-                Node {index} ({node})
-              </label>
-            </div>
-          ))}
-      </>
+      nodeToSetup !== null &&
+      roster.map((node, index) => {
+        const proxy = nodeProxyAddresses.get(node);
+
+        return (
+          <div className="flex items-center my-4 ml-4" key={node}>
+            <input
+              id={node + index}
+              type="radio"
+              className={`w-4 h-4 border-gray-300 cursor-pointer ${
+                proxy === '' && 'cursor-not-allowed'
+              }`}
+              checked={node === nodeToSetup[0]}
+              onChange={() => handleCheck(node, proxy)}
+              disabled={proxy === ''}
+            />
+            <label
+              htmlFor={node + index}
+              className={`block ml-2 text-sm font-medium ${proxy !== '' && 'text-gray-700'} ${
+                proxy === '' && 'text-gray-400'
+              } cursor-pointer ${proxy === '' && 'cursor-not-allowed'}`}
+              onChange={() => handleCheck(node, proxy)}>
+              Node {index} ({node})
+            </label>
+          </div>
+        );
+      })
     );
   };
 

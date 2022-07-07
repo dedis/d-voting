@@ -58,9 +58,10 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [DKGStatuses]);
 
-  // Set the mapping of the node and proxy address
+  // Set the mapping of the node and proxy address (only if the address was not
+  // already fetched)
   useEffect(() => {
-    if (node !== null) {
+    if (node !== null && proxy === null) {
       const fetchNodeProxy = async () => {
         try {
           setTimeout(() => {
@@ -100,7 +101,7 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node]);
+  }, [node, proxy]);
 
   useEffect(() => {
     if (proxy !== null) {
@@ -114,7 +115,7 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
 
   // Fetch the status of the nodes
   useEffect(() => {
-    if (proxy !== null) {
+    if (proxy !== null && status === null) {
       const fetchDKGStatus = async () => {
         // If we were not able to retrieve the proxy address of the node,
         // still return a resolved promise so that promise.then() goes to onSuccess().
@@ -165,29 +166,23 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [proxy]);
+  }, [proxy, status]);
 
   useEffect(() => {
     // UseEffect prevents the race condition on setDKGStatuses
     if (status !== null) {
+      setDKGLoading(false);
+
       // notify parent
       const newDKGStatuses = new Map(DKGStatuses);
       newDKGStatuses.set(node, status);
       setDKGStatuses(newDKGStatuses);
-      setDKGLoading(false);
-    }
-  }, [status]);
 
-  useEffect(() => {
-    // UseEffect prevents the race condition on setLoading
-    if (!DKGLoading) {
-      // notify parent
       const newLoading = new Map(loading);
       newLoading.set(node, false);
       setLoading(newLoading);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [DKGLoading]);
+  }, [status]);
 
   return (
     <tr key={node} className="bg-white border-b hover:bg-gray-50">

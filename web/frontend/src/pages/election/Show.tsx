@@ -206,6 +206,7 @@ const ElectionShow: FC = () => {
                 <Action
                   status={status}
                   electionID={electionID}
+                  roster={roster}
                   nodeProxyAddresses={nodeProxyAddresses}
                   setStatus={setStatus}
                   setResultAvailable={setIsResultAvailable}
