@@ -1,4 +1,6 @@
-versionFlag="github.com/dedis/d-voting.Version=$(shell git describe --tags)"
+version=$(shell git describe --abbrev=0 --tags || echo '0.0.0')
+versionFlag="github.com/dedis/d-voting.Version=$(version)"
+versionFile=$(shell echo $(version) | tr . _)
 timeFlag="github.com/dedis/d-voting.BuildTime=$(shell date +'%d/%m/%y_%H:%M')"
 
 lint:
@@ -22,8 +24,10 @@ test_integration:
 	go test ./integration
 
 build:
-	go build -ldflags="-X $(versionFlag) -X $(timeFlag)" ./cli/memcoin
+	go build -ldflags="-X $(versionFlag) -X $(timeFlag)" -o memcoin ./cli/memcoin
+	GOOS=linux GOARCH=amd64 go build -ldflags="-X $(versionFlag) -X $(timeFlag)" -o memcoin-linux-amd64-$(versionFile) ./cli/memcoin
+	GOOS=darwin GOARCH=amd64 go build -ldflags="-X $(versionFlag) -X $(timeFlag)" -o memcoin-darwin-amd64-$(versionFile) ./cli/memcoin
+	GOOS=windows GOARCH=amd64 go build -ldflags="-X $(versionFlag) -X $(timeFlag)" -o memcoin-windows-amd64-$(versionFile) ./cli/memcoin
 
-deb:
-	GOOS=linux GOARCH=amd64 make build
+deb: build
 	cd deb-package; ./build-deb.sh; cd ..
