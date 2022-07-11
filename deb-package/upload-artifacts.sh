@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # This script uploads .deb packages, creates a snapshot and publish a new
 # version. It expects as input the folder containing the *.deb files.
@@ -32,11 +32,14 @@ gpg_passphrase="$GPG_PASSPHRASE" # will be passed over the network, use TLS !
 aptly_api="https://aptly-api.dedis.ch"
 
 gitversion=$(git describe --abbrev=0 --tags)
-version=${gitversion:1}
+version="${gitversion:1}"
 
 aptly_repository=dvoting-release
 aptly_snapshot=dvoting-$version
 aptly_published=s3:apt.dedis.ch:/squeeze
+
+echo "getting packages from $packages:"
+ls $packages
 
 echo "Check if snapshot $aptly_snapshot already exists"
 res=$(curl -s -u $aptly_user:$aptly_password -o /dev/null -w "%{http_code}" ${aptly_api}/api/snapshots/$aptly_snapshot)

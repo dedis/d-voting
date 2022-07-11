@@ -5,8 +5,8 @@ on:
     types: [published]
 
 jobs:
-  build:
-    name: build
+  release:
+    name: release
     runs-on: ubuntu-latest
 
     steps:
@@ -28,22 +28,13 @@ jobs:
         # builds the binary and the .deb
         run: make deb
 
-  release:
-    name: release
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
       - name: Publish release to aptly
         env:
           APTLY_USER: ${{ secrets.APTLY_USER }}
           APTLY_PASSWORD: ${{ secrets.APTLY_PASSWORD }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          ./deb-package/upload-artifacts.sh deb-package/dist/
+          ./deb-package/upload-artifacts.sh deb-package/dist
 
       - name: Update artifacts to Github's release
         uses: softprops/action-gh-release@v1
