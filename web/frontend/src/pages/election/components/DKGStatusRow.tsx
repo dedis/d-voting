@@ -182,6 +182,7 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
       newLoading.set(node, false);
       setLoading(newLoading);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
   return (

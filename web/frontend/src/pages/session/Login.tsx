@@ -1,17 +1,14 @@
-import React, { FC, useContext, useEffect, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 
 import { useLocation } from 'react-router-dom';
-import { FlashContext } from 'index';
-import handleLogin from './HandleLogin';
+import ClientError from 'layout/ClientError';
 
 const Login: FC = () => {
   const { t } = useTranslation();
   const [content, setContent] = useState('');
   const location = useLocation();
-
-  const fctx = useContext(FlashContext);
 
   type LocationState = {
     from: Location;
@@ -25,14 +22,7 @@ const Login: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
 
-  return (
-    <div>
-      <div className="flex py-8">{content}</div>
-      <button id="login-button" className="flex" onClick={() => handleLogin(fctx)}>
-        {t('login')}
-      </button>
-    </div>
-  );
+  return <ClientError statusCode={401} description={content} />;
 };
 
 Login.propTypes = {

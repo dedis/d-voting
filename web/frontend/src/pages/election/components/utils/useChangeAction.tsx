@@ -25,6 +25,7 @@ import ResultButton from '../ActionButtons/ResultButton';
 import ShuffleButton from '../ActionButtons/ShuffleButton';
 import VoteButton from '../ActionButtons/VoteButton';
 import NoActionAvailable from '../ActionButtons/NoActionAvailable';
+import handleLogin from 'pages/session/HandleLogin';
 
 const useChangeAction = (
   status: Status,
@@ -213,6 +214,7 @@ const useChangeAction = (
             if (proxy !== '') {
               return pollDKGStatus(proxy, NodeStatus.Initialized);
             }
+            return undefined;
           });
 
           Promise.all(promises).then(
@@ -390,6 +392,7 @@ const useChangeAction = (
         if (proxy !== '') {
           return initialize(proxy);
         }
+        return undefined;
       });
 
       Promise.all(promises).then(() => {
@@ -516,7 +519,15 @@ const useChangeAction = (
     // Except for seeing the results, all actions at least require the users
     // to be logged in
     if (!isLogged && status !== Status.ResultAvailable) {
-      return <NoActionAvailable />;
+      return (
+        <div>
+          {t('notLoggedInActionText1')}
+          <button id="login-button" className="text-indigo-600" onClick={() => handleLogin(fctx)}>
+            {t('notLoggedInActionText2')}
+          </button>
+          {t('notLoggedInActionText3')}
+        </div>
+      );
     }
 
     switch (status) {
