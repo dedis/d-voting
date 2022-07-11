@@ -1,64 +1,59 @@
 <div align="center">
 
-<img width="300px" src="docs/assets/logo-white-bg.png"/>
+<img width="300px" src="docs/assets/logo-white.png#gh-dark-mode-only"/>
+<img width="300px" src="docs/assets/logo-black.png#gh-light-mode-only"/>
 
-<table class="tg">
-<tbody>
-  <tr>
-    <th class="tg-amwm" colspan="2">Global</th>
-  </tr>
-  <tr>
-    <td class="tg-baqh" colspan="2">
+<p></p>
+
+<table>
+<tr>
+    <td>Global</td>
+    <td>
         <a href="https://sonarcloud.io/summary/new_code?id=dedis_d-voting">
             <img src="https://sonarcloud.io/api/project_badges/measure?project=dedis_d-voting&metric=alert_status">
         </a>
-    </td>
-  </tr>
-  <tr>
-    <th class="tg-amwm" colspan="2">Blockchain</th>
-  </tr>
-  <tr>
-    <td class="tg-baqh">Tests</td>
-    <td class="tg-baqh">Quality</td>
-  </tr>
-  <tr>
-    <td class="tg-baqh">
+        <a href="https://github.com/dedis/d-voting/graphs/contributors">
+            <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/dedis/d-voting">
+        </a>
+        <a href="https://github.com/dedis/d-voting/releases">
+            <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/dedis/d-voting">
+        </a>
+      </td>
+</tr>
+<tr>
+    <td>Blockchain</td>
+    <td>
         <a href="https://github.com/dedis/d-voting/actions/workflows/go_test.yml">
             <img src="https://github.com/dedis/d-voting/actions/workflows/go_test.yml/badge.svg">
-        </a>
-        <a href="https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml">
-            <img src="https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml/badge.svg">
         </a>
         <a href="https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml">
             <img src="https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml/badge.svg">
         </a>
-    </td>
-    <td class="tg-baqh">
+        <a href="https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml">
+            <img src="https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml/badge.svg">
+        </a><br/>
         <a href="https://coveralls.io/github/dedis/d-voting?branch=main">
             <img src="https://coveralls.io/repos/github/dedis/d-voting/badge.svg?branch=main">
         </a>
+        <a href="https://goreportcard.com/report/github.com/dedis/d-voting">
+            <img src="https://goreportcard.com/badge/github.com/dedis/d-voting">
+        </a>
+        <a href="https://pkg.go.dev/github.com/dedis/d-voting">
+            <img src="https://pkg.go.dev/badge/github.com/dedis/d-voting.svg" alt="Go Reference">
+        </a>
     </td>
-  </tr>
-  <tr>
-    <th class="tg-amwm" colspan="2">Web client</th>
-  </tr>
-  <tr>
-    <td class="tg-baqh">Frontend</td>
-    <td class="tg-baqh">Backend</td>
-  </tr>
-  <tr>
-    <td class="tg-baqh">
+<tr>
+<tr>
+    <td>WEB</td>
+    <td>
         <a href="https://github.com/dedis/d-voting/actions/workflows/web_frontend_lint.yml">
             <img src="https://github.com/dedis/d-voting/actions/workflows/web_frontend_lint.yml/badge.svg">
         </a>
-    </td>
-    <td class="tg-baqh">
         <a href="https://github.com/dedis/d-voting/actions/workflows/web_backend_lint.yml">
             <img src="https://github.com/dedis/d-voting/actions/workflows/web_backend_lint.yml/badge.svg">
         </a>
     </td>
-  </tr>
-</tbody>
+</tr>
 </table>
 
 </div>
@@ -71,6 +66,14 @@
 - An open platform to run voting instances on a blockchain
 - Provides privacy of votes with state-of-the art protocols
 - Fully auditable and decentralized process
+
+## Global architecture
+
+Find more about the architecture on the [documentation
+website](https://dedis.github.io/d-voting/#/).
+
+![Global component diagram](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/dedis/d-voting/main/docs/assets/component-global.puml)
+
 
 # Setup
 
@@ -216,6 +219,18 @@ N.B. run following commands to get help
 # Use the frontend
 
 See README in `web/`.
+
+# Debian deployment
+
+A package registry with debian packages is available at http://apt.dedis.ch.
+To install a package run the following:
+
+```sh
+echo "deb http://apt.dedis.ch/ squeeze main" >> /etc/apt/sources.list
+wget -q -O- http://apt.dedis.ch/unicore.gpg | sudo apt-key add -
+sudo apt update
+sudo apt install dedis-dvoting
+```
 
 # Metrics
 

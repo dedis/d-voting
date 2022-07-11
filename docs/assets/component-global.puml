@@ -1,0 +1,42 @@
+@startuml
+
+title D-Voting - Component Diagram
+
+node "Blockchain node1" as bc {
+  [proxy]
+  interface HTTP as iproxy
+  proxy -up- iproxy
+}
+
+node "Blockchain node2" as bc2 {
+  [proxy] as p2
+  interface HTTP as iproxy2
+  p2 -up- iproxy2
+}
+
+component "Web Front" as wf
+component "Web Back" as wb
+component "Tequilla" as teq
+
+actor user
+
+user -> wf: browse
+
+wf -down- iproxy
+wf -> wb: forward
+wb -down- iproxy
+wb -> teq: authenticate
+
+wf ~down~ iproxy2
+wb ~down~ iproxy2
+
+interface TPC as inode
+interface TPC as inode2
+
+bc -- inode
+bc2 -- inode2
+
+bc -( inode2
+bc2 -( inode
+
+@enduml
