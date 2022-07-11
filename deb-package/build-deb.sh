@@ -11,9 +11,8 @@ mkdir -p $INSTALL_DIR
 # get version from git without v prefix
 GITVERSION=$(git describe --abbrev=0 --tags || echo '0.0.0')
 VERSION=${GITVERSION:1}
-versionFile=$(echo $GITVERSION | tr . _)
 
-cp ../memcoin-linux-amd64-${versionFile} $INSTALL_DIR/memcoin
+cp ../memcoin $INSTALL_DIR/
 
 # Prometheus Node Exporter
 NE_DIR="deb/opt/exporter"
