@@ -26,6 +26,7 @@ import ShuffleButton from '../ActionButtons/ShuffleButton';
 import VoteButton from '../ActionButtons/VoteButton';
 import NoActionAvailable from '../ActionButtons/NoActionAvailable';
 import handleLogin from 'pages/session/HandleLogin';
+import { UserRole } from 'types/userRole';
 
 const useChangeAction = (
   status: Status,
@@ -66,7 +67,7 @@ const useChangeAction = (
   const fctx = useContext(FlashContext);
   const navigate = useNavigate();
   const pctx = useContext(ProxyContext);
-  const { isLogged } = useContext(AuthContext);
+  const { role, isLogged } = useContext(AuthContext);
 
   const POLLING_INTERVAL = 1000;
   const MAX_ATTEMPTS = 20;
@@ -528,6 +529,15 @@ const useChangeAction = (
           {t('notLoggedInActionText3')}
         </div>
       );
+    }
+
+    // Voters cannot perform any actions except voting and seeing the result
+    if (role === UserRole.Voter && (status < Status.Open || status > Status.Canceled)) {
+      return <div>{t('actionTextVoter1')}</div>;
+    }
+
+    if (role === UserRole.Voter && status >= Status.Closed && status < Status.ResultAvailable) {
+      return <div>{t('actionTextVoter2')}</div>;
     }
 
     switch (status) {

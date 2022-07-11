@@ -249,6 +249,8 @@
     "actionLoading": "Action loading...",
     "statusLoading": "Status loading...",
     "actionNotAvailable": "Action not available",
-    "uninitialized": "Uninitialized"
+    "uninitialized": "Uninitialized",
+    "actionTextVoter1": "The election is not open yet, you can come back later to vote once it is open.",
+    "actionTextVoter2": "The results of the election are not available yet."
   }
 }

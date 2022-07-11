@@ -156,9 +156,6 @@ const ElectionShow: FC = () => {
       }
     }
 
-    if (status >= Status.Open) {
-      setDKGLoading(false);
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [DKGStatuses, status, DKGLoading]);
 
