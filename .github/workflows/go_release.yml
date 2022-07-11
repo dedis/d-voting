@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: Use go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '>=1.18'
+
+      - name: Install fpm
+        run: |
+          sudo apt-get update
+          sudo apt-get install ruby-dev build-essential
+          sudo gem install fpm -f
+
+      - name: build artifacts
+        # builds the binary and the .deb
+        run: make deb
+
+  release:
+    name: release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Publish release to aptly
+        env:
+          APTLY_USER: ${{ secrets.APTLY_USER }}
+          APTLY_PASSWORD: ${{ secrets.APTLY_PASSWORD }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          ./deb-package/upload-artifacts.sh deb-package/dist/
+
+      - name: Update artifacts to Github's release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            memcoin-*
+            deb-package/dist/*

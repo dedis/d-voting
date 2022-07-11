@@ -8,8 +8,11 @@ rm -rf deb
 INSTALL_DIR="deb/opt/dedis/dvoting/bin"
 mkdir -p $INSTALL_DIR
 
-DVOTING_CLI_DIR="$PWD/.."
-cp $DVOTING_CLI_DIR/memcoin $INSTALL_DIR
+# get version from git without v prefix
+GITVERSION=$(git describe --abbrev=0 --tags || echo '0.0.0')
+VERSION=${GITVERSION:1}
+
+cp ../memcoin $INSTALL_DIR/
 
 # Prometheus Node Exporter
 NE_DIR="deb/opt/exporter"
@@ -32,9 +35,6 @@ mkdir -p deb/var/log/dedis/dvoting
 # adjust permissions
 find deb ! -perm -a+r -exec chmod a+r {} \;
 
-# get version from git without v prefix
-GITVERSION=$(git describe --abbrev=0 --tags)
-VERSION=${GITVERSION:1}
 if [[ -z "${ITERATION}" ]]
 then
   ITERATION="0"
