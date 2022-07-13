@@ -16,7 +16,6 @@ const QuickAction: FC<QuickActionProps> = ({ status, electionID }) => {
       {status === Status.ResultAvailable && (
         <ResultButton status={status} electionID={electionID} />
       )}
-      {status !== Status.Open && status !== Status.ResultAvailable && <span></span>}
     </div>
   );
 };

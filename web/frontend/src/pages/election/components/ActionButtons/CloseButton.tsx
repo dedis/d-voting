@@ -4,7 +4,7 @@ import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OngoingAction, Status } from 'types/election';
 import { UserRole } from 'types/userRole';
-import IndigoSpinnerIcon from '../IndigoSpinnerIcon';
+import ActionButton from './ActionButton';
 
 const CloseButton = ({ status, handleClose, ongoingAction }) => {
   const authCtx = useContext(AuthContext);
@@ -15,20 +15,15 @@ const CloseButton = ({ status, handleClose, ongoingAction }) => {
   return (
     isAuthorized &&
     status === Status.Open && (
-      <button onClick={handleClose}>
-        {ongoingAction !== OngoingAction.Closing && (
-          <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-1 mr-2 border border-gray-300 text-sm rounded-full font-medium text-gray-700 hover:text-indigo-500">
-            <LockClosedIcon className="-ml-1 mr-2 h-5 w-" aria-hidden="true" />
-            {t('close')}
-          </div>
-        )}
-        {ongoingAction === OngoingAction.Closing && (
-          <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-1 mr-2 border border-gray-300 text-sm rounded-full font-medium text-gray-700">
-            <IndigoSpinnerIcon />
-            {t('closing')}
-          </div>
-        )}
-      </button>
+      <ActionButton
+        handleClick={handleClose}
+        ongoing={ongoingAction === OngoingAction.Closing}
+        ongoingText={t('closing')}>
+        <>
+          <LockClosedIcon className="-ml-1 mr-2 h-5 w-" aria-hidden="true" />
+          {t('close')}
+        </>
+      </ActionButton>
     )
   );
 };

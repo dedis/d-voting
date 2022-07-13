@@ -51,15 +51,17 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
   };
 
   useEffect(() => {
+    // update status on useChangeAction (i.e. initializing and setting up)
     if (DKGStatuses.has(node)) {
       setStatus(DKGStatuses.get(node));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [DKGStatuses]);
 
-  // Set the mapping of the node and proxy address
+  // Set the mapping of the node and proxy address (only if the address was not
+  // already fetched)
   useEffect(() => {
-    if (node !== null) {
+    if (node !== null && proxy === null) {
       const fetchNodeProxy = async () => {
         try {
           setTimeout(() => {
@@ -99,7 +101,7 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node]);
+  }, [node, proxy]);
 
   useEffect(() => {
     if (proxy !== null) {
@@ -113,13 +115,13 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
 
   // Fetch the status of the nodes
   useEffect(() => {
-    if (proxy !== null) {
+    if (proxy !== null && status === null) {
       const fetchDKGStatus = async () => {
         // If we were not able to retrieve the proxy address of the node,
         // still return a resolved promise so that promise.then() goes to onSuccess().
         // Error was already displayed, no need to throw another one.
         if (proxy === '') {
-          return NodeStatus.NotInitialized;
+          return NodeStatus.Unreachable;
         }
 
         try {
@@ -155,36 +157,33 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
 
           // if we could not retrieve the proxy still resolve the promise
           // so that promise.then() goes to onSuccess() but display the error
-          return NodeStatus.NotInitialized;
+          return NodeStatus.Unreachable;
         }
       };
 
-      fetchDKGStatus()
-        .then((nodeStatus) => {
-          setStatus(nodeStatus);
-
-          // notify parent
-          const newDKGStatuses = new Map(DKGStatuses);
-          newDKGStatuses.set(node, nodeStatus);
-          setDKGStatuses(newDKGStatuses);
-        })
-        .finally(() => {
-          setDKGLoading(false);
-        });
+      fetchDKGStatus().then((nodeStatus) => {
+        setStatus(nodeStatus);
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [proxy]);
+  }, [proxy, status]);
 
   useEffect(() => {
-    // UseEffect prevents the race condition on setLoading
-    if (!DKGLoading) {
+    // UseEffect prevents the race condition on setDKGStatuses
+    if (status !== null) {
+      setDKGLoading(false);
+
       // notify parent
+      const newDKGStatuses = new Map(DKGStatuses);
+      newDKGStatuses.set(node, status);
+      setDKGStatuses(newDKGStatuses);
+
       const newLoading = new Map(loading);
       newLoading.set(node, false);
       setLoading(newLoading);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [DKGLoading]);
+  }, [status]);
 
   return (
     <tr key={node} className="bg-white border-b hover:bg-gray-50">

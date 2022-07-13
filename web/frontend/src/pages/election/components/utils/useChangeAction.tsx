@@ -6,11 +6,11 @@ import { ID } from 'types/configuration';
 import { Action, OngoingAction, Status } from 'types/election';
 import { pollDKG, pollElection } from './PollStatus';
 import { NodeStatus } from 'types/node';
-import { FlashContext, FlashLevel, ProxyContext } from 'index';
+import { AuthContext, FlashContext, FlashLevel, ProxyContext } from 'index';
 import { useNavigate } from 'react-router';
 import { ROUTE_ELECTION_INDEX } from 'Routes';
 
-import ChooseProxyModal from 'components/modal/ChooseProxyModal';
+import ChooseProxyModal from 'pages/election/components/ChooseProxyModal';
 import ConfirmModal from 'components/modal/ConfirmModal';
 import usePostCall from 'components/utils/usePostCall';
 import InitializeButton from '../ActionButtons/InitializeButton';
@@ -24,6 +24,9 @@ import OpenButton from '../ActionButtons/OpenButton';
 import ResultButton from '../ActionButtons/ResultButton';
 import ShuffleButton from '../ActionButtons/ShuffleButton';
 import VoteButton from '../ActionButtons/VoteButton';
+import NoActionAvailable from '../ActionButtons/NoActionAvailable';
+import handleLogin from 'pages/session/HandleLogin';
+import { UserRole } from 'types/userRole';
 
 const useChangeAction = (
   status: Status,
@@ -55,8 +58,6 @@ const useChangeAction = (
   const [userConfirmedCanceling, setUserConfirmedCanceling] = useState(false);
   const [userConfirmedDeleting, setUserConfirmedDeleting] = useState(false);
 
-  const [proxyAddresses, setProxyAddresses] = useState<Map<string, string>>(new Map());
-
   const [getError, setGetError] = useState(null);
   const [postError, setPostError] = useState(null);
   const sendFetchRequest = usePostCall(setPostError);
@@ -66,6 +67,10 @@ const useChangeAction = (
   const fctx = useContext(FlashContext);
   const navigate = useNavigate();
   const pctx = useContext(ProxyContext);
+  const { role, isLogged } = useContext(AuthContext);
+
+  const POLLING_INTERVAL = 1000;
+  const MAX_ATTEMPTS = 20;
 
   const modalClose = (
     <ConfirmModal
@@ -94,7 +99,9 @@ const useChangeAction = (
 
   const modalSetup = (
     <ChooseProxyModal
+      roster={roster}
       showModal={showModalProxySetup}
+      DKGStatuses={DKGStatuses}
       nodeProxyAddresses={nodeProxyAddresses}
       nodeToSetup={nodeToSetup}
       setNodeToSetup={setNodeToSetup}
@@ -154,9 +161,6 @@ const useChangeAction = (
   // The previous status is used if there's an error,in which case the election
   // status is set back to this value.
   const pollElectionStatus = (previousStatus: Status, nextStatus: Status) => {
-    // polling interval
-    const interval = 1000;
-
     const request = {
       method: 'GET',
       signal: signal,
@@ -164,7 +168,13 @@ const useChangeAction = (
     // We stop polling when the status has changed to nextStatus
     const match = (s: Status) => s === nextStatus;
 
-    pollElection(endpoints.election(pctx.getProxy(), electionID), request, match, interval)
+    pollElection(
+      endpoints.election(pctx.getProxy(), electionID),
+      request,
+      match,
+      POLLING_INTERVAL,
+      MAX_ATTEMPTS
+    )
       .then(
         () => onFullFilled(nextStatus),
         (reason: any) => onRejected(reason, previousStatus)
@@ -176,8 +186,6 @@ const useChangeAction = (
   };
 
   const pollDKGStatus = (proxy: string, statusToMatch: NodeStatus) => {
-    const interval = 1000;
-
     const request = {
       method: 'GET',
       signal: signal,
@@ -185,7 +193,13 @@ const useChangeAction = (
 
     const match = (s: NodeStatus) => s === statusToMatch;
 
-    return pollDKG(endpoints.getDKGActors(proxy, electionID), request, match, interval);
+    return pollDKG(
+      endpoints.getDKGActors(proxy, electionID),
+      request,
+      match,
+      POLLING_INTERVAL,
+      MAX_ATTEMPTS
+    );
   };
 
   // Start to poll when there is an ongoingAction
@@ -195,17 +209,24 @@ const useChangeAction = (
     switch (ongoingAction) {
       case OngoingAction.Initializing:
         if (nodeProxyAddresses !== null) {
+          // TODO: can be modified such that if the majority of the node are
+          // initialized than the election status can still be set to initialized
           const promises = Array.from(nodeProxyAddresses.values()).map((proxy) => {
-            return pollDKGStatus(proxy, NodeStatus.Initialized);
+            if (proxy !== '') {
+              return pollDKGStatus(proxy, NodeStatus.Initialized);
+            }
+            return undefined;
           });
 
           Promise.all(promises).then(
             () => {
               onFullFilled(Status.Initialized);
               const newDKGStatuses = new Map(DKGStatuses);
-              nodeProxyAddresses.forEach((_proxy, node) =>
-                newDKGStatuses.set(node, NodeStatus.Initialized)
-              );
+              nodeProxyAddresses.forEach((proxy, node) => {
+                if (proxy !== '') {
+                  newDKGStatuses.set(node, NodeStatus.Initialized);
+                }
+              });
               setDKGStatuses(newDKGStatuses);
             },
             (reason: any) => onRejected(reason, Status.Initial)
@@ -213,7 +234,7 @@ const useChangeAction = (
         }
         break;
       case OngoingAction.SettingUp:
-        if (nodeProxyAddresses !== null) {
+        if (nodeToSetup !== null) {
           pollDKGStatus(nodeToSetup[1], NodeStatus.Setup)
             .then(
               () => {
@@ -366,8 +387,13 @@ const useChangeAction = (
         }
       };
 
+      // TODO: can be modified such that if the majority of the node are
+      // initialized than the election status can still be set to initialized
       const promises = Array.from(nodeProxyAddresses.values()).map((proxy) => {
-        return initialize(proxy);
+        if (proxy !== '') {
+          return initialize(proxy);
+        }
+        return undefined;
       });
 
       Promise.all(promises).then(() => {
@@ -412,12 +438,6 @@ const useChangeAction = (
   }, [userConfirmedProxySetup]);
 
   const handleInitialize = () => {
-    // initialize the address of the proxies with the address of the node
-    if (proxyAddresses.size === 0) {
-      const initProxAddresses = new Map(proxyAddresses);
-      roster.forEach((node) => initProxAddresses.set(node, node));
-      setProxyAddresses(initProxAddresses);
-    }
     setIsInitializing(true);
   };
 
@@ -485,6 +505,41 @@ const useChangeAction = (
   };
 
   const getAction = () => {
+    // Check that more than 2/3 of the nodes are working, if not actions are
+    // disabled, since consensus cannot be achieved
+    const consensus = 2 / 3;
+
+    if (
+      Array.from(DKGStatuses.values()).filter((nodeStatus) => nodeStatus !== NodeStatus.Unreachable)
+        .length <=
+      consensus * roster.length
+    ) {
+      return <NoActionAvailable />;
+    }
+
+    // Except for seeing the results, all actions at least require the users
+    // to be logged in
+    if (!isLogged && status !== Status.ResultAvailable) {
+      return (
+        <div>
+          {t('notLoggedInActionText1')}
+          <button id="login-button" className="text-indigo-600" onClick={() => handleLogin(fctx)}>
+            {t('notLoggedInActionText2')}
+          </button>
+          {t('notLoggedInActionText3')}
+        </div>
+      );
+    }
+
+    // Voters cannot perform any actions except voting and seeing the result
+    if (role === UserRole.Voter && (status < Status.Open || status > Status.Canceled)) {
+      return <div>{t('actionTextVoter1')}</div>;
+    }
+
+    if (role === UserRole.Voter && status >= Status.Closed && status < Status.ResultAvailable) {
+      return <div>{t('actionTextVoter2')}</div>;
+    }
+
     switch (status) {
       case Status.Initial:
         return (

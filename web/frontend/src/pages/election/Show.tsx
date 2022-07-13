@@ -103,14 +103,14 @@ const ElectionShow: FC = () => {
   }, [nodeToSetup]);
 
   useEffect(() => {
-    if (nodeProxyAddresses !== null && roster !== null) {
-      if (nodeToSetup === null) {
-        const node = roster[0];
-        setNodeToSetup([node, nodeProxyAddresses.get(node)]);
+    // Set default node to initialize
+    if (status >= Status.Initialized) {
+      const node = Array.from(nodeProxyAddresses).find(([_node, proxy]) => proxy !== '');
+      if (node !== undefined) {
+        setNodeToSetup(Array.from(nodeProxyAddresses).find(([_node, proxy]) => proxy !== ''));
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeProxyAddresses, nodeToSetup, roster]);
+  }, [nodeProxyAddresses, status]);
 
   useEffect(() => {
     if (roster !== null) {
@@ -139,20 +139,23 @@ const ElectionShow: FC = () => {
       if (DKGStatuses !== null && !DKGLoading) {
         const statuses = Array.from(DKGStatuses.values());
 
+        // TODO: can be modified such that if the majority of the node are
+        // initialized than the election status can still be set to initialized
         if (statuses.includes(NodeStatus.NotInitialized)) return;
 
         if (statuses.includes(NodeStatus.Setup)) {
           setStatus(Status.Setup);
-        } else {
-          setStatus(Status.Initialized);
+          return;
         }
+
+        if (statuses.includes(NodeStatus.Unreachable)) return;
+
+        setStatus(Status.Initialized);
+
         // Status Failed is handled by useChangeAction
       }
     }
 
-    if (status >= Status.Open) {
-      setDKGLoading(false);
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [DKGStatuses, status, DKGLoading]);
 

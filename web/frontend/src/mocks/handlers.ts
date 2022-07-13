@@ -63,7 +63,7 @@ export const handlers = [
       ? {
           lastname: 'Bobster',
           firstname: 'Alice',
-          role: UserRole.Admin,
+          role: UserRole.Voter,
           sciper: userId,
         }
       : {};
@@ -234,13 +234,18 @@ export const handlers = [
 
   rest.post(endpoints.dkgActors, async (req, res, ctx) => {
     const body = req.body as NewDKGBody;
-    const newDKGStatus = new Map(mockDKG.get(body.ElectionID));
 
-    mockElections.get(body.ElectionID).Roster.forEach((node) => {
-      newDKGStatus.set(node, NodeStatus.Initialized);
+    let node = '';
+    mockElections.get(body.ElectionID).Roster.forEach((n) => {
+      const p = mockNodeProxyAddresses.get(n);
+      if (p === body.Proxy) {
+        node = n;
+      }
     });
 
     setTimeout(() => {
+      const newDKGStatus = new Map(mockDKG.get(body.ElectionID));
+      newDKGStatus.set(node, NodeStatus.Initialized);
       mockDKG.set(body.ElectionID, newDKGStatus);
     }, INIT_TIMER);
 
