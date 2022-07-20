@@ -83,18 +83,18 @@ side-protocols always distribute trust among nodes: The distributed key
 generation protocol (DKG) ensures that a threshold of honest node is needed to
 decrypt a vote, and the shuffling protocol needs at least one honest node to
 ensure privacy of voters. Only the identification and authorization mechanism
-make use of a central authority, but can accommodate and any other solution. 
+make use of a central authority, but can accommodate to other solutions. 
 
 <div align="center">
     <img height="45px" src="docs/assets/privacy-black.png#gh-light-mode-only">
     <img height="45px" src="docs/assets/privacy-white.png#gh-dark-mode-only">
 </div>
 
-**Privacy** Ballots are cast on the client side using a safely-held
-distributed key. The private key cannot not be revealed without coercing a
-threshold of nodes, and the public key can be retrieved on any node a client
-trust. Ballots are decrypted only once a cryptographic process ensures that cast
-ballots cannot be linked to the original voter.
+**Privacy** Ballots are cast on the client side using a safely-held distributed
+key-pair. The private key cannot not be revealed without coercing a threshold of
+nodes, and the public key can be retrieved on any node the voter trusts. Ballots
+are decrypted only once a cryptographic process ensured that cast ballots cannot
+be linked to the original voter.
 
 <div align="center">
     <img height="50px" src="docs/assets/audit-black.png#gh-light-mode-only">
@@ -102,20 +102,105 @@ ballots cannot be linked to the original voter.
 </div>
 
 **Transparency/Verifiability/Auditability** The whole election process is
-recorded on the blockchain and signed by a threshold of participants. Anyone can
-read and verify the log of events stored on the blockchain. Malicious behavior
-can be detected, voters can check that ballots are cast as intended, and
-auditors can witness the election process.
+recorded on the blockchain and signed by a threshold of blockchain nodes. Anyone
+can read and verify the log of events stored on the blockchain. Malicious
+behavior can be detected, voters can check that ballots are cast as intended,
+and auditors can witness the election process.
 
-## Global architecture
+## 🧩 Global architecture
 
 Find more about the architecture on the [documentation
 website](https://dedis.github.io/d-voting/#/).
 
 ![Global component diagram](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/dedis/d-voting/main/docs/assets/component-global.puml)
 
+## 📁 Folders structure
 
-# Setup
+```
+.
+├── cli    
+│   ├── cosipbftcontroller
+│   ├── dvoting    
+│   ├── memcoin      
+│   └── postinstall     
+├── contracts           
+│   └── evoting      
+├── deb-package            
+├── docs       
+├── integration
+├── internal            
+├── metrics             
+│   └── controller   
+├── proxy      
+├── services    
+│   ├── dkg  
+│   │   └── pedersen  
+│   └── shuffle   
+│       └── neff   
+└── web 
+    ├── backend  
+    │   └── src   
+    └── frontend   
+        └── src   
+```
+
+## 👩‍💻👨‍💻 Contributors
+
+<table>
+    <tr style="font-weight:bold">
+        <td>Period</td>
+        <td>Contributors(s)</td>
+        <td>Activities</td>
+        <td>Links</td>
+    </tr>
+    <tr>
+        <td>Spring 2021</td>
+        <td>Students: Anas Ibrahim, Vincent Parodi<br>Supervisor: Noémien Kocher</td>
+        <td>Initial implementation of the smart contract and services</td>
+        <td><a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2021/07/report-2021-1-Vincent-Anas_EvotingDela.pdf">Report</a></td>
+    </tr>
+    <tr>
+        <td>Spring 2021</td>
+        <td>Student: Sarah Antille<br>Supervisor: Noémien Kocher</td>
+        <td>Initial implementation of the web frontend in react</td>
+        <td><a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2021/07/report-2021-1-SarahAntille_EvotingonDela.pdf">Report</a></td>
+    </tr>
+    <tr>
+        <td>Fall 2021</td>
+        <td>Students: Auguste Baum, Emilien Duc<br>Supervisor: Noémien Kocher</td>
+        <td>Adds a flexible election structure. Improves robustness and security.</td>
+        <td>
+            <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2022/02/report-2021-3-baum-auguste-Dvoting.pdf">Report</a>,
+            <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2022/02/presentation-2021-3-baum-auguste-dvoting.pdf">Presentation</a>
+        </td>
+    </tr>
+    <tr>
+        <td>Fall 2021</td>
+        <td>Students: Ambroise Borbely<br>Supervisor: Noémien Kocher</td>
+        <td>Adds authentication and authorization mechanism on the frontend.</td>
+        <td><a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2022/02/report-2021-3-borbely-ambroise-DVotingFrontend.pdf">Report</a></td>
+    </tr>
+    <tr>
+        <td>Spring 2022</td>
+        <td>Students: Guanyu Zhang, Igowa Giovanni<br>Supervisor: Noémien Kocher<br>Assistant: Emilien Duc</td>
+        <td>Improves production-readiness: deploy a test pipeline and analyze the system's robustness.</td>
+        <td>
+            <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2022/07/report-2022-1-giovanni-zhang-d-voting-production.pdf">Report</a>,
+            <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2022/07/presentation-2022-1-giovanni-zhang-d-voting-production.pdf">Presentation</a>
+        </td>
+    </tr>
+    <tr>
+        <td>Spring 2022</td>
+        <td>Students: Badr Larhdir, Capucine Berger<br>Supervisor: Noémien Kocher</td>
+        <td>Major iteration over the frontend - design and functionalities: implements a flexible election form, nodes setup, and result page.</td>
+        <td>
+            <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2022/07/report-2022-1-capucine-badr-d-voting-frontend.pdf">Report</a>,
+            <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2022/07/presentation-2022-1-capucine-badr-d-voting-frontend.pdf">Presentation</a>
+        </td>
+    </tr>
+</table>
+
+# ⚙️ Setup
 
 First be sure to have Go installed (at least 1.17).
 
