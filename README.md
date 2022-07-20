@@ -61,11 +61,51 @@
 # D-Voting
 
 **D-Voting** is an e-voting platform based on the
-[Dela](https://github.com/dedis/dela) blockchain. In short:
+[Dela](https://github.com/dedis/dela) blockchain. It uses state-of-the-art
+protocols that guarantee a fully decentralized process. This project was born in
+early 2021 and has been iteratively implemented by EPFL student under the
+supervision of DEDIS members.
 
-- An open platform to run voting instances on a blockchain
-- Provides privacy of votes with state-of-the art protocols
-- Fully auditable and decentralized process
+⚠️ This project is still under developpment and should not be used for real
+elections.
+
+Main properties of the system are the following: 
+
+<div align="center">
+    <img height="45px" src="docs/assets/spof-black.png#gh-light-mode-only">
+    <img height="45px" src="docs/assets/spof-white.png#gh-dark-mode-only">
+</div>
+
+**No single point of failure** The system is supported by a decentralized
+network of blockchain nodes, making no single party able to take over the
+network without compromising a Byzantine threshold of nodes. Additionally,
+side-protocols always distribute trust among nodes: The distributed key
+generation protocol (DKG) ensures that a threshold of honest node is needed to
+decrypt a vote, and the shuffling protocol needs at least one honest node to
+ensure privacy of voters. Only the identification and authorization mechanism
+make use of a central authority, but can accommodate and any other solution. 
+
+<div align="center">
+    <img height="45px" src="docs/assets/privacy-black.png#gh-light-mode-only">
+    <img height="45px" src="docs/assets/privacy-white.png#gh-dark-mode-only">
+</div>
+
+**Privacy** Ballots are cast on the client side using a safely-held
+distributed key. The private key cannot not be revealed without coercing a
+threshold of nodes, and the public key can be retrieved on any node a client
+trust. Ballots are decrypted only once a cryptographic process ensures that cast
+ballots cannot be linked to the original voter.
+
+<div align="center">
+    <img height="50px" src="docs/assets/audit-black.png#gh-light-mode-only">
+    <img height="50px" src="docs/assets/audit-white.png#gh-dark-mode-only">
+</div>
+
+**Transparency/Verifiability/Auditability** The whole election process is
+recorded on the blockchain and signed by a threshold of participants. Anyone can
+read and verify the log of events stored on the blockchain. Malicious behavior
+can be detected, voters can check that ballots are cast as intended, and
+auditors can witness the election process.
 
 ## Global architecture
 
@@ -227,7 +267,7 @@ To install a package run the following:
 
 ```sh
 echo "deb http://apt.dedis.ch/ squeeze main" >> /etc/apt/sources.list
-wget -q -O- http://apt.dedis.ch/unicore.gpg | sudo apt-key add -
+wget -q -O- http://apt.dedis.ch/dvoting-release.pgp | sudo apt-key add -
 sudo apt update
 sudo apt install dedis-dvoting
 ```
