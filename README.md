@@ -139,7 +139,7 @@ web-backend has a local database to store configuration data such as
 authorizations. Admins use the web-frontend to perform update.
 
 The following component diagrams summarizes the interaction between those
-high-level components.
+high-level components:
 
 [minogrpc]: https://github.com/dedis/dela/tree/master/mino/minogrpc
 
@@ -163,7 +163,7 @@ ballot to getting the result of the election:
     <img height="55px" src="docs/assets/encrypt-white.png#gh-dark-mode-only">
 </div>
 
-**1) Create ballot** The voter get the shared public key and encrypts locally
+**1) Create ballot** The voter gets the shared public key and encrypts locally
 its ballot. The shared public key can be retrieved on any node and is associated
 to a private key that is distributed among the nodes. This process is done on
 the client's browser using the web-frontend.
@@ -177,7 +177,7 @@ the client's browser using the web-frontend.
 of the blockchain node. This operation is relayed by the web-backend which
 verifies that the voters has the right to vote. If successful, the encrypted
 ballot is stored on the blockchain. At this stage each encrypted ballot is
-recorded with its user on the blockchain.
+associated to its voter on the blockchain.
 
 <div align="center">
     <img height="70px" src="docs/assets/shuffle-black.png#gh-light-mode-only">
@@ -186,9 +186,9 @@ recorded with its user on the blockchain.
 
 **3) Shuffle ballots** Once the election is closed by an admin, ballots are
 shuffled to ensure privacy of voters. This operation is done by a threshold of
-node that each perform their own shuffling. Each shuffling guaranty the
-integrity of votes while re-encrypting and changing the order of votes. At this
-stage encrypted ballots cannot ne linked back to their voters.
+node that each perform their own shuffling. Each shuffling guaranties the
+integrity of ballots while re-encrypting and changing the order of ballots. At
+this stage encrypted ballots cannot ne linked back to their voters.
 
 <div align="center">
     <img height="90px" src="docs/assets/reveal-black.png#gh-light-mode-only">
@@ -206,7 +206,7 @@ is stored on the blockchain.
 A smart contract is a piece of code that runs on a blockchain. It defines a set
 of operations that act on a global state (think of it as database) and can be
 triggered with transactions. What makes a smart contract special is that its
-executions depends on a consensus among blockchain nodes and operations are
+executions depends on a consensus among blockchain nodes where operations are
 successful only if a consensus is reached. Additionally, transactions and their
 results are permanently recorded and signed on an append-only ledger, making any
 operations on the blockchain transparent and permanent.
@@ -214,24 +214,25 @@ operations on the blockchain transparent and permanent.
 In the D-Voting system a single D-Voting smart contract handles the elections.
 The smart contract ensures that elections follow a correct workflow to
 guarantees its desirable properties such as privacy. For example, the smart
-contract won't allow ballots to be decrypted if they haven't been shuffled by a
-threshold of nodes before.
+contract won't allow ballots to be decrypted if they haven't been previously
+shuffled by a threshold of nodes.
 
 ## Services
 
 Apart from executing smart contracts, blockchain nodes need additional side
 services to support an election. Side services can read from the global state
-and send transactions. They are used to perform specific protocol executions not
-directly related to blockchain protocols such as the distributed key generation
-(DKG) and verifiable shuffling protocols.
+and send transactions to write to it via the D-Voting smart contract. They are
+used to perform specific protocol executions not directly related to blockchain
+protocols such as the distributed key generation (DKG) and verifiable shuffling
+protocols.
 
 ### DKG
 
 DKG stands for Distributed Key Generation. This service allows the creation of a
-key-pair that is distributed among multiple participants. Data encrypted with
-the key-pair can only be decrypted with the contribution of a threshold of
-participants. This makes it convenient to distribute trust on encrypted data.
-In the D-Voting project we use the Pedersen [[1]] version of DKG.
+distributed key-pair among multiple participants. Data encrypted with the
+key-pair can only be decrypted with the contribution of a threshold of
+participants. This makes it convenient to distribute trust on encrypted data. In
+the D-Voting project we use the Pedersen [[1]] version of DKG.
 
 The DKG service needs to be setup at the beginning of each new election - we
 want each election to have its own key-pair. Doing the setup requires two steps:
@@ -257,8 +258,8 @@ an election is closed, an admin can trigger the shuffling steps from the nodes.
 During this phase, every node perform a shuffling on the current list of
 encrypted ballots and try to submit it to the D-Voting smart contract. The smart
 contract will accept only one shuffling step per block, and nodes repeat their
-shuffling step with the latest shuffled list until their shuffling step has not
-been accepted and a threshold of nodes has not been reached.
+shuffling step with the latest shuffled list until their shuffling step has been
+accepted or a threshold of nodes successfully submitted their shuffling steps.
 
 [2]: https://dl.acm.org/doi/10.1145/501983.502000
 
@@ -288,9 +289,9 @@ been accepted and a threshold of nodes has not been reached.
 │       └── <b>neff</b>            Implementation of the shuffle service
 └── <b>web</b>
     ├── <b>backend</b>
-    │   └── src             Source of the web backend
+    │   └── src             Sources of the web backend (express.js server)
     └── <b>frontend</b>
-        └── src             Sources of the web frontend
+        └── src             Sources of the web frontend (react app)
 </pre>
 </code>
 
