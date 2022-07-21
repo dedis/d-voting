@@ -43,6 +43,8 @@ with the node's public address:
 export dela_public="//172.16.253.150:9000"
 ```
 
+and don't forget to restart the service!
+
 ### Leader's node
 
 Get the token and certificate (24h * 30 = 720):
@@ -100,7 +102,7 @@ sudo memcoin --config /var/opt/dedis/dvoting/data/dela ordering setup \
 ```sh
 PK=<> # taken from the "ordering export", the part after ":"
 sudo memcoin --config /var/opt/dedis/dvoting/data/dela pool add \
-    --key /home/user/master.key \
+    --key /home/dedis/private.key \
     --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access \
     --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 \
     --args access:grant_contract --args go.dedis.ch/dela.Evoting \
