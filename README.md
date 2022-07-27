@@ -66,7 +66,7 @@ protocols that guarantee privacy of votes and a fully decentralized process.
 This project was born in early 2021 and has been iteratively implemented by EPFL
 students under the supervision of DEDIS members.
 
-⚠️ This project is still under developpment and should not be used for real
+⚠️ This project is still under development and should not be used for real
 elections.
 
 Main properties of the system are the following: 
@@ -76,7 +76,7 @@ Main properties of the system are the following:
     <img height="45px" src="docs/assets/spof-white.png#gh-dark-mode-only">
 </div>
 
-**No single point of failure** The system is supported by a decentralized
+**No single point of failure** - The system is supported by a decentralized
 network of blockchain nodes, making no single party able to break the system
 without compromising a Byzantine threshold of nodes. Additionally,
 side-protocols always distribute trust among nodes: The distributed key
@@ -90,18 +90,18 @@ make use of a central authority, but can accommodate to other solutions.
     <img height="45px" src="docs/assets/privacy-white.png#gh-dark-mode-only">
 </div>
 
-**Privacy** Ballots are cast on the client side using a safely-held distributed
-key-pair. The private key cannot not be revealed without coercing a threshold of
-nodes, and voters can retrieve the public key on any node. Ballots are decrypted
-only once a cryptographic process ensured that cast ballots cannot be linked to
-the original voter.
+**Privacy** - Ballots are cast on the client side using a safely-held
+distributed key-pair. The private key cannot not be revealed without coercing a
+threshold of nodes, and voters can retrieve the public key on any node. Ballots
+are decrypted only once a cryptographic process ensured that cast ballots cannot
+be linked to the original voter.
 
 <div align="center">
     <img height="50px" src="docs/assets/audit-black.png#gh-light-mode-only">
     <img height="50px" src="docs/assets/audit-white.png#gh-dark-mode-only">
 </div>
 
-**Transparency/Verifiability/Auditability** The whole election process is
+**Transparency/Verifiability/Auditability** - The whole election process is
 recorded on the blockchain and signed by a threshold of blockchain nodes. Anyone
 can read and verify the log of events stored on the blockchain. Malicious
 behavior can be detected, voters can check that ballots are cast as intended,
@@ -111,32 +111,32 @@ and auditors can witness the election process.
 
 The project has 4 main high-level components:
 
-**Blockchain node** A blockchain node is the wide definition of the program that
-runs on a host and participate in the election logic. The blockchain node is
-built on top of Dela with an additional d-voting smart contract, proxy, and two
-services: DKG and verifiable Shuffling. The blockchain node is more accurately a
-subsystem, as it wraps many other components. Blockchain nodes communicate
-through gRPC with the [minogrpc][minogrpc] network overlay. We sometimes refer
-to the blockchain node simply as a "node".
+**Proxy** - A proxy offers the mean for an external actor such as a website to
+interact with a blockchain node. It is a component of the blockchain node that
+exposes HTTP endpoints for external entities to send commands to the node. The
+proxy is notably used by the web clients to use the election system.
 
-**Proxy** A proxy enables external interactions on a blockchain node. It is a
-component of the blockchain node that exposes HTTP endpoints for external
-entities to send commands to the node. The proxy is notably used by the web
-clients to use the election system.
-
-**Web frontend** The web frontend is a web app built with React. It offers a
+**Web frontend** - The web frontend is a web app built with React. It offers a
 view for end-users to use the D-Voting system. The app is meant to be used by
 voters and admins. Admins can perform administrative tasks such as creating an
 election, closing it, or revealing the results. Depending on the task, the web
 frontend will directly send HTTP requests to the proxy of a blockchain node, or
 to the web-backend.
 
-**Web backend** The web backend handles authentication and authorization. Some
+**Web backend** - The web backend handles authentication and authorization. Some
 requests that need specific authorization are relayed from the web-frontend to
 the web-backend. The web backend checks the requests and signs messages before
 relaying them to the blockchain node, which trusts the web-backend. The
 web-backend has a local database to store configuration data such as
-authorizations. Admins use the web-frontend to perform update.
+authorizations. Admins use the web-frontend to perform updates.
+
+**Blockchain node** - A blockchain node is the wide definition of the program
+that runs on a host and participate in the election logic. The blockchain node
+is built on top of Dela with an additional d-voting smart contract, proxy, and
+two services: DKG and verifiable Shuffling. The blockchain node is more
+accurately a subsystem, as it wraps many other components. Blockchain nodes
+communicate through gRPC with the [minogrpc][minogrpc] network overlay. We
+sometimes refer to the blockchain node simply as a "node".
 
 The following component diagrams summarizes the interaction between those
 high-level components:
@@ -150,13 +150,9 @@ website](https://dedis.github.io/d-voting/#/).
 
 ## Workflow
 
-An election follows a specific workflow to ensure privacy of votes. You can
-find more about it in the
-[documentation](https://dedis.github.io/d-voting/#/api?id=signed-requests), but
-here is a high-level recap.
-
-Once an election is created and open, there are 4 main steps from the cast of a
-ballot to getting the result of the election:
+An election follows a specific workflow to ensure privacy of votes. Once an
+election is created and open, there are 4 main steps from the cast of a ballot
+to getting the result of the election:
 
 <div align="center">
     <img height="55px" src="docs/assets/encrypt-black.png#gh-light-mode-only">
@@ -188,7 +184,7 @@ associated to its voter on the blockchain.
 shuffled to ensure privacy of voters. This operation is done by a threshold of
 node that each perform their own shuffling. Each shuffling guaranties the
 integrity of ballots while re-encrypting and changing the order of ballots. At
-this stage encrypted ballots cannot ne linked back to their voters.
+this stage encrypted ballots cannot be linked back to their voters.
 
 <div align="center">
     <img height="90px" src="docs/assets/reveal-black.png#gh-light-mode-only">
@@ -200,6 +196,9 @@ revealed. This operation is done only if the previous step is correctly
 executed. The decryption is done by a threshold of nodes that must each provide
 a contribution to achieve the decryption. Once done, the result of the election
 is stored on the blockchain.
+
+For a more formal and in-depth overview of the workflow, see the
+[documentation](https://dedis.github.io/d-voting/#/api?id=signed-requests)
 
 ## Smart contract
 
@@ -226,40 +225,42 @@ used to perform specific protocol executions not directly related to blockchain
 protocols such as the distributed key generation (DKG) and verifiable shuffling
 protocols.
 
-### DKG
+### Distributed Key Generation (DKG)
 
-DKG stands for Distributed Key Generation. This service allows the creation of a
-distributed key-pair among multiple participants. Data encrypted with the
-key-pair can only be decrypted with the contribution of a threshold of
-participants. This makes it convenient to distribute trust on encrypted data. In
-the D-Voting project we use the Pedersen [[1]] version of DKG.
+The DKG service allows the creation of a distributed key-pair among multiple
+participants. Data encrypted with the key-pair can only be decrypted with the
+contribution of a threshold of participants. This makes it convenient to
+distribute trust on encrypted data. In the D-Voting project we use the Pedersen
+[[1]] version of DKG.
 
-The DKG service needs to be setup at the beginning of each new election - we
-want each election to have its own key-pair. Doing the setup requires two steps:
-1\) Initialization and 2\) Setup. The initialization creates a new RPC for nodes
-to communicate and must be done on each node. The second step, setup, must be
-executed on one of the node. The setup step starts the DKG protocol and
-generates the key-pair. Once done, the D-Voting smart contract can be called to
-open the election, which will retrieve the DKG public key and save it on the
-smart contract.
+The DKG service needs to be setup at the beginning of each new election, because
+we want each election to have its own key-pair. Doing the setup requires two
+steps: 1\) Initialization and 2\) Setup. The initialization creates new RPC
+endpoints on each node, which they can use to communicate with each other. The
+second step, the setup, must be executed on one of the node. The setup step
+starts the DKG protocol and generates the key-pair. Once done, the D-Voting
+smart contract can be called to open the election, which will retrieve the DKG
+public key and save it on the smart contract.
 
 [1]: https://dl.acm.org/doi/10.5555/1754868.1754929
 
 ### Verifiable shuffling
 
-The shuffling service ensures that encrypted votes can not be linked to their
-voters. Once the service is setup, each node can perform what we call a
-"shuffling step". A shuffling step re-orders an array of elements such that
+The shuffling service ensures that encrypted votes can not be linked to the user
+who cast them. Once the service is setup, each node can perform what we call a
+"shuffling step". A shuffling step re-orders an array of elements such that the
 integrity of the elements is guarantee (i.e no elements have been modified,
 added, or removed), but one can't trace how elements have been re-ordered. 
 
 In D-Voting we use the Neff [[2]] implementation of verifiable shuffling. Once
 an election is closed, an admin can trigger the shuffling steps from the nodes.
-During this phase, every node perform a shuffling on the current list of
-encrypted ballots and try to submit it to the D-Voting smart contract. The smart
-contract will accept only one shuffling step per block, and nodes repeat their
-shuffling step with the latest shuffled list until their shuffling step has been
-accepted or a threshold of nodes successfully submitted their shuffling steps.
+During this phase, every node performs a shuffling on the current list of
+encrypted ballots and tries to submit it to the D-Voting smart contract. The
+smart contract will accept only one shuffling step per block in the blockchain.
+Nodes re-try to shuffle the ballots, using the latest shuffled list in the
+blockchain, until the result of their shuffling has been committed to the
+blockchain or a threshold of nodes successfully submitted their own shuffling
+results.
 
 [2]: https://dl.acm.org/doi/10.1145/501983.502000
 
@@ -292,8 +293,8 @@ accepted or a threshold of nodes successfully submitted their shuffling steps.
     │   └── src             Sources of the web backend (express.js server)
     └── <b>frontend</b>
         └── src             Sources of the web frontend (react app)
-</pre>
 </code>
+</pre>
 
 ## 👩‍💻👨‍💻 Contributors
 
