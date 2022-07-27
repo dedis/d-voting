@@ -30,8 +30,8 @@ wb -> teq: authenticate
 wf ~down~ iproxy2
 wb ~down~ iproxy2
 
-interface TPC as inode
-interface TPC as inode2
+interface gRPC as inode
+interface gRPC as inode2
 
 bc -- inode
 bc2 -- inode2
