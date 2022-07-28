@@ -4,6 +4,8 @@
 # an evoting system. User can pass number of nodes, window attach mode useful for autotest,
 # and docker usage.
 
+set -e
+
 # by default run on local
 DOCKER=false
 ATTACH=true
@@ -68,11 +70,10 @@ tmux new-session -d -s $s
 rm -rf ./log/log
 mkdir -p ./log/log
 
-
-
+crypto bls signer new --save private.key --force
 
 if [ "$DOCKER" == false ]; then
-    make build
+    go build -o memcoin ./cli/memcoin
 else
     # Clean created containers and tmp dir
     if [[ $(docker ps -a -q --filter ancestor=node) ]]; then

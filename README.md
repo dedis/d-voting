@@ -354,9 +354,9 @@ results.
 
 # ⚙️ Setup
 
-First be sure to have Go installed (at least 1.17).
+1: Install [Go](https://go.dev/dl/) (at least 1.17).
 
-Be sure to have the `crypto` utility from Dela:
+2: Install the `crypto` utility from Dela:
 
 ```sh
 git clone https://github.com/dedis/dela.git
@@ -367,30 +367,48 @@ go install
 Go will install the binaries in `$GOPATH/bin`, so be sure this it is correctly
 added to you path (like with `export PATH=$PATH:/Users/david/go/bin`).
 
-Create a private key (in the d-voting root folder):
+3: [Install tmux](https://github.com/tmux/tmux/wiki/Installing)
+
+# Setup a simple system with 3 nodes
+
+1: Run 3 nodes:
 
 ```sh
-crypto bls signer new --save private.key
+./runNode.sh -n 3
 ```
 
-Copy the private key from the d-voting root folder to the `cli/memcoin` folder:
+This will run 4 terminal sessions. You can navigate by hitting
+<kbd>CTRL</kbd>+<kbd>B</kbd> and then <kbd>S</kbd>. Use the arrows to select a
+window.
+
+2: Launch the setup
+
+From the first terminal sessions, run:
 
 ```sh
-cp private.key cli/memcoin/
+./setupnNode.sh -n 3
 ```
 
-Install memcoin (this requires the private key in `cli/memcoin`):
+3: Launch the web backend
 
 ```sh
-cd cli/memcoin
-go install
+cd web/backend
+# it this is the first time, run `npm install` first
+npm start
 ```
 
-Additionally, you can build the memcoin binary with:
+4: Launch the web frontend
 
 ```sh
-go build ./cli/memcoin
+cd web/frontend
+# it this is the first time, run `npm install` first
+REACT_APP_PROXY=http://localhost:9081 REACT_APP_NOMOCK=on npm start
 ```
+
+Note that you need to be on EPFL's network to login with Tequila. Additionally,
+once logged with Tequila, update the redirect URL and replace
+`dvoting-dev.dedis.ch` with `localhost`. Once logged, you can create an
+election.
 
 # Run the nodes
 
