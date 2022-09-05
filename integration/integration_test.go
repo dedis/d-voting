@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"strconv"
@@ -60,7 +59,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 
 		delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 
-		dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-three-votes")
+		dirPath, err := os.MkdirTemp(os.TempDir(), "d-voting-three-votes")
 		require.NoError(t, err)
 
 		defer os.RemoveAll(dirPath)

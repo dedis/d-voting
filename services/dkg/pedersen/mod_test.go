@@ -1,13 +1,16 @@
 package pedersen
 
 import (
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"net/url"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
+	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn/signed"
@@ -20,6 +23,7 @@ import (
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/core/store/kv"
@@ -468,7 +472,7 @@ func TestPedersen_Scenario(t *testing.T) {
 
 		token := joinable.GenerateToken(time.Hour)
 
-		certHash, err := joinable.GetCertificateStore().Hash(joinable.GetCertificate())
+		certHash, err := joinable.GetCertificateStore().Hash(joinable.GetCertificateChain())
 		require.NoError(t, err)
 
 		for _, n := range minos {
@@ -623,8 +627,19 @@ func TestPedersen_ComputePubshares_SenderFailed(t *testing.T) {
 		rpc: fake.NewStreamRPC(nil, fake.NewBadSender()),
 	}
 
+	oldLog := dela.Logger
+	defer func() {
+		dela.Logger = oldLog
+	}()
+
+	out := new(bytes.Buffer)
+	dela.Logger = zerolog.New(out)
+
+	// should only output a warning
 	err := a.ComputePubshares()
-	require.EqualError(t, err, fake.Err("failed to send decrypt request"))
+	require.NoError(t, err)
+
+	require.True(t, strings.Contains(out.String(), "failed to send decrypt request"), out.String())
 }
 
 func TestPedersen_ComputePubshares_OK(t *testing.T) {

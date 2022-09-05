@@ -158,7 +158,7 @@ func TestBallot_Unmarshal(t *testing.T) {
 
 	err = b.Unmarshal(ballotWrongSelect, election)
 	require.EqualError(t, err, "could not unmarshal select answers: "+
-		"question Q1 has too many selected answers")
+		"failed to check number of answers: question Q1 has too many selected answers")
 
 	// with not enough selected answers in select question
 	ballotWrongSelect = string("select:" + encodedQuestionID(1) + ":1,0,0\n" +
@@ -170,7 +170,7 @@ func TestBallot_Unmarshal(t *testing.T) {
 
 	err = b.Unmarshal(ballotWrongSelect, election)
 	require.EqualError(t, err, "could not unmarshal select answers: "+
-		"question Q1 has not enough selected answers")
+		"failed to check number of answers: question Q1 has not enough selected answers")
 
 	// with not enough answers in rank question
 	ballotWrongRank := string("select:" + encodedQuestionID(1) + ":1,0,1\n" +
@@ -192,7 +192,7 @@ func TestBallot_Unmarshal(t *testing.T) {
 
 	err = b.Unmarshal(ballotWrongRank, election)
 	require.EqualError(t, err, "could not unmarshal rank answers: "+
-		"could not parse rank value for Q.Q2 : strconv.ParseInt: parsing \"x\": invalid syntax")
+		"could not parse rank value for Q.Q2: strconv.ParseInt: parsing \"x\": invalid syntax")
 
 	// with too many selected answers in rank question
 	ballotWrongRank = string("select:" + encodedQuestionID(1) + ":1,0,1\n" +
@@ -204,7 +204,7 @@ func TestBallot_Unmarshal(t *testing.T) {
 
 	err = b.Unmarshal(ballotWrongRank, election)
 	require.EqualError(t, err, "could not unmarshal rank answers: "+
-		"invalid rank not in range [0, MaxN[")
+		"invalid rank not in range [0, MaxN[: 3")
 
 	// with valid ranks but one is selected twice
 	ballotWrongRank = string("select:" + encodedQuestionID(1) + ":1,0,1\n" +
@@ -216,7 +216,7 @@ func TestBallot_Unmarshal(t *testing.T) {
 
 	err = b.Unmarshal(ballotWrongRank, election)
 	require.EqualError(t, err, "could not unmarshal rank answers: "+
-		"question Q2 has too many selected answers")
+		"failed to check number of answers: question Q2 has too many selected answers")
 
 	// with not enough selected answers in rank question
 	ballotWrongRank = string("select:" + encodedQuestionID(1) + ":1,0,1\n" +
@@ -227,7 +227,8 @@ func TestBallot_Unmarshal(t *testing.T) {
 	election.BallotSize = len(ballotWrongRank)
 
 	err = b.Unmarshal(ballotWrongRank, election)
-	require.EqualError(t, err, "could not unmarshal rank answers: question"+
+	require.EqualError(t, err, "could not unmarshal rank answers: "+
+		"failed to check number of answers: question"+
 		" Q2 has not enough selected answers")
 
 	// with not enough answers in text question
@@ -252,7 +253,7 @@ func TestBallot_Unmarshal(t *testing.T) {
 
 	err = b.Unmarshal(ballotWrongText, election)
 	require.EqualError(t, err, "could not unmarshal text answers: "+
-		"could not decode text for Q. Q4: illegal base64 data at input byte 12")
+		"could not decode text for Q.Q4: illegal base64 data at input byte 12")
 
 	// with too many selected answers in text question
 	election.Configuration.Scaffold[0].Texts[0].MaxN = 1
@@ -266,7 +267,7 @@ func TestBallot_Unmarshal(t *testing.T) {
 
 	err = b.Unmarshal(ballotWrongText, election)
 	require.EqualError(t, err, "could not unmarshal text answers: "+
-		"question Q4 has too many selected answers")
+		"failed to check number of answers: question Q4 has too many selected answers")
 
 	election.Configuration.Scaffold[0].Texts[0].MaxN = 2
 
@@ -280,7 +281,7 @@ func TestBallot_Unmarshal(t *testing.T) {
 
 	err = b.Unmarshal(ballotWrongText, election)
 	require.EqualError(t, err, "could not unmarshal text answers: "+
-		"question Q4 has not enough selected answers")
+		"failed to check number of answers: question Q4 has not enough selected answers")
 
 	// with unknown question type
 	ballotWrongType := string("wrong:" + encodedQuestionID(1) + ":")
@@ -381,14 +382,6 @@ func TestSubject_IsValid(t *testing.T) {
 
 	valid := configuration.IsValid()
 	require.True(t, valid)
-
-	// with wrongly ID not in base64
-	mainSubject.ID = "zzz"
-
-	configuration.Scaffold = []Subject{*mainSubject}
-
-	valid = configuration.IsValid()
-	require.False(t, valid)
 
 	// with double IDs
 

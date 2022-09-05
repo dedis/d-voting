@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -25,7 +25,7 @@ func TestMemcoin_Main(t *testing.T) {
 // be able to communicate, but the chain should proceed because of the
 // threshold.
 func TestMemcoin_Scenario_SetupAndTransactions(t *testing.T) {
-	dir, err := ioutil.TempDir(os.TempDir(), "memcoin1")
+	dir, err := os.MkdirTemp(os.TempDir(), "memcoin1")
 	require.NoError(t, err)
 
 	defer os.RemoveAll(dir)
@@ -40,7 +40,7 @@ func TestMemcoin_Scenario_SetupAndTransactions(t *testing.T) {
 	node4 := filepath.Join(dir, "node4")
 	node5 := filepath.Join(dir, "node5")
 
-	cfg := config{Channel: sigs, Writer: ioutil.Discard}
+	cfg := config{Channel: sigs, Writer: io.Discard}
 
 	runNode(t, node1, cfg, 2111, &wg)
 	runNode(t, node2, cfg, 2112, &wg)
@@ -117,7 +117,7 @@ func TestMemcoin_Scenario_SetupAndTransactions(t *testing.T) {
 // restart. It basically tests if the components are correctly loaded from the
 // persisten storage.
 func TestMemcoin_Scenario_RestartNode(t *testing.T) {
-	dir, err := ioutil.TempDir(os.TempDir(), "memcoin2")
+	dir, err := os.MkdirTemp(os.TempDir(), "memcoin2")
 	require.NoError(t, err)
 
 	defer os.RemoveAll(dir)
@@ -132,7 +132,7 @@ func TestMemcoin_Scenario_RestartNode(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
-	cfg := config{Channel: sigs, Writer: ioutil.Discard}
+	cfg := config{Channel: sigs, Writer: io.Discard}
 
 	// Now the node are restarted. It should correctly follow the existing chain
 	// and then participate to new blocks.
@@ -177,7 +177,7 @@ func setupChain(t *testing.T, nodes []string, ports []uint16) {
 	wg := sync.WaitGroup{}
 	wg.Add(len(nodes))
 
-	cfg := config{Channel: sigs, Writer: ioutil.Discard}
+	cfg := config{Channel: sigs, Writer: io.Discard}
 
 	for i, node := range nodes {
 		runNode(t, node, cfg, ports[i], &wg)

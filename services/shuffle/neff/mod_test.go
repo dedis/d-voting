@@ -1,9 +1,12 @@
 package neff
 
 import (
+	"bytes"
 	"encoding/hex"
+	"strings"
 	"testing"
 
+	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/mino"
@@ -13,6 +16,7 @@ import (
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/shuffle/neff/types"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 )
 
@@ -72,8 +76,18 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	rpc := fake.NewStreamRPC(fake.NewReceiver(), fake.NewBadSender())
 	actor.rpc = rpc
 
+	oldLog := dela.Logger
+	defer func() {
+		dela.Logger = oldLog
+	}()
+
+	out := new(bytes.Buffer)
+	dela.Logger = zerolog.New(out)
+
+	// should only output a warning
 	err = actor.Shuffle(electionIDBuf)
-	require.EqualError(t, err, fake.Err("failed to start shuffle"))
+	require.NoError(t, err)
+	require.True(t, strings.Contains(out.String(), "failed to start shuffle"), out.String())
 
 	rpc = fake.NewStreamRPC(fake.NewBadReceiver(), fake.Sender{})
 	actor.rpc = rpc

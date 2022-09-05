@@ -2,9 +2,10 @@ package controller
 
 import (
 	"encoding/hex"
-	"golang.org/x/xerrors"
-	"io/ioutil"
+	"io"
 	"testing"
+
+	"golang.org/x/xerrors"
 
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/dedis/d-voting/services/dkg"
@@ -21,7 +22,7 @@ func TestInitAction_Execute(t *testing.T) {
 	ctx := node.Context{
 		Injector: node.NewInjector(),
 		Flags:    flags,
-		Out:      ioutil.Discard,
+		Out:      io.Discard,
 	}
 
 	action := initAction{}
@@ -89,7 +90,7 @@ func TestSetupAction_Execute(t *testing.T) {
 
 	ctx := node.Context{
 		Injector: inj,
-		Out:      ioutil.Discard,
+		Out:      io.Discard,
 	}
 
 	electionID := "deadbeef"
@@ -151,7 +152,7 @@ func TestExportInfoAction_Execute(t *testing.T) {
 	ctx := node.Context{
 		Injector: node.NewInjector(),
 		Flags:    make(node.FlagSet),
-		Out:      ioutil.Discard,
+		Out:      io.Discard,
 	}
 
 	action := exportInfoAction{}

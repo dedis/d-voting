@@ -3,7 +3,7 @@ package controller
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"testing"
 	"time"
 
@@ -172,7 +172,7 @@ func prepContext(calls *fake.Call) node.Context {
 	ctx := node.Context{
 		Injector: node.NewInjector(),
 		Flags:    make(node.FlagSet),
-		Out:      ioutil.Discard,
+		Out:      io.Discard,
 	}
 
 	events := []ordering.Event{
