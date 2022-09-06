@@ -176,7 +176,12 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 			require.True(t, ok)
 		}
 
-		closeNodes(t, nodes)
+		fmt.Println("closing nodes")
+
+		err = closeNodes(nodes)
+		require.NoError(t, err)
+
+		fmt.Println("test done")
 	}
 }
 
@@ -547,7 +552,7 @@ func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error
 	return nil
 }
 
-func closeNodes(t *testing.T, nodes []dVotingCosiDela) {
+func closeNodes(nodes []dVotingCosiDela) error {
 	wait := sync.WaitGroup{}
 	wait.Add(len(nodes))
 
@@ -558,20 +563,19 @@ func closeNodes(t *testing.T, nodes []dVotingCosiDela) {
 		}(n.(dVotingNode))
 	}
 
-	t.Log("stopping nodes...")
-
 	done := make(chan struct{})
 
 	go func() {
-		select {
-		case <-done:
-		case <-time.After(time.Second * 30):
-			t.Error("timeout while closing nodes")
-		}
+		wait.Wait()
+		close(done)
 	}()
 
-	wait.Wait()
-	close(done)
+	select {
+	case <-done:
+		return nil
+	case <-time.After(time.Second * 30):
+		return xerrors.New("failed to close: timeout")
+	}
 }
 
 func encodeID(ID string) types.ID {
