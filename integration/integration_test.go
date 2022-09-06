@@ -71,7 +71,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 
 		signer := createDVotingAccess(t, nodes, dirPath)
 
-		m := newTxManager(signer, nodes[0], time.Second*time.Duration(numNodes/2+1), numNodes*2)
+		m := newTxManager(signer, nodes[0], time.Second*time.Duration(numNodes/2+1), numNodes*4)
 
 		err = grantAccess(m, signer)
 		require.NoError(t, err)
