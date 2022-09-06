@@ -110,8 +110,9 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		err = closeElection(m, electionID, adminID)
 		require.NoError(t, err)
 
-		waitForStatus(t, types.Closed, electionFac, electionID, nodes, numNodes,
+		err = waitForStatus(types.Closed, electionFac, electionID, nodes, numNodes,
 			5*time.Second)
+		require.NoError(t, err)
 
 		// ##### SHUFFLE BALLOTS #####
 		t.Logf("initializing shuffle")
@@ -124,8 +125,9 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		err = sActor.Shuffle(electionID)
 		require.NoError(t, err)
 
-		waitForStatus(t, types.ShuffledBallots, electionFac, electionID, nodes,
+		err = waitForStatus(types.ShuffledBallots, electionFac, electionID, nodes,
 			numNodes, 2*time.Second*time.Duration(numNodes))
+		require.NoError(t, err)
 
 		// ##### SUBMIT PUBLIC SHARES #####
 		t.Logf("submitting public shares")
@@ -135,8 +137,9 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		err = actor.ComputePubshares()
 		require.NoError(t, err)
 
-		waitForStatus(t, types.PubSharesSubmitted, electionFac, electionID, nodes,
+		err = waitForStatus(types.PubSharesSubmitted, electionFac, electionID, nodes,
 			numNodes, 6*time.Second*time.Duration(numNodes))
+		require.NoError(t, err)
 
 		// ##### DECRYPT BALLOTS #####
 		t.Logf("decrypting")
@@ -147,8 +150,9 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		err = decryptBallots(m, actor, election)
 		require.NoError(t, err)
 
-		waitForStatus(t, types.ResultAvailable, electionFac, electionID, nodes,
+		err = waitForStatus(types.ResultAvailable, electionFac, electionID, nodes,
 			numNodes, 1500*time.Millisecond*time.Duration(numVotes))
+		require.NoError(t, err)
 
 		t.Logf("get vote proof")
 		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
@@ -576,31 +580,40 @@ func encodeID(ID string) types.ID {
 
 // waitForStatus polls the nodes until they all updated to the expected status
 // for the given election. An error is raised if the timeout expires.
-func waitForStatus(t *testing.T, status types.Status, electionFac types.ElectionFactory,
-	electionID []byte, nodes []dVotingCosiDela, numNodes int, timeOut time.Duration) {
-	// set up a timer to fail the test in case we never reach the status
-	timer := time.NewTimer(timeOut)
-	go func() {
-		<-timer.C
-		t.Errorf("timed out while waiting for status %d", status)
-	}()
+func waitForStatus(status types.Status, electionFac types.ElectionFactory,
+	electionID []byte, nodes []dVotingCosiDela, numNodes int, timeOut time.Duration) error {
 
-	isOK := func() bool {
+	expiration := time.Now().Add(timeOut)
+
+	isOK := func() (bool, error) {
 		for _, node := range nodes {
 			election, err := getElection(electionFac, electionID, node.GetOrdering())
-			require.NoError(t, err)
+			if err != nil {
+				return false, xerrors.Errorf("failed to get election: %v", err)
+			}
 
 			if election.Status != status {
-				return false
+				return false, nil
 			}
 		}
 
-		return true
+		return true, nil
 	}
 
-	for !isOK() {
+	for {
+		if time.Now().After(expiration) {
+			return xerrors.New("status check expired")
+		}
+
+		ok, err := isOK()
+		if err != nil {
+			return xerrors.Errorf("failed to check status: %v", err)
+		}
+
+		if ok {
+			return nil
+		}
+
 		time.Sleep(time.Millisecond * 100)
 	}
-
-	timer.Stop()
 }
