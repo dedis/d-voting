@@ -275,15 +275,15 @@ func (h *Handler) doDKG(deals, resps *list.List, out mino.Sender, from mino.Addr
 }
 
 func (h *Handler) deal(out mino.Sender) error {
-	// send my Deals to the other nodes
+	// Send my Deals to the other nodes. Note that we take an optimistic
+	// approach and don't check if the deals are correctly sent to the node. The
+	// DKG setup needs a full connectivity anyway, and for the moment everything
+	// fails if this assumption breaks.
+
 	deals, err := h.dkg.Deals()
 	if err != nil {
 		return xerrors.Errorf("failed to compute the deals: %v", err)
 	}
-
-	// use a waitgroup to send all the deals asynchronously and wait
-	var wg sync.WaitGroup
-	wg.Add(len(deals))
 
 	for i, deal := range deals {
 		dealMsg := types.NewDeal(
@@ -301,24 +301,13 @@ func (h *Handler) deal(out mino.Sender) error {
 
 		h.log.Info().Str("to", to.String()).Msg("send deal")
 
-		errs := out.Send(dealMsg, to)
-		go func(errs <-chan error, to mino.Address) {
-			err, more := <-errs
-			if more {
-				dela.Logger.Warn().Msgf("got an error while sending deal: %v", err)
-			}
-			h.log.Info().Str("to", to.String()).Msg("deal sent")
-			wg.Done()
-		}(errs, to)
+		out.Send(dealMsg, to)
 	}
-
-	wg.Wait()
 
 	return nil
 }
 
 func (h *Handler) respond(deals *list.List, out mino.Sender) {
-
 	numReceivedDeals := 0
 
 	for numReceivedDeals < len(h.startRes.participants)-1 {
