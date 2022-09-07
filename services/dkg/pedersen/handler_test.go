@@ -1,8 +1,10 @@
 package pedersen
 
 import (
+	"container/list"
 	"encoding/hex"
 	"strconv"
+	"strings"
 	"testing"
 
 	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
@@ -17,7 +19,6 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	pedersen "go.dedis.ch/kyber/v3/share/dkg/pedersen"
-	vss "go.dedis.ch/kyber/v3/share/vss/pedersen"
 )
 
 func TestHandler_Stream(t *testing.T) {
@@ -111,30 +112,16 @@ func TestHandler_Start(t *testing.T) {
 		[]mino.Address{fake.NewAddress(0)},
 		[]kyber.Point{},
 	)
-	err := h.start(start, []types.Deal{}, []*pedersen.Response{}, nil, nil, nil)
+	err := h.start(start, list.New(), list.New(), nil, nil)
 	require.EqualError(t, err, "there should be as many players as pubKey: 1 := 0")
 
 	start = types.NewStart(
 		[]mino.Address{fake.NewAddress(0), fake.NewAddress(1)},
 		[]kyber.Point{pubKey, suite.Point()},
 	)
-	receiver := fake.NewBadReceiver()
-	err = h.start(start, []types.Deal{}, []*pedersen.Response{}, nil, fake.Sender{}, receiver)
-	require.EqualError(t, err, fake.Err("failed to receive after sending deals"))
 
-	receiver = fake.NewReceiver(
-		fake.NewRecvMsg(fake.NewAddress(0), types.Deal{}),
-		fake.NewRecvMsg(fake.NewAddress(0), nil),
-	)
-	err = h.start(start, []types.Deal{}, []*pedersen.Response{}, nil, fake.Sender{}, receiver)
-	require.EqualError(t, err, "failed to handle deal from 'fake.Address[0]': failed to process deal from %!s(<nil>): schnorr: signature of invalid length 0 instead of 64")
-
-	err = h.start(start, []types.Deal{}, []*pedersen.Response{}, nil, fake.Sender{}, &fake.Receiver{})
-	require.EqualError(t, err, "unexpected message: <nil>")
-
-	// We check when there is already something in the slice if Deals
-	err = h.start(start, []types.Deal{{}}, []*pedersen.Response{}, nil, fake.NewBadSender(), &fake.Receiver{})
-	require.EqualError(t, err, "failed to certify: expected a response, got: <nil>")
+	err = h.start(start, list.New(), list.New(), nil, fake.Sender{})
+	require.NoError(t, err)
 }
 
 func TestHandler_Certify(t *testing.T) {
@@ -148,19 +135,16 @@ func TestHandler_Certify(t *testing.T) {
 		startRes: &state{},
 		dkg:      dkg,
 	}
-	receiver := fake.NewBadReceiver()
-	responses := []*pedersen.Response{{Response: &vss.Response{}}}
 
-	err = h.certify(responses, fake.Sender{}, receiver, nil)
-	require.EqualError(t, err, fake.Err("failed to receive after sending deals"))
+	responses := list.New()
 
 	dkg = getCertified(t)
 	h.dkg = dkg
-	err = h.certify(responses, fake.NewBadSender(), &fake.Receiver{}, nil)
-	require.EqualError(t, err, fake.Err("got an error while sending pub key"))
+	err = h.certify(responses, fake.NewBadSender())
+	require.NoError(t, err)
 }
 
-func TestHandler_HandleDeal(t *testing.T) {
+func TestHandler_HandleDeal_Fail(t *testing.T) {
 	privKey1 := suite.Scalar().Pick(suite.RandomStream())
 	pubKey1 := suite.Point().Mul(privKey1, nil)
 	privKey2 := suite.Scalar().Pick(suite.RandomStream())
@@ -194,9 +178,58 @@ func TestHandler_HandleDeal(t *testing.T) {
 
 	h := Handler{
 		dkg: dkg1,
+		startRes: &state{
+			participants: []mino.Address{fake.NewAddress(0)},
+		},
 	}
-	err = h.handleDeal(dealMsg, nil, []mino.Address{fake.NewAddress(0)}, fake.NewBadSender())
+	err = h.handleDeal(dealMsg, fake.NewBadSender())
 	require.EqualError(t, err, fake.Err("failed to send response to 'fake.Address[0]'"))
+
+	err = h.handleDeal(dealMsg, fake.Sender{})
+	require.True(t, strings.Contains(err.Error(), "failed to process deal"))
+}
+
+func TestHandler_HandleDeal_Ok(t *testing.T) {
+	privKey1 := suite.Scalar().Pick(suite.RandomStream())
+	pubKey1 := suite.Point().Mul(privKey1, nil)
+	privKey2 := suite.Scalar().Pick(suite.RandomStream())
+	pubKey2 := suite.Point().Mul(privKey2, nil)
+
+	dkg1, err := pedersen.NewDistKeyGenerator(suite, privKey1, []kyber.Point{pubKey1, pubKey2}, 2)
+	require.NoError(t, err)
+
+	dkg2, err := pedersen.NewDistKeyGenerator(suite, privKey2, []kyber.Point{pubKey1, pubKey2}, 2)
+	require.NoError(t, err)
+
+	deals, err := dkg2.Deals()
+	require.Len(t, deals, 1)
+	require.NoError(t, err)
+
+	var deal *pedersen.Deal
+	for _, d := range deals {
+		deal = d
+	}
+
+	dealMsg := types.NewDeal(
+		deal.Index,
+		deal.Signature,
+		types.NewEncryptedDeal(
+			deal.Deal.DHKey,
+			deal.Deal.Signature,
+			deal.Deal.Nonce,
+			deal.Deal.Cipher,
+		),
+	)
+
+	h := Handler{
+		dkg: dkg1,
+		startRes: &state{
+			participants: []mino.Address{fake.NewAddress(0)},
+		},
+	}
+
+	err = h.handleDeal(dealMsg, fake.Sender{})
+	require.NoError(t, err)
 }
 
 func TestHandlerData_MarshalJSON(t *testing.T) {
@@ -340,6 +373,7 @@ func TestHandler_HandlerDecryptRequest(t *testing.T) {
 
 }
 
+// -----------------------------------------------------------------------------
 // Utility functions
 
 func getCertified(t *testing.T) *pedersen.DistKeyGenerator {

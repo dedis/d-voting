@@ -14,6 +14,7 @@ import (
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/rs/zerolog"
 
 	"github.com/dedis/d-voting/internal/tracing"
 	"github.com/dedis/d-voting/services/dkg"
@@ -124,6 +125,8 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, pool pool.Pool, txmngr txn.Man
 	no := s.mino.WithSegment(electionID)
 	rpc := mino.MustCreateRPC(no, RPC, h, s.factory)
 
+	log := dela.Logger.With().Str("role", "DKG actor").Logger()
+
 	a := &Actor{
 		rpc:         rpc,
 		factory:     s.factory,
@@ -133,6 +136,7 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, pool pool.Pool, txmngr txn.Man
 		handler:     h,
 		electionID:  electionID,
 		status:      dkg.Status{Status: dkg.Initialized},
+		log:         log,
 	}
 
 	evoting.PromElectionDkgStatus.WithLabelValues(electionID).Set(float64(dkg.Initialized))
@@ -164,6 +168,7 @@ type Actor struct {
 	handler     *Handler
 	electionID  string
 	status      dkg.Status
+	log         zerolog.Logger
 }
 
 func (a *Actor) setErr(err error, args map[string]interface{}) {
@@ -180,6 +185,7 @@ func (a *Actor) setErr(err error, args map[string]interface{}) {
 // participating nodes. This function updates the actor's status in case of
 // error to allow asynchronous call of this function.
 func (a *Actor) Setup() (kyber.Point, error) {
+	a.log.Info().Msg("setup")
 
 	if a.handler.startRes.Done() {
 		err := xerrors.New("setup() was already called, only one call is allowed")
@@ -210,6 +216,8 @@ func (a *Actor) Setup() (kyber.Point, error) {
 	for addrIter.HasNext() {
 		addrs = append(addrs, addrIter.GetNext())
 	}
+
+	a.log.Info().Msgf("sending getkey request to %v", addrs)
 
 	// get the peer DKG pub keys
 	getPeerKey := types.NewGetPeerPubKey()
@@ -260,6 +268,8 @@ func (a *Actor) Setup() (kyber.Point, error) {
 
 	message := types.NewStart(associatedAddrs, dkgPeerPubkeys)
 
+	a.log.Info().Msgf("sending start to %s", addrs)
+
 	errs = sender.Send(message, addrs...)
 	err = <-errs
 	if err != nil {
@@ -272,7 +282,7 @@ func (a *Actor) Setup() (kyber.Point, error) {
 
 	for i := 0; i < lenAddrs; i++ {
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*200)
 		defer cancel()
 
 		addr, msg, err := receiver.Recv(ctx)
@@ -299,6 +309,8 @@ func (a *Actor) Setup() (kyber.Point, error) {
 			a.setErr(err, nil)
 			return nil, err
 		}
+
+		a.log.Info().Msgf("ok for %s", addr.String())
 	}
 
 	a.status = dkg.Status{Status: dkg.Setup}
