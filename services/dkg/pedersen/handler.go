@@ -68,7 +68,8 @@ type Handler struct {
 	context     serde.Context
 	electionFac serde.Factory
 
-	log zerolog.Logger
+	log     zerolog.Logger
+	running bool
 }
 
 // NewHandler creates a new handler
@@ -98,7 +99,8 @@ func NewHandler(me mino.Address, service ordering.Service, pool pool.Pool,
 		context:     context,
 		electionFac: electionFac,
 
-		log: log,
+		log:     log,
+		running: false,
 	}
 }
 
@@ -111,6 +113,19 @@ func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 	// this start message earlier than us, start their DKG work by sending
 	// messages to the other nodes, and then we might get their messages before
 	// the start message.
+
+	// We make sure not additional request is accepted if a setup is in
+	// progress.
+	h.Lock()
+	if !h.startRes.Done() && h.running {
+		h.Unlock()
+		return xerrors.Errorf("DKG is running")
+	}
+	if !h.startRes.Done() {
+		// This is the first setup
+		h.running = true
+	}
+	h.Unlock()
 
 	deals := list.New()
 	responses := list.New()
