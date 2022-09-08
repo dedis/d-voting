@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"strconv"
@@ -39,7 +38,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 
 	delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 
-	dirPath, err := ioutil.TempDir(os.TempDir(), "d-voting-three-votes")
+	dirPath, err := os.MkdirTemp(os.TempDir(), "d-voting-three-votes")
 	require.NoError(b, err)
 
 	defer os.RemoveAll(dirPath)

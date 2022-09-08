@@ -1,0 +1,45 @@
+name: Go Scenario Test (with proxy)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go ^1.17
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.17
+
+      - name: Install crypto util from Dela
+        run: |
+          git clone https://github.com/dedis/dela.git
+          cd dela
+          go install ./cli/crypto
+        
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+      
+      - name: Create a private key
+        run: crypto bls signer new --save private.key
+
+      - name: Install memcoin
+        run: make build
+
+      - name: Start 3 nodes
+        run: |
+          ./memcoin --config /tmp/node1 start --postinstall --promaddr :9100 --proxyaddr :9080 --proxykey adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3 --listen tcp://0.0.0.0:2001 --public //localhost:2001 --routing tree &
+          ./memcoin --config /tmp/node2 start --postinstall --promaddr :9101 --proxyaddr :9081 --proxykey adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3 --listen tcp://0.0.0.0:2002 --public //localhost:2002 --routing tree &
+          ./memcoin --config /tmp/node3 start --postinstall --promaddr :9102 --proxyaddr :9082 --proxykey adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3 --listen tcp://0.0.0.0:2003 --public //localhost:2003 --routing tree &
+
+      - name: Run the setup
+        run: ./setupnNode.sh -n 3 -d false
+
+      - name: Run the scenario Test
+        run: go test -timeout 7m -run TestScenario ./integration/...

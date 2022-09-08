@@ -3,7 +3,6 @@ package fake
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 
 	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/ordering"
@@ -112,7 +111,6 @@ func (f *Service) AddTx(tx Transaction) {
 
 	f.Status = true
 
-	fmt.Println("watch", results[0])
 	f.Channel <- ordering.Event{
 		Index:        0,
 		Transactions: results,

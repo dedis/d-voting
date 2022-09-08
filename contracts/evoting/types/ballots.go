@@ -171,8 +171,6 @@ func (b *Ballot) invalidate() {
 
 // Equal performs a loose comparison of a ballot.
 func (b *Ballot) Equal(other Ballot) bool {
-	fmt.Printf("b: %v\n", b)
-	fmt.Printf("other: %v\n", other)
 	if len(b.SelectResultIDs) != len(other.SelectResultIDs) {
 		return false
 	}

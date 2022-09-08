@@ -2,15 +2,19 @@ package pedersen
 
 import (
 	"bytes"
+	"container/list"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"io"
 	"math/rand"
 	"sync"
 	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting"
+	"github.com/rs/zerolog"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
@@ -33,8 +37,13 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// recvResponseTimeout is the maximum time a node will wait for a response
-const recvResponseTimeout = time.Second * 10
+// the receiving time out, after which we check if the DKG setup is done or not.
+// Allows to exit the loop.
+const recvTimeout = time.Second * 2
+
+// the time after which we expect new messages (deals or responses) to be
+// received.
+const retryTimeout = time.Second * 1
 
 // Handler represents the RPC executed on each node
 //
@@ -58,6 +67,9 @@ type Handler struct {
 
 	context     serde.Context
 	electionFac serde.Factory
+
+	log     zerolog.Logger
+	running bool
 }
 
 // NewHandler creates a new handler
@@ -69,6 +81,8 @@ func NewHandler(me mino.Address, service ordering.Service, pool pool.Pool,
 	pubKey := handlerData.PubKey
 	startRes := handlerData.StartRes
 	privShare := handlerData.PrivShare
+
+	log := dela.Logger.With().Str("role", "DKG").Str("address", me.String()).Logger()
 
 	return &Handler{
 		me:              me,
@@ -84,6 +98,9 @@ func NewHandler(me mino.Address, service ordering.Service, pool pool.Pool,
 
 		context:     context,
 		electionFac: electionFac,
+
+		log:     log,
+		running: false,
 	}
 }
 
@@ -97,86 +114,118 @@ func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 	// messages to the other nodes, and then we might get their messages before
 	// the start message.
 
-	deals := []types.Deal{}
-	responses := []*pedersen.Response{}
-
-mainSwitch:
-	from, msg, err := in.Recv(context.Background())
-	if err != nil {
-		return xerrors.Errorf("failed to receive: %v", err)
+	// We make sure not additional request is accepted if a setup is in
+	// progress.
+	h.Lock()
+	if !h.startRes.Done() && h.running {
+		h.Unlock()
+		return xerrors.Errorf("DKG is running")
 	}
-
-	// We expect a Start message or a decrypt request at first, but we might
-	// receive other messages in the meantime, like a Deal.
-	switch msg := msg.(type) {
-
-	case types.Start:
-		err := h.start(msg, deals, responses, from, out, in)
-		if err != nil {
-			return xerrors.Errorf("failed to start: %v", err)
-		}
-
-	case types.Deal:
-		// This is a special case where a DKG started, some nodes received the
-		// start signal and started sending their deals but we have not yet
-		// received our start signal. In this case we collect the Deals while
-		// waiting for the start signal.
-		deals = append(deals, msg)
-		goto mainSwitch
-
-	case types.Response:
-		// This is a special case where a DKG started, some nodes received the
-		// start signal and started sending their deals but we have not yet
-		// received our start signal. In this case we collect the Response while
-		// waiting for the start signal.
-		response := &pedersen.Response{
-			Index: msg.GetIndex(),
-			Response: &vss.Response{
-				SessionID: msg.GetResponse().GetSessionID(),
-				Index:     msg.GetResponse().GetIndex(),
-				Status:    msg.GetResponse().GetStatus(),
-				Signature: msg.GetResponse().GetSignature(),
-			},
-		}
-		responses = append(responses, response)
-		goto mainSwitch
-
-	case types.DecryptRequest:
-
-		if !h.startRes.Done() {
-			return xerrors.Errorf("you must first initialize DKG. Did you " +
-				"call setup() first?")
-		}
-
-		err = h.handleDecryptRequest(msg.GetElectionId())
-		if err != nil {
-			return xerrors.Errorf("could not send pubShares: %v", err)
-		}
-
-	case types.GetPeerPubKey:
-		response := types.NewGetPeerPubKeyResp(h.pubKey)
-		errs := out.Send(response, from)
-		err = <-errs
-		if err != nil {
-			return xerrors.Errorf("got an error while sending the get peer pubkey resp "+
-				"reply: %v", err)
-		}
-		goto mainSwitch
-
-	default:
-		return xerrors.Errorf("expected Start message, decrypt request or "+
-			"Deal as first message, got: %T", msg)
+	if !h.startRes.Done() {
+		// This is the first setup
+		h.running = true
 	}
+	h.Unlock()
 
-	return nil
+	deals := list.New()
+	responses := list.New()
+
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), recvTimeout)
+		from, msg, err := in.Recv(ctx)
+		cancel()
+
+		if errors.Is(err, context.DeadlineExceeded) {
+			if h.startRes.Done() {
+				return nil
+			}
+
+			continue
+		}
+
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+
+		if err != nil {
+			return xerrors.Errorf("failed to receive: %v", err)
+		}
+
+		h.log.Info().Msgf("received message from %s: %T\n", from, msg)
+
+		// We expect a Start message or a decrypt request at first, but we might
+		// receive other messages in the meantime, like a Deal.
+		switch msg := msg.(type) {
+
+		case types.Start:
+			err := h.start(msg, deals, responses, from, out)
+			if err != nil {
+				return xerrors.Errorf("failed to start: %v", err)
+			}
+
+		case types.Deal:
+			// This is a special case where a DKG started, some nodes received the
+			// start signal and started sending their deals but we have not yet
+			// received our start signal. In this case we collect the Deals while
+			// waiting for the start signal.
+			h.Lock()
+			deals.PushBack(msg)
+			h.Unlock()
+
+		case types.Response:
+			// This is a special case where a DKG started, some nodes received the
+			// start signal and started sending their deals but we have not yet
+			// received our start signal. In this case we collect the Response while
+			// waiting for the start signal.
+			response := &pedersen.Response{
+				Index: msg.GetIndex(),
+				Response: &vss.Response{
+					SessionID: msg.GetResponse().GetSessionID(),
+					Index:     msg.GetResponse().GetIndex(),
+					Status:    msg.GetResponse().GetStatus(),
+					Signature: msg.GetResponse().GetSignature(),
+				},
+			}
+
+			h.Lock()
+			responses.PushBack(response)
+			h.Unlock()
+
+		case types.DecryptRequest:
+
+			if !h.startRes.Done() {
+				return xerrors.Errorf("you must first initialize DKG. Did you " +
+					"call setup() first?")
+			}
+
+			err = h.handleDecryptRequest(msg.GetElectionId())
+			if err != nil {
+				return xerrors.Errorf("could not send pubShares: %v", err)
+			}
+
+			return nil
+
+		case types.GetPeerPubKey:
+			response := types.NewGetPeerPubKeyResp(h.pubKey)
+			errs := out.Send(response, from)
+			err = <-errs
+			if err != nil {
+				return xerrors.Errorf("got an error while sending the get peer pubkey resp "+
+					"reply: %v", err)
+			}
+
+		default:
+			return xerrors.Errorf("expected Start message, decrypt request or "+
+				"Deal as first message, got: %T", msg)
+		}
+	}
 }
 
 // start is called when the node has received its start message. Note that we
 // might have already received some deals from other nodes in the meantime. The
 // function handles the DKG creation protocol.
-func (h *Handler) start(start types.Start, receivedDeals []types.Deal,
-	receivedResps []*pedersen.Response, from mino.Address, out mino.Sender,
-	in mino.Receiver) error {
+func (h *Handler) start(start types.Start, deals, resps *list.List, from mino.Address,
+	out mino.Sender) error {
 
 	if len(start.GetAddresses()) != len(start.GetPublicKeys()) {
 		return xerrors.Errorf("there should be as many players as "+
@@ -184,163 +233,44 @@ func (h *Handler) start(start types.Start, receivedDeals []types.Deal,
 	}
 
 	// create the DKG
-	thrshold := threshold.ByzantineThreshold(len(start.GetPublicKeys()))
-	d, err := pedersen.NewDistKeyGenerator(suite, h.privKey, start.GetPublicKeys(), thrshold)
+	t := threshold.ByzantineThreshold(len(start.GetPublicKeys()))
+	d, err := pedersen.NewDistKeyGenerator(suite, h.privKey, start.GetPublicKeys(), t)
 	if err != nil {
 		return xerrors.Errorf("failed to create new DKG: %v", err)
 	}
+
 	h.dkg = d
-
-	// send my Deals to the other nodes
-	deals, err := h.dkg.Deals()
-	if err != nil {
-		return xerrors.Errorf("failed to compute the deals: %v", err)
-	}
-
-	// use a waitgroup to send all the deals asynchronously and wait
-	var wg sync.WaitGroup
-	wg.Add(len(deals))
-
-	for i, deal := range deals {
-		dealMsg := types.NewDeal(
-			deal.Index,
-			deal.Signature,
-			types.NewEncryptedDeal(
-				deal.Deal.DHKey,
-				deal.Deal.Signature,
-				deal.Deal.Nonce,
-				deal.Deal.Cipher,
-			),
-		)
-
-		errs := out.Send(dealMsg, start.GetAddresses()[i])
-		go func(errs <-chan error) {
-			err, more := <-errs
-			if more {
-				dela.Logger.Warn().Msgf("got an error while sending deal: %v", err)
-			}
-			wg.Done()
-		}(errs)
-	}
-
-	wg.Wait()
-
-	dela.Logger.Trace().Msgf("%s sent all its deals", h.me)
-
-	numReceivedDeals := 0
-
-	// Process the deals we received before the start message
-	for _, deal := range receivedDeals {
-		err = h.handleDeal(deal, from, start.GetAddresses(), out)
-		if err != nil {
-			dela.Logger.Warn().Msgf("%s failed to handle received deal "+
-				"from %s: %v", h.me, from, err)
-		}
-		numReceivedDeals++
-	}
-
-	// If there are N nodes, then N nodes first send (N-1) Deals. Then each node
-	// send a response to every other nodes. So the number of responses a node
-	// get is (N-1) * (N-1), where (N-1) should equal len(deals).
-	for numReceivedDeals < len(deals) {
-		from, msg, err := in.Recv(context.Background())
-		if err != nil {
-			return xerrors.Errorf("failed to receive after sending deals: %v", err)
-		}
-
-		switch msg := msg.(type) {
-
-		case types.Deal:
-			// Process the Deal and Send the response to all the other nodes
-			err = h.handleDeal(msg, from, start.GetAddresses(), out)
-			if err != nil {
-				dela.Logger.Warn().Msgf("%s failed to handle received deal "+
-					"from %s: %v", h.me, from, err)
-				return xerrors.Errorf("failed to handle deal from '%s': %v", from, err)
-			}
-			numReceivedDeals++
-
-		case types.Response:
-			// Process responses
-			dela.Logger.Trace().Msgf("%s received response from %s", h.me, from)
-			response := &pedersen.Response{
-				Index: msg.GetIndex(),
-				Response: &vss.Response{
-					SessionID: msg.GetResponse().GetSessionID(),
-					Index:     msg.GetResponse().GetIndex(),
-					Status:    msg.GetResponse().GetStatus(),
-					Signature: msg.GetResponse().GetSignature(),
-				},
-			}
-			receivedResps = append(receivedResps, response)
-
-		default:
-			return xerrors.Errorf("unexpected message: %T", msg)
-		}
-	}
-
 	h.startRes.SetParticipants(start.GetAddresses())
 
-	err = h.certify(receivedResps, out, in, from)
-	if err != nil {
-		return xerrors.Errorf("failed to certify: %v", err)
-	}
+	// asynchronously start the procedure. This allows for receiving messages
+	// in the main for loop in the meantime.
+	go h.doDKG(deals, resps, out, from)
 
 	return nil
 }
 
-func (h *Handler) certify(resps []*pedersen.Response, out mino.Sender,
-	in mino.Receiver, from mino.Address) error {
+// doDKG calls the subsequent DKG steps
+func (h *Handler) doDKG(deals, resps *list.List, out mino.Sender, from mino.Address) {
+	h.log.Info().Str("action", "deal").Msg("new state")
+	h.deal(out)
 
-	for _, response := range resps {
-		_, err := h.dkg.ProcessResponse(response)
-		if err != nil {
-			dela.Logger.Warn().Msgf("%s failed to process response: %v", h.me, err)
-		}
+	h.log.Info().Str("action", "respond").Msg("new state")
+	h.respond(deals, out)
+
+	h.log.Info().Str("action", "certify").Msg("new state")
+	err := h.certify(resps, out)
+	if err != nil {
+		dela.Logger.Error().Msgf("failed to certify: %v", err)
+		return
 	}
 
-	for !h.dkg.Certified() {
-		ctx, cancel := context.WithTimeout(context.Background(),
-			recvResponseTimeout)
-		defer cancel()
-
-		from, msg, err := in.Recv(ctx)
-		if err != nil {
-			return xerrors.Errorf("failed to receive after sending deals: %v", err)
-		}
-
-		switch msg := msg.(type) {
-
-		case types.Response:
-			// Processing responses
-			dela.Logger.Trace().Msgf("%s received response from %s", h.me, from)
-			response := &pedersen.Response{
-				Index: msg.GetIndex(),
-				Response: &vss.Response{
-					SessionID: msg.GetResponse().GetSessionID(),
-					Index:     msg.GetResponse().GetIndex(),
-					Status:    msg.GetResponse().GetStatus(),
-					Signature: msg.GetResponse().GetSignature(),
-				},
-			}
-
-			_, err = h.dkg.ProcessResponse(response)
-			if err != nil {
-				dela.Logger.Warn().Msgf("%s, failed to process response "+
-					"from '%s': %v", h.me, from, err)
-			}
-
-		default:
-			return xerrors.Errorf("expected a response, got: %T", msg)
-		}
-	}
-
-	dela.Logger.Trace().Msgf("%s is certified", h.me)
+	h.log.Info().Str("action", "finalize").Msg("new state")
 
 	// Send back the public DKG key
 	distKey, err := h.dkg.DistKeyShare()
 	if err != nil {
-		return xerrors.Errorf("failed to get distr key: %v", err)
+		dela.Logger.Error().Msgf("failed to get distr key: %v", err)
+		return
 	}
 
 	// Update the state before sending to acknowledgement to the
@@ -354,17 +284,95 @@ func (h *Handler) certify(resps []*pedersen.Response, out mino.Sender,
 	done := types.NewStartDone(distKey.Public())
 	err = <-out.Send(done, from)
 	if err != nil {
-		return xerrors.Errorf("got an error while sending pub key: %v", err)
+		dela.Logger.Error().Msgf("got an error while sending pub key: %v", err)
+		return
+	}
+}
+
+func (h *Handler) deal(out mino.Sender) error {
+	// Send my Deals to the other nodes. Note that we take an optimistic
+	// approach and don't check if the deals are correctly sent to the node. The
+	// DKG setup needs a full connectivity anyway, and for the moment everything
+	// fails if this assumption breaks.
+
+	deals, err := h.dkg.Deals()
+	if err != nil {
+		return xerrors.Errorf("failed to compute the deals: %v", err)
+	}
+
+	for i, deal := range deals {
+		dealMsg := types.NewDeal(
+			deal.Index,
+			deal.Signature,
+			types.NewEncryptedDeal(
+				deal.Deal.DHKey,
+				deal.Deal.Signature,
+				deal.Deal.Nonce,
+				deal.Deal.Cipher,
+			),
+		)
+
+		to := h.startRes.participants[i]
+
+		h.log.Info().Str("to", to.String()).Msg("send deal")
+
+		out.Send(dealMsg, to)
+	}
+
+	return nil
+}
+
+func (h *Handler) respond(deals *list.List, out mino.Sender) {
+	numReceivedDeals := 0
+
+	for numReceivedDeals < len(h.startRes.participants)-1 {
+		h.Lock()
+		deal := deals.Front()
+		if deal != nil {
+			deals.Remove(deal)
+		}
+		h.Unlock()
+
+		if deal == nil {
+			time.Sleep(retryTimeout)
+			continue
+		}
+
+		err := h.handleDeal(deal.Value.(types.Deal), out)
+		if err != nil {
+			h.log.Warn().Msgf("failed to handle received deal: %v", err)
+		}
+
+		numReceivedDeals++
+	}
+}
+
+func (h *Handler) certify(resps *list.List, out mino.Sender) error {
+
+	for !h.dkg.Certified() {
+		h.Lock()
+		resp := resps.Front()
+		if resp != nil {
+			resps.Remove(resp)
+		}
+		h.Unlock()
+
+		if resp == nil {
+			time.Sleep(retryTimeout)
+			continue
+		}
+
+		_, err := h.dkg.ProcessResponse(resp.Value.(*pedersen.Response))
+		if err != nil {
+			h.log.Warn().Msgf("%s failed to process response: %v", h.me, err)
+		}
 	}
 
 	return nil
 }
 
 // handleDeal process the Deal and send the responses to the other nodes.
-func (h *Handler) handleDeal(msg types.Deal, from mino.Address, addrs []mino.Address,
-	out mino.Sender) error {
-
-	dela.Logger.Trace().Msgf("%s received deal from %s", h.me, from)
+func (h *Handler) handleDeal(msg types.Deal, out mino.Sender) error {
 
 	deal := &pedersen.Deal{
 		Index: msg.GetIndex(),
@@ -379,8 +387,7 @@ func (h *Handler) handleDeal(msg types.Deal, from mino.Address, addrs []mino.Add
 
 	response, err := h.dkg.ProcessDeal(deal)
 	if err != nil {
-		return xerrors.Errorf("failed to process deal from %s: %v",
-			h.me, err)
+		return xerrors.Errorf("failed to process deal: %v", err)
 	}
 
 	resp := types.NewResponse(
@@ -393,19 +400,17 @@ func (h *Handler) handleDeal(msg types.Deal, from mino.Address, addrs []mino.Add
 		),
 	)
 
-	for _, addr := range addrs {
+	for _, addr := range h.startRes.participants {
 		if addr.Equal(h.me) {
 			continue
 		}
 
 		errs := out.Send(resp, addr)
+
 		err = <-errs
 		if err != nil {
-			dela.Logger.Warn().Msgf("got an error while sending "+
-				"response: %v", err)
 			return xerrors.Errorf("failed to send response to '%s': %v", addr, err)
 		}
-
 	}
 
 	return nil
@@ -471,7 +476,7 @@ func (h *Handler) handleDecryptRequest(electionID string) error {
 			return xerrors.Errorf("failed to make tx: %v", err)
 		}
 
-		//TODO: Define in term of size of election ? (same in shuffle)
+		// TODO: Define in term of size of election ? (same in shuffle)
 		watchTimeout := 4 + rand.Intn(election.ShuffleThreshold)
 		watchCtx, cancel := context.WithTimeout(context.Background(), time.Duration(watchTimeout)*time.Second)
 		defer cancel()

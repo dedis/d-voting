@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -267,7 +266,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		buf, _ := ioutil.ReadAll(resp.Body)
+		buf, _ := io.ReadAll(resp.Body)
 		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
 	}
 
@@ -525,7 +524,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		buf, _ := ioutil.ReadAll(resp.Body)
+		buf, _ := io.ReadAll(resp.Body)
 		return xerrors.Errorf("unexpected shuffle status: %s - %s", resp.Status, buf)
 	}
 
@@ -686,7 +685,7 @@ func castVote(electionID string, signed []byte, proxyAddr string) (string, error
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		buf, _ := ioutil.ReadAll(resp.Body)
+		buf, _ := io.ReadAll(resp.Body)
 		return "", xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
 	}
 
@@ -721,7 +720,7 @@ func updateElection(secret kyber.Scalar, proxyAddr, electionIDHex, action string
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		buf, _ := ioutil.ReadAll(resp.Body)
+		buf, _ := io.ReadAll(resp.Body)
 		return resp.StatusCode, xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
 	}
 
@@ -744,7 +743,7 @@ func initDKG(secret kyber.Scalar, proxyAddr, electionIDHex string) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		buf, _ := ioutil.ReadAll(resp.Body)
+		buf, _ := io.ReadAll(resp.Body)
 		return xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
 	}
 
@@ -772,7 +771,7 @@ func updateDKG(secret kyber.Scalar, proxyAddr, electionIDHex, action string) (in
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		buf, _ := ioutil.ReadAll(resp.Body)
+		buf, _ := io.ReadAll(resp.Body)
 		return resp.StatusCode, xerrors.Errorf("unexpected status: %s - %s", resp.Status, buf)
 	}
 

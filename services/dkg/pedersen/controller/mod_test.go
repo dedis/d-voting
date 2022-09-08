@@ -1,13 +1,14 @@
 package controller
 
 import (
-	"go.dedis.ch/dela/core/txn/signed"
-	"go.dedis.ch/dela/core/validation/simple"
-	"go.dedis.ch/dela/crypto/bls"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"go.dedis.ch/dela/core/txn/signed"
+	"go.dedis.ch/dela/core/validation/simple"
+	"go.dedis.ch/dela/crypto/bls"
 
 	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/stretchr/testify/require"
@@ -26,7 +27,7 @@ func TestMinimal_OnStart(t *testing.T) {
 	ctx := node.Context{
 		Injector: node.NewInjector(),
 		Flags:    flags,
-		Out:      ioutil.Discard,
+		Out:      io.Discard,
 	}
 
 	// Should miss mino.Mino
@@ -82,7 +83,7 @@ func TestMinimal_OnStart(t *testing.T) {
 	err = c.OnStart(nil, ctx.Injector)
 	require.EqualError(t, err, "no flags")
 
-	dir, err := ioutil.TempDir(os.TempDir(), "memcoin1")
+	dir, err := os.MkdirTemp(os.TempDir(), "memcoin1")
 	require.NoError(t, err)
 	flags.strings["config"] = dir
 

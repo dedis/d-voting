@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,7 +12,7 @@ func TestInitAction_Execute(t *testing.T) {
 	ctx := node.Context{
 		Injector: node.NewInjector(),
 		Flags:    make(node.FlagSet),
-		Out:      ioutil.Discard,
+		Out:      io.Discard,
 	}
 
 	action := InitAction{}

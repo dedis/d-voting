@@ -12,6 +12,9 @@
         <a href="https://sonarcloud.io/summary/new_code?id=dedis_d-voting">
             <img src="https://sonarcloud.io/api/project_badges/measure?project=dedis_d-voting&metric=alert_status">
         </a>
+        <a href="https://github.com/dedis/d-voting/actions/workflows/go_release.yml">
+            <img src="https://github.com/dedis/d-voting/actions/workflows/go_release.yml/badge.svg">
+        </a><br/>
         <a href="https://github.com/dedis/d-voting/graphs/contributors">
             <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/dedis/d-voting">
         </a>
@@ -28,6 +31,9 @@
         </a>
         <a href="https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml">
             <img src="https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml/badge.svg">
+        </a>
+        <a href="https://github.com/dedis/d-voting/actions/workflows/go_scenario_test.yml">
+            <img src="https://github.com/dedis/d-voting/actions/workflows/go_scenario_test.yml/badge.svg">
         </a>
         <a href="https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml">
             <img src="https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml/badge.svg">
@@ -354,7 +360,7 @@ results.
 
 # ⚙️ Setup
 
-First be sure to have Go installed (at least 1.17).
+First be sure to have Go installed (at least 1.19).
 
 Be sure to have the `crypto` utility from Dela:
 
