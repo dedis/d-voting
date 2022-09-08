@@ -354,7 +354,7 @@ results.
 
 # ⚙️ Setup
 
-First be sure to have Go installed (at least 1.17).
+First be sure to have Go installed (at least 1.19).
 
 Be sure to have the `crypto` utility from Dela:
 
