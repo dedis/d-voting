@@ -124,6 +124,9 @@ func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 	if !h.startRes.Done() {
 		// This is the first setup
 		h.running = true
+		defer func() {
+			h.running = false
+		}()
 	}
 	h.Unlock()
 
