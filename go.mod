@@ -9,7 +9,7 @@ require (
 	github.com/rs/zerolog v1.19.0
 	github.com/stretchr/testify v1.7.0
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
-	go.dedis.ch/dela v0.0.0-20220727144418-4a9466c2c294
+	go.dedis.ch/dela v0.0.0-20220909115533-ad4f281a552f
 	go.dedis.ch/dela-apps v0.0.0-20211019120455-a0db752a0ba0
 	go.dedis.ch/kyber/v3 v3.1.0-alpha
 	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f
