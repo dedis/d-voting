@@ -4,6 +4,8 @@
 # an evoting system. User can pass number of nodes, window attach mode useful for autotest,
 # and docker usage.
 
+set -e
+
 # by default run on local
 DOCKER=false
 ATTACH=true
@@ -68,11 +70,10 @@ tmux new-session -d -s $s
 rm -rf ./log/log
 mkdir -p ./log/log
 
-
-
+crypto bls signer new --save private.key --force
 
 if [ "$DOCKER" == false ]; then
-    make build
+    go build -o memcoin ./cli/memcoin
 else
     # Clean created containers and tmp dir
     if [[ $(docker ps -a -q --filter ancestor=node) ]]; then
@@ -97,7 +98,16 @@ tmux new-window -t $s
 window=$from
 
 if [ "$DOCKER" == false ]; then
-    tmux send-keys -t $s:$window "PROXY_LOG=info LLVL=info ./memcoin --config /tmp/node$from start --postinstall --promaddr :$((9099 + $from)) --proxyaddr :$((9079 + $from)) --proxykey $pk --listen tcp://0.0.0.0:$((2000 + $from)) --public //localhost:$((2000 + $from))| tee ./log/log/node$from.log" C-m
+    tmux send-keys -t $s:$window "PROXY_LOG=info LLVL=info ./memcoin \
+      --config /tmp/node$from \
+      start \
+      --postinstall \
+      --promaddr :$((9099 + $from)) \
+      --proxyaddr :$((9079 + $from)) \
+      --proxykey $pk \
+      --listen tcp://0.0.0.0:$((2000 + $from)) \
+      --routing tree \
+      --public //localhost:$((2000 + $from))| tee ./log/log/node$from.log" C-m
 else
     docker run -d -it --env LLVL=info --name node$from --network evoting-net -v "$(pwd)"/nodedata:/tmp  --publish $(( 9079+$from )):9080 node
     tmux send-keys -t $s:$window "docker exec node$from memcoin --config /tmp/node$from start --postinstall \
