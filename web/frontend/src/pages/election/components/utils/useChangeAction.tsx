@@ -389,8 +389,8 @@ const useChangeAction = (
 
       // TODO: can be modified such that if the majority of the node are
       // initialized than the election status can still be set to initialized
-      const promises = Array.from(nodeProxyAddresses.values()).map((proxy) => {
-        if (proxy !== '') {
+      const promises = Array.from(nodeProxyAddresses).map(([node, proxy]) => {
+        if (proxy !== '' && DKGStatuses.get(node) === NodeStatus.NotInitialized) {
           return initialize(proxy);
         }
         return undefined;
