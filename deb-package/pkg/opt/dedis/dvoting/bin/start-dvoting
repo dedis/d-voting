@@ -3,8 +3,18 @@
 sleep 5
 
 source /opt/dedis/dvoting/config/config.env
-source /etc/dedis/dvoting/network.env
+source /etc/dedis/dvoting/config.env
 
 echo "Starting ${dela_bin} on ${dela_listen} using folder ${dela_data} ..."
 
-LLVL=info ${dela_bin} --config ${dela_data} start --postinstall --promaddr ${prometheus_addr} --proxyaddr ${proxy_addr} --listen ${dela_listen} --public ${dela_public} --proxykey ${dela_proxy_pk}
+${dela_bin} \
+    --config ${dela_data} \
+    start \
+    --postinstall \
+    --promaddr ${prometheus_addr} \
+    --proxyaddr ${proxy_addr} \
+    --listen ${dela_listen} \
+    --public ${dela_public} \
+    --proxykey ${dela_proxy_pk} \
+    --certKey ${dela_cert_key} \
+    --certChain ${dela_cert_chain}
