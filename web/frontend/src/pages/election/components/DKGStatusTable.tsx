@@ -1,7 +1,8 @@
 import { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ID } from 'types/configuration';
-import { NodeStatus } from 'types/node';
+import { OngoingAction } from 'types/election';
+import { InternalDKGInfo, NodeStatus } from 'types/node';
 import DKGStatusRow from './DKGStatusRow';
 
 type DKGStatusTableProps = {
@@ -15,6 +16,11 @@ type DKGStatusTableProps = {
   setDKGStatuses: (DKFStatuses: Map<string, NodeStatus>) => void;
   setTextModalError: (error: string) => void;
   setShowModalError: (show: boolean) => void;
+  // notify to start initialization
+  ongoingAction: OngoingAction;
+  // notify the parent of the new state
+  notifyDKGState: (node: string, info: InternalDKGInfo) => void;
+  nodeToSetup: [string, string];
 };
 
 const DKGStatusTable: FC<DKGStatusTableProps> = ({
@@ -28,6 +34,9 @@ const DKGStatusTable: FC<DKGStatusTableProps> = ({
   setDKGStatuses,
   setTextModalError,
   setShowModalError,
+  ongoingAction,
+  notifyDKGState,
+  nodeToSetup,
 }) => {
   const { t } = useTranslation();
 
@@ -61,6 +70,9 @@ const DKGStatusTable: FC<DKGStatusTableProps> = ({
                   setDKGStatuses={setDKGStatuses}
                   setTextModalError={setTextModalError}
                   setShowModalError={setShowModalError}
+                  ongoingAction={ongoingAction}
+                  notifyDKGState={notifyDKGState}
+                  nodeToSetup={nodeToSetup}
                 />
               ))}
           </tbody>

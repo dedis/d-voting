@@ -9,7 +9,7 @@ import Modal from 'components/modal/Modal';
 import StatusTimeline from './components/StatusTimeline';
 import Loading from 'pages/Loading';
 import Action from './components/Action';
-import { NodeStatus } from 'types/node';
+import { InternalDKGInfo, NodeStatus } from 'types/node';
 import useGetResults from './components/utils/useGetResults';
 import UserIDTable from './components/UserIDTable';
 import DKGStatusTable from './components/DKGStatusTable';
@@ -42,7 +42,7 @@ const ElectionShow: FC = () => {
 
   const [nodeProxyAddresses, setNodeProxyAddresses] = useState<Map<string, string>>(new Map());
   const [nodeToSetup, setNodeToSetup] = useState<[string, string]>(null);
-  // The status of each node
+  // The status of each node. Key is the node's address.
   const [DKGStatuses, setDKGStatuses] = useState<Map<string, NodeStatus>>(new Map());
 
   const [nodeLoading, setNodeLoading] = useState<Map<string, boolean>>(null);
@@ -50,6 +50,25 @@ const ElectionShow: FC = () => {
 
   const ongoingItem = 'ongoingAction' + electionID;
   const nodeToSetupItem = 'nodeToSetup' + electionID;
+
+  const notifyDKGState = (node: string, info: InternalDKGInfo) => {
+    console.log('DKG node updated:', info);
+    switch (info.getStatus()) {
+      case NodeStatus.Failed:
+        console.log('DKG node failed');
+        setOngoingAction(OngoingAction.None);
+        break;
+      case NodeStatus.Setup:
+        setOngoingAction(OngoingAction.None);
+        setStatus(Status.Setup);
+        break;
+    }
+
+    const newDKGStatuses = new Map(DKGStatuses);
+    newDKGStatuses.set(node, info.getStatus());
+    setDKGStatuses(newDKGStatuses);
+    console.log('dkg statuses:', DKGStatuses);
+  };
 
   // Fetch result when available after a status change
   useEffect(() => {
@@ -76,6 +95,7 @@ const ElectionShow: FC = () => {
     const storedOngoingAction = JSON.parse(window.localStorage.getItem(ongoingItem));
 
     if (storedOngoingAction !== null) {
+      console.log('stored ongoing action:', storedOngoingAction);
       setOngoingAction(storedOngoingAction);
     }
 
@@ -141,14 +161,20 @@ const ElectionShow: FC = () => {
 
         // TODO: can be modified such that if the majority of the node are
         // initialized than the election status can still be set to initialized
-        if (statuses.includes(NodeStatus.NotInitialized)) return;
+        if (statuses.includes(NodeStatus.NotInitialized)) {
+          setOngoingAction(OngoingAction.None);
+          setStatus(Status.Initial);
+          return;
+        }
 
         if (statuses.includes(NodeStatus.Setup)) {
+          setOngoingAction(OngoingAction.None);
           setStatus(Status.Setup);
           return;
         }
 
         if (statuses.includes(NodeStatus.Unreachable)) return;
+        if (statuses.includes(NodeStatus.Failed)) return;
 
         setStatus(Status.Initialized);
 
@@ -220,8 +246,6 @@ const ElectionShow: FC = () => {
                   setOngoingAction={setOngoingAction}
                   nodeToSetup={nodeToSetup}
                   setNodeToSetup={setNodeToSetup}
-                  DKGStatuses={DKGStatuses}
-                  setDKGStatuses={setDKGStatuses}
                 />
               )}
             </div>
@@ -248,6 +272,9 @@ const ElectionShow: FC = () => {
                 setDKGStatuses={setDKGStatuses}
                 setTextModalError={setTextModalError}
                 setShowModalError={setShowModalError}
+                ongoingAction={ongoingAction}
+                notifyDKGState={notifyDKGState}
+                nodeToSetup={nodeToSetup}
               />
             </div>
           </div>

@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next';
 import * as endpoints from 'components/utils/Endpoints';
 import { ID } from 'types/configuration';
 import { Action, OngoingAction, Status } from 'types/election';
-import { pollDKG, pollElection } from './PollStatus';
-import { NodeStatus } from 'types/node';
+import { pollElection } from './PollStatus';
 import { AuthContext, FlashContext, FlashLevel, ProxyContext } from 'index';
 import { useNavigate } from 'react-router';
 import { ROUTE_ELECTION_INDEX } from 'Routes';
@@ -24,7 +23,6 @@ import OpenButton from '../ActionButtons/OpenButton';
 import ResultButton from '../ActionButtons/ResultButton';
 import ShuffleButton from '../ActionButtons/ShuffleButton';
 import VoteButton from '../ActionButtons/VoteButton';
-import NoActionAvailable from '../ActionButtons/NoActionAvailable';
 import handleLogin from 'pages/session/HandleLogin';
 import { UserRole } from 'types/userRole';
 
@@ -40,12 +38,9 @@ const useChangeAction = (
   ongoingAction: OngoingAction,
   setOngoingAction: (action: OngoingAction) => void,
   nodeToSetup: [string, string],
-  setNodeToSetup: ([node, proxy]: [string, string]) => void,
-  DKGStatuses: Map<string, NodeStatus>,
-  setDKGStatuses: (dkgStatuses: Map<string, NodeStatus>) => void
+  setNodeToSetup: ([node, proxy]: [string, string]) => void
 ) => {
   const { t } = useTranslation();
-  const [isInitializing, setIsInitializing] = useState(false);
   const [, setIsPosting] = useState(false);
 
   const [showModalProxySetup, setShowModalProxySetup] = useState(false);
@@ -101,7 +96,6 @@ const useChangeAction = (
     <ChooseProxyModal
       roster={roster}
       showModal={showModalProxySetup}
-      DKGStatuses={DKGStatuses}
       nodeProxyAddresses={nodeProxyAddresses}
       nodeToSetup={nodeToSetup}
       setNodeToSetup={setNodeToSetup}
@@ -121,20 +115,6 @@ const useChangeAction = (
       },
     };
     return sendFetchRequest(endpoint, req, setIsPosting);
-  };
-
-  const initializeNode = async (proxy: string) => {
-    const request = {
-      method: 'POST',
-      body: JSON.stringify({
-        ElectionID: electionID,
-        Proxy: proxy,
-      }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    };
-    return sendFetchRequest(endpoints.dkgActors, request, setIsPosting);
   };
 
   const onFullFilled = (nextStatus: Status) => {
@@ -185,80 +165,16 @@ const useChangeAction = (
       });
   };
 
-  const pollDKGStatus = (proxy: string, statusToMatch: NodeStatus) => {
-    const request = {
-      method: 'GET',
-      signal: signal,
-    };
-
-    const match = (s: NodeStatus) => s === statusToMatch;
-
-    return pollDKG(
-      endpoints.getDKGActors(proxy, electionID),
-      request,
-      match,
-      POLLING_INTERVAL,
-      MAX_ATTEMPTS
-    );
-  };
-
   // Start to poll when there is an ongoingAction
   useEffect(() => {
     // use an abortController to stop polling when the component is unmounted
 
     switch (ongoingAction) {
       case OngoingAction.Initializing:
-        if (nodeProxyAddresses !== null) {
-          // TODO: can be modified such that if the majority of the node are
-          // initialized than the election status can still be set to initialized
-          const promises = Array.from(nodeProxyAddresses.values()).map((proxy) => {
-            if (proxy !== '') {
-              return pollDKGStatus(proxy, NodeStatus.Initialized);
-            }
-            return undefined;
-          });
-
-          Promise.all(promises).then(
-            () => {
-              onFullFilled(Status.Initialized);
-              const newDKGStatuses = new Map(DKGStatuses);
-              nodeProxyAddresses.forEach((proxy, node) => {
-                if (proxy !== '') {
-                  newDKGStatuses.set(node, NodeStatus.Initialized);
-                }
-              });
-              setDKGStatuses(newDKGStatuses);
-            },
-            (reason: any) => onRejected(reason, Status.Initial)
-          );
-        }
+        // Initializing is handled by each row of the DKG table
         break;
       case OngoingAction.SettingUp:
-        if (nodeToSetup !== null) {
-          pollDKGStatus(nodeToSetup[1], NodeStatus.Setup)
-            .then(
-              () => {
-                onFullFilled(Status.Setup);
-                const newDKGStatuses = new Map(DKGStatuses);
-                newDKGStatuses.set(nodeToSetup[0], NodeStatus.Setup);
-                setDKGStatuses(newDKGStatuses);
-              },
-              (reason: any) => {
-                onRejected(reason, Status.Initialized);
-
-                if (!(reason instanceof DOMException)) {
-                  const newDKGStatuses = new Map(DKGStatuses);
-                  newDKGStatuses.set(nodeToSetup[0], NodeStatus.Failed);
-                  setDKGStatuses(newDKGStatuses);
-                }
-              }
-            )
-            .catch((e) => {
-              setStatus(Status.Initialized);
-              setGetError(e.message);
-              setShowModalError(true);
-            });
-        }
+        // Initializing is handled by each row of the DKG table
         break;
       case OngoingAction.Opening:
         pollElectionStatus(Status.Setup, Status.Open);
@@ -376,34 +292,6 @@ const useChangeAction = (
   }, [userConfirmedDeleting]);
 
   useEffect(() => {
-    if (isInitializing) {
-      const initialize = async (proxy: string) => {
-        setOngoingAction(OngoingAction.Initializing);
-        const initSuccess = await initializeNode(proxy);
-
-        if (!initSuccess) {
-          setStatus(Status.Initial);
-          setOngoingAction(OngoingAction.None);
-        }
-      };
-
-      // TODO: can be modified such that if the majority of the node are
-      // initialized than the election status can still be set to initialized
-      const promises = Array.from(nodeProxyAddresses).map(([node, proxy]) => {
-        if (proxy !== '' && DKGStatuses.get(node) === NodeStatus.NotInitialized) {
-          return initialize(proxy);
-        }
-        return undefined;
-      });
-
-      Promise.all(promises).then(() => {
-        setIsInitializing(false);
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isInitializing]);
-
-  useEffect(() => {
     if (userConfirmedProxySetup) {
       const setup = async () => {
         setOngoingAction(OngoingAction.SettingUp);
@@ -438,7 +326,7 @@ const useChangeAction = (
   }, [userConfirmedProxySetup]);
 
   const handleInitialize = () => {
-    setIsInitializing(true);
+    setOngoingAction(OngoingAction.Initializing);
   };
 
   const handleSetup = () => {
@@ -505,18 +393,6 @@ const useChangeAction = (
   };
 
   const getAction = () => {
-    // Check that more than 2/3 of the nodes are working, if not actions are
-    // disabled, since consensus cannot be achieved
-    const consensus = 2 / 3;
-
-    if (
-      Array.from(DKGStatuses.values()).filter((nodeStatus) => nodeStatus !== NodeStatus.Unreachable)
-        .length <=
-      consensus * roster.length
-    ) {
-      return <NoActionAvailable />;
-    }
-
     // Except for seeing the results, all actions at least require the users
     // to be logged in
     if (!isLogged && status !== Status.ResultAvailable) {

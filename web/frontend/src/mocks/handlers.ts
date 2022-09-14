@@ -63,7 +63,7 @@ export const handlers = [
       ? {
           lastname: 'Bobster',
           firstname: 'Alice',
-          role: UserRole.Voter,
+          role: UserRole.Admin,
           sciper: userId,
         }
       : {};
