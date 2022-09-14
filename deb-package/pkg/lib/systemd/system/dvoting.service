@@ -5,6 +5,10 @@ After=network.target
 [Service]
 User=dvoting
 
+# Enable gRPC debugging
+#Environment=GRPC_GO_LOG_SEVERITY_LEVEL=info
+#Environment=GRPC_GO_LOG_VERBOSITY_LEVEL=10
+
 ExecStartPre=/bin/rm -f /var/opt/dedis/dvoting/data/dela/daemon.sock
 ExecStart=/opt/dedis/dvoting/bin/start-dvoting
 
