@@ -49,6 +49,34 @@ const DKGStatus: FC<DKGStatusProps> = ({ status }) => {
             <div>{t('failed')}</div>
           </div>
         );
+      case NodeStatus.Dealing:
+        return (
+          <div className="flex items-center">
+            <div className="block h-4 w-4 bg-blue-500 rounded-full mr-2"></div>
+            <div>{t('dealing')}</div>
+          </div>
+        );
+      case NodeStatus.Responding:
+        return (
+          <div className="flex items-center">
+            <div className="block h-4 w-4 bg-blue-500 rounded-full mr-2"></div>
+            <div>{t('responding')}</div>
+          </div>
+        );
+      case NodeStatus.Certifying:
+        return (
+          <div className="flex items-center">
+            <div className="block h-4 w-4 bg-blue-500 rounded-full mr-2"></div>
+            <div>{t('certifying')}</div>
+          </div>
+        );
+      case NodeStatus.Certified:
+        return (
+          <div className="flex items-center">
+            <div className="block h-4 w-4 bg-green-500 rounded-full mr-2"></div>
+            <div>{t('certified')}</div>
+          </div>
+        );
       default:
         return null;
     }

@@ -9,6 +9,14 @@ export const enum NodeStatus {
   Setup,
   // Failed is when the actor failed to set up
   Failed,
+  // Dealing is when the actor is sending its deals
+  Dealing,
+  // Responding is when the actor is sending its responses on the received deals
+  Responding,
+  // Certifying is when the actor is validating its deals based on the responses
+  Certifying,
+  // Certified is when the actor has been certified
+  Certified,
 }
 
 interface DKGInfo {

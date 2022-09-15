@@ -12,33 +12,29 @@ import { ExclamationCircleIcon } from '@heroicons/react/outline';
 import { pollDKG } from './utils/PollStatus';
 
 const POLLING_INTERVAL = 1000;
-const MAX_ATTEMPTS = 10;
+const MAX_ATTEMPTS = 20;
 
 type DKGStatusRowProps = {
   electionId: ID;
   node: string;
   index: number;
-  loading: Map<string, boolean>;
-  setLoading: (loading: Map<string, boolean>) => void;
   nodeProxyAddresses: Map<string, string>;
   setNodeProxyAddresses: (nodeProxy: Map<string, string>) => void;
-  DKGStatuses: Map<string, NodeStatus>;
-  setDKGStatuses: (DKFStatuses: Map<string, NodeStatus>) => void;
   setTextModalError: (error: string) => void;
   setShowModalError: (show: boolean) => void;
   // notify to start initialization
   ongoingAction: OngoingAction;
   // notify the parent of the new state
   notifyDKGState: (node: string, info: InternalDKGInfo) => void;
+  // contains the node/proxy address of the node to setup
   nodeToSetup: [string, string];
+  notifyLoading: (node: string, loading: boolean) => void;
 };
 
 const DKGStatusRow: FC<DKGStatusRowProps> = ({
   electionId,
   node, // node is the node address, not the proxy
   index,
-  loading,
-  setLoading,
   nodeProxyAddresses,
   setNodeProxyAddresses,
   setTextModalError,
@@ -46,6 +42,7 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
   ongoingAction,
   notifyDKGState,
   nodeToSetup,
+  notifyLoading,
 }) => {
   const { t } = useTranslation();
   const [proxy, setProxy] = useState(null);
@@ -73,6 +70,13 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
+  // Notify the parent when we are loading or not
+  useEffect(() => {
+    notifyLoading(node, DKGLoading);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [DKGLoading]);
+
+  // send the initialization request
   const initializeNode = async () => {
     const req = {
       method: 'POST',
@@ -92,67 +96,71 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
     }
   };
 
-  // Signal the start of DKG initialization
+  // Initialize the node if the initialization is ongoing and we are in a
+  // legitimate status.
   useEffect(() => {
     if (
       ongoingAction === OngoingAction.Initializing &&
       (status === NodeStatus.NotInitialized || status === NodeStatus.Failed)
     ) {
-      // TODO: can be modified such that if the majority of the node are
-      // initialized than the election status can still be set to initialized
-
       setDKGLoading(true);
 
       initializeNode()
         .then(() => {
           setStatus(NodeStatus.Initialized);
         })
-        .catch((e) => {
+        .catch((e: Error) => {
           setInfo(e.toString());
           setStatus(NodeStatus.Failed);
+        })
+        .finally(() => {
+          setDKGLoading(false);
         });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ongoingAction]);
 
-  const pollDKGStatus = (statusToMatch: NodeStatus) => {
+  const pollDKGStatus = (statusToMatch: NodeStatus): Promise<DKGInfo> => {
     const req = {
       method: 'GET',
       signal: signal,
     };
 
     const match = (s: NodeStatus) => s === statusToMatch;
+    const statusUpdate = (s: NodeStatus) => setStatus(s);
 
     return pollDKG(
       endpoints.getDKGActors(proxy, electionId),
       req,
       match,
       POLLING_INTERVAL,
-      MAX_ATTEMPTS
+      MAX_ATTEMPTS,
+      statusUpdate
     );
   };
 
+  // Action taken when the setting up is triggered.
   useEffect(() => {
-    if (
-      ongoingAction === OngoingAction.SettingUp &&
-      nodeToSetup !== null &&
-      nodeToSetup[0] === node
-    ) {
-      setDKGLoading(true);
-      pollDKGStatus(NodeStatus.Setup)
-        .then(
-          () => {
-            setStatus(NodeStatus.Setup);
-          },
-          (reason: any) => {
-            setStatus(NodeStatus.Failed);
-            setInfo(reason.toString());
-          }
-        )
-        .catch((e) => {
-          console.log('error:', e);
-        });
+    if (ongoingAction !== OngoingAction.SettingUp || nodeToSetup === null) {
+      return;
     }
+
+    setDKGLoading(true);
+
+    let expectedStatus = NodeStatus.Certified;
+    if (nodeToSetup[0] === node) {
+      expectedStatus = NodeStatus.Setup;
+    }
+
+    pollDKGStatus(expectedStatus)
+      .then(
+        () => {},
+        (e: Error) => {
+          setStatus(NodeStatus.Failed);
+          setInfo(e.toString());
+        }
+      )
+      .finally(() => setDKGLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ongoingAction]);
 
@@ -241,7 +249,7 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
           }
 
           let dataReceived = await response.json();
-          console.log('data received:', dataReceived);
+
           return InternalDKGInfo.fromInfo(dataReceived as DKGInfo);
         } catch (e) {
           let errorMessage = t('errorRetrievingNodes');
@@ -265,22 +273,11 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
       fetchDKGStatus().then((internalStatus) => {
         setStatus(internalStatus.getStatus());
         setInfo(internalStatus.getError());
+        setDKGLoading(false);
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proxy, status]);
-
-  useEffect(() => {
-    // UseEffect prevents the race condition on setDKGStatuses
-    if (status !== null) {
-      setDKGLoading(false);
-
-      const newLoading = new Map(loading);
-      newLoading.set(node, false);
-      setLoading(newLoading);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status]);
 
   return (
     <tr key={node} className="bg-white border-b hover:bg-gray-50">
@@ -288,7 +285,8 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
         {t('node')} {index} ({node})
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 flex flex-row">
-        {!DKGLoading ? <DKGStatus status={status} /> : <IndigoSpinnerIcon />}
+        {DKGLoading && <IndigoSpinnerIcon />}
+        <DKGStatus status={status} />
         <Modal
           textModal={info}
           buttonRightText="close"

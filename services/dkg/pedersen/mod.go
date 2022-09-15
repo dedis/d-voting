@@ -118,9 +118,11 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, pool pool.Pool, txmngr txn.Man
 
 	ctx := jsonserde.NewContext()
 
+	status := &dkg.Status{Status: dkg.Initialized}
+
 	// link the actor to an RPC by the election ID
 	h := NewHandler(s.mino.GetAddress(), s.service, pool, txmngr, s.signer,
-		handlerData, ctx, s.electionFac)
+		handlerData, ctx, s.electionFac, status)
 
 	no := s.mino.WithSegment(electionID)
 	rpc := mino.MustCreateRPC(no, RPC, h, s.factory)
@@ -135,7 +137,7 @@ func (s *Pedersen) NewActor(electionIDBuf []byte, pool pool.Pool, txmngr txn.Man
 		electionFac: s.electionFac,
 		handler:     h,
 		electionID:  electionID,
-		status:      dkg.Status{Status: dkg.Initialized},
+		status:      status,
 		log:         log,
 	}
 
@@ -167,12 +169,12 @@ type Actor struct {
 	electionFac serde.Factory
 	handler     *Handler
 	electionID  string
-	status      dkg.Status
+	status      *dkg.Status
 	log         zerolog.Logger
 }
 
 func (a *Actor) setErr(err error, args map[string]interface{}) {
-	a.status = dkg.Status{
+	*a.status = dkg.Status{
 		Status: dkg.Failed,
 		Err:    err,
 		Args:   args,
@@ -313,7 +315,7 @@ func (a *Actor) Setup() (kyber.Point, error) {
 		a.log.Info().Msgf("ok for %s", addr.String())
 	}
 
-	a.status = dkg.Status{Status: dkg.Setup}
+	*a.status = dkg.Status{Status: dkg.Setup}
 	evoting.PromElectionDkgStatus.WithLabelValues(a.electionID).Set(float64(dkg.Setup))
 
 	return dkgPubKeys[0], nil
@@ -397,7 +399,7 @@ func (a *Actor) MarshalJSON() ([]byte, error) {
 
 // Status implements dkg.Actor
 func (a *Actor) Status() dkg.Status {
-	return a.status
+	return *a.status
 }
 
 func electionExists(service ordering.Service, electionIDBuf []byte) (ordering.Proof, bool) {

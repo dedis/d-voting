@@ -51,6 +51,7 @@ const ElectionShow: FC = () => {
   const ongoingItem = 'ongoingAction' + electionID;
   const nodeToSetupItem = 'nodeToSetup' + electionID;
 
+  // called by a DKG row
   const notifyDKGState = (node: string, info: InternalDKGInfo) => {
     console.log('DKG node updated:', info);
     switch (info.getStatus()) {
@@ -68,6 +69,13 @@ const ElectionShow: FC = () => {
     newDKGStatuses.set(node, info.getStatus());
     setDKGStatuses(newDKGStatuses);
     console.log('dkg statuses:', DKGStatuses);
+  };
+
+  // called by a DKG row
+  const notifyLoading = (node: string, l: boolean) => {
+    const newLoading = new Map(nodeLoading);
+    newLoading.set(node, l);
+    setNodeLoading(newLoading);
   };
 
   // Fetch result when available after a status change
@@ -264,17 +272,14 @@ const ElectionShow: FC = () => {
               <DKGStatusTable
                 roster={roster}
                 electionId={electionId}
-                loading={nodeLoading}
-                setLoading={setNodeLoading}
                 nodeProxyAddresses={nodeProxyAddresses}
                 setNodeProxyAddresses={setNodeProxyAddresses}
-                DKGStatuses={DKGStatuses}
-                setDKGStatuses={setDKGStatuses}
                 setTextModalError={setTextModalError}
                 setShowModalError={setShowModalError}
                 ongoingAction={ongoingAction}
                 notifyDKGState={notifyDKGState}
                 nodeToSetup={nodeToSetup}
+                notifyLoading={notifyLoading}
               />
             </div>
           </div>
