@@ -263,16 +263,60 @@ export const handlers = [
         const newDKGStatus = new Map(mockDKG.get(ElectionID as string));
         let node = '';
 
-        mockElections.get(ElectionID as string).Roster.forEach((n) => {
+        const roster = mockElections.get(ElectionID as string).Roster;
+
+        const INCREMENT = 1200;
+
+        roster.forEach((n) => {
           const p = mockNodeProxyAddresses.get(n);
           if (p === body.Proxy) {
             node = n;
           }
         });
 
-        newDKGStatus.set(node, NodeStatus.Setup);
+        const setup = () => {
+          newDKGStatus.set(node, NodeStatus.Setup);
+          mockDKG.set(ElectionID as string, newDKGStatus);
+        };
 
-        setTimeout(() => mockDKG.set(ElectionID as string, newDKGStatus), SETUP_TIMER);
+        const certified = () => {
+          roster.forEach((n) => {
+            newDKGStatus.set(n, NodeStatus.Certified);
+          });
+          mockDKG.set(ElectionID as string, newDKGStatus);
+
+          setTimeout(setup, INCREMENT);
+        };
+
+        const certifying = () => {
+          roster.forEach((n) => {
+            newDKGStatus.set(n, NodeStatus.Certifying);
+          });
+          mockDKG.set(ElectionID as string, newDKGStatus);
+
+          setTimeout(certified, INCREMENT);
+        };
+
+        const responding = () => {
+          roster.forEach((n) => {
+            newDKGStatus.set(n, NodeStatus.Responding);
+          });
+          mockDKG.set(ElectionID as string, newDKGStatus);
+
+          setTimeout(certifying, INCREMENT);
+        };
+
+        const dealing = () => {
+          roster.forEach((n) => {
+            newDKGStatus.set(n, NodeStatus.Dealing);
+          });
+          mockDKG.set(ElectionID as string, newDKGStatus);
+
+          setTimeout(responding, INCREMENT);
+        };
+
+        setTimeout(dealing, INCREMENT);
+
         break;
       case Action.BeginDecryption:
         setTimeout(
