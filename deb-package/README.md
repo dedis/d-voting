@@ -34,11 +34,15 @@ The resulting .deb can be found in the `dist/` folder.
 
 ### Network config
 
-Ensure that the public address is correct. For instance, in `network.env`, replace:
+Ensure that the public address is correct. For instance, in
+`/etc/dedis/dvoting/config.env`, replace:
+
 ```sh
 export dela_public="//localhost:9000"
 ```
+
 with the node's public address:
+
 ```sh
 export dela_public="//172.16.253.150:9000"
 ```
