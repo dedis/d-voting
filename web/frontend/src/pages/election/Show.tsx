@@ -53,10 +53,8 @@ const ElectionShow: FC = () => {
 
   // called by a DKG row
   const notifyDKGState = (node: string, info: InternalDKGInfo) => {
-    console.log('DKG node updated:', info);
     switch (info.getStatus()) {
       case NodeStatus.Failed:
-        console.log('DKG node failed');
         setOngoingAction(OngoingAction.None);
         break;
       case NodeStatus.Setup:
@@ -68,7 +66,6 @@ const ElectionShow: FC = () => {
     const newDKGStatuses = new Map(DKGStatuses);
     newDKGStatuses.set(node, info.getStatus());
     setDKGStatuses(newDKGStatuses);
-    console.log('dkg statuses:', DKGStatuses);
   };
 
   // called by a DKG row
@@ -103,7 +100,6 @@ const ElectionShow: FC = () => {
     const storedOngoingAction = JSON.parse(window.localStorage.getItem(ongoingItem));
 
     if (storedOngoingAction !== null) {
-      console.log('stored ongoing action:', storedOngoingAction);
       setOngoingAction(storedOngoingAction);
     }
 
@@ -152,10 +148,14 @@ const ElectionShow: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roster]);
 
+  // Keep the "DKGLoading" state according to "nodeLoading". This state tells if
+  // one of the element on the map is true.
   useEffect(() => {
     if (nodeLoading !== null) {
       if (!Array.from(nodeLoading.values()).includes(true)) {
         setDKGLoading(false);
+      } else {
+        setDKGLoading(true);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -166,23 +166,17 @@ const ElectionShow: FC = () => {
     if (status === Status.Initial) {
       if (DKGStatuses !== null && !DKGLoading) {
         const statuses = Array.from(DKGStatuses.values());
+        setOngoingAction(OngoingAction.None);
 
         // TODO: can be modified such that if the majority of the node are
         // initialized than the election status can still be set to initialized
-        if (statuses.includes(NodeStatus.NotInitialized)) {
-          setOngoingAction(OngoingAction.None);
-          setStatus(Status.Initial);
+        if (
+          statuses.includes(NodeStatus.NotInitialized) ||
+          statuses.includes(NodeStatus.Unreachable) ||
+          statuses.includes(NodeStatus.Failed)
+        ) {
           return;
         }
-
-        if (statuses.includes(NodeStatus.Setup)) {
-          setOngoingAction(OngoingAction.None);
-          setStatus(Status.Setup);
-          return;
-        }
-
-        if (statuses.includes(NodeStatus.Unreachable)) return;
-        if (statuses.includes(NodeStatus.Failed)) return;
 
         setStatus(Status.Initialized);
 

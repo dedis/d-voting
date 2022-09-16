@@ -101,12 +101,15 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
   useEffect(() => {
     if (
       ongoingAction === OngoingAction.Initializing &&
-      (status === NodeStatus.NotInitialized || status === NodeStatus.Failed)
+      (status === NodeStatus.NotInitialized ||
+        status === NodeStatus.Failed ||
+        status === NodeStatus.Unreachable)
     ) {
       setDKGLoading(true);
 
       initializeNode()
         .then(() => {
+          setInfo('');
           setStatus(NodeStatus.Initialized);
         })
         .catch((e: Error) => {
