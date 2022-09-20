@@ -188,7 +188,7 @@ associated to its voter on the blockchain.
 
 **3) Shuffle ballots** Once the election is closed by an admin, ballots are
 shuffled to ensure privacy of voters. This operation is done by a threshold of
-node that each perform their own shuffling. Each shuffling guaranties the
+node that each perform their own shuffling. Each shuffling guarantees the
 integrity of ballots while re-encrypting and changing the order of ballots. At
 this stage encrypted ballots cannot be linked back to their voters.
 
@@ -209,7 +209,7 @@ For a more formal and in-depth overview of the workflow, see the
 ## Smart contract
 
 A smart contract is a piece of code that runs on a blockchain. It defines a set
-of operations that act on a global state (think of it as database) and can be
+of operations that act on a global state (think of it as a database) and can be
 triggered with transactions. What makes a smart contract special is that its
 executions depends on a consensus among blockchain nodes where operations are
 successful only if a consensus is reached. Additionally, transactions and their
@@ -377,7 +377,15 @@ added to you path (like with `export PATH=$PATH:/Users/david/go/bin`).
 
 # Setup a simple system with 3 nodes
 
-1: Run 3 nodes:
+If you are using Windows and cannot use tmux, you need to do the actions of the scripts in point 
+_1_ 
+and _2_ manually: open 3 
+terminal sessions and
+run the commands from the section _Run the nodes_ below (1 command LLVL=info memcoin etc. per
+terminal and then launch the setup script in another terminal). You can then follow the 
+instructions below starting from point _3_.
+
+1: Run 3 nodes
 
 ```sh
 ./runNode.sh -n 3
@@ -394,6 +402,7 @@ From the first terminal sessions, run:
 ```sh
 ./setupnNode.sh -n 3
 ```
+
 
 3: Launch the web backend
 
@@ -444,7 +453,7 @@ Then you should be able to run the setup script:
 ```sh
 ./setup.sh
 ```
-With this other script you can choose the number of nodes that you want to set up:
+With this other script using tmux you can choose the number of nodes that you want to set up:
 
 ```sh
 ./setupnNode.sh -n 3 
