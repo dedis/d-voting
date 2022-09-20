@@ -70,12 +70,6 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
-  // Notify the parent when we are loading or not
-  useEffect(() => {
-    notifyLoading(node, DKGLoading);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [DKGLoading]);
-
   // send the initialization request
   const initializeNode = async () => {
     const req = {
@@ -106,19 +100,6 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
         status === NodeStatus.Unreachable)
     ) {
       setDKGLoading(true);
-
-      initializeNode()
-        .then(() => {
-          setInfo('');
-          setStatus(NodeStatus.Initialized);
-        })
-        .catch((e: Error) => {
-          setInfo(e.toString());
-          setStatus(NodeStatus.Failed);
-        })
-        .finally(() => {
-          setDKGLoading(false);
-        });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ongoingAction]);
@@ -142,6 +123,68 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
     );
   };
 
+  // performAction does the initialization or the setup if appropriate
+  const performAction = () => {
+    // Initialize ?
+    if (
+      ongoingAction === OngoingAction.Initializing &&
+      (status === NodeStatus.NotInitialized ||
+        status === NodeStatus.Failed ||
+        status === NodeStatus.Unreachable)
+    ) {
+      if (proxy === '') {
+        setStatus(NodeStatus.Unreachable);
+        setInfo('proxy empty');
+        setDKGLoading(false);
+        return;
+      }
+
+      initializeNode()
+        .then(() => {
+          setInfo('');
+          setStatus(NodeStatus.Initialized);
+        })
+        .catch((e: Error) => {
+          setInfo(e.toString());
+          setStatus(NodeStatus.Failed);
+        })
+        .finally(() => {
+          setDKGLoading(false);
+        });
+
+      return;
+    }
+
+    // Setup ?
+    if (ongoingAction === OngoingAction.SettingUp && nodeToSetup !== null) {
+      let expectedStatus = NodeStatus.Certified;
+      if (nodeToSetup[0] === node) {
+        expectedStatus = NodeStatus.Setup;
+      }
+
+      pollDKGStatus(expectedStatus)
+        .then(
+          () => {},
+          (e: Error) => {
+            setStatus(NodeStatus.Failed);
+            setInfo(e.toString());
+          }
+        )
+        .finally(() => setDKGLoading(false));
+    }
+  };
+
+  // Notify the parent when we are loading or not
+  useEffect(() => {
+    notifyLoading(node, DKGLoading);
+
+    if (DKGLoading) {
+      performAction();
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [DKGLoading]);
+
   // Action taken when the setting up is triggered.
   useEffect(() => {
     if (ongoingAction !== OngoingAction.SettingUp || nodeToSetup === null) {
@@ -150,20 +193,6 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
 
     setDKGLoading(true);
 
-    let expectedStatus = NodeStatus.Certified;
-    if (nodeToSetup[0] === node) {
-      expectedStatus = NodeStatus.Setup;
-    }
-
-    pollDKGStatus(expectedStatus)
-      .then(
-        () => {},
-        (e: Error) => {
-          setStatus(NodeStatus.Failed);
-          setInfo(e.toString());
-        }
-      )
-      .finally(() => setDKGLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ongoingAction]);
 
@@ -196,8 +225,8 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
             errorMessage += t('error');
           }
 
-          setTextModalError(errorMessage + e.message);
-          setShowModalError(true);
+          setInfo(errorMessage + e.message);
+          setStatus(NodeStatus.Unreachable);
 
           // if we could not retrieve the proxy still resolve the promise
           // so that promise.then() goes to onSuccess() but display the error
@@ -207,9 +236,13 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
 
       setDKGLoading(true);
 
-      fetchNodeProxy().then((nodeProxyAddress) => {
-        setProxy(nodeProxyAddress.Proxy);
-      });
+      fetchNodeProxy()
+        .then((nodeProxyAddress) => {
+          setProxy(nodeProxyAddress.Proxy);
+        })
+        .finally(() => {
+          setDKGLoading(false);
+        });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node, proxy]);
@@ -264,12 +297,14 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
             errorMessage += t('error');
           }
 
-          setTextModalError(errorMessage + e.message);
-          setShowModalError(true);
+          setInfo(errorMessage + e.message);
 
           // if we could not retrieve the proxy still resolve the promise
           // so that promise.then() goes to onSuccess() but display the error
-          return InternalDKGInfo.fromStatus(NodeStatus.Unreachable);
+          return InternalDKGInfo.fromInfo({
+            Status: NodeStatus.Failed,
+            Error: { Title: errorMessage, Message: e.message, Code: 0, Args: undefined },
+          });
         }
       };
 

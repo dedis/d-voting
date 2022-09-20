@@ -152,11 +152,8 @@ const ElectionShow: FC = () => {
   // one of the element on the map is true.
   useEffect(() => {
     if (nodeLoading !== null) {
-      if (!Array.from(nodeLoading.values()).includes(true)) {
-        setDKGLoading(false);
-      } else {
-        setDKGLoading(true);
-      }
+      const someNodeLoading = Array.from(nodeLoading.values()).includes(true);
+      setDKGLoading(someNodeLoading);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeLoading]);
@@ -166,6 +163,12 @@ const ElectionShow: FC = () => {
     if (status === Status.Initial) {
       if (DKGStatuses !== null && !DKGLoading) {
         const statuses = Array.from(DKGStatuses.values());
+
+        // We want to update only if all nodes have already set their status
+        if (statuses.length !== roster.length) {
+          return;
+        }
+
         setOngoingAction(OngoingAction.None);
 
         // TODO: can be modified such that if the majority of the node are
