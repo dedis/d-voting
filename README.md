@@ -377,13 +377,11 @@ added to you path (like with `export PATH=$PATH:/Users/david/go/bin`).
 
 # Setup a simple system with 3 nodes
 
-If you are using Windows and cannot use tmux, you need to do the actions of the scripts in point 
-_1_ 
-and _2_ manually: open 3 
-terminal sessions and
-run the commands from the section _Run the nodes_ below (1 command LLVL=info memcoin etc. per
-terminal and then launch the setup script in another terminal). You can then follow the 
-instructions below starting from point _3_.
+If you are using Windows and cannot use tmux, you need to do the actions of the
+scripts in point _1_ and _2_ manually: open 3 terminal sessions and run the
+commands from the section _Run the nodes_ below (1 command LLVL=info memcoin etc.
+per terminal and then launch the setup script in another terminal). You can then
+follow the instructions below starting from point _3_.
 
 1: Run 3 nodes
 
