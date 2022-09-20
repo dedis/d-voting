@@ -188,7 +188,7 @@ associated to its voter on the blockchain.
 
 **3) Shuffle ballots** Once the election is closed by an admin, ballots are
 shuffled to ensure privacy of voters. This operation is done by a threshold of
-node that each perform their own shuffling. Each shuffling guaranties the
+node that each perform their own shuffling. Each shuffling guarantees the
 integrity of ballots while re-encrypting and changing the order of ballots. At
 this stage encrypted ballots cannot be linked back to their voters.
 
@@ -209,7 +209,7 @@ For a more formal and in-depth overview of the workflow, see the
 ## Smart contract
 
 A smart contract is a piece of code that runs on a blockchain. It defines a set
-of operations that act on a global state (think of it as database) and can be
+of operations that act on a global state (think of it as a database) and can be
 triggered with transactions. What makes a smart contract special is that its
 executions depends on a consensus among blockchain nodes where operations are
 successful only if a consensus is reached. Additionally, transactions and their
@@ -377,7 +377,13 @@ added to you path (like with `export PATH=$PATH:/Users/david/go/bin`).
 
 # Setup a simple system with 3 nodes
 
-1: Run 3 nodes:
+If you are using Windows and cannot use tmux, you need to do the actions of the
+scripts in point *1* and *2* manually: open 3 terminal sessions and run the
+commands from the section *Run the nodes* below (1 command LLVL=info memcoin etc.
+per terminal and then launch the setup script in another terminal). You can then
+follow the instructions below starting from point *3*.
+
+1: Run 3 nodes
 
 ```sh
 ./runNode.sh -n 3
@@ -394,6 +400,7 @@ From the first terminal sessions, run:
 ```sh
 ./setupnNode.sh -n 3
 ```
+
 
 3: Launch the web backend
 
@@ -444,7 +451,8 @@ Then you should be able to run the setup script:
 ```sh
 ./setup.sh
 ```
-With this other script you can choose the number of nodes that you want to set up:
+With this other script using tmux you can choose the number of nodes that you
+want to set up:
 
 ```sh
 ./setupnNode.sh -n 3 
@@ -462,28 +470,29 @@ rm -rf /tmp/node{1,2,3}
 ## Automate the previous setup using `tmux`
 
 If you have `tmux` installed, you can start a `tmux` session that will
-execute the above setup by running in the project root `./runNode.sh -n 3`. This
-command takes as argument the number of nodes. 
+execute the above setup by running in the project root `./runNode.sh -n 3`.
+This command takes as argument the number of nodes. 
 Once the session is started, you can move around the panes with
-`Ctrl+B` followed by arrow keys or by `N`. You can also have an overview of the windows 
-with `Ctrl+B` followed by `S`.
+`Ctrl+B` followed by arrow keys or by `N`. You can also have an overview of the
+windows with `Ctrl+B` followed by `S`.
 
 
 To end the session, run `./kill_test.sh`,
-which will kill each window then the `tmux` session (which you can do manually with `Ctrl+D`),
-then delete the node data (i.e. the files `/tmp/node{1,2,3}`).
+which will kill each window then the `tmux` session (which you can do manually 
+with `Ctrl+D`), then delete the node data (i.e. the files `/tmp/node{1,2,3}`).
 
 ## Run the scenario test
 
-If nodes are running and `setup.sh` or `./setupnNode.sh -n 3` has been called, you can run a test
-scenario:
+If nodes are running and `setup.sh` or `./setupnNode.sh -n 3` has been called,
+you can run a test scenario:
 
 ```sh
 sk=28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409
 LLVL=info memcoin --config /tmp/node1 e-voting scenarioTest --secretkey $sk
 ```
 
-You can also run scenario_test.go, by running in the integration folder this command:
+You can also run scenario_test.go, by running in the integration folder this
+command:
 ```sh
 NNODES=3 go test -v scenario_test.go
 ```
@@ -496,7 +505,8 @@ Public key: `adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3`
 Secret key: `28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409`
 
 ## Run the scenario test with docker 
-Use the following commands to launch and set up nodes, and start the scenario test with user defined number of nodes.
+Use the following commands to launch and set up nodes, and start the scenario
+test with user defined number of nodes.
 
 First build the docker image `docker build -t node .`
 
@@ -509,7 +519,8 @@ Afterwards use the following commands, replace 4 by the desired nb of nodes :
 NNODES=4 KILLNODE=true go test -v -run ^TestScenario$ github.com/dedis/d-voting/integration -count=1
 ```
 
-Here we set KILLNODE=true or false to decide whether kill and restart a node during the election process. By default, it's set to false.
+Here we set KILLNODE=true or false to decide whether kill and restart a node 
+during the election process. By default, it's set to false.
 
 To end the session, run `./kill_test.sh`.
 
