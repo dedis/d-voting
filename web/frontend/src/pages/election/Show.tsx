@@ -234,7 +234,9 @@ const ElectionShow: FC = () => {
           <div className="py-4 pl-2 pb-8">
             <div className="font-bold uppercase text-lg text-gray-700 pb-2">{t('action')}</div>
             <div className="px-2">
-              {DKGLoading && <LoadingButton>{t('actionLoading')}</LoadingButton>}{' '}
+              {DKGLoading && ongoingAction === OngoingAction.None && (
+                <LoadingButton>{t('actionLoading')}</LoadingButton>
+              )}{' '}
               {(!DKGLoading || ongoingAction !== OngoingAction.None) && (
                 <Action
                   status={status}
