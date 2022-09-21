@@ -20,8 +20,6 @@ type DKGStatusRowProps = {
   index: number;
   nodeProxyAddresses: Map<string, string>;
   setNodeProxyAddresses: (nodeProxy: Map<string, string>) => void;
-  setTextModalError: (error: string) => void;
-  setShowModalError: (show: boolean) => void;
   // notify to start initialization
   ongoingAction: OngoingAction;
   // notify the parent of the new state
@@ -37,8 +35,6 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
   index,
   nodeProxyAddresses,
   setNodeProxyAddresses,
-  setTextModalError,
-  setShowModalError,
   ongoingAction,
   notifyDKGState,
   nodeToSetup,
@@ -170,12 +166,16 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
             setInfo(e.toString());
           }
         )
-        .finally(() => setDKGLoading(false));
+        .finally(() => {
+          console.log('setDKGLoading to false');
+          setDKGLoading(false);
+        });
     }
   };
 
   // Notify the parent when we are loading or not
   useEffect(() => {
+    console.log('notifyLoading', DKGLoading);
     notifyLoading(node, DKGLoading);
 
     if (DKGLoading) {

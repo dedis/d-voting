@@ -10,8 +10,6 @@ type DKGStatusTableProps = {
   electionId: ID;
   nodeProxyAddresses: Map<string, string>;
   setNodeProxyAddresses: (nodeProxy: Map<string, string>) => void;
-  setTextModalError: (error: string) => void;
-  setShowModalError: (show: boolean) => void;
   // notify to start initialization
   ongoingAction: OngoingAction;
   // notify the parent of the new state
@@ -25,8 +23,6 @@ const DKGStatusTable: FC<DKGStatusTableProps> = ({
   electionId,
   nodeProxyAddresses,
   setNodeProxyAddresses,
-  setTextModalError,
-  setShowModalError,
   ongoingAction,
   notifyDKGState,
   nodeToSetup,
@@ -58,8 +54,6 @@ const DKGStatusTable: FC<DKGStatusTableProps> = ({
                   index={index}
                   nodeProxyAddresses={nodeProxyAddresses}
                   setNodeProxyAddresses={setNodeProxyAddresses}
-                  setTextModalError={setTextModalError}
-                  setShowModalError={setShowModalError}
                   ongoingAction={ongoingAction}
                   notifyDKGState={notifyDKGState}
                   nodeToSetup={nodeToSetup}

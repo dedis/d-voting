@@ -53,14 +53,11 @@ const ElectionShow: FC = () => {
 
   // called by a DKG row
   const notifyDKGState = (node: string, info: InternalDKGInfo) => {
-    switch (info.getStatus()) {
-      case NodeStatus.Failed:
-        setOngoingAction(OngoingAction.None);
-        break;
-      case NodeStatus.Setup:
-        setOngoingAction(OngoingAction.None);
-        setStatus(Status.Setup);
-        break;
+    if (
+      info.getStatus() === NodeStatus.Setup &&
+      (status === Status.Initial || status === Status.Initialized)
+    ) {
+      setStatus(Status.Setup);
     }
 
     const newDKGStatuses = new Map(DKGStatuses);
@@ -154,6 +151,9 @@ const ElectionShow: FC = () => {
     if (nodeLoading !== null) {
       const someNodeLoading = Array.from(nodeLoading.values()).includes(true);
       setDKGLoading(someNodeLoading);
+      if (!someNodeLoading) {
+        setOngoingAction(OngoingAction.None);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeLoading]);
@@ -168,8 +168,6 @@ const ElectionShow: FC = () => {
         if (statuses.length !== roster.length) {
           return;
         }
-
-        setOngoingAction(OngoingAction.None);
 
         // TODO: can be modified such that if the majority of the node are
         // initialized than the election status can still be set to initialized
@@ -222,12 +220,12 @@ const ElectionShow: FC = () => {
             )}
           <div className="py-6 pl-2">
             <div className="font-bold uppercase text-lg text-gray-700">{t('status')}</div>
-            {DKGLoading && (
+            {DKGLoading && ongoingAction === OngoingAction.None && (
               <div className="px-2 pt-6">
                 <LoadingButton>{t('statusLoading')}</LoadingButton>
               </div>
             )}
-            {!DKGLoading && (
+            {(!DKGLoading || ongoingAction !== OngoingAction.None) && (
               <div className="px-2 pt-6 flex justify-center">
                 <StatusTimeline status={status} ongoingAction={ongoingAction} />
               </div>
@@ -237,7 +235,7 @@ const ElectionShow: FC = () => {
             <div className="font-bold uppercase text-lg text-gray-700 pb-2">{t('action')}</div>
             <div className="px-2">
               {DKGLoading && <LoadingButton>{t('actionLoading')}</LoadingButton>}{' '}
-              {!DKGLoading && (
+              {(!DKGLoading || ongoingAction !== OngoingAction.None) && (
                 <Action
                   status={status}
                   electionID={electionID}
@@ -271,8 +269,6 @@ const ElectionShow: FC = () => {
                 electionId={electionId}
                 nodeProxyAddresses={nodeProxyAddresses}
                 setNodeProxyAddresses={setNodeProxyAddresses}
-                setTextModalError={setTextModalError}
-                setShowModalError={setShowModalError}
                 ongoingAction={ongoingAction}
                 notifyDKGState={notifyDKGState}
                 nodeToSetup={nodeToSetup}
