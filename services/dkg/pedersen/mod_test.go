@@ -184,7 +184,7 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 
 		otherActor := Actor{
 			handler: NewHandler(fake.NewAddress(0), &fake.Service{}, &fake.Pool{},
-				fake.Manager{}, fake.Signer{}, handlerData, serdecontext, electionFac),
+				fake.Manager{}, fake.Signer{}, handlerData, serdecontext, electionFac, nil),
 		}
 
 		requireActorsEqual(t, actor, &otherActor)

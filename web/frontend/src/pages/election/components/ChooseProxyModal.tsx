@@ -2,12 +2,10 @@ import { Dialog, Transition } from '@headlessui/react';
 import { CogIcon } from '@heroicons/react/outline';
 import { FC, Fragment, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { NodeStatus } from 'types/node';
 
 type ChooseProxyModalProps = {
   roster: string[];
   showModal: boolean;
-  DKGStatuses: Map<string, NodeStatus>;
   nodeProxyAddresses: Map<string, string>;
   nodeToSetup: [string, string];
   setNodeToSetup: (node: [string, string]) => void;
@@ -18,7 +16,6 @@ type ChooseProxyModalProps = {
 const ChooseProxyModal: FC<ChooseProxyModalProps> = ({
   roster,
   showModal,
-  DKGStatuses,
   nodeProxyAddresses,
   nodeToSetup,
   setNodeToSetup,
@@ -48,8 +45,7 @@ const ChooseProxyModal: FC<ChooseProxyModalProps> = ({
       nodeToSetup !== null &&
       roster.map((node, index) => {
         const proxy = nodeProxyAddresses.get(node);
-        const status = DKGStatuses.get(node);
-        const checkable = proxy !== '' && status === NodeStatus.Initialized;
+        const checkable = proxy !== '';
 
         return (
           <div className="flex items-center my-4 ml-4" key={node}>
