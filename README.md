@@ -403,7 +403,9 @@ From the first terminal sessions, run:
 
 
 3: Launch the web backend
+
 From a new terminal session, run:
+
 ```sh
 cd web/backend
 # if this is the first time, run `npm install` and `cp config.env.template config.env` first
@@ -411,7 +413,9 @@ npm start
 ```
 
 4: Launch the web frontend
+
 From a new terminal session, run:
+
 ```sh
 cd web/frontend
 # if this is the first time, run `npm install` first
