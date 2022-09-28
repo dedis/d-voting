@@ -404,13 +404,17 @@ From the first terminal sessions, run:
 
 3: Launch the web backend
 
+From a new terminal session, run:
+
 ```sh
 cd web/backend
-# if this is the first time, run `npm install` first
+# if this is the first time, run `npm install` and `cp config.env.template config.env` first
 npm start
 ```
 
 4: Launch the web frontend
+
+From a new terminal session, run:
 
 ```sh
 cd web/frontend
@@ -427,6 +431,37 @@ election.
 
 ```sh
 ./kill_test.sh
+```
+
+6: Troubleshoot
+
+If while running 
+
+```sh
+npm start
+```
+
+in the web backend folder, you get this error:
+
+```sh
+Error: listen EADDRINUSE: address already in use :::5000
+```
+
+then run this instead:
+
+```sh
+PORT=4000 npm start
+#or any other available port
+```
+and in the web/frontend/src/setupProxy.js file, change :
+
+```sh
+target: 'http://localhost:5000',
+```
+with
+
+```sh
+target: 'http://localhost:4000',
 ```
 
 # Run the nodes
