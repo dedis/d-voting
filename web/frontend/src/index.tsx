@@ -69,16 +69,21 @@ class FlashMessage {
     return this.level;
   }
 }
-const flash = new FlashMessage('', 1)
-const defaultFlashState = { getMessages: function (): FlashMessage[] { return [flash] }, addMessage: function (msg: '', level: 0): void { console.log("ok") }, hideMessage: function (index: ''): void { console.log("ok") } }
+const flash = new FlashMessage('', 1);
+const defaultFlashState = {
+  getMessages: function (): FlashMessage[] {
+    return [flash];
+  },
+  addMessage: function (msg: '', level: 0): void {},
+  hideMessage: function (index: ''): void {},
+};
 // the flash context handles flash messages across the app
 export const FlashContext = createContext<FlashState>(defaultFlashState);
-
 
 // the proxy state provides the proxy address across all the app
 export interface ProxyState {
   getProxy(): string;
-  setProxy(p: string): any;
+  setProxy(p: string): void;
 }
 
 export class ProxyHolder implements ProxyState {
