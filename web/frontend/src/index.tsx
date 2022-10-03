@@ -69,10 +69,10 @@ class FlashMessage {
     return this.level;
   }
 }
-const flash = new FlashMessage('', 1);
+const flashM = new FlashMessage('', 1);
 const defaultFlashState = {
   getMessages: function (): FlashMessage[] {
-    return [flash];
+    return [flashM];
   },
   addMessage: function (msg: '', level: 0): void {},
   hideMessage: function (index: ''): void {},
