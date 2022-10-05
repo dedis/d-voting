@@ -1,6 +1,4 @@
-# 28/09 : 
-
-# first production-ready meeting
+# 28/09 : First production-ready meeting
 
 
 ## Participants : 
@@ -30,9 +28,9 @@ DKG : exp de la fonction des n points nécessaires pour connaître son expressio
 
 Revoir sa propre PR et ne pas hésiter a review les PR des autres pour améliorer compréhension du projet global
 
-Prochains meetings :
+## Prochains meetings :
 
-## Prochaines réunions peuvent durer un peu plus lgtps
+Prochaines réunions peuvent durer un peu plus lgtps
 
 13/10 : présentation de 20 min sur le projet et ce qui sera à implémenter durant le semestre.
 
