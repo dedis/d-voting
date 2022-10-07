@@ -1,75 +1,80 @@
-TODO: 
+TODO:
+
 1. Explain how to sync up the smart contract with the DKG
 2. Explain how to sync up the smart contract with the Shuffle
 3. Explain how security impacts the smart contract (at the decrypt stage)
 
-## Create an election
+## Create an form
 
 This transaction requires the following 3 parameters:
-1. `title` of the election
-2. `admin` ID of the creator of the election
-3. `format` of the election
 
-Key / Value pairs sent in the transaction in order to create an election:
+1. `title` of the form
+2. `admin` ID of the creator of the form
+3. `format` of the form
+
+Key / Value pairs sent in the transaction in order to create an form:
 | | |
 |-|-|
 |"go.dedis.ch/dela.ContractArg"|[]byte(evoting.ContractName)|
-|evoting.CreateElectionArg|createElectionBuf|
-|evoting.CmdArg|[]byte(evoting.CmdCreateElection|
+|evoting.CreateFormArg|createFormBuf|
+|evoting.CmdArg|[]byte(evoting.CmdCreateForm|
 
 where:
-``` go
+
+```go
 evoting.ContractName = "go.dedis.ch/dela.Evoting"
-evoting.CreateElectionArg = "evoting:create_election"
-createElectionBuf = marshalled version of types.CreateElectionTransaction{
+evoting.CreateFormArg = "evoting:create_form"
+createFormBuf = marshalled version of types.CreateFormTransaction{
         Title: title,
         AdminID: admin,
         Format: format
     }
 evoting.CmdArg = "evoting:command"
-evoting.CmdCreateElection = "CREATE_ELECTION"
+evoting.CmdCreateForm = "CREATE_FORM"
 ```
 
-On success, the result of this transaction returns a `transactionID`. This `transactionID` is then 
-processed as follow to computed the unique `electionID`:
+On success, the result of this transaction returns a `transactionID`. This `transactionID` is then
+processed as follow to computed the unique `formID`:
 
-``` go
+```go
 hash := sha256.New()
 hash.Write(transactionID)
-electionID := hash.Sum(nil)
+formID := hash.Sum(nil)
 ```
 
-## Open an election
+## Open an form
 
-This transaction requires an `electionID`
+This transaction requires an `formID`
 
-Key / Value pairs sent in the transaction in order to create an election:
+Key / Value pairs sent in the transaction in order to create an form:
 | | |
 |-|-|
 |"go.dedis.ch/dela.ContractArg"|[]byte(evoting.ContractName)|
-|evoting.OpenElectionArg|openElectionBuf|
-|evoting.CmdArg|[]byte(evoting.CmdOpenElection|
+|evoting.OpenFormArg|openFormBuf|
+|evoting.CmdArg|[]byte(evoting.CmdOpenForm|
 
 where:
-``` go
+
+```go
     evoting.ContractName = "go.dedis.ch/dela.Evoting"
-    evoting.OpenElectionArg = "evoting:open_election"
-    openElectionBuf = marshalled version of types.OpenElectionTransaction{
-            ElectionID: hex.EncodeToString(electionID),
+    evoting.OpenFormArg = "evoting:open_form"
+    openFormBuf = marshalled version of types.OpenFormTransaction{
+            FormID: hex.EncodeToString(formID),
         }
     evoting.CmdArg = "evoting:command"
-    evoting.CmdOpenElection = "OPEN_ELECTION"
+    evoting.CmdOpenForm = "OPEN_FORM"
 ```
 
 ## Cast a vote
 
 This transaction requires the following 3 parameters:
+
 1. `actor` of type dkg.Actor
-2. `electionID` (see Create Election above)
+2. `formID` (see Create Form above)
 3. `userID` of the voter
 4. `vote` to be casted
 
-Key / Value pairs sent in the transaction in order to create an election:
+Key / Value pairs sent in the transaction in order to create an form:
 | | |
 |-|-|
 |"go.dedis.ch/dela.ContractArg"|[]byte(evoting.ContractName)|
@@ -77,11 +82,12 @@ Key / Value pairs sent in the transaction in order to create an election:
 |evoting.CmdArg|[]byte(evoting.CmdCastVote|
 
 where:
-``` go   
+
+```go
     evoting.ContractName = "go.dedis.ch/dela.Evoting"
     evoting.CastVoteArg = "evoting:cast_vote"
     castVoteBuf = a marshalled version of types.CastVoteTransaction{
-			ElectionID: hex.EncodeToString(electionID),
+			FormID: hex.EncodeToString(formID),
 			UserID:     userID,
 			Ballot:     ballot,   // a vote encrypted by the actor
 		}
@@ -89,25 +95,26 @@ where:
     evoting.CmdCastVote = "CAST_VOTE"
 ```
 
-## Close an election
+## Close an form
 
-This transaction requires an `electionID` and an `adminID`.
+This transaction requires an `formID` and an `adminID`.
 
-Key / Value pairs sent in the transaction in order to create an election:
+Key / Value pairs sent in the transaction in order to create an form:
 | | |
 |-|-|
 |"go.dedis.ch/dela.ContractArg"|[]byte(evoting.ContractName)|
-|evoting.CloseElectionArg|closeElectionBuf|
-|evoting.CmdArg|[]byte(evoting.CmdOpenElection|
+|evoting.CloseFormArg|closeFormBuf|
+|evoting.CmdArg|[]byte(evoting.CmdOpenForm|
 
 where:
-``` go
+
+```go
     evoting.ContractName = "go.dedis.ch/dela.Evoting"
-    evoting.CloseElectionArg = "evoting:close_election"
-    closeElectionBuf = marshalled version of types.CloseElectionTransaction{
-		ElectionID: hex.EncodeToString(electionID),
+    evoting.CloseFormArg = "evoting:close_form"
+    closeFormBuf = marshalled version of types.CloseFormTransaction{
+		FormID: hex.EncodeToString(formID),
 		UserID:     adminID,
 	}
     evoting.CmdArg = "evoting:command"
-    evoting.CmdCloseElection = "CLOSE_ELECTION"
+    evoting.CmdCloseForm = "CLOSE_FORM"
 ```
