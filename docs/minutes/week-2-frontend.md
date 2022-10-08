@@ -3,6 +3,7 @@ Date: 03/10/2022 Participants: Ahmed Elalamy, Ghita Tagemouati, Khadija Tagemoua
 ## Updates
 
 Each member of the team has created a PR:
+
 - Khadija added types on index.tsx
 - Ghita started changing "election" to "form" in the codebase. She mentions having spent a lot of time trying to make the nodes work
 - Ahmed changed the favicon
