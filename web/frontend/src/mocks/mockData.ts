@@ -1,4 +1,4 @@
-import { Results } from 'types/election';
+import { Results } from 'types/form';
 
 const mockNodes: string[] = [
   '123.456.78.9:9000',
@@ -22,7 +22,7 @@ const mockRoster: string[] = [
   '123.456.78.9:9005',
 ];
 
-const mockElection1: any = {
+const mockForm1: any = {
   MainTitle: 'Life on the campus',
   Scaffold: [
     {
@@ -88,7 +88,7 @@ const mockElection1: any = {
   ],
 };
 
-const mockElectionResult11: Results = {
+const mockFormResult11: Results = {
   SelectResultIDs: [(0x3fb2).toString(), (0x41e2).toString(), (0xa319).toString()],
   SelectResult: [
     [true, false, false, false, false],
@@ -101,7 +101,7 @@ const mockElectionResult11: Results = {
   TextResult: [['Noémien', 'Pierluca']],
 };
 
-const mockElectionResult12: Results = {
+const mockFormResult12: Results = {
   SelectResultIDs: [(0x3fb2).toString(), (0x41e2).toString(), (0xa319).toString()],
   SelectResult: [
     [false, false, false, true, false],
@@ -114,7 +114,7 @@ const mockElectionResult12: Results = {
   TextResult: [['Noémien', 'Pierluca']],
 };
 
-const mockElection2: any = {
+const mockForm2: any = {
   MainTitle: 'Please give your opinion',
   Scaffold: [
     {
@@ -182,7 +182,7 @@ const mockElection2: any = {
   ],
 };
 
-const mockElection3: any = {
+const mockForm3: any = {
   MainTitle: 'Lunch',
   Scaffold: [
     {
@@ -207,7 +207,7 @@ const mockElection3: any = {
   ],
 };
 
-const mockElectionResult21: Results = {
+const mockFormResult21: Results = {
   SelectResultIDs: [(0x3fb2).toString(), (0xa319).toString()],
   SelectResult: [
     [true, false, false, false, false],
@@ -222,7 +222,7 @@ const mockElectionResult21: Results = {
   TextResult: [['Jane Doe', 'John Smith']],
 };
 
-const mockElectionResult22: Results = {
+const mockFormResult22: Results = {
   SelectResultIDs: [(0x3fb2).toString(), (0xa319).toString()],
   SelectResult: [
     [false, false, true, false, false],
@@ -237,7 +237,7 @@ const mockElectionResult22: Results = {
   TextResult: [['Jane Doe', 'John Smith']],
 };
 
-const mockElectionResult23: Results = {
+const mockFormResult23: Results = {
   SelectResultIDs: [(0x3fb2).toString(), (0xa319).toString()],
   SelectResult: [
     [false, false, false, true, false],
@@ -252,7 +252,7 @@ const mockElectionResult23: Results = {
   TextResult: [['Another Name', 'Jane Doe']],
 };
 
-const mockElectionResult31: Results = {
+const mockFormResult31: Results = {
   SelectResultIDs: [],
   SelectResult: [],
   RankResultIDs: [],
@@ -261,7 +261,7 @@ const mockElectionResult31: Results = {
   TextResult: [['Alice', 'Pizza', 'Ice cold water', '🍒🍒🍒🍒']],
 };
 
-const mockElectionResult32: Results = {
+const mockFormResult32: Results = {
   SelectResultIDs: [],
   SelectResult: [],
   RankResultIDs: [],
@@ -270,7 +270,7 @@ const mockElectionResult32: Results = {
   TextResult: [['Bob', 'Pizza', 'Coke', '🍒🍒🍒']],
 };
 
-const mockElectionResult33: Results = {
+const mockFormResult33: Results = {
   SelectResultIDs: null,
   SelectResult: null,
   RankResultIDs: null,
@@ -280,17 +280,17 @@ const mockElectionResult33: Results = {
 };
 
 export {
-  mockElection1,
-  mockElectionResult11,
-  mockElectionResult12,
-  mockElection2,
-  mockElectionResult21,
-  mockElectionResult22,
-  mockElection3,
-  mockElectionResult23,
-  mockElectionResult31,
-  mockElectionResult32,
-  mockElectionResult33,
+  mockForm1,
+  mockFormResult11,
+  mockFormResult12,
+  mockForm2,
+  mockFormResult21,
+  mockFormResult22,
+  mockForm3,
+  mockFormResult23,
+  mockFormResult31,
+  mockFormResult32,
+  mockFormResult33,
   mockRoster,
   mockNodes,
 };

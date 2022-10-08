@@ -11,11 +11,11 @@ type BadPedersen struct {
 	Err error
 }
 
-func (f BadPedersen) Listen(electionID []byte, txmngr txn.Manager) (dkg.Actor, error) {
+func (f BadPedersen) Listen(formID []byte, txmngr txn.Manager) (dkg.Actor, error) {
 	return nil, f.Err
 }
 
-func (f BadPedersen) GetActor(electionID []byte) (dkg.Actor, bool) {
+func (f BadPedersen) GetActor(formID []byte) (dkg.Actor, bool) {
 	return nil, false
 }
 
@@ -24,14 +24,14 @@ type Pedersen struct {
 	Actors map[string]dkg.Actor
 }
 
-func (f Pedersen) Listen(electionID []byte, txmngr txn.Manager) (dkg.Actor, error) {
+func (f Pedersen) Listen(formID []byte, txmngr txn.Manager) (dkg.Actor, error) {
 	actor := DKGActor{PubKey: suite.Point().Pick(suite.RandomStream())}
-	f.Actors[string(electionID)] = actor
+	f.Actors[string(formID)] = actor
 	return actor, nil
 }
 
-func (f Pedersen) GetActor(electionID []byte) (dkg.Actor, bool) {
-	a, exists := f.Actors[string(electionID)]
+func (f Pedersen) GetActor(formID []byte) (dkg.Actor, bool) {
+	a, exists := f.Actors[string(formID)]
 	return a, exists
 }
 

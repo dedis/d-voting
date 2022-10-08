@@ -67,7 +67,7 @@ type Handler struct {
 	pubKey    kyber.Point
 
 	context     serde.Context
-	electionFac serde.Factory
+	formFac serde.Factory
 
 	log     zerolog.Logger
 	running bool
@@ -78,7 +78,7 @@ type Handler struct {
 // NewHandler creates a new handler
 func NewHandler(me mino.Address, service ordering.Service, pool pool.Pool,
 	txnmngr txn.Manager, pubSharesSigner crypto.Signer, handlerData HandlerData,
-	context serde.Context, electionFac serde.Factory, status *dkg.Status) *Handler {
+	context serde.Context, formFac serde.Factory, status *dkg.Status) *Handler {
 
 	privKey := handlerData.PrivKey
 	pubKey := handlerData.PubKey
@@ -100,7 +100,7 @@ func NewHandler(me mino.Address, service ordering.Service, pool pool.Pool,
 		pubKey:    pubKey,
 
 		context:     context,
-		electionFac: electionFac,
+		formFac: formFac,
 
 		log:     log,
 		running: false,
@@ -206,7 +206,7 @@ func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 					"call setup() first?")
 			}
 
-			err = h.handleDecryptRequest(msg.GetElectionId())
+			err = h.handleDecryptRequest(msg.GetFormId())
 			if err != nil {
 				return xerrors.Errorf("could not send pubShares: %v", err)
 			}
@@ -428,10 +428,10 @@ func (h *Handler) handleDeal(msg types.Deal, out mino.Sender) error {
 	return nil
 }
 
-// handleDecryptRequest computes the public shares of an election and sends them
+// handleDecryptRequest computes the public shares of an form and sends them
 // to the chain to allow decryption to proceed.
-func (h *Handler) handleDecryptRequest(electionID string) error {
-	shuffleInstances, err := h.getShuffleIfValid(electionID)
+func (h *Handler) handleDecryptRequest(formID string) error {
+	shuffleInstances, err := h.getShuffleIfValid(formID)
 	if err != nil {
 		return xerrors.Errorf("failed to check if the shuffle is over: %v", err)
 	}
@@ -466,30 +466,30 @@ func (h *Handler) handleDecryptRequest(electionID string) error {
 	// loop until our transaction has been accepted, or enough nodes submitted
 	// their pubShares
 	for {
-		election, err := h.getElection(electionID)
+		form, err := h.getForm(formID)
 		if err != nil {
-			return xerrors.Errorf("could not get the election: %v", err)
+			return xerrors.Errorf("could not get the form: %v", err)
 		}
 
 		//TODO: Works with current "shuffleThreshold", but the shuffle threshold
 		// should be smaller in theory ? (1/3 + 1 vs 2/3 + 1 ? )
-		nbrSubmissions := len(election.PubsharesUnits.Pubshares)
+		nbrSubmissions := len(form.PubsharesUnits.Pubshares)
 
-		if nbrSubmissions >= election.ShuffleThreshold {
+		if nbrSubmissions >= form.ShuffleThreshold {
 			dela.Logger.Info().Msgf("decryption possible with shares from %d nodes",
 				nbrSubmissions)
 			return nil
 		}
 
-		tx, err := makeTx(h.context, &election, publicShares, h.privShare.I,
+		tx, err := makeTx(h.context, &form, publicShares, h.privShare.I,
 			h.txmnger, h.pubSharesSigner)
 
 		if err != nil {
 			return xerrors.Errorf("failed to make tx: %v", err)
 		}
 
-		// TODO: Define in term of size of election ? (same in shuffle)
-		watchTimeout := 4 + rand.Intn(election.ShuffleThreshold)
+		// TODO: Define in term of size of form ? (same in shuffle)
+		watchTimeout := 4 + rand.Intn(form.ShuffleThreshold)
 		watchCtx, cancel := context.WithTimeout(context.Background(), time.Duration(watchTimeout)*time.Second)
 		defer cancel()
 
@@ -522,21 +522,21 @@ func (h *Handler) handleDecryptRequest(electionID string) error {
 
 // getShuffleIfValid allows checking if enough shuffles have been made on the
 // ballots.
-func (h *Handler) getShuffleIfValid(electionID string) ([]etypes.ShuffleInstance, error) {
-	election, err := h.getElection(electionID)
+func (h *Handler) getShuffleIfValid(formID string) ([]etypes.ShuffleInstance, error) {
+	form, err := h.getForm(formID)
 	if err != nil {
-		return nil, xerrors.Errorf("could not get the election: %v", err)
+		return nil, xerrors.Errorf("could not get the form: %v", err)
 	}
 
-	if len(election.ShuffleInstances) == 0 {
-		return nil, xerrors.New("election has no shuffles")
+	if len(form.ShuffleInstances) == 0 {
+		return nil, xerrors.New("form has no shuffles")
 	}
 
-	if election.Status != etypes.ShuffledBallots {
+	if form.Status != etypes.ShuffledBallots {
 		return nil, xerrors.New("ballots have not been shuffled")
 	}
 
-	return election.ShuffleInstances, nil
+	return form.ShuffleInstances, nil
 }
 
 // MarshalJSON returns a JSON-encoded bytestring containing all the data in the
@@ -810,13 +810,13 @@ func watchTx(events <-chan ordering.Event, txID []byte) (bool, string) {
 	return false, "watch timeout"
 }
 
-func makeTx(ctx serde.Context, election *etypes.Election, pubShares etypes.PubsharesUnit,
+func makeTx(ctx serde.Context, form *etypes.Form, pubShares etypes.PubsharesUnit,
 	index int,
 	manager txn.Manager,
 	pubSharesSigner crypto.Signer) (txn.Transaction, error) {
 
 	pubShareTx := etypes.RegisterPubShares{
-		ElectionID: election.ElectionID,
+		FormID: form.FormID,
 		Pubshares:  pubShares,
 		Index:      index,
 	}
@@ -865,7 +865,7 @@ func makeTx(ctx serde.Context, election *etypes.Election, pubShares etypes.Pubsh
 		Value: []byte(evoting.CmdRegisterPubShares),
 	}
 	args[2] = txn.Arg{
-		Key:   evoting.ElectionArg,
+		Key:   evoting.FormArg,
 		Value: data,
 	}
 
@@ -877,34 +877,34 @@ func makeTx(ctx serde.Context, election *etypes.Election, pubShares etypes.Pubsh
 	return tx, nil
 }
 
-// getElection gets the election from the service
-func (h *Handler) getElection(electionIDHex string) (etypes.Election, error) {
-	var election etypes.Election
+// getForm gets the form from the service
+func (h *Handler) getForm(formIDHex string) (etypes.Form, error) {
+	var form etypes.Form
 
-	electionID, err := hex.DecodeString(electionIDHex)
+	formID, err := hex.DecodeString(formIDHex)
 	if err != nil {
-		return election, xerrors.Errorf("failed to decode electionIDHex: %v", err)
+		return form, xerrors.Errorf("failed to decode formIDHex: %v", err)
 	}
 
-	proof, exists := electionExists(h.service, electionID)
+	proof, exists := formExists(h.service, formID)
 	if !exists {
-		return election, xerrors.Errorf("election does not exist: %v", err)
+		return form, xerrors.Errorf("form does not exist: %v", err)
 	}
 
-	message, err := h.electionFac.Deserialize(h.context, proof.GetValue())
+	message, err := h.formFac.Deserialize(h.context, proof.GetValue())
 	if err != nil {
-		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
+		return form, xerrors.Errorf("failed to deserialize Form: %v", err)
 	}
 
-	election, ok := message.(etypes.Election)
+	form, ok := message.(etypes.Form)
 	if !ok {
-		return election, xerrors.Errorf("wrong message type: %T", message)
+		return form, xerrors.Errorf("wrong message type: %T", message)
 	}
 
-	if electionIDHex != election.ElectionID {
-		return election, xerrors.Errorf("electionID do not match: %q != %q",
-			electionIDHex, election.ElectionID)
+	if formIDHex != form.FormID {
+		return form, xerrors.Errorf("formID do not match: %q != %q",
+			formIDHex, form.FormID)
 	}
 
-	return election, nil
+	return form, nil
 }

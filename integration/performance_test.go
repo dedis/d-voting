@@ -60,31 +60,31 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 		require.NoError(b, err)
 	}
 
-	// ##### CREATE ELECTION #####
-	electionID, err := createElectionNChunks(m, "Three votes election", adminID, numChunksPerBallot)
+	// ##### CREATE FORM #####
+	formID, err := createFormNChunks(m, "Three votes form", adminID, numChunksPerBallot)
 	require.NoError(b, err)
 
 	time.Sleep(time.Millisecond * 1000)
 
 	// ##### SETUP DKG #####
-	actor, err := initDkg(nodes, electionID, m.m)
+	actor, err := initDkg(nodes, formID, m.m)
 	require.NoError(b, err)
 
-	// ##### OPEN ELECTION #####
-	err = openElection(m, electionID)
+	// ##### OPEN FORM #####
+	err = openForm(m, formID)
 	require.NoError(b, err)
 
-	electionFac := types.NewElectionFactory(types.CiphervoteFactory{}, nodes[0].GetRosterFac())
+	formFac := types.NewFormFactory(types.CiphervoteFactory{}, nodes[0].GetRosterFac())
 
 	b.Logf("start casting votes")
-	election, err := getElection(electionFac, electionID, nodes[0].GetOrdering())
+	form, err := getForm(formFac, formID, nodes[0].GetOrdering())
 	require.NoError(b, err)
 
-	castedVotes, err := castVotesNChunks(m, actor, election, numVotes)
+	castedVotes, err := castVotesNChunks(m, actor, form, numVotes)
 	require.NoError(b, err)
 
-	// ##### CLOSE ELECTION #####
-	err = closeElection(m, electionID, adminID)
+	// ##### CLOSE FORM #####
+	err = closeForm(m, formID, adminID)
 	require.NoError(b, err)
 
 	time.Sleep(time.Millisecond * 1000)
@@ -98,7 +98,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	require.NoError(b, err)
 
 	b.Logf("shuffling")
-	err = sActor.Shuffle(electionID)
+	err = sActor.Shuffle(formID)
 	require.NoError(b, err)
 
 	//b.StopTimer()
@@ -110,10 +110,10 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 
 	//b.ResetTimer()
 
-	election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
+	form, err = getForm(formFac, formID, nodes[0].GetOrdering())
 	require.NoError(b, err)
 
-	err = decryptBallots(m, actor, election)
+	err = decryptBallots(m, actor, form)
 	require.NoError(b, err)
 
 	//b.StopTimer()
@@ -121,18 +121,18 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	time.Sleep(time.Second * 1)
 
 	b.Logf("get vote proof")
-	election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
+	form, err = getForm(formFac, formID, nodes[0].GetOrdering())
 	require.NoError(b, err)
 
-	fmt.Println("Title of the election : " + election.Configuration.MainTitle)
-	fmt.Println("ID of the election : " + string(election.ElectionID))
-	fmt.Println("Status of the election : " + strconv.Itoa(int(election.Status)))
-	fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
-	fmt.Println("Chunks per ballot : " + strconv.Itoa(election.ChunksPerBallot()))
+	fmt.Println("Title of the form : " + form.Configuration.MainTitle)
+	fmt.Println("ID of the form : " + string(form.FormID))
+	fmt.Println("Status of the form : " + strconv.Itoa(int(form.Status)))
+	fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(form.DecryptedBallots)))
+	fmt.Println("Chunks per ballot : " + strconv.Itoa(form.ChunksPerBallot()))
 
-	require.Len(b, election.DecryptedBallots, len(castedVotes))
+	require.Len(b, form.DecryptedBallots, len(castedVotes))
 
-	for _, ballot := range election.DecryptedBallots {
+	for _, ballot := range form.DecryptedBallots {
 		ok := false
 		for _, casted := range castedVotes {
 			if ballot.Equal(casted) {
@@ -146,7 +146,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	closeNodesBench(b, nodes)
 }
 
-func createElectionNChunks(m txManager, title string, admin string, numChunks int) ([]byte, error) {
+func createFormNChunks(m txManager, title string, admin string, numChunks int) ([]byte, error) {
 
 	defaultBallotContent := "text:" + encodeID("bb") + ":\n\n"
 	textSize := 29*numChunks - len(defaultBallotContent)
@@ -175,20 +175,20 @@ func createElectionNChunks(m txManager, title string, admin string, numChunks in
 		},
 	}
 
-	createElection := types.CreateElection{
+	createForm := types.CreateForm{
 		Configuration: configuration,
 		AdminID:       admin,
 	}
 
-	data, err := createElection.Serialize(serdecontext)
+	data, err := createForm.Serialize(serdecontext)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to serialize create election: %v", err)
+		return nil, xerrors.Errorf("failed to serialize create form: %v", err)
 	}
 
 	args := []txn.Arg{
 		{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
-		{Key: evoting.ElectionArg, Value: data},
-		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCreateElection)},
+		{Key: evoting.FormArg, Value: data},
+		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCreateForm)},
 	}
 
 	txID, err := m.addAndWait(args...)
@@ -196,15 +196,15 @@ func createElectionNChunks(m txManager, title string, admin string, numChunks in
 		return nil, xerrors.Errorf("failed to addAndWait: %v", err)
 	}
 
-	// Calculate electionID from
+	// Calculate formID from
 	hash := sha256.New()
 	hash.Write(txID)
-	electionID := hash.Sum(nil)
+	formID := hash.Sum(nil)
 
-	return electionID, nil
+	return formID, nil
 }
 
-func castVotesNChunks(m txManager, actor dkg.Actor, election types.Election,
+func castVotesNChunks(m txManager, actor dkg.Actor, form types.Form,
 	numberOfVotes int) ([]types.Ballot, error) {
 
 	ballotBuilder := strings.Builder{}
@@ -213,14 +213,14 @@ func castVotesNChunks(m txManager, actor dkg.Actor, election types.Election,
 	ballotBuilder.Write([]byte(encodeID("bb")))
 	ballotBuilder.Write([]byte(":"))
 
-	textSize := 29*election.ChunksPerBallot() - ballotBuilder.Len() - 3
+	textSize := 29*form.ChunksPerBallot() - ballotBuilder.Len() - 3
 
 	ballotBuilder.Write([]byte(strings.Repeat("=", textSize)))
 	ballotBuilder.Write([]byte("\n\n"))
 
 	vote := ballotBuilder.String()
 
-	ballot, err := marshallBallot(strings.NewReader(vote), actor, election.ChunksPerBallot())
+	ballot, err := marshallBallot(strings.NewReader(vote), actor, form.ChunksPerBallot())
 	if err != nil {
 		return nil, xerrors.Errorf("failed to marshallBallot: %v", err)
 	}
@@ -232,7 +232,7 @@ func castVotesNChunks(m txManager, actor dkg.Actor, election types.Election,
 		userID := "user " + strconv.Itoa(i)
 
 		castVote := types.CastVote{
-			ElectionID: election.ElectionID,
+			FormID: form.FormID,
 			UserID:     userID,
 			Ballot:     ballot,
 		}
@@ -244,7 +244,7 @@ func castVotesNChunks(m txManager, actor dkg.Actor, election types.Election,
 
 		args := []txn.Arg{
 			{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
-			{Key: evoting.ElectionArg, Value: data},
+			{Key: evoting.FormArg, Value: data},
 			{Key: evoting.CmdArg, Value: []byte(evoting.CmdCastVote)},
 		}
 		_, err = m.addAndWait(args...)
@@ -253,7 +253,7 @@ func castVotesNChunks(m txManager, actor dkg.Actor, election types.Election,
 		}
 
 		var ballot types.Ballot
-		err = ballot.Unmarshal(vote, election)
+		err = ballot.Unmarshal(vote, form)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to unmarshal ballot: %v", err)
 		}

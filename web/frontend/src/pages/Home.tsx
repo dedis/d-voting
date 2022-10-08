@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronRightIcon } from '@heroicons/react/solid';
-import { ROUTE_ELECTION_INDEX } from 'Routes';
+import { ROUTE_FORM_INDEX } from 'Routes';
 import { Link } from 'react-router-dom';
 import introductionImage from '../assets/introductionImage.png';
 
@@ -32,7 +32,7 @@ const Home: FC = () => {
               </div>
               <div className="mt-12 sm:max-w-lg sm:w-full sm:flex">
                 <div className="mt-4 sm:mt-0 sm:ml-3">
-                  <Link to={ROUTE_ELECTION_INDEX}>
+                  <Link to={ROUTE_FORM_INDEX}>
                     <button className="block w-full rounded-md border border-transparent px-5 py-3 bg-indigo-600 text-base font-medium text-white shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:px-10">
                       Get Started
                     </button>

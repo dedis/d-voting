@@ -4,15 +4,15 @@ import (
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 )
 
-// CreateElectionRequest defines the HTTP request for creating an election
-type CreateElectionRequest struct {
+// CreateFormRequest defines the HTTP request for creating an form
+type CreateFormRequest struct {
 	AdminID       string
 	Configuration etypes.Configuration
 }
 
-// CreateElectionResponse defines the HTTP response when creating an election
-type CreateElectionResponse struct {
-	ElectionID string // hex-encoded
+// CreateFormResponse defines the HTTP response when creating an form
+type CreateFormResponse struct {
+	FormID string // hex-encoded
 }
 
 // CastVoteRequest defines the HTTP request for casting a vote
@@ -31,15 +31,15 @@ type EGPairJSON struct {
 	C []byte
 }
 
-// UpdateElectionRequest defines the HTTP request for updating an election
-type UpdateElectionRequest struct {
+// UpdateFormRequest defines the HTTP request for updating an form
+type UpdateFormRequest struct {
 	Action string
 }
 
-// GetElectionResponse defines the HTTP response when getting the election info
-type GetElectionResponse struct {
-	// ElectionID is hex-encoded
-	ElectionID      string
+// GetFormResponse defines the HTTP response when getting the form info
+type GetFormResponse struct {
+	// FormID is hex-encoded
+	FormID      string
 	Configuration   etypes.Configuration
 	Status          uint16
 	Pubkey          string
@@ -50,18 +50,18 @@ type GetElectionResponse struct {
 	Voters          []string
 }
 
-// LightElection represents a light version of the election
-type LightElection struct {
-	ElectionID string
+// LightForm represents a light version of the form
+type LightForm struct {
+	FormID string
 	Title      string
 	Status     uint16
 	Pubkey     string
 }
 
-// GetElectionsResponse defines the HTTP response when getting all elections
+// GetFormsResponse defines the HTTP response when getting all forms
 // infos.
-type GetElectionsResponse struct {
-	Elections []LightElection
+type GetFormsResponse struct {
+	Forms []LightForm
 }
 
 // HTTPError defines the standard error format

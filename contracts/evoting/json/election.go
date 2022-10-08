@@ -14,16 +14,16 @@ import (
 
 var suite = suites.MustFind("Ed25519")
 
-// electionFormat defines how the election messages are encoded/decoded using
+// formFormat defines how the form messages are encoded/decoded using
 // the JSON format.
 //
 // - implements serde.FormatEngine
-type electionFormat struct{}
+type formFormat struct{}
 
 // Encode implements serde.FormatEngine
-func (electionFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, error) {
+func (formFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, error) {
 	switch m := message.(type) {
-	case types.Election:
+	case types.Form:
 
 		var pubkey []byte
 		var err error
@@ -56,9 +56,9 @@ func (electionFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, 
 				err)
 		}
 
-		electionJSON := ElectionJSON{
+		formJSON := FormJSON{
 			Configuration:    m.Configuration,
-			ElectionID:       m.ElectionID,
+			FormID:       m.FormID,
 			Status:           uint16(m.Status),
 			Pubkey:           pubkey,
 			BallotSize:       m.BallotSize,
@@ -70,9 +70,9 @@ func (electionFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, 
 			RosterBuf:        rosterBuf,
 		}
 
-		buff, err := ctx.Marshal(&electionJSON)
+		buff, err := ctx.Marshal(&formJSON)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to marshal election: %v", err)
+			return nil, xerrors.Errorf("failed to marshal form: %v", err)
 		}
 
 		return buff, nil
@@ -82,30 +82,30 @@ func (electionFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, 
 }
 
 // Decode implements serde.FormatEngine
-func (electionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, error) {
-	var electionJSON ElectionJSON
+func (formFormat) Decode(ctx serde.Context, data []byte) (serde.Message, error) {
+	var formJSON FormJSON
 
-	err := ctx.Unmarshal(data, &electionJSON)
+	err := ctx.Unmarshal(data, &formJSON)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to unmarshal election: %v", err)
+		return nil, xerrors.Errorf("failed to unmarshal form: %v", err)
 	}
 
 	var pubKey kyber.Point
 
-	if electionJSON.Pubkey != nil {
+	if formJSON.Pubkey != nil {
 		pubKey = suite.Point()
-		err = pubKey.UnmarshalBinary(electionJSON.Pubkey)
+		err = pubKey.UnmarshalBinary(formJSON.Pubkey)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to unmarshal pubkey: %v", err)
 		}
 	}
 
-	suffragia, err := decodeSuffragia(ctx, electionJSON.Suffragia)
+	suffragia, err := decodeSuffragia(ctx, formJSON.Suffragia)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to decode suffragia: %v", err)
 	}
 
-	shuffleInstances, err := decodeShuffleInstances(ctx, electionJSON.ShuffleInstances)
+	shuffleInstances, err := decodeShuffleInstances(ctx, formJSON.ShuffleInstances)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to decode shuffle instances: %v", err)
 	}
@@ -116,38 +116,38 @@ func (electionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, err
 		return nil, xerrors.Errorf("failed to get roster factory: %T", fac)
 	}
 
-	roster, err := rosterFac.AuthorityOf(ctx, electionJSON.RosterBuf)
+	roster, err := rosterFac.AuthorityOf(ctx, formJSON.RosterBuf)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to decode roster: %v", err)
 	}
 
-	pubSharesSubmissions, err := decodePubSharesUnits(electionJSON.PubsharesUnits)
+	pubSharesSubmissions, err := decodePubSharesUnits(formJSON.PubsharesUnits)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to decode pubShares submissions: %v", err)
 	}
 
-	return types.Election{
-		Configuration:    electionJSON.Configuration,
-		ElectionID:       electionJSON.ElectionID,
-		Status:           types.Status(electionJSON.Status),
+	return types.Form{
+		Configuration:    formJSON.Configuration,
+		FormID:       formJSON.FormID,
+		Status:           types.Status(formJSON.Status),
 		Pubkey:           pubKey,
-		BallotSize:       electionJSON.BallotSize,
+		BallotSize:       formJSON.BallotSize,
 		Suffragia:        suffragia,
 		ShuffleInstances: shuffleInstances,
-		ShuffleThreshold: electionJSON.ShuffleThreshold,
+		ShuffleThreshold: formJSON.ShuffleThreshold,
 		PubsharesUnits:   pubSharesSubmissions,
-		DecryptedBallots: electionJSON.DecryptedBallots,
+		DecryptedBallots: formJSON.DecryptedBallots,
 		Roster:           roster,
 	}, nil
 }
 
-// ElectionJSON defines the Election in the JSON format
-type ElectionJSON struct {
+// FormJSON defines the Form in the JSON format
+type FormJSON struct {
 	Configuration types.Configuration
 
-	// ElectionID is the hex-encoded SHA256 of the transaction ID that creates
-	// the election
-	ElectionID string
+	// FormID is the hex-encoded SHA256 of the transaction ID that creates
+	// the form
+	FormID string
 
 	AdminID string
 	Status  uint16
@@ -171,9 +171,9 @@ type ElectionJSON struct {
 
 	DecryptedBallots []types.Ballot
 
-	// roster is set when the election is created based on the current
+	// roster is set when the form is created based on the current
 	// roster of the node stored in the global state. The roster will not change
-	// during an election and will be used for DKG and Neff. Its type is
+	// during an form and will be used for DKG and Neff. Its type is
 	// authority.Authority.
 
 	RosterBuf []byte
@@ -346,7 +346,7 @@ func decodeShuffleInstance(ctx serde.Context,
 type PubsharesUnitJSON [][][]byte
 
 // PubsharesUnitsJSON defines the JSON representation of the
-// types.PubsharesUnits as used in the election.
+// types.PubsharesUnits as used in the form.
 type PubsharesUnitsJSON struct {
 	// PubsharesJSON contains all the pubShares submitted.
 	PubsharesJSON []PubsharesUnitJSON

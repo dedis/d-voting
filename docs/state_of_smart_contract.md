@@ -2,7 +2,7 @@
 
 In the use cases we defined two smart contracts for each of the following purposes:
 
-- storing the elections informations
+- storing the forms informations
 - storing a ballot
 
 As (at least for the moment) in a dela there is no notion of “instance of a smart contract”, we have
@@ -10,7 +10,7 @@ to see the definition of a smart contract as a single entity that performs its r
 the storage with a predefined set of keys.
 
 The simplest and naive solution is to have a single smart contract that stores everything: the
-elections, the ballots for each election, and the results. This is like having a giant XML/JSON file
+forms, the ballots for each form, and the results. This is like having a giant XML/JSON file
 that contains everything, with the smart contract being the interface that handles that.
 
 As we want to be generic, we should be able to create “any” kind of poll. With that regard we
@@ -32,7 +32,7 @@ starting with 0, your favorite, to N”.
 number of choices. That kind of question can be “Enter the name of 1 or 2 of your favorite
 candidate(s)”.
 
-The data structure of an election should contain the **Configuration**, which describes the
+The data structure of an form should contain the **Configuration**, which describes the
 different questions that the poll contains. We gather the questions (ie. the collections of Select,
 Rank, Text questions) under “Subjects” that define the order of the questions. A subject is nothing
 more than a container to organize the questions. Each subject can also contain, apart from the
@@ -48,11 +48,11 @@ allows us to map answers to the question.
 type ID uint16
 type Identity uint16
 
-type Elections struct {
-Elections map[ID]Election
+type Forms struct {
+Forms map[ID]Form
 }
 
-type Election struct {
+type Form struct {
     Configuration       Configuration
     Status              status // Initial | Open | Closed | Shuffling | Decrypting | ..
     Pubkey              []byte

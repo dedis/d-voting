@@ -44,7 +44,7 @@ import (
 )
 
 const contentType = "application/json"
-const getElectionErr = "failed to get election: %v"
+const getFormErr = "failed to get form: %v"
 
 var suite = suites.MustFind("ed25519")
 
@@ -136,7 +136,7 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve authority factory: %v", err)
 	}
 
-	electionFac := types.NewElectionFactory(types.CiphervoteFactory{}, rosterFac)
+	formFac := types.NewFormFactory(types.CiphervoteFactory{}, rosterFac)
 	mngr := getManager(signer, client)
 
 	proxykeyHex := ctx.Flags.String("proxykey")
@@ -153,24 +153,24 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to unmarshal proxy key: %v", err)
 	}
 
-	ep := eproxy.NewElection(ordering, mngr, p, sjson.NewContext(), electionFac, proxykey)
+	ep := eproxy.NewForm(ordering, mngr, p, sjson.NewContext(), formFac, proxykey)
 
 	router := mux.NewRouter()
 
-	router.HandleFunc("/evoting/elections", ep.NewElection).Methods("POST")
-	router.HandleFunc("/evoting/elections", ep.Elections).Methods("GET")
-	router.HandleFunc("/evoting/elections", eproxy.AllowCORS).Methods("OPTIONS")
-	router.HandleFunc("/evoting/elections/{electionID}", ep.Election).Methods("GET")
-	router.HandleFunc("/evoting/elections/{electionID}", ep.EditElection).Methods("PUT")
-	router.HandleFunc("/evoting/elections/{electionID}", eproxy.AllowCORS).Methods("OPTIONS")
-	router.HandleFunc("/evoting/elections/{electionID}", ep.DeleteElection).Methods("DELETE")
-	router.HandleFunc("/evoting/elections/{electionID}/vote", ep.NewElectionVote).Methods("POST")
+	router.HandleFunc("/evoting/forms", ep.NewForm).Methods("POST")
+	router.HandleFunc("/evoting/forms", ep.Forms).Methods("GET")
+	router.HandleFunc("/evoting/forms", eproxy.AllowCORS).Methods("OPTIONS")
+	router.HandleFunc("/evoting/forms/{formID}", ep.Form).Methods("GET")
+	router.HandleFunc("/evoting/forms/{formID}", ep.EditForm).Methods("PUT")
+	router.HandleFunc("/evoting/forms/{formID}", eproxy.AllowCORS).Methods("OPTIONS")
+	router.HandleFunc("/evoting/forms/{formID}", ep.DeleteForm).Methods("DELETE")
+	router.HandleFunc("/evoting/forms/{formID}/vote", ep.NewFormVote).Methods("POST")
 
 	router.NotFoundHandler = http.HandlerFunc(eproxy.NotFoundHandler)
 	router.MethodNotAllowedHandler = http.HandlerFunc(eproxy.NotAllowedHandler)
 
-	proxy.RegisterHandler("/evoting/elections", router.ServeHTTP)
-	proxy.RegisterHandler("/evoting/elections/", router.ServeHTTP)
+	proxy.RegisterHandler("/evoting/forms", router.ServeHTTP)
+	proxy.RegisterHandler("/evoting/forms/", router.ServeHTTP)
 
 	dela.Logger.Info().Msg("d-voting proxy handlers registered")
 
@@ -200,8 +200,8 @@ func getSigner(filePath string) (crypto.Signer, error) {
 type scenarioTestAction struct {
 }
 
-// Execute implements node.ActionTemplate. It creates an election and
-// simulates the full election process
+// Execute implements node.ActionTemplate. It creates an form and
+// simulates the full form process
 func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	secretkeyHex := ctx.Flags.String("secretkey")
 
@@ -230,7 +230,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	serdecontext := sjson.NewContext()
-	electionFac := types.NewElectionFactory(types.CiphervoteFactory{}, rosterFac)
+	formFac := types.NewFormFactory(types.CiphervoteFactory{}, rosterFac)
 
 	var service ordering.Service
 	err = ctx.Injector.Resolve(&service)
@@ -238,26 +238,26 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve service: %v", err)
 	}
 
-	// ###################################### CREATE SIMPLE ELECTION ######
+	// ###################################### CREATE SIMPLE FORM ######
 
-	fmt.Fprintln(ctx.Out, "Create election")
+	fmt.Fprintln(ctx.Out, "Create form")
 
 	// Define the configuration
 	configuration := fake.BasicConfiguration
 
-	createSimpleElectionRequest := ptypes.CreateElectionRequest{
+	createSimpleFormRequest := ptypes.CreateFormRequest{
 		Configuration: configuration,
 		AdminID:       "adminId",
 	}
 
-	signed, err := createSignedRequest(secret, createSimpleElectionRequest)
+	signed, err := createSignedRequest(secret, createSimpleFormRequest)
 	if err != nil {
 		return createSignedErr(err)
 	}
 
-	fmt.Fprintln(ctx.Out, "create election js:", signed)
+	fmt.Fprintln(ctx.Out, "create form js:", signed)
 
-	url := proxyAddr1 + "/evoting/elections"
+	url := proxyAddr1 + "/evoting/forms"
 	fmt.Fprintln(ctx.Out, "POST", url)
 
 	resp, err := http.Post(url, contentType, bytes.NewBuffer(signed))
@@ -279,34 +279,34 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	resp.Body.Close()
 
-	var electionResponse ptypes.CreateElectionResponse
+	var formResponse ptypes.CreateFormResponse
 
-	err = json.Unmarshal(body, &electionResponse)
+	err = json.Unmarshal(body, &formResponse)
 	if err != nil {
-		return xerrors.Errorf("failed to unmarshal create election response: %v - %s", err, body)
+		return xerrors.Errorf("failed to unmarshal create form response: %v - %s", err, body)
 	}
 
-	electionID := electionResponse.ElectionID
+	formID := formResponse.FormID
 
-	electionIDBuf, err := hex.DecodeString(electionID)
+	formIDBuf, err := hex.DecodeString(formID)
 	if err != nil {
-		return xerrors.Errorf("failed to decode electionID '%s': %v", electionID, err)
+		return xerrors.Errorf("failed to decode formID '%s': %v", formID, err)
 	}
 
-	election, err := getElection(serdecontext, electionFac, electionID, service)
+	form, err := getForm(serdecontext, formFac, formID, service)
 	if err != nil {
-		return xerrors.Errorf(getElectionErr, err)
+		return xerrors.Errorf(getFormErr, err)
 	}
 
-	// sanity check, the electionID returned and the one stored in the election
+	// sanity check, the formID returned and the one stored in the form
 	// type must be the same.
-	if election.ElectionID != electionID {
-		return xerrors.Errorf("electionID mismatch: %s != %s", election.ElectionID, electionID)
+	if form.FormID != formID {
+		return xerrors.Errorf("formID mismatch: %s != %s", form.FormID, formID)
 	}
 
-	fmt.Fprintf(ctx.Out, "Title of the election: "+election.Configuration.MainTitle)
-	fmt.Fprintf(ctx.Out, "ID of the election: "+election.ElectionID)
-	fmt.Fprintf(ctx.Out, "Status of the election: "+strconv.Itoa(int(election.Status)))
+	fmt.Fprintf(ctx.Out, "Title of the form: "+form.Configuration.MainTitle)
+	fmt.Fprintf(ctx.Out, "ID of the form: "+form.FormID)
+	fmt.Fprintf(ctx.Out, "Status of the form: "+strconv.Itoa(int(form.Status)))
 
 	// ##################################### SETUP DKG #########################
 
@@ -314,60 +314,60 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintf(ctx.Out, "Node 1")
 
-	err = initDKG(secret, proxyAddr1, electionID)
+	err = initDKG(secret, proxyAddr1, formID)
 	if err != nil {
 		return xerrors.Errorf("failed to init dkg 1: %v", err)
 	}
 
 	fmt.Fprintf(ctx.Out, "Node 2")
 
-	err = initDKG(secret, proxyAddr2, electionID)
+	err = initDKG(secret, proxyAddr2, formID)
 	if err != nil {
 		return xerrors.Errorf("failed to init dkg 2: %v", err)
 	}
 
 	fmt.Fprintf(ctx.Out, "Node 3")
 
-	err = initDKG(secret, proxyAddr3, electionID)
+	err = initDKG(secret, proxyAddr3, formID)
 	if err != nil {
 		return xerrors.Errorf("failed to init dkg 3: %v", err)
 	}
 
 	fmt.Fprintf(ctx.Out, "Setup DKG on node 1")
 
-	_, err = updateDKG(secret, proxyAddr1, electionID, "setup")
+	_, err = updateDKG(secret, proxyAddr1, formID, "setup")
 	if err != nil {
 		return xerrors.Errorf("failed to setup dkg on node 1: %v", err)
 	}
 
-	// ##################################### OPEN ELECTION #####################
+	// ##################################### OPEN FORM #####################
 
-	fmt.Fprintf(ctx.Out, "Open election")
+	fmt.Fprintf(ctx.Out, "Open form")
 
-	_, err = updateElection(secret, proxyAddr1, electionID, "open")
+	_, err = updateForm(secret, proxyAddr1, formID, "open")
 	if err != nil {
-		return xerrors.Errorf("failed to open election: %v", err)
+		return xerrors.Errorf("failed to open form: %v", err)
 	}
 
-	// ##################################### GET ELECTION INFO #################
+	// ##################################### GET FORM INFO #################
 
-	fmt.Fprintln(ctx.Out, "Get election")
+	fmt.Fprintln(ctx.Out, "Get form")
 
-	election, err = getElection(serdecontext, electionFac, electionID, service)
+	form, err = getForm(serdecontext, formFac, formID, service)
 	if err != nil {
-		return xerrors.Errorf(getElectionErr, err)
+		return xerrors.Errorf(getFormErr, err)
 	}
 
-	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
-	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
-	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
-	dela.Logger.Info().Msgf("Pubkey of the election : %x", election.Pubkey)
+	dela.Logger.Info().Msg("Title of the form : " + form.Configuration.MainTitle)
+	dela.Logger.Info().Msg("ID of the form : " + string(form.FormID))
+	dela.Logger.Info().Msg("Status of the form : " + strconv.Itoa(int(form.Status)))
+	dela.Logger.Info().Msgf("Pubkey of the form : %x", form.Pubkey)
 
-	// ############################# ATTEMPT TO CLOSE ELECTION #################
+	// ############################# ATTEMPT TO CLOSE FORM #################
 
-	fmt.Fprintln(ctx.Out, "Close election")
+	fmt.Fprintln(ctx.Out, "Close form")
 
-	status, err := updateElection(secret, proxyAddr1, electionID, "close")
+	status, err := updateForm(secret, proxyAddr1, formID, "close")
 	if status != http.StatusInternalServerError {
 		return xerrors.Errorf("unexpected error: %d: %v", status, err)
 	}
@@ -392,13 +392,13 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve DKG: %v", err)
 	}
 
-	dkgActor, exists := dkg.GetActor(electionIDBuf)
+	dkgActor, exists := dkg.GetActor(formIDBuf)
 	if !exists {
 		return xerrors.Errorf("failed to get actor: %v", err)
 	}
 
 	// Ballot 1
-	ballot1, err := marshallBallot(b1, dkgActor, election.ChunksPerBallot())
+	ballot1, err := marshallBallot(b1, dkgActor, form.ChunksPerBallot())
 	if err != nil {
 		return xerrors.Errorf("failed to marshall ballot : %v", err)
 	}
@@ -415,7 +415,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "cast first ballot")
 
-	respBody, err := castVote(electionID, signed, proxyAddr1)
+	respBody, err := castVote(formID, signed, proxyAddr1)
 	if err != nil {
 		return xerrors.Errorf("failed to cast vote: %v", err)
 	}
@@ -423,7 +423,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("Response body: " + respBody)
 
 	// Ballot 2
-	ballot2, err := marshallBallot(b2, dkgActor, election.ChunksPerBallot())
+	ballot2, err := marshallBallot(b2, dkgActor, form.ChunksPerBallot())
 	if err != nil {
 		return xerrors.Errorf("failed to marshall ballot : %v", err)
 	}
@@ -440,7 +440,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "cast second ballot")
 
-	respBody, err = castVote(electionID, signed, proxyAddr1)
+	respBody, err = castVote(formID, signed, proxyAddr1)
 	if err != nil {
 		return xerrors.Errorf("failed to cast vote: %v", err)
 	}
@@ -448,7 +448,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg("Response body: " + respBody)
 
 	// Ballot 3
-	ballot3, err := marshallBallot(b3, dkgActor, election.ChunksPerBallot())
+	ballot3, err := marshallBallot(b3, dkgActor, form.ChunksPerBallot())
 	if err != nil {
 		return xerrors.Errorf("failed to marshall ballot: %v", err)
 	}
@@ -465,40 +465,40 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	fmt.Fprintln(ctx.Out, "cast third ballot")
 
-	respBody, err = castVote(electionID, signed, proxyAddr1)
+	respBody, err = castVote(formID, signed, proxyAddr1)
 	if err != nil {
 		return xerrors.Errorf("failed to cast vote: %v", err)
 	}
 
 	dela.Logger.Info().Msg("Response body: " + respBody)
 
-	election, err = getElection(serdecontext, electionFac, electionID, service)
+	form, err = getForm(serdecontext, formFac, formID, service)
 	if err != nil {
-		return xerrors.Errorf(getElectionErr, err)
+		return xerrors.Errorf(getFormErr, err)
 	}
 
-	encryptedBallots := election.Suffragia.Ciphervotes
+	encryptedBallots := form.Suffragia.Ciphervotes
 	dela.Logger.Info().Msg("Length encrypted ballots: " + strconv.Itoa(len(encryptedBallots)))
 	dela.Logger.Info().Msgf("Ballot of user1: %s", encryptedBallots[0])
 	dela.Logger.Info().Msgf("Ballot of user2: %s", encryptedBallots[1])
 	dela.Logger.Info().Msgf("Ballot of user3: %s", encryptedBallots[2])
 
-	// ############################# CLOSE ELECTION FOR REAL ###################
+	// ############################# CLOSE FORM FOR REAL ###################
 
-	fmt.Fprintln(ctx.Out, "Close election (for real)")
+	fmt.Fprintln(ctx.Out, "Close form (for real)")
 
-	_, err = updateElection(secret, proxyAddr1, electionID, "close")
+	_, err = updateForm(secret, proxyAddr1, formID, "close")
 	if err != nil {
-		return xerrors.Errorf("failed to close election: %v", err)
+		return xerrors.Errorf("failed to close form: %v", err)
 	}
 
-	election, err = getElection(serdecontext, electionFac, electionID, service)
+	form, err = getForm(serdecontext, formFac, formID, service)
 	if err != nil {
-		return xerrors.Errorf(getElectionErr, err)
+		return xerrors.Errorf(getFormErr, err)
 	}
 
-	dela.Logger.Info().Msg("Title of the election: " + election.Configuration.MainTitle)
-	dela.Logger.Info().Msg("Status of the election: " + strconv.Itoa(int(election.Status)))
+	dela.Logger.Info().Msg("Title of the form: " + form.Configuration.MainTitle)
+	dela.Logger.Info().Msg("Status of the form: " + strconv.Itoa(int(form.Status)))
 
 	// ###################################### SHUFFLE BALLOTS ##################
 
@@ -513,7 +513,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return createSignedErr(err)
 	}
 
-	req, err := http.NewRequest(http.MethodPut, proxyAddr1+"/evoting/services/shuffle/"+electionID, bytes.NewBuffer(signed))
+	req, err := http.NewRequest(http.MethodPut, proxyAddr1+"/evoting/services/shuffle/"+formID, bytes.NewBuffer(signed))
 	if err != nil {
 		return xerrors.Errorf("failed to create shuffle request: %v", err)
 	}
@@ -530,103 +530,103 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	// time.Sleep(20 * time.Second)
 
-	election, err = getElection(serdecontext, electionFac, electionID, service)
+	form, err = getForm(serdecontext, formFac, formID, service)
 	if err != nil {
-		return xerrors.Errorf(getElectionErr, err)
+		return xerrors.Errorf(getFormErr, err)
 	}
 
-	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
-	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
-	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
-	dela.Logger.Info().Msg("Number of shuffled ballots : " + strconv.Itoa(len(election.ShuffleInstances)))
-	dela.Logger.Info().Msg("Number of encrypted ballots : " + strconv.Itoa(len(election.Suffragia.Ciphervotes)))
+	dela.Logger.Info().Msg("Title of the form : " + form.Configuration.MainTitle)
+	dela.Logger.Info().Msg("ID of the form : " + string(form.FormID))
+	dela.Logger.Info().Msg("Status of the form : " + strconv.Itoa(int(form.Status)))
+	dela.Logger.Info().Msg("Number of shuffled ballots : " + strconv.Itoa(len(form.ShuffleInstances)))
+	dela.Logger.Info().Msg("Number of encrypted ballots : " + strconv.Itoa(len(form.Suffragia.Ciphervotes)))
 
 	// ###################################### REQUEST PUBLIC SHARES ############
 
 	fmt.Fprintln(ctx.Out, "request public shares")
 
-	_, err = updateDKG(secret, proxyAddr1, electionID, "computePubshares")
+	_, err = updateDKG(secret, proxyAddr1, formID, "computePubshares")
 	if err != nil {
 		return xerrors.Errorf("failed to compute pubshares: %v", err)
 	}
 
 	time.Sleep(10 * time.Second)
 
-	election, err = getElection(serdecontext, electionFac, electionID, service)
+	form, err = getForm(serdecontext, formFac, formID, service)
 	if err != nil {
-		return xerrors.Errorf(getElectionErr, err)
+		return xerrors.Errorf(getFormErr, err)
 	}
 
-	validSubmissions := len(election.PubsharesUnits.Pubshares)
+	validSubmissions := len(form.PubsharesUnits.Pubshares)
 
-	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
-	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
-	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
+	dela.Logger.Info().Msg("Title of the form : " + form.Configuration.MainTitle)
+	dela.Logger.Info().Msg("ID of the form : " + string(form.FormID))
+	dela.Logger.Info().Msg("Status of the form : " + strconv.Itoa(int(form.Status)))
 	dela.Logger.Info().Msg("Number of Pubshare units submitted: " + strconv.Itoa(validSubmissions))
 
 	// ###################################### DECRYPT BALLOTS ##################
 
 	fmt.Fprintln(ctx.Out, "decrypt ballots")
 
-	_, err = updateElection(secret, proxyAddr1, electionID, "combineShares")
+	_, err = updateForm(secret, proxyAddr1, formID, "combineShares")
 	if err != nil {
 		return xerrors.Errorf("failed to combine shares: %v", err)
 	}
 
-	election, err = getElection(serdecontext, electionFac, electionID, service)
+	form, err = getForm(serdecontext, formFac, formID, service)
 	if err != nil {
-		return xerrors.Errorf(getElectionErr, err)
+		return xerrors.Errorf(getFormErr, err)
 	}
 
-	// dela.Logger.Info().Msg("----------------------- Election : " +
+	// dela.Logger.Info().Msg("----------------------- Form : " +
 	// string(proof.GetValue()))
-	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
-	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
-	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
-	dela.Logger.Info().Msg("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
+	dela.Logger.Info().Msg("Title of the form : " + form.Configuration.MainTitle)
+	dela.Logger.Info().Msg("ID of the form : " + string(form.FormID))
+	dela.Logger.Info().Msg("Status of the form : " + strconv.Itoa(int(form.Status)))
+	dela.Logger.Info().Msg("Number of decrypted ballots : " + strconv.Itoa(len(form.DecryptedBallots)))
 
-	// ###################################### GET ELECTION RESULT ##############
+	// ###################################### GET FORM RESULT ##############
 
-	fmt.Fprintln(ctx.Out, "Get election result")
+	fmt.Fprintln(ctx.Out, "Get form result")
 
-	election, err = getElection(serdecontext, electionFac, electionID, service)
+	form, err = getForm(serdecontext, formFac, formID, service)
 	if err != nil {
-		return xerrors.Errorf(getElectionErr, err)
+		return xerrors.Errorf(getFormErr, err)
 	}
 
-	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
-	dela.Logger.Info().Msg("ID of the election : " + string(election.ElectionID))
-	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
-	dela.Logger.Info().Msg("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
+	dela.Logger.Info().Msg("Title of the form : " + form.Configuration.MainTitle)
+	dela.Logger.Info().Msg("ID of the form : " + string(form.FormID))
+	dela.Logger.Info().Msg("Status of the form : " + strconv.Itoa(int(form.Status)))
+	dela.Logger.Info().Msg("Number of decrypted ballots : " + strconv.Itoa(len(form.DecryptedBallots)))
 
-	if len(election.DecryptedBallots) != 3 {
-		return xerrors.Errorf("unexpected number of decrypted ballot: %d != 3", len(election.DecryptedBallots))
+	if len(form.DecryptedBallots) != 3 {
+		return xerrors.Errorf("unexpected number of decrypted ballot: %d != 3", len(form.DecryptedBallots))
 	}
 
-	// dela.Logger.Info().Msg(election.DecryptedBallots[0].Vote)
-	// dela.Logger.Info().Msg(election.DecryptedBallots[1].Vote)
-	// dela.Logger.Info().Msg(election.DecryptedBallots[2].Vote)
+	// dela.Logger.Info().Msg(form.DecryptedBallots[0].Vote)
+	// dela.Logger.Info().Msg(form.DecryptedBallots[1].Vote)
+	// dela.Logger.Info().Msg(form.DecryptedBallots[2].Vote)
 
-	// ###################################### GET ALL ELECTION ##############
+	// ###################################### GET ALL FORM ##############
 
-	resp, err = http.Get(proxyAddr1 + "/evoting/elections")
+	resp, err = http.Get(proxyAddr1 + "/evoting/forms")
 	if err != nil {
-		return xerrors.Errorf("failed to get all elections")
+		return xerrors.Errorf("failed to get all forms")
 	}
 
-	var allElections ptypes.GetElectionsResponse
+	var allForms ptypes.GetFormsResponse
 
 	decoder := json.NewDecoder(resp.Body)
 
-	err = decoder.Decode(&allElections)
+	err = decoder.Decode(&allForms)
 	if err != nil {
-		return xerrors.Errorf("failed to decode getAllElections: %v", err)
+		return xerrors.Errorf("failed to decode getAllForms: %v", err)
 	}
 
-	dela.Logger.Info().Msgf("All elections: %v", allElections)
+	dela.Logger.Info().Msgf("All forms: %v", allForms)
 
-	if len(allElections.Elections) != 1 && allElections.Elections[0].ElectionID != electionID {
-		return xerrors.Errorf("unexpected allElections: %v", allElections)
+	if len(allForms.Forms) != 1 && allForms.Forms[0].FormID != formID {
+		return xerrors.Errorf("unexpected allForms: %v", allForms)
 	}
 
 	return nil
@@ -677,9 +677,9 @@ func marshallBallot(voteStr string, actor dkg.Actor, chunks int) (ptypes.Cipherv
 	return ballot, nil
 }
 
-// electionID is hex-encoded
-func castVote(electionID string, signed []byte, proxyAddr string) (string, error) {
-	resp, err := http.Post(proxyAddr+"/evoting/elections/"+electionID+"/vote", contentType, bytes.NewBuffer(signed))
+// formID is hex-encoded
+func castVote(formID string, signed []byte, proxyAddr string) (string, error) {
+	resp, err := http.Post(proxyAddr+"/evoting/forms/"+formID+"/vote", contentType, bytes.NewBuffer(signed))
 	if err != nil {
 		return "", xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
@@ -699,8 +699,8 @@ func castVote(electionID string, signed []byte, proxyAddr string) (string, error
 	return string(body), nil
 }
 
-func updateElection(secret kyber.Scalar, proxyAddr, electionIDHex, action string) (int, error) {
-	msg := ptypes.UpdateElectionRequest{
+func updateForm(secret kyber.Scalar, proxyAddr, formIDHex, action string) (int, error) {
+	msg := ptypes.UpdateFormRequest{
 		Action: action,
 	}
 
@@ -709,7 +709,7 @@ func updateElection(secret kyber.Scalar, proxyAddr, electionIDHex, action string
 		return 0, createSignedErr(err)
 	}
 
-	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/elections/"+electionIDHex, bytes.NewBuffer(signed))
+	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/forms/"+formIDHex, bytes.NewBuffer(signed))
 	if err != nil {
 		return 0, xerrors.Errorf("failed to create request: %v", err)
 	}
@@ -727,9 +727,9 @@ func updateElection(secret kyber.Scalar, proxyAddr, electionIDHex, action string
 	return 0, nil
 }
 
-func initDKG(secret kyber.Scalar, proxyAddr, electionIDHex string) error {
+func initDKG(secret kyber.Scalar, proxyAddr, formIDHex string) error {
 	setupDKG := ptypes.NewDKGRequest{
-		ElectionID: electionIDHex,
+		FormID: formIDHex,
 	}
 
 	signed, err := createSignedRequest(secret, setupDKG)
@@ -750,7 +750,7 @@ func initDKG(secret kyber.Scalar, proxyAddr, electionIDHex string) error {
 	return nil
 }
 
-func updateDKG(secret kyber.Scalar, proxyAddr, electionIDHex, action string) (int, error) {
+func updateDKG(secret kyber.Scalar, proxyAddr, formIDHex, action string) (int, error) {
 	msg := ptypes.UpdateDKG{
 		Action: action,
 	}
@@ -760,7 +760,7 @@ func updateDKG(secret kyber.Scalar, proxyAddr, electionIDHex, action string) (in
 		return 0, createSignedErr(err)
 	}
 
-	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/services/dkg/actors/"+electionIDHex, bytes.NewBuffer(signed))
+	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/services/dkg/actors/"+formIDHex, bytes.NewBuffer(signed))
 	if err != nil {
 		return 0, xerrors.Errorf("failed to create request: %v", err)
 	}
@@ -778,39 +778,39 @@ func updateDKG(secret kyber.Scalar, proxyAddr, electionIDHex, action string) (in
 	return 0, nil
 }
 
-// getElection gets the election from the snap. Returns the election ID NOT hex
+// getForm gets the form from the snap. Returns the form ID NOT hex
 // encoded.
-func getElection(ctx serde.Context, electionFac serde.Factory, electionIDHex string,
-	srv ordering.Service) (types.Election, error) {
+func getForm(ctx serde.Context, formFac serde.Factory, formIDHex string,
+	srv ordering.Service) (types.Form, error) {
 
-	var election types.Election
+	var form types.Form
 
-	electionID, err := hex.DecodeString(electionIDHex)
+	formID, err := hex.DecodeString(formIDHex)
 	if err != nil {
-		return election, xerrors.Errorf("failed to decode electionIDHex: %v", err)
+		return form, xerrors.Errorf("failed to decode formIDHex: %v", err)
 	}
 
-	proof, err := srv.GetProof(electionID)
+	proof, err := srv.GetProof(formID)
 	if err != nil {
-		return election, xerrors.Errorf("failed to get proof: %v", err)
+		return form, xerrors.Errorf("failed to get proof: %v", err)
 	}
 
-	electionBuff := proof.GetValue()
-	if len(electionBuff) == 0 {
-		return election, xerrors.Errorf("election does not exist")
+	formBuff := proof.GetValue()
+	if len(formBuff) == 0 {
+		return form, xerrors.Errorf("form does not exist")
 	}
 
-	message, err := electionFac.Deserialize(ctx, electionBuff)
+	message, err := formFac.Deserialize(ctx, formBuff)
 	if err != nil {
-		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
+		return form, xerrors.Errorf("failed to deserialize Form: %v", err)
 	}
 
-	election, ok := message.(types.Election)
+	form, ok := message.(types.Form)
 	if !ok {
-		return election, xerrors.Errorf("wrong message type: %T", message)
+		return form, xerrors.Errorf("wrong message type: %T", message)
 	}
 
-	return election, nil
+	return form, nil
 }
 
 func createSignedErr(err error) error {

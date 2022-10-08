@@ -17,14 +17,14 @@ var suite = suites.MustFind("Ed25519")
 // ID defines the ID of a ballot question
 type ID string
 
-// Status defines the status of the election
+// Status defines the status of the form
 type Status uint16
 
 const (
 	// DecryptedBallots = 4
-	// Initial is when the election has just been created
+	// Initial is when the form has just been created
 	Initial Status = 0
-	// Open is when the election is open, i.e. it fetched the public key
+	// Open is when the form is open, i.e. it fetched the public key
 	Open Status = 1
 	// Closed is when no more users can cast ballots
 	Closed Status = 2
@@ -34,31 +34,31 @@ const (
 	PubSharesSubmitted Status = 4
 	// ResultAvailable is when the ballots have been decrypted
 	ResultAvailable Status = 5
-	// Canceled is when the election has been cancel
+	// Canceled is when the form has been cancel
 	Canceled Status = 6
 )
 
-// electionFormat contains the supported formats for the election. Right now
+// formFormat contains the supported formats for the form. Right now
 // only JSON is supported.
-var electionFormat = registry.NewSimpleRegistry()
+var formFormat = registry.NewSimpleRegistry()
 
-// RegisterElectionFormat registers the engine for the provided format
-func RegisterElectionFormat(format serde.Format, engine serde.FormatEngine) {
-	electionFormat.Register(format, engine)
+// RegisterFormFormat registers the engine for the provided format
+func RegisterFormFormat(format serde.Format, engine serde.FormatEngine) {
+	formFormat.Register(format, engine)
 }
 
-// ElectionKey is the key of the election factory
-type ElectionKey struct{}
+// FormKey is the key of the form factory
+type FormKey struct{}
 
-// Election contains all information about a simple election
+// Form contains all information about a simple form
 //
 // - implements serde.Message
-type Election struct {
+type Form struct {
 	Configuration Configuration
 
-	// ElectionID is the hex-encoded SHA256 of the transaction ID that creates
-	// the election
-	ElectionID string
+	// FormID is the hex-encoded SHA256 of the transaction ID that creates
+	// the form
+	FormID string
 
 	Status Status
 	Pubkey kyber.Point
@@ -84,46 +84,46 @@ type Election struct {
 
 	DecryptedBallots []Ballot
 
-	// roster is set when the election is created based on the current
+	// roster is set when the form is created based on the current
 	// roster of the node stored in the global state. The roster will not change
-	// during an election and will be used for DKG and Neff. Its type is
+	// during an form and will be used for DKG and Neff. Its type is
 	// authority.Authority.
 
 	Roster authority.Authority
 }
 
 // Serialize implements serde.Message
-func (e Election) Serialize(ctx serde.Context) ([]byte, error) {
-	format := electionFormat.Get(ctx.GetFormat())
+func (e Form) Serialize(ctx serde.Context) ([]byte, error) {
+	format := formFormat.Get(ctx.GetFormat())
 
 	data, err := format.Encode(ctx, e)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to encode election: %v", err)
+		return nil, xerrors.Errorf("failed to encode form: %v", err)
 	}
 
 	return data, nil
 }
 
-// ElectionFactory provides the mean to deserialize an election. It naturally
-// uses the electionFormat.
+// FormFactory provides the mean to deserialize an form. It naturally
+// uses the formFormat.
 //
 // - implements serde.Factory
-type ElectionFactory struct {
+type FormFactory struct {
 	ciphervoteFac serde.Factory
 	rosterFac     authority.Factory
 }
 
-// NewElectionFactory creates a new Election factory
-func NewElectionFactory(cf serde.Factory, rf authority.Factory) ElectionFactory {
-	return ElectionFactory{
+// NewFormFactory creates a new Form factory
+func NewFormFactory(cf serde.Factory, rf authority.Factory) FormFactory {
+	return FormFactory{
 		ciphervoteFac: cf,
 		rosterFac:     rf,
 	}
 }
 
 // Deserialize implements serde.Factory
-func (e ElectionFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
-	format := electionFormat.Get(ctx.GetFormat())
+func (e FormFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
+	format := formFormat.Get(ctx.GetFormat())
 
 	ctx = serde.WithFactory(ctx, CiphervoteKey{}, e.ciphervoteFac)
 	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, e.rosterFac)
@@ -138,7 +138,7 @@ func (e ElectionFactory) Deserialize(ctx serde.Context, data []byte) (serde.Mess
 
 // ChunksPerBallot returns the number of chunks of El Gamal pairs needed to
 // represent an encrypted ballot, knowing that one chunk is 29 bytes at most.
-func (e *Election) ChunksPerBallot() int {
+func (e *Form) ChunksPerBallot() int {
 	if e.BallotSize%29 == 0 {
 		return e.BallotSize / 29
 	}
@@ -158,7 +158,7 @@ func (r RandomVector) Unmarshal() ([]kyber.Scalar, error) {
 		scalar := suite.Scalar()
 		err := scalar.UnmarshalBinary(v)
 		if err != nil {
-			return nil, xerrors.Errorf("cannot unmarshal election random vector: %v", err)
+			return nil, xerrors.Errorf("cannot unmarshal form random vector: %v", err)
 		}
 		e[i] = scalar
 	}

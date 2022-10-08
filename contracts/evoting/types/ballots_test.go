@@ -31,12 +31,12 @@ func decodedQuestionID(i int) ID {
 
 func TestBallot_Unmarshal(t *testing.T) {
 	b := Ballot{}
-	election := Election{BallotSize: len(ballot1)}
-	err := b.Unmarshal(ballot1, election)
+	form := Form{BallotSize: len(ballot1)}
+	err := b.Unmarshal(ballot1, form)
 
 	require.EqualError(t, err, "wrong question ID: the question doesn't exist")
 
-	election.Configuration = Configuration{Scaffold: []Subject{{
+	form.Configuration = Configuration{Scaffold: []Subject{{
 		Subjects: []Subject{},
 
 		Selects: []Select{{
@@ -73,7 +73,7 @@ func TestBallot_Unmarshal(t *testing.T) {
 	},
 	}}
 
-	err = b.Unmarshal(ballot1, election)
+	err = b.Unmarshal(ballot1, form)
 	require.NoError(t, err)
 
 	// expected ballot
@@ -97,11 +97,11 @@ func TestBallot_Unmarshal(t *testing.T) {
 	require.Equal(t, expected.TextResult, b.TextResult)
 
 	// with ballot too long
-	err = b.Unmarshal(ballot1+"x", election)
+	err = b.Unmarshal(ballot1+"x", form)
 	require.EqualError(t, err, "ballot has an unexpected size 102, expected <= 101")
 
 	// with line wrongly formatted
-	err = b.Unmarshal("x", election)
+	err = b.Unmarshal("x", form)
 	require.EqualError(t, err, "a line in the ballot has length != 3: x")
 
 	// with ID not encoded in base64
@@ -110,16 +110,16 @@ func TestBallot_Unmarshal(t *testing.T) {
 		"select:" + encodedQuestionID(3) + ":1,0,1,1\n" +
 		"text:" + encodedQuestionID(4) + ":YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ==\n\n")
 
-	err = b.Unmarshal(ballotWrongID, election)
+	err = b.Unmarshal(ballotWrongID, form)
 	require.EqualError(t, err, "could not decode question ID: illegal base64 data at input byte 0")
 
-	// with question ID not from the election
+	// with question ID not from the form
 	ballotUnknownID := string("select:" + encodedQuestionID(0) + ":1,0,1\n" +
 		"rank:" + encodedQuestionID(2) + ":1,2,0,,\n" +
 		"select:" + encodedQuestionID(3) + ":1,0,1,1\n" +
 		"text:" + encodedQuestionID(4) + ":YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ==\n\n")
 
-	err = b.Unmarshal(ballotUnknownID, election)
+	err = b.Unmarshal(ballotUnknownID, form)
 	require.EqualError(t, err, "wrong question ID: the question doesn't exist")
 
 	// with too many answers in select question
@@ -128,9 +128,9 @@ func TestBallot_Unmarshal(t *testing.T) {
 		"select:" + encodedQuestionID(3) + ":1,0,1,1\n" +
 		"text:" + encodedQuestionID(4) + ":YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ==\n\n")
 
-	election.BallotSize = len(ballotWrongSelect)
+	form.BallotSize = len(ballotWrongSelect)
 
-	err = b.Unmarshal(ballotWrongSelect, election)
+	err = b.Unmarshal(ballotWrongSelect, form)
 	require.EqualError(t, err,
 		"could not unmarshal select answers: question Q1 has a wrong number"+
 			" of answers: expected 3 got 5")
@@ -141,11 +141,11 @@ func TestBallot_Unmarshal(t *testing.T) {
 		"select:" + encodedQuestionID(3) + ":1,0,1,1\n" +
 		"text:" + encodedQuestionID(4) + ":YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ==\n\n")
 
-	election.BallotSize = len(ballotWrongSelect)
+	form.BallotSize = len(ballotWrongSelect)
 
-	err = b.Unmarshal(ballotWrongSelect, election)
+	err = b.Unmarshal(ballotWrongSelect, form)
 	require.EqualError(t, err, "could not unmarshal select answers:"+
-		" could not parse selection value for Q.Q1: strconv."+
+		" could not parse sform value for Q.Q1: strconv."+
 		"ParseBool: parsing \"wrong\": invalid syntax")
 
 	// with too many selected answers in select question
@@ -154,9 +154,9 @@ func TestBallot_Unmarshal(t *testing.T) {
 		"select:" + encodedQuestionID(3) + ":1,0,1,1\n" +
 		"text:" + encodedQuestionID(4) + ":YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ==\n\n")
 
-	election.BallotSize = len(ballotWrongSelect)
+	form.BallotSize = len(ballotWrongSelect)
 
-	err = b.Unmarshal(ballotWrongSelect, election)
+	err = b.Unmarshal(ballotWrongSelect, form)
 	require.EqualError(t, err, "could not unmarshal select answers: "+
 		"failed to check number of answers: question Q1 has too many selected answers")
 
@@ -166,9 +166,9 @@ func TestBallot_Unmarshal(t *testing.T) {
 		"select:" + encodedQuestionID(3) + ":1,0,1,1\n" +
 		"text:" + encodedQuestionID(4) + ":YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ==\n\n")
 
-	election.BallotSize = len(ballotWrongSelect)
+	form.BallotSize = len(ballotWrongSelect)
 
-	err = b.Unmarshal(ballotWrongSelect, election)
+	err = b.Unmarshal(ballotWrongSelect, form)
 	require.EqualError(t, err, "could not unmarshal select answers: "+
 		"failed to check number of answers: question Q1 has not enough selected answers")
 
@@ -178,7 +178,7 @@ func TestBallot_Unmarshal(t *testing.T) {
 		"select:" + encodedQuestionID(3) + ":1,0,1,1\n" +
 		"text:" + encodedQuestionID(4) + ":YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ==\n\n")
 
-	err = b.Unmarshal(ballotWrongRank, election)
+	err = b.Unmarshal(ballotWrongRank, form)
 	require.EqualError(t, err, "could not unmarshal rank answers: question"+
 		" Q2 has a wrong number of answers: expected 5 got 3")
 
@@ -188,9 +188,9 @@ func TestBallot_Unmarshal(t *testing.T) {
 		"select:" + encodedQuestionID(3) + ":1,0,1,1\n" +
 		"text:" + encodedQuestionID(4) + ":YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ==\n\n")
 
-	election.BallotSize = len(ballotWrongRank)
+	form.BallotSize = len(ballotWrongRank)
 
-	err = b.Unmarshal(ballotWrongRank, election)
+	err = b.Unmarshal(ballotWrongRank, form)
 	require.EqualError(t, err, "could not unmarshal rank answers: "+
 		"could not parse rank value for Q.Q2: strconv.ParseInt: parsing \"x\": invalid syntax")
 
@@ -200,9 +200,9 @@ func TestBallot_Unmarshal(t *testing.T) {
 		"select:" + encodedQuestionID(3) + ":1,0,1,1\n" +
 		"text:" + encodedQuestionID(4) + ":YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ==\n\n")
 
-	election.BallotSize = len(ballotWrongRank)
+	form.BallotSize = len(ballotWrongRank)
 
-	err = b.Unmarshal(ballotWrongRank, election)
+	err = b.Unmarshal(ballotWrongRank, form)
 	require.EqualError(t, err, "could not unmarshal rank answers: "+
 		"invalid rank not in range [0, MaxN[: 3")
 
@@ -212,9 +212,9 @@ func TestBallot_Unmarshal(t *testing.T) {
 		"select:" + encodedQuestionID(3) + ":1,0,1,1\n" +
 		"text:" + encodedQuestionID(4) + ":YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ==\n\n")
 
-	election.BallotSize = len(ballotWrongRank)
+	form.BallotSize = len(ballotWrongRank)
 
-	err = b.Unmarshal(ballotWrongRank, election)
+	err = b.Unmarshal(ballotWrongRank, form)
 	require.EqualError(t, err, "could not unmarshal rank answers: "+
 		"failed to check number of answers: question Q2 has too many selected answers")
 
@@ -224,9 +224,9 @@ func TestBallot_Unmarshal(t *testing.T) {
 		"select:" + encodedQuestionID(3) + ":1,0,1,1\n" +
 		"text:" + encodedQuestionID(4) + ":YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ==\n\n")
 
-	election.BallotSize = len(ballotWrongRank)
+	form.BallotSize = len(ballotWrongRank)
 
-	err = b.Unmarshal(ballotWrongRank, election)
+	err = b.Unmarshal(ballotWrongRank, form)
 	require.EqualError(t, err, "could not unmarshal rank answers: "+
 		"failed to check number of answers: question"+
 		" Q2 has not enough selected answers")
@@ -237,9 +237,9 @@ func TestBallot_Unmarshal(t *testing.T) {
 		"select:" + encodedQuestionID(3) + ":1,0,1,1\n" +
 		"text:" + encodedQuestionID(4) + ":Y2VzdG1vaUVtaQ==\n\n")
 
-	election.BallotSize = len(ballotWrongText)
+	form.BallotSize = len(ballotWrongText)
 
-	err = b.Unmarshal(ballotWrongText, election)
+	err = b.Unmarshal(ballotWrongText, form)
 	require.EqualError(t, err, "could not unmarshal text answers: "+
 		"question Q4 has a wrong number of answers: expected 2 got 1")
 
@@ -249,27 +249,27 @@ func TestBallot_Unmarshal(t *testing.T) {
 		"select:" + encodedQuestionID(3) + ":1,0,1,1\n" +
 		"text:" + encodedQuestionID(4) + ":wrongEncoding,Y2VzdG1vaUVtaQ==\n\n")
 
-	election.BallotSize = len(ballotWrongText)
+	form.BallotSize = len(ballotWrongText)
 
-	err = b.Unmarshal(ballotWrongText, election)
+	err = b.Unmarshal(ballotWrongText, form)
 	require.EqualError(t, err, "could not unmarshal text answers: "+
 		"could not decode text for Q.Q4: illegal base64 data at input byte 12")
 
 	// with too many selected answers in text question
-	election.Configuration.Scaffold[0].Texts[0].MaxN = 1
+	form.Configuration.Scaffold[0].Texts[0].MaxN = 1
 
 	ballotWrongText = string("select:" + encodedQuestionID(1) + ":1,0,1\n" +
 		"rank:" + encodedQuestionID(2) + ":1,2,0,,\n" +
 		"select:" + encodedQuestionID(3) + ":1,0,1,1\n" +
 		"text:" + encodedQuestionID(4) + ":YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ==\n\n")
 
-	election.BallotSize = len(ballotWrongText)
+	form.BallotSize = len(ballotWrongText)
 
-	err = b.Unmarshal(ballotWrongText, election)
+	err = b.Unmarshal(ballotWrongText, form)
 	require.EqualError(t, err, "could not unmarshal text answers: "+
 		"failed to check number of answers: question Q4 has too many selected answers")
 
-	election.Configuration.Scaffold[0].Texts[0].MaxN = 2
+	form.Configuration.Scaffold[0].Texts[0].MaxN = 2
 
 	// with not enough elected answers in text question
 	ballotWrongText = string("select:" + encodedQuestionID(1) + ":1,0,1\n" +
@@ -277,16 +277,16 @@ func TestBallot_Unmarshal(t *testing.T) {
 		"select:" + encodedQuestionID(3) + ":1,0,1,1\n" +
 		"text:" + encodedQuestionID(4) + ":,Y2VzdG1vaUVtaQ==\n\n")
 
-	election.BallotSize = len(ballotWrongText)
+	form.BallotSize = len(ballotWrongText)
 
-	err = b.Unmarshal(ballotWrongText, election)
+	err = b.Unmarshal(ballotWrongText, form)
 	require.EqualError(t, err, "could not unmarshal text answers: "+
 		"failed to check number of answers: question Q4 has not enough selected answers")
 
 	// with unknown question type
 	ballotWrongType := string("wrong:" + encodedQuestionID(1) + ":")
 
-	err = b.Unmarshal(ballotWrongType, election)
+	err = b.Unmarshal(ballotWrongType, form)
 	require.EqualError(t, err, "question type is unknown")
 }
 

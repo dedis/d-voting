@@ -5,8 +5,8 @@ import {
   ROUTE_ABOUT,
   ROUTE_ADMIN,
   ROUTE_BALLOT_SHOW,
-  ROUTE_ELECTION_CREATE,
-  ROUTE_ELECTION_INDEX,
+  ROUTE_FORM_CREATE,
+  ROUTE_FORM_INDEX,
   ROUTE_LOGGED,
   ROUTE_LOGIN,
   ROUTE_UNAUTHORIZED,
@@ -15,10 +15,10 @@ import Login from '../pages/session/Login';
 import Home from '../pages/Home';
 import About from '../pages/About';
 import Admin from 'pages/admin/Admin';
-import ElectionIndex from '../pages/election/Index';
-import ElectionCreate from '../pages/election/New';
-import ElectionResult from '../pages/election/Result';
-import ElectionShow from '../pages/election/Show';
+import FormIndex from '../pages/form/Index';
+import FormCreate from '../pages/form/New';
+import FormResult from '../pages/form/Result';
+import FormShow from '../pages/form/Show';
 import BallotShow from '../pages/ballot/Show';
 import NavBar from './NavBar';
 import Footer from './Footer';
@@ -65,17 +65,17 @@ const App = () => {
             className=" mb-auto max-w-[80rem] mx-auto flex flex-row justify-center items-center w-full">
             <Routes>
               <Route
-                path={ROUTE_ELECTION_CREATE}
+                path={ROUTE_FORM_CREATE}
                 element={
                   <RequireAuth roles={[UserRole.Admin, UserRole.Operator]}>
-                    <ElectionCreate />
+                    <FormCreate />
                   </RequireAuth>
                 }
               />
-              <Route path={'/elections/:electionId'} element={<ElectionShow />} />
-              <Route path={'/elections/:electionId/result'} element={<ElectionResult />} />
+              <Route path={'/forms/:formId'} element={<FormShow />} />
+              <Route path={'/forms/:formId/result'} element={<FormResult />} />
               <Route
-                path={ROUTE_BALLOT_SHOW + '/:electionId'}
+                path={ROUTE_BALLOT_SHOW + '/:formId'}
                 element={
                   <RequireAuth roles={null}>
                     <BallotShow />
@@ -91,7 +91,7 @@ const App = () => {
                 }
               />
               <Route path={ROUTE_ABOUT} element={<About />} />
-              <Route path={ROUTE_ELECTION_INDEX} element={<ElectionIndex />} />
+              <Route path={ROUTE_FORM_INDEX} element={<FormIndex />} />
               <Route path={ROUTE_LOGIN} element={<Login />} />
               <Route path={ROUTE_LOGGED} element={<Logged />} />
               <Route path={ROUTE_UNAUTHORIZED} element={<ClientError statusCode={403} />} />

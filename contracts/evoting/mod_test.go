@@ -29,26 +29,26 @@ import (
 	"go.dedis.ch/kyber/v3/util/random"
 )
 
-var dummyElectionIDBuff = []byte("dummyID")
-var fakeElectionID = hex.EncodeToString(dummyElectionIDBuff)
+var dummyFormIDBuff = []byte("dummyID")
+var fakeFormID = hex.EncodeToString(dummyFormIDBuff)
 var fakeCommonSigner = bls.NewSigner()
 
 const getTransactionErr = "failed to get transaction: \"evoting:arg\" not found in tx arg"
 const unmarshalTransactionErr = "failed to get transaction: failed to deserialize " +
 	"transaction: failed to decode: failed to unmarshal transaction json: invalid " +
 	"character 'd' looking for beginning of value"
-const deserializeErr = "failed to deserialize Election"
+const deserializeErr = "failed to deserialize Form"
 
-var invalidElection = []byte("fake election")
+var invalidForm = []byte("fake form")
 
 var ctx serde.Context
 
-var electionFac serde.Factory
+var formFac serde.Factory
 var transactionFac serde.Factory
 
 func init() {
 	ciphervoteFac := types.CiphervoteFactory{}
-	electionFac = types.NewElectionFactory(ciphervoteFac, fakeAuthorityFactory{})
+	formFac = types.NewFormFactory(ciphervoteFac, fakeAuthorityFactory{})
 	transactionFac = types.NewTransactionFactory(ciphervoteFac)
 
 	ctx = sjson.NewContext()
@@ -82,14 +82,14 @@ func TestExecute(t *testing.T) {
 
 	contract.cmd = fakeCmd{err: fake.GetError()}
 
-	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdCreateElection)))
-	require.EqualError(t, err, fake.Err("failed to create election"))
+	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdCreateForm)))
+	require.EqualError(t, err, fake.Err("failed to create form"))
 
 	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdCastVote)))
 	require.EqualError(t, err, fake.Err("failed to cast vote"))
 
-	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdCloseElection)))
-	require.EqualError(t, err, fake.Err("failed to close election"))
+	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdCloseForm)))
+	require.EqualError(t, err, fake.Err("failed to close form"))
 
 	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdShuffleBallots)))
 	require.EqualError(t, err, fake.Err("failed to shuffle ballots"))
@@ -97,19 +97,19 @@ func TestExecute(t *testing.T) {
 	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdCombineShares)))
 	require.EqualError(t, err, fake.Err("failed to decrypt ballots"))
 
-	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdCancelElection)))
-	require.EqualError(t, err, fake.Err("failed to cancel election"))
+	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdCancelForm)))
+	require.EqualError(t, err, fake.Err("failed to cancel form"))
 
 	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, "fake"))
 	require.EqualError(t, err, "unknown command: fake")
 
 	contract.cmd = fakeCmd{}
-	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdCreateElection)))
+	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdCreateForm)))
 	require.NoError(t, err)
 
 }
 
-func TestCommand_CreateElection(t *testing.T) {
+func TestCommand_CreateForm(t *testing.T) {
 	initMetrics()
 
 	fakeActor := fakeDkgActor{
@@ -122,11 +122,11 @@ func TestCommand_CreateElection(t *testing.T) {
 		err:   nil,
 	}
 
-	createElection := types.CreateElection{
+	createForm := types.CreateForm{
 		AdminID: "dummyAdminID",
 	}
 
-	data, err := createElection.Serialize(ctx)
+	data, err := createForm.Serialize(ctx)
 	require.NoError(t, err)
 
 	var evotingAccessKey = [32]byte{3}
@@ -141,39 +141,39 @@ func TestCommand_CreateElection(t *testing.T) {
 		Contract: &contract,
 	}
 
-	err = cmd.createElection(fake.NewSnapshot(), makeStep(t))
+	err = cmd.createForm(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
 
-	err = cmd.createElection(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
+	err = cmd.createForm(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
 	require.EqualError(t, err, unmarshalTransactionErr)
 
-	err = cmd.createElection(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(data)))
+	err = cmd.createForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "failed to get roster")
 
 	snap := fake.NewSnapshot()
-	step := makeStep(t, ElectionArg, string(data))
-	err = cmd.createElection(snap, step)
+	step := makeStep(t, FormArg, string(data))
+	err = cmd.createForm(snap, step)
 	require.NoError(t, err)
 
-	// recover election ID:
+	// recover form ID:
 	h := sha256.New()
 	h.Write(step.Current.GetID())
-	electionIDBuff := h.Sum(nil)
+	formIDBuff := h.Sum(nil)
 
-	res, err := snap.Get(electionIDBuff)
+	res, err := snap.Get(formIDBuff)
 	require.NoError(t, err)
 
-	message, err := electionFac.Deserialize(ctx, res)
+	message, err := formFac.Deserialize(ctx, res)
 	require.NoError(t, err)
 
-	election, ok := message.(types.Election)
+	form, ok := message.(types.Form)
 	require.True(t, ok)
 
-	require.Equal(t, types.Initial, election.Status)
-	require.Equal(t, float64(types.Initial), testutil.ToFloat64(PromElectionStatus))
+	require.Equal(t, types.Initial, form.Status)
+	require.Equal(t, float64(types.Initial), testutil.ToFloat64(PromFormStatus))
 }
 
-func TestCommand_OpenElection(t *testing.T) {
+func TestCommand_OpenForm(t *testing.T) {
 	// TODO
 }
 
@@ -181,7 +181,7 @@ func TestCommand_CastVote(t *testing.T) {
 	initMetrics()
 
 	castVote := types.CastVote{
-		ElectionID: fakeElectionID,
+		FormID: fakeFormID,
 		UserID:     "dummyUserId",
 		Ballot: types.Ciphervote{types.EGPair{
 			K: suite.Point(),
@@ -192,9 +192,9 @@ func TestCommand_CastVote(t *testing.T) {
 	data, err := castVote.Serialize(ctx)
 	require.NoError(t, err)
 
-	dummyElection, contract := initElectionAndContract()
+	dummyForm, contract := initFormAndContract()
 
-	electionBuf, err := dummyElection.Serialize(ctx)
+	formBuf, err := dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
 	cmd := evotingCommand{
@@ -204,44 +204,44 @@ func TestCommand_CastVote(t *testing.T) {
 	err = cmd.castVote(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
 
-	err = cmd.castVote(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
+	err = cmd.castVote(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
 	require.EqualError(t, err, unmarshalTransactionErr)
 
-	err = cmd.castVote(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(data)))
+	err = cmd.castVote(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.Contains(t, err.Error(), "failed to get key")
 
 	snap := fake.NewSnapshot()
 
-	err = snap.Set(dummyElectionIDBuff, invalidElection)
+	err = snap.Set(dummyFormIDBuff, invalidForm)
 	require.NoError(t, err)
 
-	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.castVote(snap, makeStep(t, FormArg, string(data)))
 	require.Contains(t, err.Error(), deserializeErr)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, fmt.Sprintf("the election is not open, current status: %d", types.Initial))
+	err = cmd.castVote(snap, makeStep(t, FormArg, string(data)))
+	require.EqualError(t, err, fmt.Sprintf("the form is not open, current status: %d", types.Initial))
 
-	dummyElection.Status = types.Open
-	dummyElection.BallotSize = 0
+	dummyForm.Status = types.Open
+	dummyForm.BallotSize = 0
 
-	electionBuf, err = dummyElection.Serialize(ctx)
+	formBuf, err = dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.castVote(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "the ballot has unexpected length: 1 != 0")
 
-	dummyElection.BallotSize = 29
+	dummyForm.BallotSize = 29
 
-	electionBuf, err = dummyElection.Serialize(ctx)
+	formBuf, err = dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
 	// encrypt a real message :
@@ -264,142 +264,142 @@ func TestCommand_CastVote(t *testing.T) {
 		},
 	}
 
-	castVote.ElectionID = "X"
+	castVote.FormID = "X"
 
 	data, err = castVote.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, "failed to get election: failed to decode "+
-		"electionIDHex: encoding/hex: invalid byte: U+0058 'X'")
+	err = cmd.castVote(snap, makeStep(t, FormArg, string(data)))
+	require.EqualError(t, err, "failed to get form: failed to decode "+
+		"formIDHex: encoding/hex: invalid byte: U+0058 'X'")
 
-	dummyElection.ElectionID = fakeElectionID
+	dummyForm.FormID = fakeFormID
 
-	electionBuf, err = dummyElection.Serialize(ctx)
+	formBuf, err = dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	castVote.ElectionID = fakeElectionID
+	castVote.FormID = fakeFormID
 
 	data, err = castVote.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = cmd.castVote(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.castVote(snap, makeStep(t, FormArg, string(data)))
 	require.NoError(t, err)
 
-	res, err := snap.Get(dummyElectionIDBuff)
+	res, err := snap.Get(dummyFormIDBuff)
 	require.NoError(t, err)
 
-	message, err := electionFac.Deserialize(ctx, res)
+	message, err := formFac.Deserialize(ctx, res)
 	require.NoError(t, err)
 
-	election, ok := message.(types.Election)
+	form, ok := message.(types.Form)
 	require.True(t, ok)
 
-	require.Len(t, election.Suffragia.Ciphervotes, 1)
-	require.True(t, castVote.Ballot.Equal(election.Suffragia.Ciphervotes[0]))
+	require.Len(t, form.Suffragia.Ciphervotes, 1)
+	require.True(t, castVote.Ballot.Equal(form.Suffragia.Ciphervotes[0]))
 
-	require.Equal(t, castVote.UserID, election.Suffragia.UserIDs[0])
-	require.Equal(t, float64(len(election.Suffragia.Ciphervotes)), testutil.ToFloat64(PromElectionBallots))
+	require.Equal(t, castVote.UserID, form.Suffragia.UserIDs[0])
+	require.Equal(t, float64(len(form.Suffragia.Ciphervotes)), testutil.ToFloat64(PromFormBallots))
 }
 
-func TestCommand_CloseElection(t *testing.T) {
+func TestCommand_CloseForm(t *testing.T) {
 	initMetrics()
 
-	closeElection := types.CloseElection{
-		ElectionID: fakeElectionID,
+	closeForm := types.CloseForm{
+		FormID: fakeFormID,
 		UserID:     "dummyUserId",
 	}
 
-	data, err := closeElection.Serialize(ctx)
+	data, err := closeForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	dummyElection, contract := initElectionAndContract()
-	dummyElection.ElectionID = fakeElectionID
+	dummyForm, contract := initFormAndContract()
+	dummyForm.FormID = fakeFormID
 
-	electionBuf, err := dummyElection.Serialize(ctx)
+	formBuf, err := dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
 	cmd := evotingCommand{
 		Contract: &contract,
 	}
 
-	err = cmd.closeElection(fake.NewSnapshot(), makeStep(t))
+	err = cmd.closeForm(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
 
-	err = cmd.closeElection(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
+	err = cmd.closeForm(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
 	require.EqualError(t, err, unmarshalTransactionErr)
 
-	err = cmd.closeElection(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(data)))
+	err = cmd.closeForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.Contains(t, err.Error(), "failed to get key")
 
 	snap := fake.NewSnapshot()
 
-	err = snap.Set(dummyElectionIDBuff, invalidElection)
+	err = snap.Set(dummyFormIDBuff, invalidForm)
 	require.NoError(t, err)
 
-	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.closeForm(snap, makeStep(t, FormArg, string(data)))
 	require.Contains(t, err.Error(), deserializeErr)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	closeElection.UserID = hex.EncodeToString([]byte("dummyAdminID"))
+	closeForm.UserID = hex.EncodeToString([]byte("dummyAdminID"))
 
-	data, err = closeElection.Serialize(ctx)
+	data, err = closeForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, fmt.Sprintf("the election is not open, "+
+	err = cmd.closeForm(snap, makeStep(t, FormArg, string(data)))
+	require.EqualError(t, err, fmt.Sprintf("the form is not open, "+
 		"current status: %d", types.Initial))
-	require.Equal(t, 0, testutil.CollectAndCount(PromElectionStatus))
+	require.Equal(t, 0, testutil.CollectAndCount(PromFormStatus))
 
-	dummyElection.Status = types.Open
+	dummyForm.Status = types.Open
 
-	electionBuf, err = dummyElection.Serialize(ctx)
+	formBuf, err = dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.closeForm(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "at least two ballots are required")
 
-	dummyElection.Suffragia.CastVote("dummyUser1", types.Ciphervote{})
-	dummyElection.Suffragia.CastVote("dummyUser2", types.Ciphervote{})
+	dummyForm.Suffragia.CastVote("dummyUser1", types.Ciphervote{})
+	dummyForm.Suffragia.CastVote("dummyUser2", types.Ciphervote{})
 
-	electionBuf, err = dummyElection.Serialize(ctx)
+	formBuf, err = dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	err = cmd.closeElection(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.closeForm(snap, makeStep(t, FormArg, string(data)))
 	require.NoError(t, err)
-	require.Equal(t, float64(types.Closed), testutil.ToFloat64(PromElectionStatus))
+	require.Equal(t, float64(types.Closed), testutil.ToFloat64(PromFormStatus))
 
-	res, err := snap.Get(dummyElectionIDBuff)
-	require.NoError(t, err)
-
-	message, err := electionFac.Deserialize(ctx, res)
+	res, err := snap.Get(dummyFormIDBuff)
 	require.NoError(t, err)
 
-	election, ok := message.(types.Election)
+	message, err := formFac.Deserialize(ctx, res)
+	require.NoError(t, err)
+
+	form, ok := message.(types.Form)
 	require.True(t, ok)
 
-	require.Equal(t, types.Closed, election.Status)
-	require.Equal(t, float64(types.Closed), testutil.ToFloat64(PromElectionStatus))
+	require.Equal(t, types.Closed, form.Status)
+	require.Equal(t, float64(types.Closed), testutil.ToFloat64(PromFormStatus))
 }
 
 func TestCommand_ShuffleBallotsCannotShuffleTwice(t *testing.T) {
 	k := 3
 
-	election, shuffleBallots, contract := initGoodShuffleBallot(t, k)
+	form, shuffleBallots, contract := initGoodShuffleBallot(t, k)
 
 	cmd := evotingCommand{
 		Contract: &contract,
@@ -411,8 +411,8 @@ func TestCommand_ShuffleBallotsCannotShuffleTwice(t *testing.T) {
 	// Attempts to shuffle twice :
 	shuffleBallots.Round = 1
 
-	election.ShuffleInstances = make([]types.ShuffleInstance, 1)
-	election.ShuffleInstances[0].ShuffledBallots = make([]types.Ciphervote, 3)
+	form.ShuffleInstances = make([]types.ShuffleInstance, 1)
+	form.ShuffleInstances[0].ShuffledBallots = make([]types.Ciphervote, 3)
 
 	Ks, Cs, _ := fakeKCPoints(k)
 	for i := 0; i < k; i++ {
@@ -420,21 +420,21 @@ func TestCommand_ShuffleBallotsCannotShuffleTwice(t *testing.T) {
 			K: Ks[i],
 			C: Cs[i],
 		}}
-		election.ShuffleInstances[0].ShuffledBallots[i] = ballot
+		form.ShuffleInstances[0].ShuffledBallots[i] = ballot
 	}
 
-	election.ShuffleInstances[0].ShufflerPublicKey = shuffleBallots.PublicKey
+	form.ShuffleInstances[0].ShufflerPublicKey = shuffleBallots.PublicKey
 
-	electionBuff, err := election.Serialize(ctx)
+	formBuff, err := form.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuff)
+	err = snap.Set(dummyFormIDBuff, formBuff)
 	require.NoError(t, err)
 
 	data, err := shuffleBallots.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.shuffleBallots(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "a node already submitted a shuffle that has "+
 		"been accepted in round 0")
 }
@@ -445,7 +445,7 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 	k := 3
 
 	// Simple Shuffle from round 0 :
-	election, shuffleBallots, contract := initGoodShuffleBallot(t, k)
+	form, shuffleBallots, contract := initGoodShuffleBallot(t, k)
 
 	cmd := evotingCommand{
 		Contract: &contract,
@@ -454,30 +454,30 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 
 	snap := fake.NewSnapshot()
 
-	electionBuf, err := election.Serialize(ctx)
+	formBuf, err := form.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
 	data, err := shuffleBallots.Serialize(ctx)
 	require.NoError(t, err)
 
-	step := makeStep(t, ElectionArg, string(data))
+	step := makeStep(t, FormArg, string(data))
 
 	err = cmd.shuffleBallots(snap, step)
 	require.NoError(t, err)
-	require.Equal(t, float64(1), testutil.ToFloat64(PromElectionShufflingInstances))
+	require.Equal(t, float64(1), testutil.ToFloat64(PromFormShufflingInstances))
 
 	// Valid Shuffle is over :
 	shuffleBallots.Round = k
-	election.ShuffleInstances = make([]types.ShuffleInstance, k)
+	form.ShuffleInstances = make([]types.ShuffleInstance, k)
 
 	data, err = shuffleBallots.Serialize(ctx)
 	require.NoError(t, err)
 
 	for i := 1; i <= k-1; i++ {
-		election.ShuffleInstances[i].ShuffledBallots = make([]types.Ciphervote, 3)
+		form.ShuffleInstances[i].ShuffledBallots = make([]types.Ciphervote, 3)
 	}
 
 	Ks, Cs, _ := fakeKCPoints(k)
@@ -486,45 +486,45 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 			K: Ks[i],
 			C: Cs[i],
 		}}
-		election.ShuffleInstances[k-1].ShuffledBallots[i] = ballot
+		form.ShuffleInstances[k-1].ShuffledBallots[i] = ballot
 	}
 
-	electionBuf, err = election.Serialize(ctx)
+	formBuf, err = form.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.shuffleBallots(snap, makeStep(t, FormArg, string(data)))
 	require.NoError(t, err)
-	require.Equal(t, float64(k+1), testutil.ToFloat64(PromElectionShufflingInstances))
+	require.Equal(t, float64(k+1), testutil.ToFloat64(PromFormShufflingInstances))
 
 	// Check the shuffle is over:
-	electionTxIDBuff, err := hex.DecodeString(election.ElectionID)
+	formTxIDBuff, err := hex.DecodeString(form.FormID)
 	require.NoError(t, err)
 
-	electionBuf, err = snap.Get(electionTxIDBuff)
+	formBuf, err = snap.Get(formTxIDBuff)
 	require.NoError(t, err)
 
-	message, err := electionFac.Deserialize(ctx, electionBuf)
+	message, err := formFac.Deserialize(ctx, formBuf)
 	require.NoError(t, err)
 
-	election, ok := message.(types.Election)
+	form, ok := message.(types.Form)
 	require.True(t, ok)
 
-	require.Equal(t, types.ShuffledBallots, election.Status)
-	require.Equal(t, float64(types.ShuffledBallots), testutil.ToFloat64(PromElectionStatus))
+	require.Equal(t, types.ShuffledBallots, form.Status)
+	require.Equal(t, float64(types.ShuffledBallots), testutil.ToFloat64(PromFormStatus))
 }
 
 func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	k := 3
 
-	election, shuffleBallots, contract := initBadShuffleBallot(k)
+	form, shuffleBallots, contract := initBadShuffleBallot(k)
 
 	data, err := shuffleBallots.Serialize(ctx)
 	require.NoError(t, err)
 
-	electionBuf, err := election.Serialize(ctx)
+	formBuf, err := form.Serialize(ctx)
 	require.NoError(t, err)
 
 	cmd := evotingCommand{
@@ -535,56 +535,56 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	err = cmd.shuffleBallots(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
 
-	err = cmd.shuffleBallots(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
+	err = cmd.shuffleBallots(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
 	require.EqualError(t, err, unmarshalTransactionErr)
 
-	err = cmd.shuffleBallots(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(data)))
+	err = cmd.shuffleBallots(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.Contains(t, err.Error(), "failed to get key")
 
-	// Wrong election id format
+	// Wrong form id format
 	snap := fake.NewSnapshot()
 
-	err = snap.Set(dummyElectionIDBuff, invalidElection)
+	err = snap.Set(dummyFormIDBuff, invalidForm)
 	require.NoError(t, err)
 
-	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.shuffleBallots(snap, makeStep(t, FormArg, string(data)))
 	require.Contains(t, err.Error(), deserializeErr)
 
-	// Election not closed
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	// Form not closed
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
-	require.EqualError(t, err, "the election is not closed")
+	err = cmd.shuffleBallots(snap, makeStep(t, FormArg, string(data)))
+	require.EqualError(t, err, "the form is not closed")
 
 	// Wrong round :
-	election.Status = types.Closed
+	form.Status = types.Closed
 
-	electionBuf, err = election.Serialize(ctx)
+	formBuf, err = form.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.shuffleBallots(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "wrong shuffle round: expected round '0', "+
 		"transaction is for round '2'")
 
 	// Missing public key of shuffler:
 	shuffleBallots.Round = 1
-	election.ShuffleInstances = make([]types.ShuffleInstance, 1)
+	form.ShuffleInstances = make([]types.ShuffleInstance, 1)
 	shuffleBallots.PublicKey = []byte("wrong Key")
 
 	data, err = shuffleBallots.Serialize(ctx)
 	require.NoError(t, err)
 
-	electionBuf, err = election.Serialize(ctx)
+	formBuf, err = form.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.shuffleBallots(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "could not verify identity of shuffler : "+
 		"public key not associated to a member of the roster: 77726f6e67204b6579")
 
@@ -594,11 +594,11 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	data, err = shuffleBallots.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.shuffleBallots(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "could node deserialize shuffle signature : "+
 		"couldn't decode signature: couldn't deserialize data: unexpected end of JSON input")
 
-	// Wrong election ID (Hash of shuffle fails)
+	// Wrong form ID (Hash of shuffle fails)
 	signature, err := fakeCommonSigner.Sign([]byte("fake shuffle"))
 	require.NoError(t, err)
 
@@ -611,15 +611,15 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	require.NoError(t, err)
 
 	// Signatures not matching:
-	election.ElectionID = fakeElectionID
+	form.FormID = fakeFormID
 
-	electionBuf, err = election.Serialize(ctx)
+	formBuf, err = form.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.shuffleBallots(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "signature does not match the Shuffle : "+
 		"bls verify failed: bls: invalid signature")
 
@@ -646,22 +646,22 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 
 	shuffleBallots.Signature = wrongSignature
 
-	election.BallotSize = 1
+	form.BallotSize = 1
 
-	electionBuf, err = election.Serialize(ctx)
+	formBuf, err = form.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
 	data, err = shuffleBallots.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.shuffleBallots(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "randomVector has unexpected length : 0 != 1")
 
 	// random vector with right length, but different value :
-	lenRandomVector := election.ChunksPerBallot()
+	lenRandomVector := form.ChunksPerBallot()
 	e := make([]kyber.Scalar, lenRandomVector)
 	for i := 0; i < lenRandomVector; i++ {
 		v := suite.Scalar().Pick(suite.RandomStream())
@@ -674,7 +674,7 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	data, err = shuffleBallots.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.shuffleBallots(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "random vector from shuffle transaction is "+
 		"different than expected random vector")
 
@@ -700,45 +700,45 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 
 	// > With no casted ballot the shuffling can't happen
 
-	election.Pubkey = pubKey
+	form.Pubkey = pubKey
 	shuffleBallots.Round = 0
-	election.ShuffleInstances = make([]types.ShuffleInstance, 0)
-	election.Suffragia.Ciphervotes = make([]types.Ciphervote, 0)
+	form.ShuffleInstances = make([]types.ShuffleInstance, 0)
+	form.Suffragia.Ciphervotes = make([]types.Ciphervote, 0)
 
 	data, err = shuffleBallots.Serialize(ctx)
 	require.NoError(t, err)
 
-	electionBuf, err = election.Serialize(ctx)
+	formBuf, err = form.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.shuffleBallots(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "not enough votes: 0 < 2")
 
 	// > With only one shuffled ballot the shuffling can't happen
 
-	election.Suffragia.CastVote("user1", types.Ciphervote{
+	form.Suffragia.CastVote("user1", types.Ciphervote{
 		types.EGPair{K: suite.Point(), C: suite.Point()},
 	})
 
 	data, err = shuffleBallots.Serialize(ctx)
 	require.NoError(t, err)
 
-	electionBuf, err = election.Serialize(ctx)
+	formBuf, err = form.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	err = cmd.shuffleBallots(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.shuffleBallots(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "not enough votes: 1 < 2")
 }
 
 func TestCommand_RegisterPubShares(t *testing.T) {
 	registerPubShares := types.RegisterPubShares{
-		ElectionID: fakeElectionID,
+		FormID: fakeFormID,
 		Index:      0,
 		Pubshares:  make([][]types.Pubshare, 0),
 		Signature:  []byte{},
@@ -748,10 +748,10 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 	data, err := registerPubShares.Serialize(ctx)
 	require.NoError(t, err)
 
-	election, contract := initElectionAndContract()
-	election.ElectionID = fakeElectionID
+	form, contract := initFormAndContract()
+	form.FormID = fakeFormID
 
-	electionBuf, err := election.Serialize(ctx)
+	formBuf, err := form.Serialize(ctx)
 	require.NoError(t, err)
 
 	cmd := evotingCommand{
@@ -761,49 +761,49 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 	err = cmd.registerPubshares(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
 
-	err = cmd.registerPubshares(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
+	err = cmd.registerPubshares(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
 	require.EqualError(t, err, unmarshalTransactionErr)
 
-	err = cmd.registerPubshares(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(data)))
+	err = cmd.registerPubshares(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.Contains(t, err.Error(), "failed to get key")
 
 	snap := fake.NewSnapshot()
 
-	err = snap.Set(dummyElectionIDBuff, invalidElection)
+	err = snap.Set(dummyFormIDBuff, invalidForm)
 	require.NoError(t, err)
 
-	err = cmd.registerPubshares(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.registerPubshares(snap, makeStep(t, FormArg, string(data)))
 	require.Contains(t, err.Error(), deserializeErr)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	err = cmd.registerPubshares(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.registerPubshares(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "the ballots have not been shuffled")
 
 	// Requirements:
-	election.Status = types.ShuffledBallots
-	election.PubsharesUnits = types.PubsharesUnits{
+	form.Status = types.ShuffledBallots
+	form.PubsharesUnits = types.PubsharesUnits{
 		Pubshares: make([]types.PubsharesUnit, 0),
 		PubKeys:   make([][]byte, 0),
 		Indexes:   make([]int, 0),
 	}
-	election.ShuffleInstances = make([]types.ShuffleInstance, 1)
-	election.ShuffleInstances[0] = types.ShuffleInstance{
+	form.ShuffleInstances = make([]types.ShuffleInstance, 1)
+	form.ShuffleInstances[0] = types.ShuffleInstance{
 		ShuffledBallots: make([]types.Ciphervote, 1),
 	}
-	election.ShuffleInstances[0].ShuffledBallots[0] = types.Ciphervote{types.EGPair{
+	form.ShuffleInstances[0].ShuffledBallots[0] = types.Ciphervote{types.EGPair{
 		K: suite.Point(),
 		C: suite.Point(),
 	}}
 
-	electionBuf, err = election.Serialize(ctx)
+	formBuf, err = form.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	err = cmd.registerPubshares(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.registerPubshares(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "could not verify identity of node : public key not associated to a member of the roster: ")
 
 	registerPubShares.PublicKey, err = fakeCommonSigner.GetPublicKey().MarshalBinary()
@@ -812,7 +812,7 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 	data, err = registerPubShares.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = cmd.registerPubshares(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.registerPubshares(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "could node deserialize pubShare signature:"+
 		" couldn't decode signature: couldn't deserialize data: unexpected end of JSON input")
 
@@ -827,7 +827,7 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 	data, err = registerPubShares.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = cmd.registerPubshares(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.registerPubshares(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "signature does not match the PubsharesUnit:"+
 		" bls verify failed: bls: invalid signature ")
 
@@ -848,7 +848,7 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 	data, err = registerPubShares.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = cmd.registerPubshares(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.registerPubshares(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "unexpected size of pubshares submission: 0 != 1")
 
 	registerPubShares.Pubshares = make([][]types.Pubshare, 1)
@@ -856,7 +856,7 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 	data, err = registerPubShares.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = cmd.registerPubshares(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.registerPubshares(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "unexpected size of pubshares submission: 0 != 1")
 
 	registerPubShares.Pubshares[0] = make([]types.Pubshare, 1)
@@ -881,78 +881,78 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 	data, err = registerPubShares.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = cmd.registerPubshares(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.registerPubshares(snap, makeStep(t, FormArg, string(data)))
 	require.NoError(t, err)
-	require.Equal(t, float64(1), testutil.ToFloat64(PromElectionPubShares))
+	require.Equal(t, float64(1), testutil.ToFloat64(PromFormPubShares))
 
 	// With the public key already used:
-	election.PubsharesUnits.PubKeys = append(election.PubsharesUnits.PubKeys,
+	form.PubsharesUnits.PubKeys = append(form.PubsharesUnits.PubKeys,
 		registerPubShares.PublicKey)
 
-	electionBuf, err = election.Serialize(ctx)
+	formBuf, err = form.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	err = cmd.registerPubshares(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.registerPubshares(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, fmt.Sprintf("'%x' already made a submission",
 		registerPubShares.PublicKey))
 
 	// With the index already used:
-	election.PubsharesUnits.Indexes = append(election.PubsharesUnits.Indexes,
+	form.PubsharesUnits.Indexes = append(form.PubsharesUnits.Indexes,
 		registerPubShares.Index)
-	election.PubsharesUnits.PubKeys = make([][]byte, 0)
+	form.PubsharesUnits.PubKeys = make([][]byte, 0)
 
-	electionBuf, err = election.Serialize(ctx)
+	formBuf, err = form.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	err = cmd.registerPubshares(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.registerPubshares(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "a submission has already been made for index 0")
 
 	// All good:
-	election.PubsharesUnits.Indexes = make([]int, 0)
+	form.PubsharesUnits.Indexes = make([]int, 0)
 
-	electionBuf, err = election.Serialize(ctx)
+	formBuf, err = form.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	err = cmd.registerPubshares(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.registerPubshares(snap, makeStep(t, FormArg, string(data)))
 	require.NoError(t, err)
-	require.Equal(t, float64(1), testutil.ToFloat64(PromElectionPubShares))
+	require.Equal(t, float64(1), testutil.ToFloat64(PromFormPubShares))
 
-	res, err := snap.Get(dummyElectionIDBuff)
-	require.NoError(t, err)
-
-	message, err := electionFac.Deserialize(ctx, res)
+	res, err := snap.Get(dummyFormIDBuff)
 	require.NoError(t, err)
 
-	resultElection, ok := message.(types.Election)
+	message, err := formFac.Deserialize(ctx, res)
+	require.NoError(t, err)
+
+	resultForm, ok := message.(types.Form)
 	require.True(t, ok)
 
-	require.Equal(t, types.PubSharesSubmitted, resultElection.Status)
+	require.Equal(t, types.PubSharesSubmitted, resultForm.Status)
 
-	require.Equal(t, resultElection.PubsharesUnits.PubKeys[0], registerPubShares.PublicKey)
-	require.Equal(t, resultElection.PubsharesUnits.Indexes[0], registerPubShares.Index)
+	require.Equal(t, resultForm.PubsharesUnits.PubKeys[0], registerPubShares.PublicKey)
+	require.Equal(t, resultForm.PubsharesUnits.Indexes[0], registerPubShares.Index)
 }
 
 func TestCommand_DecryptBallots(t *testing.T) {
 	decryptBallot := types.CombineShares{
-		ElectionID: fakeElectionID,
+		FormID: fakeFormID,
 		UserID:     hex.EncodeToString([]byte("dummyUserId")),
 	}
 
 	data, err := decryptBallot.Serialize(ctx)
 	require.NoError(t, err)
 
-	dummyElection, contract := initElectionAndContract()
+	dummyForm, contract := initFormAndContract()
 
-	electionBuf, err := dummyElection.Serialize(ctx)
+	formBuf, err := dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
 	cmd := evotingCommand{
@@ -962,21 +962,21 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	err = cmd.combineShares(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
 
-	err = cmd.combineShares(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
+	err = cmd.combineShares(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
 	require.EqualError(t, err, unmarshalTransactionErr)
 
-	err = cmd.combineShares(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(data)))
+	err = cmd.combineShares(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.Contains(t, err.Error(), "failed to get key")
 
 	snap := fake.NewSnapshot()
 
-	err = snap.Set(dummyElectionIDBuff, invalidElection)
+	err = snap.Set(dummyFormIDBuff, invalidForm)
 	require.NoError(t, err)
 
-	err = cmd.combineShares(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.combineShares(snap, makeStep(t, FormArg, string(data)))
 	require.Contains(t, err.Error(), deserializeErr)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
 	decryptBallot.UserID = hex.EncodeToString([]byte("dummyAdminID"))
@@ -984,120 +984,120 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	data, err = decryptBallot.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = cmd.combineShares(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.combineShares(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, fmt.Sprintf("the public shares have not"+
 		" been submitted, current status: %d", types.Initial))
 
-	dummyElection.Status = types.PubSharesSubmitted
+	dummyForm.Status = types.PubSharesSubmitted
 
 	// Avoid panic (will always be the case in practice):
-	dummyElection.ShuffleInstances = make([]types.ShuffleInstance, 1)
-	dummyElection.ShuffleInstances[0] = types.ShuffleInstance{
+	dummyForm.ShuffleInstances = make([]types.ShuffleInstance, 1)
+	dummyForm.ShuffleInstances[0] = types.ShuffleInstance{
 		ShuffledBallots:   make([]types.Ciphervote, 1),
 		ShuffleProofs:     nil,
 		ShufflerPublicKey: nil,
 	}
 
-	dummyElection.ShuffleInstances[0].ShuffledBallots[0] = types.Ciphervote{}
+	dummyForm.ShuffleInstances[0].ShuffledBallots[0] = types.Ciphervote{}
 
-	electionBuf, err = dummyElection.Serialize(ctx)
+	formBuf, err = dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
 	// Nothing to decrypt
-	err = cmd.combineShares(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.combineShares(snap, makeStep(t, FormArg, string(data)))
 	require.NoError(t, err)
 
-	dummyElection.ShuffleInstances[0].ShuffledBallots[0] = make([]types.EGPair, 1)
-	dummyElection.ShuffleInstances[0].ShuffledBallots[0][0] = types.EGPair{
+	dummyForm.ShuffleInstances[0].ShuffledBallots[0] = make([]types.EGPair, 1)
+	dummyForm.ShuffleInstances[0].ShuffledBallots[0][0] = types.EGPair{
 		K: suite.Point(),
 		C: suite.Point(),
 	}
 
-	electionBuf, err = dummyElection.Serialize(ctx)
+	formBuf, err = dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
 	// Decrypt empty ballot
-	err = cmd.combineShares(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.combineShares(snap, makeStep(t, FormArg, string(data)))
 	require.NoError(t, err)
 
-	res, err := snap.Get(dummyElectionIDBuff)
+	res, err := snap.Get(dummyFormIDBuff)
 	require.NoError(t, err)
 
-	message, err := electionFac.Deserialize(ctx, res)
+	message, err := formFac.Deserialize(ctx, res)
 	require.NoError(t, err)
 
-	election, ok := message.(types.Election)
+	form, ok := message.(types.Form)
 	require.True(t, ok)
 
-	require.Equal(t, types.Ballot{}, election.DecryptedBallots[0])
-	require.Equal(t, types.ResultAvailable, election.Status)
-	require.Equal(t, float64(types.ResultAvailable), testutil.ToFloat64(PromElectionStatus))
+	require.Equal(t, types.Ballot{}, form.DecryptedBallots[0])
+	require.Equal(t, types.ResultAvailable, form.Status)
+	require.Equal(t, float64(types.ResultAvailable), testutil.ToFloat64(PromFormStatus))
 }
 
-func TestCommand_CancelElection(t *testing.T) {
-	cancelElection := types.CancelElection{
-		ElectionID: fakeElectionID,
+func TestCommand_CancelForm(t *testing.T) {
+	cancelForm := types.CancelForm{
+		FormID: fakeFormID,
 		UserID:     "dummyUserId",
 	}
 
-	data, err := cancelElection.Serialize(ctx)
+	data, err := cancelForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	dummyElection, contract := initElectionAndContract()
-	dummyElection.ElectionID = fakeElectionID
+	dummyForm, contract := initFormAndContract()
+	dummyForm.FormID = fakeFormID
 
-	electionBuf, err := dummyElection.Serialize(ctx)
+	formBuf, err := dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
 	cmd := evotingCommand{
 		Contract: &contract,
 	}
 
-	err = cmd.cancelElection(fake.NewSnapshot(), makeStep(t))
+	err = cmd.cancelForm(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
 
-	err = cmd.cancelElection(fake.NewSnapshot(), makeStep(t, ElectionArg, "dummy"))
+	err = cmd.cancelForm(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
 	require.EqualError(t, err, unmarshalTransactionErr)
 
-	err = cmd.cancelElection(fake.NewBadSnapshot(), makeStep(t, ElectionArg, string(data)))
+	err = cmd.cancelForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.Contains(t, err.Error(), "failed to get key")
 
 	snap := fake.NewSnapshot()
 
-	err = snap.Set(dummyElectionIDBuff, invalidElection)
+	err = snap.Set(dummyFormIDBuff, invalidForm)
 	require.NoError(t, err)
 
-	err = cmd.cancelElection(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.cancelForm(snap, makeStep(t, FormArg, string(data)))
 	require.Contains(t, err.Error(), deserializeErr)
 
-	err = snap.Set(dummyElectionIDBuff, electionBuf)
+	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	cancelElection.UserID = hex.EncodeToString([]byte("dummyAdminID"))
+	cancelForm.UserID = hex.EncodeToString([]byte("dummyAdminID"))
 
-	data, err = cancelElection.Serialize(ctx)
+	data, err = cancelForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = cmd.cancelElection(snap, makeStep(t, ElectionArg, string(data)))
+	err = cmd.cancelForm(snap, makeStep(t, FormArg, string(data)))
 	require.NoError(t, err)
 
-	res, err := snap.Get(dummyElectionIDBuff)
+	res, err := snap.Get(dummyFormIDBuff)
 	require.NoError(t, err)
 
-	message, err := electionFac.Deserialize(ctx, res)
+	message, err := formFac.Deserialize(ctx, res)
 	require.NoError(t, err)
 
-	election, ok := message.(types.Election)
+	form, ok := message.(types.Form)
 	require.True(t, ok)
 
-	require.Equal(t, types.Canceled, election.Status)
-	require.Equal(t, float64(types.Canceled), testutil.ToFloat64(PromElectionStatus))
+	require.Equal(t, types.Canceled, form.Status)
+	require.Equal(t, float64(types.Canceled), testutil.ToFloat64(PromFormStatus))
 }
 
 func TestRegisterContract(t *testing.T) {
@@ -1108,20 +1108,20 @@ func TestRegisterContract(t *testing.T) {
 // Utility functions
 
 func initMetrics() {
-	PromElectionStatus.Reset()
-	PromElectionBallots.Reset()
-	PromElectionShufflingInstances.Reset()
-	PromElectionPubShares.Reset()
+	PromFormStatus.Reset()
+	PromFormBallots.Reset()
+	PromFormShufflingInstances.Reset()
+	PromFormPubShares.Reset()
 }
 
-func initElectionAndContract() (types.Election, Contract) {
+func initFormAndContract() (types.Form, Contract) {
 	fakeDkg := fakeDKG{
 		actor: fakeDkgActor{},
 		err:   nil,
 	}
 
-	dummyElection := types.Election{
-		ElectionID:       fakeElectionID,
+	dummyForm := types.Form{
+		FormID:       fakeFormID,
 		Status:           0,
 		Pubkey:           nil,
 		Suffragia:        types.Suffragia{},
@@ -1139,14 +1139,14 @@ func initElectionAndContract() (types.Election, Contract) {
 
 	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
 
-	return dummyElection, contract
+	return dummyForm, contract
 }
 
-func initGoodShuffleBallot(t *testing.T, k int) (types.Election, types.ShuffleBallots, Contract) {
-	election, shuffleBallots, contract := initBadShuffleBallot(3)
-	election.Status = types.Closed
+func initGoodShuffleBallot(t *testing.T, k int) (types.Form, types.ShuffleBallots, Contract) {
+	form, shuffleBallots, contract := initBadShuffleBallot(3)
+	form.Status = types.Closed
 
-	election.BallotSize = 1
+	form.BallotSize = 1
 
 	Ks, Cs, pubKey := fakeKCPoints(k)
 	shuffleBallots.PublicKey, _ = fakeCommonSigner.GetPublicKey().MarshalBinary()
@@ -1161,20 +1161,20 @@ func initGoodShuffleBallot(t *testing.T, k int) (types.Election, types.ShuffleBa
 	}
 
 	// Encrypted ballots:
-	election.Pubkey = pubKey
+	form.Pubkey = pubKey
 	shuffleBallots.Round = 0
-	election.ShuffleInstances = make([]types.ShuffleInstance, 0)
+	form.ShuffleInstances = make([]types.ShuffleInstance, 0)
 
 	for i := 0; i < k; i++ {
 		ballot := types.Ciphervote{types.EGPair{
 			K: Ks[i],
 			C: Cs[i],
 		}}
-		election.Suffragia.CastVote(fmt.Sprintf("user%d", i), ballot)
+		form.Suffragia.CastVote(fmt.Sprintf("user%d", i), ballot)
 	}
 
 	// Valid Signature of shuffle
-	election.ElectionID = fakeElectionID
+	form.FormID = fakeFormID
 
 	h := sha256.New()
 	shuffleBallots.Fingerprint(h)
@@ -1190,7 +1190,7 @@ func initGoodShuffleBallot(t *testing.T, k int) (types.Election, types.ShuffleBa
 	semiRandomStream, err := NewSemiRandomStream(hash)
 	require.NoError(t, err)
 
-	lenRandomVector := election.ChunksPerBallot()
+	lenRandomVector := form.ChunksPerBallot()
 	e := make([]kyber.Scalar, lenRandomVector)
 	for i := 0; i < lenRandomVector; i++ {
 		v := suite.Scalar().Pick(semiRandomStream)
@@ -1198,25 +1198,25 @@ func initGoodShuffleBallot(t *testing.T, k int) (types.Election, types.ShuffleBa
 	}
 	shuffleBallots.RandomVector.LoadFromScalars(e)
 
-	return election, shuffleBallots, contract
+	return form, shuffleBallots, contract
 }
 
-func initBadShuffleBallot(sizeOfElection int) (types.Election, types.ShuffleBallots, Contract) {
+func initBadShuffleBallot(sizeOfForm int) (types.Form, types.ShuffleBallots, Contract) {
 	FakePubKey := fake.NewBadPublicKey()
 	FakePubKeyMarshalled, _ := FakePubKey.MarshalBinary()
-	shuffledBallots := make([]types.Ciphervote, sizeOfElection)
+	shuffledBallots := make([]types.Ciphervote, sizeOfForm)
 
 	shuffleBallots := types.ShuffleBallots{
-		ElectionID:      fakeElectionID,
+		FormID:      fakeFormID,
 		Round:           2,
 		ShuffledBallots: shuffledBallots,
 		Proof:           nil,
 		PublicKey:       FakePubKeyMarshalled,
 	}
 
-	election, contract := initElectionAndContract()
+	form, contract := initFormAndContract()
 
-	return election, shuffleBallots, contract
+	return form, shuffleBallots, contract
 }
 
 func fakeKCPoints(k int) ([]kyber.Point, []kyber.Point, kyber.Point) {
@@ -1265,11 +1265,11 @@ type fakeDKG struct {
 	err   error
 }
 
-func (f fakeDKG) Listen(electionID []byte, txmanager txn.Manager) (dkg.Actor, error) {
+func (f fakeDKG) Listen(formID []byte, txmanager txn.Manager) (dkg.Actor, error) {
 	return f.actor, f.err
 }
 
-func (f fakeDKG) GetActor(electionID []byte) (dkg.Actor, bool) {
+func (f fakeDKG) GetActor(formID []byte) (dkg.Actor, bool) {
 	return f.actor, false
 }
 
@@ -1343,11 +1343,11 @@ type fakeCmd struct {
 	err error
 }
 
-func (c fakeCmd) createElection(snap store.Snapshot, step execution.Step) error {
+func (c fakeCmd) createForm(snap store.Snapshot, step execution.Step) error {
 	return c.err
 }
 
-func (c fakeCmd) openElection(snap store.Snapshot, step execution.Step) error {
+func (c fakeCmd) openForm(snap store.Snapshot, step execution.Step) error {
 	return c.err
 }
 
@@ -1355,7 +1355,7 @@ func (c fakeCmd) castVote(snap store.Snapshot, step execution.Step) error {
 	return c.err
 }
 
-func (c fakeCmd) closeElection(snap store.Snapshot, step execution.Step) error {
+func (c fakeCmd) closeForm(snap store.Snapshot, step execution.Step) error {
 	return c.err
 }
 
@@ -1367,11 +1367,11 @@ func (c fakeCmd) combineShares(snap store.Snapshot, step execution.Step) error {
 	return c.err
 }
 
-func (c fakeCmd) cancelElection(snap store.Snapshot, step execution.Step) error {
+func (c fakeCmd) cancelForm(snap store.Snapshot, step execution.Step) error {
 	return c.err
 }
 
-func (c fakeCmd) deleteElection(snap store.Snapshot, step execution.Step) error {
+func (c fakeCmd) deleteForm(snap store.Snapshot, step execution.Step) error {
 	return c.err
 }
 

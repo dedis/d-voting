@@ -7,8 +7,8 @@ import { ENDPOINT_LOGOUT } from '../components/utils/Endpoints';
 import {
   ROUTE_ABOUT,
   ROUTE_ADMIN,
-  ROUTE_ELECTION_CREATE,
-  ROUTE_ELECTION_INDEX,
+  ROUTE_FORM_CREATE,
+  ROUTE_FORM_INDEX,
   ROUTE_HOME,
 } from '../Routes';
 
@@ -59,7 +59,7 @@ const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
             <div className="mt-6">
               <nav className="grid gap-y-8">
                 {
-                  <NavLink to={ROUTE_ELECTION_INDEX}>
+                  <NavLink to={ROUTE_FORM_INDEX}>
                     <Popover.Button className=" w-full -m-3 p-3 flex items-center rounded-md hover:bg-gray-50">
                       <span className="ml-3 text-base font-medium text-gray-900">
                         {t('navBarStatus')}
@@ -89,10 +89,10 @@ const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
             </div>
             <div className="pt-4">
               {authCtx.isLogged && (authCtx.role === 'admin' || authCtx.role === 'operator') && (
-                <NavLink to={ROUTE_ELECTION_CREATE}>
+                <NavLink to={ROUTE_FORM_CREATE}>
                   <Popover.Button className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700">
                     <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                    {t('navBarCreateElection')}
+                    {t('navBarCreateForm')}
                   </Popover.Button>
                 </NavLink>
               )}
@@ -149,10 +149,10 @@ const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
 const RightSideNavBar = ({ authCtx, handleLogout, fctx, t }) => (
   <div className="absolute hidden inset-y-0 right-0 flex items-center pr-2 md:static md:inset-auto md:flex md:ml-6 md:pr-0">
     {authCtx.isLogged && (authCtx.role === 'admin' || authCtx.role === 'operator') && (
-      <NavLink title={t('navBarCreateElection')} to={ROUTE_ELECTION_CREATE}>
+      <NavLink title={t('navBarCreateForm')} to={ROUTE_FORM_CREATE}>
         <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border-2 border-indigo-500 rounded-md shadow-sm text-base font-medium text-indigo-500 bg-white hover:bg-indigo-500 hover:text-white">
           <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-          {t('navBarCreateElection')}
+          {t('navBarCreateForm')}
         </div>
       </NavLink>
     )}
@@ -172,7 +172,7 @@ const LeftSideNavBar = ({ authCtx, t }) => (
     <div className="hidden md:block md:ml-6">
       <div className="flex space-x-6 mt-1">
         <NavLink
-          to={ROUTE_ELECTION_INDEX}
+          to={ROUTE_FORM_INDEX}
           title={t('navBarStatus')}
           className={'text-black text-lg hover:text-indigo-700'}>
           {t('navBarStatus')}

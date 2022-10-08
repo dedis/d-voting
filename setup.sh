@@ -89,9 +89,9 @@ echo "${GREEN}[4/7]${NC} grant access on the chain"
 # ./memcoin --config /tmp/node3 e-voting registerHandlers --signer private.key
 # ./memcoin --config /tmp/node3 dkg registerHandlers
 
-# If an election is created with ID "deadbeef" then one must set up DKG
-# on each node before the election can proceed:
-# ./memcoin --config /tmp/node1 dkg init --electionID deadbeef
-# ./memcoin --config /tmp/node2 dkg init --electionID deadbeef
-# ./memcoin --config /tmp/node3 dkg init --electionID deadbeef
-# ./memcoin --config /tmp/node1 dkg setup --electionID deadbeef
+# If an form is created with ID "deadbeef" then one must set up DKG
+# on each node before the form can proceed:
+# ./memcoin --config /tmp/node1 dkg init --formID deadbeef
+# ./memcoin --config /tmp/node2 dkg init --formID deadbeef
+# ./memcoin --config /tmp/node3 dkg init --formID deadbeef
+# ./memcoin --config /tmp/node1 dkg setup --formID deadbeef

@@ -93,10 +93,10 @@ func TestSetupAction_Execute(t *testing.T) {
 		Out:      io.Discard,
 	}
 
-	electionID := "deadbeef"
+	formID := "deadbeef"
 
 	flags.strings["member"] = "badAddress"
-	flags.strings["electionID"] = electionID
+	flags.strings["formID"] = formID
 	ctx.Flags = flags
 
 	// No DKG
@@ -109,10 +109,10 @@ func TestSetupAction_Execute(t *testing.T) {
 	// already have a public key
 	p := fake.Pedersen{Actors: make(map[string]dkg.Actor)}
 
-	electionIDBuf, err := hex.DecodeString(electionID)
+	formIDBuf, err := hex.DecodeString(formID)
 	require.NoError(t, err)
 
-	a, err := p.Listen(electionIDBuf, fake.Manager{})
+	a, err := p.Listen(formIDBuf, fake.Manager{})
 	require.NoError(t, err)
 
 	inj.Inject(p)
@@ -133,7 +133,7 @@ func TestSetupAction_Execute(t *testing.T) {
 		bucket := tx.GetBucket([]byte(BucketName))
 		require.NotNil(t, bucket)
 
-		pubKeyBuf := bucket.Get(electionIDBuf)
+		pubKeyBuf := bucket.Get(formIDBuf)
 		pubKeyRes := suite.Point()
 		err = pubKeyRes.UnmarshalBinary(pubKeyBuf)
 		require.NoError(t, err)

@@ -37,18 +37,18 @@ const (
 // DKG defines the primitive to start a DKG protocol
 type DKG interface {
 	// Listen starts the RPC. This function should be called on each node that
-	// wishes to participate in a DKG. electionID is NOT hex-encoded.
-	Listen(electionID []byte, txmngr txn.Manager) (Actor, error)
+	// wishes to participate in a DKG. formID is NOT hex-encoded.
+	Listen(formID []byte, txmngr txn.Manager) (Actor, error)
 
 	// GetActor allows to retrieve the Actor corresponding to a given
-	// electionID. electionID is NOT hex-encoded.
-	GetActor(electionID []byte) (Actor, bool)
+	// formID. formID is NOT hex-encoded.
+	GetActor(formID []byte) (Actor, bool)
 }
 
 // Actor defines the primitives to use a DKG protocol
 //
-// An actor is directly linked to an election; one should not be able to create
-// an Actor for an election that does not exist
+// An actor is directly linked to an form; one should not be able to create
+// an Actor for an form that does not exist
 type Actor interface {
 	// Setup must be first called by ONE of the actors to use the subsequent
 	// functions. It creates the public distributed key and the private share on

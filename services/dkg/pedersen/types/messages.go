@@ -257,19 +257,19 @@ func (s StartDone) Serialize(ctx serde.Context) ([]byte, error) {
 //
 // - implements serde.Message
 type DecryptRequest struct {
-	electionId string
+	formId string
 }
 
 // NewDecryptRequest creates a new decryption request.
-func NewDecryptRequest(electionId string) DecryptRequest {
+func NewDecryptRequest(formId string) DecryptRequest {
 	return DecryptRequest{
-		electionId: electionId,
+		formId: formId,
 	}
 }
 
-// GetElectionId returns electionId.
-func (req DecryptRequest) GetElectionId() string {
-	return req.electionId
+// GetFormId returns formId.
+func (req DecryptRequest) GetFormId() string {
+	return req.formId
 }
 
 // Serialize implements serde.Message.

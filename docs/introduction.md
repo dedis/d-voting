@@ -16,15 +16,15 @@ end-user can interact with the system.
 
 <p style="text-align:center"><img src="assets/layers.png"/></p>
 
-## Election flow
+## Form flow
 
-The following sequence diagram shows the entire flow of an election.
+The following sequence diagram shows the entire flow of an form.
 
-<p style="text-align:center"><img src="assets/election flow.png"/></p>
+<p style="text-align:center"><img src="assets/form flow.png"/></p>
 
 <details>
     <summary>source</summary>
-title Election flow
+title Form flow
 
 actor voter
 actor admin
@@ -34,58 +34,59 @@ database DKGRegistry
 
 == Setup ==
 
-admin->smart contract:OpenElection
+admin->smart contract:OpenForm
 smart contract->global state:GetRoster
 global state-->smart contract:roster
-smart contract->global state:StoreElection(roster, ...)
-note over admin:electionID can be computed by the admin\nbased on the transaction ID that is unique
-admin->DKGRegistry:init(electionID)
-DKGRegistry->global state:GetElection
-global state-->DKGRegistry:election.roster
+smart contract->global state:StoreForm(roster, ...)
+note over admin:formID can be computed by the admin\nbased on the transaction ID that is unique
+admin->DKGRegistry:init(formID)
+DKGRegistry->global state:GetForm
+global state-->DKGRegistry:form.roster
 DKGRegistry->DKGRegistry:dkg = create(roster)
-DKGRegistry->DKGRegistry:store(dkg, electionID)
-admin-->DKGRegistry:setup(electionID)
+DKGRegistry->DKGRegistry:store(dkg, formID)
+admin-->DKGRegistry:setup(formID)
 
-DKGRegistry->DKGRegistry:dkg = get(electionID)\npubkey = dkg.setup
+DKGRegistry->DKGRegistry:dkg = get(formID)\npubkey = dkg.setup
 
 == Open ==
 
-admin->smart contract:open(electionID)
-smart contract->DKGRegistry:GetPubKey(electionID)
+admin->smart contract:open(formID)
+smart contract->DKGRegistry:GetPubKey(formID)
 
 DKGRegistry-->smart contract:pubkey
-smart contract->global state:StoreElection(pubkey, ...)
+smart contract->global state:StoreForm(pubkey, ...)
 
 == Cast ==
 
-voter->global state:GetElection(electionID)
-global state-->voter:election.pubkey
+voter->global state:GetForm(formID)
+global state-->voter:form.pubkey
 
 voter->voter:ballot = encrypt(vote, pubkey)
 voter->smart contract:Cast(ballot)
 
-smart contract->global state:StoreElection(ballot, ...)
+smart contract->global state:StoreForm(ballot, ...)
 
-== Shuffle election ==
+== Shuffle form ==
 
-admin->smart contract:CloseElection
-smart contract->global state:StoreElection(status, ...)
+admin->smart contract:CloseForm
+smart contract->global state:StoreForm(status, ...)
 
 admin->Neff:init
-admin->Neff:setup(electionID)
-Neff->global state:GetElection(electionID)
-global state-->Neff:election.roster
+admin->Neff:setup(formID)
+Neff->global state:GetForm(formID)
+global state-->Neff:form.roster
 
 Neff->smart contract:SubmitShuffle(shuffledBallots)\nuse the transactionID as the random source for the proof
-smart contract->global state:StoreElection(shuffledBallots, ...)
-smart contract->global state:(if enough shuffling)\nStoreElection(status, ...)
+smart contract->global state:StoreForm(shuffledBallots, ...)
+smart contract->global state:(if enough shuffling)\nStoreForm(status, ...)
 
 == Terminate ==
 admin->DKGRegistry: ComputePubshares()
 
 DKGRegistry->smart contract: SubmitPushares (pubshare)
-smart contract->global state: StoreElection(pubshare, ...)
+smart contract->global state: StoreForm(pubshare, ...)
 
 admin->smart contract: CombinePubShares
-smart contract->global state: StoreElection(decryptedBallots, ...)
+smart contract->global state: StoreForm(decryptedBallots, ...)
+
 </details>
