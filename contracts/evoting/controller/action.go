@@ -174,7 +174,7 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 	router.HandleFunc(electionIDPath, ep.EditElection).Methods("PUT")
 	router.HandleFunc(electionIDPath, eproxy.AllowCORS).Methods("OPTIONS")
 	router.HandleFunc(electionIDPath, ep.DeleteElection).Methods("DELETE")
-	router.HandleFunc(electionPathSlash+"vote", ep.NewElectionVote).Methods("POST")
+	router.HandleFunc(electionIDPath+"/vote", ep.NewElectionVote).Methods("POST")
 
 	router.NotFoundHandler = http.HandlerFunc(eproxy.NotFoundHandler)
 	router.MethodNotAllowedHandler = http.HandlerFunc(eproxy.NotAllowedHandler)
@@ -296,8 +296,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	if err != nil {
 		return xerrors.Errorf(getElectionErr, err)
 	}
-	logElectionStatus(election.Configuration.MainTitle, string(election.ElectionID),
-		strconv.Itoa(int(election.Status)))
+	logElectionStatus(election)
 	dela.Logger.Info().Msgf("Pubkey of the election : %x", election.Pubkey)
 
 	// ############################# ATTEMPT TO CLOSE ELECTION #################
@@ -472,8 +471,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf(getElectionErr, err)
 	}
 
-	logElectionStatus(election.Configuration.MainTitle, string(election.ElectionID),
-		strconv.Itoa(int(election.Status)))
+	logElectionStatus(election)
 	dela.Logger.Info().Msg("Number of shuffled ballots : " + strconv.Itoa(len(election.ShuffleInstances)))
 	dela.Logger.Info().Msg("Number of encrypted ballots : " + strconv.Itoa(len(election.Suffragia.Ciphervotes)))
 
@@ -495,8 +493,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	validSubmissions := len(election.PubsharesUnits.Pubshares)
 
-	logElectionStatus(election.Configuration.MainTitle, string(election.ElectionID),
-		strconv.Itoa(int(election.Status)))
+	logElectionStatus(election)
 	dela.Logger.Info().Msg("Number of Pubshare units submitted: " + strconv.Itoa(validSubmissions))
 
 	// ###################################### DECRYPT BALLOTS ##################
@@ -515,8 +512,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	// dela.Logger.Info().Msg("----------------------- Election : " +
 	// string(proof.GetValue()))
-	logElectionStatus(election.Configuration.MainTitle, string(election.ElectionID),
-		strconv.Itoa(int(election.Status)))
+	logElectionStatus(election)
 	dela.Logger.Info().Msg("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
 
 	// ###################################### GET ELECTION RESULT ##############
@@ -528,8 +524,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf(getElectionErr, err)
 	}
 
-	logElectionStatus(election.Configuration.MainTitle, string(election.ElectionID),
-		strconv.Itoa(int(election.Status)))
+	logElectionStatus(election)
 	dela.Logger.Info().Msg("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
 
 	if len(election.DecryptedBallots) != 3 {
@@ -640,10 +635,10 @@ func setupSimpleElection(ctx node.Context, secret kyber.Scalar, proxyAddr1 strin
 	return electionID, election, electionIDBuf, nil
 }
 
-func logElectionStatus(title, ID, status string) {
-	dela.Logger.Info().Msg("Title of the election : " + title)
-	dela.Logger.Info().Msg("ID of the election : " + ID)
-	dela.Logger.Info().Msg("Status of the election : " + status)
+func logElectionStatus(election types.Election) {
+	dela.Logger.Info().Msg("Title of the election : " + election.Configuration.MainTitle)
+	dela.Logger.Info().Msg("ID of the election : " + election.ElectionID)
+	dela.Logger.Info().Msg("Status of the election : " + strconv.Itoa(int(election.Status)))
 }
 
 func encodeID(ID string) types.ID {
