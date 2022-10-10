@@ -74,8 +74,8 @@ const defaultFlashState = {
   getMessages: function (): FlashMessage[] {
     return [flashM];
   },
-  addMessage: function (msg: '', level: 0): void {},
-  hideMessage: function (index: ''): void {},
+  addMessage: function (msg: string, level: FlashLevel): void {},
+  hideMessage: function (index: string): void {},
 };
 // the flash context handles flash messages across the app
 export const FlashContext = createContext<FlashState>(defaultFlashState);
