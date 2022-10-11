@@ -68,6 +68,15 @@ const About: FC = () => {
               <img src={dVotingSystem} alt="" />
             </div>
           </div>
+          <div className="text-base max-w-prose mx-auto lg:max-w-none">
+            <div className="text-4xl mt-10 leading-8 font-extrabold tracking-tight text-gray-900 max-w-none lg:mx-auto">
+              <p>{t('contributors')}</p>
+            </div>
+            <p className="relative z-10 mt-2 font-medium prose prose-indigo text-gray-500">
+              Anas Ibrahim, Vincent Parodi, Sarah Antille, Auguste Baum, Emilien Duc, Ambroise
+              Borbely, Guanyu Zhand, Igowa Giovanni, Badr Larhdir, Capucine Berger
+            </p>
+          </div>
         </div>
       </div>
     </div>

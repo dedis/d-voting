@@ -36,7 +36,9 @@
     "dbUtils.js"
   ],
   "typedocOptions": {
-    "entryPoints": ["src/Server.ts"],
+    "entryPoints": [
+      "src/Server.ts"
+    ],
     "out": "tsdocs"
   }
 }
