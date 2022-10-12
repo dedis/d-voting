@@ -10,6 +10,12 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const (
+	selectStr = "select"
+	rankStr   = "rank"
+	textStr   = "text"
+)
+
 // Ballot contains all information about a simple ballot
 type Ballot struct {
 
@@ -81,7 +87,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 
 		switch question[0] {
 
-		case "select":
+		case selectStr:
 			selections := strings.Split(question[2], ",")
 
 			selectQ := Select{
@@ -100,7 +106,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 			b.SelectResultIDs = append(b.SelectResultIDs, ID(questionID))
 			b.SelectResult = append(b.SelectResult, results)
 
-		case "rank":
+		case rankStr:
 			ranks := strings.Split(question[2], ",")
 
 			rankQ := Rank{
@@ -118,7 +124,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 			b.RankResultIDs = append(b.RankResultIDs, ID(questionID))
 			b.RankResult = append(b.RankResult, results)
 
-		case "text":
+		case textStr:
 			texts := strings.Split(question[2], ",")
 
 			textQ := Text{
@@ -272,6 +278,7 @@ type Subject struct {
 // GetQuestion finds the question associated to a given ID and returns it
 // Returns nil if no question found.
 func (s *Subject) GetQuestion(ID ID) Question {
+	// Iterating through the subjects and calling the GetQuestion method on each subject.
 	for _, subject := range s.Subjects {
 		question := subject.GetQuestion(ID)
 		if question != nil {
@@ -311,21 +318,22 @@ func (s *Subject) MaxEncodedSize() int {
 
 	//TODO : optimise by computing max size according to number of choices and maxN
 	for _, rank := range s.Ranks {
-		size += len("rank::")
+		size += len(rank.GetString() + "::")
 		size += len(rank.ID)
 		// at most 3 bytes (128) + ',' per choice
 		size += len(rank.Choices) * 4
 	}
 
+	// Calculating the size of the data structure.
 	for _, selection := range s.Selects {
-		size += len("select::")
+		size += len(selection.GetString() + "::")
 		size += len(selection.ID)
 		// 1 bytes (0/1) + ',' per choice
 		size += len(selection.Choices) * 2
 	}
 
 	for _, text := range s.Texts {
-		size += len("text::")
+		size += len(text.GetString() + "::")
 		size += len(text.ID)
 
 		// at most 4 bytes per character + ',' per answer
@@ -401,6 +409,7 @@ type Question interface {
 	GetMaxN() uint
 	GetMinN() uint
 	GetChoicesLength() int
+	GetString() string
 }
 
 func isValid(q Question) bool {
@@ -416,6 +425,10 @@ type Select struct {
 	MaxN    uint
 	MinN    uint
 	Choices []string
+}
+
+func (s Select) GetString() string {
+	return selectStr
 }
 
 // GetMaxN implements Question
@@ -476,6 +489,10 @@ type Rank struct {
 	MaxN    uint
 	MinN    uint
 	Choices []string
+}
+
+func (r Rank) GetString() string {
+	return rankStr
 }
 
 // GetMaxN implements Question
@@ -546,6 +563,10 @@ type Text struct {
 	MaxLength uint
 	Regex     string
 	Choices   []string
+}
+
+func (t Text) GetString() string {
+	return textStr
 }
 
 // GetMaxN implements Question
