@@ -278,7 +278,6 @@ type Subject struct {
 // GetQuestion finds the question associated to a given ID and returns it
 // Returns nil if no question found.
 func (s *Subject) GetQuestion(ID ID) Question {
-	// Iterating through the subjects and calling the GetQuestion method on each subject.
 	for _, subject := range s.Subjects {
 		question := subject.GetQuestion(ID)
 		if question != nil {
@@ -324,7 +323,6 @@ func (s *Subject) MaxEncodedSize() int {
 		size += len(rank.Choices) * 4
 	}
 
-	// Calculating the size of the data structure.
 	for _, selection := range s.Selects {
 		size += len(selection.GetString() + "::")
 		size += len(selection.ID)
@@ -427,6 +425,7 @@ type Select struct {
 	Choices []string
 }
 
+// GetString implements Question
 func (s Select) GetString() string {
 	return selectStr
 }
