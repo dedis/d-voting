@@ -25,10 +25,10 @@ const Home: FC = () => {
                 </a>
               </div>
               <div className="mt-6 sm:max-w-xl">
-                <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">
+                <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-4xl">
                   {t('homeTitle')}
                 </h1>
-                <p className="mt-6 text-xl text-gray-500">{t('homeText')}</p>
+                <p className="mt-6 text-base text-gray-500">{t('homeText')}</p>
               </div>
               <div className="mt-12 sm:max-w-lg sm:w-full sm:flex">
                 <div className="mt-4 sm:mt-0 sm:ml-3">
@@ -44,7 +44,7 @@ const Home: FC = () => {
         </div>
 
         <div className="sm:mx-auto sm:max-w-3xl sm:px-6">
-          <div className="py-12 sm:relative sm:mt-12 sm:py-16 lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
+          <div className="py-12 sm:relative sm:mt-12 sm:py-16 lg:absolute lg:inset-y-0 lg:right-0 lg:w-3/5">
             <div className="hidden sm:block">
               <svg
                 className="absolute top-8 right-1/2 -mr-3 lg:m-0 lg:left-0"
