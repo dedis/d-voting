@@ -72,7 +72,7 @@ const About: FC = () => {
             <div className="text-4xl mt-10 leading-8 font-extrabold tracking-tight text-gray-900 max-w-none lg:mx-auto">
               <p>{t('contributors')}</p>
             </div>
-            <p className="relative text-justify z-10 mt-2 font-medium prose prose-indigo text-gray-500">
+            <p className="text-justify mt-2 font-medium prose prose-indigo text-gray-500">
               Anas Ibrahim, Vincent Parodi, Sarah Antille, Auguste Baum, Emilien Duc, Ambroise
               Borbely, Guanyu Zhand, Igowa Giovanni, Badr Larhdir, Capucine Berger, Albert
               Troussard, Mohamed Amine Benaziz, Chen Chang Lew, Ahmed Kamal Elalamy, Ghita
