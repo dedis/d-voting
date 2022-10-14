@@ -32,7 +32,7 @@ starting with 0, your favorite, to N”.
 number of choices. That kind of question can be “Enter the name of 1 or 2 of your favorite
 candidate(s)”.
 
-The data structure of an form should contain the **Configuration**, which describes the
+The data structure of a form should contain the **Configuration**, which describes the
 different questions that the poll contains. We gather the questions (ie. the collections of Select,
 Rank, Text questions) under “Subjects” that define the order of the questions. A subject is nothing
 more than a container to organize the questions. Each subject can also contain, apart from the

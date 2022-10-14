@@ -16,15 +16,15 @@ end-user can interact with the system.
 
 <p style="text-align:center"><img src="assets/layers.png"/></p>
 
-## Form flow
+## Voting flow
 
-The following sequence diagram shows the entire flow of an form.
+The following sequence diagram shows the entire flow of a form.
 
-<p style="text-align:center"><img src="assets/form flow.png"/></p>
+<p style="text-align:center"><img src="assets/Voting flow.png"/></p>
 
 <details>
     <summary>source</summary>
-title Form flow
+title Voting flow
 
 actor voter
 actor admin

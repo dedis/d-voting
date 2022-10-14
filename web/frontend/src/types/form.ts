@@ -7,9 +7,9 @@ export const enum Status {
   Initialized = 7,
   // Setup is when a node has been setup by the dkg service
   Setup = 8,
-  // Open is when an form is open, and users can cast ballots
+  // Open is when a form is open, and users can cast ballots
   Open = 1,
-  // Closed is when an form is closed, users can no longer cast ballots
+  // Closed is when a form is closed, users can no longer cast ballots
   Closed = 2,
   // ShuffledBallots is when the ballots have been shuffled
   ShuffledBallots = 3,
@@ -17,7 +17,7 @@ export const enum Status {
   PubSharesSubmitted = 4,
   // ResultAvailable is when the ballots have been decrypted
   ResultAvailable = 5,
-  // Canceled is when an form has been canceled
+  // Canceled is when a form has been canceled
   Canceled = 6,
 }
 

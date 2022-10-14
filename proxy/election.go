@@ -249,7 +249,7 @@ func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// openForm allows opening an form, which sets the public key based on
+// openForm allows opening a form, which sets the public key based on
 // the DKG actor.
 func (h *form) openForm(elecID string, w http.ResponseWriter, r *http.Request) {
 	openForm := types.OpenForm{
@@ -270,7 +270,7 @@ func (h *form) openForm(elecID string, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// closeForm closes an form.
+// closeForm closes a form.
 func (h *form) closeForm(formIDHex string, w http.ResponseWriter, r *http.Request) {
 
 	closeForm := types.CloseForm{
@@ -291,7 +291,7 @@ func (h *form) closeForm(formIDHex string, w http.ResponseWriter, r *http.Reques
 	}
 }
 
-// combineShares decrypts the shuffled ballots in an form.
+// combineShares decrypts the shuffled ballots in a form.
 func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Request) {
 
 	form, err := getForm(h.context, h.formFac, formIDHex, h.orderingSvc)
@@ -324,7 +324,7 @@ func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Re
 	}
 }
 
-// cancelForm cancels an form.
+// cancelForm cancels a form.
 func (h *form) cancelForm(formIDHex string, w http.ResponseWriter, r *http.Request) {
 
 	cancelForm := types.CancelForm{

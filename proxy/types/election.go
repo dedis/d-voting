@@ -4,13 +4,13 @@ import (
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 )
 
-// CreateFormRequest defines the HTTP request for creating an form
+// CreateFormRequest defines the HTTP request for creating a form
 type CreateFormRequest struct {
 	AdminID       string
 	Configuration etypes.Configuration
 }
 
-// CreateFormResponse defines the HTTP response when creating an form
+// CreateFormResponse defines the HTTP response when creating a form
 type CreateFormResponse struct {
 	FormID string // hex-encoded
 }
@@ -31,7 +31,7 @@ type EGPairJSON struct {
 	C []byte
 }
 
-// UpdateFormRequest defines the HTTP request for updating an form
+// UpdateFormRequest defines the HTTP request for updating a form
 type UpdateFormRequest struct {
 	Action string
 }

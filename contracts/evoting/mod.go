@@ -101,13 +101,13 @@ type commands interface {
 type Command string
 
 const (
-	// CmdCreateForm is the command to create an form
+	// CmdCreateForm is the command to create a form
 	CmdCreateForm Command = "CREATE_FORM"
-	// CmdOpenForm is the command to open an form
+	// CmdOpenForm is the command to open a form
 	CmdOpenForm Command = "OPEN_FORM"
 	// CmdCastVote is the command to cast a vote
 	CmdCastVote Command = "CAST_VOTE"
-	// CmdCloseForm is the command to close an form
+	// CmdCloseForm is the command to close a form
 	CmdCloseForm Command = "CLOSE_FORM"
 	// CmdShuffleBallots is the command to shuffle ballots
 	CmdShuffleBallots Command = "SHUFFLE_BALLOTS"
@@ -117,10 +117,10 @@ const (
 
 	// CmdCombineShares is the command to decrypt ballots
 	CmdCombineShares Command = "COMBINE_SHARES"
-	// CmdCancelForm is the command to cancel an form
+	// CmdCancelForm is the command to cancel a form
 	CmdCancelForm Command = "CANCEL_FORM"
 
-	// CmdDeleteForm is the command to delete an form
+	// CmdDeleteForm is the command to delete a form
 	CmdDeleteForm Command = "DELETE_FORM"
 )
 

@@ -4,7 +4,7 @@ TODO:
 2. Explain how to sync up the smart contract with the Shuffle
 3. Explain how security impacts the smart contract (at the decrypt stage)
 
-## Create an form
+## Create a form
 
 This transaction requires the following 3 parameters:
 
@@ -12,7 +12,7 @@ This transaction requires the following 3 parameters:
 2. `admin` ID of the creator of the form
 3. `format` of the form
 
-Key / Value pairs sent in the transaction in order to create an form:
+Key / Value pairs sent in the transaction in order to create a form:
 | | |
 |-|-|
 |"go.dedis.ch/dela.ContractArg"|[]byte(evoting.ContractName)|
@@ -42,11 +42,11 @@ hash.Write(transactionID)
 formID := hash.Sum(nil)
 ```
 
-## Open an form
+## Open a form
 
 This transaction requires an `formID`
 
-Key / Value pairs sent in the transaction in order to create an form:
+Key / Value pairs sent in the transaction in order to create a form:
 | | |
 |-|-|
 |"go.dedis.ch/dela.ContractArg"|[]byte(evoting.ContractName)|
@@ -74,7 +74,7 @@ This transaction requires the following 3 parameters:
 3. `userID` of the voter
 4. `vote` to be casted
 
-Key / Value pairs sent in the transaction in order to create an form:
+Key / Value pairs sent in the transaction in order to create a form:
 | | |
 |-|-|
 |"go.dedis.ch/dela.ContractArg"|[]byte(evoting.ContractName)|
@@ -95,11 +95,11 @@ where:
     evoting.CmdCastVote = "CAST_VOTE"
 ```
 
-## Close an form
+## Close a form
 
 This transaction requires an `formID` and an `adminID`.
 
-Key / Value pairs sent in the transaction in order to create an form:
+Key / Value pairs sent in the transaction in order to create a form:
 | | |
 |-|-|
 |"go.dedis.ch/dela.ContractArg"|[]byte(evoting.ContractName)|

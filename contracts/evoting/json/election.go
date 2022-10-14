@@ -173,7 +173,7 @@ type FormJSON struct {
 
 	// roster is set when the form is created based on the current
 	// roster of the node stored in the global state. The roster will not change
-	// during an form and will be used for DKG and Neff. Its type is
+	// during a form and will be used for DKG and Neff. Its type is
 	// authority.Authority.
 
 	RosterBuf []byte

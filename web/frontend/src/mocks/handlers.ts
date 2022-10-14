@@ -118,10 +118,7 @@ export const handlers = [
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
-      return res(
-        ctx.status(403),
-        ctx.json({ message: 'You are not authorized to create an form' })
-      );
+      return res(ctx.status(403), ctx.json({ message: 'You are not authorized to create a form' }));
     }
 
     const createForm = (configuration: any) => {
@@ -186,10 +183,7 @@ export const handlers = [
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
-      return res(
-        ctx.status(403),
-        ctx.json({ message: 'You are not authorized to update an form' })
-      );
+      return res(ctx.status(403), ctx.json({ message: 'You are not authorized to update a form' }));
     }
 
     switch (body.Action) {
@@ -370,10 +364,7 @@ export const handlers = [
     const { FormID } = req.params;
 
     if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
-      return res(
-        ctx.status(403),
-        ctx.json({ message: 'You are not authorized to update an form' })
-      );
+      return res(ctx.status(403), ctx.json({ message: 'You are not authorized to update a form' }));
     }
 
     setTimeout(

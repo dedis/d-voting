@@ -35,7 +35,7 @@ type initAction struct {
 }
 
 // Execute implements node.ActionTemplate. It creates an actor from
-// the dkgPedersen instance and links it to an form.
+// the dkgPedersen instance and links it to a form.
 func (a *initAction) Execute(ctx node.Context) error {
 
 	formID := ctx.Flags.String("formID")

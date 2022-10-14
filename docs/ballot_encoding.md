@@ -49,7 +49,7 @@ A possible encoding of an answer would be (by string concatenation):
 ## Size of the ballot
 
 In order to maintain complete voter anonymity and untraceability of ballots throughout the
-form process, it is important that all encrypted ballots have the same size. To this aim,
+voting process, it is important that all encrypted ballots have the same size. To this aim,
 the form has an attribute called "BallotSize" which is the size
 that all ballots should have before they're encrypted. Smaller ballots should therefore be
 padded in order to reach this size. To denote the end of the ballot and the start of the padding,

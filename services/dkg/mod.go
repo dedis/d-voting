@@ -47,8 +47,8 @@ type DKG interface {
 
 // Actor defines the primitives to use a DKG protocol
 //
-// An actor is directly linked to an form; one should not be able to create
-// an Actor for an form that does not exist
+// An actor is directly linked to a form; one should not be able to create
+// an Actor for a form that does not exist
 type Actor interface {
 	// Setup must be first called by ONE of the actors to use the subsequent
 	// functions. It creates the public distributed key and the private share on

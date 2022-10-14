@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Status } from 'types/form';
 
-// Custom hook that can display the status of an form and enable changes
+// Custom hook that can display the status of a form and enable changes
 // of status (closing, cancelling,...)
 const useChangeStatus = (status: Status) => {
   const { t } = useTranslation();

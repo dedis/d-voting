@@ -107,11 +107,11 @@ be linked to the original voter.
     <img height="50px" src="docs/assets/audit-white.png#gh-dark-mode-only">
 </div>
 
-**Transparency/Verifiability/Auditability** - The whole form process is
+**Transparency/Verifiability/Auditability** - The whole voting process is
 recorded on the blockchain and signed by a threshold of blockchain nodes. Anyone
 can read and verify the log of events stored on the blockchain. Malicious
 behavior can be detected, voters can check that ballots are cast as intended,
-and auditors can witness the form process.
+and auditors can witness the voting process.
 
 ## 🧩 Global architecture
 
@@ -120,7 +120,7 @@ The project has 4 main high-level components:
 **Proxy** - A proxy offers the mean for an external actor such as a website to
 interact with a blockchain node. It is a component of the blockchain node that
 exposes HTTP endpoints for external entities to send commands to the node. The
-proxy is notably used by the web clients to use the form system.
+proxy is notably used by the web clients to use the voting system.
 
 **Web frontend** - The web frontend is a web app built with React. It offers a
 view for end-users to use the D-Voting system. The app is meant to be used by
@@ -137,7 +137,7 @@ web-backend has a local database to store configuration data such as
 authorizations. Admins use the web-frontend to perform updates.
 
 **Blockchain node** - A blockchain node is the wide definition of the program
-that runs on a host and participate in the form logic. The blockchain node
+that runs on a host and participate in the voting logic. The blockchain node
 is built on top of Dela with an additional d-voting smart contract, proxy, and
 two services: DKG and verifiable Shuffling. The blockchain node is more
 accurately a subsystem, as it wraps many other components. Blockchain nodes
@@ -156,7 +156,7 @@ website](https://dedis.github.io/d-voting/#/).
 
 ## Workflow
 
-An form follows a specific workflow to ensure privacy of votes. Once an
+A form follows a specific workflow to ensure privacy of votes. Once an
 form is created and open, there are 4 main steps from the cast of a ballot
 to getting the result of the form:
 
@@ -225,7 +225,7 @@ shuffled by a threshold of nodes.
 ## Services
 
 Apart from executing smart contracts, blockchain nodes need additional side
-services to support an form. Side services can read from the global state
+services to support a form. Side services can read from the global state
 and send transactions to write to it via the D-Voting smart contract. They are
 used to perform specific protocol executions not directly related to blockchain
 protocols such as the distributed key generation (DKG) and verifiable shuffling
@@ -259,7 +259,7 @@ integrity of the elements is guarantee (i.e no elements have been modified,
 added, or removed), but one can't trace how elements have been re-ordered.
 
 In D-Voting we use the Neff [[2]] implementation of verifiable shuffling. Once
-an form is closed, an admin can trigger the shuffling steps from the nodes.
+a form is closed, an admin can trigger the shuffling steps from the nodes.
 During this phase, every node performs a shuffling on the current list of
 encrypted ballots and tries to submit it to the D-Voting smart contract. The
 smart contract will accept only one shuffling step per block in the blockchain.
@@ -557,7 +557,7 @@ NNODES=4 KILLNODE=true go test -v -run ^TestScenario$ github.com/dedis/d-voting/
 ```
 
 Here we set KILLNODE=true or false to decide whether kill and restart a node
-during the form process. By default, it's set to false.
+during the voting process. By default, it's set to false.
 
 To end the session, run `./kill_test.sh`.
 

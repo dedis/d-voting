@@ -40,7 +40,7 @@ func (e FormIDs) Contains(el string) int {
 	return -1
 }
 
-// Add adds an form ID or returns an error if already present
+// Add adds a form ID or returns an error if already present
 func (e *FormIDs) Add(id string) error {
 	if e.Contains(id) >= 0 {
 		return xerrors.Errorf("id %q already exist", id)
@@ -51,7 +51,7 @@ func (e *FormIDs) Add(id string) error {
 	return nil
 }
 
-// Remove removes an form ID from the list, if it exists
+// Remove removes a form ID from the list, if it exists
 func (e *FormIDs) Remove(id string) {
 	i := e.Contains(id)
 	if i >= 0 {
@@ -87,7 +87,7 @@ func (t TransactionFactory) Deserialize(ctx serde.Context, data []byte) (serde.M
 	return message, nil
 }
 
-// CreateForm defines the transaction to create an form
+// CreateForm defines the transaction to create a form
 //
 // - implements serde.Message
 type CreateForm struct {
@@ -107,7 +107,7 @@ func (ce CreateForm) Serialize(ctx serde.Context) ([]byte, error) {
 	return data, nil
 }
 
-// OpenForm defines the transaction to open an form
+// OpenForm defines the transaction to open a form
 //
 // - implements serde.Message
 type OpenForm struct {
@@ -149,7 +149,7 @@ func (cv CastVote) Serialize(ctx serde.Context) ([]byte, error) {
 	return data, nil
 }
 
-// CloseForm defines the transaction to close an form
+// CloseForm defines the transaction to close a form
 //
 // - implements serde.Message
 type CloseForm struct {

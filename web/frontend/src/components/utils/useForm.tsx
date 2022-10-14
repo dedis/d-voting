@@ -5,7 +5,7 @@ import { ID } from 'types/configuration';
 import { useContext } from 'react';
 import { ProxyContext } from 'index';
 
-// Custom hook that fetches an form given its id and returns its
+// Custom hook that fetches a form given its id and returns its
 // different parameters
 const useForm = (formID: ID) => {
   const pctx = useContext(ProxyContext);

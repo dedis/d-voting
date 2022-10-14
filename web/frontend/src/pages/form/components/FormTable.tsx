@@ -10,7 +10,7 @@ type FormTableProps = {
   pageIndex: number;
 };
 
-// Returns a table where each line corresponds to an form with
+// Returns a table where each line corresponds to a form with
 // its name, status and a quickAction if available
 const FORM_PER_PAGE = 10;
 

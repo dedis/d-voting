@@ -428,7 +428,7 @@ func (h *Handler) handleDeal(msg types.Deal, out mino.Sender) error {
 	return nil
 }
 
-// handleDecryptRequest computes the public shares of an form and sends them
+// handleDecryptRequest computes the public shares of a form and sends them
 // to the chain to allow decryption to proceed.
 func (h *Handler) handleDecryptRequest(formID string) error {
 	shuffleInstances, err := h.getShuffleIfValid(formID)

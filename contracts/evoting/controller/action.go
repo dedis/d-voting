@@ -200,8 +200,8 @@ func getSigner(filePath string) (crypto.Signer, error) {
 type scenarioTestAction struct {
 }
 
-// Execute implements node.ActionTemplate. It creates an form and
-// simulates the full form process
+// Execute implements node.ActionTemplate. It creates a form and
+// simulates the full voting process
 func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	secretkeyHex := ctx.Flags.String("secretkey")
 
