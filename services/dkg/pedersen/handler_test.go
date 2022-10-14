@@ -59,7 +59,7 @@ func TestHandler_Stream(t *testing.T) {
 
 	form := formTypes.Form{
 		Configuration:    formTypes.Configuration{},
-		FormID:       formIDHex,
+		FormID:           formIDHex,
 		Status:           formTypes.ShuffledBallots,
 		Pubkey:           nil,
 		BallotSize:       0,
@@ -77,12 +77,12 @@ func TestHandler_Stream(t *testing.T) {
 	h.formFac = formTypes.NewFormFactory(formTypes.CiphervoteFactory{}, fake.RosterFac{})
 
 	h.service = &fake.Service{
-		Err:       nil,
-		Forms: Forms,
-		Pool:      nil,
-		Status:    false,
-		Channel:   nil,
-		Context:   json.NewContext(),
+		Err:     nil,
+		Forms:   Forms,
+		Pool:    nil,
+		Status:  false,
+		Channel: nil,
+		Context: json.NewContext(),
 	}
 
 	h.context = json.NewContext()
@@ -289,7 +289,7 @@ func TestHandler_HandlerDecryptRequest(t *testing.T) {
 
 	form := formTypes.Form{
 		Configuration:    formTypes.Configuration{},
-		FormID:       formIDHex,
+		FormID:           formIDHex,
 		Status:           formTypes.ShuffledBallots,
 		Pubkey:           nil,
 		BallotSize:       0,
@@ -311,12 +311,12 @@ func TestHandler_HandlerDecryptRequest(t *testing.T) {
 	h.formFac = formTypes.NewFormFactory(formTypes.CiphervoteFactory{}, fake.RosterFac{})
 
 	service := fake.Service{
-		Err:       nil,
-		Forms: Forms,
-		Pool:      nil,
-		Status:    false,
-		Channel:   nil,
-		Context:   json.NewContext(),
+		Err:     nil,
+		Forms:   Forms,
+		Pool:    nil,
+		Status:  false,
+		Channel: nil,
+		Context: json.NewContext(),
 	}
 
 	h.context = json.NewContext()

@@ -154,7 +154,7 @@ type Contract struct {
 
 	context serde.Context
 
-	formFac    serde.Factory
+	formFac        serde.Factory
 	rosterFac      authority.Factory
 	transactionFac serde.Factory
 }
@@ -178,7 +178,7 @@ func NewContract(accessKey, rosterKey []byte, srvc access.Service,
 
 		context: ctx,
 
-		formFac:    formFac,
+		formFac:        formFac,
 		rosterFac:      rosterFac,
 		transactionFac: transactionFac,
 	}

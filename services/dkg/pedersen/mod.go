@@ -61,13 +61,13 @@ const (
 type Pedersen struct {
 	sync.RWMutex
 
-	mino        mino.Mino
-	factory     serde.Factory
-	service     ordering.Service
+	mino    mino.Mino
+	factory serde.Factory
+	service ordering.Service
 	formFac serde.Factory
-	pool        pool.Pool
-	signer      crypto.Signer
-	actors      map[string]dkg.Actor
+	pool    pool.Pool
+	signer  crypto.Signer
+	actors  map[string]dkg.Actor
 }
 
 // NewPedersen returns a new DKG Pedersen factory
@@ -78,12 +78,12 @@ func NewPedersen(m mino.Mino, service ordering.Service, pool pool.Pool,
 	actors := make(map[string]dkg.Actor)
 
 	return &Pedersen{
-		mino:        m,
-		factory:     factory,
-		service:     service,
-		pool:        pool,
-		actors:      actors,
-		signer:      signer,
+		mino:    m,
+		factory: factory,
+		service: service,
+		pool:    pool,
+		actors:  actors,
+		signer:  signer,
 		formFac: formFac,
 	}
 }
@@ -130,15 +130,15 @@ func (s *Pedersen) NewActor(formIDBuf []byte, pool pool.Pool, txmngr txn.Manager
 	log := dela.Logger.With().Str("role", "DKG actor").Logger()
 
 	a := &Actor{
-		rpc:         rpc,
-		factory:     s.factory,
-		service:     s.service,
-		context:     ctx,
+		rpc:     rpc,
+		factory: s.factory,
+		service: s.service,
+		context: ctx,
 		formFac: s.formFac,
-		handler:     h,
+		handler: h,
 		formID:  formID,
-		status:      status,
-		log:         log,
+		status:  status,
+		log:     log,
 	}
 
 	evoting.PromFormDkgStatus.WithLabelValues(formID).Set(float64(dkg.Initialized))
@@ -162,15 +162,15 @@ func (s *Pedersen) GetActor(formIDBuf []byte) (dkg.Actor, bool) {
 //
 // - implements dkg.Actor
 type Actor struct {
-	rpc         mino.RPC
-	factory     serde.Factory
-	service     ordering.Service
-	context     serde.Context
+	rpc     mino.RPC
+	factory serde.Factory
+	service ordering.Service
+	context serde.Context
 	formFac serde.Factory
-	handler     *Handler
+	handler *Handler
 	formID  string
-	status      *dkg.Status
-	log         zerolog.Logger
+	status  *dkg.Status
+	log     zerolog.Logger
 }
 
 func (a *Actor) setErr(err error, args map[string]interface{}) {

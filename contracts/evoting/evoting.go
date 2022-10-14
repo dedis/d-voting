@@ -32,7 +32,7 @@ import (
 const (
 	shufflingProtocolName = "PairShuffle"
 	errGetTransaction     = "failed to get transaction: %v"
-	errGetForm        = "failed to get form: %v"
+	errGetForm            = "failed to get form: %v"
 	errWrongTx            = "wrong type of transaction: %T"
 )
 
@@ -86,7 +86,7 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 	}
 
 	form := types.Form{
-		FormID:    hex.EncodeToString(formIDBuf),
+		FormID:        hex.EncodeToString(formIDBuf),
 		Configuration: tx.Configuration,
 		Status:        types.Initial,
 		// Pubkey is set by the opening command

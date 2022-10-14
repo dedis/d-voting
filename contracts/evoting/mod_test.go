@@ -182,7 +182,7 @@ func TestCommand_CastVote(t *testing.T) {
 
 	castVote := types.CastVote{
 		FormID: fakeFormID,
-		UserID:     "dummyUserId",
+		UserID: "dummyUserId",
 		Ballot: types.Ciphervote{types.EGPair{
 			K: suite.Point(),
 			C: suite.Point(),
@@ -313,7 +313,7 @@ func TestCommand_CloseForm(t *testing.T) {
 
 	closeForm := types.CloseForm{
 		FormID: fakeFormID,
-		UserID:     "dummyUserId",
+		UserID: "dummyUserId",
 	}
 
 	data, err := closeForm.Serialize(ctx)
@@ -738,11 +738,11 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 
 func TestCommand_RegisterPubShares(t *testing.T) {
 	registerPubShares := types.RegisterPubShares{
-		FormID: fakeFormID,
-		Index:      0,
-		Pubshares:  make([][]types.Pubshare, 0),
-		Signature:  []byte{},
-		PublicKey:  []byte{},
+		FormID:    fakeFormID,
+		Index:     0,
+		Pubshares: make([][]types.Pubshare, 0),
+		Signature: []byte{},
+		PublicKey: []byte{},
 	}
 
 	data, err := registerPubShares.Serialize(ctx)
@@ -944,7 +944,7 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 func TestCommand_DecryptBallots(t *testing.T) {
 	decryptBallot := types.CombineShares{
 		FormID: fakeFormID,
-		UserID:     hex.EncodeToString([]byte("dummyUserId")),
+		UserID: hex.EncodeToString([]byte("dummyUserId")),
 	}
 
 	data, err := decryptBallot.Serialize(ctx)
@@ -1043,7 +1043,7 @@ func TestCommand_DecryptBallots(t *testing.T) {
 func TestCommand_CancelForm(t *testing.T) {
 	cancelForm := types.CancelForm{
 		FormID: fakeFormID,
-		UserID:     "dummyUserId",
+		UserID: "dummyUserId",
 	}
 
 	data, err := cancelForm.Serialize(ctx)
@@ -1121,7 +1121,7 @@ func initFormAndContract() (types.Form, Contract) {
 	}
 
 	dummyForm := types.Form{
-		FormID:       fakeFormID,
+		FormID:           fakeFormID,
 		Status:           0,
 		Pubkey:           nil,
 		Suffragia:        types.Suffragia{},
@@ -1207,7 +1207,7 @@ func initBadShuffleBallot(sizeOfForm int) (types.Form, types.ShuffleBallots, Con
 	shuffledBallots := make([]types.Ciphervote, sizeOfForm)
 
 	shuffleBallots := types.ShuffleBallots{
-		FormID:      fakeFormID,
+		FormID:          fakeFormID,
 		Round:           2,
 		ShuffledBallots: shuffledBallots,
 		Proof:           nil,

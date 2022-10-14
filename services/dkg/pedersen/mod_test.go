@@ -326,7 +326,7 @@ func TestPedersen_Setup(t *testing.T) {
 
 	service := fake.NewService(formID, etypes.Form{
 		FormID: formID,
-		Roster:     fake.Authority{},
+		Roster: fake.Authority{},
 	}, serdecontext)
 
 	actor := Actor{
@@ -336,7 +336,7 @@ func TestPedersen_Setup(t *testing.T) {
 		handler: &Handler{
 			startRes: &state{},
 		},
-		context:     serdecontext,
+		context: serdecontext,
 		formFac: formFac,
 	}
 
@@ -390,7 +390,7 @@ func TestPedersen_Setup(t *testing.T) {
 		formID,
 		etypes.Form{
 			FormID: formID,
-			Roster:     roster,
+			Roster: roster,
 		}, serdecontext)
 
 	actor.service = &service

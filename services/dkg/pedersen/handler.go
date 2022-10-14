@@ -66,7 +66,7 @@ type Handler struct {
 	privKey   kyber.Scalar
 	pubKey    kyber.Point
 
-	context     serde.Context
+	context serde.Context
 	formFac serde.Factory
 
 	log     zerolog.Logger
@@ -99,7 +99,7 @@ func NewHandler(me mino.Address, service ordering.Service, pool pool.Pool,
 		privKey:   privKey,
 		pubKey:    pubKey,
 
-		context:     context,
+		context: context,
 		formFac: formFac,
 
 		log:     log,
@@ -816,9 +816,9 @@ func makeTx(ctx serde.Context, form *etypes.Form, pubShares etypes.PubsharesUnit
 	pubSharesSigner crypto.Signer) (txn.Transaction, error) {
 
 	pubShareTx := etypes.RegisterPubShares{
-		FormID: form.FormID,
-		Pubshares:  pubShares,
-		Index:      index,
+		FormID:    form.FormID,
+		Pubshares: pubShares,
+		Index:     index,
 	}
 
 	h := sha256.New()
