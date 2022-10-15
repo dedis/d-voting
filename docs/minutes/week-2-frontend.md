@@ -1,22 +1,21 @@
-# Meeting 29/09/2022
+Date: 03/10/2022 Participants: Ahmed Elalamy, Ghita Tagemouati, Khadija Tagemouati, Noémien Kocher
 
-On peut lancer que le front end en ne mettant pas le react…
+## Updates
 
-```jsx
-dans handlers dans frontend/src/mocks 
-rest.get("/api/blabla)
-```
+Each member of the team has created a PR:
 
-Environnement de travail vérifier qu’il formate le code automatiquement
+- Khadija added types on index.tsx
+- Ghita started changing "election" to "form" in the codebase. She mentions having spent a lot of time trying to make the nodes work
+- Ahmed changed the favicon
 
-Rajouter un champ pour donner des infos sur la question 
+## ToDo Next
 
-Exemple : merci de donner votre nom et prénom en majuscule en max 10 caractère
+- [ ] For the presentation we should be able to tell what everyone would be doing during the semester. It doesn't have to be precise but has to show that we have a plan. 
+- [ ] Modify the readme with the configuration of the linter.
+- [ ] Add information about questions as : "Here you need to enter your name and your surname in 10 characters"
 
-logo sur l’icone de la page
+## Others
+We decide with Noémien what everyone wants to do.
+We try to configure the linter on everyone's machine. It was not easy.
+We found an error that is we can click multiple time on the cast button when it is loading.
 
-on peut toujours cliquer sur le bouton cast alors qu’il charge
-
-idées de quoi mettre sur la première page : peut être des statistiques sur les elections en cours, ou 3 noeux qui tournent sur la blockchain
-
-- [ ]  mettre a jour le readme pour dire qu’il faut configurer le eslint et prettier
