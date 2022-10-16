@@ -70,23 +70,26 @@ type election struct {
 func (h *election) NewElection(w http.ResponseWriter, r *http.Request) {
 	var req ptypes.CreateElectionRequest
 
+	//get the signed request
 	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
 		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
 
+	//get the request and verify the signature
 	err = signed.GetAndVerify(h.pk, &req)
 	if err != nil {
 		InternalError(w, r, getSignedErr(err), nil)
 		return
 	}
-
+	//create the election
 	createElection := types.CreateElection{
 		Configuration: req.Configuration,
 		AdminID:       req.AdminID,
 	}
 
+	//serialize the election
 	data, err := createElection.Serialize(h.context)
 	if err != nil {
 		http.Error(w, "failed to marshal CreateElectionTransaction: "+err.Error(),
@@ -94,20 +97,24 @@ func (h *election) NewElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//create the transaction and add it to the pool
 	txID, err := h.submitAndWaitForTxn(r.Context(), evoting.CmdCreateElection, evoting.ElectionArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	//hash the transaction
 	hash := sha256.New()
 	hash.Write(txID)
 	electionID := hash.Sum(nil)
 
+	//return the electionID
 	response := ptypes.CreateElectionResponse{
 		ElectionID: hex.EncodeToString(electionID),
 	}
 
+	//sign the response
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
@@ -118,24 +125,30 @@ func (h *election) NewElection(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewElectionVote implements proxy.Proxy
+// Create a new vote for an election
+// TODO: add a check to verify that the election is open
 func (h *election) NewElectionVote(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
+	//check if the electionID is valid
 	if vars == nil || vars["electionID"] == "" {
 		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
 		return
 	}
 
+
 	electionID := vars["electionID"]
 
 	var req ptypes.CastVoteRequest
 
+	//get the signed request
 	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
 		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
 
+	//get the request and verify the signature
 	err = signed.GetAndVerify(h.pk, &req)
 	if err != nil {
 		InternalError(w, r, getSignedErr(err), nil)
@@ -148,13 +161,16 @@ func (h *election) NewElectionVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//check if the election exists
 	if elecMD.ElectionsIDs.Contains(electionID) < 0 {
 		http.Error(w, "the election does not exist", http.StatusNotFound)
 		return
 	}
 
+	
 	ciphervote := make(types.Ciphervote, len(req.Ballot))
 
+	// encrypt the vote 
 	for i, egpair := range req.Ballot {
 		k := suite.Point()
 
@@ -184,6 +200,7 @@ func (h *election) NewElectionVote(w http.ResponseWriter, r *http.Request) {
 		Ballot:     ciphervote,
 	}
 
+	//serialize the vote
 	data, err := castVote.Serialize(h.context)
 	if err != nil {
 		http.Error(w, "failed to marshal CastVoteTransaction: "+err.Error(),
@@ -191,6 +208,7 @@ func (h *election) NewElectionVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//create the transaction and add it to the pool
 	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCastVote, evoting.ElectionArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
@@ -202,6 +220,7 @@ func (h *election) NewElectionVote(w http.ResponseWriter, r *http.Request) {
 func (h *election) EditElection(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
+	//check if the electionID is valid
 	if vars == nil || vars["electionID"] == "" {
 		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
 		return
@@ -215,6 +234,7 @@ func (h *election) EditElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//check if the election exists
 	if elecMD.ElectionsIDs.Contains(electionID) < 0 {
 		http.Error(w, "the election does not exist", http.StatusNotFound)
 		return
@@ -222,17 +242,20 @@ func (h *election) EditElection(w http.ResponseWriter, r *http.Request) {
 
 	var req ptypes.UpdateElectionRequest
 
+	//get the signed request
 	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
 		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
 
+	//get the request and verify the signature
 	err = signed.GetAndVerify(h.pk, &req)
 	if err != nil {
 		InternalError(w, r, getSignedErr(err), nil)
 		return
 	}
+
 
 	switch req.Action {
 	case "open":
@@ -256,6 +279,7 @@ func (h *election) openElection(elecID string, w http.ResponseWriter, r *http.Re
 		ElectionID: elecID,
 	}
 
+	//serialize the transaction
 	data, err := openElection.Serialize(h.context)
 	if err != nil {
 		http.Error(w, "failed to marshal OpenElectionTransaction: "+err.Error(),
@@ -263,6 +287,7 @@ func (h *election) openElection(elecID string, w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	//create the transaction and add it to the pool
 	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdOpenElection, evoting.ElectionArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
@@ -277,6 +302,7 @@ func (h *election) closeElection(electionIDHex string, w http.ResponseWriter, r 
 		ElectionID: electionIDHex,
 	}
 
+	//serialize the transaction
 	data, err := closeElection.Serialize(h.context)
 	if err != nil {
 		http.Error(w, "failed to marshal CloseElectionTransaction: "+err.Error(),
@@ -284,6 +310,7 @@ func (h *election) closeElection(electionIDHex string, w http.ResponseWriter, r 
 		return
 	}
 
+	//create the transaction and add it to the pool
 	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCloseElection, evoting.ElectionArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
@@ -294,6 +321,8 @@ func (h *election) closeElection(electionIDHex string, w http.ResponseWriter, r 
 // combineShares decrypts the shuffled ballots in an election.
 func (h *election) combineShares(electionIDHex string, w http.ResponseWriter, r *http.Request) {
 
+
+	
 	election, err := getElection(h.context, h.electionFac, electionIDHex, h.orderingSvc)
 	if err != nil {
 		http.Error(w, "failed to get election: "+err.Error(),
@@ -310,6 +339,7 @@ func (h *election) combineShares(electionIDHex string, w http.ResponseWriter, r 
 		ElectionID: electionIDHex,
 	}
 
+	//serialize the transaction
 	data, err := decryptBallots.Serialize(h.context)
 	if err != nil {
 		http.Error(w, "failed to marshal decryptBallots: "+err.Error(),
@@ -317,6 +347,7 @@ func (h *election) combineShares(electionIDHex string, w http.ResponseWriter, r 
 		return
 	}
 
+	//create the transaction and add it to the pool
 	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCombineShares, evoting.ElectionArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
@@ -331,6 +362,7 @@ func (h *election) cancelElection(electionIDHex string, w http.ResponseWriter, r
 		ElectionID: electionIDHex,
 	}
 
+	//serialize the transaction
 	data, err := cancelElection.Serialize(h.context)
 	if err != nil {
 		http.Error(w, "failed to marshal CancelElection: "+err.Error(),
@@ -338,6 +370,7 @@ func (h *election) cancelElection(electionIDHex string, w http.ResponseWriter, r
 		return
 	}
 
+	//create the transaction and add it to the pool
 	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCancelElection, evoting.ElectionArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
@@ -353,6 +386,7 @@ func (h *election) Election(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 
+	//check if the election exists
 	if vars == nil || vars["electionID"] == "" {
 		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
 		return
@@ -360,6 +394,7 @@ func (h *election) Election(w http.ResponseWriter, r *http.Request) {
 
 	electionID := vars["electionID"]
 
+	//get the election
 	election, err := getElection(h.context, h.electionFac, electionID, h.orderingSvc)
 	if err != nil {
 		http.Error(w, xerrors.Errorf("failed to get election: %v", err).Error(), http.StatusInternalServerError)
@@ -368,6 +403,7 @@ func (h *election) Election(w http.ResponseWriter, r *http.Request) {
 
 	var pubkeyBuf []byte
 
+	//get the public key
 	if election.Pubkey != nil {
 		pubkeyBuf, err = election.Pubkey.MarshalBinary()
 		if err != nil {
@@ -420,6 +456,7 @@ func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 
 	allElectionsInfo := make([]ptypes.LightElection, len(elecMD.ElectionsIDs))
 
+	//get the elections
 	for i, id := range elecMD.ElectionsIDs {
 		election, err := getElection(h.context, h.electionFac, id, h.orderingSvc)
 		if err != nil {
@@ -462,6 +499,7 @@ func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 func (h *election) DeleteElection(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
+	//check if the electionID is valid
 	if vars == nil || vars["electionID"] == "" {
 		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
 		return
@@ -475,6 +513,7 @@ func (h *election) DeleteElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//check if the election exists
 	if elecMD.ElectionsIDs.Contains(electionID) < 0 {
 		http.Error(w, "the election does not exist", http.StatusNotFound)
 		return
@@ -490,6 +529,7 @@ func (h *election) DeleteElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the signature is valid
 	err = schnorr.Verify(suite, h.pk, []byte(electionID), sig)
 	if err != nil {
 		ForbiddenError(w, r, xerrors.Errorf("signature verification failed: %v", err), nil)
@@ -506,6 +546,7 @@ func (h *election) DeleteElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//create the transaction and add it to the pool
 	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdDeleteElection, evoting.ElectionArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
@@ -515,6 +556,7 @@ func (h *election) DeleteElection(w http.ResponseWriter, r *http.Request) {
 
 // waitForTxnID blocks until `ID` is included or `events` is closed.
 func (h *election) waitForTxnID(events <-chan ordering.Event, ID []byte) error {
+	// Wait for the transaction to be included in a block.
 	for event := range events {
 		for _, res := range event.Transactions {
 			if !bytes.Equal(res.GetTransaction().GetID(), ID) {
@@ -604,6 +646,7 @@ func (h *election) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
 		return nil, xerrors.Errorf("failed to sync manager: %v", err)
 	}
 
+
 	tx, err := createTransaction(h.mngr, cmd, cmdArg, payload)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to create transaction: %v", err)
@@ -627,6 +670,7 @@ func (h *election) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
 	return tx.GetID(), nil
 }
 
+// createTransaction creates a transaction with the given command and payload.
 func createTransaction(manager txn.Manager, commandType evoting.Command,
 	commandArg string, buf []byte) (txn.Transaction, error) {
 
