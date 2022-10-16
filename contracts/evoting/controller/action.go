@@ -296,6 +296,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	if err != nil {
 		return xerrors.Errorf(getElectionErr, err)
 	}
+
 	logElectionStatus(election)
 	dela.Logger.Info().Msgf("Pubkey of the election : %x", election.Pubkey)
 

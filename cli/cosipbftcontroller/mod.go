@@ -1,7 +1,6 @@
 // Package controller implements a minimal controller for cosipbft.
 //
 // Documentation Last Review: 13.10.2020
-//
 package controller
 
 import (
@@ -38,9 +37,8 @@ import (
 
 const (
 	privateKeyFile = "private.key"
-	 errInjector = "injector: %v"
-	)
- 
+	errInjector    = "injector: %v"
+)
 
 // valueAccessKey is the access key used for the value contract.
 var valueAccessKey = [32]byte{2}
