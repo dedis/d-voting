@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	selectStr = "select"
-	rankStr   = "rank"
-	textStr   = "text"
+	selectID = "select"
+	rankID   = "rank"
+	textID   = "text"
 )
 
 // Ballot contains all information about a simple ballot
@@ -87,7 +87,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 
 		switch question[0] {
 
-		case selectStr:
+		case selectID:
 			selections := strings.Split(question[2], ",")
 
 			selectQ := Select{
@@ -106,7 +106,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 			b.SelectResultIDs = append(b.SelectResultIDs, ID(questionID))
 			b.SelectResult = append(b.SelectResult, results)
 
-		case rankStr:
+		case rankID:
 			ranks := strings.Split(question[2], ",")
 
 			rankQ := Rank{
@@ -124,7 +124,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 			b.RankResultIDs = append(b.RankResultIDs, ID(questionID))
 			b.RankResult = append(b.RankResult, results)
 
-		case textStr:
+		case textID:
 			texts := strings.Split(question[2], ",")
 
 			textQ := Text{
@@ -317,21 +317,21 @@ func (s *Subject) MaxEncodedSize() int {
 
 	//TODO : optimise by computing max size according to number of choices and maxN
 	for _, rank := range s.Ranks {
-		size += len(rank.GetString() + "::")
+		size += len(rank.GetID() + "::")
 		size += len(rank.ID)
 		// at most 3 bytes (128) + ',' per choice
 		size += len(rank.Choices) * 4
 	}
 
 	for _, selection := range s.Selects {
-		size += len(selection.GetString() + "::")
+		size += len(selection.GetID() + "::")
 		size += len(selection.ID)
 		// 1 bytes (0/1) + ',' per choice
 		size += len(selection.Choices) * 2
 	}
 
 	for _, text := range s.Texts {
-		size += len(text.GetString() + "::")
+		size += len(text.GetID() + "::")
 		size += len(text.ID)
 
 		// at most 4 bytes per character + ',' per answer
@@ -407,7 +407,7 @@ type Question interface {
 	GetMaxN() uint
 	GetMinN() uint
 	GetChoicesLength() int
-	GetString() string
+	GetID() string
 }
 
 func isValid(q Question) bool {
@@ -425,9 +425,9 @@ type Select struct {
 	Choices []string
 }
 
-// GetString implements Question
-func (s Select) GetString() string {
-	return selectStr
+// GetID implements Question
+func (s Select) GetID() string {
+	return selectID
 }
 
 // GetMaxN implements Question
@@ -490,8 +490,8 @@ type Rank struct {
 	Choices []string
 }
 
-func (r Rank) GetString() string {
-	return rankStr
+func (r Rank) GetID() string {
+	return rankID
 }
 
 // GetMaxN implements Question
@@ -564,8 +564,8 @@ type Text struct {
 	Choices   []string
 }
 
-func (t Text) GetString() string {
-	return textStr
+func (t Text) GetID() string {
+	return textID
 }
 
 // GetMaxN implements Question
