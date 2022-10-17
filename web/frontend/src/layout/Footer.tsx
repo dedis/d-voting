@@ -21,6 +21,12 @@ const Footer = () => (
           <ProxyInput />
         </div>
       </div>
+      <div className="text-center">
+        version:
+        {process.env.REACT_APP_VERSION || 'unknown'} - build{' '}
+        {process.env.REACT_APP_BUILD || 'unknown'} - on{' '}
+        {process.env.REACT_APP_BUILD_TIME || 'unknown'}
+      </div>
     </footer>
   </div>
 );

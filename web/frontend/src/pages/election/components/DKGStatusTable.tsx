@@ -1,33 +1,32 @@
 import { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ID } from 'types/configuration';
-import { NodeStatus } from 'types/node';
+import { OngoingAction } from 'types/election';
+import { InternalDKGInfo } from 'types/node';
 import DKGStatusRow from './DKGStatusRow';
 
 type DKGStatusTableProps = {
   roster: string[];
   electionId: ID;
-  loading: Map<string, boolean>;
-  setLoading: (loading: Map<string, boolean>) => void;
   nodeProxyAddresses: Map<string, string>;
   setNodeProxyAddresses: (nodeProxy: Map<string, string>) => void;
-  DKGStatuses: Map<string, NodeStatus>;
-  setDKGStatuses: (DKFStatuses: Map<string, NodeStatus>) => void;
-  setTextModalError: (error: string) => void;
-  setShowModalError: (show: boolean) => void;
+  // notify to start initialization
+  ongoingAction: OngoingAction;
+  // notify the parent of the new state
+  notifyDKGState: (node: string, info: InternalDKGInfo) => void;
+  nodeToSetup: [string, string];
+  notifyLoading: (node: string, loading: boolean) => void;
 };
 
 const DKGStatusTable: FC<DKGStatusTableProps> = ({
   roster,
   electionId,
-  loading,
-  setLoading,
   nodeProxyAddresses,
   setNodeProxyAddresses,
-  DKGStatuses,
-  setDKGStatuses,
-  setTextModalError,
-  setShowModalError,
+  ongoingAction,
+  notifyDKGState,
+  nodeToSetup,
+  notifyLoading,
 }) => {
   const { t } = useTranslation();
 
@@ -53,14 +52,12 @@ const DKGStatusTable: FC<DKGStatusTableProps> = ({
                   electionId={electionId}
                   node={node}
                   index={index}
-                  loading={loading}
-                  setLoading={setLoading}
                   nodeProxyAddresses={nodeProxyAddresses}
                   setNodeProxyAddresses={setNodeProxyAddresses}
-                  DKGStatuses={DKGStatuses}
-                  setDKGStatuses={setDKGStatuses}
-                  setTextModalError={setTextModalError}
-                  setShowModalError={setShowModalError}
+                  ongoingAction={ongoingAction}
+                  notifyDKGState={notifyDKGState}
+                  nodeToSetup={nodeToSetup}
+                  notifyLoading={notifyLoading}
                 />
               ))}
           </tbody>

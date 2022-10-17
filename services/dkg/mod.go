@@ -24,6 +24,14 @@ const (
 	Setup StatusCode = 1
 	// Failed is when the actor failed to set up
 	Failed StatusCode = 2
+	// Dealing is when the actor is sending its deals
+	Dealing = 3
+	// Responding is when the actor sends its responses on the deals
+	Responding = 4
+	// Certifying is when the actor is validating its responses
+	Certifying = 5
+	// Certified is then the actor is certified
+	Certified = 6
 )
 
 // DKG defines the primitive to start a DKG protocol

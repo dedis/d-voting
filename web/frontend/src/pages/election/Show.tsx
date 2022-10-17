@@ -9,7 +9,7 @@ import Modal from 'components/modal/Modal';
 import StatusTimeline from './components/StatusTimeline';
 import Loading from 'pages/Loading';
 import Action from './components/Action';
-import { NodeStatus } from 'types/node';
+import { InternalDKGInfo, NodeStatus } from 'types/node';
 import useGetResults from './components/utils/useGetResults';
 import UserIDTable from './components/UserIDTable';
 import DKGStatusTable from './components/DKGStatusTable';
@@ -42,7 +42,7 @@ const ElectionShow: FC = () => {
 
   const [nodeProxyAddresses, setNodeProxyAddresses] = useState<Map<string, string>>(new Map());
   const [nodeToSetup, setNodeToSetup] = useState<[string, string]>(null);
-  // The status of each node
+  // The status of each node. Key is the node's address.
   const [DKGStatuses, setDKGStatuses] = useState<Map<string, NodeStatus>>(new Map());
 
   const [nodeLoading, setNodeLoading] = useState<Map<string, boolean>>(null);
@@ -50,6 +50,27 @@ const ElectionShow: FC = () => {
 
   const ongoingItem = 'ongoingAction' + electionID;
   const nodeToSetupItem = 'nodeToSetup' + electionID;
+
+  // called by a DKG row
+  const notifyDKGState = (node: string, info: InternalDKGInfo) => {
+    if (
+      info.getStatus() === NodeStatus.Setup &&
+      (status === Status.Initial || status === Status.Initialized)
+    ) {
+      setStatus(Status.Setup);
+    }
+
+    const newDKGStatuses = new Map(DKGStatuses);
+    newDKGStatuses.set(node, info.getStatus());
+    setDKGStatuses(newDKGStatuses);
+  };
+
+  // called by a DKG row
+  const notifyLoading = (node: string, l: boolean) => {
+    const newLoading = new Map(nodeLoading);
+    newLoading.set(node, l);
+    setNodeLoading(newLoading);
+  };
 
   // Fetch result when available after a status change
   useEffect(() => {
@@ -124,10 +145,14 @@ const ElectionShow: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roster]);
 
+  // Keep the "DKGLoading" state according to "nodeLoading". This state tells if
+  // one of the element on the map is true.
   useEffect(() => {
     if (nodeLoading !== null) {
-      if (!Array.from(nodeLoading.values()).includes(true)) {
-        setDKGLoading(false);
+      const someNodeLoading = Array.from(nodeLoading.values()).includes(true);
+      setDKGLoading(someNodeLoading);
+      if (!someNodeLoading) {
+        setOngoingAction(OngoingAction.None);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -139,16 +164,20 @@ const ElectionShow: FC = () => {
       if (DKGStatuses !== null && !DKGLoading) {
         const statuses = Array.from(DKGStatuses.values());
 
-        // TODO: can be modified such that if the majority of the node are
-        // initialized than the election status can still be set to initialized
-        if (statuses.includes(NodeStatus.NotInitialized)) return;
-
-        if (statuses.includes(NodeStatus.Setup)) {
-          setStatus(Status.Setup);
+        // We want to update only if all nodes have already set their status
+        if (statuses.length !== roster.length) {
           return;
         }
 
-        if (statuses.includes(NodeStatus.Unreachable)) return;
+        // TODO: can be modified such that if the majority of the node are
+        // initialized than the election status can still be set to initialized
+        if (
+          statuses.includes(NodeStatus.NotInitialized) ||
+          statuses.includes(NodeStatus.Unreachable) ||
+          statuses.includes(NodeStatus.Failed)
+        ) {
+          return;
+        }
 
         setStatus(Status.Initialized);
 
@@ -191,12 +220,12 @@ const ElectionShow: FC = () => {
             )}
           <div className="py-6 pl-2">
             <div className="font-bold uppercase text-lg text-gray-700">{t('status')}</div>
-            {DKGLoading && (
+            {DKGLoading && ongoingAction === OngoingAction.None && (
               <div className="px-2 pt-6">
                 <LoadingButton>{t('statusLoading')}</LoadingButton>
               </div>
             )}
-            {!DKGLoading && (
+            {(!DKGLoading || ongoingAction !== OngoingAction.None) && (
               <div className="px-2 pt-6 flex justify-center">
                 <StatusTimeline status={status} ongoingAction={ongoingAction} />
               </div>
@@ -205,8 +234,10 @@ const ElectionShow: FC = () => {
           <div className="py-4 pl-2 pb-8">
             <div className="font-bold uppercase text-lg text-gray-700 pb-2">{t('action')}</div>
             <div className="px-2">
-              {DKGLoading && <LoadingButton>{t('actionLoading')}</LoadingButton>}{' '}
-              {!DKGLoading && (
+              {DKGLoading && ongoingAction === OngoingAction.None && (
+                <LoadingButton>{t('actionLoading')}</LoadingButton>
+              )}{' '}
+              {(!DKGLoading || ongoingAction !== OngoingAction.None) && (
                 <Action
                   status={status}
                   electionID={electionID}
@@ -220,8 +251,6 @@ const ElectionShow: FC = () => {
                   setOngoingAction={setOngoingAction}
                   nodeToSetup={nodeToSetup}
                   setNodeToSetup={setNodeToSetup}
-                  DKGStatuses={DKGStatuses}
-                  setDKGStatuses={setDKGStatuses}
                 />
               )}
             </div>
@@ -240,14 +269,12 @@ const ElectionShow: FC = () => {
               <DKGStatusTable
                 roster={roster}
                 electionId={electionId}
-                loading={nodeLoading}
-                setLoading={setNodeLoading}
                 nodeProxyAddresses={nodeProxyAddresses}
                 setNodeProxyAddresses={setNodeProxyAddresses}
-                DKGStatuses={DKGStatuses}
-                setDKGStatuses={setDKGStatuses}
-                setTextModalError={setTextModalError}
-                setShowModalError={setShowModalError}
+                ongoingAction={ongoingAction}
+                notifyDKGState={notifyDKGState}
+                nodeToSetup={nodeToSetup}
+                notifyLoading={notifyLoading}
               />
             </div>
           </div>
