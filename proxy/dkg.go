@@ -18,9 +18,9 @@ import (
 // NewDKG returns a new initialized DKG proxy
 func NewDKG(mngr txn.Manager, d dkgSrv.DKG, pk kyber.Point) DKG {
 	return dkg{
-		mngr: mngr,
-		d:    d,
-		pk:   pk,
+		manager:    mngr,
+		dkgService: d,
+		pk:         pk,
 	}
 }
 
@@ -28,27 +28,34 @@ func NewDKG(mngr txn.Manager, d dkgSrv.DKG, pk kyber.Point) DKG {
 //
 // - implements proxy.DKG
 type dkg struct {
-	mngr txn.Manager
-	d    dkgSrv.DKG
-	pk   kyber.Point
+	// manager - the transaction manager
+	manager txn.Manager
+	//dkgService - the DKG service
+	dkgService dkgSrv.DKG
+	// pk - the public key of the proxy
+	pk kyber.Point
 }
 
 // NewDKGActor implements proxy.DKG
+// Create a new DKG actor for the given electionID
 func (d dkg) NewDKGActor(w http.ResponseWriter, r *http.Request) {
 	var req types.NewDKGRequest
 
+	// Read the request
 	signed, err := types.NewSignedRequest(r.Body)
 	if err != nil {
 		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
 
+	// Verify the request
 	err = signed.GetAndVerify(d.pk, &req)
 	if err != nil {
 		InternalError(w, r, getSignedErr(err), nil)
 		return
 	}
 
+	// decode the electionID
 	electionIDBuf, err := hex.DecodeString(req.ElectionID)
 	if err != nil {
 		http.Error(w, "failed to decode electionID: "+req.ElectionID,
@@ -56,7 +63,8 @@ func (d dkg) NewDKGActor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = d.d.Listen(electionIDBuf, d.mngr)
+	// subscribe to the DKG service
+	_, err = d.dkgService.Listen(electionIDBuf, d.manager)
 	if err != nil {
 		http.Error(w, "failed to start actor: "+err.Error(),
 			http.StatusInternalServerError)
@@ -64,12 +72,15 @@ func (d dkg) NewDKGActor(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Actor implements proxy.DKG
+// Send the actor status
 func (d dkg) Actor(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "*")
 
 	vars := mux.Vars(r)
 
+	// check if electionID is present
 	if vars == nil || vars["electionID"] == "" {
 		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
 		return
@@ -77,21 +88,25 @@ func (d dkg) Actor(w http.ResponseWriter, r *http.Request) {
 
 	electionID := vars["electionID"]
 
+	// decode the electionID
 	electionIDBuf, err := hex.DecodeString(electionID)
 	if err != nil {
 		BadRequestError(w, r, xerrors.Errorf("failed to decode electionID: %v", err), nil)
 		return
 	}
 
-	actor, found := d.d.GetActor(electionIDBuf)
+	// get the actor
+	actor, found := d.dkgService.GetActor(electionIDBuf)
 	if !found {
 		NotFoundErr(w, r, xerrors.New("actor not found"), nil)
 		return
 	}
 
+	// get the status
 	status := actor.Status()
 	var httpErr types.HTTPError
 
+	// if the status has an error, return it
 	if status.Err != nil {
 		httpErr = types.HTTPError{
 			Title:   "Setup failed",
@@ -101,6 +116,7 @@ func (d dkg) Actor(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// return the status
 	response := types.GetActorInfo{
 		Status: int(status.Status),
 		Error:  httpErr,
@@ -108,6 +124,7 @@ func (d dkg) Actor(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
+	// encode the response
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		InternalError(w, r, xerrors.Errorf("failed to write response: %v", err), nil)
@@ -116,6 +133,7 @@ func (d dkg) Actor(w http.ResponseWriter, r *http.Request) {
 }
 
 // EditDKGActor implements proxy.DKG
+// Setups the DKG actor or begins decryption
 func (d dkg) EditDKGActor(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
@@ -126,13 +144,15 @@ func (d dkg) EditDKGActor(w http.ResponseWriter, r *http.Request) {
 
 	electionID := vars["electionID"]
 
+	// decode the electionID
 	electionIDBuf, err := hex.DecodeString(electionID)
 	if err != nil {
 		http.Error(w, "failed to decode electionID: "+electionID, http.StatusBadRequest)
 		return
 	}
 
-	a, exists := d.d.GetActor(electionIDBuf)
+	// get the actor
+	a, exists := d.dkgService.GetActor(electionIDBuf)
 	if !exists {
 		http.Error(w, "actor does not exist", http.StatusInternalServerError)
 		return
@@ -140,12 +160,14 @@ func (d dkg) EditDKGActor(w http.ResponseWriter, r *http.Request) {
 
 	var req types.UpdateDKG
 
+	// Read the request
 	signed, err := types.NewSignedRequest(r.Body)
 	if err != nil {
 		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
 
+	// Verify the signature
 	err = signed.GetAndVerify(d.pk, &req)
 	if err != nil {
 		InternalError(w, r, getSignedErr(err), nil)
@@ -153,6 +175,7 @@ func (d dkg) EditDKGActor(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch req.Action {
+	// setup the DKG
 	case "setup":
 		// As the setup can be long, we run it asynchronously. One can fetch the
 		// status of the actor to know when the setup is over.
@@ -162,6 +185,7 @@ func (d dkg) EditDKGActor(w http.ResponseWriter, r *http.Request) {
 				dela.Logger.Err(err).Msg("failed to setup")
 			}
 		}()
+		// begin the decryption
 	case "computePubshares":
 		err = a.ComputePubshares()
 		if err != nil {
