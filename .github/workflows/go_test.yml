@@ -37,7 +37,7 @@ jobs:
             -Dsonar.projectKey=dedis_d-voting
             -Dsonar.go.tests.reportPaths=report.json
             -Dsonar.go.coverage.reportPaths=profile.cov
-            -Dsonar.coverage.exclusions=**/*_test.go, /internal/**/*
+            -Dsonar.coverage.exclusions=**/*_test.go,/internal/**/*
             -Dsonar.issue.ignore.multicriteria=e1
             -Dsonar.issue.ignore.multicriteria.e1.ruleKey=*Naming*
             -Dsonar.issue.ignore.multicriteria.e1.resourceKey=**/*_test.go
