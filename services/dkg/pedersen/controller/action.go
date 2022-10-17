@@ -324,8 +324,10 @@ func (a *RegisterHandlersAction) Execute(ctx node.Context) error {
 	// DKG get info: https://dedis.github.io/d-voting/#/api?id=dk3-dkg-get-info
 	router.HandleFunc("/evoting/services/dkg/actors/{electionID}", ep.Actor).Methods("GET")
 
-	// 	  DKG setup:            https://dedis.github.io/d-voting/#/api?id=dk2-dkg-setup-%f0%9f%94%90
-	// or DKG begin decryption: https://dedis.github.io/d-voting/#/api?id=dk4-dkg-begin-decryption-%f0%9f%94%90
+	//DKG setup:            
+	//https://dedis.github.io/d-voting/#/api?id=dk2-dkg-setup-%f0%9f%94%90
+	//or DKG begin decryption: 
+	//https://dedis.github.io/d-voting/#/api?id=dk4-dkg-begin-decryption-%f0%9f%94%90
 	router.HandleFunc("/evoting/services/dkg/actors/{electionID}", ep.EditDKGActor).Methods("PUT")
 	router.HandleFunc("/evoting/services/dkg/actors/{electionID}", eproxy.AllowCORS).Methods("OPTIONS")
 
