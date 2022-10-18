@@ -100,6 +100,7 @@ func (a *RegisterHandlersAction) Execute(ctx node.Context) error {
 
 	ep := eproxy.NewShuffle(actor, proxykey)
 
+	// setup the proxy to handle the shuffle
 	router.HandleFunc("/evoting/services/shuffle/{electionID}", ep.EditShuffle).Methods("PUT")
 
 	router.NotFoundHandler = http.HandlerFunc(eproxy.NotFoundHandler)
