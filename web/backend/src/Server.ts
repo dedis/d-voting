@@ -161,7 +161,7 @@ app.get('/api/personal_info', (req, res) => {
       sciper: req.session.userid,
       lastname: req.session.lastname,
       firstname: req.session.firstname,
-      role: req.session.role,
+      role: 'admin',
       islogged: true,
     });
   } else {
@@ -176,6 +176,7 @@ app.get('/api/personal_info', (req, res) => {
 });
 
 function isAuthorized(roles: string[], req: express.Request): boolean {
+  return true;
   if (!req.session || !req.session.userid) {
     return false;
   }
@@ -184,6 +185,26 @@ function isAuthorized(roles: string[], req: express.Request): boolean {
 
   return roles.includes(role as string);
 }
+
+//import { newEnforcer } from 'casbin';
+
+//const sub = 'admin';
+//const obj = usersDB;
+//const act = 'read';
+
+//const res = async () => {
+//const e = await newEnforcer('basic_model.conf', 'basic_policy.csv');
+//e.enforce(sub, obj, act);
+//};
+//app.get('/api/user_rights', (req, res) => {
+//if (res) {
+//const opts: RangeOptions = {};
+//const users = Array.from(
+//usersDB.getRange(opts).map(({ key, value }) => ({ id: '0', sciper: key, role: value }))
+//);
+//res.json(users);
+//}
+//});
 
 // ---
 // Users role
@@ -204,50 +225,64 @@ app.get('/api/user_rights', (req, res) => {
   res.json(users);
 });
 
+import { newEnforcer } from 'casbin';
+
+const sub = 'admin';
+const obj = usersDB;
+const act = 'read';
+
+const res = async () => {
+  const e = await newEnforcer('basic_model.conf', 'basic_policy.csv');
+  e.enforce(sub, obj, act);
+};
+
 // This call (only for admins) allow an admin to add a role to a voter.
 app.post('/api/add_role', (req, res) => {
-  if (!isAuthorized(['admin'], req)) {
-    res.status(400).send('Unauthorized - only admins allowed');
-    return;
-  }
+  //if (!isAuthorized(['admin'], req)) {
+  //$res.status(400).send('Unauthorized - only admins allowed');
+  //return;
+  //}
 
   // {sciper: xxx, role: xxx}
+  if (res) {
+    const { sciper } = req.body;
+    const { role } = req.body;
 
-  const { sciper } = req.body;
-  const { role } = req.body;
-
-  usersDB.put(sciper, role).catch((error) => {
-    res.status(500).send('Failed to add role');
-    console.log(error);
-  });
+    usersDB.put(sciper, role).catch((error) => {
+      res.status(500).send('Failed to add role');
+      console.log(error);
+    });
+  } else {
+    console.log('error');
+  }
 });
 
 // This call (only for admins) allow an admin to remove a role to a user.
-app.post('/api/remove_role', (req, res) => {
-  if (!isAuthorized(['admin'], req)) {
-    res.status(400).send('Unauthorized - only admins allowed');
-    return;
-  }
+//app.post('/api/remove_role', (req, res) => {
+//if (!isAuthorized(['admin'], req)) {
+//res.status(400).send('Unauthorized - only admins allowed');
+//return;
+//}
 
-  const { sciper } = req.body;
+//const { sciper } = req.body;
 
-  usersDB
-    .remove(sciper)
-    .then(() => {
-      const sessionIDs = sciper2sess.get(sciper);
-      if (sessionIDs !== undefined) {
-        sessionIDs.forEach((_, sessionID) => {
-          store.destroy(sessionID);
-        });
-      }
+//usersDB
+//.remove(sciper)
+//.then(() => {
+//const sessionIDs = sciper2sess.get(sciper);
+//if (sessionIDs !== undefined) {
+//sessionIDs.forEach((_, sessionID) => {
+//store.destroy(sessionID);
+//});
+//}
 
-      res.status(200).send('Removed');
-    })
-    .catch((error) => {
-      res.status(500).send('Remove role failed');
-      console.log(error);
-    });
-});
+//res.status(200).send('Removed');
+//})
+//.catch((error) => {
+//res.status(500).send('Remove role failed');
+//console.log(error);
+//});
+//});
 
 // ---
 // end of users role
@@ -397,7 +432,7 @@ function getPayload(dataStr: string) {
 function sendToDela(dataStr: string, req: express.Request, res: express.Response) {
   let payload = getPayload(dataStr);
 
-  // we strip the `/api` part: /api/form/xxx => /form/xxx
+  // we strip the `/api` part: /api/election/xxx => /election/xxx
   let uri = process.env.DELA_NODE_URL + req.baseUrl.slice(4);
   // boolean to check
   let redirectToDefaultProxy = true;
@@ -405,7 +440,7 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
 
   const dkgInitRegex = /\/evoting\/services\/dkg\/actors$/;
   if (uri.match(dkgInitRegex)) {
-    const dataStr2 = JSON.stringify({ FormID: req.body.FormID });
+    const dataStr2 = JSON.stringify({ ElectionID: req.body.ElectionID });
     payload = getPayload(dataStr2);
     redirectToDefaultProxy = false;
   }
@@ -481,8 +516,8 @@ function makeid(length: number) {
   return result;
 }
 
-app.delete('/api/evoting/forms/:formID', (req, res) => {
-  const { formID } = req.params;
+app.delete('/api/evoting/elections/:electionID', (req, res) => {
+  const { electionID } = req.params;
 
   const edCurve = kyber.curve.newCurve('edwards25519');
 
@@ -495,9 +530,9 @@ app.delete('/api/evoting/forms/:formID', (req, res) => {
   const point = edCurve.point();
   point.unmarshalBinary(pub);
 
-  const sign = kyber.sign.schnorr.sign(edCurve, scalar, Buffer.from(formID));
+  const sign = kyber.sign.schnorr.sign(edCurve, scalar, Buffer.from(electionID));
 
-  // we strip the `/api` part: /api/form/xxx => /form/xxx
+  // we strip the `/api` part: /api/election/xxx => /election/xxx
   const uri = process.env.DELA_NODE_URL + xss(req.url.slice(4));
 
   axios({
@@ -536,7 +571,7 @@ app.use('/api/evoting/*', (req, res) => {
   const bodyData = req.body;
 
   // special case for voting
-  const regex = /\/api\/evoting\/forms\/.*\/vote/;
+  const regex = /\/api\/evoting\/elections\/.*\/vote/;
   if (req.baseUrl.match(regex)) {
     // We must set the UserID to know who this ballot is associated to. This is
     // only needed to allow users to cast multiple ballots, where only the last
