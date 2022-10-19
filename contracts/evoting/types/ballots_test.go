@@ -128,13 +128,11 @@ func TestBallot_Unmarshal(t *testing.T) {
 	err = b.Unmarshal(ballotWrongID, form)
 	require.EqualError(t, err, "could not decode question ID: illegal base64 data at input byte 0")
 
-
 	// with question ID not from the form
 	ballotUnknownID := string(selectIDTest + encodedQuestionID(0) + ":1,0,1\n" +
 		rankIDTest + encodedQuestionID(2) + ":1,2,0,,\n" +
 		selectIDTest + encodedQuestionID(3) + ":1,0,1,1\n" +
 		textIDTest + encodedQuestionID(4) + ":YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ==\n\n")
-
 
 	err = b.Unmarshal(ballotUnknownID, form)
 	require.EqualError(t, err, "wrong question ID: the question doesn't exist")
@@ -206,7 +204,6 @@ func TestBallot_Unmarshal(t *testing.T) {
 		textIDTest + encodedQuestionID(4) + ":YmxhYmxhYmxhZg==,Y2VzdG1vaUVtaQ==\n\n")
 
 	form.BallotSize = len(ballotWrongRank)
-
 
 	err = b.Unmarshal(ballotWrongRank, form)
 	require.EqualError(t, err, unmarshalingRankID+
@@ -297,8 +294,6 @@ func TestBallot_Unmarshal(t *testing.T) {
 
 	form.BallotSize = len(ballotWrongText)
 
-	err = b.Unmarshal(ballotWrongText, form)
-	require.EqualError(t, err, "could not unmarshal text answers: "+
 	err = b.Unmarshal(ballotWrongText, form)
 	require.EqualError(t, err, unmarshalingTextID+
 		"failed to check number of answers: question Q4 has not enough selected answers")

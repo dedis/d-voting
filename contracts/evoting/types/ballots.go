@@ -90,7 +90,6 @@ func (b *Ballot) Unmarshal(marshalledBallot string, form Form) error {
 		case selectID:
 			selections := strings.Split(question[2], ",")
 
-
 			selectQ := Select{
 				ID:      ID(questionID),
 				MaxN:    q.GetMaxN(),
@@ -98,7 +97,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, form Form) error {
 				Choices: make([]string, q.GetChoicesLength()),
 			}
 
-			results, err := selectQ.unmarshalAnswers(sforms)
+			results, err := selectQ.unmarshalAnswers(selections)
 			if err != nil {
 				b.invalidate()
 				return fmt.Errorf("could not unmarshal select answers: %v", err)
@@ -328,7 +327,7 @@ func (s *Subject) MaxEncodedSize() int {
 		size += len(selection.GetID() + "::")
 		size += len(selection.ID)
 		// 1 bytes (0/1) + ',' per choice
-		size += len(sform.Choices) * 2
+		size += len(selection.Choices) * 2
 	}
 
 	for _, text := range s.Texts {
@@ -402,8 +401,7 @@ func (s *Subject) isValid(uniqueIDs map[ID]bool) bool {
 	return true
 }
 
-// Question is an 
-offering the primitives all questions should have to
+// Question is an offering the primitives all questions should have to
 // verify the validity of an answer on a decrypted ballot.
 type Question interface {
 	GetMaxN() uint

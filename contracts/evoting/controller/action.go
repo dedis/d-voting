@@ -861,3 +861,4 @@ func createSignedRequest(secret kyber.Scalar, msg interface{}) ([]byte, error) {
 	}
 
 	return signedJSON, nil
+}
