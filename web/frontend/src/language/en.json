@@ -217,6 +217,7 @@
     "fr": "🇫🇷 French",
     "de": "🇩🇪 German",
     "save": "Save",
+    "contributors": "Our contributors",
     "nodeSetup": "Node setup",
     "inputNodeSetup": "Choose which node to start the setup on:",
     "inputProxyAddressError": "Error: the address of a proxy cannot be empty.",
