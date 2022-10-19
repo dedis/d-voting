@@ -161,7 +161,7 @@ app.get('/api/personal_info', (req, res) => {
       sciper: req.session.userid,
       lastname: req.session.lastname,
       firstname: req.session.firstname,
-      role: 'admin',
+      role: req.session.role,
       islogged: true,
     });
   } else {
@@ -176,7 +176,6 @@ app.get('/api/personal_info', (req, res) => {
 });
 
 function isAuthorized(roles: string[], req: express.Request): boolean {
-  return true;
   if (!req.session || !req.session.userid) {
     return false;
   }
@@ -185,26 +184,6 @@ function isAuthorized(roles: string[], req: express.Request): boolean {
 
   return roles.includes(role as string);
 }
-
-//import { newEnforcer } from 'casbin';
-
-//const sub = 'admin';
-//const obj = usersDB;
-//const act = 'read';
-
-//const res = async () => {
-//const e = await newEnforcer('basic_model.conf', 'basic_policy.csv');
-//e.enforce(sub, obj, act);
-//};
-//app.get('/api/user_rights', (req, res) => {
-//if (res) {
-//const opts: RangeOptions = {};
-//const users = Array.from(
-//usersDB.getRange(opts).map(({ key, value }) => ({ id: '0', sciper: key, role: value }))
-//);
-//res.json(users);
-//}
-//});
 
 // ---
 // Users role
@@ -225,64 +204,50 @@ app.get('/api/user_rights', (req, res) => {
   res.json(users);
 });
 
-import { newEnforcer } from 'casbin';
-
-const sub = 'admin';
-const obj = usersDB;
-const act = 'read';
-
-const res = async () => {
-  const e = await newEnforcer('basic_model.conf', 'basic_policy.csv');
-  e.enforce(sub, obj, act);
-};
-
 // This call (only for admins) allow an admin to add a role to a voter.
 app.post('/api/add_role', (req, res) => {
-  //if (!isAuthorized(['admin'], req)) {
-  //$res.status(400).send('Unauthorized - only admins allowed');
-  //return;
-  //}
+  if (!isAuthorized(['admin'], req)) {
+    res.status(400).send('Unauthorized - only admins allowed');
+    return;
+  }
 
   // {sciper: xxx, role: xxx}
-  if (res) {
-    const { sciper } = req.body;
-    const { role } = req.body;
 
-    usersDB.put(sciper, role).catch((error) => {
-      res.status(500).send('Failed to add role');
-      console.log(error);
-    });
-  } else {
-    console.log('error');
-  }
+  const { sciper } = req.body;
+  const { role } = req.body;
+
+  usersDB.put(sciper, role).catch((error) => {
+    res.status(500).send('Failed to add role');
+    console.log(error);
+  });
 });
 
 // This call (only for admins) allow an admin to remove a role to a user.
-//app.post('/api/remove_role', (req, res) => {
-//if (!isAuthorized(['admin'], req)) {
-//res.status(400).send('Unauthorized - only admins allowed');
-//return;
-//}
+app.post('/api/remove_role', (req, res) => {
+  if (!isAuthorized(['admin'], req)) {
+    res.status(400).send('Unauthorized - only admins allowed');
+    return;
+  }
 
-//const { sciper } = req.body;
+  const { sciper } = req.body;
 
-//usersDB
-//.remove(sciper)
-//.then(() => {
-//const sessionIDs = sciper2sess.get(sciper);
-//if (sessionIDs !== undefined) {
-//sessionIDs.forEach((_, sessionID) => {
-//store.destroy(sessionID);
-//});
-//}
+  usersDB
+    .remove(sciper)
+    .then(() => {
+      const sessionIDs = sciper2sess.get(sciper);
+      if (sessionIDs !== undefined) {
+        sessionIDs.forEach((_, sessionID) => {
+          store.destroy(sessionID);
+        });
+      }
 
-//res.status(200).send('Removed');
-//})
-//.catch((error) => {
-//res.status(500).send('Remove role failed');
-//console.log(error);
-//});
-//});
+      res.status(200).send('Removed');
+    })
+    .catch((error) => {
+      res.status(500).send('Remove role failed');
+      console.log(error);
+    });
+});
 
 // ---
 // end of users role
