@@ -69,18 +69,25 @@ class FlashMessage {
     return this.level;
   }
 }
-
+const flashM = new FlashMessage('', 1);
+const defaultFlashState = {
+  getMessages: function (): FlashMessage[] {
+    return [flashM];
+  },
+  addMessage: function (msg: string, level: FlashLevel): void {},
+  hideMessage: function (index: string): void {},
+};
 // the flash context handles flash messages across the app
-export const FlashContext = createContext<FlashState>(undefined);
+export const FlashContext = createContext<FlashState>(defaultFlashState);
 
 // the proxy state provides the proxy address across all the app
 export interface ProxyState {
   getProxy(): string;
-  setProxy(p: string);
+  setProxy(p: string): void;
 }
 
 export class ProxyHolder implements ProxyState {
-  proxy: string;
+  proxy!: string;
 
   getProxy(): string {
     return this.proxy;
@@ -145,7 +152,7 @@ const Failed: FC = ({ children }) => (
 // and displays flash messages.
 const AppContainer = () => {
   const [content, setContent] = useState<ReactElement>(<Loading />);
-  const [auth, setAuth] = useState<AuthState>(undefined);
+  const [auth, setAuth] = useState<AuthState>(defaultAuth);
 
   const [flashes, setFlashes] = useState<FlashMessage[]>([]);
 
@@ -226,7 +233,7 @@ const AppContainer = () => {
         await setDefaultProxy();
 
         setContent(<App />);
-      } catch (e) {
+      } catch (e: any) {
         setContent(<Failed>{e.toString()}</Failed>);
         console.log('error:', e);
       }

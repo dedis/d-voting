@@ -16,11 +16,11 @@ const About: FC = () => {
           </p>
         </div>
         <div className="relative z-10 text-base max-w-prose mx-auto lg:max-w-5xl lg:mx-0 lg:pr-72">
-          <p className="text-lg text-gray-500">{t('about0')}</p>
+          <p className="text-lg text-justify text-gray-500">{t('about0')}</p>
         </div>
         <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-start">
           <div className="relative z-10">
-            <div className="prose prose-indigo text-gray-500 mx-auto lg:max-w-none">
+            <div className="prose prose-indigo text-justify text-gray-500 mx-auto lg:max-w-none">
               <p>{t('about1')}</p>
               <p>{t('about2')}</p>
               <p>{t('about3')}</p>
@@ -67,6 +67,17 @@ const About: FC = () => {
             <div className="relative bg-white rounded-lg shadow-lg">
               <img src={dVotingSystem} alt="" />
             </div>
+          </div>
+          <div className="text-base max-w-prose mx-auto lg:max-w-none">
+            <div className="text-4xl mt-10 leading-8 font-extrabold tracking-tight text-gray-900 max-w-none lg:mx-auto">
+              <p>{t('contributors')}</p>
+            </div>
+            <p className="text-justify mt-2 font-medium prose prose-indigo text-gray-500">
+              Anas Ibrahim, Vincent Parodi, Sarah Antille, Auguste Baum, Emilien Duc, Ambroise
+              Borbely, Guanyu Zhand, Igowa Giovanni, Badr Larhdir, Capucine Berger, Albert
+              Troussard, Mohamed Amine Benaziz, Chen Chang Lew, Ahmed Kamal Elalamy, Ghita
+              Tagemouati, Khadija Tagemouati.
+            </p>
           </div>
         </div>
       </div>
