@@ -2,6 +2,7 @@ import { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Answers, TextQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
+import { QuestionMarkCircleIcon } from '@heroicons/react/outline/';
 
 type TextProps = {
   text: TextQuestion;
@@ -29,7 +30,21 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
           ? t('fillText', { minText: min, singularPlural: t('pluralAnswers') })
           : t('fillText', { minText: min, singularPlural: t('singularAnswer') });
     }
-    return <div className="text-sm pl-2 pb-2 text-gray-400">{hint}</div>;
+    return (
+      <div className="text-sm pl-2 pb-2 text-gray-400">
+        <div className="space-x-2 flex flex-row">
+          {() => {
+            return (
+              <>
+                <QuestionMarkCircleIcon className="flex-none mt-1 h-4 w-4" />
+                <div>{text.Hint}</div>
+              </>
+            );
+          }}
+        </div>
+        <div className="font-semibold ml-6">{hint}</div>
+      </div>
+    );
   };
 
   const handleTextInput = (e: React.ChangeEvent<HTMLTextAreaElement>, choiceIndex: number) => {
