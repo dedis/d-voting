@@ -33,16 +33,12 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
     return (
       <div className="text-sm pl-2 pb-2 text-gray-400">
         <div className="space-x-2 flex flex-row">
-          {() => {
-            return (
-              <>
-                <QuestionMarkCircleIcon className="flex-none mt-1 h-4 w-4" />
-                <div>{text.Hint}</div>
-              </>
-            );
-          }}
+          <>
+            <QuestionMarkCircleIcon className="flex-none mt-1 h-4 w-4" />
+            <div>{text.Hint}</div>
+          </>
         </div>
-        <div className="font-semibold ml-6">{hint}</div>
+        <div className="font-semibold ml-6 mt-1">{hint}</div>
       </div>
     );
   };
