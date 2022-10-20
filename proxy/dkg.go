@@ -28,11 +28,11 @@ func NewDKG(mngr txn.Manager, d dkgSrv.DKG, pk kyber.Point) DKG {
 //
 // - implements proxy.DKG
 type dkg struct {
-	// manager - the transaction manager
+	// manager is the transaction manager
 	manager txn.Manager
-	//dkgService - the DKG service
+	// dkgService is the DKG service
 	dkgService dkgSrv.DKG
-	// pk - the public key of the proxy
+	// pk is the public key of the proxy
 	pk kyber.Point
 }
 
