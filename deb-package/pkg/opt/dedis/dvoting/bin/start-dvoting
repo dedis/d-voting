@@ -18,4 +18,5 @@ ${dela_bin} \
     --proxykey ${dela_proxy_pk} \
     --certKey ${dela_cert_key} \
     --certChain ${dela_cert_chain} \
-    --routing ${dela_routing}
+    --routing ${dela_routing} \
+    --noTLS=${dela_noTLS}
