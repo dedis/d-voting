@@ -253,8 +253,6 @@ func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
 		InternalError(w, r, getSignedErr(err), nil)
 		return
 	}
-
-
 	switch req.Action {
 	case "open":
 		h.openForm(formID, w, r)
