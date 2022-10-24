@@ -108,7 +108,7 @@ func TestHandler_Start(t *testing.T) {
 	h := Handler{
 		startRes: &state{},
 		privKey:  privKey,
-		status: &dkg.Status{},
+		status:   &dkg.Status{},
 	}
 	start := types.NewStart(
 		[]mino.Address{fake.NewAddress(0)},
