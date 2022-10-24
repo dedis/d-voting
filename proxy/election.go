@@ -507,7 +507,7 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//check if the form exists
+	// check if the form exists
 	if elecMD.FormsIDs.Contains(formID) < 0 {
 		http.Error(w, "the form does not exist", http.StatusNotFound)
 		return
