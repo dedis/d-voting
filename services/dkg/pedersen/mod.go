@@ -31,7 +31,7 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/xerrors"
 
-	// Register the JSON format for the election
+	// Register the JSON format for the form
 	_ "github.com/dedis/d-voting/contracts/evoting/json"
 )
 
@@ -61,100 +61,100 @@ const (
 type Pedersen struct {
 	sync.RWMutex
 
-	mino        mino.Mino
-	factory     serde.Factory
-	service     ordering.Service
-	electionFac serde.Factory
-	pool        pool.Pool
-	signer      crypto.Signer
-	actors      map[string]dkg.Actor
+	mino    mino.Mino
+	factory serde.Factory
+	service ordering.Service
+	formFac serde.Factory
+	pool    pool.Pool
+	signer  crypto.Signer
+	actors  map[string]dkg.Actor
 }
 
 // NewPedersen returns a new DKG Pedersen factory
 func NewPedersen(m mino.Mino, service ordering.Service, pool pool.Pool,
-	electionFac serde.Factory, signer crypto.Signer) *Pedersen {
+	formFac serde.Factory, signer crypto.Signer) *Pedersen {
 
 	factory := types.NewMessageFactory(m.GetAddressFactory())
 	actors := make(map[string]dkg.Actor)
 
 	return &Pedersen{
-		mino:        m,
-		factory:     factory,
-		service:     service,
-		pool:        pool,
-		actors:      actors,
-		signer:      signer,
-		electionFac: electionFac,
+		mino:    m,
+		factory: factory,
+		service: service,
+		pool:    pool,
+		actors:  actors,
+		signer:  signer,
+		formFac: formFac,
 	}
 }
 
 // Listen implements dkg.DKG. It must be called on each node that participates
 // in the DKG.
-func (s *Pedersen) Listen(electionIDBuf []byte, txmngr txn.Manager) (dkg.Actor, error) {
+func (s *Pedersen) Listen(formIDBuf []byte, txmngr txn.Manager) (dkg.Actor, error) {
 
-	electionID := hex.EncodeToString(electionIDBuf)
+	formID := hex.EncodeToString(formIDBuf)
 
-	_, exists := electionExists(s.service, electionIDBuf)
+	_, exists := formExists(s.service, formIDBuf)
 	if !exists {
-		return nil, xerrors.Errorf("election %s was not found", electionID)
+		return nil, xerrors.Errorf("form %s was not found", formID)
 	}
 
-	actor, exists := s.GetActor(electionIDBuf)
+	actor, exists := s.GetActor(formIDBuf)
 	if exists {
-		return actor, xerrors.Errorf("actor already exists for electionID %s", electionID)
+		return actor, xerrors.Errorf("actor already exists for formID %s", formID)
 	}
 
-	return s.NewActor(electionIDBuf, s.pool, txmngr, NewHandlerData())
+	return s.NewActor(formIDBuf, s.pool, txmngr, NewHandlerData())
 }
 
-// NewActor initializes a dkg.Actor with an RPC specific to the election with
+// NewActor initializes a dkg.Actor with an RPC specific to the form with
 // the given keypair
-func (s *Pedersen) NewActor(electionIDBuf []byte, pool pool.Pool, txmngr txn.Manager,
+func (s *Pedersen) NewActor(formIDBuf []byte, pool pool.Pool, txmngr txn.Manager,
 	handlerData HandlerData) (dkg.Actor,
 	error) {
 
 	// hex-encoded string
-	electionID := hex.EncodeToString(electionIDBuf)
+	formID := hex.EncodeToString(formIDBuf)
 
 	ctx := jsonserde.NewContext()
 
 	status := &dkg.Status{Status: dkg.Initialized}
 
-	// link the actor to an RPC by the election ID
+	// link the actor to an RPC by the form ID
 	h := NewHandler(s.mino.GetAddress(), s.service, pool, txmngr, s.signer,
-		handlerData, ctx, s.electionFac, status)
+		handlerData, ctx, s.formFac, status)
 
-	no := s.mino.WithSegment(electionID)
+	no := s.mino.WithSegment(formID)
 	rpc := mino.MustCreateRPC(no, RPC, h, s.factory)
 
 	log := dela.Logger.With().Str("role", "DKG actor").Logger()
 
 	a := &Actor{
-		rpc:         rpc,
-		factory:     s.factory,
-		service:     s.service,
-		context:     ctx,
-		electionFac: s.electionFac,
-		handler:     h,
-		electionID:  electionID,
-		status:      status,
-		log:         log,
+		rpc:     rpc,
+		factory: s.factory,
+		service: s.service,
+		context: ctx,
+		formFac: s.formFac,
+		handler: h,
+		formID:  formID,
+		status:  status,
+		log:     log,
 	}
 
-	evoting.PromElectionDkgStatus.WithLabelValues(electionID).Set(float64(dkg.Initialized))
+	evoting.PromFormDkgStatus.WithLabelValues(formID).Set(float64(dkg.Initialized))
 
 	s.Lock()
 	defer s.Unlock()
-	s.actors[electionID] = a
+	s.actors[formID] = a
 
 	return a, nil
 }
 
 // GetActor implements dkg.DKG
-func (s *Pedersen) GetActor(electionIDBuf []byte) (dkg.Actor, bool) {
+func (s *Pedersen) GetActor(formIDBuf []byte) (dkg.Actor, bool) {
 	s.RLock()
 	defer s.RUnlock()
-	actor, exists := s.actors[hex.EncodeToString(electionIDBuf)]
+	actor, exists := s.actors[hex.EncodeToString(formIDBuf)]
 	return actor, exists
 }
 
@@ -162,15 +162,15 @@ func (s *Pedersen) GetActor(electionIDBuf []byte) (dkg.Actor, bool) {
 //
 // - implements dkg.Actor
 type Actor struct {
-	rpc         mino.RPC
-	factory     serde.Factory
-	service     ordering.Service
-	context     serde.Context
-	electionFac serde.Factory
-	handler     *Handler
-	electionID  string
-	status      *dkg.Status
-	log         zerolog.Logger
+	rpc     mino.RPC
+	factory serde.Factory
+	service ordering.Service
+	context serde.Context
+	formFac serde.Factory
+	handler *Handler
+	formID  string
+	status  *dkg.Status
+	log     zerolog.Logger
 }
 
 func (a *Actor) setErr(err error, args map[string]interface{}) {
@@ -180,7 +180,7 @@ func (a *Actor) setErr(err error, args map[string]interface{}) {
 		Args:   args,
 	}
 
-	evoting.PromElectionDkgStatus.WithLabelValues(a.electionID).Set(float64(dkg.Failed))
+	evoting.PromFormDkgStatus.WithLabelValues(a.formID).Set(float64(dkg.Failed))
 }
 
 // Setup implements dkg.Actor. It initializes the DKG protocol across all
@@ -195,9 +195,9 @@ func (a *Actor) Setup() (kyber.Point, error) {
 		return nil, err
 	}
 
-	election, err := a.getElection()
+	form, err := a.getForm()
 	if err != nil {
-		err := xerrors.Errorf("failed to get election: %v", err)
+		err := xerrors.Errorf("failed to get form: %v", err)
 		a.setErr(err, nil)
 		return nil, err
 	}
@@ -206,15 +206,15 @@ func (a *Actor) Setup() (kyber.Point, error) {
 	defer cancel()
 	ctx = context.WithValue(ctx, tracing.ProtocolKey, protocolNameSetup)
 
-	sender, receiver, err := a.rpc.Stream(ctx, election.Roster)
+	sender, receiver, err := a.rpc.Stream(ctx, form.Roster)
 	if err != nil {
 		err := xerrors.Errorf("failed to stream: %v", err)
 		a.setErr(err, nil)
 		return nil, err
 	}
 
-	addrs := make([]mino.Address, 0, election.Roster.Len())
-	addrIter := election.Roster.AddressIterator()
+	addrs := make([]mino.Address, 0, form.Roster.Len())
+	addrIter := form.Roster.AddressIterator()
 	for addrIter.HasNext() {
 		addrs = append(addrs, addrIter.GetNext())
 	}
@@ -316,7 +316,7 @@ func (a *Actor) Setup() (kyber.Point, error) {
 	}
 
 	*a.status = dkg.Status{Status: dkg.Setup}
-	evoting.PromElectionDkgStatus.WithLabelValues(a.electionID).Set(float64(dkg.Setup))
+	evoting.PromFormDkgStatus.WithLabelValues(a.formID).Set(float64(dkg.Setup))
 
 	return dkgPubKeys[0], nil
 }
@@ -380,7 +380,7 @@ func (a *Actor) ComputePubshares() error {
 		addrs = append(addrs, iterator.GetNext())
 	}
 
-	message := types.NewDecryptRequest(a.electionID)
+	message := types.NewDecryptRequest(a.formID)
 
 	err = <-sender.Send(message, addrs...)
 	if err != nil {
@@ -402,8 +402,8 @@ func (a *Actor) Status() dkg.Status {
 	return *a.status
 }
 
-func electionExists(service ordering.Service, electionIDBuf []byte) (ordering.Proof, bool) {
-	proof, err := service.GetProof(electionIDBuf)
+func formExists(service ordering.Service, formIDBuf []byte) (ordering.Proof, bool) {
+	proof, err := service.GetProof(formIDBuf)
 	if err != nil {
 		return proof, false
 	}
@@ -416,34 +416,34 @@ func electionExists(service ordering.Service, electionIDBuf []byte) (ordering.Pr
 	return proof, true
 }
 
-// getElection gets the election from the service.
-func (a Actor) getElection() (etypes.Election, error) {
-	var election etypes.Election
+// getForm gets the form from the service.
+func (a Actor) getForm() (etypes.Form, error) {
+	var form etypes.Form
 
-	electionID, err := hex.DecodeString(a.electionID)
+	formID, err := hex.DecodeString(a.formID)
 	if err != nil {
-		return election, xerrors.Errorf("failed to decode electionIDHex: %v", err)
+		return form, xerrors.Errorf("failed to decode formIDHex: %v", err)
 	}
 
-	proof, exists := electionExists(a.service, electionID)
+	proof, exists := formExists(a.service, formID)
 	if !exists {
-		return election, xerrors.Errorf("election does not exist: %v", err)
+		return form, xerrors.Errorf("form does not exist: %v", err)
 	}
 
-	message, err := a.electionFac.Deserialize(a.context, proof.GetValue())
+	message, err := a.formFac.Deserialize(a.context, proof.GetValue())
 	if err != nil {
-		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
+		return form, xerrors.Errorf("failed to deserialize Form: %v", err)
 	}
 
-	election, ok := message.(etypes.Election)
+	form, ok := message.(etypes.Form)
 	if !ok {
-		return election, xerrors.Errorf("wrong message type: %T", message)
+		return form, xerrors.Errorf("wrong message type: %T", message)
 	}
 
-	if a.electionID != election.ElectionID {
-		return election, xerrors.Errorf("electionID do not match: %q != %q",
-			a.electionID, election.ElectionID)
+	if a.formID != form.FormID {
+		return form, xerrors.Errorf("formID do not match: %q != %q",
+			a.formID, form.FormID)
 	}
 
-	return election, nil
+	return form, nil
 }

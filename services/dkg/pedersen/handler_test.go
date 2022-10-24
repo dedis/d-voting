@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
+	formTypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/serde/json"
@@ -43,46 +43,46 @@ func TestHandler_Stream(t *testing.T) {
 	)
 	err = h.Stream(fake.NewBadSender(), receiver)
 	require.EqualError(t, err, "could not send pubShares: failed to check"+
-		" if the shuffle is over: could not get the election: election does not exist: <nil>")
+		" if the shuffle is over: could not get the form: form does not exist: <nil>")
 
-	electionIDHex := hex.EncodeToString([]byte("election"))
+	formIDHex := hex.EncodeToString([]byte("form"))
 
 	receiver = fake.NewReceiver(
-		fake.NewRecvMsg(fake.NewAddress(0), types.NewDecryptRequest(electionIDHex)),
+		fake.NewRecvMsg(fake.NewAddress(0), types.NewDecryptRequest(formIDHex)),
 	)
 
-	units := electionTypes.PubsharesUnits{
-		Pubshares: make([]electionTypes.PubsharesUnit, 0),
+	units := formTypes.PubsharesUnits{
+		Pubshares: make([]formTypes.PubsharesUnit, 0),
 		PubKeys:   make([][]byte, 0),
 		Indexes:   make([]int, 0),
 	}
 
-	election := electionTypes.Election{
-		Configuration:    electionTypes.Configuration{},
-		ElectionID:       electionIDHex,
-		Status:           electionTypes.ShuffledBallots,
+	form := formTypes.Form{
+		Configuration:    formTypes.Configuration{},
+		FormID:           formIDHex,
+		Status:           formTypes.ShuffledBallots,
 		Pubkey:           nil,
 		BallotSize:       0,
-		Suffragia:        electionTypes.Suffragia{},
-		ShuffleInstances: make([]electionTypes.ShuffleInstance, 1),
+		Suffragia:        formTypes.Suffragia{},
+		ShuffleInstances: make([]formTypes.ShuffleInstance, 1),
 		ShuffleThreshold: 0,
 		PubsharesUnits:   units,
 		DecryptedBallots: nil,
 		Roster:           fake.Authority{},
 	}
 
-	Elections := make(map[string]electionTypes.Election)
-	Elections[electionIDHex] = election
+	Forms := make(map[string]formTypes.Form)
+	Forms[formIDHex] = form
 
-	h.electionFac = electionTypes.NewElectionFactory(electionTypes.CiphervoteFactory{}, fake.RosterFac{})
+	h.formFac = formTypes.NewFormFactory(formTypes.CiphervoteFactory{}, fake.RosterFac{})
 
 	h.service = &fake.Service{
-		Err:       nil,
-		Elections: Elections,
-		Pool:      nil,
-		Status:    false,
-		Channel:   nil,
-		Context:   json.NewContext(),
+		Err:     nil,
+		Forms:   Forms,
+		Pool:    nil,
+		Status:  false,
+		Channel: nil,
+		Context: json.NewContext(),
 	}
 
 	h.context = json.NewContext()
@@ -279,44 +279,44 @@ func TestState_MarshalJSON(t *testing.T) {
 }
 
 func TestHandler_HandlerDecryptRequest(t *testing.T) {
-	electionIDHex := hex.EncodeToString([]byte("election"))
+	formIDHex := hex.EncodeToString([]byte("form"))
 
-	units := electionTypes.PubsharesUnits{
-		Pubshares: make([]electionTypes.PubsharesUnit, 0),
+	units := formTypes.PubsharesUnits{
+		Pubshares: make([]formTypes.PubsharesUnit, 0),
 		PubKeys:   make([][]byte, 0),
 		Indexes:   make([]int, 0),
 	}
 
-	election := electionTypes.Election{
-		Configuration:    electionTypes.Configuration{},
-		ElectionID:       electionIDHex,
-		Status:           electionTypes.ShuffledBallots,
+	form := formTypes.Form{
+		Configuration:    formTypes.Configuration{},
+		FormID:           formIDHex,
+		Status:           formTypes.ShuffledBallots,
 		Pubkey:           nil,
 		BallotSize:       0,
-		Suffragia:        electionTypes.Suffragia{},
-		ShuffleInstances: make([]electionTypes.ShuffleInstance, 1),
+		Suffragia:        formTypes.Suffragia{},
+		ShuffleInstances: make([]formTypes.ShuffleInstance, 1),
 		ShuffleThreshold: 1,
 		PubsharesUnits:   units,
 		DecryptedBallots: nil,
 		Roster:           fake.Authority{},
 	}
 
-	Elections := make(map[string]electionTypes.Election)
-	Elections[electionIDHex] = election
+	Forms := make(map[string]formTypes.Form)
+	Forms[formIDHex] = form
 
 	h := Handler{}
 
 	h.privShare = &share.PriShare{I: 0, V: suite.Scalar()}
 
-	h.electionFac = electionTypes.NewElectionFactory(electionTypes.CiphervoteFactory{}, fake.RosterFac{})
+	h.formFac = formTypes.NewFormFactory(formTypes.CiphervoteFactory{}, fake.RosterFac{})
 
 	service := fake.Service{
-		Err:       nil,
-		Elections: Elections,
-		Pool:      nil,
-		Status:    false,
-		Channel:   nil,
-		Context:   json.NewContext(),
+		Err:     nil,
+		Forms:   Forms,
+		Pool:    nil,
+		Status:  false,
+		Channel: nil,
+		Context: json.NewContext(),
 	}
 
 	h.context = json.NewContext()
@@ -335,14 +335,14 @@ func TestHandler_HandlerDecryptRequest(t *testing.T) {
 	// Bad manager:
 	h.txmnger = fake.Manager{}
 
-	err := h.handleDecryptRequest(electionIDHex)
+	err := h.handleDecryptRequest(formIDHex)
 	require.EqualError(t, err, fake.Err("failed to make tx: failed to use manager"))
 
 	h.txmnger = signed.NewManager(fake.NewSigner(), fakeClient{})
 
 	// All good:
 
-	err = h.handleDecryptRequest(electionIDHex)
+	err = h.handleDecryptRequest(formIDHex)
 	require.NoError(t, err)
 
 	// With PubsharesUnit to compute:
@@ -355,20 +355,20 @@ func TestHandler_HandlerDecryptRequest(t *testing.T) {
 	Ks, Cs, _ := fakeKCPoints(k, message, suite.Point())
 
 	for i := 0; i < k; i++ {
-		ballot := electionTypes.Ciphervote{electionTypes.EGPair{
+		ballot := formTypes.Ciphervote{formTypes.EGPair{
 			K: Ks[i],
 			C: Cs[i],
 		}}
-		election.Suffragia.CastVote("dummyUser"+strconv.Itoa(i), ballot)
+		form.Suffragia.CastVote("dummyUser"+strconv.Itoa(i), ballot)
 	}
 
-	shuffledBallots := election.Suffragia.Ciphervotes
-	shuffleInstance := electionTypes.ShuffleInstance{ShuffledBallots: shuffledBallots}
-	election.ShuffleInstances = append(election.ShuffleInstances, shuffleInstance)
+	shuffledBallots := form.Suffragia.Ciphervotes
+	shuffleInstance := formTypes.ShuffleInstance{ShuffledBallots: shuffledBallots}
+	form.ShuffleInstances = append(form.ShuffleInstances, shuffleInstance)
 
-	Elections[electionIDHex] = election
+	Forms[formIDHex] = form
 
-	err = h.handleDecryptRequest(electionIDHex)
+	err = h.handleDecryptRequest(formIDHex)
 	require.NoError(t, err)
 
 }

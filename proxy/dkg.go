@@ -49,14 +49,14 @@ func (d dkg) NewDKGActor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	electionIDBuf, err := hex.DecodeString(req.ElectionID)
+	formIDBuf, err := hex.DecodeString(req.FormID)
 	if err != nil {
-		http.Error(w, "failed to decode electionID: "+req.ElectionID,
+		http.Error(w, "failed to decode formID: "+req.FormID,
 			http.StatusBadRequest)
 		return
 	}
 
-	_, err = d.d.Listen(electionIDBuf, d.mngr)
+	_, err = d.d.Listen(formIDBuf, d.mngr)
 	if err != nil {
 		http.Error(w, "failed to start actor: "+err.Error(),
 			http.StatusInternalServerError)
@@ -70,20 +70,20 @@ func (d dkg) Actor(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 
-	if vars == nil || vars["electionID"] == "" {
-		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
+	if vars == nil || vars["formID"] == "" {
+		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
 	}
 
-	electionID := vars["electionID"]
+	formID := vars["formID"]
 
-	electionIDBuf, err := hex.DecodeString(electionID)
+	formIDBuf, err := hex.DecodeString(formID)
 	if err != nil {
-		BadRequestError(w, r, xerrors.Errorf("failed to decode electionID: %v", err), nil)
+		BadRequestError(w, r, xerrors.Errorf("failed to decode formID: %v", err), nil)
 		return
 	}
 
-	actor, found := d.d.GetActor(electionIDBuf)
+	actor, found := d.d.GetActor(formIDBuf)
 	if !found {
 		NotFoundErr(w, r, xerrors.New("actor not found"), nil)
 		return
@@ -119,20 +119,20 @@ func (d dkg) Actor(w http.ResponseWriter, r *http.Request) {
 func (d dkg) EditDKGActor(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	if vars == nil || vars["electionID"] == "" {
-		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
+	if vars == nil || vars["formID"] == "" {
+		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
 	}
 
-	electionID := vars["electionID"]
+	formID := vars["formID"]
 
-	electionIDBuf, err := hex.DecodeString(electionID)
+	formIDBuf, err := hex.DecodeString(formID)
 	if err != nil {
-		http.Error(w, "failed to decode electionID: "+electionID, http.StatusBadRequest)
+		http.Error(w, "failed to decode formID: "+formID, http.StatusBadRequest)
 		return
 	}
 
-	a, exists := d.d.GetActor(electionIDBuf)
+	a, exists := d.d.GetActor(formIDBuf)
 	if !exists {
 		http.Error(w, "actor does not exist", http.StatusInternalServerError)
 		return

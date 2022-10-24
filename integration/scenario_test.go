@@ -48,7 +48,7 @@ func TestScenario(t *testing.T) {
 	t.Run("Basic configuration", getScenarioTest(numNodes, numNodes, 1))
 }
 
-func getScenarioTest(numNodes int, numVotes int, numElection int) func(*testing.T) {
+func getScenarioTest(numNodes int, numVotes int, numForm int) func(*testing.T) {
 	return func(t *testing.T) {
 
 		proxyList := make([]string, numNodes)
@@ -60,11 +60,11 @@ func getScenarioTest(numNodes int, numVotes int, numElection int) func(*testing.
 
 		var wg sync.WaitGroup
 
-		for i := 0; i < numElection; i++ {
+		for i := 0; i < numForm; i++ {
 			t.Log("Starting worker", i)
 			wg.Add(1)
 
-			go startElectionProcess(&wg, numNodes, numVotes, proxyList, t, numElection)
+			go startFormProcess(&wg, numNodes, numVotes, proxyList, t, numForm)
 			time.Sleep(2 * time.Second)
 
 		}
@@ -75,7 +75,7 @@ func getScenarioTest(numNodes int, numVotes int, numElection int) func(*testing.
 	}
 }
 
-func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray []string, t *testing.T, numElection int) {
+func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray []string, t *testing.T, numForm int) {
 	defer wg.Done()
 	rand.Seed(0)
 
@@ -87,21 +87,21 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	err = secret.UnmarshalBinary(secretkeyBuf)
 	require.NoError(t, err)
 
-	// ###################################### CREATE SIMPLE ELECTION ######
+	// ###################################### CREATE SIMPLE FORM ######
 
-	t.Log("Create election")
+	t.Log("Create form")
 
 	configuration := fake.BasicConfiguration
 
-	createSimpleElectionRequest := ptypes.CreateElectionRequest{
+	createSimpleFormRequest := ptypes.CreateFormRequest{
 		Configuration: configuration,
 		AdminID:       "adminId",
 	}
 
-	signed, err := createSignedRequest(secret, createSimpleElectionRequest)
+	signed, err := createSignedRequest(secret, createSimpleFormRequest)
 	require.NoError(t, err)
 
-	resp, err := http.Post(proxyArray[0]+"/evoting/elections", contentType, bytes.NewBuffer(signed))
+	resp, err := http.Post(proxyArray[0]+"/evoting/forms", contentType, bytes.NewBuffer(signed))
 	require.NoError(t, err)
 	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
@@ -111,14 +111,14 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Log("response body:", string(body))
 	resp.Body.Close()
 
-	var createElectionResponse ptypes.CreateElectionResponse
+	var createFormResponse ptypes.CreateFormResponse
 
-	err = json.Unmarshal(body, &createElectionResponse)
+	err = json.Unmarshal(body, &createFormResponse)
 	require.NoError(t, err)
 
-	electionID := createElectionResponse.ElectionID
+	formID := createFormResponse.FormID
 
-	t.Logf("ID of the election : " + electionID)
+	t.Logf("ID of the form : " + formID)
 
 	// ##################################### SETUP DKG #########################
 
@@ -127,7 +127,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	for i := 0; i < numNodes; i++ {
 		t.Log("Node" + strconv.Itoa(i+1))
 		t.Log(proxyArray[i])
-		err = initDKG(secret, proxyArray[i], electionID, t)
+		err = initDKG(secret, proxyArray[i], formID, t)
 		require.NoError(t, err)
 
 	}
@@ -139,19 +139,19 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	signed, err = createSignedRequest(secret, msg)
 	require.NoError(t, err)
 
-	req, err := http.NewRequest(http.MethodPut, proxyArray[0]+"/evoting/services/dkg/actors/"+electionID, bytes.NewBuffer(signed))
+	req, err := http.NewRequest(http.MethodPut, proxyArray[0]+"/evoting/services/dkg/actors/"+formID, bytes.NewBuffer(signed))
 	require.NoError(t, err)
 
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
 	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
-	// ##################################### OPEN ELECTION #####################
+	// ##################################### OPEN FORM #####################
 	// Wait for DKG setup
 	timeTable := make([]float64, 5)
 	oldTime := time.Now()
 
-	err = waitForDKG(proxyArray[0], electionID, time.Second*100, t)
+	err = waitForDKG(proxyArray[0], formID, time.Second*100, t)
 	require.NoError(t, err)
 
 	currentTime := time.Now()
@@ -160,30 +160,30 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Logf("DKG setup takes: %v sec", diff.Seconds())
 
 	randomproxy := "http://localhost:9081"
-	t.Logf("Open election send to proxy %v", randomproxy)
+	t.Logf("Open form send to proxy %v", randomproxy)
 
-	_, err = updateElection(secret, randomproxy, electionID, "open", t)
+	_, err = updateForm(secret, randomproxy, formID, "open", t)
 	require.NoError(t, err)
-	// ##################################### GET ELECTION INFO #################
+	// ##################################### GET FORM INFO #################
 
 	proxyAddr1 := proxyArray[0]
 	time.Sleep(time.Second * 5)
 
-	getElectionResponse := getElectionInfo(proxyAddr1, electionID, t)
-	electionpubkey := getElectionResponse.Pubkey
-	electionStatus := getElectionResponse.Status
-	BallotSize := getElectionResponse.BallotSize
+	getFormResponse := getFormInfo(proxyAddr1, formID, t)
+	formpubkey := getFormResponse.Pubkey
+	formStatus := getFormResponse.Status
+	BallotSize := getFormResponse.BallotSize
 	Chunksperballot := chunksPerBallot(BallotSize)
 
-	t.Logf("Publickey of the election : " + electionpubkey)
-	t.Logf("Status of the election : %v", electionStatus)
+	t.Logf("Publickey of the form : " + formpubkey)
+	t.Logf("Status of the form : %v", formStatus)
 
 	require.NoError(t, err)
-	t.Logf("BallotSize of the election : %v", BallotSize)
-	t.Logf("Chunksperballot of the election : %v", Chunksperballot)
+	t.Logf("BallotSize of the form : %v", BallotSize)
+	t.Logf("Chunksperballot of the form : %v", Chunksperballot)
 
-	// Get election public key
-	pubKey, err := encoding.StringHexToPoint(suite, electionpubkey)
+	// Get form public key
+	pubKey, err := encoding.StringHexToPoint(suite, formpubkey)
 	require.NoError(t, err)
 
 	// ##################################### CAST BALLOTS ######################
@@ -204,13 +204,13 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	for i := 0; i < numVotes; i++ {
 
 		var bMarshal types.Ballot
-		election := types.Election{
+		form := types.Form{
 			Configuration: fakeConfiguration,
-			ElectionID:    electionID,
+			FormID:    formID,
 			BallotSize:    BallotSize,
 		}
 
-		err = bMarshal.Unmarshal(ballotList[i], election)
+		err = bMarshal.Unmarshal(ballotList[i], form)
 		require.NoError(t, err)
 
 		votesfrontend[i] = bMarshal
@@ -236,7 +236,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 		signed, err = createSignedRequest(secret, castVoteRequest)
 		require.NoError(t, err)
 
-		resp, err = http.Post(randomproxy+"/evoting/elections/"+electionID+"/vote", contentType, bytes.NewBuffer(signed))
+		resp, err = http.Post(randomproxy+"/evoting/forms/"+formID+"/vote", contentType, bytes.NewBuffer(signed))
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected status: %s", resp.Status)
 
@@ -264,21 +264,21 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 		t.Log("Finished to restart node")
 	}
 
-	// ############################# CLOSE ELECTION FOR REAL ###################
+	// ############################# CLOSE FORM FOR REAL ###################
 	randomproxy = proxyArray[rand.Intn(len(proxyArray))]
 
-	t.Logf("Close election (for real) send to proxy %v", randomproxy)
+	t.Logf("Close form (for real) send to proxy %v", randomproxy)
 
-	_, err = updateElection(secret, randomproxy, electionID, "close", t)
+	_, err = updateForm(secret, randomproxy, formID, "close", t)
 	require.NoError(t, err)
 
 	time.Sleep(time.Second * 3)
 
-	getElectionResponse = getElectionInfo(proxyAddr1, electionID, t)
-	electionStatus = getElectionResponse.Status
+	getFormResponse = getFormInfo(proxyAddr1, formID, t)
+	formStatus = getFormResponse.Status
 
-	t.Logf("Status of the election : %v", electionStatus)
-	require.Equal(t, uint16(2), electionStatus)
+	t.Logf("Status of the form : %v", formStatus)
+	require.Equal(t, uint16(2), formStatus)
 
 	// ###################################### SHUFFLE BALLOTS ##################
 	time.Sleep(time.Second * 5)
@@ -294,7 +294,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 
 	randomproxy = proxyArray[rand.Intn(len(proxyArray))]
 
-	req, err = http.NewRequest(http.MethodPut, randomproxy+"/evoting/services/shuffle/"+electionID, bytes.NewBuffer(signed))
+	req, err = http.NewRequest(http.MethodPut, randomproxy+"/evoting/services/shuffle/"+formID, bytes.NewBuffer(signed))
 	require.NoError(t, err)
 	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
@@ -312,14 +312,14 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	t.Log("Response body: " + string(body))
 	resp.Body.Close()
 
-	getElectionResponse = getElectionInfo(proxyAddr1, electionID, t)
-	electionStatus = getElectionResponse.Status
+	getFormResponse = getFormInfo(proxyAddr1, formID, t)
+	formStatus = getFormResponse.Status
 
-	err = waitForElectionStatus(proxyAddr1, electionID, uint16(3), time.Second*100, t)
+	err = waitForFormStatus(proxyAddr1, formID, uint16(3), time.Second*100, t)
 	require.NoError(t, err)
 
-	t.Logf("Status of the election : %v", electionStatus)
-	require.Equal(t, uint16(3), electionStatus)
+	t.Logf("Status of the form : %v", formStatus)
+	require.Equal(t, uint16(3), formStatus)
 
 	// ###################################### REQUEST PUBLIC SHARES ############
 	time.Sleep(time.Second * 5)
@@ -329,7 +329,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	randomproxy = proxyArray[rand.Intn(len(proxyArray))]
 	oldTime = time.Now()
 
-	_, err = updateDKG(secret, randomproxy, electionID, "computePubshares", t)
+	_, err = updateDKG(secret, randomproxy, formID, "computePubshares", t)
 	require.NoError(t, err)
 
 	currentTime = time.Now()
@@ -340,11 +340,11 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 
 	time.Sleep(10 * time.Second)
 
-	getElectionResponse = getElectionInfo(proxyAddr1, electionID, t)
-	electionStatus = getElectionResponse.Status
+	getFormResponse = getFormInfo(proxyAddr1, formID, t)
+	formStatus = getFormResponse.Status
 
 	oldTime = time.Now()
-	err = waitForElectionStatus(proxyAddr1, electionID, uint16(4), time.Second*300, t)
+	err = waitForFormStatus(proxyAddr1, formID, uint16(4), time.Second*300, t)
 	require.NoError(t, err)
 
 	currentTime = time.Now()
@@ -352,8 +352,8 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	timeTable[4] = diff.Seconds()
 	t.Logf("Status goes to 4 takes: %v sec", diff.Seconds())
 
-	t.Logf("Status of the election : %v", electionStatus)
-	require.Equal(t, uint16(4), electionStatus)
+	t.Logf("Status of the form : %v", formStatus)
+	require.Equal(t, uint16(4), formStatus)
 
 	// ###################################### DECRYPT BALLOTS ##################
 	time.Sleep(time.Second * 5)
@@ -363,7 +363,7 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 	randomproxy = proxyArray[rand.Intn(len(proxyArray))]
 	oldTime = time.Now()
 
-	_, err = updateElection(secret, randomproxy, electionID, "combineShares", t)
+	_, err = updateForm(secret, randomproxy, formID, "combineShares", t)
 	require.NoError(t, err)
 
 	currentTime = time.Now()
@@ -374,18 +374,18 @@ func startElectionProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyA
 
 	time.Sleep(time.Second * 3)
 
-	getElectionResponse = getElectionInfo(proxyAddr1, electionID, t)
-	electionStatus = getElectionResponse.Status
+	getFormResponse = getFormInfo(proxyAddr1, formID, t)
+	formStatus = getFormResponse.Status
 
-	err = waitForElectionStatus(proxyAddr1, electionID, uint16(5), time.Second*100, t)
+	err = waitForFormStatus(proxyAddr1, formID, uint16(5), time.Second*100, t)
 	require.NoError(t, err)
 
-	t.Logf("Status of the election : %v", electionStatus)
-	require.Equal(t, uint16(5), electionStatus)
+	t.Logf("Status of the form : %v", formStatus)
+	require.Equal(t, uint16(5), formStatus)
 
-	//#################################### VALIDATE ELECTION RESULT ##############
+	//#################################### VALIDATE FORM RESULT ##############
 
-	tmpBallots := getElectionResponse.Result
+	tmpBallots := getFormResponse.Result
 	var tmpCount bool
 
 	for _, ballotIntem := range tmpBallots {
@@ -511,9 +511,9 @@ func createSignedRequest(secret kyber.Scalar, msg interface{}) ([]byte, error) {
 	return signedJSON, nil
 }
 
-func initDKG(secret kyber.Scalar, proxyAddr, electionIDHex string, t *testing.T) error {
+func initDKG(secret kyber.Scalar, proxyAddr, formIDHex string, t *testing.T) error {
 	setupDKG := ptypes.NewDKGRequest{
-		ElectionID: electionIDHex,
+		FormID: formIDHex,
 	}
 
 	signed, err := createSignedRequest(secret, setupDKG)
@@ -528,15 +528,15 @@ func initDKG(secret kyber.Scalar, proxyAddr, electionIDHex string, t *testing.T)
 	return nil
 }
 
-func updateElection(secret kyber.Scalar, proxyAddr, electionIDHex, action string, t *testing.T) (int, error) {
-	msg := ptypes.UpdateElectionRequest{
+func updateForm(secret kyber.Scalar, proxyAddr, formIDHex, action string, t *testing.T) (int, error) {
+	msg := ptypes.UpdateFormRequest{
 		Action: action,
 	}
 
 	signed, err := createSignedRequest(secret, msg)
 	require.NoError(t, err)
 
-	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/elections/"+electionIDHex, bytes.NewBuffer(signed))
+	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/forms/"+formIDHex, bytes.NewBuffer(signed))
 	if err != nil {
 		return 0, xerrors.Errorf("failed to create request: %v", err)
 	}
@@ -554,7 +554,7 @@ func updateElection(secret kyber.Scalar, proxyAddr, electionIDHex, action string
 	return 0, nil
 }
 
-func updateDKG(secret kyber.Scalar, proxyAddr, electionIDHex, action string, t *testing.T) (int, error) {
+func updateDKG(secret kyber.Scalar, proxyAddr, formIDHex, action string, t *testing.T) (int, error) {
 	msg := ptypes.UpdateDKG{
 		Action: action,
 	}
@@ -562,7 +562,7 @@ func updateDKG(secret kyber.Scalar, proxyAddr, electionIDHex, action string, t *
 	signed, err := createSignedRequest(secret, msg)
 	require.NoError(t, err)
 
-	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/services/dkg/actors/"+electionIDHex, bytes.NewBuffer(signed))
+	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/services/dkg/actors/"+formIDHex, bytes.NewBuffer(signed))
 	if err != nil {
 		return 0, xerrors.Errorf("failed to create request: %v", err)
 	}
@@ -577,21 +577,21 @@ func updateDKG(secret kyber.Scalar, proxyAddr, electionIDHex, action string, t *
 	return 0, nil
 }
 
-func getElectionInfo(proxyAddr, electionID string, t *testing.T) ptypes.GetElectionResponse {
-	// t.Log("Get election info")
+func getFormInfo(proxyAddr, formID string, t *testing.T) ptypes.GetFormResponse {
+	// t.Log("Get form info")
 
-	resp, err := http.Get(proxyAddr + "/evoting/elections" + "/" + electionID)
+	resp, err := http.Get(proxyAddr + "/evoting/forms" + "/" + formID)
 	require.NoError(t, err)
 
-	var infoElection ptypes.GetElectionResponse
+	var infoForm ptypes.GetFormResponse
 	decoder := json.NewDecoder(resp.Body)
 
-	err = decoder.Decode(&infoElection)
+	err = decoder.Decode(&infoForm)
 	require.NoError(t, err)
 
 	resp.Body.Close()
 
-	return infoElection
+	return infoForm
 
 }
 
@@ -623,9 +623,9 @@ func restartNode(nodeNub int, t *testing.T) {
 	require.NoError(t, err)
 }
 
-func getDKGInfo(proxyAddr, electionID string, t *testing.T) ptypes.GetActorInfo {
+func getDKGInfo(proxyAddr, formID string, t *testing.T) ptypes.GetActorInfo {
 
-	resp, err := http.Get(proxyAddr + "/evoting/services/dkg/actors" + "/" + electionID)
+	resp, err := http.Get(proxyAddr + "/evoting/services/dkg/actors" + "/" + formID)
 	require.NoError(t, err)
 
 	var infoDKG ptypes.GetActorInfo
@@ -640,11 +640,11 @@ func getDKGInfo(proxyAddr, electionID string, t *testing.T) ptypes.GetActorInfo 
 
 }
 
-func waitForDKG(proxyAddr, electionID string, timeOut time.Duration, t *testing.T) error {
+func waitForDKG(proxyAddr, formID string, timeOut time.Duration, t *testing.T) error {
 	expired := time.Now().Add(timeOut)
 
 	isOK := func() bool {
-		infoDKG := getDKGInfo(proxyAddr, electionID, t)
+		infoDKG := getDKGInfo(proxyAddr, formID, t)
 		return infoDKG.Status == 1
 	}
 
@@ -659,12 +659,12 @@ func waitForDKG(proxyAddr, electionID string, timeOut time.Duration, t *testing.
 	return nil
 }
 
-func waitForElectionStatus(proxyAddr, electionID string, status uint16, timeOut time.Duration, t *testing.T) error {
+func waitForFormStatus(proxyAddr, formID string, status uint16, timeOut time.Duration, t *testing.T) error {
 	expired := time.Now().Add(timeOut)
 
 	isOK := func() bool {
-		infoElection := getElectionInfo(proxyAddr, electionID, t)
-		return infoElection.Status == status
+		infoForm := getFormInfo(proxyAddr, formID, t)
+		return infoForm.Status == status
 	}
 
 	for !isOK() {

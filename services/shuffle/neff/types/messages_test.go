@@ -16,10 +16,10 @@ func init() {
 	RegisterMessageFormat(fake.BadFormat, fake.NewBadFormat())
 }
 
-func TestStartShuffle_GetElectionId(t *testing.T) {
+func TestStartShuffle_GetFormId(t *testing.T) {
 	startShuffle := NewStartShuffle("dummyId", nil)
 
-	require.Equal(t, "dummyId", startShuffle.GetElectionId())
+	require.Equal(t, "dummyId", startShuffle.GetFormId())
 }
 
 func TestStartShuffle_GetAddresses(t *testing.T) {

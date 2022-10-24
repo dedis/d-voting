@@ -20,35 +20,35 @@ const inclusionTimeout = 10 * time.Second
 
 var suite = suites.MustFind("ed25519")
 
-// Election defines the public HTTP API for the election smart contract
-type Election interface {
-	// POST /elections
-	NewElection(http.ResponseWriter, *http.Request)
-	// POST /elections/{electionID}/vote
-	NewElectionVote(http.ResponseWriter, *http.Request)
-	// PUT /elections/{electionID}
-	EditElection(http.ResponseWriter, *http.Request)
-	// GET /elections
-	Elections(http.ResponseWriter, *http.Request)
-	// GET /elections/{electionID}
-	Election(http.ResponseWriter, *http.Request)
-	// DELETE /elections/{electionID}
-	DeleteElection(http.ResponseWriter, *http.Request)
+// Form defines the public HTTP API for the form smart contract
+type Form interface {
+	// POST /forms
+	NewForm(http.ResponseWriter, *http.Request)
+	// POST /forms/{formID}/vote
+	NewFormVote(http.ResponseWriter, *http.Request)
+	// PUT /forms/{formID}
+	EditForm(http.ResponseWriter, *http.Request)
+	// GET /forms
+	Forms(http.ResponseWriter, *http.Request)
+	// GET /forms/{formID}
+	Form(http.ResponseWriter, *http.Request)
+	// DELETE /forms/{formID}
+	DeleteForm(http.ResponseWriter, *http.Request)
 }
 
 // DKG defines the public HTTP API of the DKG service
 type DKG interface {
 	// POST /services/dkg
 	NewDKGActor(http.ResponseWriter, *http.Request)
-	// GET /services/dkg/{electionID}
+	// GET /services/dkg/{formID}
 	Actor(http.ResponseWriter, *http.Request)
-	// PUT /services/dkg/{electionID}
+	// PUT /services/dkg/{formID}
 	EditDKGActor(http.ResponseWriter, *http.Request)
 }
 
 // Shuffle defines the public HTTP API of the shuffling service
 type Shuffle interface {
-	// PUT /services/shuffle/{electionID}
+	// PUT /services/shuffle/{formID}
 	EditShuffle(http.ResponseWriter, *http.Request)
 }
 

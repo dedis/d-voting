@@ -32,16 +32,16 @@ type shuffle struct {
 func (s shuffle) EditShuffle(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	if vars == nil || vars["electionID"] == "" {
-		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
+	if vars == nil || vars["formID"] == "" {
+		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
 	}
 
-	electionID := vars["electionID"]
+	formID := vars["formID"]
 
-	buff, err := hex.DecodeString(electionID)
+	buff, err := hex.DecodeString(formID)
 	if err != nil {
-		http.Error(w, "failed to decode electionID: "+electionID, http.StatusInternalServerError)
+		http.Error(w, "failed to decode formID: "+formID, http.StatusInternalServerError)
 		return
 	}
 

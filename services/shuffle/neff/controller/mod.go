@@ -91,7 +91,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 	}
 
 	neffShuffle := neff.NewNeffShuffle(no, service, p, blocks,
-		etypes.NewElectionFactory(etypes.CiphervoteFactory{}, rosterFac), signer)
+		etypes.NewFormFactory(etypes.CiphervoteFactory{}, rosterFac), signer)
 
 	inj.Inject(neffShuffle)
 

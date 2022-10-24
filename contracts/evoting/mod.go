@@ -17,51 +17,51 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 
-	// Register the JSON format for the election
+	// Register the JSON format for the form
 	_ "github.com/dedis/d-voting/contracts/evoting/json"
 )
 
 var (
-	PromElectionStatus = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	PromFormStatus = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "dvoting_status",
-		Help: "status of election",
+		Help: "status of form",
 	},
-		[]string{"election"},
+		[]string{"form"},
 	)
 
-	PromElectionBallots = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	PromFormBallots = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "dvoting_ballots_total",
 		Help: "number of cast ballots",
 	},
-		[]string{"election"},
+		[]string{"form"},
 	)
 
-	PromElectionShufflingInstances = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	PromFormShufflingInstances = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "dvoting_shufflings_total",
 		Help: "number of shuffling instances",
 	},
-		[]string{"election"},
+		[]string{"form"},
 	)
 
-	PromElectionPubShares = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	PromFormPubShares = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "dvoting_pubshares_total",
 		Help: "published public shares",
 	},
-		[]string{"election"},
+		[]string{"form"},
 	)
 
-	PromElectionDkgStatus = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	PromFormDkgStatus = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "dvoting_dkg_status",
 		Help: "status of distributed key generator",
 	},
-		[]string{"election"},
+		[]string{"form"},
 	)
 )
 
 const (
-	// ElectionsMetadataKey is the key at which election metadata are saved in
+	// FormsMetadataKey is the key at which form metadata are saved in
 	// the storage.
-	ElectionsMetadataKey = "ElectionsMetadataKey"
+	FormsMetadataKey = "FormsMetadataKey"
 )
 
 var suite = suites.MustFind("Ed25519")
@@ -74,9 +74,9 @@ const (
 	// run on the contract. Should be one of the Command type.
 	CmdArg = "evoting:command"
 
-	// ElectionArg is the key at which the election argument is stored in the
+	// FormArg is the key at which the form argument is stored in the
 	// transaction. The content is defined by the type of command.
-	ElectionArg = "evoting:arg"
+	FormArg = "evoting:arg"
 
 	// credentialAllCommand defines the credential command that is allowed to
 	// perform all commands.
@@ -86,29 +86,29 @@ const (
 // commands defines the commands of the evoting contract. Using an interface
 // helps in testing.
 type commands interface {
-	createElection(snap store.Snapshot, step execution.Step) error
-	openElection(snap store.Snapshot, step execution.Step) error
+	createForm(snap store.Snapshot, step execution.Step) error
+	openForm(snap store.Snapshot, step execution.Step) error
 	castVote(snap store.Snapshot, step execution.Step) error
-	closeElection(snap store.Snapshot, step execution.Step) error
+	closeForm(snap store.Snapshot, step execution.Step) error
 	shuffleBallots(snap store.Snapshot, step execution.Step) error
 	registerPubshares(snap store.Snapshot, step execution.Step) error
 	combineShares(snap store.Snapshot, step execution.Step) error
-	cancelElection(snap store.Snapshot, step execution.Step) error
-	deleteElection(snap store.Snapshot, step execution.Step) error
+	cancelForm(snap store.Snapshot, step execution.Step) error
+	deleteForm(snap store.Snapshot, step execution.Step) error
 }
 
 // Command defines a type of command for the value contract
 type Command string
 
 const (
-	// CmdCreateElection is the command to create an election
-	CmdCreateElection Command = "CREATE_ELECTION"
-	// CmdOpenElection is the command to open an election
-	CmdOpenElection Command = "OPEN_ELECTION"
+	// CmdCreateForm is the command to create a form
+	CmdCreateForm Command = "CREATE_FORM"
+	// CmdOpenForm is the command to open a form
+	CmdOpenForm Command = "OPEN_FORM"
 	// CmdCastVote is the command to cast a vote
 	CmdCastVote Command = "CAST_VOTE"
-	// CmdCloseElection is the command to close an election
-	CmdCloseElection Command = "CLOSE_ELECTION"
+	// CmdCloseForm is the command to close a form
+	CmdCloseForm Command = "CLOSE_FORM"
 	// CmdShuffleBallots is the command to shuffle ballots
 	CmdShuffleBallots Command = "SHUFFLE_BALLOTS"
 
@@ -117,11 +117,11 @@ const (
 
 	// CmdCombineShares is the command to decrypt ballots
 	CmdCombineShares Command = "COMBINE_SHARES"
-	// CmdCancelElection is the command to cancel an election
-	CmdCancelElection Command = "CANCEL_ELECTION"
+	// CmdCancelForm is the command to cancel a form
+	CmdCancelForm Command = "CANCEL_FORM"
 
-	// CmdDeleteElection is the command to delete an election
-	CmdDeleteElection Command = "DELETE_ELECTION"
+	// CmdDeleteForm is the command to delete a form
+	CmdDeleteForm Command = "DELETE_FORM"
 )
 
 // NewCreds creates new credentials for a evoting contract execution. We might
@@ -154,7 +154,7 @@ type Contract struct {
 
 	context serde.Context
 
-	electionFac    serde.Factory
+	formFac        serde.Factory
 	rosterFac      authority.Factory
 	transactionFac serde.Factory
 }
@@ -166,7 +166,7 @@ func NewContract(accessKey, rosterKey []byte, srvc access.Service,
 	ctx := json.NewContext()
 
 	ciphervoteFac := types.CiphervoteFactory{}
-	electionFac := types.NewElectionFactory(ciphervoteFac, rosterFac)
+	formFac := types.NewFormFactory(ciphervoteFac, rosterFac)
 	transactionFac := types.NewTransactionFactory(ciphervoteFac)
 
 	contract := Contract{
@@ -178,7 +178,7 @@ func NewContract(accessKey, rosterKey []byte, srvc access.Service,
 
 		context: ctx,
 
-		electionFac:    electionFac,
+		formFac:        formFac,
 		rosterFac:      rosterFac,
 		transactionFac: transactionFac,
 	}
@@ -204,25 +204,25 @@ func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 	}
 
 	switch Command(cmd) {
-	case CmdCreateElection:
-		err = c.cmd.createElection(snap, step)
+	case CmdCreateForm:
+		err = c.cmd.createForm(snap, step)
 		if err != nil {
-			return xerrors.Errorf("failed to create election: %v", err)
+			return xerrors.Errorf("failed to create form: %v", err)
 		}
-	case CmdOpenElection:
-		err := c.cmd.openElection(snap, step)
+	case CmdOpenForm:
+		err := c.cmd.openForm(snap, step)
 		if err != nil {
-			return xerrors.Errorf("failed to open election: %v", err)
+			return xerrors.Errorf("failed to open form: %v", err)
 		}
 	case CmdCastVote:
 		err := c.cmd.castVote(snap, step)
 		if err != nil {
 			return xerrors.Errorf("failed to cast vote: %v", err)
 		}
-	case CmdCloseElection:
-		err := c.cmd.closeElection(snap, step)
+	case CmdCloseForm:
+		err := c.cmd.closeForm(snap, step)
 		if err != nil {
-			return xerrors.Errorf("failed to close election: %v", err)
+			return xerrors.Errorf("failed to close form: %v", err)
 		}
 	case CmdShuffleBallots:
 		err := c.cmd.shuffleBallots(snap, step)
@@ -239,15 +239,15 @@ func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 		if err != nil {
 			return xerrors.Errorf("failed to decrypt ballots: %v", err)
 		}
-	case CmdCancelElection:
-		err := c.cmd.cancelElection(snap, step)
+	case CmdCancelForm:
+		err := c.cmd.cancelForm(snap, step)
 		if err != nil {
-			return xerrors.Errorf("failed to cancel election: %v", err)
+			return xerrors.Errorf("failed to cancel form: %v", err)
 		}
-	case CmdDeleteElection:
-		err := c.cmd.deleteElection(snap, step)
+	case CmdDeleteForm:
+		err := c.cmd.deleteForm(snap, step)
 		if err != nil {
-			return xerrors.Errorf("failed to delete election: %v", err)
+			return xerrors.Errorf("failed to delete form: %v", err)
 		}
 	default:
 		return xerrors.Errorf("unknown command: %s", cmd)
@@ -258,8 +258,8 @@ func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 
 func init() {
 	dvoting.PromCollectors = append(dvoting.PromCollectors,
-		PromElectionStatus,
-		PromElectionBallots,
-		PromElectionShufflingInstances,
-		PromElectionPubShares)
+		PromFormStatus,
+		PromFormBallots,
+		PromFormShufflingInstances,
+		PromFormPubShares)
 }

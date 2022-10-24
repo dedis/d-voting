@@ -158,10 +158,10 @@ func TestStartDone_Serialize(t *testing.T) {
 	require.EqualError(t, err, fake.Err("couldn't encode ack"))
 }
 
-func TestDecryptRequest_GetElectionId(t *testing.T) {
-	req := NewDecryptRequest("electionId")
+func TestDecryptRequest_GetFormId(t *testing.T) {
+	req := NewDecryptRequest("formId")
 
-	require.Equal(t, "electionId", req.GetElectionId())
+	require.Equal(t, "formId", req.GetFormId())
 }
 
 func TestDecryptRequest_Serialize(t *testing.T) {
