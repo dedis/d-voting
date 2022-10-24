@@ -67,9 +67,9 @@ func iterateOverLines(pass *analysis.Pass, lines []string, c *ast.Comment) {
 // checkPrefixes checks if the line starts with any of the following
 // prefixes:
 //
-// - `//go:generate`
-// - `// http://`
-// - `// https://`
+//	`go:generate`
+//	`http://`
+//	`https://`
 //
 // If it does, it returns `true`. Otherwise, it returns `false`
 func checkPrefixes(line string) bool {
@@ -87,7 +87,7 @@ func ifTooLong(line string, pass *analysis.Pass, c *ast.Comment) {
 	}
 }
 
-// It loops over all the files in the package, and for each file it loops
+// runComment loops over all the files in the package, and for each file it loops
 // over all the comments in the file, and for each comment it loops over
 // all the lines in the comment, and for each line it checks
 // if the line is too long
@@ -98,9 +98,6 @@ fileLoop:
 		for _, cg := range file.Comments {
 			for i := 0; i < len(cg.List); i++ {
 				c := cg.List[i]
-				// Checking if the first comment starts with "// Code generated"
-				//and if it does, it continues the
-				// fileLoop and changes the file
 				if isFirst && strings.HasPrefix(c.Text, "// Code generated") {
 					continue fileLoop
 				}
