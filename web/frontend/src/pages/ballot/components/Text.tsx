@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Answers, TextQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
 import { QuestionMarkCircleIcon } from '@heroicons/react/outline/';
+import { Popover } from '@headlessui/react';
 
 type TextProps = {
   text: TextQuestion;
@@ -14,31 +15,26 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
   const { t } = useTranslation();
   const [charCounts, setCharCounts] = useState(new Array<number>(text.Choices.length).fill(0));
 
-  const hintDisplay = () => {
-    let hint = '';
+  const requirementsDisplay = () => {
+    let requirements = '';
     const min = text.MinN;
     const max = text.MaxN;
 
     if (min !== max) {
-      hint =
+      requirements =
         min > 1
           ? t('minText', { minText: min, singularPlural: t('pluralAnswers') })
           : t('minText', { minText: min, singularPlural: t('singularAnswer') });
     } else {
-      hint =
+      requirements =
         min > 1
           ? t('fillText', { minText: min, singularPlural: t('pluralAnswers') })
           : t('fillText', { minText: min, singularPlural: t('singularAnswer') });
     }
     return (
       <div className="text-sm pl-2 pb-2 text-gray-400">
-        <div className="space-x-2 flex flex-row">
-          <>
-            <QuestionMarkCircleIcon className="flex-none mt-1 h-4 w-4" />
-            <div>{text.Hint}</div>
-          </>
-        </div>
-        <div className="font-semibold ml-6 mt-1">{hint}</div>
+        <div className="space-x-2 flex flex-row"></div>
+        <div className="font-semibold ml-6 mt-1">{requirements}</div>
       </div>
     );
   };
@@ -110,10 +106,20 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
   return (
     <div>
       <h3 className="text-lg break-words text-gray-600">{text.Title}</h3>
-      {hintDisplay()}
+      {requirementsDisplay()}
       <div className="sm:pl-8 mt-2 pl-6">
         {text.Choices.map((choice, index) => choiceDisplay(choice, index))}
       </div>
+      {text.Hint.length !== 0 && (
+        <Popover className="flex">
+          <Popover.Button>
+            <QuestionMarkCircleIcon className="flex-none mt-1 h-4 w-4" />
+          </Popover.Button>
+          <Popover.Panel className="flex overflow-hidden p-2 mt-1 ml-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
+            {<div>{text.Hint}</div>}
+          </Popover.Panel>
+        </Popover>
+      )}
       <div className="text-red-600 text-sm py-2 sm:pl-2 pl-1">{answers.Errors.get(text.ID)}</div>
     </div>
   );
