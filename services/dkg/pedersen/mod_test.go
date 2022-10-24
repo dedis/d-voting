@@ -336,10 +336,9 @@ func TestPedersen_Setup(t *testing.T) {
 		handler: &Handler{
 			startRes: &state{},
 		},
-		context:     serdecontext,
-		electionFac: electionFac,
-		status: &dkg.Status{},
-
+		context: serdecontext,
+		formFac: formFac,
+		status:  &dkg.Status{},
 	}
 
 	// Wrong formID
