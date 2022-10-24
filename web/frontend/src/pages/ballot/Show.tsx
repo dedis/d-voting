@@ -9,26 +9,26 @@ import SpinnerIcon from 'components/utils/SpinnerIcon';
 import { MailIcon } from '@heroicons/react/outline';
 import { useNavigate } from 'react-router';
 
-import useElection from 'components/utils/useElection';
+import useForm from 'components/utils/useForm';
 import usePostCall from 'components/utils/usePostCall';
 import * as endpoints from 'components/utils/Endpoints';
 import { encryptVote } from './components/VoteEncrypt';
 import { voteEncode } from './components/VoteEncode';
 import { useConfiguration } from 'components/utils/useConfiguration';
-import { Status } from 'types/election';
+import { Status } from 'types/form';
 import { ballotIsValid } from './components/ValidateAnswers';
 import BallotDisplay from './components/BallotDisplay';
-import ElectionClosed from './components/ElectionClosed';
+import FormClosed from './components/FormClosed';
 import Loading from 'pages/Loading';
 import RedirectToModal from 'components/modal/RedirectToModal';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
 
-  const { electionId } = useParams();
+  const { formId } = useParams();
   const UserID = sessionStorage.getItem('id');
-  const { loading, configObj, electionID, status, pubKey, ballotSize, chunksPerBallot } =
-    useElection(electionId);
+  const { loading, configObj, formID, status, pubKey, ballotSize, chunksPerBallot } =
+    useForm(formId);
   const { configuration, answers, setAnswers } = useConfiguration(configObj);
 
   const [userErrors, setUserErrors] = useState('');
@@ -89,11 +89,7 @@ const Ballot: FC = () => {
           'Content-Type': 'Application/json',
         },
       };
-      await sendFetchRequest(
-        endpoints.newElectionVote(electionID.toString()),
-        newRequest,
-        setShowModal
-      );
+      await sendFetchRequest(endpoints.newFormVote(formID.toString()), newRequest, setShowModal);
     } catch (e) {
       console.log(e);
       setModalText(t('ballotFailure'));
@@ -166,7 +162,7 @@ const Ballot: FC = () => {
               </div>
             </div>
           )}
-          {status !== Status.Open && <ElectionClosed />}
+          {status !== Status.Open && <FormClosed />}
         </>
       )}
     </>

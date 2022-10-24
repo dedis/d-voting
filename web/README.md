@@ -4,10 +4,10 @@ This folder contains a front-end for admin and user operations.
 
 ![screen](screenshot.png)
 
-It allows the user to create a new election, close/cancel it and also vote on
-on-going elections. All the elections and their operations are saved on smart
+It allows the user to create a new form, close/cancel it and also vote on
+on-going forms. All the forms and their operations are saved on smart
 contracts from dela.
- 
+
 # Setup
 
 Have node.js installed. It has been tested with node version v17.5.0.
@@ -48,9 +48,9 @@ can be placed in `.vscode/settings.json` at the root of the repos:
 
 ```json
 {
-    "editor.codeActionsOnSave": {
-        "source.fixAll.eslint": true
-    },
-    "eslint.validate": ["javascript"]
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  "eslint.validate": ["javascript"]
 }
 ```

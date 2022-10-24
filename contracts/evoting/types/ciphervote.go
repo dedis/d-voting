@@ -117,7 +117,7 @@ func (ct EGPair) String() string {
 type CiphervoteKey struct{}
 
 // CiphervoteFactory provides the mean to deserialize a ciphervote. It naturally
-// uses the electionFormat.
+// uses the formFormat.
 //
 // - implements serde.Factory
 type CiphervoteFactory struct{}

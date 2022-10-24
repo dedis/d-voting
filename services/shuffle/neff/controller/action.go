@@ -68,7 +68,7 @@ type RegisterHandlersAction struct {
 }
 
 // Execute implements node.ActionTemplate. It registers the proxy
-// handlers to set up elections
+// handlers to set up forms
 func (a *RegisterHandlersAction) Execute(ctx node.Context) error {
 	var proxy proxy.Proxy
 	err := ctx.Injector.Resolve(&proxy)
@@ -100,8 +100,7 @@ func (a *RegisterHandlersAction) Execute(ctx node.Context) error {
 
 	ep := eproxy.NewShuffle(actor, proxykey)
 
-	// setup the proxy to handle the shuffle
-	router.HandleFunc("/evoting/services/shuffle/{electionID}", ep.EditShuffle).Methods("PUT")
+	router.HandleFunc("/evoting/services/shuffle/{formID}", ep.EditShuffle).Methods("PUT")
 
 	router.NotFoundHandler = http.HandlerFunc(eproxy.NotFoundHandler)
 	router.MethodNotAllowedHandler = http.HandlerFunc(eproxy.NotAllowedHandler)

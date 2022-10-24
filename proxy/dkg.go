@@ -55,16 +55,16 @@ func (d dkg) NewDKGActor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// decode the electionID
-	electionIDBuf, err := hex.DecodeString(req.ElectionID)
+	// decode the formID
+	formIDBuf, err := hex.DecodeString(req.FormID)
 	if err != nil {
-		http.Error(w, "failed to decode electionID: "+req.ElectionID,
+		http.Error(w, "failed to decode formID: "+req.FormID,
 			http.StatusBadRequest)
 		return
 	}
 
 	// subscribe to the DKG service
-	_, err = d.dkgService.Listen(electionIDBuf, d.manager)
+	_, err = d.dkgService.Listen(formIDBuf, d.manager)
 	if err != nil {
 		http.Error(w, "failed to start actor: "+err.Error(),
 			http.StatusInternalServerError)
@@ -80,23 +80,23 @@ func (d dkg) Actor(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 
-	// check if electionID is present
-	if vars == nil || vars["electionID"] == "" {
-		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
+	// check if the formID is present
+	if vars == nil || vars["formID"] == "" {
+		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
 	}
 
-	electionID := vars["electionID"]
+	formID := vars["formID"]
 
-	// decode the electionID
-	electionIDBuf, err := hex.DecodeString(electionID)
+	// decode the formID
+	formIDBuf, err := hex.DecodeString(formID)
 	if err != nil {
-		BadRequestError(w, r, xerrors.Errorf("failed to decode electionID: %v", err), nil)
+		BadRequestError(w, r, xerrors.Errorf("failed to decode formID: %v", err), nil)
 		return
 	}
 
 	// get the actor
-	actor, found := d.dkgService.GetActor(electionIDBuf)
+	actor, found := d.dkgService.GetActor(formIDBuf)
 	if !found {
 		NotFoundErr(w, r, xerrors.New("actor not found"), nil)
 		return
@@ -137,22 +137,22 @@ func (d dkg) Actor(w http.ResponseWriter, r *http.Request) {
 func (d dkg) EditDKGActor(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	if vars == nil || vars["electionID"] == "" {
-		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
+	if vars == nil || vars["formID"] == "" {
+		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
 	}
 
-	electionID := vars["electionID"]
+	formID := vars["formID"]
 
-	// decode the electionID
-	electionIDBuf, err := hex.DecodeString(electionID)
+	// decode the formID
+	formIDBuf, err := hex.DecodeString(formID)
 	if err != nil {
-		http.Error(w, "failed to decode electionID: "+electionID, http.StatusBadRequest)
+		http.Error(w, "failed to decode formID: "+formID, http.StatusBadRequest)
 		return
 	}
 
 	// get the actor
-	a, exists := d.dkgService.GetActor(electionIDBuf)
+	a, exists := d.dkgService.GetActor(formIDBuf)
 	if !exists {
 		http.Error(w, "actor does not exist", http.StatusInternalServerError)
 		return

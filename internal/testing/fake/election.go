@@ -11,15 +11,15 @@ import (
 
 var suite = suites.MustFind("Ed25519")
 
-func NewElection(electionID string) types.Election {
+func NewForm(formID string) types.Form {
 	k := 3
 	Ks, Cs, pubKey := NewKCPointsMarshalled(k)
 
-	election := types.Election{
+	form := types.Form{
 		Configuration: types.Configuration{
 			MainTitle: "dummyTitle",
 		},
-		ElectionID: electionID,
+		FormID: formID,
 		Status:     types.Closed,
 		Pubkey:     pubKey,
 		Suffragia: types.Suffragia{
@@ -35,10 +35,10 @@ func NewElection(electionID string) types.Election {
 			K: Ks[i],
 			C: Cs[i],
 		}
-		election.Suffragia.CastVote("dummyUser"+strconv.Itoa(i), types.Ciphervote{ballot})
+		form.Suffragia.CastVote("dummyUser"+strconv.Itoa(i), types.Ciphervote{ballot})
 	}
 
-	return election
+	return form
 }
 
 func NewKCPointsMarshalled(k int) ([]kyber.Point, []kyber.Point, kyber.Point) {
@@ -66,9 +66,9 @@ func NewKCPointsMarshalled(k int) ([]kyber.Point, []kyber.Point, kyber.Point) {
 	return Ks, Cs, pubKey
 }
 
-// BasicConfiguration returns a basic election configuration
+// BasicConfiguration returns a basic form configuration
 var BasicConfiguration = types.Configuration{
-	MainTitle: "electionTitle",
+	MainTitle: "formTitle",
 	Scaffold: []types.Subject{
 		{
 			ID:       "aa",

@@ -74,6 +74,12 @@ fi
 
 tmux new-session -d -s $s
 
+# display warning if the number of nodes is less or equal than 3 because it doesn't respect the Byzantine Fault Tolerant
+if [ $N_NODE -le 3 ]; then
+  echo "Warning: the number of nodes is less or equal than 3, it doesn't respect the Byzantine Fault Tolerant"
+fi
+
+
 # Clean logs
 rm -rf ./log/log
 mkdir -p ./log/log

@@ -38,12 +38,12 @@ type NeffShuffle struct {
 	blocks      *blockstore.InDisk
 	context     serde.Context
 	nodeSigner  crypto.Signer
-	electionFac serde.Factory
+	formFac serde.Factory
 }
 
 // NewNeffShuffle returns a new NeffShuffle factory.
 func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool,
-	blocks *blockstore.InDisk, electionFac serde.Factory, signer crypto.Signer) *NeffShuffle {
+	blocks *blockstore.InDisk, formFac serde.Factory, signer crypto.Signer) *NeffShuffle {
 
 	factory := types.NewMessageFactory(m.GetAddressFactory())
 
@@ -57,7 +57,7 @@ func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool,
 		blocks:      blocks,
 		context:     ctx,
 		nodeSigner:  signer,
-		electionFac: electionFac,
+		formFac: formFac,
 	}
 }
 
@@ -65,7 +65,7 @@ func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool,
 // participates in the SHUFFLE. Creates the RPC.
 func (n NeffShuffle) Listen(txmngr txn.Manager) (shuffle.Actor, error) {
 	h := NewHandler(n.mino.GetAddress(), n.service, n.p, txmngr, n.nodeSigner,
-		n.context, n.electionFac)
+		n.context, n.formFac)
 
 	a := &Actor{
 		rpc:         mino.MustCreateRPC(n.mino, "shuffle", h, n.factory),
@@ -73,7 +73,7 @@ func (n NeffShuffle) Listen(txmngr txn.Manager) (shuffle.Actor, error) {
 		mino:        n.mino,
 		service:     n.service,
 		context:     n.context,
-		electionFac: n.electionFac,
+		formFac: n.formFac,
 	}
 
 	return a, nil
@@ -92,38 +92,38 @@ type Actor struct {
 	service ordering.Service
 
 	context     serde.Context
-	electionFac serde.Factory
+	formFac serde.Factory
 }
 
 // Shuffle must be called by ONE of the actor to shuffle the list of ElGamal
 // pairs.
 // Each node represented by a player must first execute Listen().
-func (a *Actor) Shuffle(electionID []byte) error {
+func (a *Actor) Shuffle(formID []byte) error {
 	a.Lock()
 	defer a.Unlock()
 
-	electionIDHex := hex.EncodeToString(electionID)
+	formIDHex := hex.EncodeToString(formID)
 
-	election, err := getElection(a.electionFac, a.context, electionIDHex, a.service)
+	form, err := getForm(a.formFac, a.context, formIDHex, a.service)
 	if err != nil {
-		return xerrors.Errorf("failed to get election: %v", err)
+		return xerrors.Errorf("failed to get form: %v", err)
 	}
 
-	if election.Roster.Len() == 0 {
+	if form.Roster.Len() == 0 {
 		return xerrors.Errorf("the roster is empty")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), shuffleTimeout)
 	defer cancel()
 
-	sender, _, err := a.rpc.Stream(ctx, election.Roster)
+	sender, _, err := a.rpc.Stream(ctx, form.Roster)
 	if err != nil {
 		return xerrors.Errorf("failed to stream: %v", err)
 	}
 
-	addrs := make([]mino.Address, 0, election.Roster.Len())
+	addrs := make([]mino.Address, 0, form.Roster.Len())
 	addrs = append(addrs, a.mino.GetAddress())
-	addrIter := election.Roster.AddressIterator()
+	addrIter := form.Roster.AddressIterator()
 	for addrIter.HasNext() {
 		addr := addrIter.GetNext()
 		if !addr.Equal(a.mino.GetAddress()) {
@@ -133,7 +133,7 @@ func (a *Actor) Shuffle(electionID []byte) error {
 
 	dela.Logger.Info().Msgf("sending start shuffle to: %v", addrs)
 
-	message := types.NewStartShuffle(electionIDHex, addrs)
+	message := types.NewStartShuffle(formIDHex, addrs)
 
 	errs := sender.Send(message, addrs...)
 	err = <-errs
@@ -142,7 +142,7 @@ func (a *Actor) Shuffle(electionID []byte) error {
 		//return xerrors.Errorf("failed to start shuffle: %v", err)
 	}
 
-	err = a.waitAndCheckShuffling(message.GetElectionId(), election.Roster.Len())
+	err = a.waitAndCheckShuffling(message.GetFormId(), form.Roster.Len())
 	if err != nil {
 		return xerrors.Errorf("failed to wait and check shuffling: %v", err)
 	}
@@ -150,71 +150,71 @@ func (a *Actor) Shuffle(electionID []byte) error {
 	return nil
 }
 
-// waitAndCheckShuffling periodically checks the state of the election. It
+// waitAndCheckShuffling periodically checks the state of the form. It
 // returns an error if the shuffling is not done after a while. The retry and
-// waiting time depends on the rosterLen. electionID is Hex-encoded.
-func (a *Actor) waitAndCheckShuffling(electionID string, rosterLen int) error {
-	var election etypes.Election
+// waiting time depends on the rosterLen. formID is Hex-encoded.
+func (a *Actor) waitAndCheckShuffling(formID string, rosterLen int) error {
+	var form etypes.Form
 	var err error
 
 	for i := 0; i < rosterLen*10; i++ {
-		election, err = getElection(a.electionFac, a.context, electionID, a.service)
+		form, err = getForm(a.formFac, a.context, formID, a.service)
 		if err != nil {
-			return xerrors.Errorf("failed to get election: %v", err)
+			return xerrors.Errorf("failed to get form: %v", err)
 		}
 
-		round := len(election.ShuffleInstances)
+		round := len(form.ShuffleInstances)
 		dela.Logger.Info().Msgf("SHUFFLE / ROUND : %d", round)
 
 		// if the threshold is reached that means we have enough shuffling.
-		if round >= election.ShuffleThreshold {
+		if round >= form.ShuffleThreshold {
 			dela.Logger.Info().Msgf("shuffle done with round n°%d", round)
 			return nil
 		}
 
-		dela.Logger.Info().Msgf("waiting a while before checking election: %d", i)
+		dela.Logger.Info().Msgf("waiting a while before checking form: %d", i)
 		sleepTime := rosterLen / 2
 		time.Sleep(time.Duration(sleepTime) * time.Second)
 	}
 
 	return xerrors.Errorf("threshold of shuffling not reached: %d < %d",
-		len(election.ShuffleInstances), election.ShuffleThreshold)
+		len(form.ShuffleInstances), form.ShuffleThreshold)
 }
 
-// getElection gets the election from the service.
-func getElection(electionFac serde.Factory, ctx serde.Context,
-	electionIDHex string, srv ordering.Service) (etypes.Election, error) {
+// getForm gets the form from the service.
+func getForm(formFac serde.Factory, ctx serde.Context,
+	formIDHex string, srv ordering.Service) (etypes.Form, error) {
 
-	var election etypes.Election
+	var form etypes.Form
 
-	electionID, err := hex.DecodeString(electionIDHex)
+	formID, err := hex.DecodeString(formIDHex)
 	if err != nil {
-		return election, xerrors.Errorf("failed to decode electionIDHex: %v", err)
+		return form, xerrors.Errorf("failed to decode formIDHex: %v", err)
 	}
 
-	proof, err := srv.GetProof(electionID)
+	proof, err := srv.GetProof(formID)
 	if err != nil {
-		return election, xerrors.Errorf("failed to get proof: %v", err)
+		return form, xerrors.Errorf("failed to get proof: %v", err)
 	}
 
 	if string(proof.GetValue()) == "" {
-		return election, xerrors.Errorf("election does not exist")
+		return form, xerrors.Errorf("form does not exist")
 	}
 
-	message, err := electionFac.Deserialize(ctx, proof.GetValue())
+	message, err := formFac.Deserialize(ctx, proof.GetValue())
 	if err != nil {
-		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
+		return form, xerrors.Errorf("failed to deserialize Form: %v", err)
 	}
 
-	election, ok := message.(etypes.Election)
+	form, ok := message.(etypes.Form)
 	if !ok {
-		return election, xerrors.Errorf("wrong message type: %T", message)
+		return form, xerrors.Errorf("wrong message type: %T", message)
 	}
 
-	if electionIDHex != election.ElectionID {
-		return election, xerrors.Errorf("electionID do not match: %q != %q",
-			electionIDHex, election.ElectionID)
+	if formIDHex != form.FormID {
+		return form, xerrors.Errorf("formID do not match: %q != %q",
+			formIDHex, form.FormID)
 	}
 
-	return election, nil
+	return form, nil
 }

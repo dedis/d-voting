@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 
-	electionTypes "github.com/dedis/d-voting/contracts/evoting/types"
+	formTypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/core/validation"
@@ -36,7 +36,7 @@ func (f Proof) GetValue() []byte {
 // - implements ordering.Service
 type Service struct {
 	Err       error
-	Elections map[string]electionTypes.Election
+	Forms map[string]formTypes.Form
 	Pool      *Pool
 	Status    bool
 	Channel   chan ordering.Event
@@ -44,11 +44,11 @@ type Service struct {
 }
 
 // GetProof implements ordering.Service. It returns the proof associated to the
-// election.
+// form.
 func (f Service) GetProof(key []byte) (ordering.Proof, error) {
 	keyString := hex.EncodeToString(key)
 
-	election, exists := f.Elections[keyString]
+	form, exists := f.Forms[keyString]
 	if !exists {
 		proof := Proof{
 			key:   key,
@@ -57,14 +57,14 @@ func (f Service) GetProof(key []byte) (ordering.Proof, error) {
 		return proof, f.Err
 	}
 
-	electionBuf, err := election.Serialize(f.Context)
+	formBuf, err := form.Serialize(f.Context)
 	if err != nil {
-		return nil, xerrors.Errorf("failed to serialize election: %v", err)
+		return nil, xerrors.Errorf("failed to serialize form: %v", err)
 	}
 
 	proof := Proof{
 		key:   key,
-		value: electionBuf,
+		value: formBuf,
 	}
 
 	return proof, f.Err
@@ -120,13 +120,13 @@ func (f *Service) AddTx(tx Transaction) {
 }
 
 // NewService returns a new initialized service
-func NewService(electionID string, election electionTypes.Election, ctx serde.Context) Service {
-	elections := make(map[string]electionTypes.Election)
-	elections[electionID] = election
+func NewService(formID string, form formTypes.Form, ctx serde.Context) Service {
+	forms := make(map[string]formTypes.Form)
+	forms[formID] = form
 
 	return Service{
 		Err:       nil,
-		Elections: elections,
+		Forms: forms,
 		Context:   ctx,
 	}
 }

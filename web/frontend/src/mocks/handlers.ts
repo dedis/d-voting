@@ -11,10 +11,10 @@ import * as endpoints from '../components/utils/Endpoints';
 
 import {
   EditDKGActorBody,
-  EditElectionBody,
+  EditFormBody,
   NewDKGBody,
-  NewElectionBody,
-  NewElectionVoteBody,
+  NewFormBody,
+  NewFormVoteBody,
   NewProxyAddress,
   NewUserRole,
   RemoveUserRole,
@@ -22,8 +22,8 @@ import {
 } from '../types/frontendRequestBody';
 
 import { ID } from 'types/configuration';
-import { Action, Status } from 'types/election';
-import { setupMockElection, toLightElectionInfo } from './setupMockElections';
+import { Action, Status } from 'types/form';
+import { setupMockForm, toLightFormInfo } from './setupMockForms';
 import setupMockUserDB from './setupMockUserDB';
 import { UserRole } from 'types/userRole';
 import { mockRoster } from './mockData';
@@ -32,7 +32,7 @@ import { NodeStatus } from 'types/node';
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;
 
-const { mockElections, mockResults, mockDKG, mockNodeProxyAddresses } = setupMockElection();
+const { mockForms, mockResults, mockDKG, mockNodeProxyAddresses } = setupMockForm();
 
 let mockUserDB = setupMockUserDB();
 
@@ -92,48 +92,45 @@ export const handlers = [
     return res(ctx.status(200));
   }),
 
-  rest.get(endpoints.elections(defaultProxy), async (req, res, ctx) => {
+  rest.get(endpoints.forms(defaultProxy), async (req, res, ctx) => {
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(
       ctx.status(200),
       ctx.json({
-        Elections: Array.from(mockElections.values()).map((election) =>
-          toLightElectionInfo(mockElections, election.ElectionID)
+        Forms: Array.from(mockForms.values()).map((form) =>
+          toLightFormInfo(mockForms, form.FormID)
         ),
       })
     );
   }),
 
-  rest.get(endpoints.election(defaultProxy, ':ElectionID'), async (req, res, ctx) => {
-    const { ElectionID } = req.params;
+  rest.get(endpoints.form(defaultProxy, ':FormID'), async (req, res, ctx) => {
+    const { FormID } = req.params;
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    return res(ctx.status(200), ctx.json(mockElections.get(ElectionID as ID)));
+    return res(ctx.status(200), ctx.json(mockForms.get(FormID as ID)));
   }),
 
-  rest.post(endpoints.newElection, async (req, res, ctx) => {
-    const body = req.body as NewElectionBody;
+  rest.post(endpoints.newForm, async (req, res, ctx) => {
+    const body = req.body as NewFormBody;
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
-      return res(
-        ctx.status(403),
-        ctx.json({ message: 'You are not authorized to create an election' })
-      );
+      return res(ctx.status(403), ctx.json({ message: 'You are not authorized to create a form' }));
     }
 
-    const createElection = (configuration: any) => {
-      const newElectionID = uid();
+    const createForm = (configuration: any) => {
+      const newFormID = uid();
       const newDKGStatus = new Map();
       mockRoster.forEach((node) => {
         newDKGStatus.set(node, NodeStatus.NotInitialized);
       });
-      mockDKG.set(newElectionID, newDKGStatus);
+      mockDKG.set(newFormID, newDKGStatus);
 
-      mockElections.set(newElectionID, {
-        ElectionID: newElectionID,
+      mockForms.set(newFormID, {
+        FormID: newFormID,
         Status: Status.Initial,
         Pubkey: 'DEAEV6EMII',
         Result: [],
@@ -144,28 +141,28 @@ export const handlers = [
         Voters: [],
       });
 
-      return newElectionID;
+      return newFormID;
     };
 
     return res(
       ctx.status(200),
       ctx.json({
-        ElectionID: createElection(body.Configuration),
+        FormID: createForm(body.Configuration),
       })
     );
   }),
 
-  rest.post(endpoints.newElectionVote(':ElectionID'), async (req, res, ctx) => {
-    const { Ballot }: NewElectionVoteBody = req.body as NewElectionVoteBody;
-    const { ElectionID } = req.params;
+  rest.post(endpoints.newFormVote(':FormID'), async (req, res, ctx) => {
+    const { Ballot }: NewFormVoteBody = req.body as NewFormVoteBody;
+    const { FormID } = req.params;
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    const Voters = mockElections.get(ElectionID as string).Voters;
+    const Voters = mockForms.get(FormID as string).Voters;
     Voters.push('userID' + (Voters.length + 1));
 
-    mockElections.set(ElectionID as string, {
-      ...mockElections.get(ElectionID as string),
+    mockForms.set(FormID as string, {
+      ...mockForms.get(FormID as string),
       Voters,
     });
 
@@ -177,19 +174,16 @@ export const handlers = [
     );
   }),
 
-  rest.put(endpoints.editElection(':ElectionID'), async (req, res, ctx) => {
-    const body = req.body as EditElectionBody;
-    const { ElectionID } = req.params;
+  rest.put(endpoints.editForm(':FormID'), async (req, res, ctx) => {
+    const body = req.body as EditFormBody;
+    const { FormID } = req.params;
     let status = Status.Initial;
     const Result = [];
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
-      return res(
-        ctx.status(403),
-        ctx.json({ message: 'You are not authorized to update an election' })
-      );
+      return res(ctx.status(403), ctx.json({ message: 'You are not authorized to update a form' }));
     }
 
     switch (body.Action) {
@@ -201,7 +195,7 @@ export const handlers = [
         break;
       case Action.CombineShares:
         status = Status.ResultAvailable;
-        mockResults.get(ElectionID as string).forEach((result) => Result.push(result));
+        mockResults.get(FormID as string).forEach((result) => Result.push(result));
         break;
       case Action.Cancel:
         status = Status.Canceled;
@@ -212,8 +206,8 @@ export const handlers = [
 
     setTimeout(
       () =>
-        mockElections.set(ElectionID as string, {
-          ...mockElections.get(ElectionID as string),
+        mockForms.set(FormID as string, {
+          ...mockForms.get(FormID as string),
           Status: status,
           Result,
         }),
@@ -223,19 +217,19 @@ export const handlers = [
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
-  rest.delete(endpoints.editElection(':ElectionID'), async (req, res, ctx) => {
-    const { ElectionID } = req.params;
-    mockElections.delete(ElectionID as string);
+  rest.delete(endpoints.editForm(':FormID'), async (req, res, ctx) => {
+    const { FormID } = req.params;
+    mockForms.delete(FormID as string);
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    return res(ctx.status(200), ctx.text('Election deleted'));
+    return res(ctx.status(200), ctx.text('Form deleted'));
   }),
 
   rest.post(endpoints.dkgActors, async (req, res, ctx) => {
     const body = req.body as NewDKGBody;
 
     let node = '';
-    mockElections.get(body.ElectionID).Roster.forEach((n) => {
+    mockForms.get(body.FormID).Roster.forEach((n) => {
       const p = mockNodeProxyAddresses.get(n);
       if (p === body.Proxy) {
         node = n;
@@ -243,9 +237,9 @@ export const handlers = [
     });
 
     setTimeout(() => {
-      const newDKGStatus = new Map(mockDKG.get(body.ElectionID));
+      const newDKGStatus = new Map(mockDKG.get(body.FormID));
       newDKGStatus.set(node, NodeStatus.Initialized);
-      mockDKG.set(body.ElectionID, newDKGStatus);
+      mockDKG.set(body.FormID, newDKGStatus);
     }, INIT_TIMER);
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
@@ -253,16 +247,16 @@ export const handlers = [
     return res(ctx.status(200));
   }),
 
-  rest.put(endpoints.editDKGActors(':ElectionID'), async (req, res, ctx) => {
-    const { ElectionID } = req.params;
+  rest.put(endpoints.editDKGActors(':FormID'), async (req, res, ctx) => {
+    const { FormID } = req.params;
     const body = req.body as EditDKGActorBody;
 
     switch (body.Action) {
       case Action.Setup:
-        const newDKGStatus = new Map(mockDKG.get(ElectionID as string));
+        const newDKGStatus = new Map(mockDKG.get(FormID as string));
         let node = '';
 
-        const roster = mockElections.get(ElectionID as string).Roster;
+        const roster = mockForms.get(FormID as string).Roster;
 
         const INCREMENT = 1200;
 
@@ -275,14 +269,14 @@ export const handlers = [
 
         const setup = () => {
           newDKGStatus.set(node, NodeStatus.Setup);
-          mockDKG.set(ElectionID as string, newDKGStatus);
+          mockDKG.set(FormID as string, newDKGStatus);
         };
 
         const certified = () => {
           roster.forEach((n) => {
             newDKGStatus.set(n, NodeStatus.Certified);
           });
-          mockDKG.set(ElectionID as string, newDKGStatus);
+          mockDKG.set(FormID as string, newDKGStatus);
 
           setTimeout(setup, INCREMENT);
         };
@@ -291,7 +285,7 @@ export const handlers = [
           roster.forEach((n) => {
             newDKGStatus.set(n, NodeStatus.Certifying);
           });
-          mockDKG.set(ElectionID as string, newDKGStatus);
+          mockDKG.set(FormID as string, newDKGStatus);
 
           setTimeout(certified, INCREMENT);
         };
@@ -300,7 +294,7 @@ export const handlers = [
           roster.forEach((n) => {
             newDKGStatus.set(n, NodeStatus.Responding);
           });
-          mockDKG.set(ElectionID as string, newDKGStatus);
+          mockDKG.set(FormID as string, newDKGStatus);
 
           setTimeout(certifying, INCREMENT);
         };
@@ -309,7 +303,7 @@ export const handlers = [
           roster.forEach((n) => {
             newDKGStatus.set(n, NodeStatus.Dealing);
           });
-          mockDKG.set(ElectionID as string, newDKGStatus);
+          mockDKG.set(FormID as string, newDKGStatus);
 
           setTimeout(responding, INCREMENT);
         };
@@ -320,8 +314,8 @@ export const handlers = [
       case Action.BeginDecryption:
         setTimeout(
           () =>
-            mockElections.set(ElectionID as string, {
-              ...mockElections.get(ElectionID as string),
+            mockForms.set(FormID as string, {
+              ...mockForms.get(FormID as string),
               Status: Status.PubSharesSubmitted,
             }),
           DECRYPT_TIMER
@@ -337,24 +331,24 @@ export const handlers = [
     return res(ctx.status(200), ctx.text('Action successfully done'));
   }),
 
-  rest.get(endpoints.getDKGActors('*', ':ElectionID'), async (req, res, ctx) => {
-    const { ElectionID } = req.params;
+  rest.get(endpoints.getDKGActors('*', ':FormID'), async (req, res, ctx) => {
+    const { FormID } = req.params;
     const Proxy = req.params[0];
     let node = '';
 
-    mockElections.get(ElectionID as string).Roster.forEach((n) => {
+    mockForms.get(FormID as string).Roster.forEach((n) => {
       const p = mockNodeProxyAddresses.get(n);
       if (p === Proxy) {
         node = n;
       }
     });
 
-    const currentNodeStatus = mockDKG.get(ElectionID as string).get(node);
+    const currentNodeStatus = mockDKG.get(FormID as string).get(node);
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     if (currentNodeStatus === NodeStatus.NotInitialized) {
-      return res(ctx.status(404), ctx.json(`Election ${ElectionID} does not exist`));
+      return res(ctx.status(404), ctx.json(`Form ${FormID} does not exist`));
     } else {
       return res(
         ctx.status(200),
@@ -366,20 +360,17 @@ export const handlers = [
     }
   }),
 
-  rest.put(endpoints.editShuffle(':ElectionID'), async (req, res, ctx) => {
-    const { ElectionID } = req.params;
+  rest.put(endpoints.editShuffle(':FormID'), async (req, res, ctx) => {
+    const { FormID } = req.params;
 
     if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
-      return res(
-        ctx.status(403),
-        ctx.json({ message: 'You are not authorized to update an election' })
-      );
+      return res(ctx.status(403), ctx.json({ message: 'You are not authorized to update a form' }));
     }
 
     setTimeout(
       () =>
-        mockElections.set(ElectionID as string, {
-          ...mockElections.get(ElectionID as string),
+        mockForms.set(FormID as string, {
+          ...mockForms.get(FormID as string),
           Status: Status.ShuffledBallots,
         }),
       SHUFFLE_TIMER

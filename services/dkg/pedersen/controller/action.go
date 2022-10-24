@@ -35,14 +35,14 @@ type initAction struct {
 }
 
 // Execute implements node.ActionTemplate. It creates an actor from
-// the dkgPedersen instance and links it to an election.
+// the dkgPedersen instance and links it to a form.
 func (a *initAction) Execute(ctx node.Context) error {
 
-	electionID := ctx.Flags.String("electionID")
+	formID := ctx.Flags.String("formID")
 
-	electionIDBuf, err := hex.DecodeString(electionID)
+	formIDBuf, err := hex.DecodeString(formID)
 	if err != nil {
-		return xerrors.Errorf("failed to decode electionID: %v", err)
+		return xerrors.Errorf("failed to decode formID: %v", err)
 	}
 
 	// Initialize the actor
@@ -52,9 +52,9 @@ func (a *initAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve DKG: %v", err)
 	}
 
-	_, exists := dkg.GetActor(electionIDBuf)
+	_, exists := dkg.GetActor(formIDBuf)
 	if exists {
-		return xerrors.Errorf("DKG was already initialized for electionID %s", electionID)
+		return xerrors.Errorf("DKG was already initialized for formID %s", formID)
 	}
 
 	signer, err := getSigner(ctx.Flags)
@@ -67,7 +67,7 @@ func (a *initAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to make client: %v", err)
 	}
 
-	actor, err := dkg.Listen(electionIDBuf, signed.NewManager(signer, &client))
+	actor, err := dkg.Listen(formIDBuf, signed.NewManager(signer, &client))
 	if err != nil {
 		return xerrors.Errorf("failed to start the RPC: %v", err)
 	}
@@ -85,13 +85,13 @@ func (a *initAction) Execute(ctx node.Context) error {
 			return err
 		}
 
-		return bucket.Set(electionIDBuf, actorBuf)
+		return bucket.Set(formIDBuf, actorBuf)
 	})
 	if err != nil {
 		return xerrors.Errorf("failed to update DKG store: %v", err)
 	}
 
-	dela.Logger.Info().Msgf("DKG was successfully linked to election %v", electionIDBuf)
+	dela.Logger.Info().Msgf("DKG was successfully linked to form %v", formIDBuf)
 
 	return nil
 }
@@ -107,9 +107,9 @@ type setupAction struct {
 // request the setup.
 func (a *setupAction) Execute(ctx node.Context) error {
 
-	electionIDBuf, err := hex.DecodeString(ctx.Flags.String("electionID"))
+	formIDBuf, err := hex.DecodeString(ctx.Flags.String("formID"))
 	if err != nil {
-		return xerrors.Errorf("failed to decode electionID: %v", err)
+		return xerrors.Errorf("failed to decode formID: %v", err)
 	}
 
 	var dkg dkg.DKG
@@ -118,7 +118,7 @@ func (a *setupAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve DKG: %v", err)
 	}
 
-	actor, exists := dkg.GetActor(electionIDBuf)
+	actor, exists := dkg.GetActor(formIDBuf)
 	if !exists {
 		return xerrors.Errorf("failed to get actor: %v", err)
 	}
@@ -148,7 +148,7 @@ func (a *setupAction) Execute(ctx node.Context) error {
 			return err
 		}
 
-		return bucket.Set(electionIDBuf, actorBuf)
+		return bucket.Set(formIDBuf, actorBuf)
 	})
 	if err != nil {
 		return xerrors.Errorf("failed to update DKG store: %v", err)
@@ -195,7 +195,7 @@ func (a *exportInfoAction) Execute(ctx node.Context) error {
 			return nil
 		}
 
-		return bucket.ForEach(func(electionIDBuf, handlerDataBuf []byte) error {
+		return bucket.ForEach(func(formIDBuf, handlerDataBuf []byte) error {
 
 			handlerData := pedersen.HandlerData{}
 			err = json.Unmarshal(handlerDataBuf, &handlerData)
@@ -203,8 +203,8 @@ func (a *exportInfoAction) Execute(ctx node.Context) error {
 				return err
 			}
 
-			// Print electionID and actor data
-			fmt.Fprint(ctx.Out, hex.EncodeToString(electionIDBuf))
+			// Print formID and actor data
+			fmt.Fprint(ctx.Out, hex.EncodeToString(formIDBuf))
 			fmt.Fprint(ctx.Out, handlerData)
 
 			return nil
@@ -232,9 +232,9 @@ type getPublicKeyAction struct {
 // Execute implements node.ActionTemplate. It retrieves the collective
 // public key from the DKG service and prints it.
 func (a *getPublicKeyAction) Execute(ctx node.Context) error {
-	electionIDBuf, err := hex.DecodeString(ctx.Flags.String("electionID"))
+	formIDBuf, err := hex.DecodeString(ctx.Flags.String("formID"))
 	if err != nil {
-		return xerrors.Errorf("failed to decode electionID: %v", err)
+		return xerrors.Errorf("failed to decode formID: %v", err)
 	}
 
 	var dkgPedersen dkg.DKG
@@ -243,7 +243,7 @@ func (a *getPublicKeyAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve dkg: %v", err)
 	}
 
-	actor, exists := dkgPedersen.GetActor(electionIDBuf)
+	actor, exists := dkgPedersen.GetActor(formIDBuf)
 	if !exists {
 		return xerrors.Errorf("failed to get actor: %v", err)
 	}
@@ -272,7 +272,7 @@ type RegisterHandlersAction struct {
 }
 
 // Execute implements node.ActionTemplate. It registers the proxy
-// handlers to set up elections
+// handlers to set up forms
 func (a *RegisterHandlersAction) Execute(ctx node.Context) error {
 	var proxy proxy.Proxy
 	err := ctx.Injector.Resolve(&proxy)
@@ -320,13 +320,9 @@ func (a *RegisterHandlersAction) Execute(ctx node.Context) error {
 	// DKG init
 	router.HandleFunc("/evoting/services/dkg/actors", ep.NewDKGActor).Methods("POST")
 	router.HandleFunc("/evoting/services/dkg/actors", eproxy.AllowCORS).Methods("OPTIONS")
-
-	// DKG get info
-	router.HandleFunc("/evoting/services/dkg/actors/{electionID}", ep.Actor).Methods("GET")
-
-	//DKG setup or DKG begin decryption
-	router.HandleFunc("/evoting/services/dkg/actors/{electionID}", ep.EditDKGActor).Methods("PUT")
-	router.HandleFunc("/evoting/services/dkg/actors/{electionID}", eproxy.AllowCORS).Methods("OPTIONS")
+	router.HandleFunc("/evoting/services/dkg/actors/{formID}", ep.Actor).Methods("GET")
+	router.HandleFunc("/evoting/services/dkg/actors/{formID}", ep.EditDKGActor).Methods("PUT")
+	router.HandleFunc("/evoting/services/dkg/actors/{formID}", eproxy.AllowCORS).Methods("OPTIONS")
 
 	router.NotFoundHandler = http.HandlerFunc(eproxy.NotFoundHandler)
 	router.MethodNotAllowedHandler = http.HandlerFunc(eproxy.NotAllowedHandler)

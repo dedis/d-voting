@@ -1,14 +1,14 @@
-import { LightElectionInfo } from 'types/election';
-import { useFillLightElectionInfo } from './FillElectionInfo';
+import { LightFormInfo } from 'types/form';
+import { useFillLightFormInfo } from './FillFormInfo';
 
 /**
  *
- * @param {*} electionData a json object of an election
- * @returns the fields of an election and a function to change the status field
+ * @param {*} formData a json object of a form
+ * @returns the fields of a form and a function to change the status field
  */
-const ElectionFields = (electionData: LightElectionInfo) => {
-  const { title, id, status, pubKey, setStatus } = useFillLightElectionInfo(electionData);
+const FormFields = (formData: LightFormInfo) => {
+  const { title, id, status, pubKey, setStatus } = useFillLightFormInfo(formData);
   return { title, id, status, pubKey, setStatus };
 };
 
-export default ElectionFields;
+export default FormFields;

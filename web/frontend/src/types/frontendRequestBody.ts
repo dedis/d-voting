@@ -1,16 +1,16 @@
 import { ID } from './configuration';
-import { Action } from './election';
+import { Action } from './form';
 import { UserRole } from './userRole';
 
-interface NewElectionBody {
+interface NewFormBody {
   Configuration: any;
 }
 
-interface NewElectionVoteBody {
+interface NewFormVoteBody {
   Ballot: [];
 }
 
-interface EditElectionBody {
+interface EditFormBody {
   Action: Action.Open | Action.Close | Action.CombineShares | Action.Cancel;
 }
 
@@ -20,7 +20,7 @@ interface EditDKGActorBody {
 }
 
 interface NewDKGBody {
-  ElectionID: ID;
+  FormID: ID;
   Proxy: string;
 }
 
@@ -43,9 +43,9 @@ interface UpdateProxyAddress {
 }
 
 export type {
-  NewElectionVoteBody,
-  NewElectionBody,
-  EditElectionBody,
+  NewFormVoteBody,
+  NewFormBody,
+  EditFormBody,
   EditDKGActorBody,
   NewDKGBody,
   NewProxyAddress,

@@ -47,25 +47,25 @@ type controller struct{}
 // Build implements node.Initializer.
 func (m controller) SetCommands(builder node.Builder) {
 
-	electionIDFlag := cli.StringFlag{
-		Name:     "electionID",
-		Usage:    "the election ID, formatted in hexadecimal",
+	formIDFlag := cli.StringFlag{
+		Name:     "formID",
+		Usage:    "the form ID, formatted in hexadecimal",
 		Required: true,
 	}
 
 	cmd := builder.SetCommand("dkg")
 	cmd.SetDescription("interact with the DKG service")
 
-	// memcoin --config /tmp/node1 dkg init --electionID electionID
+	// memcoin --config /tmp/node1 dkg init --formID formID
 	sub := cmd.SetSubCommand("init")
-	sub.SetDescription("initialize the DKG protocol for a given election")
-	sub.SetFlags(electionIDFlag)
+	sub.SetDescription("initialize the DKG protocol for a given form")
+	sub.SetFlags(formIDFlag)
 	sub.SetAction(builder.MakeAction(&initAction{}))
 
-	// memcoin --config /tmp/node1 dkg setup --electionID electionID
+	// memcoin --config /tmp/node1 dkg setup --formID formID
 	sub = cmd.SetSubCommand("setup")
 	sub.SetDescription("create the public distributed key and the private share on each node")
-	sub.SetFlags(electionIDFlag)
+	sub.SetFlags(formIDFlag)
 	sub.SetAction(builder.MakeAction(&setupAction{}))
 
 	sub = cmd.SetSubCommand("export")
@@ -74,7 +74,7 @@ func (m controller) SetCommands(builder node.Builder) {
 
 	sub = cmd.SetSubCommand("getPublicKey")
 	sub.SetDescription("print the distributed public key")
-	sub.SetFlags(electionIDFlag)
+	sub.SetFlags(formIDFlag)
 	sub.SetAction(builder.MakeAction(&getPublicKeyAction{}))
 
 	sub = cmd.SetSubCommand("registerHandlers")
@@ -151,9 +151,9 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 		return xerrors.Errorf("failed to make client: %v", err)
 	}
 
-	electionFac := etypes.NewElectionFactory(etypes.CiphervoteFactory{}, rosterFac)
+	formFac := etypes.NewFormFactory(etypes.CiphervoteFactory{}, rosterFac)
 
-	dkg := pedersen.NewPedersen(no, srvc, p, electionFac, signer)
+	dkg := pedersen.NewPedersen(no, srvc, p, formFac, signer)
 
 	// Use dkgMap to fill the actors map
 	err = db.View(func(tx kv.ReadableTx) error {
@@ -162,7 +162,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 			return nil
 		}
 
-		return bucket.ForEach(func(electionIDBuf, handlerDataBuf []byte) error {
+		return bucket.ForEach(func(formIDBuf, handlerDataBuf []byte) error {
 
 			handlerData := pedersen.HandlerData{}
 			err = json.Unmarshal(handlerDataBuf, &handlerData)
@@ -170,7 +170,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 				return err
 			}
 
-			_, err = dkg.NewActor(electionIDBuf, p, signed.NewManager(signer, &client), handlerData)
+			_, err = dkg.NewActor(formIDBuf, p, signed.NewManager(signer, &client), handlerData)
 			if err != nil {
 				return err
 			}
