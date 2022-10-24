@@ -31,12 +31,7 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
           ? t('fillText', { minText: min, singularPlural: t('pluralAnswers') })
           : t('fillText', { minText: min, singularPlural: t('singularAnswer') });
     }
-    return (
-      <div className="text-sm pl-2 pb-2 text-gray-400">
-        <div className="space-x-2 flex flex-row"></div>
-        <div className="font-semibold ml-6 mt-1">{requirements}</div>
-      </div>
-    );
+    return <div>{requirements}</div>;
   };
 
   const handleTextInput = (e: React.ChangeEvent<HTMLTextAreaElement>, choiceIndex: number) => {
@@ -115,7 +110,7 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
           <Popover.Button>
             <QuestionMarkCircleIcon className="flex-none mt-1 h-4 w-4" />
           </Popover.Button>
-          <Popover.Panel className="flex overflow-hidden p-2 mt-1 ml-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
+          <Popover.Panel className="flex overflow-hidden p-2 mt-1 ml-2  divide-y divide-gray-100 rounded-md bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
             {<div>{text.Hint}</div>}
           </Popover.Panel>
         </Popover>
