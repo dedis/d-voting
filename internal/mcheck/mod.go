@@ -87,9 +87,9 @@ func ifTooLong(line string, pass *analysis.Pass, c *ast.Comment) {
 	}
 }
 
-// runComment loops over all the files in the package, and for each file it loops
-// over all the comments in the file, and for each comment it loops over
-// all the lines in the comment, and for each line it checks
+// runComment loops over all the files in the package, and for each file it
+// loops over all the comments in the file, and for each comment it loops
+// over all the lines in the comment, and for each line it checks
 // if the line is too long
 func runComment(pass *analysis.Pass) (interface{}, error) {
 fileLoop:
