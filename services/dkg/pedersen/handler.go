@@ -23,6 +23,7 @@ import (
 
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
+	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
@@ -70,12 +71,14 @@ type Handler struct {
 
 	log     zerolog.Logger
 	running bool
+
+	status *dkg.Status
 }
 
 // NewHandler creates a new handler
 func NewHandler(me mino.Address, service ordering.Service, pool pool.Pool,
 	txnmngr txn.Manager, pubSharesSigner crypto.Signer, handlerData HandlerData,
-	context serde.Context, electionFac serde.Factory) *Handler {
+	context serde.Context, electionFac serde.Factory, status *dkg.Status) *Handler {
 
 	privKey := handlerData.PrivKey
 	pubKey := handlerData.PubKey
@@ -101,6 +104,8 @@ func NewHandler(me mino.Address, service ordering.Service, pool pool.Pool,
 
 		log:     log,
 		running: false,
+
+		status: status,
 	}
 }
 
@@ -255,12 +260,15 @@ func (h *Handler) start(start types.Start, deals, resps *list.List, from mino.Ad
 // doDKG calls the subsequent DKG steps
 func (h *Handler) doDKG(deals, resps *list.List, out mino.Sender, from mino.Address) {
 	h.log.Info().Str("action", "deal").Msg("new state")
+	*h.status = dkg.Status{Status: dkg.Dealing}
 	h.deal(out)
 
 	h.log.Info().Str("action", "respond").Msg("new state")
+	*h.status = dkg.Status{Status: dkg.Responding}
 	h.respond(deals, out)
 
 	h.log.Info().Str("action", "certify").Msg("new state")
+	*h.status = dkg.Status{Status: dkg.Certifying}
 	err := h.certify(resps, out)
 	if err != nil {
 		dela.Logger.Error().Msgf("failed to certify: %v", err)
@@ -268,6 +276,7 @@ func (h *Handler) doDKG(deals, resps *list.List, out mino.Sender, from mino.Addr
 	}
 
 	h.log.Info().Str("action", "finalize").Msg("new state")
+	*h.status = dkg.Status{Status: dkg.Certified}
 
 	// Send back the public DKG key
 	distKey, err := h.dkg.DistKeyShare()

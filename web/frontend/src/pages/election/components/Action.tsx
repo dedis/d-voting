@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 
 import { ID } from 'types/configuration';
 import { OngoingAction, Status } from 'types/election';
-import { NodeStatus } from 'types/node';
 import useChangeAction from './utils/useChangeAction';
 
 type ActionProps = {
@@ -19,8 +18,6 @@ type ActionProps = {
   setOngoingAction: (action: OngoingAction) => void;
   nodeToSetup: [string, string];
   setNodeToSetup: ([node, proxy]: [string, string]) => void;
-  DKGStatuses: Map<string, NodeStatus>;
-  setDKGStatuses: (dkgStatuses: Map<string, NodeStatus>) => void;
 };
 
 const Action: FC<ActionProps> = ({
@@ -36,8 +33,6 @@ const Action: FC<ActionProps> = ({
   setOngoingAction,
   nodeToSetup,
   setNodeToSetup,
-  DKGStatuses,
-  setDKGStatuses,
 }) => {
   const { getAction, modalClose, modalCancel, modalDelete, modalSetup } = useChangeAction(
     status,
@@ -51,9 +46,7 @@ const Action: FC<ActionProps> = ({
     ongoingAction,
     setOngoingAction,
     nodeToSetup,
-    setNodeToSetup,
-    DKGStatuses,
-    setDKGStatuses
+    setNodeToSetup
   );
 
   return (

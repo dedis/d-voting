@@ -44,8 +44,9 @@ const pollDKG = (
   request: RequestInit,
   validate: (status: NodeStatus) => boolean,
   interval: number,
-  maxAttempts: number
-) => {
+  maxAttempts: number,
+  status: (status: NodeStatus) => void
+): Promise<DKGInfo> => {
   let attempts = 0;
 
   const executePoll = async (resolve, reject) => {
@@ -67,6 +68,8 @@ const pollDKG = (
       if (!response.ok) {
         throw new Error(JSON.stringify(result));
       }
+
+      status(result.Status);
 
       if (validate(result.Status)) {
         return resolve(result);
@@ -94,7 +97,7 @@ const pollDKG = (
     }
   };
 
-  return new Promise(executePoll);
+  return new Promise<DKGInfo>(executePoll);
 };
 
 export { pollElection, pollDKG };

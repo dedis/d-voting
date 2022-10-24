@@ -17,4 +17,5 @@ ${dela_bin} \
     --public ${dela_public} \
     --proxykey ${dela_proxy_pk} \
     --certKey ${dela_cert_key} \
-    --certChain ${dela_cert_chain}
+    --certChain ${dela_cert_chain} \
+    --routing ${dela_routing}
