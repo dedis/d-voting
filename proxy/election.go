@@ -84,7 +84,6 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// create the form
 	createForm := types.CreateForm{
 		Configuration: req.Configuration,
 		AdminID:       req.AdminID,
@@ -105,7 +104,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//hash the transaction
+	// hash the transaction
 	hash := sha256.New()
 	hash.Write(txID)
 	formID := hash.Sum(nil)
@@ -115,7 +114,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 		FormID: hex.EncodeToString(formID),
 	}
 
-	//sign the response
+	// sign the response
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {

@@ -55,7 +55,6 @@ func (d dkg) NewDKGActor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// decode the formID
 	formIDBuf, err := hex.DecodeString(req.FormID)
 	if err != nil {
 		http.Error(w, "failed to decode formID: "+req.FormID,
@@ -88,14 +87,12 @@ func (d dkg) Actor(w http.ResponseWriter, r *http.Request) {
 
 	formID := vars["formID"]
 
-	// decode the formID
 	formIDBuf, err := hex.DecodeString(formID)
 	if err != nil {
 		BadRequestError(w, r, xerrors.Errorf("failed to decode formID: %v", err), nil)
 		return
 	}
 
-	// get the actor
 	actor, found := d.dkgService.GetActor(formIDBuf)
 	if !found {
 		NotFoundErr(w, r, xerrors.New("actor not found"), nil)
@@ -144,7 +141,6 @@ func (d dkg) EditDKGActor(w http.ResponseWriter, r *http.Request) {
 
 	formID := vars["formID"]
 
-	// decode the formID
 	formIDBuf, err := hex.DecodeString(formID)
 	if err != nil {
 		http.Error(w, "failed to decode formID: "+formID, http.StatusBadRequest)

@@ -24,9 +24,9 @@ func NewShuffle(actor shuffleSrv.Actor, pk kyber.Point) Shuffle {
 //
 // - implements proxy.Shuffle
 type shuffle struct {
-	// actor - the shuffle actor
+	// actor is the shuffle actor
 	actor shuffleSrv.Actor
-	// pk - the public key of the proxy
+	// pk is the public key of the proxy
 	pk kyber.Point
 }
 
@@ -42,7 +42,7 @@ func (s shuffle) EditShuffle(w http.ResponseWriter, r *http.Request) {
 
 	formID := vars["formID"]
 
-	// decode the formID
+
 	buff, err := hex.DecodeString(formID)
 	if err != nil {
 		http.Error(w, "failed to decode formID: "+formID, http.StatusInternalServerError)
