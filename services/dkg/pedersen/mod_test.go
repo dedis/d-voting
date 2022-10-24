@@ -338,6 +338,7 @@ func TestPedersen_Setup(t *testing.T) {
 		},
 		context:     serdecontext,
 		electionFac: electionFac,
+		status: &dkg.Status{},
 	}
 
 	// Wrong electionID

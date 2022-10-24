@@ -13,6 +13,7 @@ import (
 	"go.dedis.ch/dela/serde/json"
 
 	"github.com/dedis/d-voting/internal/testing/fake"
+	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/mino"
@@ -107,6 +108,7 @@ func TestHandler_Start(t *testing.T) {
 	h := Handler{
 		startRes: &state{},
 		privKey:  privKey,
+		status: &dkg.Status{},
 	}
 	start := types.NewStart(
 		[]mino.Address{fake.NewAddress(0)},
