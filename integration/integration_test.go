@@ -81,36 +81,36 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 			require.NoError(t, err)
 		}
 
-		// ##### CREATE ELECTION #####
-		electionID, err := createElection(m, "Three votes election", adminID)
+		// ##### CREATE FORM #####
+		formID, err := createForm(m, "Three votes form", adminID)
 		require.NoError(t, err)
 
 		time.Sleep(time.Second * 1)
 
 		// ##### SETUP DKG #####
-		actor, err := initDkg(nodes, electionID, m.m)
+		actor, err := initDkg(nodes, formID, m.m)
 		require.NoError(t, err)
 
-		// ##### OPEN ELECTION #####
-		err = openElection(m, electionID)
+		// ##### OPEN FORM #####
+		err = openForm(m, formID)
 		require.NoError(t, err)
 
-		electionFac := types.NewElectionFactory(types.CiphervoteFactory{}, nodes[0].GetRosterFac())
+		formFac := types.NewFormFactory(types.CiphervoteFactory{}, nodes[0].GetRosterFac())
 
 		t.Logf("start casting votes")
-		election, err := getElection(electionFac, electionID, nodes[0].GetOrdering())
+		form, err := getForm(formFac, formID, nodes[0].GetOrdering())
 		require.NoError(t, err)
 
-		castedVotes, err := castVotesRandomly(m, actor, election, numVotes)
+		castedVotes, err := castVotesRandomly(m, actor, form, numVotes)
 		require.NoError(t, err)
 
 		fmt.Println("casted votes:", castedVotes)
 
-		// ##### CLOSE ELECTION #####
-		err = closeElection(m, electionID, adminID)
+		// ##### CLOSE FORM #####
+		err = closeForm(m, formID, adminID)
 		require.NoError(t, err)
 
-		err = waitForStatus(types.Closed, electionFac, electionID, nodes, numNodes,
+		err = waitForStatus(types.Closed, formFac, formID, nodes, numNodes,
 			5*time.Second)
 		require.NoError(t, err)
 
@@ -122,50 +122,50 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		time.Sleep(time.Second * 1)
 
 		t.Logf("shuffling")
-		err = sActor.Shuffle(electionID)
+		err = sActor.Shuffle(formID)
 		require.NoError(t, err)
 
-		err = waitForStatus(types.ShuffledBallots, electionFac, electionID, nodes,
+		err = waitForStatus(types.ShuffledBallots, formFac, formID, nodes,
 			numNodes, 2*time.Second*time.Duration(numNodes))
 		require.NoError(t, err)
 
 		// ##### SUBMIT PUBLIC SHARES #####
 		t.Logf("submitting public shares")
 
-		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
+		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
 		require.NoError(t, err)
 		err = actor.ComputePubshares()
 		require.NoError(t, err)
 
-		err = waitForStatus(types.PubSharesSubmitted, electionFac, electionID, nodes,
+		err = waitForStatus(types.PubSharesSubmitted, formFac, formID, nodes,
 			numNodes, 6*time.Second*time.Duration(numNodes))
 		require.NoError(t, err)
 
 		// ##### DECRYPT BALLOTS #####
 		t.Logf("decrypting")
 
-		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
-		t.Logf("PubsharesUnit: %v", election.PubsharesUnits)
+		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
+		t.Logf("PubsharesUnit: %v", form.PubsharesUnits)
 		require.NoError(t, err)
-		err = decryptBallots(m, actor, election)
+		err = decryptBallots(m, actor, form)
 		require.NoError(t, err)
 
-		err = waitForStatus(types.ResultAvailable, electionFac, electionID, nodes,
+		err = waitForStatus(types.ResultAvailable, formFac, formID, nodes,
 			numNodes, 1500*time.Millisecond*time.Duration(numVotes))
 		require.NoError(t, err)
 
 		t.Logf("get vote proof")
-		election, err = getElection(electionFac, electionID, nodes[0].GetOrdering())
+		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
 		require.NoError(t, err)
 
-		fmt.Println("Title of the election : " + election.Configuration.MainTitle)
-		fmt.Println("ID of the election : " + string(election.ElectionID))
-		fmt.Println("Status of the election : " + strconv.Itoa(int(election.Status)))
-		fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(election.DecryptedBallots)))
+		fmt.Println("Title of the form : " + form.Configuration.MainTitle)
+		fmt.Println("ID of the form : " + string(form.FormID))
+		fmt.Println("Status of the form : " + strconv.Itoa(int(form.Status)))
+		fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(form.DecryptedBallots)))
 
-		require.Len(t, election.DecryptedBallots, len(castedVotes))
+		require.Len(t, form.DecryptedBallots, len(castedVotes))
 
-		for _, b := range election.DecryptedBallots {
+		for _, b := range form.DecryptedBallots {
 			ok := false
 			for _, casted := range castedVotes {
 				if b.Equal(casted) {
@@ -284,24 +284,24 @@ func grantAccess(m txManager, signer crypto.Signer) error {
 	return nil
 }
 
-func createElection(m txManager, title string, admin string) ([]byte, error) {
+func createForm(m txManager, title string, admin string) ([]byte, error) {
 	// Define the configuration :
 	configuration := fake.BasicConfiguration
 
-	createElection := types.CreateElection{
+	createForm := types.CreateForm{
 		Configuration: configuration,
 		AdminID:       admin,
 	}
 
-	data, err := createElection.Serialize(serdecontext)
+	data, err := createForm.Serialize(serdecontext)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to serialize: %v", err)
 	}
 
 	args := []txn.Arg{
 		{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
-		{Key: evoting.ElectionArg, Value: data},
-		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCreateElection)},
+		{Key: evoting.FormArg, Value: data},
+		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCreateForm)},
 	}
 
 	txID, err := m.addAndWait(args...)
@@ -309,28 +309,28 @@ func createElection(m txManager, title string, admin string) ([]byte, error) {
 		return nil, xerrors.Errorf(addAndWaitErr, err)
 	}
 
-	// Calculate electionID from
+	// Calculate formID from
 	hash := sha256.New()
 	hash.Write(txID)
-	electionID := hash.Sum(nil)
+	formID := hash.Sum(nil)
 
-	return electionID, nil
+	return formID, nil
 }
 
-func openElection(m txManager, electionID []byte) error {
-	openElection := &types.OpenElection{
-		ElectionID: hex.EncodeToString(electionID),
+func openForm(m txManager, formID []byte) error {
+	openForm := &types.OpenForm{
+		FormID: hex.EncodeToString(formID),
 	}
 
-	data, err := openElection.Serialize(serdecontext)
+	data, err := openForm.Serialize(serdecontext)
 	if err != nil {
-		return xerrors.Errorf("failed to serialize open election: %v", err)
+		return xerrors.Errorf("failed to serialize open form: %v", err)
 	}
 
 	args := []txn.Arg{
 		{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
-		{Key: evoting.ElectionArg, Value: data},
-		{Key: evoting.CmdArg, Value: []byte(evoting.CmdOpenElection)},
+		{Key: evoting.FormArg, Value: data},
+		{Key: evoting.CmdArg, Value: []byte(evoting.CmdOpenForm)},
 	}
 
 	_, err = m.addAndWait(args...)
@@ -341,34 +341,34 @@ func openElection(m txManager, electionID []byte) error {
 	return nil
 }
 
-func getElection(electionFac serde.Factory, electionID []byte,
-	service ordering.Service) (types.Election, error) {
+func getForm(formFac serde.Factory, formID []byte,
+	service ordering.Service) (types.Form, error) {
 
-	election := types.Election{}
+	form := types.Form{}
 
-	proof, err := service.GetProof(electionID)
+	proof, err := service.GetProof(formID)
 	if err != nil {
-		return election, xerrors.Errorf("failed to GetProof: %v", err)
+		return form, xerrors.Errorf("failed to GetProof: %v", err)
 	}
 
 	if proof == nil {
-		return election, xerrors.Errorf("election does not exist: %v", err)
+		return form, xerrors.Errorf("form does not exist: %v", err)
 	}
 
-	message, err := electionFac.Deserialize(serdecontext, proof.GetValue())
+	message, err := formFac.Deserialize(serdecontext, proof.GetValue())
 	if err != nil {
-		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
+		return form, xerrors.Errorf("failed to deserialize Form: %v", err)
 	}
 
-	election, ok := message.(types.Election)
+	form, ok := message.(types.Form)
 	if !ok {
-		return election, xerrors.Errorf("wrong message type: %T", message)
+		return form, xerrors.Errorf("wrong message type: %T", message)
 	}
 
-	return election, nil
+	return form, nil
 }
 
-func castVotesRandomly(m txManager, actor dkg.Actor, election types.Election,
+func castVotesRandomly(m txManager, actor dkg.Actor, form types.Form,
 	numberOfVotes int) ([]types.Ballot, error) {
 
 	possibleBallots := []string{
@@ -386,7 +386,7 @@ func castVotesRandomly(m txManager, actor dkg.Actor, election types.Election,
 		randomIndex := rand.Intn(len(possibleBallots))
 		vote := possibleBallots[randomIndex]
 
-		ciphervote, err := marshallBallot(strings.NewReader(vote), actor, election.ChunksPerBallot())
+		ciphervote, err := marshallBallot(strings.NewReader(vote), actor, form.ChunksPerBallot())
 		if err != nil {
 			return nil, xerrors.Errorf("failed to marshallBallot: %v", err)
 		}
@@ -394,7 +394,7 @@ func castVotesRandomly(m txManager, actor dkg.Actor, election types.Election,
 		userID := "user " + strconv.Itoa(i)
 
 		castVote := types.CastVote{
-			ElectionID: election.ElectionID,
+			FormID: form.FormID,
 			UserID:     userID,
 			Ballot:     ciphervote,
 		}
@@ -406,7 +406,7 @@ func castVotesRandomly(m txManager, actor dkg.Actor, election types.Election,
 
 		args := []txn.Arg{
 			{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
-			{Key: evoting.ElectionArg, Value: data},
+			{Key: evoting.FormArg, Value: data},
 			{Key: evoting.CmdArg, Value: []byte(evoting.CmdCastVote)},
 		}
 
@@ -416,7 +416,7 @@ func castVotesRandomly(m txManager, actor dkg.Actor, election types.Election,
 		}
 
 		var ballot types.Ballot
-		err = ballot.Unmarshal(vote, election)
+		err = ballot.Unmarshal(vote, form)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to unmarshal ballot: %v", err)
 		}
@@ -456,32 +456,32 @@ func marshallBallot(vote io.Reader, actor dkg.Actor, chunks int) (types.Ciphervo
 	return ballot, nil
 }
 
-func closeElection(m txManager, electionID []byte, admin string) error {
-	closeElection := &types.CloseElection{
-		ElectionID: hex.EncodeToString(electionID),
+func closeForm(m txManager, formID []byte, admin string) error {
+	closeForm := &types.CloseForm{
+		FormID: hex.EncodeToString(formID),
 		UserID:     admin,
 	}
 
-	data, err := closeElection.Serialize(serdecontext)
+	data, err := closeForm.Serialize(serdecontext)
 	if err != nil {
-		return xerrors.Errorf("failed to serialize open election: %v", err)
+		return xerrors.Errorf("failed to serialize open form: %v", err)
 	}
 
 	args := []txn.Arg{
 		{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
-		{Key: evoting.ElectionArg, Value: data},
-		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCloseElection)},
+		{Key: evoting.FormArg, Value: data},
+		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCloseForm)},
 	}
 
 	_, err = m.addAndWait(args...)
 	if err != nil {
-		return xerrors.Errorf("failed to Marshall closeElection: %v", err)
+		return xerrors.Errorf("failed to Marshall closeForm: %v", err)
 	}
 
 	return nil
 }
 
-func initDkg(nodes []dVotingCosiDela, electionID []byte, m txn.Manager) (dkg.Actor, error) {
+func initDkg(nodes []dVotingCosiDela, formID []byte, m txn.Manager) (dkg.Actor, error) {
 	var actor dkg.Actor
 	var err error
 
@@ -489,7 +489,7 @@ func initDkg(nodes []dVotingCosiDela, electionID []byte, m txn.Manager) (dkg.Act
 		d := node.(dVotingNode).GetDkg()
 
 		// put Listen in a goroutine to optimize for speed
-		actor, err = d.Listen(electionID, m)
+		actor, err = d.Listen(formID, m)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to GetDkg: %v", err)
 		}
@@ -524,13 +524,13 @@ func initShuffle(nodes []dVotingCosiDela) (shuffle.Actor, error) {
 	return sActor, nil
 }
 
-func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error {
-	if election.Status != types.PubSharesSubmitted {
+func decryptBallots(m txManager, actor dkg.Actor, form types.Form) error {
+	if form.Status != types.PubSharesSubmitted {
 		return xerrors.Errorf("cannot decrypt: not all pubShares submitted")
 	}
 
 	decryptBallots := types.CombineShares{
-		ElectionID: election.ElectionID,
+		FormID: form.FormID,
 	}
 
 	data, err := decryptBallots.Serialize(serdecontext)
@@ -540,7 +540,7 @@ func decryptBallots(m txManager, actor dkg.Actor, election types.Election) error
 
 	args := []txn.Arg{
 		{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
-		{Key: evoting.ElectionArg, Value: data},
+		{Key: evoting.FormArg, Value: data},
 		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCombineShares)},
 	}
 
@@ -583,20 +583,20 @@ func encodeID(ID string) types.ID {
 }
 
 // waitForStatus polls the nodes until they all updated to the expected status
-// for the given election. An error is raised if the timeout expires.
-func waitForStatus(status types.Status, electionFac types.ElectionFactory,
-	electionID []byte, nodes []dVotingCosiDela, numNodes int, timeOut time.Duration) error {
+// for the given form. An error is raised if the timeout expires.
+func waitForStatus(status types.Status, formFac types.FormFactory,
+	formID []byte, nodes []dVotingCosiDela, numNodes int, timeOut time.Duration) error {
 
 	expiration := time.Now().Add(timeOut)
 
 	isOK := func() (bool, error) {
 		for _, node := range nodes {
-			election, err := getElection(electionFac, electionID, node.GetOrdering())
+			form, err := getForm(formFac, formID, node.GetOrdering())
 			if err != nil {
-				return false, xerrors.Errorf("failed to get election: %v", err)
+				return false, xerrors.Errorf("failed to get form: %v", err)
 			}
 
-			if election.Status != status {
+			if form.Status != status {
 				return false, nil
 			}
 		}

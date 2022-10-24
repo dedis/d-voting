@@ -18,19 +18,19 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 	var m TransactionJSON
 
 	switch t := msg.(type) {
-	case types.CreateElection:
-		ce := CreateElectionJSON{
+	case types.CreateForm:
+		ce := CreateFormJSON{
 			Configuration: t.Configuration,
 			AdminID:       t.AdminID,
 		}
 
-		m = TransactionJSON{CreateElection: &ce}
-	case types.OpenElection:
-		oe := OpenElectionJSON{
-			ElectionID: t.ElectionID,
+		m = TransactionJSON{CreateForm: &ce}
+	case types.OpenForm:
+		oe := OpenFormJSON{
+			FormID: t.FormID,
 		}
 
-		m = TransactionJSON{OpenElection: &oe}
+		m = TransactionJSON{OpenForm: &oe}
 	case types.CastVote:
 		ballot, err := t.Ballot.Serialize(ctx)
 		if err != nil {
@@ -38,19 +38,19 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 		}
 
 		cv := CastVoteJSON{
-			ElectionID: t.ElectionID,
+			FormID: t.FormID,
 			UserID:     t.UserID,
 			Ciphervote: ballot,
 		}
 
 		m = TransactionJSON{CastVote: &cv}
-	case types.CloseElection:
-		ce := CloseElectionJSON{
-			ElectionID: t.ElectionID,
+	case types.CloseForm:
+		ce := CloseFormJSON{
+			FormID: t.FormID,
 			UserID:     t.UserID,
 		}
 
-		m = TransactionJSON{CloseElection: &ce}
+		m = TransactionJSON{CloseForm: &ce}
 	case types.ShuffleBallots:
 		ciphervotes := make([]json.RawMessage, len(t.ShuffledBallots))
 
@@ -64,7 +64,7 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 		}
 
 		sb := ShuffleBallotsJSON{
-			ElectionID:   t.ElectionID,
+			FormID:   t.FormID,
 			Round:        t.Round,
 			Ciphervotes:  ciphervotes,
 			RandomVector: t.RandomVector,
@@ -90,7 +90,7 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 		}
 
 		rp := RegisterPubSharesJSON{
-			ElectionID: t.ElectionID,
+			FormID: t.FormID,
 			Index:      t.Index,
 			PubShares:  pubShares,
 			Signature:  t.Signature,
@@ -100,24 +100,24 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 		m = TransactionJSON{RegisterPubShares: &rp}
 	case types.CombineShares:
 		db := CombineSharesJSON{
-			ElectionID: t.ElectionID,
+			FormID: t.FormID,
 			UserID:     t.UserID,
 		}
 
 		m = TransactionJSON{CombineShares: &db}
-	case types.CancelElection:
-		ce := CancelElectionJSON{
-			ElectionID: t.ElectionID,
+	case types.CancelForm:
+		ce := CancelFormJSON{
+			FormID: t.FormID,
 			UserID:     t.UserID,
 		}
 
-		m = TransactionJSON{CancelElection: &ce}
-	case types.DeleteElection:
-		de := DeleteElectionJSON{
-			ElectionID: t.ElectionID,
+		m = TransactionJSON{CancelForm: &ce}
+	case types.DeleteForm:
+		de := DeleteFormJSON{
+			FormID: t.FormID,
 		}
 
-		m = TransactionJSON{DeleteElection: &de}
+		m = TransactionJSON{DeleteForm: &de}
 	default:
 		return nil, xerrors.Errorf("unknown type: '%T", msg)
 	}
@@ -140,14 +140,14 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 	}
 
 	switch {
-	case m.CreateElection != nil:
-		return types.CreateElection{
-			Configuration: m.CreateElection.Configuration,
-			AdminID:       m.CreateElection.AdminID,
+	case m.CreateForm != nil:
+		return types.CreateForm{
+			Configuration: m.CreateForm.Configuration,
+			AdminID:       m.CreateForm.AdminID,
 		}, nil
-	case m.OpenElection != nil:
-		return types.OpenElection{
-			ElectionID: m.OpenElection.ElectionID,
+	case m.OpenForm != nil:
+		return types.OpenForm{
+			FormID: m.OpenForm.FormID,
 		}, nil
 	case m.CastVote != nil:
 		msg, err := decodeCastVote(ctx, *m.CastVote)
@@ -156,10 +156,10 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 		}
 
 		return msg, nil
-	case m.CloseElection != nil:
-		return types.CloseElection{
-			ElectionID: m.CloseElection.ElectionID,
-			UserID:     m.CloseElection.UserID,
+	case m.CloseForm != nil:
+		return types.CloseForm{
+			FormID: m.CloseForm.FormID,
+			UserID:     m.CloseForm.UserID,
 		}, nil
 	case m.ShuffleBallots != nil:
 		msg, err := decodeShuffleBallots(ctx, *m.ShuffleBallots)
@@ -177,17 +177,17 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 		return msg, nil
 	case m.CombineShares != nil:
 		return types.CombineShares{
-			ElectionID: m.CombineShares.ElectionID,
+			FormID: m.CombineShares.FormID,
 			UserID:     m.CombineShares.UserID,
 		}, nil
-	case m.CancelElection != nil:
-		return types.CancelElection{
-			ElectionID: m.CancelElection.ElectionID,
-			UserID:     m.CancelElection.UserID,
+	case m.CancelForm != nil:
+		return types.CancelForm{
+			FormID: m.CancelForm.FormID,
+			UserID:     m.CancelForm.UserID,
 		}, nil
-	case m.DeleteElection != nil:
-		return types.DeleteElection{
-			ElectionID: m.DeleteElection.ElectionID,
+	case m.DeleteForm != nil:
+		return types.DeleteForm{
+			FormID: m.DeleteForm.FormID,
 		}, nil
 	}
 
@@ -197,44 +197,44 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 // TransactionJSON is the JSON message that wraps the different kinds of
 // transactions.
 type TransactionJSON struct {
-	CreateElection    *CreateElectionJSON    `json:",omitempty"`
-	OpenElection      *OpenElectionJSON      `json:",omitempty"`
+	CreateForm    *CreateFormJSON    `json:",omitempty"`
+	OpenForm      *OpenFormJSON      `json:",omitempty"`
 	CastVote          *CastVoteJSON          `json:",omitempty"`
-	CloseElection     *CloseElectionJSON     `json:",omitempty"`
+	CloseForm     *CloseFormJSON     `json:",omitempty"`
 	ShuffleBallots    *ShuffleBallotsJSON    `json:",omitempty"`
 	RegisterPubShares *RegisterPubSharesJSON `json:",omitempty"`
 	CombineShares     *CombineSharesJSON     `json:",omitempty"`
-	CancelElection    *CancelElectionJSON    `json:",omitempty"`
-	DeleteElection    *DeleteElectionJSON    `json:",omitempty"`
+	CancelForm    *CancelFormJSON    `json:",omitempty"`
+	DeleteForm    *DeleteFormJSON    `json:",omitempty"`
 }
 
-// CreateElectionJSON is the JSON representation of a CreateElection transaction
-type CreateElectionJSON struct {
+// CreateFormJSON is the JSON representation of a CreateForm transaction
+type CreateFormJSON struct {
 	Configuration types.Configuration
 	AdminID       string
 }
 
-// OpenElectionJSON is the JSON representation of a OpenElection transaction
-type OpenElectionJSON struct {
-	ElectionID string
+// OpenFormJSON is the JSON representation of a OpenForm transaction
+type OpenFormJSON struct {
+	FormID string
 }
 
 // CastVoteJSON is the JSON representation of a CastVote transaction
 type CastVoteJSON struct {
-	ElectionID string
+	FormID string
 	UserID     string
 	Ciphervote json.RawMessage
 }
 
-// CloseElectionJSON is the JSON representation of a CloseElection transaction
-type CloseElectionJSON struct {
-	ElectionID string
+// CloseFormJSON is the JSON representation of a CloseForm transaction
+type CloseFormJSON struct {
+	FormID string
 	UserID     string
 }
 
 // ShuffleBallotsJSON is the JSON representation of a ShuffleBallots transaction
 type ShuffleBallotsJSON struct {
-	ElectionID   string
+	FormID   string
 	Round        int
 	Ciphervotes  []json.RawMessage
 	RandomVector types.RandomVector
@@ -244,7 +244,7 @@ type ShuffleBallotsJSON struct {
 }
 
 type RegisterPubSharesJSON struct {
-	ElectionID string
+	FormID string
 	Index      int
 	PubShares  PubsharesUnitJSON
 	Signature  []byte
@@ -253,19 +253,19 @@ type RegisterPubSharesJSON struct {
 
 // CombineSharesJSON is the JSON representation of a CombineShares transaction
 type CombineSharesJSON struct {
-	ElectionID string
+	FormID string
 	UserID     string
 }
 
-// CancelElectionJSON is the JSON representation of a CancelElection transaction
-type CancelElectionJSON struct {
-	ElectionID string
+// CancelFormJSON is the JSON representation of a CancelForm transaction
+type CancelFormJSON struct {
+	FormID string
 	UserID     string
 }
 
-// DeleteElectionJSON is the JSON representation of a DeleteElection transaction
-type DeleteElectionJSON struct {
-	ElectionID string
+// DeleteFormJSON is the JSON representation of a DeleteForm transaction
+type DeleteFormJSON struct {
+	FormID string
 }
 
 func decodeCastVote(ctx serde.Context, m CastVoteJSON) (serde.Message, error) {
@@ -285,7 +285,7 @@ func decodeCastVote(ctx serde.Context, m CastVoteJSON) (serde.Message, error) {
 	}
 
 	return types.CastVote{
-		ElectionID: m.ElectionID,
+		FormID: m.FormID,
 		UserID:     m.UserID,
 		Ballot:     ciphervote,
 	}, nil
@@ -314,7 +314,7 @@ func decodeShuffleBallots(ctx serde.Context, m ShuffleBallotsJSON) (serde.Messag
 	}
 
 	return types.ShuffleBallots{
-		ElectionID:      m.ElectionID,
+		FormID:      m.FormID,
 		Round:           m.Round,
 		ShuffledBallots: ciphervotes,
 		RandomVector:    m.RandomVector,
@@ -342,7 +342,7 @@ func decodeRegisterPubShares(m RegisterPubSharesJSON) (serde.Message, error) {
 	}
 
 	return types.RegisterPubShares{
-		ElectionID: m.ElectionID,
+		FormID: m.FormID,
 		Index:      m.Index,
 		Pubshares:  pubShares,
 		Signature:  m.Signature,

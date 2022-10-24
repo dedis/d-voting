@@ -38,13 +38,13 @@ type Handler struct {
 	txmngr        txn.Manager
 	shuffleSigner crypto.Signer
 	context       serde.Context
-	electionFac   serde.Factory
+	formFac   serde.Factory
 }
 
 // NewHandler creates a new handler
 func NewHandler(me mino.Address, service ordering.Service, p pool.Pool,
 	txmngr txn.Manager, shuffleSigner crypto.Signer, ctx serde.Context,
-	electionFac serde.Factory) *Handler {
+	formFac serde.Factory) *Handler {
 
 	return &Handler{
 		me:            me,
@@ -53,7 +53,7 @@ func NewHandler(me mino.Address, service ordering.Service, p pool.Pool,
 		txmngr:        txmngr,
 		shuffleSigner: shuffleSigner,
 		context:       ctx,
-		electionFac:   electionFac,
+		formFac:   formFac,
 	}
 }
 
@@ -70,7 +70,7 @@ func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 
 	switch msg := msg.(type) {
 	case types.StartShuffle:
-		err := h.handleStartShuffle(msg.GetElectionId())
+		err := h.handleStartShuffle(msg.GetFormId())
 		if err != nil {
 			return xerrors.Errorf("failed to handle StartShuffle message: %v", err)
 		}
@@ -81,7 +81,7 @@ func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 	return nil
 }
 
-func (h *Handler) handleStartShuffle(electionID string) error {
+func (h *Handler) handleStartShuffle(formID string) error {
 	dela.Logger.Info().Msg("Starting the neff shuffle protocol ...")
 
 	err := h.txmngr.Sync()
@@ -91,28 +91,28 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 
 	// loop until the threshold is reached or our transaction has been accepted
 	for {
-		election, err := getElection(h.electionFac, h.context, electionID, h.service)
+		form, err := getForm(h.formFac, h.context, formID, h.service)
 		if err != nil {
-			return xerrors.Errorf("failed to get election: %v", err)
+			return xerrors.Errorf("failed to get form: %v", err)
 		}
 
-		round := len(election.ShuffleInstances)
+		round := len(form.ShuffleInstances)
 
 		// check if the threshold is reached
-		if round >= election.ShuffleThreshold {
+		if round >= form.ShuffleThreshold {
 			dela.Logger.Info().Msgf("shuffle done with round n°%d", round)
 			return nil
 		}
 
-		if election.Status != etypes.Closed {
-			return xerrors.Errorf("the election must be closed: (%v)", election.Status)
+		if form.Status != etypes.Closed {
+			return xerrors.Errorf("the form must be closed: (%v)", form.Status)
 		}
 
-		tx, err := makeTx(h.context, &election, h.txmngr, h.shuffleSigner)
+		tx, err := makeTx(h.context, &form, h.txmngr, h.shuffleSigner)
 		if err != nil {
 			return xerrors.Errorf("failed to make tx: %v", err)
 		}
-		watchTimeout := 4 + election.ShuffleThreshold/2
+		watchTimeout := 4 + form.ShuffleThreshold/2
 		watchCtx, cancel := context.WithTimeout(context.Background(), time.Duration(watchTimeout)*time.Second)
 		defer cancel()
 
@@ -151,17 +151,17 @@ func (h *Handler) handleStartShuffle(electionID string) error {
 	}
 }
 
-func makeTx(ctx serde.Context, election *etypes.Election, manager txn.Manager,
+func makeTx(ctx serde.Context, form *etypes.Form, manager txn.Manager,
 	shuffleSigner crypto.Signer) (txn.Transaction, error) {
 
-	shuffledBallots, getProver, err := getShuffledBallots(election)
+	shuffledBallots, getProver, err := getShuffledBallots(form)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get shuffled ballots: %v", err)
 	}
 
 	shuffleBallots := etypes.ShuffleBallots{
-		ElectionID:      election.ElectionID,
-		Round:           len(election.ShuffleInstances),
+		FormID:      form.FormID,
+		Round:           len(form.ShuffleInstances),
 		ShuffledBallots: shuffledBallots,
 	}
 
@@ -180,9 +180,9 @@ func makeTx(ctx serde.Context, election *etypes.Election, manager txn.Manager,
 		return nil, xerrors.Errorf("could not create semi-random stream: %v", err)
 	}
 
-	e := make([]kyber.Scalar, election.ChunksPerBallot())
+	e := make([]kyber.Scalar, form.ChunksPerBallot())
 
-	for i := 0; i < election.ChunksPerBallot(); i++ {
+	for i := 0; i < form.ChunksPerBallot(); i++ {
 		v := suite.Scalar().Pick(semiRandomStream)
 		e[i] = v
 	}
@@ -240,7 +240,7 @@ func makeTx(ctx serde.Context, election *etypes.Election, manager txn.Manager,
 		Value: []byte(evoting.CmdShuffleBallots),
 	}
 	args[2] = txn.Arg{
-		Key:   evoting.ElectionArg,
+		Key:   evoting.FormArg,
 		Value: data,
 	}
 
@@ -255,17 +255,17 @@ func makeTx(ctx serde.Context, election *etypes.Election, manager txn.Manager,
 }
 
 // getShuffledBallots returns the shuffled ballots with the shuffling proof.
-func getShuffledBallots(election *etypes.Election) ([]etypes.Ciphervote,
+func getShuffledBallots(form *etypes.Form) ([]etypes.Ciphervote,
 	func(e []kyber.Scalar) (proof.Prover, error), error) {
 
-	round := len(election.ShuffleInstances)
+	round := len(form.ShuffleInstances)
 
 	var ciphervotes []etypes.Ciphervote
 
 	if round == 0 {
-		ciphervotes = election.Suffragia.Ciphervotes
+		ciphervotes = form.Suffragia.Ciphervotes
 	} else {
-		ciphervotes = election.ShuffleInstances[round-1].ShuffledBallots
+		ciphervotes = form.ShuffleInstances[round-1].ShuffledBallots
 	}
 
 	seqSize := len(ciphervotes[0])
@@ -284,7 +284,7 @@ func getShuffledBallots(election *etypes.Election) ([]etypes.Ciphervote,
 	}
 
 	// shuffle sequences
-	XX, YY, getProver := shuffleKyber.SequencesShuffle(suite, nil, election.Pubkey,
+	XX, YY, getProver := shuffleKyber.SequencesShuffle(suite, nil, form.Pubkey,
 		X, Y, suite.RandomStream())
 
 	ciphervotes, err := etypes.CiphervotesFromPairs(XX, YY)
