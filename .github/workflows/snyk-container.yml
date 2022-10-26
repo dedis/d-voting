@@ -11,7 +11,7 @@
 # issues, monitor images for newly disclosed vulnerabilities in Snyk and
 # fail PR checks for new vulnerabilities, see https://github.com/snyk/actions/
 
-name: Example workflow for Go using Snyk
+name: Example workflow using Snyk
 on: push
 jobs:
   security:
@@ -23,5 +23,4 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=high
-        command: monitor
+          command: monitor
