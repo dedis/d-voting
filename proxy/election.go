@@ -637,7 +637,6 @@ func (h *form) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
 		return nil, xerrors.Errorf("failed to sync manager: %v", err)
 	}
 
-
 	tx, err := createTransaction(h.mngr, cmd, cmdArg, payload)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to create transaction: %v", err)
