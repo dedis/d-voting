@@ -42,7 +42,6 @@ func (s shuffle) EditShuffle(w http.ResponseWriter, r *http.Request) {
 
 	formID := vars["formID"]
 
-
 	buff, err := hex.DecodeString(formID)
 	if err != nil {
 		http.Error(w, "failed to decode formID: "+formID, http.StatusInternalServerError)
