@@ -164,7 +164,6 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	ciphervote := make(types.Ciphervote, len(req.Ballot))
 
 	// encrypt the vote 
