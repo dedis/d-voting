@@ -2,7 +2,6 @@ import * as yup from 'yup';
 
 const idSchema = yup.string().min(1).required();
 const titleSchema = yup.string().required();
-const hintSchema = yup.string();
 
 const selectsSchema = yup.object({
   ID: yup.lazy(() => idSchema),
@@ -202,7 +201,6 @@ const ranksSchema = yup.object({
 const textsSchema = yup.object({
   ID: yup.lazy(() => idSchema),
   Title: yup.lazy(() => titleSchema),
-  Hint: yup.lazy(() => hintSchema),
   MaxN: yup
     .number()
     .test({
@@ -311,6 +309,7 @@ const textsSchema = yup.object({
       },
     })
     .required(),
+  Hint: yup.lazy(() => yup.string().optional()),
 });
 
 const subjectSchema = yup.object({

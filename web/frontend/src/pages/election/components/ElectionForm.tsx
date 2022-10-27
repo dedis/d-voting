@@ -105,7 +105,7 @@ const ElectionForm: FC<ElectionFormProps> = () => {
     const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(JSON.stringify(data))}`;
     const link = document.createElement('a');
     link.href = jsonString;
-    link.download = 'election_configuration.json';
+    link.download = `election_configuration.json`;
     link.click();
   };
 
