@@ -31,7 +31,7 @@
                   "type": "array",
                   "items": { "type": "string" }
                 },
-                "Hint" : { "type" : "string" }
+                "Hint": { "type": "string" }
               },
               "required": ["ID", "Title", "MaxN", "MinN", "Choices"],
               "additionalProperties": false
@@ -50,7 +50,7 @@
                   "type": "array",
                   "items": { "type": "string" }
                 },
-                "Hint" : { "type" : "string" }
+                "Hint": { "type": "string" }
               },
               "required": ["ID", "Title", "MaxN", "MinN", "Choices"],
               "additionalProperties": false
@@ -71,7 +71,7 @@
                   "type": "array",
                   "items": { "type": "string" }
                 },
-                "Hint" : { "type" : "string" }
+                "Hint": { "type": "string" }
               },
               "required": ["ID", "Title", "MaxN", "MinN", "Regex", "MaxLength", "Choices"],
               "additionalProperties": false
