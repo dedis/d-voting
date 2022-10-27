@@ -42,11 +42,11 @@ type Ballot struct {
 
 // Unmarshal decodes the given string according to the format described in
 // "state of smart contract.md"
-func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
-	if len(marshalledBallot) > election.BallotSize {
+func (b *Ballot) Unmarshal(marshalledBallot string, form Form) error {
+	if len(marshalledBallot) > form.BallotSize {
 		b.invalidate()
 		return fmt.Errorf("ballot has an unexpected size %d, expected <= %d",
-			len(marshalledBallot), election.BallotSize)
+			len(marshalledBallot), form.BallotSize)
 	}
 
 	lines := strings.Split(marshalledBallot, "\n")
@@ -78,7 +78,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 			return xerrors.Errorf("could not decode question ID: %v", err)
 		}
 
-		q := election.Configuration.GetQuestion(ID(questionID))
+		q := form.Configuration.GetQuestion(ID(questionID))
 
 		if q == nil {
 			b.invalidate()
@@ -363,10 +363,10 @@ func (s *Subject) isValid(uniqueIDs map[ID]bool) bool {
 		}
 	}
 
-	for _, selection := range s.Selects {
-		uniqueIDs[selection.ID] = true
+	for _, sform := range s.Selects {
+		uniqueIDs[sform.ID] = true
 
-		if !isValid(selection) {
+		if !isValid(sform) {
 			return false
 		}
 	}
@@ -401,7 +401,7 @@ func (s *Subject) isValid(uniqueIDs map[ID]bool) bool {
 	return true
 }
 
-// Question is an interface offering the primitives all questions should have to
+// Question is an offering the primitives all questions should have to
 // verify the validity of an answer on a decrypted ballot.
 type Question interface {
 	GetMaxN() uint
@@ -447,20 +447,20 @@ func (s Select) GetChoicesLength() int {
 
 // unmarshalAnswers interprets the given raw answers into a slice of bool with
 // the answer for each choice and ensure the answers are correctly formatted
-func (s Select) unmarshalAnswers(selections []string) ([]bool, error) {
-	if len(selections) != len(s.Choices) {
+func (s Select) unmarshalAnswers(sforms []string) ([]bool, error) {
+	if len(sforms) != len(s.Choices) {
 		return nil, fmt.Errorf("question %s has a wrong number of answers:"+
-			" expected %d got %d", s.ID, len(s.Choices), len(selections))
+			" expected %d got %d", s.ID, len(s.Choices), len(sforms))
 	}
 
 	var selected uint = 0
 	results := make([]bool, 0)
 
-	for _, selection := range selections {
-		b, err := strconv.ParseBool(selection)
+	for _, sform := range sforms {
+		b, err := strconv.ParseBool(sform)
 
 		if err != nil {
-			return nil, fmt.Errorf("could not parse selection value for Q.%s: %v",
+			return nil, fmt.Errorf("could not parse sform value for Q.%s: %v",
 				s.ID, err)
 		}
 

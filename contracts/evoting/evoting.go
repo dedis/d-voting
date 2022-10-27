@@ -32,7 +32,7 @@ import (
 const (
 	shufflingProtocolName = "PairShuffle"
 	errGetTransaction     = "failed to get transaction: %v"
-	errGetElection        = "failed to get election: %v"
+	errGetForm            = "failed to get form: %v"
 	errWrongTx            = "wrong type of transaction: %T"
 )
 
@@ -47,15 +47,15 @@ type evotingCommand struct {
 
 type prover func(suite proof.Suite, protocolName string, verifier proof.Verifier, proof []byte) error
 
-// createElection implements commands. It performs the CREATE_ELECTION command
-func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step) error {
+// createForm implements commands. It performs the CREATE_FORM command
+func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) error {
 
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
 	}
 
-	tx, ok := msg.(types.CreateElection)
+	tx, ok := msg.(types.CreateForm)
 	if !ok {
 		return xerrors.Errorf(errWrongTx, msg)
 	}
@@ -70,13 +70,13 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("failed to get roster: %v", err)
 	}
 
-	// Get the electionID, which is the SHA256 of the transaction ID
+	// Get the formID, which is the SHA256 of the transaction ID
 	h := sha256.New()
 	h.Write(step.Current.GetID())
-	electionIDBuf := h.Sum(nil)
+	formIDBuf := h.Sum(nil)
 
 	if !tx.Configuration.IsValid() {
-		return xerrors.Errorf("configuration of election is incoherent or has duplicated IDs")
+		return xerrors.Errorf("configuration of form is incoherent or has duplicated IDs")
 	}
 
 	units := types.PubsharesUnits{
@@ -85,8 +85,8 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 		Indexes:   make([]int, 0),
 	}
 
-	election := types.Election{
-		ElectionID:    hex.EncodeToString(electionIDBuf),
+	form := types.Form{
+		FormID:        hex.EncodeToString(formIDBuf),
 		Configuration: tx.Configuration,
 		Status:        types.Initial,
 		// Pubkey is set by the opening command
@@ -96,49 +96,49 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 		ShuffleInstances: []types.ShuffleInstance{},
 		DecryptedBallots: []types.Ballot{},
 		// We set the participant in the e-voting once for all. If it happens
-		// that 1/3 of the participants go away, the election will never end.
+		// that 1/3 of the participants go away, the form will never end.
 		Roster:           roster,
 		ShuffleThreshold: threshold.ByzantineThreshold(roster.Len()),
 	}
 
-	PromElectionStatus.WithLabelValues(election.ElectionID).Set(float64(election.Status))
+	PromFormStatus.WithLabelValues(form.FormID).Set(float64(form.Status))
 
-	electionBuf, err := election.Serialize(e.context)
+	formBuf, err := form.Serialize(e.context)
 	if err != nil {
-		return xerrors.Errorf("failed to marshal Election : %v", err)
+		return xerrors.Errorf("failed to marshal Form : %v", err)
 	}
 
-	err = snap.Set(electionIDBuf, electionBuf)
+	err = snap.Set(formIDBuf, formBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
 
-	// Update the election metadata store
+	// Update the form metadata store
 
-	electionsMetadataBuf, err := snap.Get([]byte(ElectionsMetadataKey))
+	formsMetadataBuf, err := snap.Get([]byte(FormsMetadataKey))
 	if err != nil {
-		return xerrors.Errorf("failed to get key '%s': %v", electionsMetadataBuf, err)
+		return xerrors.Errorf("failed to get key '%s': %v", formsMetadataBuf, err)
 	}
 
-	electionsMetadata := &types.ElectionsMetadata{
-		ElectionsIDs: types.ElectionIDs{},
+	formsMetadata := &types.FormsMetadata{
+		FormsIDs: types.FormIDs{},
 	}
 
-	if len(electionsMetadataBuf) != 0 {
-		err := json.Unmarshal(electionsMetadataBuf, electionsMetadata)
+	if len(formsMetadataBuf) != 0 {
+		err := json.Unmarshal(formsMetadataBuf, formsMetadata)
 		if err != nil {
-			return xerrors.Errorf("failed to unmarshal ElectionsMetadata: %v", err)
+			return xerrors.Errorf("failed to unmarshal FormsMetadata: %v", err)
 		}
 	}
 
-	electionsMetadata.ElectionsIDs.Add(election.ElectionID)
+	formsMetadata.FormsIDs.Add(form.FormID)
 
-	electionMetadataJSON, err := json.Marshal(electionsMetadata)
+	formMetadataJSON, err := json.Marshal(formsMetadata)
 	if err != nil {
-		return xerrors.Errorf("failed to marshal ElectionsMetadata: %v", err)
+		return xerrors.Errorf("failed to marshal FormsMetadata: %v", err)
 	}
 
-	err = snap.Set([]byte(ElectionsMetadataKey), electionMetadataJSON)
+	err = snap.Set([]byte(FormsMetadataKey), formMetadataJSON)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
@@ -146,39 +146,39 @@ func (e evotingCommand) createElection(snap store.Snapshot, step execution.Step)
 	return nil
 }
 
-// openElection set the public key on the election. The public key is fetched
+// openForm set the public key on the form. The public key is fetched
 // from the DKG actor. It works only if DKG is set up.
-func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) error {
+func (e evotingCommand) openForm(snap store.Snapshot, step execution.Step) error {
 
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
 	}
 
-	tx, ok := msg.(types.OpenElection)
+	tx, ok := msg.(types.OpenForm)
 	if !ok {
 		return xerrors.Errorf(errWrongTx, msg)
 	}
 
-	election, electionID, err := e.getElection(tx.ElectionID, snap)
+	form, formID, err := e.getForm(tx.FormID, snap)
 	if err != nil {
-		return xerrors.Errorf(errGetElection, err)
+		return xerrors.Errorf(errGetForm, err)
 	}
 
-	if election.Status != types.Initial {
-		return xerrors.Errorf("the election was opened before, current status: %d", election.Status)
+	if form.Status != types.Initial {
+		return xerrors.Errorf("the form was opened before, current status: %d", form.Status)
 	}
 
-	election.Status = types.Open
-	PromElectionStatus.WithLabelValues(election.ElectionID).Set(float64(election.Status))
+	form.Status = types.Open
+	PromFormStatus.WithLabelValues(form.FormID).Set(float64(form.Status))
 
-	if election.Pubkey != nil {
-		return xerrors.Errorf("pubkey is already set: %s", election.Pubkey)
+	if form.Pubkey != nil {
+		return xerrors.Errorf("pubkey is already set: %s", form.Pubkey)
 	}
 
-	dkgActor, exists := e.pedersen.GetActor(electionID)
+	dkgActor, exists := e.pedersen.GetActor(formID)
 	if !exists {
-		return xerrors.Errorf("failed to get actor for election %q", election.ElectionID)
+		return xerrors.Errorf("failed to get actor for form %q", form.FormID)
 	}
 
 	pubkey, err := dkgActor.GetPublicKey()
@@ -186,14 +186,14 @@ func (e evotingCommand) openElection(snap store.Snapshot, step execution.Step) e
 		return xerrors.Errorf("failed to get pubkey: %v", err)
 	}
 
-	election.Pubkey = pubkey
+	form.Pubkey = pubkey
 
-	electionBuf, err := election.Serialize(e.context)
+	formBuf, err := form.Serialize(e.context)
 	if err != nil {
-		return xerrors.Errorf("failed to marshal Election : %v", err)
+		return xerrors.Errorf("failed to marshal Form : %v", err)
 	}
 
-	err = snap.Set(electionID, electionBuf)
+	err = snap.Set(formID, formBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
@@ -214,33 +214,33 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 		return xerrors.Errorf(errWrongTx, msg)
 	}
 
-	election, electionID, err := e.getElection(tx.ElectionID, snap)
+	form, formID, err := e.getForm(tx.FormID, snap)
 	if err != nil {
-		return xerrors.Errorf(errGetElection, err)
+		return xerrors.Errorf(errGetForm, err)
 	}
 
-	if election.Status != types.Open {
-		return xerrors.Errorf("the election is not open, current status: %d", election.Status)
+	if form.Status != types.Open {
+		return xerrors.Errorf("the form is not open, current status: %d", form.Status)
 	}
 
-	if len(tx.Ballot) != election.ChunksPerBallot() {
+	if len(tx.Ballot) != form.ChunksPerBallot() {
 		return xerrors.Errorf("the ballot has unexpected length: %d != %d",
-			len(tx.Ballot), election.ChunksPerBallot())
+			len(tx.Ballot), form.ChunksPerBallot())
 	}
 
-	election.Suffragia.CastVote(tx.UserID, tx.Ballot)
+	form.Suffragia.CastVote(tx.UserID, tx.Ballot)
 
-	electionBuf, err := election.Serialize(e.context)
+	formBuf, err := form.Serialize(e.context)
 	if err != nil {
-		return xerrors.Errorf("failed to marshal Election : %v", err)
+		return xerrors.Errorf("failed to marshal Form : %v", err)
 	}
 
-	err = snap.Set(electionID, electionBuf)
+	err = snap.Set(formID, formBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
 
-	PromElectionBallots.WithLabelValues(election.ElectionID).Set(float64(len(election.Suffragia.Ciphervotes)))
+	PromFormBallots.WithLabelValues(form.FormID).Set(float64(len(form.Suffragia.Ciphervotes)))
 
 	return nil
 }
@@ -263,17 +263,17 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("check previous transactions failed: %v", err)
 	}
 
-	election, electionID, err := e.getElection(tx.ElectionID, snap)
+	form, formID, err := e.getForm(tx.FormID, snap)
 	if err != nil {
-		return xerrors.Errorf(errGetElection, err)
+		return xerrors.Errorf(errGetForm, err)
 	}
 
-	if election.Status != types.Closed {
-		return xerrors.Errorf("the election is not closed")
+	if form.Status != types.Closed {
+		return xerrors.Errorf("the form is not closed")
 	}
 
 	// Round starts at 0
-	expectedRound := len(election.ShuffleInstances)
+	expectedRound := len(form.ShuffleInstances)
 
 	if tx.Round != expectedRound {
 		return xerrors.Errorf("wrong shuffle round: expected round '%d', "+
@@ -282,14 +282,14 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 
 	shufflerPublicKey := tx.PublicKey
 
-	err = isMemberOf(election.Roster, shufflerPublicKey)
+	err = isMemberOf(form.Roster, shufflerPublicKey)
 	if err != nil {
 		return xerrors.Errorf("could not verify identity of shuffler : %v", err)
 	}
 
 	// Check the node who submitted the shuffle did not already submit an
 	// accepted shuffle
-	for i, shuffleInstance := range election.ShuffleInstances {
+	for i, shuffleInstance := range form.ShuffleInstances {
 		if bytes.Equal(shufflerPublicKey, shuffleInstance.ShufflerPublicKey) {
 			return xerrors.Errorf("a node already submitted a shuffle that "+
 				"has been accepted in round %d", i)
@@ -336,12 +336,12 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		return xerrors.Errorf("could not create semi-random stream: %v", err)
 	}
 
-	if election.ChunksPerBallot() != len(randomVector) {
+	if form.ChunksPerBallot() != len(randomVector) {
 		return xerrors.Errorf("randomVector has unexpected length : %v != %v",
-			len(randomVector), election.ChunksPerBallot())
+			len(randomVector), form.ChunksPerBallot())
 	}
 
-	for i := 0; i < election.ChunksPerBallot(); i++ {
+	for i := 0; i < form.ChunksPerBallot(); i++ {
 		v := suite.Scalar().Pick(semiRandomStream)
 		if !randomVector[i].Equal(v) {
 			return xerrors.Errorf("random vector from shuffle transaction is " +
@@ -358,11 +358,11 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	var ciphervotes []types.Ciphervote
 
 	if tx.Round == 0 {
-		ciphervotes = election.Suffragia.Ciphervotes
+		ciphervotes = form.Suffragia.Ciphervotes
 	} else {
-		// get the election's last shuffled ballots
-		lastIndex := len(election.ShuffleInstances) - 1
-		ciphervotes = election.ShuffleInstances[lastIndex].ShuffledBallots
+		// get the form's last shuffled ballots
+		lastIndex := len(form.ShuffleInstances) - 1
+		ciphervotes = form.ShuffleInstances[lastIndex].ShuffledBallots
 	}
 
 	if len(ciphervotes) < 2 {
@@ -374,7 +374,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	XXUp, YYUp, XXDown, YYDown := shuffle.GetSequenceVerifiable(suite, X, Y, XX,
 		YY, randomVector)
 
-	verifier := shuffle.Verifier(suite, nil, election.Pubkey, XXUp, YYUp, XXDown, YYDown)
+	verifier := shuffle.Verifier(suite, nil, form.Pubkey, XXUp, YYUp, XXDown, YYDown)
 
 	err = e.prover(suite, shufflingProtocolName, verifier, tx.Proof)
 	if err != nil {
@@ -388,22 +388,22 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 		ShufflerPublicKey: shufflerPublicKey,
 	}
 
-	election.ShuffleInstances = append(election.ShuffleInstances, currentShuffleInstance)
+	form.ShuffleInstances = append(form.ShuffleInstances, currentShuffleInstance)
 
-	PromElectionShufflingInstances.WithLabelValues(election.ElectionID).Set(float64(len(election.ShuffleInstances)))
+	PromFormShufflingInstances.WithLabelValues(form.FormID).Set(float64(len(form.ShuffleInstances)))
 
 	// in case we have enough shuffled ballots, we update the status
-	if len(election.ShuffleInstances) >= election.ShuffleThreshold {
-		election.Status = types.ShuffledBallots
-		PromElectionStatus.WithLabelValues(election.ElectionID).Set(float64(election.Status))
+	if len(form.ShuffleInstances) >= form.ShuffleThreshold {
+		form.Status = types.ShuffledBallots
+		PromFormStatus.WithLabelValues(form.FormID).Set(float64(form.Status))
 	}
 
-	electionBuf, err := election.Serialize(e.context)
+	formBuf, err := form.Serialize(e.context)
 	if err != nil {
-		return xerrors.Errorf("failed to marshal Election : %v", err)
+		return xerrors.Errorf("failed to marshal Form : %v", err)
 	}
 
-	err = snap.Set(electionID, electionBuf)
+	err = snap.Set(formID, formBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
@@ -420,8 +420,8 @@ func (e evotingCommand) checkPreviousTransactions(step execution.Step, round int
 			continue
 		}
 
-		// skip tx that does not contain the election argument
-		if string(tx.GetArg(CmdArg)) != ElectionArg {
+		// skip tx that does not contain the form argument
+		if string(tx.GetArg(CmdArg)) != FormArg {
 			continue
 		}
 
@@ -444,41 +444,41 @@ func (e evotingCommand) checkPreviousTransactions(step execution.Step, round int
 	return nil
 }
 
-// closeElection implements commands. It performs the CLOSE_ELECTION command
-func (e evotingCommand) closeElection(snap store.Snapshot, step execution.Step) error {
+// closeForm implements commands. It performs the CLOSE_FORM command
+func (e evotingCommand) closeForm(snap store.Snapshot, step execution.Step) error {
 
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
 	}
 
-	tx, ok := msg.(types.CloseElection)
+	tx, ok := msg.(types.CloseForm)
 	if !ok {
 		return xerrors.Errorf(errWrongTx, msg)
 	}
 
-	election, electionID, err := e.getElection(tx.ElectionID, snap)
+	form, formID, err := e.getForm(tx.FormID, snap)
 	if err != nil {
-		return xerrors.Errorf(errGetElection, err)
+		return xerrors.Errorf(errGetForm, err)
 	}
 
-	if election.Status != types.Open {
-		return xerrors.Errorf("the election is not open, current status: %d", election.Status)
+	if form.Status != types.Open {
+		return xerrors.Errorf("the form is not open, current status: %d", form.Status)
 	}
 
-	if len(election.Suffragia.Ciphervotes) <= 1 {
+	if len(form.Suffragia.Ciphervotes) <= 1 {
 		return xerrors.Errorf("at least two ballots are required")
 	}
 
-	election.Status = types.Closed
-	PromElectionStatus.WithLabelValues(election.ElectionID).Set(float64(election.Status))
+	form.Status = types.Closed
+	PromFormStatus.WithLabelValues(form.FormID).Set(float64(form.Status))
 
-	electionBuf, err := election.Serialize(e.context)
+	formBuf, err := form.Serialize(e.context)
 	if err != nil {
-		return xerrors.Errorf("failed to marshal Election : %v", err)
+		return xerrors.Errorf("failed to marshal Form : %v", err)
 	}
 
-	err = snap.Set(electionID, electionBuf)
+	err = snap.Set(formID, formBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
@@ -499,16 +499,16 @@ func (e evotingCommand) registerPubshares(snap store.Snapshot, step execution.St
 		return xerrors.Errorf(errWrongTx, msg)
 	}
 
-	election, electionID, err := e.getElection(tx.ElectionID, snap)
+	form, formID, err := e.getForm(tx.FormID, snap)
 	if err != nil {
-		return xerrors.Errorf(errGetElection, err)
+		return xerrors.Errorf(errGetForm, err)
 	}
 
-	if election.Status != types.ShuffledBallots {
+	if form.Status != types.ShuffledBallots {
 		return xerrors.Errorf("the ballots have not been shuffled")
 	}
 
-	err = isMemberOf(election.Roster, tx.PublicKey)
+	err = isMemberOf(form.Roster, tx.PublicKey)
 	if err != nil {
 		return xerrors.Errorf("could not verify identity of node : %v", err)
 	}
@@ -542,7 +542,7 @@ func (e evotingCommand) registerPubshares(snap store.Snapshot, step execution.St
 	}
 
 	// coherence check on the length of the shares submitted
-	shuffledBallots := election.ShuffleInstances[len(election.ShuffleInstances)-1].
+	shuffledBallots := form.ShuffleInstances[len(form.ShuffleInstances)-1].
 		ShuffledBallots
 	if len(tx.Pubshares) != len(shuffledBallots) {
 		return xerrors.Errorf("unexpected size of pubshares submission: %d != %d",
@@ -556,7 +556,7 @@ func (e evotingCommand) registerPubshares(snap store.Snapshot, step execution.St
 		}
 	}
 
-	units := &election.PubsharesUnits
+	units := &form.PubsharesUnits
 
 	// Check the node hasn't made any other submissions
 	for _, key := range units.PubKeys {
@@ -571,26 +571,26 @@ func (e evotingCommand) registerPubshares(snap store.Snapshot, step execution.St
 		}
 	}
 
-	// Add the pubshares to the election
+	// Add the pubshares to the form
 	units.Pubshares = append(units.Pubshares, tx.Pubshares)
 	units.PubKeys = append(units.PubKeys, tx.PublicKey)
 	units.Indexes = append(units.Indexes, tx.Index)
 
 	nbrSubmissions := len(units.Pubshares)
 
-	PromElectionPubShares.WithLabelValues(election.ElectionID).Set(float64(nbrSubmissions))
+	PromFormPubShares.WithLabelValues(form.FormID).Set(float64(nbrSubmissions))
 
-	if nbrSubmissions >= election.ShuffleThreshold {
-		election.Status = types.PubSharesSubmitted
-		PromElectionStatus.WithLabelValues(election.ElectionID).Set(float64(election.Status))
+	if nbrSubmissions >= form.ShuffleThreshold {
+		form.Status = types.PubSharesSubmitted
+		PromFormStatus.WithLabelValues(form.FormID).Set(float64(form.Status))
 	}
 
-	electionBuf, err := election.Serialize(e.context)
+	formBuf, err := form.Serialize(e.context)
 	if err != nil {
-		return xerrors.Errorf("failed to marshal Election: %v", err)
+		return xerrors.Errorf("failed to marshal Form: %v", err)
 	}
 
-	err = snap.Set(electionID, electionBuf)
+	err = snap.Set(formID, formBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
@@ -611,22 +611,22 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 		return xerrors.Errorf(errWrongTx, msg)
 	}
 
-	election, electionID, err := e.getElection(tx.ElectionID, snap)
+	form, formID, err := e.getForm(tx.FormID, snap)
 	if err != nil {
-		return xerrors.Errorf(errGetElection, err)
+		return xerrors.Errorf(errGetForm, err)
 	}
 
-	if election.Status != types.PubSharesSubmitted {
+	if form.Status != types.PubSharesSubmitted {
 		return xerrors.Errorf("the public shares have not been submitted,"+
-			" current status: %d", election.Status)
+			" current status: %d", form.Status)
 	}
 
-	allPubShares := election.PubsharesUnits.Pubshares
+	allPubShares := form.PubsharesUnits.Pubshares
 
-	shufflesSize := len(election.ShuffleInstances)
+	shufflesSize := len(form.ShuffleInstances)
 
-	shuffledBallotsSize := len(election.ShuffleInstances[shufflesSize-1].ShuffledBallots)
-	ballotSize := len(election.ShuffleInstances[shufflesSize-1].ShuffledBallots[0])
+	shuffledBallotsSize := len(form.ShuffleInstances[shufflesSize-1].ShuffledBallots)
+	ballotSize := len(form.ShuffleInstances[shufflesSize-1].ShuffledBallots[0])
 
 	decryptedBallots := make([]types.Ballot, shuffledBallotsSize)
 
@@ -635,7 +635,7 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 		marshalledBallot := strings.Builder{}
 
 		for j := 0; j < ballotSize; j++ {
-			chunk, err := decrypt(i, j, allPubShares, election.PubsharesUnits.Indexes)
+			chunk, err := decrypt(i, j, allPubShares, form.PubsharesUnits.Indexes)
 			if err != nil {
 				return xerrors.Errorf("failed to decrypt (K, C): %v", err)
 			}
@@ -644,7 +644,7 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 		}
 
 		var ballot types.Ballot
-		err = ballot.Unmarshal(marshalledBallot.String(), election)
+		err = ballot.Unmarshal(marshalledBallot.String(), form)
 
 		if err != nil {
 			dela.Logger.Warn().Msgf("Failed to unmarshal a ballot: %v", err)
@@ -653,51 +653,17 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 		decryptedBallots[i] = ballot
 	}
 
-	election.DecryptedBallots = decryptedBallots
+	form.DecryptedBallots = decryptedBallots
 
-	election.Status = types.ResultAvailable
-	PromElectionStatus.WithLabelValues(election.ElectionID).Set(float64(election.Status))
+	form.Status = types.ResultAvailable
+	PromFormStatus.WithLabelValues(form.FormID).Set(float64(form.Status))
 
-	electionBuf, err := election.Serialize(e.context)
+	formBuf, err := form.Serialize(e.context)
 	if err != nil {
-		return xerrors.Errorf("failed to marshal Election : %v", err)
+		return xerrors.Errorf("failed to marshal Form : %v", err)
 	}
 
-	err = snap.Set(electionID, electionBuf)
-	if err != nil {
-		return xerrors.Errorf("failed to set value: %v", err)
-	}
-
-	return nil
-}
-
-// cancelElection implements commands. It performs the CANCEL_ELECTION command
-func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step) error {
-
-	msg, err := e.getTransaction(step.Current)
-	if err != nil {
-		return xerrors.Errorf(errGetTransaction, err)
-	}
-
-	tx, ok := msg.(types.CancelElection)
-	if !ok {
-		return xerrors.Errorf(errWrongTx, msg)
-	}
-
-	election, electionID, err := e.getElection(tx.ElectionID, snap)
-	if err != nil {
-		return xerrors.Errorf(errGetElection, err)
-	}
-
-	election.Status = types.Canceled
-	PromElectionStatus.WithLabelValues(election.ElectionID).Set(float64(election.Status))
-
-	electionBuf, err := election.Serialize(e.context)
-	if err != nil {
-		return xerrors.Errorf("failed to marshal Election : %v", err)
-	}
-
-	err = snap.Set(electionID, electionBuf)
+	err = snap.Set(formID, formBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
@@ -705,55 +671,89 @@ func (e evotingCommand) cancelElection(snap store.Snapshot, step execution.Step)
 	return nil
 }
 
-// deleteElection implements commands. It performs the DELETE_ELECTION command
-func (e evotingCommand) deleteElection(snap store.Snapshot, step execution.Step) error {
+// cancelForm implements commands. It performs the CANCEL_FORM command
+func (e evotingCommand) cancelForm(snap store.Snapshot, step execution.Step) error {
 
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
 	}
 
-	tx, ok := msg.(types.DeleteElection)
+	tx, ok := msg.(types.CancelForm)
 	if !ok {
 		return xerrors.Errorf(errWrongTx, msg)
 	}
 
-	election, electionID, err := e.getElection(tx.ElectionID, snap)
+	form, formID, err := e.getForm(tx.FormID, snap)
 	if err != nil {
-		return xerrors.Errorf(errGetElection, err)
+		return xerrors.Errorf(errGetForm, err)
 	}
 
-	err = snap.Delete(electionID)
+	form.Status = types.Canceled
+	PromFormStatus.WithLabelValues(form.FormID).Set(float64(form.Status))
+
+	formBuf, err := form.Serialize(e.context)
 	if err != nil {
-		return xerrors.Errorf("failed to delete election: %v", err)
+		return xerrors.Errorf("failed to marshal Form : %v", err)
 	}
 
-	// Update the election metadata store
-
-	electionsMetadataBuf, err := snap.Get([]byte(ElectionsMetadataKey))
+	err = snap.Set(formID, formBuf)
 	if err != nil {
-		return xerrors.Errorf("failed to get key '%s': %v", electionsMetadataBuf, err)
+		return xerrors.Errorf("failed to set value: %v", err)
 	}
 
-	if len(electionsMetadataBuf) == 0 {
+	return nil
+}
+
+// deleteForm implements commands. It performs the DELETE_FORM command
+func (e evotingCommand) deleteForm(snap store.Snapshot, step execution.Step) error {
+
+	msg, err := e.getTransaction(step.Current)
+	if err != nil {
+		return xerrors.Errorf(errGetTransaction, err)
+	}
+
+	tx, ok := msg.(types.DeleteForm)
+	if !ok {
+		return xerrors.Errorf(errWrongTx, msg)
+	}
+
+	form, formID, err := e.getForm(tx.FormID, snap)
+	if err != nil {
+		return xerrors.Errorf(errGetForm, err)
+	}
+
+	err = snap.Delete(formID)
+	if err != nil {
+		return xerrors.Errorf("failed to delete form: %v", err)
+	}
+
+	// Update the form metadata store
+
+	formsMetadataBuf, err := snap.Get([]byte(FormsMetadataKey))
+	if err != nil {
+		return xerrors.Errorf("failed to get key '%s': %v", formsMetadataBuf, err)
+	}
+
+	if len(formsMetadataBuf) == 0 {
 		return nil
 	}
 
-	var electionsMetadata types.ElectionsMetadata
+	var formsMetadata types.FormsMetadata
 
-	err = json.Unmarshal(electionsMetadataBuf, &electionsMetadata)
+	err = json.Unmarshal(formsMetadataBuf, &formsMetadata)
 	if err != nil {
-		return xerrors.Errorf("failed to unmarshal ElectionsMetadata: %v", err)
+		return xerrors.Errorf("failed to unmarshal FormsMetadata: %v", err)
 	}
 
-	electionsMetadata.ElectionsIDs.Remove(election.ElectionID)
+	formsMetadata.FormsIDs.Remove(form.FormID)
 
-	electionMetadataJSON, err := json.Marshal(electionsMetadata)
+	formMetadataJSON, err := json.Marshal(formsMetadata)
 	if err != nil {
-		return xerrors.Errorf("failed to marshal ElectionsMetadata: %v", err)
+		return xerrors.Errorf("failed to marshal FormsMetadata: %v", err)
 	}
 
-	err = snap.Set([]byte(ElectionsMetadataKey), electionMetadataJSON)
+	err = snap.Set([]byte(FormsMetadataKey), formMetadataJSON)
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
@@ -826,51 +826,51 @@ func (s SemiRandomStream) XORKeyStream(dst, src []byte) {
 	xof.XORKeyStream(dst, src)
 }
 
-// getElection gets the election from the snap. Returns the election ID NOT hex
+// getForm gets the form from the snap. Returns the form ID NOT hex
 // encoded.
-func (e evotingCommand) getElection(electionIDHex string,
-	snap store.Snapshot) (types.Election, []byte, error) {
+func (e evotingCommand) getForm(formIDHex string,
+	snap store.Snapshot) (types.Form, []byte, error) {
 
-	var election types.Election
+	var form types.Form
 
-	electionID, err := hex.DecodeString(electionIDHex)
+	formID, err := hex.DecodeString(formIDHex)
 	if err != nil {
-		return election, nil, xerrors.Errorf("failed to decode electionIDHex: %v", err)
+		return form, nil, xerrors.Errorf("failed to decode formIDHex: %v", err)
 	}
 
-	electionBuff, err := snap.Get(electionID)
+	formBuff, err := snap.Get(formID)
 	if err != nil {
-		return election, nil, xerrors.Errorf("failed to get key %q: %v", electionID, err)
+		return form, nil, xerrors.Errorf("failed to get key %q: %v", formID, err)
 	}
 
-	message, err := e.electionFac.Deserialize(e.context, electionBuff)
+	message, err := e.formFac.Deserialize(e.context, formBuff)
 	if err != nil {
-		return election, nil, xerrors.Errorf("failed to deserialize Election: %v", err)
+		return form, nil, xerrors.Errorf("failed to deserialize Form: %v", err)
 	}
 
-	election, ok := message.(types.Election)
+	form, ok := message.(types.Form)
 	if !ok {
-		return election, nil, xerrors.Errorf("wrong message type: %T", message)
+		return form, nil, xerrors.Errorf("wrong message type: %T", message)
 	}
 
-	if electionIDHex != election.ElectionID {
-		return election, nil, xerrors.Errorf("electionID do not match: %q != %q",
-			electionIDHex, election.ElectionID)
+	if formIDHex != form.FormID {
+		return form, nil, xerrors.Errorf("formID do not match: %q != %q",
+			formIDHex, form.FormID)
 	}
 
-	electionIDBuff, err := hex.DecodeString(electionIDHex)
+	formIDBuff, err := hex.DecodeString(formIDHex)
 	if err != nil {
-		return election, nil, xerrors.Errorf("failed to get election id buff: %v", err)
+		return form, nil, xerrors.Errorf("failed to get form id buff: %v", err)
 	}
 
-	return election, electionIDBuff, nil
+	return form, formIDBuff, nil
 }
 
 // getTransaction extracts the argument from the transaction.
 func (e evotingCommand) getTransaction(tx txn.Transaction) (serde.Message, error) {
-	buff := tx.GetArg(ElectionArg)
+	buff := tx.GetArg(FormArg)
 	if len(buff) == 0 {
-		return nil, xerrors.Errorf("%q not found in tx arg", ElectionArg)
+		return nil, xerrors.Errorf("%q not found in tx arg", FormArg)
 	}
 
 	message, err := e.transactionFac.Deserialize(e.context, buff)

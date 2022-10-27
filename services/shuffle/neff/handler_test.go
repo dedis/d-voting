@@ -41,7 +41,7 @@ func TestHandler_Stream(t *testing.T) {
 
 	err = handler.Stream(fake.Sender{}, receiver)
 	require.EqualError(t, err, "failed to handle StartShuffle message: failed "+
-		"to get election: failed to decode electionIDHex: encoding/hex: invalid byte: U+0075 'u'")
+		"to get form: failed to decode formIDHex: encoding/hex: invalid byte: U+0075 'u'")
 
 	//Test successful Shuffle round from message:
 	dummyID := hex.EncodeToString([]byte("dummyId"))
@@ -70,30 +70,30 @@ func TestHandler_StartShuffle(t *testing.T) {
 	// Service not working:
 	badService := fake.Service{
 		Err:       fakeErr,
-		Elections: nil,
+		Forms: nil,
 	}
 	handler.service = &badService
 	handler.txmngr = fake.Manager{}
 
 	err := handler.handleStartShuffle(dummyID)
-	require.EqualError(t, err, "failed to get election: failed to get proof: fake error")
+	require.EqualError(t, err, "failed to get form: failed to get proof: fake error")
 
-	Elections := make(map[string]etypes.Election)
+	Forms := make(map[string]etypes.Form)
 
-	// Election does not exist
+	// Form does not exist
 	service := fake.Service{
 		Err:       nil,
-		Elections: Elections,
+		Forms: Forms,
 		Context:   json.NewContext(),
 	}
 	handler.service = &service
 
 	err = handler.handleStartShuffle(dummyID)
-	require.EqualError(t, err, "failed to get election: election does not exist")
+	require.EqualError(t, err, "failed to get form: form does not exist")
 
-	// Election still opened:
-	election := etypes.Election{
-		ElectionID:       dummyID,
+	// Form still opened:
+	form := etypes.Form{
+		FormID:       dummyID,
 		Status:           0,
 		Pubkey:           nil,
 		Suffragia:        etypes.Suffragia{},
@@ -104,16 +104,16 @@ func TestHandler_StartShuffle(t *testing.T) {
 		Roster:           fake.Authority{},
 	}
 
-	service = updateService(election, dummyID)
+	service = updateService(form, dummyID)
 	handler.service = &service
 	handler.context = serdecontext
-	handler.electionFac = electionFac
+	handler.formFac = formFac
 
 	err = handler.handleStartShuffle(dummyID)
-	require.EqualError(t, err, "the election must be closed: (0)")
+	require.EqualError(t, err, "the form must be closed: (0)")
 
 	// Wrong formatted ballots:
-	election.Status = etypes.Closed
+	form.Status = etypes.Closed
 
 	deleteUserFromSuffragia := func(suff *etypes.Suffragia, userID string) bool {
 		for i, u := range suff.UserIDs {
@@ -127,26 +127,26 @@ func TestHandler_StartShuffle(t *testing.T) {
 		return false
 	}
 
-	deleteUserFromSuffragia(&election.Suffragia, "fakeUser")
+	deleteUserFromSuffragia(&form.Suffragia, "fakeUser")
 
-	// Valid Ballots, bad election.PubKey
+	// Valid Ballots, bad form.PubKey
 	for i := 0; i < k; i++ {
 		ballot := etypes.Ciphervote{etypes.EGPair{
 			K: Ks[i],
 			C: Cs[i],
 		},
 		}
-		election.Suffragia.CastVote("dummyUser"+strconv.Itoa(i), ballot)
+		form.Suffragia.CastVote("dummyUser"+strconv.Itoa(i), ballot)
 	}
 
-	service = updateService(election, dummyID)
+	service = updateService(form, dummyID)
 
 	handler.service = &service
 
 	// Wrong shuffle signer
-	election.Pubkey = pubKey
+	form.Pubkey = pubKey
 
-	service = updateService(election, dummyID)
+	service = updateService(form, dummyID)
 	handler.service = &service
 
 	handler.shuffleSigner = fake.NewBadSigner()
@@ -155,7 +155,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 	require.EqualError(t, err, fake.Err("failed to make tx: could not sign the shuffle "))
 
 	// Bad common signer :
-	service = updateService(election, dummyID)
+	service = updateService(form, dummyID)
 
 	handler.service = &service
 	handler.shuffleSigner = fake.NewSigner()
@@ -181,8 +181,8 @@ func TestHandler_StartShuffle(t *testing.T) {
 	require.NoError(t, err)
 
 	// Threshold is reached :
-	election.ShuffleThreshold = 0
-	service = updateService(election, dummyID)
+	form.ShuffleThreshold = 0
+	service = updateService(form, dummyID)
 	fakePool = fake.Pool{Service: &service}
 	handler.service = &service
 
@@ -190,12 +190,12 @@ func TestHandler_StartShuffle(t *testing.T) {
 	require.NoError(t, err)
 
 	// Service not working :
-	election.ShuffleThreshold = 1
+	form.ShuffleThreshold = 1
 
-	Elections = make(map[string]etypes.Election)
-	Elections[dummyID] = election
+	Forms = make(map[string]etypes.Form)
+	Forms[dummyID] = form
 
-	service = updateService(election, dummyID)
+	service = updateService(form, dummyID)
 	fakePool = fake.Pool{Service: &service}
 
 	handler.service = &service
@@ -204,17 +204,17 @@ func TestHandler_StartShuffle(t *testing.T) {
 	require.NoError(t, err)
 
 	// Shuffle already started:
-	shuffledBallots := append([]etypes.Ciphervote{}, election.Suffragia.Ciphervotes...)
+	shuffledBallots := append([]etypes.Ciphervote{}, form.Suffragia.Ciphervotes...)
 
-	election.ShuffleInstances = append(election.ShuffleInstances,
+	form.ShuffleInstances = append(form.ShuffleInstances,
 		etypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
 
-	election.ShuffleThreshold = 2
+	form.ShuffleThreshold = 2
 
-	service = updateService(election, dummyID)
+	service = updateService(form, dummyID)
 	fakePool = fake.Pool{Service: &service}
 	handler = *NewHandler(handler.me, &service, &fakePool, manager,
-		handler.shuffleSigner, serdecontext, electionFac)
+		handler.shuffleSigner, serdecontext, formFac)
 
 	err = handler.handleStartShuffle(dummyID)
 	require.NoError(t, err)
@@ -222,13 +222,13 @@ func TestHandler_StartShuffle(t *testing.T) {
 
 // -----------------------------------------------------------------------------
 // Utility functions
-func updateService(election etypes.Election, dummyID string) fake.Service {
-	Elections := make(map[string]etypes.Election)
-	Elections[dummyID] = election
+func updateService(form etypes.Form, dummyID string) fake.Service {
+	Forms := make(map[string]etypes.Form)
+	Forms[dummyID] = form
 
 	return fake.Service{
 		Err:       nil,
-		Elections: Elections,
+		Forms: Forms,
 		Pool:      nil,
 		Status:    false,
 		Channel:   nil,
@@ -239,14 +239,14 @@ func updateService(election etypes.Election, dummyID string) fake.Service {
 func initValidHandler(dummyID string) Handler {
 	handler := Handler{}
 
-	election := initFakeElection(dummyID)
+	form := initFakeForm(dummyID)
 
-	Elections := make(map[string]etypes.Election)
-	Elections[dummyID] = election
+	Forms := make(map[string]etypes.Form)
+	Forms[dummyID] = form
 
 	service := fake.Service{
 		Err:       nil,
-		Elections: Elections,
+		Forms: Forms,
 		Status:    true,
 		Context:   json.NewContext(),
 	}
@@ -258,16 +258,16 @@ func initValidHandler(dummyID string) Handler {
 	handler.shuffleSigner = fake.NewSigner()
 	handler.txmngr = signed.NewManager(fake.NewSigner(), fakeClient{})
 	handler.context = serdecontext
-	handler.electionFac = electionFac
+	handler.formFac = formFac
 
 	return handler
 }
 
-func initFakeElection(electionID string) etypes.Election {
+func initFakeForm(formID string) etypes.Form {
 	k := 3
 	KsMarshalled, CsMarshalled, pubKey := fakeKCPoints(k)
-	election := etypes.Election{
-		ElectionID:       electionID,
+	form := etypes.Form{
+		FormID:       formID,
 		Status:           etypes.Closed,
 		Pubkey:           pubKey,
 		Suffragia:        etypes.Suffragia{},
@@ -284,9 +284,9 @@ func initFakeElection(electionID string) etypes.Election {
 			C: CsMarshalled[i],
 		},
 		}
-		election.Suffragia.CastVote("dummyUser"+strconv.Itoa(i), ballot)
+		form.Suffragia.CastVote("dummyUser"+strconv.Itoa(i), ballot)
 	}
-	return election
+	return form
 }
 
 func fakeKCPoints(k int) ([]kyber.Point, []kyber.Point, kyber.Point) {

@@ -30,7 +30,7 @@ func TestMessageFormat_StartShuffle_Encode(t *testing.T) {
 	data, err := format.Encode(ctx, startShuffle)
 	require.NoError(t, err)
 
-	regexp := `{"StartShuffle":{"ElectionId":"dummyId","Addresses":\["AAAAAA=="\]`
+	regexp := `{"StartShuffle":{"FormId":"dummyId","Addresses":\["AAAAAA=="\]`
 	require.Regexp(t, regexp, string(data))
 }
 
@@ -72,7 +72,7 @@ func TestMessageFormat_StartShuffle_Decode(t *testing.T) {
 
 	startShuffle, err := format.Decode(ctx, data)
 	require.NoError(t, err)
-	require.Equal(t, expected.GetElectionId(), startShuffle.(types.StartShuffle).GetElectionId())
+	require.Equal(t, expected.GetFormId(), startShuffle.(types.StartShuffle).GetFormId())
 	require.Len(t, startShuffle.(types.StartShuffle).GetAddresses(), len(expected.GetAddresses()))
 
 }
