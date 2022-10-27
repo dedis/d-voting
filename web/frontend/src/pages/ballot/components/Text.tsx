@@ -109,7 +109,7 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
         <Popover className="relative">
           <Popover.Button>
             <div className="text-gray-600">
-              <QuestionMarkCircleIcon className="color-gray-900mt-1 h-4 w-4" />
+              <QuestionMarkCircleIcon className="color-gray-900 mt-2 h-4 w-4" />
             </div>
           </Popover.Button>
           <Transition
