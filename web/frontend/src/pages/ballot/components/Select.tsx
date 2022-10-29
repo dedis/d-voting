@@ -1,9 +1,8 @@
-import { FC, Fragment } from 'react';
+import { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Answers, SelectQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
-import { QuestionMarkCircleIcon } from '@heroicons/react/outline/';
-import { Popover, Transition } from '@headlessui/react';
+import HintButton from 'pages/ballot/components/HintButton';
 
 type SelectProps = {
   select: SelectQuestion;
@@ -85,27 +84,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers }) => {
             choiceDisplay(isChecked, select.Choices[choiceIndex], choiceIndex)
         )}
       </div>
-      {select.Hint.length !== 0 && (
-        <Popover className="relative">
-          <Popover.Button>
-            <div className="text-gray-600">
-              <QuestionMarkCircleIcon className="color-gray-900 mt-2 h-4 w-4" />
-            </div>
-          </Popover.Button>
-          <Transition
-            as={Fragment}
-            enter="transition ease-out duration-100"
-            enterFrom="transform opacity-0 scale-95"
-            enterTo="transform opacity-100 scale-100"
-            leave="transition ease-in duration-75"
-            leaveFrom="transform opacity-100 scale-100"
-            leaveTo="transform opacity-0 scale-95">
-            <Popover.Panel className="z-30 absolute p-2 max-w-prose mt-1 ml-2 rounded-md bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
-              {<div className="text-sm">{select.Hint}</div>}
-            </Popover.Panel>
-          </Transition>
-        </Popover>
-      )}
+      <HintButton text={select.Hint} />
       <div className="text-red-600 text-sm py-2 sm:pl-4 pl-2">{answers.Errors.get(select.ID)}</div>
     </div>
   );

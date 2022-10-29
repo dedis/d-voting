@@ -1,9 +1,8 @@
-import { FC, Fragment, useEffect, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Answers, TextQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
-import { QuestionMarkCircleIcon } from '@heroicons/react/outline/';
-import { Popover, Transition } from '@headlessui/react';
+import HintButton from 'pages/ballot/components/HintButton';
 
 type TextProps = {
   text: TextQuestion;
@@ -105,27 +104,7 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
       <div className="sm:pl-8 mt-2 pl-6">
         {text.Choices.map((choice, index) => choiceDisplay(choice, index))}
       </div>
-      {text.Hint.length !== 0 && (
-        <Popover className="relative">
-          <Popover.Button>
-            <div className="text-gray-600">
-              <QuestionMarkCircleIcon className="color-gray-900 mt-2 h-4 w-4" />
-            </div>
-          </Popover.Button>
-          <Transition
-            as={Fragment}
-            enter="transition ease-out duration-100"
-            enterFrom="transform opacity-0 scale-95"
-            enterTo="transform opacity-100 scale-100"
-            leave="transition ease-in duration-75"
-            leaveFrom="transform opacity-100 scale-100"
-            leaveTo="transform opacity-0 scale-95">
-            <Popover.Panel className="z-30 absolute p-2 max-w-prose mt-1 ml-2 rounded-md bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
-              {<div className="text-sm">{text.Hint}</div>}
-            </Popover.Panel>
-          </Transition>
-        </Popover>
-      )}
+      <HintButton text={text.Hint} />
       <div className="text-red-600 text-sm py-2 sm:pl-2 pl-1">{answers.Errors.get(text.ID)}</div>
     </div>
   );
