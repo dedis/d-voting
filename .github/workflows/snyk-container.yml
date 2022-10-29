@@ -20,16 +20,10 @@ jobs:
       - uses: actions/checkout@master
       - name: install Snyk CLI
         run: npm install -g snyk
-        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       - name: run Snyk Open Source Test
         run: snyk test
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      - name: run Snyk Code Test
-        run: snyk code test
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
