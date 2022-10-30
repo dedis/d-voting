@@ -164,7 +164,6 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	ciphervote := make(types.Ciphervote, len(req.Ballot))
 
 	// encrypt the vote 
@@ -637,7 +636,6 @@ func (h *form) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
 	if err != nil {
 		return nil, xerrors.Errorf("failed to sync manager: %v", err)
 	}
-
 
 	tx, err := createTransaction(h.mngr, cmd, cmdArg, payload)
 	if err != nil {

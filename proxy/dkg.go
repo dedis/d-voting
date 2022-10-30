@@ -181,7 +181,7 @@ func (d dkg) EditDKGActor(w http.ResponseWriter, r *http.Request) {
 				dela.Logger.Err(err).Msg("failed to setup")
 			}
 		}()
-		// begin the decryption
+	// begin the decryption
 	case "computePubshares":
 		err = a.ComputePubshares()
 		if err != nil {
