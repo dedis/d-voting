@@ -68,15 +68,13 @@ if tmux has-session -t $s 2>/dev/null; then
   ./kill_test.sh
 fi
 
-#tmux list-sessions | rg "^$s:" >/dev/null 2>&1 && { echo >&2 "A session with the name $s already exists; kill it and try again"; exit 1; }
- 
 
 
 tmux new-session -d -s $s
 
 # display warning if the number of nodes is less or equal than 3 because it doesn't respect the Byzantine Fault Tolerant
 if [ $N_NODE -le 3 ]; then
-  echo "Warning: the number of nodes is less or equal than 3, it doesn't respect the Byzantine Fault Tolerant"
+  echo "Warning: the number of nodes is less or equal than 3, it will not be resiliant if one node is down"
 fi
 
 
