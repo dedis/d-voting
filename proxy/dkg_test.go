@@ -94,7 +94,8 @@ func TestNewDKGActor(t *testing.T) {
 
 }
 
-// test that NewDKGActor is setting the right status code when the request is not valid
+// test that NewDKGActor is setting 
+// the right status code when the request is not valid
 func TestNewDKGActorInvalidRequest(t *testing.T) {
 	var w http.ResponseWriter = httptest.NewRecorder()
 
