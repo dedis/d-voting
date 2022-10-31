@@ -271,6 +271,9 @@ func TestNewDKGActorFormDoesNotExist(t *testing.T) {
 	dkgInterface := NewDKG(mngr, mockDKGServiceError{}, public)
 
 	requestt, err := createSignedRequest(secret, request)
+	
+	require.NoError(t, err)
+
 
 	r, err := http.NewRequest("POST", "/dkg", strings.NewReader(string(requestt)))
 
