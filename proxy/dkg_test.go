@@ -50,7 +50,6 @@ func TestNewDkg(t *testing.T) {
 // test that NewDKGActor is working properly
 func TestNewDKGActor(t *testing.T) {
 
-	println("1")
 	var w http.ResponseWriter = httptest.NewRecorder()
 
 	//print(r.Body)
@@ -62,7 +61,6 @@ func TestNewDKGActor(t *testing.T) {
 	//create the txn.Manager
 	var mngr txn.Manager
 	ctx.Injector.Inject(&mngr)
-	println("2")
 	
 
 
@@ -84,23 +82,16 @@ func TestNewDKGActor(t *testing.T) {
 	request := types.NewDKGRequest{
 		FormID: "abcd",
 	}
-	println("3")
-	
 
 	dkgInterface := NewDKG(mngr, mockDKGService{}, public)
 
 	requestt, e := createSignedRequest(secret, request)
+	require.NoError(t, e)
 
 	r, e := http.NewRequest("POST", "/dkg", strings.NewReader(string(requestt)))
-	if e != nil {
-		t.Fatal(e)
-	}
+	require.NoError(t, e)
 
-	println("4")
 	dkgInterface.NewDKGActor(w, r)
-
-	println("5")
-
 
 	require.Equal(t, 200, w.(*httptest.ResponseRecorder).Result().StatusCode)
 
