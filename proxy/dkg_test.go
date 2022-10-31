@@ -13,7 +13,7 @@ import (
 
 	"github.com/dedis/d-voting/proxy/types"
 	dkgSrv "github.com/dedis/d-voting/services/dkg"
-	
+
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/txn"
@@ -61,8 +61,6 @@ func TestNewDKGActor(t *testing.T) {
 	//create the txn.Manager
 	var mngr txn.Manager
 	ctx.Injector.Inject(&mngr)
-	
-
 
 	pk, err := hex.DecodeString("adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3")
 	require.NoError(t, err)
@@ -70,7 +68,6 @@ func TestNewDKGActor(t *testing.T) {
 	public := suite.Point()
 	err = public.UnmarshalBinary(pk)
 	require.NoError(t, err)
-
 
 	secretkeyBuf, err := hex.DecodeString("28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409")
 	require.NoError(t, err)
@@ -101,11 +98,10 @@ func TestNewDKGActor(t *testing.T) {
 	//recorder:=httptest.NewRecorder()
 
 	//dkgInterface.Actor(recorder, httptest.NewRequest( "GET", "/services/dkg/"+request.FormID, nil))
-	
+
 	//require.Equal(t, 200, recorder.Result().StatusCode)
 
 }
-
 
 // test that NewDKGActor is setting the right status code when the request is not valid
 func TestNewDKGActorInvalidRequest(t *testing.T) {
@@ -118,8 +114,6 @@ func TestNewDKGActorInvalidRequest(t *testing.T) {
 	//create the txn.Manager
 	var mngr txn.Manager
 	ctx.Injector.Inject(&mngr)
-	
-
 
 	pk, err := hex.DecodeString("adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3")
 	require.NoError(t, err)
@@ -128,15 +122,12 @@ func TestNewDKGActorInvalidRequest(t *testing.T) {
 	err = public.UnmarshalBinary(pk)
 	require.NoError(t, err)
 
-
 	secretkeyBuf, err := hex.DecodeString("28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409")
 	require.NoError(t, err)
 
 	secret := suite.Scalar()
 	err = secret.UnmarshalBinary(secretkeyBuf)
 	require.NoError(t, err)
-
-	
 
 	dkgInterface := NewDKG(mngr, mockDKGService{}, public)
 
@@ -151,8 +142,6 @@ func TestNewDKGActorInvalidRequest(t *testing.T) {
 
 }
 
-
-
 // test that NewDKGActor is setting the right status code when the request cannot be verified
 func TestNewDKGActorInvalidSignature(t *testing.T) {
 	var w http.ResponseWriter = httptest.NewRecorder()
@@ -166,8 +155,6 @@ func TestNewDKGActorInvalidSignature(t *testing.T) {
 	//create the txn.Manager
 	var mngr txn.Manager
 	ctx.Injector.Inject(&mngr)
-	
-
 
 	pk, err := hex.DecodeString("badbad10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3")
 	require.NoError(t, err)
@@ -175,7 +162,6 @@ func TestNewDKGActorInvalidSignature(t *testing.T) {
 	public := suite.Point()
 	err = public.UnmarshalBinary(pk)
 	require.NoError(t, err)
-
 
 	secretkeyBuf, err := hex.DecodeString("28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409")
 	require.NoError(t, err)
@@ -190,12 +176,11 @@ func TestNewDKGActorInvalidSignature(t *testing.T) {
 
 	dkgInterface := NewDKG(mngr, mockDKGService{}, public)
 
-	requestt, e := createSignedRequest(secret, request)
+	requestt, err := createSignedRequest(secret, request)
+	require.NoError(t, err)
 
-	r, e := http.NewRequest("POST", "/dkg", strings.NewReader(string(requestt)))
-	if e != nil {
-		t.Fatal(e)
-	}
+	r, err := http.NewRequest("POST", "/dkg", strings.NewReader(string(requestt)))
+	require.NoError(t, err)
 
 	dkgInterface.NewDKGActor(w, r)
 
@@ -216,8 +201,6 @@ func TestNewDKGActorInvalidFormID(t *testing.T) {
 	//create the txn.Manager
 	var mngr txn.Manager
 	ctx.Injector.Inject(&mngr)
-	
-
 
 	pk, err := hex.DecodeString("adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3")
 	require.NoError(t, err)
@@ -225,7 +208,6 @@ func TestNewDKGActorInvalidFormID(t *testing.T) {
 	public := suite.Point()
 	err = public.UnmarshalBinary(pk)
 	require.NoError(t, err)
-
 
 	secretkeyBuf, err := hex.DecodeString("28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409")
 	require.NoError(t, err)
@@ -240,12 +222,13 @@ func TestNewDKGActorInvalidFormID(t *testing.T) {
 
 	dkgInterface := NewDKG(mngr, mockDKGService{}, public)
 
-	requestt, e := createSignedRequest(secret, request)
+	requestt, err := createSignedRequest(secret, request)
 
-	r, e := http.NewRequest("POST", "/dkg", strings.NewReader(string(requestt)))
-	if e != nil {
-		t.Fatal(e)
-	}
+	require.NoError(t, err)
+
+	r, err := http.NewRequest("POST", "/dkg", strings.NewReader(string(requestt)))
+
+	require.NoError(t, err)
 
 	dkgInterface.NewDKGActor(w, r)
 
@@ -266,8 +249,6 @@ func TestNewDKGActorFormDoesNotExist(t *testing.T) {
 	//create the txn.Manager
 	var mngr txn.Manager
 	ctx.Injector.Inject(&mngr)
-	
-
 
 	pk, err := hex.DecodeString("adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3")
 	require.NoError(t, err)
@@ -275,7 +256,6 @@ func TestNewDKGActorFormDoesNotExist(t *testing.T) {
 	public := suite.Point()
 	err = public.UnmarshalBinary(pk)
 	require.NoError(t, err)
-
 
 	secretkeyBuf, err := hex.DecodeString("28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409")
 	require.NoError(t, err)
@@ -290,18 +270,16 @@ func TestNewDKGActorFormDoesNotExist(t *testing.T) {
 
 	dkgInterface := NewDKG(mngr, mockDKGServiceError{}, public)
 
-	requestt, e := createSignedRequest(secret, request)
+	requestt, err := createSignedRequest(secret, request)
 
-	r, e := http.NewRequest("POST", "/dkg", strings.NewReader(string(requestt)))
-	if e != nil {
-		t.Fatal(e)
-	}
+	r, err := http.NewRequest("POST", "/dkg", strings.NewReader(string(requestt)))
+
+	require.NoError(t, err)
 
 	dkgInterface.NewDKGActor(w, r)
 
 	require.Equal(t, 500, w.(*httptest.ResponseRecorder).Result().StatusCode)
 }
-
 
 // test that Actor is working correctly
 func TestActor(t *testing.T) {
@@ -316,8 +294,6 @@ func TestActor(t *testing.T) {
 	//create the txn.Manager
 	var mngr txn.Manager
 	ctx.Injector.Inject(&mngr)
-	
-
 
 	pk, err := hex.DecodeString("adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3")
 	require.NoError(t, err)
@@ -325,7 +301,6 @@ func TestActor(t *testing.T) {
 	public := suite.Point()
 	err = public.UnmarshalBinary(pk)
 	require.NoError(t, err)
-
 
 	secretkeyBuf, err := hex.DecodeString("28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409")
 	require.NoError(t, err)
@@ -340,33 +315,17 @@ func TestActor(t *testing.T) {
 
 	dkgInterface := NewDKG(mngr, mockDKGService{}, public)
 
-	requestt, e := createSignedRequest(secret, request)
+	requestt, err:= createSignedRequest(secret, request)
+	require.NoError(t, err)
 
-	
-
-	r, e := http.NewRequest("GET", "/services/dkg/actors/1234", strings.NewReader(string(requestt)))
-
-	
-
-	if e != nil {
-		t.Fatal(e)
-	}
+	r, err := http.NewRequest("GET", "/services/dkg/actors/1234", strings.NewReader(string(requestt)))
+	require.NoError(t, err)
 
 	dkgInterface.Actor(w, r)
 
 	//require.Equal(t, 200, w.(*httptest.ResponseRecorder).Result().Status)
 
 }
-
-
-
-
-
-
-
-
-
-
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
@@ -379,10 +338,10 @@ type mockDKGService struct {
 }
 
 func (m mockDKGService) Listen(_ []byte, _ txn.Manager) (dkgSrv.Actor, error) {
-	return nil,nil
+	return nil, nil
 }
 func (m mockDKGService) GetActor(formID []byte) (dkgSrv.Actor, bool) {
-	return nil,false
+	return nil, false
 }
 
 // mock dkgService that returns an error
@@ -391,9 +350,12 @@ type mockDKGServiceError struct {
 }
 
 func (m mockDKGServiceError) Listen(_ []byte, _ txn.Manager) (dkgSrv.Actor, error) {
-	return nil,errors.New("error")
+	return nil, errors.New("error")
 }
 
+func (m mockDKGServiceError) GetActor(formID []byte) (dkgSrv.Actor, bool) {
+	return nil, false
+}
 
 func createSignedRequest(secret kyber.Scalar, msg interface{}) ([]byte, error) {
 	jsonMsg, err := json.Marshal(msg)
@@ -425,4 +387,3 @@ func createSignedRequest(secret kyber.Scalar, msg interface{}) ([]byte, error) {
 
 	return signedJSON, nil
 }
-
