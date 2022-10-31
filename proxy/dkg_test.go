@@ -92,15 +92,6 @@ func TestNewDKGActor(t *testing.T) {
 
 	require.Equal(t, 200, w.(*httptest.ResponseRecorder).Result().StatusCode)
 
-	//formIDBuffer, err := hex.DecodeString("abcd")
-	//require.NoError(t, err)
-
-	//recorder:=httptest.NewRecorder()
-
-	//dkgInterface.Actor(recorder, httptest.NewRequest( "GET", "/services/dkg/"+request.FormID, nil))
-
-	//require.Equal(t, 200, recorder.Result().StatusCode)
-
 }
 
 // test that NewDKGActor is setting the right status code when the request is not valid
@@ -142,7 +133,8 @@ func TestNewDKGActorInvalidRequest(t *testing.T) {
 
 }
 
-// test that NewDKGActor is setting the right status code when the request cannot be verified
+// test that NewDKGActor is setting the right 
+// status code when the request cannot be verified
 func TestNewDKGActorInvalidSignature(t *testing.T) {
 	var w http.ResponseWriter = httptest.NewRecorder()
 
@@ -188,7 +180,8 @@ func TestNewDKGActorInvalidSignature(t *testing.T) {
 
 }
 
-// test that NewDKGActor is setting the right status code when the formID cannot be decoded
+// test that NewDKGActor is setting 
+// the right status code when the formID cannot be decoded
 func TestNewDKGActorInvalidFormID(t *testing.T) {
 	var w http.ResponseWriter = httptest.NewRecorder()
 
@@ -236,7 +229,8 @@ func TestNewDKGActorInvalidFormID(t *testing.T) {
 
 }
 
-// test that NewDKGActor is setting the right status code when the form does not exist
+// test that NewDKGActor is setting the 
+// right status code when the form does not exist
 func TestNewDKGActorFormDoesNotExist(t *testing.T) {
 	var w http.ResponseWriter = httptest.NewRecorder()
 
@@ -330,8 +324,8 @@ func TestActor(t *testing.T) {
 
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
+// -------------------
+// -------------------
 // Auxiliar functions
 //
 
