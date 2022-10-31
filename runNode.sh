@@ -72,7 +72,8 @@ fi
 
 tmux new-session -d -s $s
 
-# display warning if the number of nodes is less or equal than 3 because it doesn't respect the Byzantine Fault Tolerant
+# Checks that we can afford to have at least one Byzantine node and keep the
+# system working, which is not possible with less than 4 nodes.
 if [ $N_NODE -le 3 ]; then
   echo "Warning: the number of nodes is less or equal than 3, it will not be resiliant if one node is down"
 fi
