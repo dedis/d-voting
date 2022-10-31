@@ -79,7 +79,14 @@ const Rank: FC<RankProps> = ({ rank, answers }) => {
 
   return (
     <div className="mb-6">
-      <h3 className="text-lg break-words text-gray-600">{rank.Title}</h3>
+      <div className="grid grid-rows-1 grid-flow-col">
+        <div>
+          <h3 className="text-lg break-words text-gray-600 w-96">{rank.Title}</h3>
+        </div>
+        <div>
+          <HintButton text={rank.Hint} />
+        </div>
+      </div>
       <div className="mt-5 px-4 max-w-[300px] sm:pl-8 sm:max-w-md">
         <>
           <Droppable droppableId={String(rank.ID)}>
@@ -94,7 +101,6 @@ const Rank: FC<RankProps> = ({ rank, answers }) => {
           </Droppable>
         </>
       </div>
-      <HintButton text={rank.Hint} />
     </div>
   );
 };

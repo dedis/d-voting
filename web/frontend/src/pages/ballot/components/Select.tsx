@@ -76,15 +76,21 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers }) => {
 
   return (
     <div>
-      <h3 className="text-lg break-words text-gray-600">{select.Title}</h3>
-      {requirementsDisplay()}
+      <div className="grid grid-rows-1 grid-flow-col">
+        <div>
+          <h3 className="text-lg break-words text-gray-600 w-96">{select.Title}</h3>
+        </div>
+        <div>
+          <HintButton text={select.Hint} />
+        </div>
+      </div>
+      <div className="pt-1">{requirementsDisplay()}</div>
       <div className="sm:pl-8 mt-2 pl-6">
         {Array.from(answers.SelectAnswers.get(select.ID).entries()).map(
           ([choiceIndex, isChecked]) =>
             choiceDisplay(isChecked, select.Choices[choiceIndex], choiceIndex)
         )}
       </div>
-      <HintButton text={select.Hint} />
       <div className="text-red-600 text-sm py-2 sm:pl-4 pl-2">{answers.Errors.get(select.ID)}</div>
     </div>
   );

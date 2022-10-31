@@ -99,12 +99,18 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
 
   return (
     <div>
-      <h3 className="text-lg break-words text-gray-600">{text.Title}</h3>
-      {requirementsDisplay()}
+      <div className="grid grid-rows-1 grid-flow-col">
+        <div>
+          <h3 className="text-lg break-words text-gray-600 w-96">{text.Title}</h3>
+        </div>
+        <div>
+          <HintButton text={text.Hint} />
+        </div>
+      </div>
+      <div className="pt-1">{requirementsDisplay()}</div>
       <div className="sm:pl-8 mt-2 pl-6">
         {text.Choices.map((choice, index) => choiceDisplay(choice, index))}
       </div>
-      <HintButton text={text.Hint} />
       <div className="text-red-600 text-sm py-2 sm:pl-2 pl-1">{answers.Errors.get(text.ID)}</div>
     </div>
   );
