@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+
 	"net/http"
 
 	"github.com/dedis/d-voting/proxy/types"
@@ -37,8 +38,9 @@ type dkg struct {
 }
 
 // NewDKGActor implements proxy.DKG
-// Create a new DKG actor for the given electionID
+// Create a new DKG actor for the given formID
 func (d dkg) NewDKGActor(w http.ResponseWriter, r *http.Request) {
+
 	var req types.NewDKGRequest
 
 	// Read the request
@@ -59,6 +61,17 @@ func (d dkg) NewDKGActor(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "failed to decode formID: "+req.FormID,
 			http.StatusBadRequest)
+		return
+	}
+
+	
+	if len(formIDBuf) == 0 {
+		http.Error(w, "formID is empty", http.StatusBadRequest)
+		return
+	}
+
+	_, found := d.dkgService.GetActor(formIDBuf)
+	if found {
 		return
 	}
 
