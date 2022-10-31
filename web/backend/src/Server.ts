@@ -545,7 +545,6 @@ app.use('/api/evoting/*', (req, res) => {
     // bodyData.UserID = req.session.userid.toString();
     bodyData.UserID = makeid(10);
   }
-  //console.log('bodyData', bodyData);
 
   const dataStr = JSON.stringify(bodyData);
 
