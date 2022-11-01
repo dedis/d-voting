@@ -175,18 +175,19 @@ app.get('/api/personal_info', (req, res) => {
   }
 });
 
-function isAuthorized(roles: string[], req: express.Request): boolean {
-  //return true;
-  if (!req.session || !req.session.userid) {
-    return false;
-  }
+//function isAuthorized(roles: string[], req: express.Request): boolean {
+//return true;
+//if (!req.session || !req.session.userid) {
+//return false;
+//}
 
-  const { role } = req.session;
+//const { role } = req.session;
 
-  return roles.includes(role as string);
-}
+//return roles.includes(role as string);
+//}
 
-import { Enforcer, newEnforcer } from 'casbin';
+import { newEnforcer } from 'casbin';
+
 const e = newEnforcer('model.conf', 'policy.csv');
 
 // ---
@@ -207,11 +208,10 @@ app.get('/api/user_rights', async (req, res) => {
           res.json(users);
         } else {
           res.status(400).send('Unauthorized - only admins allowed');
-          return;
         }
       })
-      .catch((e) => console.log('error', e))
-  ).catch((e) => console.log('error', e));
+      .catch((erreur) => console.log('error', erreur))
+  ).catch((erreur1) => console.log('error', erreur1));
 });
 
 // This call (only for admins) allow an admin to add a role to a voter.
@@ -231,11 +231,10 @@ app.post('/api/add_role', (req, res) => {
           });
         } else {
           res.status(400).send('Unauthorized - only admins allowed');
-          return;
         }
       })
-      .catch((e) => console.log('error', e))
-  ).catch((e) => console.log('error', e));
+      .catch((error) => console.log('error', error))
+  ).catch((error1) => console.log('error', error1));
 });
 
 // This call (only for admins) allow an admin to remove a role to a user.
@@ -245,7 +244,6 @@ app.post('/api/remove_role', (req, res) => {
       enforcer
         .enforce(req.session.userid, 'database', 'removerole')
         .then((isOK) => {
-          console.log(isOK);
           if (isOK) {
             const { sciper } = req.body;
             usersDB
@@ -266,12 +264,11 @@ app.post('/api/remove_role', (req, res) => {
               });
           } else {
             res.status(400).send('Unauthorized - only admins allowed');
-            return;
           }
         })
-        .catch((e) => console.log('error', e));
+        .catch((erreur) => console.log('error', erreur));
     })
-    .catch((e) => console.log('error', e));
+    .catch((erreur1) => console.log('error', erreur1));
 });
 
 // ---
@@ -330,7 +327,6 @@ app.put('/api/proxies/:nodeAddr', (req, res) => {
         }
       } else {
         res.status(400).send('Unauthorized - only admins and operators allowed');
-        return;
       }
     });
   });
@@ -360,7 +356,6 @@ app.delete('/api/proxies/:nodeAddr', (req, res) => {
         }
       } else {
         res.status(400).send('Unauthorized - only admins and operators allowed');
-        return;
       }
     });
   });
@@ -506,8 +501,8 @@ app.use('/api/evoting/*', (req, res, next) => {
           return;
         }
       })
-      .catch((e) => console.log('erreur', e));
-  }).catch((e) => console.log('erreur', e));
+      .catch((error) => console.log('erreur', error));
+  }).catch((error1) => console.log('erreur', error1));
 });
 
 // https://stackoverflow.com/a/1349426
