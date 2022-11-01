@@ -176,6 +176,7 @@ app.get('/api/personal_info', (req, res) => {
 });
 
 function isAuthorized(roles: string[], req: express.Request): boolean {
+  //return true;
   if (!req.session || !req.session.userid) {
     return false;
   }
@@ -185,68 +186,92 @@ function isAuthorized(roles: string[], req: express.Request): boolean {
   return roles.includes(role as string);
 }
 
+import { Enforcer, newEnforcer } from 'casbin';
+const e = newEnforcer('model.conf', 'policy.csv');
+
 // ---
 // Users role
 // ---
-
 // This call allow a user that is admin to get the list of the people that have
 // a special role (not a voter).
-app.get('/api/user_rights', (req, res) => {
-  if (!isAuthorized(['admin'], req)) {
-    res.status(400).send('Unauthorized - only admins allowed');
-    return;
-  }
-
-  const opts: RangeOptions = {};
-  const users = Array.from(
-    usersDB.getRange(opts).map(({ key, value }) => ({ id: '0', sciper: key, role: value }))
-  );
-  res.json(users);
+app.get('/api/user_rights', async (req, res) => {
+  e.then((enforcer) =>
+    enforcer
+      .enforce(req.session.userid, 'roles', 'list')
+      .then((isOK) => {
+        if (isOK) {
+          const opts: RangeOptions = {};
+          const users = Array.from(
+            usersDB.getRange(opts).map(({ key, value }) => ({ id: '0', sciper: key, role: value }))
+          );
+          res.json(users);
+        } else {
+          res.status(400).send('Unauthorized - only admins allowed');
+          return;
+        }
+      })
+      .catch((e) => console.log('error', e))
+  ).catch((e) => console.log('error', e));
 });
 
 // This call (only for admins) allow an admin to add a role to a voter.
 app.post('/api/add_role', (req, res) => {
-  if (!isAuthorized(['admin'], req)) {
-    res.status(400).send('Unauthorized - only admins allowed');
-    return;
-  }
+  e.then((enforcer) =>
+    enforcer
+      .enforce(req.session.userid, 'database', 'addrole')
+      .then((isOk) => {
+        console.log(isOk);
+        if (isOk) {
+          const { sciper } = req.body;
+          const { role } = req.body;
 
-  // {sciper: xxx, role: xxx}
-
-  const { sciper } = req.body;
-  const { role } = req.body;
-
-  usersDB.put(sciper, role).catch((error) => {
-    res.status(500).send('Failed to add role');
-    console.log(error);
-  });
+          usersDB.put(sciper, role).catch((error) => {
+            res.status(500).send('Failed to add role');
+            console.log(error);
+          });
+        } else {
+          res.status(400).send('Unauthorized - only admins allowed');
+          return;
+        }
+      })
+      .catch((e) => console.log('error', e))
+  ).catch((e) => console.log('error', e));
 });
 
 // This call (only for admins) allow an admin to remove a role to a user.
 app.post('/api/remove_role', (req, res) => {
-  if (!isAuthorized(['admin'], req)) {
-    res.status(400).send('Unauthorized - only admins allowed');
-    return;
-  }
+  newEnforcer('model.conf', 'policy.csv')
+    .then((enforcer) => {
+      enforcer
+        .enforce(req.session.userid, 'database', 'removerole')
+        .then((isOK) => {
+          console.log(isOK);
+          if (isOK) {
+            const { sciper } = req.body;
+            usersDB
+              .remove(sciper)
+              .then(() => {
+                const sessionIDs = sciper2sess.get(sciper);
+                if (sessionIDs !== undefined) {
+                  sessionIDs.forEach((_, sessionID) => {
+                    store.destroy(sessionID);
+                  });
+                }
 
-  const { sciper } = req.body;
-
-  usersDB
-    .remove(sciper)
-    .then(() => {
-      const sessionIDs = sciper2sess.get(sciper);
-      if (sessionIDs !== undefined) {
-        sessionIDs.forEach((_, sessionID) => {
-          store.destroy(sessionID);
-        });
-      }
-
-      res.status(200).send('Removed');
+                res.status(200).send('Removed');
+              })
+              .catch((error) => {
+                res.status(500).send('Remove role failed');
+                console.log(error);
+              });
+          } else {
+            res.status(400).send('Unauthorized - only admins allowed');
+            return;
+          }
+        })
+        .catch((e) => console.log('error', e));
     })
-    .catch((error) => {
-      res.status(500).send('Remove role failed');
-      console.log(error);
-    });
+    .catch((e) => console.log('error', e));
 });
 
 // ---
@@ -256,7 +281,90 @@ app.post('/api/remove_role', (req, res) => {
 // ---
 // Proxies
 // ---
+app.post('/api/proxies', (req, res) => {
+  e.then((enforcer) => {
+    enforcer.enforce(req.session.userid, 'proxies', 'post').then((isOK) => {
+      if (isOK) {
+        try {
+          const bodydata = req.body;
+          proxiesDB.put(bodydata.NodeAddr, bodydata.Proxy);
+          console.log('put', bodydata.NodeAddr, '=>', bodydata.Proxy);
+          res.status(200).send('ok');
+        } catch (error: any) {
+          res.status(500).send(error.toString());
+        }
+      } else {
+        res.status(400).send('Unauthorized - only admins and operators allowed');
+        return;
+      }
+    });
+  });
+});
 
+app.put('/api/proxies/:nodeAddr', (req, res) => {
+  e.then((enforcer) => {
+    enforcer.enforce(req.session.userid, 'proxies', 'put').then((isOK) => {
+      if (isOK) {
+        let { nodeAddr } = req.params;
+
+        nodeAddr = decodeURIComponent(nodeAddr);
+
+        const proxy = proxiesDB.get(nodeAddr);
+
+        if (proxy === undefined) {
+          res.status(404).send('not found');
+          return;
+        }
+        try {
+          const bodydata = req.body;
+          if (bodydata.Proxy === undefined) {
+            res.status(400).send('bad request, proxy is undefined');
+            return;
+          }
+
+          proxiesDB.put(nodeAddr, bodydata.Proxy);
+          console.log('put', nodeAddr, '=>', bodydata.Proxy);
+          res.status(200).send('ok');
+        } catch (error: any) {
+          res.status(500).send(error.toString());
+        }
+      } else {
+        res.status(400).send('Unauthorized - only admins and operators allowed');
+        return;
+      }
+    });
+  });
+});
+
+app.delete('/api/proxies/:nodeAddr', (req, res) => {
+  e.then((enforcer) => {
+    enforcer.enforce(req.session.userid, 'proxies', 'delete').then((isOK) => {
+      if (isOK) {
+        let { nodeAddr } = req.params;
+
+        nodeAddr = decodeURIComponent(nodeAddr);
+
+        const proxy = proxiesDB.get(nodeAddr);
+
+        if (proxy === undefined) {
+          res.status(404).send('not found');
+          return;
+        }
+
+        try {
+          proxiesDB.remove(nodeAddr);
+          console.log('remove', nodeAddr, '=>', proxy);
+          res.status(200).send('ok');
+        } catch (error: any) {
+          res.status(500).send(error.toString());
+        }
+      } else {
+        res.status(400).send('Unauthorized - only admins and operators allowed');
+        return;
+      }
+    });
+  });
+});
 const proxiesDB = lmdb.open<string, string>({ path: `${process.env.DB_PATH}proxies` });
 
 app.get('/api/proxies', (req, res) => {
@@ -282,80 +390,6 @@ app.get('/api/proxies/:nodeAddr', (req, res) => {
     NodeAddr: nodeAddr,
     Proxy: proxy,
   });
-});
-
-app.post('/api/proxies', (req, res) => {
-  if (!isAuthorized(['admin', 'operator'], req)) {
-    res.status(400).send('Unauthorized - only admins and operators allowed');
-    return;
-  }
-
-  try {
-    const bodydata = req.body;
-    proxiesDB.put(bodydata.NodeAddr, bodydata.Proxy);
-    console.log('put', bodydata.NodeAddr, '=>', bodydata.Proxy);
-    res.status(200).send('ok');
-  } catch (error: any) {
-    res.status(500).send(error.toString());
-  }
-});
-
-app.put('/api/proxies/:nodeAddr', (req, res) => {
-  if (!isAuthorized(['admin', 'operator'], req)) {
-    res.status(400).send('Unauthorized - only admins and operators allowed');
-    return;
-  }
-
-  let { nodeAddr } = req.params;
-
-  nodeAddr = decodeURIComponent(nodeAddr);
-
-  const proxy = proxiesDB.get(nodeAddr);
-
-  if (proxy === undefined) {
-    res.status(404).send('not found');
-    return;
-  }
-
-  try {
-    const bodydata = req.body;
-    if (bodydata.Proxy === undefined) {
-      res.status(400).send('bad request, proxy is undefined');
-      return;
-    }
-
-    proxiesDB.put(nodeAddr, bodydata.Proxy);
-    console.log('put', nodeAddr, '=>', bodydata.Proxy);
-    res.status(200).send('ok');
-  } catch (error: any) {
-    res.status(500).send(error.toString());
-  }
-});
-
-app.delete('/api/proxies/:nodeAddr', (req, res) => {
-  if (!isAuthorized(['admin', 'operator'], req)) {
-    res.status(400).send('Unauthorized - only admins and operators allowed');
-    return;
-  }
-
-  let { nodeAddr } = req.params;
-
-  nodeAddr = decodeURIComponent(nodeAddr);
-
-  const proxy = proxiesDB.get(nodeAddr);
-
-  if (proxy === undefined) {
-    res.status(404).send('not found');
-    return;
-  }
-
-  try {
-    proxiesDB.remove(nodeAddr);
-    console.log('remove', nodeAddr, '=>', proxy);
-    res.status(200).send('ok');
-  } catch (error: any) {
-    res.status(500).send(error.toString());
-  }
 });
 
 // ---
@@ -461,13 +495,19 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
 
 // Secure /api/evoting to admins and operators
 app.use('/api/evoting/*', (req, res, next) => {
-  if (!isAuthorized(['admin', 'operator'], req)) {
-    console.log('role is:', req.session.role);
-    res.status(400).send('Unauthorized - only admins and operators allowed');
-    return;
-  }
-
-  next();
+  e.then((enforcer) => {
+    enforcer
+      .enforce(req.session.userid, 'election', 'create')
+      .then((isOk) => {
+        if (isOk) {
+          next();
+        } else {
+          res.status(400).send('Unauthorized - only admins and operators allowed');
+          return;
+        }
+      })
+      .catch((e) => console.log('erreur', e));
+  }).catch((e) => console.log('erreur', e));
 });
 
 // https://stackoverflow.com/a/1349426

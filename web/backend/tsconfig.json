@@ -25,6 +25,8 @@
     }
   },
   "include": [
+    "model.conf",
+    "policy.csv",
     "src/Server.ts",
     "config.json"
   ],
