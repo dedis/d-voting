@@ -8,6 +8,7 @@ import crypto from 'crypto';
 import lmdb, { RangeOptions } from 'lmdb';
 import xss from 'xss';
 import createMemoryStore from 'memorystore';
+import { newEnforcer } from 'casbin';
 
 const MemoryStore = createMemoryStore(session);
 
@@ -175,18 +176,16 @@ app.get('/api/personal_info', (req, res) => {
   }
 });
 
-//function isAuthorized(roles: string[], req: express.Request): boolean {
-//return true;
-//if (!req.session || !req.session.userid) {
-//return false;
-//}
+// function isAuthorized(roles: string[], req: express.Request): boolean {
+// return true;
+// if (!req.session || !req.session.userid) {
+// return false;
+// }
 
-//const { role } = req.session;
+// const { role } = req.session;
 
-//return roles.includes(role as string);
-//}
-
-import { newEnforcer } from 'casbin';
+// return roles.includes(role as string);
+// }
 
 const e = newEnforcer('model.conf', 'policy.csv');
 
@@ -278,6 +277,7 @@ app.post('/api/remove_role', (req, res) => {
 // ---
 // Proxies
 // ---
+const proxiesDB = lmdb.open<string, string>({ path: `${process.env.DB_PATH}proxies` });
 app.post('/api/proxies', (req, res) => {
   e.then((enforcer) => {
     enforcer.enforce(req.session.userid, 'proxies', 'post').then((isOK) => {
@@ -292,7 +292,6 @@ app.post('/api/proxies', (req, res) => {
         }
       } else {
         res.status(400).send('Unauthorized - only admins and operators allowed');
-        return;
       }
     });
   });
@@ -360,7 +359,6 @@ app.delete('/api/proxies/:nodeAddr', (req, res) => {
     });
   });
 });
-const proxiesDB = lmdb.open<string, string>({ path: `${process.env.DB_PATH}proxies` });
 
 app.get('/api/proxies', (req, res) => {
   const output = new Map<string, string>();
@@ -498,7 +496,6 @@ app.use('/api/evoting/*', (req, res, next) => {
           next();
         } else {
           res.status(400).send('Unauthorized - only admins and operators allowed');
-          return;
         }
       })
       .catch((error) => console.log('erreur', error));
