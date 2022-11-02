@@ -325,10 +325,8 @@ func TestActor(t *testing.T) {
 
 }
 
-// -------------------
-// -------------------
-// Auxiliar functions
-//
+// -----------------------------------------------------------------------------
+// Utility functions
 
 // mock dkgService
 type mockDKGService struct {
