@@ -316,6 +316,7 @@ func (a *RegisterHandlersAction) Execute(ctx node.Context) error {
 
 	ep := eproxy.NewDKG(mngr, dkg, proxykey)
 
+	// Link the request to the proxy
 	router.HandleFunc("/evoting/services/dkg/actors", ep.NewDKGActor).Methods("POST")
 	router.HandleFunc("/evoting/services/dkg/actors", eproxy.AllowCORS).Methods("OPTIONS")
 	router.HandleFunc("/evoting/services/dkg/actors/{formID}", ep.Actor).Methods("GET")

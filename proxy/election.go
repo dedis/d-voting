@@ -70,12 +70,14 @@ type form struct {
 func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 	var req ptypes.CreateFormRequest
 
+	// get the signed request
 	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
 		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
 
+	// get the request and verify the signature
 	err = signed.GetAndVerify(h.pk, &req)
 	if err != nil {
 		InternalError(w, r, getSignedErr(err), nil)
@@ -87,6 +89,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 		AdminID:       req.AdminID,
 	}
 
+	// serialize the transaction
 	data, err := createForm.Serialize(h.context)
 	if err != nil {
 		http.Error(w, "failed to marshal CreateFormTransaction: "+err.Error(),
@@ -94,20 +97,24 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// create the transaction and add it to the pool
 	txID, err := h.submitAndWaitForTxn(r.Context(), evoting.CmdCreateForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	// hash the transaction
 	hash := sha256.New()
 	hash.Write(txID)
 	formID := hash.Sum(nil)
 
+	// return the formID
 	response := ptypes.CreateFormResponse{
 		FormID: hex.EncodeToString(formID),
 	}
 
+	// sign the response
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
@@ -121,6 +128,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
+	// check if the formID is valid
 	if vars == nil || vars["formID"] == "" {
 		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
@@ -130,12 +138,14 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 
 	var req ptypes.CastVoteRequest
 
+	// get the signed request
 	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
 		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
 
+	// get the request and verify the signature
 	err = signed.GetAndVerify(h.pk, &req)
 	if err != nil {
 		InternalError(w, r, getSignedErr(err), nil)
@@ -148,6 +158,7 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the form exist
 	if elecMD.FormsIDs.Contains(formID) < 0 {
 		http.Error(w, "the form does not exist", http.StatusNotFound)
 		return
@@ -155,6 +166,7 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 
 	ciphervote := make(types.Ciphervote, len(req.Ballot))
 
+	// encrypt the vote 
 	for i, egpair := range req.Ballot {
 		k := suite.Point()
 
@@ -184,6 +196,7 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 		Ballot:     ciphervote,
 	}
 
+	// serialize the vote
 	data, err := castVote.Serialize(h.context)
 	if err != nil {
 		http.Error(w, "failed to marshal CastVoteTransaction: "+err.Error(),
@@ -191,6 +204,7 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// create the transaction and add it to the pool
 	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCastVote, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
@@ -202,6 +216,7 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
+	//check if the formID is valid
 	if vars == nil || vars["formID"] == "" {
 		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
@@ -215,6 +230,7 @@ func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the form exists
 	if elecMD.FormsIDs.Contains(formID) < 0 {
 		http.Error(w, "the form does not exist", http.StatusNotFound)
 		return
@@ -222,18 +238,19 @@ func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
 
 	var req ptypes.UpdateFormRequest
 
+	// get the signed request
 	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
 		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
 
+	// get the request and verify the signature
 	err = signed.GetAndVerify(h.pk, &req)
 	if err != nil {
 		InternalError(w, r, getSignedErr(err), nil)
 		return
 	}
-
 	switch req.Action {
 	case "open":
 		h.openForm(formID, w, r)
@@ -256,6 +273,7 @@ func (h *form) openForm(elecID string, w http.ResponseWriter, r *http.Request) {
 		FormID: elecID,
 	}
 
+	// serialize the transaction
 	data, err := openForm.Serialize(h.context)
 	if err != nil {
 		http.Error(w, "failed to marshal OpenFormTransaction: "+err.Error(),
@@ -263,6 +281,7 @@ func (h *form) openForm(elecID string, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// create the transaction and add it to the pool
 	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdOpenForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
@@ -277,6 +296,7 @@ func (h *form) closeForm(formIDHex string, w http.ResponseWriter, r *http.Reques
 		FormID: formIDHex,
 	}
 
+	// serialize the transaction
 	data, err := closeForm.Serialize(h.context)
 	if err != nil {
 		http.Error(w, "failed to marshal CloseFormTransaction: "+err.Error(),
@@ -284,6 +304,7 @@ func (h *form) closeForm(formIDHex string, w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// create the transaction and add it to the pool
 	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCloseForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
@@ -310,6 +331,7 @@ func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Re
 		FormID: formIDHex,
 	}
 
+	// serialize the transaction
 	data, err := decryptBallots.Serialize(h.context)
 	if err != nil {
 		http.Error(w, "failed to marshal decryptBallots: "+err.Error(),
@@ -317,6 +339,7 @@ func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// create the transaction and add it to the pool
 	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
@@ -331,6 +354,7 @@ func (h *form) cancelForm(formIDHex string, w http.ResponseWriter, r *http.Reque
 		FormID: formIDHex,
 	}
 
+	// serialize the transaction
 	data, err := cancelForm.Serialize(h.context)
 	if err != nil {
 		http.Error(w, "failed to marshal CancelForm: "+err.Error(),
@@ -338,6 +362,7 @@ func (h *form) cancelForm(formIDHex string, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// create the transaction and add it to the pool
 	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCancelForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
@@ -353,6 +378,7 @@ func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 
+	// check if the form exists
 	if vars == nil || vars["formID"] == "" {
 		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
@@ -360,6 +386,7 @@ func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 
 	formID := vars["formID"]
 
+	// get the form
 	form, err := getForm(h.context, h.formFac, formID, h.orderingSvc)
 	if err != nil {
 		http.Error(w, xerrors.Errorf("failed to get form: %v", err).Error(), http.StatusInternalServerError)
@@ -368,6 +395,7 @@ func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 
 	var pubkeyBuf []byte
 
+	// get the public key
 	if form.Pubkey != nil {
 		pubkeyBuf, err = form.Pubkey.MarshalBinary()
 		if err != nil {
@@ -420,6 +448,7 @@ func (h *form) Forms(w http.ResponseWriter, r *http.Request) {
 
 	allFormsInfo := make([]ptypes.LightForm, len(elecMD.FormsIDs))
 
+	// get the forms
 	for i, id := range elecMD.FormsIDs {
 		form, err := getForm(h.context, h.formFac, id, h.orderingSvc)
 		if err != nil {
@@ -462,6 +491,7 @@ func (h *form) Forms(w http.ResponseWriter, r *http.Request) {
 func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
+	// check if the formID is valid
 	if vars == nil || vars["formID"] == "" {
 		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
@@ -475,6 +505,7 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the form exists
 	if elecMD.FormsIDs.Contains(formID) < 0 {
 		http.Error(w, "the form does not exist", http.StatusNotFound)
 		return
@@ -490,6 +521,7 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if the signature is valid
 	err = schnorr.Verify(suite, h.pk, []byte(formID), sig)
 	if err != nil {
 		ForbiddenError(w, r, xerrors.Errorf("signature verification failed: %v", err), nil)
@@ -506,6 +538,7 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// create the transaction and add it to the pool
 	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdDeleteForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
@@ -627,6 +660,7 @@ func (h *form) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
 	return tx.GetID(), nil
 }
 
+// createTransaction creates a transaction with the given command and payload.
 func createTransaction(manager txn.Manager, commandType evoting.Command,
 	commandArg string, buf []byte) (txn.Transaction, error) {
 

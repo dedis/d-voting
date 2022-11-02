@@ -24,14 +24,17 @@ func NewShuffle(actor shuffleSrv.Actor, pk kyber.Point) Shuffle {
 //
 // - implements proxy.Shuffle
 type shuffle struct {
+	// actor is the shuffle actor
 	actor shuffleSrv.Actor
-	pk    kyber.Point
+	// pk is the public key of the proxy
+	pk kyber.Point
 }
 
 // EditShuffle implements proxy.Shuffle
 func (s shuffle) EditShuffle(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
+	// check if the formID is present
 	if vars == nil || vars["formID"] == "" {
 		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
@@ -47,12 +50,14 @@ func (s shuffle) EditShuffle(w http.ResponseWriter, r *http.Request) {
 
 	var req types.UpdateShuffle
 
+	// Read the request
 	signed, err := types.NewSignedRequest(r.Body)
 	if err != nil {
 		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
 
+	// Verify the signature and get the request
 	err = signed.GetAndVerify(s.pk, &req)
 	if err != nil {
 		InternalError(w, r, getSignedErr(err), nil)
@@ -60,6 +65,7 @@ func (s shuffle) EditShuffle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch req.Action {
+	// shuffle the ballots
 	case "shuffle":
 		err = s.actor.Shuffle(buff)
 		if err != nil {
