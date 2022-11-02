@@ -397,7 +397,7 @@ function getPayload(dataStr: string) {
 function sendToDela(dataStr: string, req: express.Request, res: express.Response) {
   let payload = getPayload(dataStr);
 
-  // we strip the `/api` part: /api/election/xxx => /election/xxx
+  // we strip the `/api` part: /api/form/xxx => /form/xxx
   let uri = process.env.DELA_NODE_URL + req.baseUrl.slice(4);
   // boolean to check
   let redirectToDefaultProxy = true;
@@ -405,7 +405,7 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
 
   const dkgInitRegex = /\/evoting\/services\/dkg\/actors$/;
   if (uri.match(dkgInitRegex)) {
-    const dataStr2 = JSON.stringify({ ElectionID: req.body.ElectionID });
+    const dataStr2 = JSON.stringify({ FormID: req.body.FormID });
     payload = getPayload(dataStr2);
     redirectToDefaultProxy = false;
   }
@@ -481,8 +481,8 @@ function makeid(length: number) {
   return result;
 }
 
-app.delete('/api/evoting/elections/:electionID', (req, res) => {
-  const { electionID } = req.params;
+app.delete('/api/evoting/forms/:formID', (req, res) => {
+  const { formID } = req.params;
 
   const edCurve = kyber.curve.newCurve('edwards25519');
 
@@ -495,9 +495,9 @@ app.delete('/api/evoting/elections/:electionID', (req, res) => {
   const point = edCurve.point();
   point.unmarshalBinary(pub);
 
-  const sign = kyber.sign.schnorr.sign(edCurve, scalar, Buffer.from(electionID));
+  const sign = kyber.sign.schnorr.sign(edCurve, scalar, Buffer.from(formID));
 
-  // we strip the `/api` part: /api/election/xxx => /election/xxx
+  // we strip the `/api` part: /api/form/xxx => /form/xxx
   const uri = process.env.DELA_NODE_URL + xss(req.url.slice(4));
 
   axios({
@@ -536,7 +536,7 @@ app.use('/api/evoting/*', (req, res) => {
   const bodyData = req.body;
 
   // special case for voting
-  const regex = /\/api\/evoting\/elections\/.*\/vote/;
+  const regex = /\/api\/evoting\/forms\/.*\/vote/;
   if (req.baseUrl.match(regex)) {
     // We must set the UserID to know who this ballot is associated to. This is
     // only needed to allow users to cast multiple ballots, where only the last

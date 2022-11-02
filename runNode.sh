@@ -62,9 +62,22 @@ pk=adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3
 # Launch session
 s="d-voting-test"
 
-tmux list-sessions | rg "^$s:" >/dev/null 2>&1 && { echo >&2 "A session with the name $s already exists; kill it and try again"; exit 1; }
+# check if session already exists, if so run the kill_test.sh script
+if tmux has-session -t $s 2>/dev/null; then
+  echo "Session $s already exists, killing it"
+  ./kill_test.sh
+fi
+
+
 
 tmux new-session -d -s $s
+
+# Checks that we can afford to have at least one Byzantine node and keep the
+# system working, which is not possible with less than 4 nodes.
+if [ $N_NODE -le 3 ]; then
+  echo "Warning: the number of nodes is less or equal than 3, it will not be resiliant if one node is down"
+fi
+
 
 # Clean logs
 rm -rf ./log/log
