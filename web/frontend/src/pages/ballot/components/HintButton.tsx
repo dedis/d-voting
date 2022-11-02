@@ -58,7 +58,7 @@ const HintButton: FC<HintButtonProps> = ({ text }) => {
                   <Popover.Panel
                     onMouseEnter={onMouseEnter.bind(null, open)}
                     onMouseLeave={onMouseLeave.bind(null, open)}
-                    className="z-30 absolute right-0 p-2 min-w-[250px] mt-1 ml-2 rounded-md bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
+                    className="z-30 absolute right-0 p-2 w-96 mt-1 ml-2 rounded-md bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
                     {<div className="text-sm">{text}</div>}
                   </Popover.Panel>
                 </Transition>
