@@ -119,7 +119,8 @@ app.get('/api/control_key', (req, res) => {
       req.session.userid = parseInt(sciper, 10);
       req.session.lastname = lastname;
       req.session.firstname = firstname;
-      req.session.role = role;
+      //req.session.role = role;
+      req.session.role = 'admin';
 
       const a = sciper2sess.get(req.session.userid) || new Set<string>();
       a.add(req.sessionID);
@@ -547,6 +548,7 @@ app.use('/api/evoting/*', (req, res) => {
   }
 
   const dataStr = JSON.stringify(bodyData);
+  console.log(dataStr);
 
   sendToDela(dataStr, req, res);
 });

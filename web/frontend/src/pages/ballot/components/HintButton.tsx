@@ -43,7 +43,7 @@ const HintButton: FC<HintButtonProps> = ({ text }) => {
                   ref={buttonRef}
                   onMouseEnter={onMouseEnter.bind(null, open)}
                   onMouseLeave={onMouseLeave.bind(null, open)}>
-                  <div className="text-gray-600">
+                  <div className="text-gray-600 hover:text-blue-600">
                     <QuestionMarkCircleIcon className="color-gray-900 mt-2 h-4 w-4" />
                   </div>
                 </Popover.Button>
