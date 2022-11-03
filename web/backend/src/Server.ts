@@ -194,7 +194,7 @@ const e = newEnforcer('model.conf', 'policy.csv');
 // ---
 // This call allow a user that is admin to get the list of the people that have
 // a special role (not a voter).
-app.get('/api/user_rights', async (req, res) => {
+app.get('/api/user_rights', (req, res) => {
   e.then((enforcer) =>
     enforcer
       .enforce(req.session.userid, 'roles', 'list')
@@ -209,8 +209,8 @@ app.get('/api/user_rights', async (req, res) => {
           res.status(400).send('Unauthorized - only admins allowed');
         }
       })
-      .catch((erreur) => console.log('error', erreur))
-  ).catch((erreur1) => console.log('error', erreur1));
+      .catch((error) => console.log('error', error))
+  ).catch((error) => console.log('error', error));
 });
 
 // This call (only for admins) allow an admin to add a role to a voter.
@@ -265,9 +265,9 @@ app.post('/api/remove_role', (req, res) => {
             res.status(400).send('Unauthorized - only admins allowed');
           }
         })
-        .catch((erreur) => console.log('error', erreur));
+        .catch((error) => console.log('error', error));
     })
-    .catch((erreur1) => console.log('error', erreur1));
+    .catch((error) => console.log('error', error));
 });
 
 // ---
@@ -498,8 +498,8 @@ app.use('/api/evoting/*', (req, res, next) => {
           res.status(400).send('Unauthorized - only admins and operators allowed');
         }
       })
-      .catch((error) => console.log('erreur', error));
-  }).catch((error1) => console.log('erreur', error1));
+      .catch((error) => console.log('error', error));
+  }).catch((error1) => console.log('error', error1));
 });
 
 // https://stackoverflow.com/a/1349426
