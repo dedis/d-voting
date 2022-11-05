@@ -2,7 +2,7 @@ import { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Answers, TextQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
-import HintButton from 'pages/ballot/components/HintButton';
+import HintButton from 'components/buttons/HintButton';
 
 type TextProps = {
   text: TextQuestion;

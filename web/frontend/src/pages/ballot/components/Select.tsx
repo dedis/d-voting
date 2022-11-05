@@ -2,7 +2,7 @@ import { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Answers, SelectQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
-import HintButton from 'pages/ballot/components/HintButton';
+import HintButton from 'components/buttons/HintButton';
 
 type SelectProps = {
   select: SelectQuestion;

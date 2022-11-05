@@ -2,7 +2,7 @@ import { FC } from 'react';
 import { Draggable, DropResult, Droppable } from 'react-beautiful-dnd';
 import { Answers, ID, RankQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
-import HintButton from 'pages/ballot/components/HintButton';
+import HintButton from 'components/buttons/HintButton';
 
 export const handleOnDragEnd = (
   result: DropResult,
