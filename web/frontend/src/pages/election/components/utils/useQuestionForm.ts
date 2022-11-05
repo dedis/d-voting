@@ -4,7 +4,7 @@ import { RankQuestion, SelectQuestion, TextQuestion } from 'types/configuration'
 // form hook that handles the form state for all types of questions
 const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion) => {
   const [state, setState] = useState<RankQuestion | SelectQuestion | TextQuestion>(initState);
-  const { MinN, Choices } = state;
+  const { MinN, Choices,ChoicesDe,ChoicesFr } = state;
 
   // depending on the type of the Exception in the question, the form state is
   // updated accordingly
@@ -19,6 +19,8 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
           setState({
             ...state,
             Choices: [...Choices, ''],
+            ChoicesFr: [...ChoicesFr, ''],
+            ChoicesDe: [...ChoicesDe, ''],
             MaxN: Choices.length + 1,
             MinN: Choices.length + 1,
           });
@@ -27,10 +29,18 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
           const filteredChoices = Choices.filter(
             (item: string, idx: number) => idx !== optionnalValues
           );
+          const filteredChoicesFr = ChoicesFr.filter(
+            (item: string, idx: number) => idx !== optionnalValues
+          );
+          const filteredChoicesDe = ChoicesDe.filter(
+            (item: string, idx: number) => idx !== optionnalValues
+          );
 
           setState({
             ...state,
             Choices: filteredChoices,
+            ChoicesFr: filteredChoicesFr,
+            ChoicesDe: filteredChoicesDe,
             MaxN: filteredChoices.length,
             MinN: filteredChoices.length,
           });
@@ -58,21 +68,26 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
 
   // updates the choices array when the user adds a new choice
   const addChoice = () => {
-    setState({ ...state, Choices: [...Choices, ''], MaxN: Choices.length + 1 });
+    setState({ ...state, Choices: [...Choices, ''], ChoicesFr: [...ChoicesFr, ''], ChoicesDe: [...ChoicesDe, ''], MaxN: Choices.length + 1 });
   };
 
   // remove a choice from the choices array
   const deleteChoice = (index: number) => {
     if (Choices.length > MinN) {
       const filteredChoices = Choices.filter((item: string, idx: number) => idx !== index);
-
-      setState({
+    if (ChoicesFr.length > MinN) {
+        const filteredChoicesFr = ChoicesFr.filter((item: string, idx: number) => idx !== index);    
+    if (ChoicesDe.length > MinN) {
+        const filteredChoicesDe = ChoicesDe.filter((item: string, idx: number) => idx !== index);
+        setState({
         ...state,
         Choices: filteredChoices,
+        ChoicesFr: filteredChoicesFr,
+        ChoicesDe: filteredChoicesDe,
         MaxN: filteredChoices.length,
       });
     }
-  };
+    }}};
 
   // update the choice at the given index
   const updateChoice = (index: number) => (e) => {
@@ -80,6 +95,18 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
     setState({
       ...state,
       Choices: Choices.map((item: string, idx: number) => {
+        if (idx === index) {
+          return e.target.value;
+        }
+        return item;
+      }),
+      ChoicesFr: ChoicesFr.map((item: string, idx: number) => {
+        if (idx === index) {
+          return e.target.value;
+        }
+        return item;
+      }),
+      ChoicesDe: ChoicesDe.map((item: string, idx: number) => {
         if (idx === index) {
           return e.target.value;
         }

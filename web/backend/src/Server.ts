@@ -116,6 +116,7 @@ app.get('/api/control_key', (req, res) => {
 
       const role = usersDB.get(sciper) || '';
 
+      
       req.session.userid = parseInt(sciper, 10);
       req.session.lastname = lastname;
       req.session.firstname = firstname;

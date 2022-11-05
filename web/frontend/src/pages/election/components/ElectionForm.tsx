@@ -20,6 +20,8 @@ import RemoveElementModal from './RemoveElementModal';
 import { useConfiguration } from 'components/utils/useConfiguration';
 import BallotDisplay from 'pages/ballot/components/BallotDisplay';
 
+import { availableLanguages } from 'language/Configuration';
+
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
 
@@ -45,7 +47,13 @@ const ElectionForm: FC<ElectionFormProps> = () => {
   const [marshalledConf, setMarshalledConf] = useState<any>(marshalConfig(conf));
   const { configuration: previewConf, answers, setAnswers } = useConfiguration(marshalledConf);
 
-  const { MainTitle, Scaffold } = conf;
+  const { MainTitle, Scaffold, TitleLg1,TitleLg2} = conf; //ScaffoldLg1, , ScaffoldLg2 
+
+  const [language, setLanguage] = useState('en');
+  //const [titleChanging1, setTitleChanging1] = useState<boolean>(true);
+ // const [titleChanging2, setTitleChanging2] = useState<boolean>(true);
+  //const TitleLg1 = '';
+  //const TitleLg2 = '';
 
   useEffect(() => {
     setMarshalledConf(marshalConfig(conf));
@@ -134,17 +142,53 @@ const ElectionForm: FC<ElectionFormProps> = () => {
     return (
       <div className="w-screen px-4 md:px-0 md:w-auto">
         <div className="flex flex-col border rounded-md">
-          <div className="flex mt-3 mb-2">
+          <div className="flex flex-col justify-itens-center mt-3 mb-2">
             {titleChanging ? (
               <>
-                <input
+                <div className="py-6 px-5 space-y-6">
+                    <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+                        {availableLanguages.map(
+                            (lang) =>
+                                language !== lang && (
+                                  <button key={lang}>
+                                    <div
+                                        className="text-base font-medium text-gray-900 hover:text-gray-700"
+                                        onClick={() => setLanguage(lang)}>
+                                        {t(lang)}
+                      </div>
+                    </button>
+                  )
+              )}
+            </div>
+          </div>
+                {language === 'en' && (
+                    <input
                   value={MainTitle}
                   onChange={(e) => setConf({ ...conf, MainTitle: e.target.value })}
                   name="MainTitle"
                   type="text"
-                  placeholder={t('enterMainTitle')}
-                  className="ml-3 px-1 w-60 text-lg border rounded-md"
+                  placeholder={t('enterMainTitleLg')}
+                  className="m-3 px-1 w-100 text-lg border rounded-md"
                 />
+                )}
+                {language === 'fr' && (
+                <input
+                  value={TitleLg1}
+                  onChange={(e) => setConf({ ...conf, TitleLg1: e.target.value })}
+                  name="MainTitle1"
+                  type="text"
+                  placeholder={t('enterMainTitleLg1')}
+                  className="m-3 px-1 w-100 text-lg border rounded-md"
+                />)}
+                {language === 'de' && (
+                <input
+                  value={TitleLg2}
+                  onChange={(e) => setConf({ ...conf, TitleLg2: e.target.value })}
+                  name="MainTitle2"
+                  type="text"
+                  placeholder={t('enterMainTitleLg2')}
+                  className="m-3 px-1 w-100 text-lg border rounded-md"
+                />)}
                 <div className="ml-1">
                   <button
                     className={`border p-1 rounded-md ${

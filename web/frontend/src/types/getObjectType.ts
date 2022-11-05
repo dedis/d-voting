@@ -5,13 +5,22 @@ import { ID, RANK, SELECT, SUBJECT, TEXT } from './configuration';
 const uid: Function = new ShortUniqueId({ length: 8 });
 
 const emptyConfiguration = (): types.Configuration => {
-  return { MainTitle: '', Scaffold: [] };
+  return {
+    MainTitle: '',
+    Scaffold: [],
+    TitleLg1: '',
+    //ScaffoldLg1: [],
+    TitleLg2: '',
+    //ScaffoldLg2: [],
+  };
 };
 
 const newSubject = (): types.Subject => {
   return {
     ID: uid(),
     Title: '',
+    TitleFr: '',
+    TitleDe: '',
     Order: [],
     Type: SUBJECT,
     Elements: new Map(),
@@ -22,9 +31,13 @@ const newRank = (): types.RankQuestion => {
   return {
     ID: uid(),
     Title: '',
+    TitleFr: '',
+    TitleDe: '',
     MaxN: 2,
     MinN: 2,
     Choices: ['', ''],
+    ChoicesDe: ['',''],
+    ChoicesFr: ['',''],
     Type: RANK,
   };
 };
@@ -33,9 +46,13 @@ const newSelect = (): types.SelectQuestion => {
   return {
     ID: uid(),
     Title: '',
+    TitleDe: '',
+    TitleFr: '',
     MaxN: 1,
     MinN: 1,
     Choices: [''],
+    ChoicesDe: [''],
+    ChoicesFr: [''],
     Type: SELECT,
   };
 };
@@ -44,11 +61,15 @@ const newText = (): types.TextQuestion => {
   return {
     ID: uid(),
     Title: '',
+    TitleFr: '',
+    TitleDe: '',
     MaxN: 1,
     MinN: 0,
     MaxLength: 50,
     Regex: '',
     Choices: [''],
+    ChoicesDe: [''],
+    ChoicesFr: [''],
     Type: TEXT,
   };
 };

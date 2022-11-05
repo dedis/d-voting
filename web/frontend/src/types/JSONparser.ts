@@ -62,28 +62,41 @@ const unmarshalSubjectAndCreateAnswers = (
   const elements = new Map<ID, types.SubjectElement>();
 
   for (const subSubjectObj of subjectObj.Subjects) {
-    const subSubject = unmarshalSubjectAndCreateAnswers(subSubjectObj, answerMap);
+    const subSubject = unmarshalSubjectAndCreateAnswers(
+      subSubjectObj,
+      answerMap
+    );
     elements.set(subSubject.ID, subSubject);
   }
 
   for (const rankObj of subjectObj.Ranks) {
     const rank = unmarshalRank(rankObj);
     elements.set(rank.ID, rank);
-    answerMap.RankAnswers.set(rank.ID, Array.from(Array(rank.Choices.length).keys()));
+    answerMap.RankAnswers.set(
+      rank.ID,
+      Array.from(Array(rank.Choices.length).keys())
+    );
     answerMap.Errors.set(rank.ID, '');
   }
 
   for (const selectObj of subjectObj.Selects) {
     const select = unmarshalSelect(selectObj);
+
     elements.set(select.ID, select);
-    answerMap.SelectAnswers.set(select.ID, new Array<boolean>(select.Choices.length).fill(false));
+    answerMap.SelectAnswers.set(
+      select.ID,
+      new Array<boolean>(select.Choices.length).fill(false)
+    );
     answerMap.Errors.set(select.ID, '');
   }
 
   for (const textObj of subjectObj.Texts) {
     const text = unmarshalText(textObj);
     elements.set(text.ID, text);
-    answerMap.TextAnswers.set(text.ID, new Array<string>(text.Choices.length).fill(''));
+    answerMap.TextAnswers.set(
+      text.ID,
+      new Array<string>(text.Choices.length).fill('')
+    );
     answerMap.Errors.set(text.ID, '');
   }
 
@@ -95,10 +108,23 @@ const unmarshalSubjectAndCreateAnswers = (
 };
 
 const unmarshalConfig = (json: any): types.Configuration => {
-  const conf = { MainTitle: json.MainTitle, Scaffold: [] };
+  const conf = {
+    MainTitle: json.MainTitle,
+    Scaffold: [],
+    TitleLg1: json.TitleLg1,
+    //ScaffoldLg1: [],
+    TitleLg2: json.TitleLg2,
+    //ScaffoldLg2: [],
+  };
   for (const subject of json.Scaffold) {
     conf.Scaffold.push(unmarshalSubject(subject));
   }
+  /*for (const subject of json.ScaffoldLg1) {
+    conf.ScaffoldLg1.push(unmarshalSubject(subject));
+  }
+  for (const subject of json.ScaffoldLg2) {
+    conf.ScaffoldLg2.push(unmarshalSubject(subject));
+  }*/
   return conf;
 };
 
@@ -138,9 +164,8 @@ const marshalSelect = (select: types.SelectQuestion): any => {
 
 const marshalSubject = (subject: types.Subject): any => {
   const newSubject: any = { ...subject };
-  const { rankQuestion, selectQuestion, textQuestion, subjects } = toArraysOfSubjectElement(
-    subject.Elements
-  );
+  const { rankQuestion, selectQuestion, textQuestion, subjects } =
+    toArraysOfSubjectElement(subject.Elements);
   delete newSubject.Type;
   delete newSubject.Elements;
 
@@ -150,7 +175,9 @@ const marshalSubject = (subject: types.Subject): any => {
   newSubject.Subjects = new Array<any>();
 
   rankQuestion.forEach((rank) => newSubject.Ranks.push(marshalRank(rank)));
-  selectQuestion.forEach((select) => newSubject.Selects.push(marshalSelect(select)));
+  selectQuestion.forEach((select) =>
+    newSubject.Selects.push(marshalSelect(select))
+  );
   textQuestion.forEach((text) => newSubject.Texts.push(marshalText(text)));
   subjects.forEach((subj) => newSubject.Subjects.push(marshalSubject(subj)));
 
@@ -158,7 +185,10 @@ const marshalSubject = (subject: types.Subject): any => {
 };
 
 const marshalConfig = (configuration: types.Configuration): any => {
-  const conf = { MainTitle: configuration.MainTitle, Scaffold: [] };
+  const title = {en : configuration.MainTitle, fr : configuration.TitleLg1, de : configuration.TitleLg2};
+  console.log('marshall' ,JSON.stringify(title))
+
+  const conf = { MainTitle:JSON.stringify(title), Scaffold: [] };
   for (const subject of configuration.Scaffold) {
     conf.Scaffold.push(marshalSubject(subject));
   }

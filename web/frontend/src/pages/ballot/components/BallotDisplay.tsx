@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { Answers, Configuration, ID, RANK, SELECT, SUBJECT, TEXT } from 'types/configuration';
 import * as types from 'types/configuration';
 import Rank, { handleOnDragEnd } from './Rank';
@@ -19,6 +19,17 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
   setAnswers,
   userErrors,
 }) => {
+  const [titles,setTitles]= useState<any>({});
+  useEffect (()=> {
+    try{
+      console.log('config', configuration.MainTitle)
+      const ts = JSON.parse(configuration.MainTitle)
+      setTitles(ts)   
+    }catch(e){
+        console.log('error',e)
+    }
+   
+  }, [configuration])
   const SubjectElementDisplay = (element: types.SubjectElement) => {
     return (
       <div className="pl-4 sm:pl-6">
@@ -62,7 +73,7 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
     <DragDropContext onDragEnd={(dropRes) => handleOnDragEnd(dropRes, answers, setAnswers)}>
       <div className="w-full mb-0 sm:mb-4 mt-4 sm:mt-6">
         <h3 className="pb-6 break-all text-2xl text-center text-gray-700">
-          {configuration.MainTitle}
+          {titles.en}
         </h3>
         <div className="flex flex-col">
           {configuration.Scaffold.map((subject: types.Subject) => SubjectTree(subject))}

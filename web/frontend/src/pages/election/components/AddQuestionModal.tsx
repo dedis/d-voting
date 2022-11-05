@@ -1,7 +1,6 @@
 import { FC, Fragment, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Dialog, Transition } from '@headlessui/react';
-
 import { useTranslation } from 'react-i18next';
 import { CheckIcon, MinusCircleIcon, PlusCircleIcon } from '@heroicons/react/outline';
 import {
@@ -16,6 +15,9 @@ import { ranksSchema, selectsSchema, textsSchema } from '../../../schema/configu
 import useQuestionForm from './utils/useQuestionForm';
 import DisplayTypeIcon from './DisplayTypeIcon';
 
+import { availableLanguages } from 'language/Configuration';
+
+//import TranslatableInput from './TranslatableInput';
 type AddQuestionModalProps = {
   question: RankQuestion | SelectQuestion | TextQuestion;
   open: boolean;
@@ -42,8 +44,8 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
     deleteChoice,
     updateChoice,
   } = useQuestionForm(question);
-
-  const { Title, MaxN, MinN, Choices } = values;
+  const [language, setLanguage] = useState('en');
+  const { Title, TitleDe, TitleFr, MaxN, MinN, Choices, ChoicesFr, ChoicesDe } = values;
   const [errors, setErrors] = useState([]);
 
   const handleSave = async () => {
@@ -79,7 +81,20 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
         break;
     }
   };
+  /*const handleValueChange(value, lang, stateName) {
+    const state = this.state[stateName];
+    state[lang] = value;
 
+    this.setState({
+      [stateName]: state
+    });
+  }
+
+  const handleLanguageChange(editingLanguage) {
+    this.setState({
+      editingLanguage
+    });
+  }*/
   const handleDeleteChoice = (index: number) => (e) => {
     switch (Type) {
       case RANK:
@@ -124,6 +139,49 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
         return;
     }
   };
+  type renderQuestionModalProps = {
+    lg : string;
+  };
+  const RenderQuestionModal : FC<renderQuestionModalProps> = ({lg }) => {
+    return(<div className="pb-2">
+    {Choices.map((choice: string, idx: number) => (
+      <div className="flex w-60" key={`${ID}wrapper${idx}`}>
+        
+        <input
+          key={`${ID}choice${idx}`}
+          value={choice}
+          onChange={updateChoice(idx)}
+          name="Choice"
+          type="text"
+          placeholder={Type !== TEXT ? `${lg}` + ` ${idx + 1}`  : `Answer ${idx + 1}`
+          }
+          className="my-1 px-1 w-60 ml-2 border rounded-md"
+        />
+        
+        <div className="flex ml-1 mt-1.2">
+          {Choices.length > 1 && (
+            <button
+              key={`${ID}deleteChoice${idx}`}
+              type="button"
+              className="inline-flex items-center border border-transparent rounded-full font-medium text-gray-300 hover:text-gray-400"
+              onClick={handleDeleteChoice(idx)}>
+              <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
+            </button>
+          )}
+          {idx === Choices.length - 1 && (
+            <button
+              key={`${ID}addChoice${idx}`}
+              type="button"
+              className="inline-flex items-center border border-transparent rounded-full font-medium text-green-600 hover:text-green-800"
+              onClick={handleAddChoice}>
+              <PlusCircleIcon className="h-5 w-5" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      </div>
+      ))}
+    </div>)
+  }
 
   return (
     <Transition.Root show={open} as={Fragment}>
@@ -170,17 +228,55 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
               <div className="pb-6 pr-6 pl-6">
                 <div className="flex flex-col sm:flex-row sm:min-h-[18rem] ">
                   <div className="flex flex-col w-[55%]">
+                    <div className="py-6 px-5 space-y-6">
+                      <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+                        {availableLanguages.map(
+                          (lang) =>
+                            language !== lang && (
+                              <button key={lang}>
+                                <div
+                                  className="text-base font-medium text-gray-900 hover:text-gray-700"
+                                  onClick={() => setLanguage(lang)}>
+                                  {t(lang)}
+                                </div>
+                              </button>
+                            )
+                        )}
+                      </div>
+                    </div>
                     <div className="pb-4">{t('mainProperties')} </div>
                     <div>
                       <label className="block text-md mt font-medium text-gray-500">Title</label>
-                      <input
-                        value={Title}
-                        onChange={handleChange()}
-                        name="Title"
-                        type="text"
-                        placeholder={t('enterTitle')}
-                        className="my-1 px-1 w-60 ml-1 border rounded-md"
-                      />
+                      {language === 'en' && (
+                        <input
+                          value={Title}
+                          onChange={handleChange()}
+                          name="Title"
+                          type="text"
+                          placeholder={'Enter your Title'}
+                          className="my-1 px-1 w-60 ml-1 border rounded-md"
+                        />
+                      )}
+                      {language === 'fr' && (
+                        <input
+                          value={TitleFr}
+                          onChange={handleChange()}
+                          name="TitleFr"
+                          type="text"
+                          placeholder={'Entrer votre Titre'}
+                          className="my-1 px-1 w-60 ml-1 border rounded-md"
+                        />
+                      )} 
+                      {language === 'de' && (
+                        <input
+                          value={TitleDe}
+                          onChange={handleChange()}
+                          name="TitleDe"
+                          type="text"
+                          placeholder={'enterTitle'}
+                          className="my-1 px-1 w-60 ml-1 border rounded-md"
+                        />
+                      )}
                     </div>
                     <div className="text-red-600">
                       {errors
@@ -192,41 +288,13 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                     <label className="flex pt-2 text-md font-medium text-gray-500">
                       {Type !== TEXT ? t('choices') : t('answers')}
                     </label>
-                    <div className="pb-2">
-                      {Choices.map((choice: string, idx: number) => (
-                        <div className="flex w-60" key={`${ID}wrapper${idx}`}>
-                          <input
-                            key={`${ID}choice${idx}`}
-                            value={choice}
-                            onChange={updateChoice(idx)}
-                            name="Choice"
-                            type="text"
-                            placeholder={Type !== TEXT ? `Choice ${idx + 1}` : `Answer ${idx + 1}`}
-                            className="my-1 px-1 w-60 ml-2 border rounded-md"
-                          />
-                          <div className="flex ml-1 mt-1.2">
-                            {Choices.length > 1 && (
-                              <button
-                                key={`${ID}deleteChoice${idx}`}
-                                type="button"
-                                className="inline-flex items-center border border-transparent rounded-full font-medium text-gray-300 hover:text-gray-400"
-                                onClick={handleDeleteChoice(idx)}>
-                                <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
-                              </button>
-                            )}
-                            {idx === Choices.length - 1 && (
-                              <button
-                                key={`${ID}addChoice${idx}`}
-                                type="button"
-                                className="inline-flex items-center border border-transparent rounded-full font-medium text-green-600 hover:text-green-800"
-                                onClick={handleAddChoice}>
-                                <PlusCircleIcon className="h-5 w-5" aria-hidden="true" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    {language === 'en' && ( <RenderQuestionModal lg="Choice"/>)}
+                     
+                    {language === 'fr' && ( <RenderQuestionModal lg="Choix"/>)} 
+              
+                    {language === 'de' && (<RenderQuestionModal lg="Choix"/>)}
+                    
+                       
                     <div className="text-red-600">
                       {errors
                         .filter((err) => err.startsWith('Choices'))

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ID } from 'types/configuration';
 import { ElectionInfo, LightElectionInfo, Results, Status } from 'types/election';
+import { election } from './Endpoints';
 
 const useFillElectionInfo = (electionData: ElectionInfo) => {
   const [id, setId] = useState<ID>('');
@@ -16,6 +17,10 @@ const useFillElectionInfo = (electionData: ElectionInfo) => {
 
   useEffect(() => {
     if (electionData !== null) {
+      const title = JSON.parse(electionData.Configuration.MainTitle);
+      electionData.Configuration.TitleEn = title.en;
+      electionData.Configuration.TitleFr = title.fr;
+      electionData.Configuration.TitleDe = title.de;
       setId(electionData.ElectionID);
       setStatus(electionData.Status);
       setPubKey(electionData.Pubkey);
@@ -25,6 +30,7 @@ const useFillElectionInfo = (electionData: ElectionInfo) => {
       setBallotSize(electionData.BallotSize);
       setConfigObj(electionData.Configuration);
       setVoters(electionData.Voters);
+
 
       if (electionData.Result.length > 0) {
         setIsResultSet(true);

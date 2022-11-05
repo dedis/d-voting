@@ -86,8 +86,12 @@
     "noFile": "No file found",
     "createElecDesc": "Create a new election by filling out the information below or by",
     "uploadJSON": "uploading a JSON file",
-    "enterMainTitle": "Enter the Main Title",
-    "enterSubjectTitle": "Enter the Subject Title",
+    "enterMainTitleLg": "Enter the Main Title in English",
+    "enterMainTitleLg1": "Enter the Main Title in French",
+    "enterMainTitleLg2": "Enter the Main Title in Deutsch",
+    "enterSubjectTitleLg1": "Enter the Subject Title in French",
+    "enterSubjectTitleLg": "Enter the Subject Title in English",
+    "enterSubjectTitleLg2": "Enter the Subject Title in Deutsch",
     "errorCandidates": "You must add at least one candidate!",
     "errorNewCandidate": "Are you sure you don't want to add ",
     "errorRetrievingElections": "An error seems to have occurred while retrieving all the elections from our server. Contact the administrator of this website. Error: ",
@@ -256,6 +260,7 @@
     "actionNotAvailable": "Action not available",
     "uninitialized": "Uninitialized",
     "actionTextVoter1": "The election is not open yet, you can come back later to vote once it is open.",
-    "actionTextVoter2": "The results of the election are not available yet."
+    "actionTextVoter2": "The results of the election are not available yet.",
+    "choice": "Choix"
   }
 }

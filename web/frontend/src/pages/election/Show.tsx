@@ -14,6 +14,7 @@ import useGetResults from './components/utils/useGetResults';
 import UserIDTable from './components/UserIDTable';
 import DKGStatusTable from './components/DKGStatusTable';
 import LoadingButton from './components/LoadingButton';
+//import { json } from 'node:stream/consumers';
 
 const ElectionShow: FC = () => {
   const { t } = useTranslation();
@@ -51,6 +52,7 @@ const ElectionShow: FC = () => {
   const ongoingItem = 'ongoingAction' + electionID;
   const nodeToSetupItem = 'nodeToSetup' + electionID;
 
+  
   // called by a DKG row
   const notifyDKGState = (node: string, info: InternalDKGInfo) => {
     if (
@@ -208,7 +210,7 @@ const ElectionShow: FC = () => {
       {!loading ? (
         <>
           <div className="pt-8 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-            {configObj.MainTitle}
+            {configObj.TitleEn}
           </div>
 
           <div className="pt-2 break-all">Election ID : {electionId}</div>
