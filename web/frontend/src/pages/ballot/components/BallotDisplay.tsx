@@ -6,6 +6,7 @@ import Select from './Select';
 import Text from './Text';
 import { DragDropContext } from 'react-beautiful-dnd';
 
+
 type BallotDisplayProps = {
   configuration: Configuration;
   answers: Answers;
