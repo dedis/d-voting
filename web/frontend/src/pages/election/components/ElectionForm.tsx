@@ -149,15 +149,14 @@ const ElectionForm: FC<ElectionFormProps> = () => {
                     <div className="grid grid-cols-2 gap-y-4 gap-x-8">
                         {availableLanguages.map(
                             (lang) =>
-                                language !== lang && (
                                   <button key={lang}>
                                     <div
-                                        className="text-base font-medium text-gray-900 hover:text-gray-700"
+                                        className="text-base font-small text-gray-900 hover:text-gray-700"
                                         onClick={() => setLanguage(lang)}>
                                         {t(lang)}
                       </div>
                     </button>
-                  )
+                  
               )}
             </div>
           </div>

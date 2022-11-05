@@ -5,6 +5,7 @@ import Rank, { handleOnDragEnd } from './Rank';
 import Select from './Select';
 import Text from './Text';
 import { DragDropContext } from 'react-beautiful-dnd';
+import { default as i18n } from 'i18next';
 
 
 type BallotDisplayProps = {
@@ -74,7 +75,9 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
     <DragDropContext onDragEnd={(dropRes) => handleOnDragEnd(dropRes, answers, setAnswers)}>
       <div className="w-full mb-0 sm:mb-4 mt-4 sm:mt-6">
         <h3 className="pb-6 break-all text-2xl text-center text-gray-700">
-          {titles.en}
+          {i18n.language == 'en' && titles.en}
+          {i18n.language == 'fr' && titles.fr}
+          {i18n.language == 'de' && titles.de}
         </h3>
         <div className="flex flex-col">
           {configuration.Scaffold.map((subject: types.Subject) => SubjectTree(subject))}
