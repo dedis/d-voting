@@ -34,80 +34,87 @@ func getSignedErr(err error) error {
 	return xerrors.Errorf("failed to get and verify signed request: %v", err)
 }
 
-// NewElection returns a new initialized election proxy
-func NewElection(srv ordering.Service, mngr txn.Manager, p pool.Pool,
-	ctx serde.Context, fac serde.Factory, pk kyber.Point) Election {
+// NewForm returns a new initialized form proxy
+func NewForm(srv ordering.Service, mngr txn.Manager, p pool.Pool,
+	ctx serde.Context, fac serde.Factory, pk kyber.Point) Form {
 
 	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
 
-	return &election{
+	return &form{
 		logger:      logger,
 		orderingSvc: srv,
 		context:     ctx,
-		electionFac: fac,
+		formFac: fac,
 		mngr:        mngr,
 		pool:        p,
 		pk:          pk,
 	}
 }
 
-// election defines HTTP handlers to manipulate the evoting smart contract
+// form defines HTTP handlers to manipulate the evoting smart contract
 //
-// - implements proxy.Election
-type election struct {
+// - implements proxy.Form
+type form struct {
 	sync.Mutex
 
 	orderingSvc ordering.Service
 	logger      zerolog.Logger
 	context     serde.Context
-	electionFac serde.Factory
+	formFac serde.Factory
 	mngr        txn.Manager
 	pool        pool.Pool
 	pk          kyber.Point
 }
 
-// NewElection implements proxy.Proxy
-func (h *election) NewElection(w http.ResponseWriter, r *http.Request) {
-	var req ptypes.CreateElectionRequest
+// NewForm implements proxy.Proxy
+func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
+	var req ptypes.CreateFormRequest
 
+	// get the signed request
 	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
 		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
 
+	// get the request and verify the signature
 	err = signed.GetAndVerify(h.pk, &req)
 	if err != nil {
 		InternalError(w, r, getSignedErr(err), nil)
 		return
 	}
 
-	createElection := types.CreateElection{
+	createForm := types.CreateForm{
 		Configuration: req.Configuration,
 		AdminID:       req.AdminID,
 	}
 
-	data, err := createElection.Serialize(h.context)
+	// serialize the transaction
+	data, err := createForm.Serialize(h.context)
 	if err != nil {
-		http.Error(w, "failed to marshal CreateElectionTransaction: "+err.Error(),
+		http.Error(w, "failed to marshal CreateFormTransaction: "+err.Error(),
 			http.StatusInternalServerError)
 		return
 	}
 
-	txID, err := h.submitAndWaitForTxn(r.Context(), evoting.CmdCreateElection, evoting.ElectionArg, data)
+	// create the transaction and add it to the pool
+	txID, err := h.submitAndWaitForTxn(r.Context(), evoting.CmdCreateForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	// hash the transaction
 	hash := sha256.New()
 	hash.Write(txID)
-	electionID := hash.Sum(nil)
+	formID := hash.Sum(nil)
 
-	response := ptypes.CreateElectionResponse{
-		ElectionID: hex.EncodeToString(electionID),
+	// return the formID
+	response := ptypes.CreateFormResponse{
+		FormID: hex.EncodeToString(formID),
 	}
 
+	// sign the response
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
@@ -117,44 +124,49 @@ func (h *election) NewElection(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// NewElectionVote implements proxy.Proxy
-func (h *election) NewElectionVote(w http.ResponseWriter, r *http.Request) {
+// NewFormVote implements proxy.Proxy
+func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	if vars == nil || vars["electionID"] == "" {
-		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
+	// check if the formID is valid
+	if vars == nil || vars["formID"] == "" {
+		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
 	}
 
-	electionID := vars["electionID"]
+	formID := vars["formID"]
 
 	var req ptypes.CastVoteRequest
 
+	// get the signed request
 	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
 		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
 
+	// get the request and verify the signature
 	err = signed.GetAndVerify(h.pk, &req)
 	if err != nil {
 		InternalError(w, r, getSignedErr(err), nil)
 		return
 	}
 
-	elecMD, err := h.getElectionsMetadata()
+	elecMD, err := h.getFormsMetadata()
 	if err != nil {
-		http.Error(w, "failed to get election metadata", http.StatusNotFound)
+		http.Error(w, "failed to get form metadata", http.StatusNotFound)
 		return
 	}
 
-	if elecMD.ElectionsIDs.Contains(electionID) < 0 {
-		http.Error(w, "the election does not exist", http.StatusNotFound)
+	// check if the form exist
+	if elecMD.FormsIDs.Contains(formID) < 0 {
+		http.Error(w, "the form does not exist", http.StatusNotFound)
 		return
 	}
 
 	ciphervote := make(types.Ciphervote, len(req.Ballot))
 
+	// encrypt the vote 
 	for i, egpair := range req.Ballot {
 		k := suite.Point()
 
@@ -179,11 +191,12 @@ func (h *election) NewElectionVote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	castVote := types.CastVote{
-		ElectionID: electionID,
+		FormID: formID,
 		UserID:     req.UserID,
 		Ballot:     ciphervote,
 	}
 
+	// serialize the vote
 	data, err := castVote.Serialize(h.context)
 	if err != nil {
 		http.Error(w, "failed to marshal CastVoteTransaction: "+err.Error(),
@@ -191,125 +204,134 @@ func (h *election) NewElectionVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCastVote, evoting.ElectionArg, data)
+	// create the transaction and add it to the pool
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCastVote, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
-// EditElection implements proxy.Proxy
-func (h *election) EditElection(w http.ResponseWriter, r *http.Request) {
+// EditForm implements proxy.Proxy
+func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	if vars == nil || vars["electionID"] == "" {
-		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
+	//check if the formID is valid
+	if vars == nil || vars["formID"] == "" {
+		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
 	}
 
-	electionID := vars["electionID"]
+	formID := vars["formID"]
 
-	elecMD, err := h.getElectionsMetadata()
+	elecMD, err := h.getFormsMetadata()
 	if err != nil {
-		http.Error(w, "failed to get election metadata", http.StatusNotFound)
+		http.Error(w, "failed to get form metadata", http.StatusNotFound)
 		return
 	}
 
-	if elecMD.ElectionsIDs.Contains(electionID) < 0 {
-		http.Error(w, "the election does not exist", http.StatusNotFound)
+	// check if the form exists
+	if elecMD.FormsIDs.Contains(formID) < 0 {
+		http.Error(w, "the form does not exist", http.StatusNotFound)
 		return
 	}
 
-	var req ptypes.UpdateElectionRequest
+	var req ptypes.UpdateFormRequest
 
+	// get the signed request
 	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
 		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
 
+	// get the request and verify the signature
 	err = signed.GetAndVerify(h.pk, &req)
 	if err != nil {
 		InternalError(w, r, getSignedErr(err), nil)
 		return
 	}
-
 	switch req.Action {
 	case "open":
-		h.openElection(electionID, w, r)
+		h.openForm(formID, w, r)
 	case "close":
-		h.closeElection(electionID, w, r)
+		h.closeForm(formID, w, r)
 	case "combineShares":
-		h.combineShares(electionID, w, r)
+		h.combineShares(formID, w, r)
 	case "cancel":
-		h.cancelElection(electionID, w, r)
+		h.cancelForm(formID, w, r)
 	default:
 		BadRequestError(w, r, xerrors.Errorf("invalid action: %s", req.Action), nil)
 		return
 	}
 }
 
-// openElection allows opening an election, which sets the public key based on
+// openForm allows opening a form, which sets the public key based on
 // the DKG actor.
-func (h *election) openElection(elecID string, w http.ResponseWriter, r *http.Request) {
-	openElection := types.OpenElection{
-		ElectionID: elecID,
+func (h *form) openForm(elecID string, w http.ResponseWriter, r *http.Request) {
+	openForm := types.OpenForm{
+		FormID: elecID,
 	}
 
-	data, err := openElection.Serialize(h.context)
+	// serialize the transaction
+	data, err := openForm.Serialize(h.context)
 	if err != nil {
-		http.Error(w, "failed to marshal OpenElectionTransaction: "+err.Error(),
+		http.Error(w, "failed to marshal OpenFormTransaction: "+err.Error(),
 			http.StatusInternalServerError)
 		return
 	}
 
-	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdOpenElection, evoting.ElectionArg, data)
+	// create the transaction and add it to the pool
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdOpenForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
-// closeElection closes an election.
-func (h *election) closeElection(electionIDHex string, w http.ResponseWriter, r *http.Request) {
+// closeForm closes a form.
+func (h *form) closeForm(formIDHex string, w http.ResponseWriter, r *http.Request) {
 
-	closeElection := types.CloseElection{
-		ElectionID: electionIDHex,
+	closeForm := types.CloseForm{
+		FormID: formIDHex,
 	}
 
-	data, err := closeElection.Serialize(h.context)
+	// serialize the transaction
+	data, err := closeForm.Serialize(h.context)
 	if err != nil {
-		http.Error(w, "failed to marshal CloseElectionTransaction: "+err.Error(),
+		http.Error(w, "failed to marshal CloseFormTransaction: "+err.Error(),
 			http.StatusInternalServerError)
 		return
 	}
 
-	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCloseElection, evoting.ElectionArg, data)
+	// create the transaction and add it to the pool
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCloseForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
-// combineShares decrypts the shuffled ballots in an election.
-func (h *election) combineShares(electionIDHex string, w http.ResponseWriter, r *http.Request) {
+// combineShares decrypts the shuffled ballots in a form.
+func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Request) {
 
-	election, err := getElection(h.context, h.electionFac, electionIDHex, h.orderingSvc)
+	form, err := getForm(h.context, h.formFac, formIDHex, h.orderingSvc)
 	if err != nil {
-		http.Error(w, "failed to get election: "+err.Error(),
+		http.Error(w, "failed to get form: "+err.Error(),
 			http.StatusInternalServerError)
 		return
 	}
-	if election.Status != types.PubSharesSubmitted {
+	if form.Status != types.PubSharesSubmitted {
 		http.Error(w, "the submission of public shares must be over!",
 			http.StatusUnauthorized)
 		return
 	}
 
 	decryptBallots := types.CombineShares{
-		ElectionID: electionIDHex,
+		FormID: formIDHex,
 	}
 
+	// serialize the transaction
 	data, err := decryptBallots.Serialize(h.context)
 	if err != nil {
 		http.Error(w, "failed to marshal decryptBallots: "+err.Error(),
@@ -317,59 +339,65 @@ func (h *election) combineShares(electionIDHex string, w http.ResponseWriter, r 
 		return
 	}
 
-	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCombineShares, evoting.ElectionArg, data)
+	// create the transaction and add it to the pool
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
-// cancelElection cancels an election.
-func (h *election) cancelElection(electionIDHex string, w http.ResponseWriter, r *http.Request) {
+// cancelForm cancels a form.
+func (h *form) cancelForm(formIDHex string, w http.ResponseWriter, r *http.Request) {
 
-	cancelElection := types.CancelElection{
-		ElectionID: electionIDHex,
+	cancelForm := types.CancelForm{
+		FormID: formIDHex,
 	}
 
-	data, err := cancelElection.Serialize(h.context)
+	// serialize the transaction
+	data, err := cancelForm.Serialize(h.context)
 	if err != nil {
-		http.Error(w, "failed to marshal CancelElection: "+err.Error(),
+		http.Error(w, "failed to marshal CancelForm: "+err.Error(),
 			http.StatusInternalServerError)
 		return
 	}
 
-	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCancelElection, evoting.ElectionArg, data)
+	// create the transaction and add it to the pool
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdCancelForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
-// Election implements proxy.Proxy. The request should not be signed because it
+// Form implements proxy.Proxy. The request should not be signed because it
 // is fetching public data.
-func (h *election) Election(w http.ResponseWriter, r *http.Request) {
+func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "*")
 
 	vars := mux.Vars(r)
 
-	if vars == nil || vars["electionID"] == "" {
-		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
+	// check if the form exists
+	if vars == nil || vars["formID"] == "" {
+		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
 	}
 
-	electionID := vars["electionID"]
+	formID := vars["formID"]
 
-	election, err := getElection(h.context, h.electionFac, electionID, h.orderingSvc)
+	// get the form
+	form, err := getForm(h.context, h.formFac, formID, h.orderingSvc)
 	if err != nil {
-		http.Error(w, xerrors.Errorf("failed to get election: %v", err).Error(), http.StatusInternalServerError)
+		http.Error(w, xerrors.Errorf("failed to get form: %v", err).Error(), http.StatusInternalServerError)
 		return
 	}
 
 	var pubkeyBuf []byte
 
-	if election.Pubkey != nil {
-		pubkeyBuf, err = election.Pubkey.MarshalBinary()
+	// get the public key
+	if form.Pubkey != nil {
+		pubkeyBuf, err = form.Pubkey.MarshalBinary()
 		if err != nil {
 			http.Error(w, "failed to marshal pubkey: "+err.Error(),
 				http.StatusInternalServerError)
@@ -377,23 +405,23 @@ func (h *election) Election(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	roster := make([]string, 0, election.Roster.Len())
+	roster := make([]string, 0, form.Roster.Len())
 
-	iter := election.Roster.AddressIterator()
+	iter := form.Roster.AddressIterator()
 	for iter.HasNext() {
 		roster = append(roster, iter.GetNext().String())
 	}
 
-	response := ptypes.GetElectionResponse{
-		ElectionID:      string(election.ElectionID),
-		Configuration:   election.Configuration,
-		Status:          uint16(election.Status),
+	response := ptypes.GetFormResponse{
+		FormID:      string(form.FormID),
+		Configuration:   form.Configuration,
+		Status:          uint16(form.Status),
 		Pubkey:          hex.EncodeToString(pubkeyBuf),
-		Result:          election.DecryptedBallots,
+		Result:          form.DecryptedBallots,
 		Roster:          roster,
-		ChunksPerBallot: election.ChunksPerBallot(),
-		BallotSize:      election.BallotSize,
-		Voters:          election.Suffragia.UserIDs,
+		ChunksPerBallot: form.ChunksPerBallot(),
+		BallotSize:      form.BallotSize,
+		Voters:          form.Suffragia.UserIDs,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -406,48 +434,49 @@ func (h *election) Election(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Elections implements proxy.Proxy. The request should not be signed because it
+// Forms implements proxy.Proxy. The request should not be signed because it
 // is fecthing public data.
-func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
+func (h *form) Forms(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "*")
 
-	elecMD, err := h.getElectionsMetadata()
+	elecMD, err := h.getFormsMetadata()
 	if err != nil {
-		InternalError(w, r, xerrors.Errorf("failed to get election metadata: %v", err), nil)
+		InternalError(w, r, xerrors.Errorf("failed to get form metadata: %v", err), nil)
 		return
 	}
 
-	allElectionsInfo := make([]ptypes.LightElection, len(elecMD.ElectionsIDs))
+	allFormsInfo := make([]ptypes.LightForm, len(elecMD.FormsIDs))
 
-	for i, id := range elecMD.ElectionsIDs {
-		election, err := getElection(h.context, h.electionFac, id, h.orderingSvc)
+	// get the forms
+	for i, id := range elecMD.FormsIDs {
+		form, err := getForm(h.context, h.formFac, id, h.orderingSvc)
 		if err != nil {
-			InternalError(w, r, xerrors.Errorf("failed to get election: %v", err), nil)
+			InternalError(w, r, xerrors.Errorf("failed to get form: %v", err), nil)
 			return
 		}
 
 		var pubkeyBuf []byte
 
-		if election.Pubkey != nil {
-			pubkeyBuf, err = election.Pubkey.MarshalBinary()
+		if form.Pubkey != nil {
+			pubkeyBuf, err = form.Pubkey.MarshalBinary()
 			if err != nil {
 				InternalError(w, r, xerrors.Errorf("failed to marshal pubkey: %v", err), nil)
 				return
 			}
 		}
 
-		info := ptypes.LightElection{
-			ElectionID: string(election.ElectionID),
-			Title:      election.Configuration.MainTitle,
-			Status:     uint16(election.Status),
+		info := ptypes.LightForm{
+			FormID: string(form.FormID),
+			Title:      form.Configuration.MainTitle,
+			Status:     uint16(form.Status),
 			Pubkey:     hex.EncodeToString(pubkeyBuf),
 		}
 
-		allElectionsInfo[i] = info
+		allFormsInfo[i] = info
 	}
 
-	response := ptypes.GetElectionsResponse{Elections: allElectionsInfo}
+	response := ptypes.GetFormsResponse{Forms: allFormsInfo}
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -458,29 +487,31 @@ func (h *election) Elections(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// DeleteElection implements proxy.Proxy
-func (h *election) DeleteElection(w http.ResponseWriter, r *http.Request) {
+// DeleteForm implements proxy.Proxy
+func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	if vars == nil || vars["electionID"] == "" {
-		http.Error(w, fmt.Sprintf("electionID not found: %v", vars), http.StatusInternalServerError)
+	// check if the formID is valid
+	if vars == nil || vars["formID"] == "" {
+		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
 	}
 
-	electionID := vars["electionID"]
+	formID := vars["formID"]
 
-	elecMD, err := h.getElectionsMetadata()
+	elecMD, err := h.getFormsMetadata()
 	if err != nil {
-		http.Error(w, "failed to get election metadata", http.StatusNotFound)
+		http.Error(w, "failed to get form metadata", http.StatusNotFound)
 		return
 	}
 
-	if elecMD.ElectionsIDs.Contains(electionID) < 0 {
-		http.Error(w, "the election does not exist", http.StatusNotFound)
+	// check if the form exists
+	if elecMD.FormsIDs.Contains(formID) < 0 {
+		http.Error(w, "the form does not exist", http.StatusNotFound)
 		return
 	}
 
-	// auth should contain the hex-encoded signature on the hex-encoded election
+	// auth should contain the hex-encoded signature on the hex-encoded form
 	// ID
 	auth := r.Header.Get("Authorization")
 
@@ -490,23 +521,25 @@ func (h *election) DeleteElection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = schnorr.Verify(suite, h.pk, []byte(electionID), sig)
+	// check if the signature is valid
+	err = schnorr.Verify(suite, h.pk, []byte(formID), sig)
 	if err != nil {
 		ForbiddenError(w, r, xerrors.Errorf("signature verification failed: %v", err), nil)
 		return
 	}
 
-	deleteElection := types.DeleteElection{
-		ElectionID: electionID,
+	deleteForm := types.DeleteForm{
+		FormID: formID,
 	}
 
-	data, err := deleteElection.Serialize(h.context)
+	data, err := deleteForm.Serialize(h.context)
 	if err != nil {
-		InternalError(w, r, xerrors.Errorf("failed to marshal DeleteElection: %v", err), nil)
+		InternalError(w, r, xerrors.Errorf("failed to marshal DeleteForm: %v", err), nil)
 		return
 	}
 
-	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdDeleteElection, evoting.ElectionArg, data)
+	// create the transaction and add it to the pool
+	_, err = h.submitAndWaitForTxn(r.Context(), evoting.CmdDeleteForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -514,7 +547,7 @@ func (h *election) DeleteElection(w http.ResponseWriter, r *http.Request) {
 }
 
 // waitForTxnID blocks until `ID` is included or `events` is closed.
-func (h *election) waitForTxnID(events <-chan ordering.Event, ID []byte) error {
+func (h *form) waitForTxnID(events <-chan ordering.Event, ID []byte) error {
 	for event := range events {
 		for _, res := range event.Transactions {
 			if !bytes.Equal(res.GetTransaction().GetID(), ID) {
@@ -533,67 +566,67 @@ func (h *election) waitForTxnID(events <-chan ordering.Event, ID []byte) error {
 	return xerrors.New("transaction not found")
 }
 
-func (h *election) getElectionsMetadata() (types.ElectionsMetadata, error) {
-	var md types.ElectionsMetadata
+func (h *form) getFormsMetadata() (types.FormsMetadata, error) {
+	var md types.FormsMetadata
 
-	proof, err := h.orderingSvc.GetProof([]byte(evoting.ElectionsMetadataKey))
+	proof, err := h.orderingSvc.GetProof([]byte(evoting.FormsMetadataKey))
 	if err != nil {
 		// if the proof doesn't exist we assume there is no metadata, thus no
-		// elections has been created so far.
+		// forms has been created so far.
 		return md, nil
 	}
 
-	// if there is not election created yet the metadata will be empty
+	// if there is not form created yet the metadata will be empty
 	if len(proof.GetValue()) == 0 {
-		return types.ElectionsMetadata{}, nil
+		return types.FormsMetadata{}, nil
 	}
 
 	err = json.Unmarshal(proof.GetValue(), &md)
 	if err != nil {
-		return md, xerrors.Errorf("failed to unmarshal ElectionMetadata: %v", err)
+		return md, xerrors.Errorf("failed to unmarshal FormMetadata: %v", err)
 	}
 
 	return md, nil
 }
 
-// getElection gets the election from the snap. Returns the election ID NOT hex
+// getForm gets the form from the snap. Returns the form ID NOT hex
 // encoded.
-func getElection(ctx serde.Context, electionFac serde.Factory, electionIDHex string,
-	srv ordering.Service) (types.Election, error) {
+func getForm(ctx serde.Context, formFac serde.Factory, formIDHex string,
+	srv ordering.Service) (types.Form, error) {
 
-	var election types.Election
+	var form types.Form
 
-	electionID, err := hex.DecodeString(electionIDHex)
+	formID, err := hex.DecodeString(formIDHex)
 	if err != nil {
-		return election, xerrors.Errorf("failed to decode electionIDHex: %v", err)
+		return form, xerrors.Errorf("failed to decode formIDHex: %v", err)
 	}
 
-	proof, err := srv.GetProof(electionID)
+	proof, err := srv.GetProof(formID)
 	if err != nil {
-		return election, xerrors.Errorf("failed to get proof: %v", err)
+		return form, xerrors.Errorf("failed to get proof: %v", err)
 	}
 
-	electionBuff := proof.GetValue()
-	if len(electionBuff) == 0 {
-		return election, xerrors.Errorf("election does not exist")
+	formBuff := proof.GetValue()
+	if len(formBuff) == 0 {
+		return form, xerrors.Errorf("form does not exist")
 	}
 
-	message, err := electionFac.Deserialize(ctx, electionBuff)
+	message, err := formFac.Deserialize(ctx, formBuff)
 	if err != nil {
-		return election, xerrors.Errorf("failed to deserialize Election: %v", err)
+		return form, xerrors.Errorf("failed to deserialize Form: %v", err)
 	}
 
-	election, ok := message.(types.Election)
+	form, ok := message.(types.Form)
 	if !ok {
-		return election, xerrors.Errorf("wrong message type: %T", message)
+		return form, xerrors.Errorf("wrong message type: %T", message)
 	}
 
-	return election, nil
+	return form, nil
 }
 
 // submitAndWaitForTxn submits a transaction and waits for it to be included.
 // Returns the transaction ID.
-func (h *election) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
+func (h *form) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
 	cmdArg string, payload []byte) ([]byte, error) {
 
 	h.Lock()
@@ -627,6 +660,7 @@ func (h *election) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
 	return tx.GetID(), nil
 }
 
+// createTransaction creates a transaction with the given command and payload.
 func createTransaction(manager txn.Manager, commandType evoting.Command,
 	commandArg string, buf []byte) (txn.Transaction, error) {
 

@@ -4,7 +4,7 @@ _Documentation Last Review: 11.04.2022_
 
 ## Regular workflow:
 
-The election workflow involves 3 actors:
+The form workflow involves 3 actors:
 
 - Smart contract
 - DKG service
@@ -12,7 +12,7 @@ The election workflow involves 3 actors:
 
 Services are side components that augment the smart contract functionalities.
 Services are accessed via the `evoting/services/<dkg>|<neff>/*` endpoint, and
-the smart contract via `/evoting/elections/*`.
+the smart contract via `/evoting/forms/*`.
 
 ## Signed requests
 
@@ -54,7 +54,7 @@ SC5:Close         │              │
 SC6:CombineShares
     │
     ▼
-SC2:ElectionGetInfo
+SC2:FormGetInfo
 
 
 
@@ -73,13 +73,13 @@ In case of error:
 }
 ```
 
-# SC1: Election create 🔐
+# SC1: Form create 🔐
 
-|        |                      |
-| ------ | -------------------- |
-| URL    | `/evoting/elections` |
-| Method | `POST`               |
-| Input  | `application/json`   |
+|        |                    |
+| ------ | ------------------ |
+| URL    | `/evoting/forms`   |
+| Method | `POST`             |
+| Input  | `application/json` |
 
 ```json
 {
@@ -93,17 +93,17 @@ Return:
 
 ```json
 {
-  "ElectionID": "<hex encoded>"
+  "FormID": "<hex encoded>"
 }
 ```
 
-# SC2: Election get info
+# SC2: Form get info
 
-|        |                                   |
-| ------ | --------------------------------- |
-| URL    | `/evoting/elections/{ElectionID}` |
-| Method | `GET`                             |
-| Input  |                                   |
+|        |                           |
+| ------ | ------------------------- |
+| URL    | `/evoting/forms/{FormID}` |
+| Method | `GET`                     |
+| Input  |                           |
 
 Return:
 
@@ -111,7 +111,7 @@ Return:
 
 ```json
 {
-  "ElectionID": "<hex encoded>",
+  "FormID": "<hex encoded>",
   "Status": "",
   "Pubkey": "<hex encoded>",
   "Result": [
@@ -132,13 +132,13 @@ Return:
 }
 ```
 
-# SC3: Election open 🔐
+# SC3: Form open 🔐
 
-|        |                                   |
-| ------ | --------------------------------- |
-| URL    | `/evoting/elections/{ElectionID}` |
-| Method | `PUT`                             |
-| Input  | `application/json`                |
+|        |                           |
+| ------ | ------------------------- |
+| URL    | `/evoting/forms/{FormID}` |
+| Method | `PUT`                     |
+| Input  | `application/json`        |
 
 ```json
 {
@@ -154,13 +154,13 @@ Return:
 
 ```
 
-# SC4: Election cast vote 🔐
+# SC4: Form cast vote 🔐
 
-|        |                                        |
-| ------ | -------------------------------------- |
-| URL    | `/evoting/elections/{ElectionID}/vote` |
-| Method | `POST`                                 |
-| Input  | `application/json`                     |
+|        |                                |
+| ------ | ------------------------------ |
+| URL    | `/evoting/forms/{FormID}/vote` |
+| Method | `POST`                         |
+| Input  | `application/json`             |
 
 ```json
 {
@@ -182,13 +182,13 @@ Return:
 
 ```
 
-# SC5: Election close 🔐
+# SC5: Form close 🔐
 
-|        |                                   |
-| ------ | --------------------------------- |
-| URL    | `/evoting/elections/{ElectionID}` |
-| Method | `PUT`                             |
-| Input  | `application/json`                |
+|        |                           |
+| ------ | ------------------------- |
+| URL    | `/evoting/forms/{FormID}` |
+| Method | `PUT`                     |
+| Input  | `application/json`        |
 
 ```json
 {
@@ -204,13 +204,13 @@ Return:
 
 ```
 
-# NS2: Election shuffle 🔐
+# NS2: Form shuffle 🔐
 
-|        |                                          |
-| ------ | ---------------------------------------- |
-| URL    | `/evoting/services/shuffle/{ElectionID}` |
-| Method | `PUT`                                    |
-| Input  | `application/json`                       |
+|        |                                      |
+| ------ | ------------------------------------ |
+| URL    | `/evoting/services/shuffle/{FormID}` |
+| Method | `PUT`                                |
+| Input  | `application/json`                   |
 
 ```json
 {
@@ -226,13 +226,13 @@ Return:
 
 ```
 
-# SC6: Election combine shares 🔐
+# SC6: Form combine shares 🔐
 
-|        |                                   |
-| ------ | --------------------------------- |
-| URL    | `/evoting/elections/{ElectionID}` |
-| Method | `PUT`                             |
-| Input  | `application/json`                |
+|        |                           |
+| ------ | ------------------------- |
+| URL    | `/evoting/forms/{FormID}` |
+| Method | `PUT`                     |
+| Input  | `application/json`        |
 
 ```json
 {
@@ -248,13 +248,13 @@ Return:
 
 ```
 
-# SC?: Election cancel 🔐
+# SC?: Form cancel 🔐
 
-|        |                                   |
-| ------ | --------------------------------- |
-| URL    | `/evoting/elections/{ElectionID}` |
-| Method | `PUT`                             |
-| Input  | `application/json`                |
+|        |                           |
+| ------ | ------------------------- |
+| URL    | `/evoting/forms/{FormID}` |
+| Method | `PUT`                     |
+| Input  | `application/json`        |
 
 ```json
 {
@@ -270,20 +270,20 @@ Return:
 
 ```
 
-# SC?: Election delete
+# SC?: Form delete
 
-|         |                                   |
-| ------- | --------------------------------- |
-| URL     | `/evoting/elections/{ElectionID}` |
-| Method  | `DELETE`                          |
-| Input   |                                   |
-| Headers | {Authorization: `<token>`}        |
+|         |                            |
+| ------- | -------------------------- |
+| URL     | `/evoting/forms/{FormID}`  |
+| Method  | `DELETE`                   |
+| Input   |                            |
+| Headers | {Authorization: `<token>`} |
 
 The `<token>` value must be the hex-encoded signature of the hex-encoded
-electionID:
+formID:
 
 ```
-<token> = hex( sig( hex( electionID ) ) )
+<token> = hex( sig( hex( formID ) ) )
 ```
 
 Return:
@@ -294,13 +294,13 @@ Return:
 
 ```
 
-# SC?: Election get all infos
+# SC?: Form get all infos
 
-|        |                      |
-| ------ | -------------------- |
-| URL    | `/evoting/elections` |
-| Method | `GET`                |
-| Input  |                      |
+|        |                  |
+| ------ | ---------------- |
+| URL    | `/evoting/forms` |
+| Method | `GET`            |
+| Input  |                  |
 
 Return:
 
@@ -308,9 +308,9 @@ Return:
 
 ```json
 {
-  "Elections": [
+  "Forms": [
     {
-      "ElectionID": "<hex encoded>",
+      "FormID": "<hex encoded>",
       "Title": "",
       "Status": "",
       "Pubkey": "<hex encoded>"
@@ -329,7 +329,7 @@ Return:
 
 ```json
 {
-  "ElectionID": "<hex encoded>",
+  "FormID": "<hex encoded>",
   "Proxy:": ""
 }
 ```
@@ -344,11 +344,11 @@ Return:
 
 # DK2: DKG setup 🔐
 
-|        |                                             |
-| ------ | ------------------------------------------- |
-| URL    | `/evoting/services/dkg/actors/{ElectionID}` |
-| Method | `PUT`                                       |
-| Input  | `application/json`                          |
+|        |                                         |
+| ------ | --------------------------------------- |
+| URL    | `/evoting/services/dkg/actors/{FormID}` |
+| Method | `PUT`                                   |
+| Input  | `application/json`                      |
 
 ```json
 {
@@ -367,11 +367,11 @@ Return:
 
 # DK3: DKG get info
 
-|        |                                             |
-| ------ | ------------------------------------------- |
-| URL    | `/evoting/services/dkg/actors/{ElectionID}` |
-| Method | `GET`                                       |
-| Input  |                                             |
+|        |                                         |
+| ------ | --------------------------------------- |
+| URL    | `/evoting/services/dkg/actors/{FormID}` |
+| Method | `GET`                                   |
+| Input  |                                         |
 
 Return:
 
@@ -391,11 +391,11 @@ Return:
 
 # DK4: DKG begin decryption 🔐
 
-|        |                                             |
-| ------ | ------------------------------------------- |
-| URL    | `/evoting/services/dkg/actors/{ElectionID}` |
-| Method | `PUT`                                       |
-| Input  | `application/json`                          |
+|        |                                         |
+| ------ | --------------------------------------- |
+| URL    | `/evoting/services/dkg/actors/{FormID}` |
+| Method | `PUT`                                   |
+| Input  | `application/json`                      |
 
 ```json
 {

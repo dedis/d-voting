@@ -22,12 +22,12 @@ import (
 
 var serdecontext serde.Context
 
-var electionFac serde.Factory
+var formFac serde.Factory
 var transactionFac serde.Factory
 
 func init() {
 	ciphervoteFac := etypes.CiphervoteFactory{}
-	electionFac = etypes.NewElectionFactory(ciphervoteFac, fakeAuthorityFactory{})
+	formFac = etypes.NewFormFactory(ciphervoteFac, fakeAuthorityFactory{})
 	transactionFac = etypes.NewTransactionFactory(ciphervoteFac)
 
 	serdecontext = json.NewContext()
@@ -45,32 +45,32 @@ func TestNeffShuffle_Listen(t *testing.T) {
 
 func TestNeffShuffle_Shuffle(t *testing.T) {
 
-	electionID := "deadbeef"
-	electionIDBuf, err := hex.DecodeString(electionID)
+	formID := "deadbeef"
+	formIDBuf, err := hex.DecodeString(formID)
 	require.NoError(t, err)
 
 	rosterLen := 2
 	roster := authority.FromAuthority(fake.NewAuthority(rosterLen, fake.NewSigner))
 
-	election := fake.NewElection(electionID)
-	election.Roster = roster
+	form := fake.NewForm(formID)
+	form.Roster = roster
 
-	shuffledBallots := append([]etypes.Ciphervote{}, election.Suffragia.Ciphervotes...)
-	election.ShuffleInstances = append(election.ShuffleInstances, etypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
+	shuffledBallots := append([]etypes.Ciphervote{}, form.Suffragia.Ciphervotes...)
+	form.ShuffleInstances = append(form.ShuffleInstances, etypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
 
-	election.ShuffleThreshold = 1
+	form.ShuffleThreshold = 1
 
-	service := fake.NewService(electionID, election, serdecontext)
+	service := fake.NewService(formID, form, serdecontext)
 
 	actor := Actor{
 		rpc:         fake.NewBadRPC(),
 		mino:        fake.Mino{},
 		service:     &service,
 		context:     serdecontext,
-		electionFac: etypes.NewElectionFactory(etypes.CiphervoteFactory{}, fake.NewRosterFac(roster)),
+		formFac: etypes.NewFormFactory(etypes.CiphervoteFactory{}, fake.NewRosterFac(roster)),
 	}
 
-	err = actor.Shuffle(electionIDBuf)
+	err = actor.Shuffle(formIDBuf)
 	require.EqualError(t, err, fake.Err("failed to stream"))
 
 	rpc := fake.NewStreamRPC(fake.NewReceiver(), fake.NewBadSender())
@@ -85,7 +85,7 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	dela.Logger = zerolog.New(out)
 
 	// should only output a warning
-	err = actor.Shuffle(electionIDBuf)
+	err = actor.Shuffle(formIDBuf)
 	require.NoError(t, err)
 	require.True(t, strings.Contains(out.String(), "failed to start shuffle"), out.String())
 
@@ -93,7 +93,7 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	actor.rpc = rpc
 
 	// we no longer use the receiver:
-	err = actor.Shuffle(electionIDBuf)
+	err = actor.Shuffle(formIDBuf)
 	require.NoError(t, err)
 
 	recv := fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), types.NewEndShuffle()))
@@ -101,7 +101,7 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	rpc = fake.NewStreamRPC(recv, fake.Sender{})
 	actor.rpc = rpc
 
-	err = actor.Shuffle(electionIDBuf)
+	err = actor.Shuffle(formIDBuf)
 	require.NoError(t, err)
 }
 

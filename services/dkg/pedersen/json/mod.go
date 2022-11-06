@@ -57,7 +57,7 @@ type StartDone struct {
 }
 
 type DecryptRequest struct {
-	ElectionId string
+	FormId string
 }
 
 type GetPeerPubKey struct{}
@@ -160,7 +160,7 @@ func (f msgFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, error) 
 		m = Message{StartDone: &ack}
 	case types.DecryptRequest:
 		req := DecryptRequest{
-			ElectionId: in.GetElectionId(),
+			FormId: in.GetFormId(),
 		}
 
 		m = Message{DecryptRequest: &req}
@@ -244,7 +244,7 @@ func (f msgFormat) Decode(ctx serde.Context, data []byte) (serde.Message, error)
 	}
 
 	if m.DecryptRequest != nil {
-		req := types.NewDecryptRequest(m.DecryptRequest.ElectionId)
+		req := types.NewDecryptRequest(m.DecryptRequest.FormId)
 
 		return req, nil
 	}

@@ -38,14 +38,14 @@ import (
 )
 
 var serdecontext serde.Context
-var electionFac serde.Factory
+var formFac serde.Factory
 var transactionFac serde.Factory
 
 func init() {
 	serdecontext = sjson.NewContext()
 
 	ciphervoteFac := etypes.CiphervoteFactory{}
-	electionFac = etypes.NewElectionFactory(ciphervoteFac, fake.Factory{})
+	formFac = etypes.NewFormFactory(ciphervoteFac, fake.Factory{})
 	transactionFac = etypes.NewTransactionFactory(ciphervoteFac)
 }
 
@@ -60,7 +60,7 @@ func TestActor_MarshalJSON(t *testing.T) {
 	actor1, err := p.NewActor([]byte("deadbeef"), &fake.Pool{},
 		fake.Manager{}, NewHandlerData())
 	require.NoError(t, err)
-	require.Equal(t, float64(dkg.Initialized), testutil.ToFloat64(evoting.PromElectionDkgStatus))
+	require.Equal(t, float64(dkg.Initialized), testutil.ToFloat64(evoting.PromFormDkgStatus))
 
 	// Serialize its persistent data
 	actor1Buf, err := actor1.MarshalJSON()
@@ -75,7 +75,7 @@ func TestActor_MarshalJSON(t *testing.T) {
 
 	actor2, err := p.NewActor([]byte("beefdead"), &fake.Pool{}, fake.Manager{}, handlerData)
 	require.NoError(t, err)
-	require.Equal(t, float64(dkg.Initialized), testutil.ToFloat64(evoting.PromElectionDkgStatus))
+	require.Equal(t, float64(dkg.Initialized), testutil.ToFloat64(evoting.PromFormDkgStatus))
 
 	// Check that the persistent data is the same for both actors
 	requireActorsEqual(t, actor1, actor2)
@@ -105,7 +105,7 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 		PubKey:  pubKey,
 		PrivKey: privKey,
 	}
-	electionActorMap := map[string]HandlerData{
+	formActorMap := map[string]HandlerData{
 		"deadbeef51": hd,
 		"deadbeef52": NewHandlerData(),
 	}
@@ -116,9 +116,9 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 			return err
 		}
 
-		for electionID, handlerData := range electionActorMap {
+		for formID, handlerData := range formActorMap {
 
-			electionIDBuf, err := hex.DecodeString(electionID)
+			formIDBuf, err := hex.DecodeString(formID)
 			if err != nil {
 				return err
 			}
@@ -128,7 +128,7 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 				return err
 			}
 
-			err = bucket.Set(electionIDBuf, handlerDataBuf)
+			err = bucket.Set(formIDBuf, handlerDataBuf)
 			if err != nil {
 				return err
 			}
@@ -145,7 +145,7 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 		bucket := tx.GetBucket([]byte("dkgmap"))
 		require.NotNil(t, bucket)
 
-		return bucket.ForEach(func(electionIDBuf, handlerDataBuf []byte) error {
+		return bucket.ForEach(func(formIDBuf, handlerDataBuf []byte) error {
 
 			handlerData := HandlerData{}
 			err = handlerData.UnmarshalJSON(handlerDataBuf)
@@ -153,12 +153,12 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 				return err
 			}
 
-			_, err = p.NewActor(electionIDBuf, &fake.Pool{}, fake.Manager{}, handlerData)
+			_, err = p.NewActor(formIDBuf, &fake.Pool{}, fake.Manager{}, handlerData)
 			if err != nil {
-				require.Equal(t, float64(dkg.Failed), testutil.ToFloat64(evoting.PromElectionDkgStatus))
+				require.Equal(t, float64(dkg.Failed), testutil.ToFloat64(evoting.PromFormDkgStatus))
 				return err
 			} else {
-				require.Equal(t, float64(dkg.Initialized), testutil.ToFloat64(evoting.PromElectionDkgStatus))
+				require.Equal(t, float64(dkg.Initialized), testutil.ToFloat64(evoting.PromFormDkgStatus))
 			}
 
 			initMetrics()
@@ -171,20 +171,20 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 	// Check that the data was used properly
 
 	// Check the number of elements is the same
-	require.Equal(t, len(electionActorMap), len(p.actors))
+	require.Equal(t, len(formActorMap), len(p.actors))
 
 	// Check equality pair by pair
-	for electionID, handlerData := range electionActorMap {
+	for formID, handlerData := range formActorMap {
 
-		electionIDBuf, err := hex.DecodeString(electionID)
+		formIDBuf, err := hex.DecodeString(formID)
 		require.NoError(t, err)
 
-		actor, exists := p.GetActor(electionIDBuf)
+		actor, exists := p.GetActor(formIDBuf)
 		require.True(t, exists)
 
 		otherActor := Actor{
 			handler: NewHandler(fake.NewAddress(0), &fake.Service{}, &fake.Pool{},
-				fake.Manager{}, fake.Signer{}, handlerData, serdecontext, electionFac, nil),
+				fake.Manager{}, fake.Signer{}, handlerData, serdecontext, formFac, nil),
 		}
 
 		requireActorsEqual(t, actor, &otherActor)
@@ -193,20 +193,20 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 
 // When a new actor is created, its information is safely stored in the dkgMap.
 func TestPedersen_SyncDB(t *testing.T) {
-	electionID1 := "deadbeef51"
-	electionID2 := "deadbeef52"
+	formID1 := "deadbeef51"
+	formID2 := "deadbeef52"
 
-	// Start some elections
-	fake.NewElection(electionID1)
-	fake.NewElection(electionID2)
+	// Start some forms
+	fake.NewForm(formID1)
+	fake.NewForm(formID2)
 
 	// Initialize a Pedersen
 	p := NewPedersen(fake.Mino{}, &fake.Service{}, &fake.Pool{}, fake.Factory{}, fake.Signer{})
 
 	// Create actors
-	a1, err := p.NewActor([]byte(electionID1), &fake.Pool{}, fake.Manager{}, NewHandlerData())
+	a1, err := p.NewActor([]byte(formID1), &fake.Pool{}, fake.Manager{}, NewHandlerData())
 	require.NoError(t, err)
-	_, err = p.NewActor([]byte(electionID2), &fake.Pool{}, fake.Manager{}, NewHandlerData())
+	_, err = p.NewActor([]byte(formID2), &fake.Pool{}, fake.Manager{}, NewHandlerData())
 	require.NoError(t, err)
 
 	// Only Setup the first actor
@@ -222,9 +222,9 @@ func TestPedersen_SyncDB(t *testing.T) {
 			return err
 		}
 
-		for electionID, actor := range p.actors {
+		for formID, actor := range p.actors {
 
-			electionIDBuf, err := hex.DecodeString(electionID)
+			formIDBuf, err := hex.DecodeString(formID)
 			if err != nil {
 				return err
 			}
@@ -234,7 +234,7 @@ func TestPedersen_SyncDB(t *testing.T) {
 				return err
 			}
 
-			err = bucket.Set(electionIDBuf, handlerDataBuf)
+			err = bucket.Set(formIDBuf, handlerDataBuf)
 			if err != nil {
 				return err
 			}
@@ -251,13 +251,13 @@ func TestPedersen_SyncDB(t *testing.T) {
 		bucket := tx.GetBucket([]byte("dkgmap"))
 		require.NotNil(t, bucket)
 
-		return bucket.ForEach(func(electionIDBuf, handlerDataBuf []byte) error {
+		return bucket.ForEach(func(formIDBuf, handlerDataBuf []byte) error {
 
 			handlerData := HandlerData{}
 			err = json.Unmarshal(handlerDataBuf, &handlerData)
 			require.NoError(t, err)
 
-			_, err = q.NewActor(electionIDBuf, &fake.Pool{}, fake.Manager{}, handlerData)
+			_, err = q.NewActor(formIDBuf, &fake.Pool{}, fake.Manager{}, handlerData)
 			require.NoError(t, err)
 
 			return nil
@@ -270,12 +270,12 @@ func TestPedersen_SyncDB(t *testing.T) {
 	require.Equal(t, len(q.actors), len(p.actors))
 
 	// Check equality of actor data
-	for electionID, actorQ := range q.actors {
+	for formID, actorQ := range q.actors {
 
-		electionIDBuf, err := hex.DecodeString(electionID)
+		formIDBuf, err := hex.DecodeString(formID)
 		require.NoError(t, err)
 
-		actorP, exists := p.GetActor(electionIDBuf)
+		actorP, exists := p.GetActor(formIDBuf)
 		require.True(t, exists)
 
 		requireActorsEqual(t, actorP, actorQ)
@@ -283,38 +283,38 @@ func TestPedersen_SyncDB(t *testing.T) {
 }
 
 func TestPedersen_Listen(t *testing.T) {
-	electionID := "d3adbeef"
-	electionIDBuf, err := hex.DecodeString(electionID)
+	formID := "d3adbeef"
+	formIDBuf, err := hex.DecodeString(formID)
 	require.NoError(t, err)
 
-	service := fake.NewService(electionID,
-		etypes.Election{Roster: fake.Authority{}}, serdecontext)
+	service := fake.NewService(formID,
+		etypes.Form{Roster: fake.Authority{}}, serdecontext)
 
 	p := NewPedersen(fake.Mino{}, &service, &fake.Pool{},
 		fake.Factory{}, fake.Signer{})
 
-	actor, err := p.Listen(electionIDBuf, fake.Manager{})
+	actor, err := p.Listen(formIDBuf, fake.Manager{})
 	require.NoError(t, err)
 
 	require.NotNil(t, actor)
 }
 
-// If Listen is called twice for the same election, the actor data is unchanged
+// If Listen is called twice for the same form, the actor data is unchanged
 func TestPedersen_TwoListens(t *testing.T) {
-	electionID := "deadbeef"
-	electionIDBuf, err := hex.DecodeString(electionID)
+	formID := "deadbeef"
+	formIDBuf, err := hex.DecodeString(formID)
 	require.NoError(t, err)
 
-	service := fake.NewService(electionID,
-		etypes.Election{Roster: fake.Authority{}}, serdecontext)
+	service := fake.NewService(formID,
+		etypes.Form{Roster: fake.Authority{}}, serdecontext)
 
 	p := NewPedersen(fake.Mino{}, &service, &fake.Pool{}, fake.Factory{}, fake.Signer{})
 
-	actor1, err := p.Listen(electionIDBuf, fake.Manager{})
+	actor1, err := p.Listen(formIDBuf, fake.Manager{})
 	require.NoError(t, err)
 
-	actor2, err := p.Listen(electionIDBuf, fake.Manager{})
-	require.Error(t, err, "actor already exists for electionID deadbeef")
+	actor2, err := p.Listen(formIDBuf, fake.Manager{})
+	require.Error(t, err, "actor already exists for formID deadbeef")
 
 	require.Equal(t, actor1, actor2)
 }
@@ -322,11 +322,11 @@ func TestPedersen_TwoListens(t *testing.T) {
 func TestPedersen_Setup(t *testing.T) {
 	initMetrics()
 
-	electionID := "d3adbeef"
+	formID := "d3adbeef"
 
-	service := fake.NewService(electionID, etypes.Election{
-		ElectionID: electionID,
-		Roster:     fake.Authority{},
+	service := fake.NewService(formID, etypes.Form{
+		FormID: formID,
+		Roster: fake.Authority{},
 	}, serdecontext)
 
 	actor := Actor{
@@ -336,28 +336,30 @@ func TestPedersen_Setup(t *testing.T) {
 		handler: &Handler{
 			startRes: &state{},
 		},
-		context:     serdecontext,
-		electionFac: electionFac,
+		context: serdecontext,
+		formFac: formFac,
+		status: &dkg.Status{},
+
 	}
 
-	// Wrong electionID
-	wrongElectionID := "beefdead"
-	actor.electionID = wrongElectionID
+	// Wrong formID
+	wrongFormID := "beefdead"
+	actor.formID = wrongFormID
 
 	_, err := actor.Setup()
-	require.EqualError(t, err, "failed to get election: election does not exist: <nil>")
-	require.Equal(t, float64(dkg.Failed), testutil.ToFloat64(evoting.PromElectionDkgStatus))
+	require.EqualError(t, err, "failed to get form: form does not exist: <nil>")
+	require.Equal(t, float64(dkg.Failed), testutil.ToFloat64(evoting.PromFormDkgStatus))
 
 	initMetrics()
 
-	actor.electionID = electionID
+	actor.formID = formID
 
 	// RPC is bogus 1
 	actor.rpc = fake.NewBadRPC()
 
 	_, err = actor.Setup()
 	require.EqualError(t, err, fake.Err("failed to stream"))
-	require.Equal(t, float64(dkg.Failed), testutil.ToFloat64(evoting.PromElectionDkgStatus))
+	require.Equal(t, float64(dkg.Failed), testutil.ToFloat64(evoting.PromFormDkgStatus))
 
 	// RPC is bogus 2
 	actor.rpc = fake.NewRPC()
@@ -383,14 +385,14 @@ func TestPedersen_Setup(t *testing.T) {
 	}
 
 	// This fake RosterFac always returns roster upon Deserialize
-	fac := etypes.NewElectionFactory(etypes.CiphervoteFactory{}, fake.NewRosterFac(roster))
-	actor.electionFac = fac
+	fac := etypes.NewFormFactory(etypes.CiphervoteFactory{}, fake.NewRosterFac(roster))
+	actor.formFac = fac
 
 	service = fake.NewService(
-		electionID,
-		etypes.Election{
-			ElectionID: electionID,
-			Roster:     roster,
+		formID,
+		etypes.Form{
+			FormID: formID,
+			Roster: roster,
 		}, serdecontext)
 
 	actor.service = &service
@@ -421,7 +423,7 @@ func TestPedersen_Setup(t *testing.T) {
 	// We test that particular behaviour later.
 	_, err = actor.Setup()
 	require.NoError(t, err)
-	require.Equal(t, float64(dkg.Setup), testutil.ToFloat64(evoting.PromElectionDkgStatus))
+	require.Equal(t, float64(dkg.Setup), testutil.ToFloat64(evoting.PromFormDkgStatus))
 }
 
 func TestPedersen_GetPublicKey(t *testing.T) {
@@ -446,8 +448,8 @@ func TestPedersen_Scenario(t *testing.T) {
 	dkgs := make([]dkg.DKG, n)
 	actors := make([]dkg.Actor, n)
 
-	electionID := "deadbeef"
-	electionIDBuf, err := hex.DecodeString(electionID)
+	formID := "deadbeef"
+	formIDBuf, err := hex.DecodeString(formID)
 	require.NoError(t, err)
 
 	for i := 0; i < n; i++ {
@@ -486,17 +488,17 @@ func TestPedersen_Scenario(t *testing.T) {
 
 	roster := authority.FromAuthority(fake.NewAuthorityFromMino(fake.NewSigner, minos...))
 
-	election := fake.NewElection(electionID)
-	election.Roster = roster
+	form := fake.NewForm(formID)
+	form.Roster = roster
 
-	service := fake.NewService(electionID, election, serdecontext)
+	service := fake.NewService(formID, form, serdecontext)
 
 	for i, mino := range minos {
-		fac := etypes.NewElectionFactory(etypes.CiphervoteFactory{}, fake.NewRosterFac(roster))
+		fac := etypes.NewFormFactory(etypes.CiphervoteFactory{}, fake.NewRosterFac(roster))
 
 		dkg := NewPedersen(mino, &service, &fake.Pool{}, fac, fake.Signer{})
 
-		actor, err := dkg.Listen(electionIDBuf, signed.NewManager(fake.Signer{}, &client{
+		actor, err := dkg.Listen(formIDBuf, signed.NewManager(fake.Signer{}, &client{
 			srvc: &fake.Service{},
 			vs:   fake.ValidationService{},
 		}))
@@ -525,16 +527,16 @@ func TestPedersen_Scenario(t *testing.T) {
 			K: Ks[i],
 			C: Cs[i],
 		}}
-		election.Suffragia.CastVote("dummyUser"+strconv.Itoa(i), ballot)
+		form.Suffragia.CastVote("dummyUser"+strconv.Itoa(i), ballot)
 	}
 
-	shuffledBallots := election.Suffragia.Ciphervotes
+	shuffledBallots := form.Suffragia.Ciphervotes
 	shuffleInstance := etypes.ShuffleInstance{ShuffledBallots: shuffledBallots}
-	election.ShuffleInstances = append(election.ShuffleInstances, shuffleInstance)
+	form.ShuffleInstances = append(form.ShuffleInstances, shuffleInstance)
 
-	election.ShuffleThreshold = 1
+	form.ShuffleThreshold = 1
 
-	service.Elections[electionID] = election
+	service.Forms[formID] = form
 
 	_, err = actors[0].Setup()
 	require.EqualError(t, err, "setup() was already called, only one call is allowed")
@@ -661,7 +663,7 @@ func TestPedersen_ComputePubshares_OK(t *testing.T) {
 // Utility functions
 
 func initMetrics() {
-	evoting.PromElectionDkgStatus.Reset()
+	evoting.PromFormDkgStatus.Reset()
 }
 
 // actorsEqual checks that two actors hold the same data

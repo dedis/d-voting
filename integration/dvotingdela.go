@@ -245,15 +245,15 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 	contract := accessContract.NewContract(aKey[:], accessService, accessStore)
 	accessContract.RegisterContract(exec, contract)
 
-	electionFac := etypes.NewElectionFactory(etypes.CiphervoteFactory{}, rosterFac)
+	formFac := etypes.NewFormFactory(etypes.CiphervoteFactory{}, rosterFac)
 
-	dkg := pedersen.NewPedersen(onet, srvc, pool, electionFac, signer)
+	dkg := pedersen.NewPedersen(onet, srvc, pool, formFac, signer)
 
 	rosterKey := [32]byte{}
 	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:],
 		accessService, dkg, rosterFac))
 
-	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, electionFac, signer)
+	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, formFac, signer)
 
 	// Neff shuffle signer
 	l := loader.NewFileLoader(filepath.Join(path, "private_neff.key"))

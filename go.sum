@@ -246,6 +246,8 @@ github.com/yuin/goldmark v1.4.1/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1
 go.dedis.ch/dela v0.0.0-20211018150429-1fdbe35cd189/go.mod h1:GVQ2MumgCcAkor2MmfRCoqTBsFjaaqt7HfJpQLhMGok=
 go.dedis.ch/dela v0.0.0-20220909115533-ad4f281a552f h1:xOO4YMx06/ERkiTtoJ9pneDJ033Ym9i8zI6NIbsOmPg=
 go.dedis.ch/dela v0.0.0-20220909115533-ad4f281a552f/go.mod h1:IIIV0aR0f1c9z4jRB2HVYYeLK7XbQ6pfqv6RufaXmUg=
+go.dedis.ch/dela v0.0.0-20221010131641-9c479e68be18 h1:sS/tKsWNFKTClWpyoTaibyORLbTxOP0aQcL2TTnWM2s=
+go.dedis.ch/dela v0.0.0-20221010131641-9c479e68be18/go.mod h1:lXxF9I5fE8ffjIL3HJZWJbpA4jFa3KE80TqjSVzCYbA=
 go.dedis.ch/dela-apps v0.0.0-20211019120455-a0db752a0ba0 h1:gPrJd+7QUuADpfToMKr80maGnjGPeB7ft7iNrkAtwGY=
 go.dedis.ch/dela-apps v0.0.0-20211019120455-a0db752a0ba0/go.mod h1:MoJSdm3LXkNtiKEK3eiBKgqFhory4v8sBr7ldFP/vFc=
 go.dedis.ch/fixbuf v1.0.3 h1:hGcV9Cd/znUxlusJ64eAlExS+5cJDIyTyEG+otu5wQs=

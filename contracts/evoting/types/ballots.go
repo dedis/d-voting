@@ -10,6 +10,12 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const (
+	selectID = "select"
+	rankID   = "rank"
+	textID   = "text"
+)
+
 // Ballot contains all information about a simple ballot
 type Ballot struct {
 
@@ -36,11 +42,11 @@ type Ballot struct {
 
 // Unmarshal decodes the given string according to the format described in
 // "state of smart contract.md"
-func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
-	if len(marshalledBallot) > election.BallotSize {
+func (b *Ballot) Unmarshal(marshalledBallot string, form Form) error {
+	if len(marshalledBallot) > form.BallotSize {
 		b.invalidate()
 		return fmt.Errorf("ballot has an unexpected size %d, expected <= %d",
-			len(marshalledBallot), election.BallotSize)
+			len(marshalledBallot), form.BallotSize)
 	}
 
 	lines := strings.Split(marshalledBallot, "\n")
@@ -72,7 +78,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 			return xerrors.Errorf("could not decode question ID: %v", err)
 		}
 
-		q := election.Configuration.GetQuestion(ID(questionID))
+		q := form.Configuration.GetQuestion(ID(questionID))
 
 		if q == nil {
 			b.invalidate()
@@ -81,7 +87,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 
 		switch question[0] {
 
-		case "select":
+		case selectID:
 			selections := strings.Split(question[2], ",")
 
 			selectQ := Select{
@@ -100,7 +106,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 			b.SelectResultIDs = append(b.SelectResultIDs, ID(questionID))
 			b.SelectResult = append(b.SelectResult, results)
 
-		case "rank":
+		case rankID:
 			ranks := strings.Split(question[2], ",")
 
 			rankQ := Rank{
@@ -118,7 +124,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, election Election) error {
 			b.RankResultIDs = append(b.RankResultIDs, ID(questionID))
 			b.RankResult = append(b.RankResult, results)
 
-		case "text":
+		case textID:
 			texts := strings.Split(question[2], ",")
 
 			textQ := Text{
@@ -311,21 +317,21 @@ func (s *Subject) MaxEncodedSize() int {
 
 	//TODO : optimise by computing max size according to number of choices and maxN
 	for _, rank := range s.Ranks {
-		size += len("rank::")
+		size += len(rank.GetID() + "::")
 		size += len(rank.ID)
 		// at most 3 bytes (128) + ',' per choice
 		size += len(rank.Choices) * 4
 	}
 
 	for _, selection := range s.Selects {
-		size += len("select::")
+		size += len(selection.GetID() + "::")
 		size += len(selection.ID)
 		// 1 bytes (0/1) + ',' per choice
 		size += len(selection.Choices) * 2
 	}
 
 	for _, text := range s.Texts {
-		size += len("text::")
+		size += len(text.GetID() + "::")
 		size += len(text.ID)
 
 		// at most 4 bytes per character + ',' per answer
@@ -357,10 +363,10 @@ func (s *Subject) isValid(uniqueIDs map[ID]bool) bool {
 		}
 	}
 
-	for _, selection := range s.Selects {
-		uniqueIDs[selection.ID] = true
+	for _, sform := range s.Selects {
+		uniqueIDs[sform.ID] = true
 
-		if !isValid(selection) {
+		if !isValid(sform) {
 			return false
 		}
 	}
@@ -395,12 +401,13 @@ func (s *Subject) isValid(uniqueIDs map[ID]bool) bool {
 	return true
 }
 
-// Question is an interface offering the primitives all questions should have to
+// Question is an offering the primitives all questions should have to
 // verify the validity of an answer on a decrypted ballot.
 type Question interface {
 	GetMaxN() uint
 	GetMinN() uint
 	GetChoicesLength() int
+	GetID() string
 }
 
 func isValid(q Question) bool {
@@ -416,6 +423,11 @@ type Select struct {
 	MaxN    uint
 	MinN    uint
 	Choices []string
+}
+
+// GetID implements Question
+func (s Select) GetID() string {
+	return selectID
 }
 
 // GetMaxN implements Question
@@ -435,20 +447,20 @@ func (s Select) GetChoicesLength() int {
 
 // unmarshalAnswers interprets the given raw answers into a slice of bool with
 // the answer for each choice and ensure the answers are correctly formatted
-func (s Select) unmarshalAnswers(selections []string) ([]bool, error) {
-	if len(selections) != len(s.Choices) {
+func (s Select) unmarshalAnswers(sforms []string) ([]bool, error) {
+	if len(sforms) != len(s.Choices) {
 		return nil, fmt.Errorf("question %s has a wrong number of answers:"+
-			" expected %d got %d", s.ID, len(s.Choices), len(selections))
+			" expected %d got %d", s.ID, len(s.Choices), len(sforms))
 	}
 
 	var selected uint = 0
 	results := make([]bool, 0)
 
-	for _, selection := range selections {
-		b, err := strconv.ParseBool(selection)
+	for _, sform := range sforms {
+		b, err := strconv.ParseBool(sform)
 
 		if err != nil {
-			return nil, fmt.Errorf("could not parse selection value for Q.%s: %v",
+			return nil, fmt.Errorf("could not parse sform value for Q.%s: %v",
 				s.ID, err)
 		}
 
@@ -476,6 +488,10 @@ type Rank struct {
 	MaxN    uint
 	MinN    uint
 	Choices []string
+}
+
+func (r Rank) GetID() string {
+	return rankID
 }
 
 // GetMaxN implements Question
@@ -546,6 +562,10 @@ type Text struct {
 	MaxLength uint
 	Regex     string
 	Choices   []string
+}
+
+func (t Text) GetID() string {
+	return textID
 }
 
 // GetMaxN implements Question
