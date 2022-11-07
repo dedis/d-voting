@@ -8,7 +8,7 @@ import crypto from 'crypto';
 import lmdb, { RangeOptions } from 'lmdb';
 import xss from 'xss';
 import createMemoryStore from 'memorystore';
-import { newEnforcer } from 'casbin';
+import { Enforcer, newEnforcer } from 'casbin';
 
 const MemoryStore = createMemoryStore(session);
 
@@ -25,6 +25,27 @@ const sciper2sess = new Map<number, Set<string>>();
 const app = express();
 
 app.use(morgan('tiny'));
+
+let enf: Enforcer;
+
+const enforcerLoading = newEnforcer('model.conf', 'policy.csv');
+const e = newEnforcer('model.conf', 'policy.csv');
+const port = process.env.PORT || 5000;
+
+Promise.all([enforcerLoading])
+  .then((res) => {
+    [enf] = res;
+    console.log(`🛡 Casbin loaded`);
+    app.listen(port);
+    console.log(`🚀 App is listening on port ${port}`);
+  })
+  .catch((err) => {
+    console.error('❌ failed to start:', err);
+  });
+
+function isAuthorized(sciper: number | undefined, subject: string, action: string): boolean {
+  return enf.enforceSync(sciper, subject, action);
+}
 
 declare module 'express-session' {
   export interface SessionData {
@@ -187,30 +208,22 @@ app.get('/api/personal_info', (req, res) => {
 // return roles.includes(role as string);
 // }
 
-const e = newEnforcer('model.conf', 'policy.csv');
-
 // ---
 // Users role
 // ---
 // This call allow a user that is admin to get the list of the people that have
 // a special role (not a voter).
 app.get('/api/user_rights', (req, res) => {
-  e.then((enforcer) =>
-    enforcer
-      .enforce(req.session.userid, 'roles', 'list')
-      .then((isOK) => {
-        if (isOK) {
-          const opts: RangeOptions = {};
-          const users = Array.from(
-            usersDB.getRange(opts).map(({ key, value }) => ({ id: '0', sciper: key, role: value }))
-          );
-          res.json(users);
-        } else {
-          res.status(400).send('Unauthorized - only admins allowed');
-        }
-      })
-      .catch((error) => console.log('error', error))
-  ).catch((error) => console.log('error', error));
+  if (!isAuthorized(req.session.userid, 'roles', 'list')) {
+    res.status(400).send('Unauthorized - only admins allowed');
+    return;
+  }
+
+  const opts: RangeOptions = {};
+  const users = Array.from(
+    usersDB.getRange(opts).map(({ key, value }) => ({ id: '0', sciper: key, role: value }))
+  );
+  res.json(users);
 });
 
 // This call (only for admins) allow an admin to add a role to a voter.
@@ -589,8 +602,3 @@ app.get('*', (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   res.status(404).send(`not found ${xss(url.toString())}`);
 });
-
-const port = process.env.PORT || 5000;
-app.listen(port);
-
-console.log(`App is listening on port ${port}`);
