@@ -41,6 +41,7 @@
     "enterMaxN": "Enter the MaxN",
     "enterRegex": "Enter your regex",
     "enterTitle": "Enter your Title",
+    "enterHint": "Enter your Hint (optionnal)",
     "mainProperties": "Main properties",
     "additionalProperties": "Additional properties",
     "removeSubject": "Remove subject",
