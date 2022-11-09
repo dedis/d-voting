@@ -20,8 +20,8 @@ func NewForm(formID string) types.Form {
 			MainTitle: "dummyTitle",
 		},
 		FormID: formID,
-		Status:     types.Closed,
-		Pubkey:     pubKey,
+		Status: types.Closed,
+		Pubkey: pubKey,
 		Suffragia: types.Suffragia{
 			Ciphervotes: []types.Ciphervote{},
 		},
@@ -105,6 +105,23 @@ var BasicConfiguration = types.Configuration{
 					Choices:   []string{"write yes in your language"},
 				},
 			},
+		},
+		{
+			ID:       "ff",
+			Title:    "subject3",
+			Order:    nil,
+			Subjects: nil,
+			Selects:  nil,
+			Ranks: []types.Rank{
+				{
+					ID:      "gg",
+					Title:   "Rank your favorite snacks",
+					MaxN:    4,
+					MinN:    2,
+					Choices: []string{"snickers", "mars", "vodka", "babibel"},
+				},
+			},
+			Texts: nil,
 		},
 	},
 }
