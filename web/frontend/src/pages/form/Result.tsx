@@ -50,7 +50,7 @@ const FormResult: FC = () => {
                         ? 'w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-white bg-indigo-500 shadow'
                         : 'w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-gray-700 hover:bg-indigo-100 hover:text-indigo-500'
                     }>
-                    Tab 1
+                    {t('resIndiv')}
                   </Tab>
                   <Tab
                     key="individual"
@@ -59,7 +59,7 @@ const FormResult: FC = () => {
                         ? 'w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-white bg-indigo-500 shadow'
                         : 'w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-indigo-500 text-gray-600 hover:bg-indigo-100 hover:text-indigo-500'
                     }>
-                    Tab 2
+                    {t('resGroup')}
                   </Tab>
                 </Tab.List>
                 <Tab.Panel>
