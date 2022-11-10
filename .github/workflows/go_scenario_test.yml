@@ -39,7 +39,7 @@ jobs:
           ./memcoin --config /tmp/node3 start --postinstall --promaddr :9102 --proxyaddr :9082 --proxykey adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3 --listen tcp://0.0.0.0:2003 --public //localhost:2003 --routing tree &
 
       - name: Run the setup
-        run: ./runSystems -n 3 -d false -r false -b false -f false
+        run: ./runSystems.sh -n 3 -d false -r false -b false -f false
 
       - name: Run the scenario Test
         run: go test -timeout 7m -run TestScenario ./integration/...
