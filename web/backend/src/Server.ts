@@ -208,7 +208,7 @@ app.get('/api/personal_info', (req, res) => {
 // return roles.includes(role as string);
 // }
 
-//const e = newEnforcer('model.conf', 'policy.csv');
+// const e = newEnforcer('model.conf', 'policy.csv');
 
 // ---
 // Users role
@@ -577,7 +577,7 @@ app.get('*', (req, res) => {
   res.status(404).send(`not found ${xss(url.toString())}`);
 });
 
-//const port = process.env.PORT || 5000;
-//app.listen(port);
+// const port = process.env.PORT || 5000;
+// app.listen(port);
 
-//console.log(`App is listening on port ${port}`);
+// console.log(`App is listening on port ${port}`);
