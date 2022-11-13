@@ -26,6 +26,10 @@ while [[ $# -gt 0 ]]; do
     echo "-n  |  --node     number of d-voting nodes"
     echo "-a  |  --attach   attach tmux window to current shell true/false, by default true"
     echo "-d  |  --docker   launch nodes on docker containers true/false, by default false"
+    echo "-r  |  --run      run the nodes true/false, by default true"
+    echo "-s  |  --setup    setup the nodes true/false, by default true"
+    echo "-f  |  --frontend setup the frontend true/false, by default true"
+    echo "-b  |  --backend  setup the backend true/false, by default true"
     exit 0
     ;;
   -r | --run)
