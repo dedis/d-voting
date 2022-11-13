@@ -4,6 +4,7 @@ import { DownloadedResults, RankResults, SelectResults, TextResults } from 'type
 import SelectResult from './components/SelectResult';
 import RankResult from './components/RankResult';
 import TextResult from './components/TextResult';
+import { default as i18n } from 'i18next';
 import {
   ID,
   RANK,
@@ -88,7 +89,17 @@ const FormResult: FC = () => {
 
     return { rankRes, selectRes, textRes };
   };
-
+  const [titles,setTitles]= useState<any>({});
+  useEffect (()=> {
+    try{
+      console.log('config', configuration.MainTitle)
+      const ts = JSON.parse(configuration.MainTitle)
+      setTitles(ts)   
+    }catch(e){
+        console.log('error',e)
+    }
+   
+  }, [configuration])
   useEffect(() => {
     if (result !== null) {
       const { rankRes, selectRes, textRes } = groupResultsByID();
@@ -158,7 +169,9 @@ const FormResult: FC = () => {
     });
 
     const data = {
-      Title: configuration.MainTitle,
+      TitleEn: i18n.language == 'en' && titles.en,
+      TitleFr: i18n.language == 'fr' && titles.fr,
+      TitleDe: i18n.language == 'en' && titles.de,
       NumberOfVotes: result.length,
       Results: dataToDownload,
     };
@@ -229,7 +242,9 @@ const FormResult: FC = () => {
               {t('totalNumberOfVotes', { votes: result.length })}
             </h2>
             <h3 className="py-6 border-t text-2xl text-center text-gray-700">
-              {configuration.MainTitle}
+                {i18n.language == 'en' && titles.en}
+                {i18n.language == 'fr' && titles.fr}
+                {i18n.language == 'de' && titles.de}
             </h3>
 
             <div className="flex flex-col">

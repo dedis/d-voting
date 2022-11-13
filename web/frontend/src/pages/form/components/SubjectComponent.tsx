@@ -306,20 +306,21 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
              
               <div className="flex flex-col mt-3  mb-2">
                  <div className="py-6 px-5 space-y-6">
-                    <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+                    <form className="flex gap-y-4 gap-x-8">
                         {availableLanguages.map(
                             (lang) =>
-                                language !== lang && (
-                                  <button key={lang}>
+                                  <label id={'lang'+ lang}>
+                                    <input className="hidden peer" type="radio" key={lang} id={'lang'+ lang} name="lang"></input>
                                     <div
-                                        className="text-base font-medium text-gray-900 hover:text-gray-700"
+                                        className="peer-checked:bg-gray-300 text-base font-small text-gray-900 hover:text-gray-700"
                                         onClick={() => setLanguage(lang)}>
                                         {t(lang)}
-                      </div>
-                    </button>
-                  )
+                                    </div>
+                                  </label>
+                    
+                  
               )}
-            </div>
+            </form>
           </div>
                 {language === 'en' && (
                   <input

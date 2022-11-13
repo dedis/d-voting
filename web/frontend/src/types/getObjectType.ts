@@ -9,9 +9,9 @@ const emptyConfiguration = (): types.Configuration => {
     MainTitle: '',
     Scaffold: [],
     TitleLg1: '',
-    //ScaffoldLg1: [],
+    //ScaffoldFr: [],
     TitleLg2: '',
-    //ScaffoldLg2: [],
+    //ScaffoldDe: [],
   };
 };
 

@@ -112,18 +112,18 @@ const unmarshalConfig = (json: any): types.Configuration => {
     MainTitle: json.MainTitle,
     Scaffold: [],
     TitleLg1: json.TitleLg1,
-    //ScaffoldLg1: [],
+   // ScaffoldFr: [],
     TitleLg2: json.TitleLg2,
-    //ScaffoldLg2: [],
+    //ScaffoldDe: [],
   };
   for (const subject of json.Scaffold) {
     conf.Scaffold.push(unmarshalSubject(subject));
   }
-  /*for (const subject of json.ScaffoldLg1) {
-    conf.ScaffoldLg1.push(unmarshalSubject(subject));
+  /*for (const subject of json.ScaffoldFr) {
+    conf.ScaffoldFr.push(unmarshalSubject(subject));
   }
-  for (const subject of json.ScaffoldLg2) {
-    conf.ScaffoldLg2.push(unmarshalSubject(subject));
+  for (const subject of json.ScaffoldDe) {
+    conf.ScaffoldDe.push(unmarshalSubject(subject));
   }*/
   return conf;
 };

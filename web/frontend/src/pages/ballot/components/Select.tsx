@@ -2,7 +2,7 @@ import { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Answers, SelectQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
-
+import { default as i18n } from 'i18next';
 type SelectProps = {
   select: SelectQuestion;
   answers: Answers;
@@ -75,12 +75,22 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers }) => {
 
   return (
     <div>
-      <h3 className="text-lg break-words text-gray-600">{select.Title}</h3>
+      <h3 className="text-lg break-words text-gray-600">
+        {i18n.language == 'en' && select.Title}
+        {i18n.language == 'fr' && select.TitleFr}
+        {i18n.language == 'de' && select.TitleDe}</h3>
       {hintDisplay()}
       <div className="sm:pl-8 pl-6">
         {Array.from(answers.SelectAnswers.get(select.ID).entries()).map(
-          ([choiceIndex, isChecked]) =>
-            choiceDisplay(isChecked, select.Choices[choiceIndex], choiceIndex)
+          ([choiceIndex, isChecked]) =>{
+            if(i18n.language == 'en' )
+                return choiceDisplay(isChecked, select.Choices[choiceIndex], choiceIndex)
+            else if(i18n.language == 'fr')
+                return choiceDisplay(isChecked, select.ChoicesFr[choiceIndex], choiceIndex)
+            else if(i18n.language == 'de') 
+                return choiceDisplay(isChecked, select.ChoicesDe[choiceIndex], choiceIndex)
+          }
+         
         )}
       </div>
       <div className="text-red-600 text-sm py-2 sm:pl-4 pl-2">{answers.Errors.get(select.ID)}</div>

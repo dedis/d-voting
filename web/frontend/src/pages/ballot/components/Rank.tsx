@@ -2,6 +2,7 @@ import { FC } from 'react';
 import { Draggable, DropResult, Droppable } from 'react-beautiful-dnd';
 import { Answers, ID, RankQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
+import { default as i18n } from 'i18next';
 
 export const handleOnDragEnd = (
   result: DropResult,
@@ -78,14 +79,26 @@ const Rank: FC<RankProps> = ({ rank, answers }) => {
 
   return (
     <div className="mb-6">
-      <h3 className="text-lg break-words text-gray-600">{rank.Title}</h3>
+      <h3 className="text-lg break-words text-gray-600">
+        {i18n.language == 'en' && rank.Title}
+        {i18n.language == 'fr' && rank.TitleFr}
+        {i18n.language == 'de' && rank.TitleDe}
+      </h3>
       <div className="mt-5 px-4 max-w-[300px] sm:pl-8 sm:max-w-md">
         <>
           <Droppable droppableId={String(rank.ID)}>
             {(provided) => (
               <ul className={rank.ID} {...provided.droppableProps} ref={provided.innerRef}>
                 {Array.from(answers.RankAnswers.get(rank.ID).entries()).map(
-                  ([rankIndex, choiceIndex]) => choiceDisplay(rank.Choices[choiceIndex], rankIndex)
+                  ([rankIndex, choiceIndex]) => {
+                    if(i18n.language == 'en')
+                        return choiceDisplay(rank.Choices[choiceIndex], rankIndex)
+                    else if (i18n.language == 'fr')    
+                        return choiceDisplay(rank.ChoicesFr[choiceIndex], rankIndex)
+                    else if (i18n.language == 'de')    
+                        return choiceDisplay(rank.ChoicesDe[choiceIndex], rankIndex)    
+                  }
+                  
                 )}
                 {provided.placeholder}
               </ul>

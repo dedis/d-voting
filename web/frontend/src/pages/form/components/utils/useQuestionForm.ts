@@ -21,8 +21,8 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
             Choices: [...Choices, ''],
             ChoicesFr: [...ChoicesFr, ''],
             ChoicesDe: [...ChoicesDe, ''],
-            MaxN: Choices.length + 1,
-            MinN: Choices.length + 1,
+            MaxN: Math.max(Choices.length + 1,ChoicesFr.length + 1, ChoicesDe.length + 1),
+            MinN: Math.min(Choices.length + 1,ChoicesFr.length + 1, ChoicesDe.length + 1),
           });
           break;
         case 'deleteChoiceRank':
@@ -67,8 +67,21 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
     };
 
   // updates the choices array when the user adds a new choice
-  const addChoice = () => {
-    setState({ ...state, Choices: [...Choices, ''], ChoicesFr: [...ChoicesFr, ''], ChoicesDe: [...ChoicesDe, ''], MaxN: Choices.length + 1 });
+  const addChoice = (lang) => {
+    switch (lang){
+        case 'en':
+            setState({...state,Choices:[...Choices,''],MaxN: Choices.length + 1})
+            break;
+        case 'fr':
+            setState({...state,ChoicesFr:[...ChoicesFr,''],MaxN: ChoicesFr.length + 1})
+            break;
+        case 'de':
+            setState({...state,ChoicesDe:[...ChoicesDe,''],MaxN: ChoicesDe.length + 1});
+            break;
+        default :    
+            setState({...state,Choices:[...Choices,''],MaxN: Choices.length + 1})
+            
+    }
   };
 
   // remove a choice from the choices array
@@ -90,29 +103,47 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
     }}};
 
   // update the choice at the given index
-  const updateChoice = (index: number) => (e) => {
+  const updateChoice = (index: number,lang: string) => (e) => {
     e.persist();
-    setState({
-      ...state,
-      Choices: Choices.map((item: string, idx: number) => {
-        if (idx === index) {
-          return e.target.value;
-        }
-        return item;
-      }),
-      ChoicesFr: ChoicesFr.map((item: string, idx: number) => {
-        if (idx === index) {
-          return e.target.value;
-        }
-        return item;
-      }),
-      ChoicesDe: ChoicesDe.map((item: string, idx: number) => {
-        if (idx === index) {
-          return e.target.value;
-        }
-        return item;
-      }),
-    });
+    switch (lang){
+        case 'en' :
+            setState({...state,Choices: Choices.map((item: string, idx: number) => {
+                if (idx === index) {
+                return e.target.value;
+                }
+                return item;
+            })})
+            break
+        case 'fr' :
+            setState({
+                ...state,
+                ChoicesFr: ChoicesFr.map((item: string, idx: number) => {
+                  if (idx === index) {
+                    return e.target.value;
+                  }
+                  return item;
+                })})
+                break
+        case 'de' : 
+            setState({
+                ...state,
+                ChoicesDe: ChoicesDe.map((item: string, idx: number) => {
+                if (idx === index) {
+                    return e.target.value;
+                }
+                return item;
+                }),
+            })   
+            break
+        default:
+            setState({...state,Choices: Choices.map((item: string, idx: number) => {
+                if (idx === index) {
+                return e.target.value;
+                }
+                return item;
+            })})  
+    } 
+    ;
   };
 
   return { state, handleChange, addChoice, deleteChoice, updateChoice };

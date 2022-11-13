@@ -2,6 +2,7 @@ import { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Answers, TextQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
+import { default as i18n } from 'i18next';
 
 type TextProps = {
   text: TextQuestion;
@@ -98,11 +99,20 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
 
   return (
     <div>
-      <h3 className="text-lg break-words text-gray-600">{text.Title}</h3>
+      <h3 className="text-lg break-words text-gray-600">
+        {i18n.language == 'en' && text.Title}
+        {i18n.language == 'fr' && text.TitleFr}
+        {i18n.language == 'de' && text.TitleDe}</h3>
       {hintDisplay()}
-      <div className="sm:pl-8 mt-2 pl-6">
+      {i18n.language == 'en' && (<div className="sm:pl-8 mt-2 pl-6">
         {text.Choices.map((choice, index) => choiceDisplay(choice, index))}
-      </div>
+      </div>)}
+      {i18n.language == 'fr' && (<div className="sm:pl-8 mt-2 pl-6">
+        {text.ChoicesFr.map((choice, index) => choiceDisplay(choice, index))}
+      </div>)}
+      {i18n.language == 'de' && (<div className="sm:pl-8 mt-2 pl-6">
+        {text.ChoicesDe.map((choice, index) => choiceDisplay(choice, index))}
+      </div>)}
       <div className="text-red-600 text-sm py-2 sm:pl-2 pl-1">{answers.Errors.get(text.ID)}</div>
     </div>
   );

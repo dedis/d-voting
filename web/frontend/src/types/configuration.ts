@@ -56,9 +56,8 @@ interface Configuration {
   Scaffold: Subject[];
   TitleLg1: string;
   TitleLg2: string;
-  //ScaffoldLg1: Subject[];
-
-  //ScaffoldLg2: Subject[];
+ // ScaffoldFr: Subject[];
+  //ScaffoldDe: Subject[];
 }
 
 // Answers describes the current answers for each type of question

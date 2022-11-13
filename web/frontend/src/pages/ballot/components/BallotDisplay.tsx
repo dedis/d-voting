@@ -8,6 +8,7 @@ import { DragDropContext } from 'react-beautiful-dnd';
 import { default as i18n } from 'i18next';
 
 
+
 type BallotDisplayProps = {
   configuration: Configuration;
   answers: Answers;
@@ -54,7 +55,9 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
     return (
       <div key={subject.ID}>
         <h3 className="text-xl break-all pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-          {subject.Title}
+          {i18n.language == 'en' && subject.Title}
+          {i18n.language == 'fr' && subject.TitleFr}
+          {i18n.language == 'de' && subject.TitleDe}
         </h3>
         {subject.Order.map((id: ID) => (
           <div key={id}>
@@ -69,8 +72,13 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
         ))}
       </div>
     );
-  };
-
+  }
+    try{
+        console.log("subjects", configuration.Scaffold);  
+    }catch(e){
+        console.log("erreur",e)
+    }
+   
   return (
     <DragDropContext onDragEnd={(dropRes) => handleOnDragEnd(dropRes, answers, setAnswers)}>
       <div className="w-full mb-0 sm:mb-4 mt-4 sm:mt-6">
@@ -78,8 +86,10 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
           {i18n.language == 'en' && titles.en}
           {i18n.language == 'fr' && titles.fr}
           {i18n.language == 'de' && titles.de}
+          
         </h3>
         <div className="flex flex-col">
+          
           {configuration.Scaffold.map((subject: types.Subject) => SubjectTree(subject))}
           <div className="text-red-600 text-sm pt-3 pb-1">{userErrors}</div>
         </div>

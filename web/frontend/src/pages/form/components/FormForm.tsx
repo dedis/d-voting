@@ -47,13 +47,13 @@ const FormForm: FC<FormFormProps> = () => {
   const [marshalledConf, setMarshalledConf] = useState<any>(marshalConfig(conf));
   const { configuration: previewConf, answers, setAnswers } = useConfiguration(marshalledConf);
 
-  const { MainTitle, Scaffold, TitleLg1,TitleLg2} = conf; //ScaffoldLg1, , ScaffoldLg2 
+  const { MainTitle, Scaffold, TitleLg1,TitleLg2,} = conf; 
 
   const [language, setLanguage] = useState('en');
   //const [titleChanging1, setTitleChanging1] = useState<boolean>(true);
  // const [titleChanging2, setTitleChanging2] = useState<boolean>(true);
   //const TitleLg1 = '';
-  //const TitleLg2 = '';
+  //const TitleLg2 = '';ScaffoldFr, ScaffoldDe 
 
   useEffect(() => {
     setMarshalledConf(marshalConfig(conf));
@@ -123,11 +123,16 @@ const FormForm: FC<FormFormProps> = () => {
     newSubjects[newSubjects.findIndex((s) => s.ID === subject.ID)] = subject;
     setConf({ ...conf, Scaffold: newSubjects });
   };
-
+// languages: string
   const addSubject = () => {
-    const newSubjects = [...Scaffold];
-    newSubjects.push(newSubject());
-    setConf({ ...conf, Scaffold: newSubjects });
+   const newSubjectsEn = [...Scaffold]; 
+   //const newSubjectsFr = [...ScaffoldFr];
+   //const newSubjectsDe = [...ScaffoldDe];
+  // if (languages === 'en'){
+    newSubjectsEn.push(newSubject());
+    setConf({ ...conf, Scaffold: newSubjectsEn });
+   //}
+    
   };
 
   const handleConfirmRemoveSubject = () => {
@@ -142,23 +147,25 @@ const FormForm: FC<FormFormProps> = () => {
     return (
       <div className="w-screen px-4 md:px-0 md:w-auto">
         <div className="flex flex-col border rounded-md">
-          <div className="flex flex-col justify-itens-center mt-3 mb-2">
+          <div className="flex flex-col justify-items-center mt-3 mb-2">
             {titleChanging ? (
               <>
                 <div className="py-6 px-5 space-y-6">
-                    <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+                    <form className="flex gap-y-4 gap-x-8">
                         {availableLanguages.map(
-                            (lang) =>
-                                  <button key={lang}>
+                            (lang,index) =>
+                                  <label id={'lang'+ lang}>
+                                    <input className="hidden peer" type="radio" key={index} id={'lang'+ lang} name="lang"></input>
                                     <div
-                                        className="text-base font-small text-gray-900 hover:text-gray-700"
+                                        className="peer-checked:bg-gray-300 text-base font-small text-gray-900 hover:text-gray-700"
                                         onClick={() => setLanguage(lang)}>
                                         {t(lang)}
-                      </div>
-                    </button>
+                                    </div>
+                                  </label>
+                    
                   
               )}
-            </div>
+            </form>
           </div>
                 {language === 'en' && (
                     <input
