@@ -169,10 +169,10 @@ if [ "$BACKEND" == true ]; then
   if tmux has-session -t $s 2>/dev/null; then
     # window for the backend
     tmux new-window -t $s -n "backend"
-    tmux send-keys -t $s:{end} "cd web/backend && PORT=4000 npm start" C-m
+    tmux send-keys -t $s:{end} "cd web/backend && npm start" C-m
   else
     #run it in the current shell
-    cd web/backend && PORT=4000 npm start
+    cd web/backend && npm start
   fi
 fi
 
