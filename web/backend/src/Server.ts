@@ -219,19 +219,23 @@ app.post('/api/add_role', (req, res) => {
   // The sciper has to contain 6 numbers
   if (sciper < 999999 && sciper > 100000) {
     // call https://search-api.epfl.ch/api/ldap?q=228271 if the answer
-    // empty then sciper invalid
+    // empty then sciper unknown
     axios.get(`https://search-api.epfl.ch/api/ldap?q=${sciper}`).then((response) => {
       if (response.data.length === 0) {
-        res.status(400).send('Unknown sciper');
+        res.status(400).send('Unknown Sciper');
       } else {
         usersDB.put(sciper, role).catch((error) => {
           res.status(500).send('Failed to add role');
           console.log(error);
         });
+        res.status(200).send('Role added');
       }
+    }).catch((error) => {
+      res.status(500).send('Failed to check Sciper');
+      console.log(error);
     });
   } else {
-    res.status(400).send('sciper length incorrect');
+    res.status(400).send('Sciper length is incorrect');
   }
 });
 
