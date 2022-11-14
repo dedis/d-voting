@@ -106,22 +106,5 @@ var BasicConfiguration = types.Configuration{
 				},
 			},
 		},
-		{
-			ID:       "ff",
-			Title:    "subject3",
-			Order:    nil,
-			Subjects: nil,
-			Selects:  nil,
-			Ranks: []types.Rank{
-				{
-					ID:      "gg",
-					Title:   "Rank your favorite snacks",
-					MaxN:    4,
-					MinN:    2,
-					Choices: []string{"snickers", "mars", "vodka", "babibel"},
-				},
-			},
-			Texts: nil,
-		},
 	},
 }
