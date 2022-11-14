@@ -62,7 +62,7 @@ func TestCrash(t *testing.T) {
 }
 
 func TestAddNodes(t *testing.T) {
-	t.Run("5 nodes, 10 votes ", getIntegrationTestAddNodes(5, 10, 2))
+	t.Run("5 nodes, 10 votes add 2 node during the process", getIntegrationTestAddNodes(5, 10, 2))
 }
 
 func BenchmarkIntegration(b *testing.B) {
@@ -340,7 +340,7 @@ func getIntegrationTestBadVote(numNodes, numVotes, numBadVotes int) func(*testin
 			if ballotIsNull(ballot) {
 				count++
 			}
-			fmt.Println(fmt.Sprintf("%#v", ballot))
+			//fmt.Println(fmt.Sprintf("%#v", ballot))
 		}
 		fmt.Println(form.DecryptedBallots)
 
