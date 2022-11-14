@@ -587,7 +587,8 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		t.Logf("shuffling")
 		err = sActor.Shuffle(formID)
 
-		// If the number of failing nodes is greater than the threshold, the shuffle will fail
+		// If the number of failing nodes is greater 
+		// than the threshold, the shuffle will fail
 		fmt.Println("threshold: ", numNodes/3)
 		if failingNodes > numNodes/3 {
 			require.Error(t, err)
