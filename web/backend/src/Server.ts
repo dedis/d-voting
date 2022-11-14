@@ -220,7 +220,7 @@ app.post('/api/add_role', (req, res) => {
   if (sciper < 999999 && sciper > 100000) {
     // call https://search-api.epfl.ch/api/ldap?q=228271 if empty then sciper invalid
     axios.get(`https://search-api.epfl.ch/api/ldap?q=${sciper}`).then((response) => {
-      if (response.data.length == 0) {
+      if (response.data.length === 0) {
         res.status(400).send('Invalid sciper');
       } else {
         usersDB.put(sciper, role).catch((error) => {
