@@ -218,7 +218,7 @@ app.post('/api/add_role', (req, res) => {
 
   // The sciper has to contain 6 numbers
   if (sciper < 999999 && sciper > 100000) {
-    // call https://search-api.epfl.ch/api/ldap?q=228271 if the answer 
+    // call https://search-api.epfl.ch/api/ldap?q=228271 if the answer
     // empty then sciper invalid
     axios.get(`https://search-api.epfl.ch/api/ldap?q=${sciper}`).then((response) => {
       if (response.data.length === 0) {
