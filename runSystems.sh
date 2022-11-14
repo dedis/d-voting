@@ -6,10 +6,10 @@
 
 set -e
 
-#TODO: add option to say if we want to run, setup or both
 # by default run on local
 DOCKER=false
 ATTACH=true
+# by default run and setup everything
 RUN=true
 SETUP=true
 FRONTEND=true
@@ -93,6 +93,12 @@ pk=adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3
 s="d-voting-test"
 from=0
 if [ "$RUN" == true ]; then
+
+  if [ -z "$N_NODE" ]; then
+    echo "Please specify the number of nodes"
+    exit 1
+  fi
+
   # check if session already exists, if so run the kill_test.sh script
   if tmux has-session -t $s 2>/dev/null; then
     echo "Session $s already exists, killing it"
@@ -159,22 +165,25 @@ if [ "$RUN" == true ]; then
 
 fi
 
-window=$from
 if [ "$BACKEND" == true ]; then
   if tmux has-session -t $s 2>/dev/null; then
     # window for the backend
-    tmux new-window -t $s
-
-    tmux send-keys -t $s:$window "cd web/backend && PORT=4000 npm start" C-m
+    tmux new-window -t $s -n "backend"
+    tmux send-keys -t $s:{end} "cd web/backend && PORT=4000 npm start" C-m
+  else
+    #run it in the current shell
+    cd web/backend && PORT=4000 npm start
   fi
 fi
-window=$((from + 1))
+
 # window for the frontend
 if [ "$FRONTEND" == true ]; then
   if tmux has-session -t $s 2>/dev/null; then
-    tmux new-window -t $s
-
-    tmux send-keys -t $s:$window "cd web/frontend && REACT_APP_PROXY=http://localhost:9081 REACT_APP_NOMOCK=on npm start" C-m
+    tmux new-window -t $s -n "frontend"
+    tmux send-keys -t $s:{end} "cd web/frontend && REACT_APP_PROXY=http://localhost:9081 REACT_APP_NOMOCK=on npm start" C-m
+  else
+    #run it in the current shell
+    cd web/frontend && REACT_APP_PROXY=http://localhost:9081 REACT_APP_NOMOCK=on npm start
   fi
 fi
 
@@ -182,12 +191,15 @@ fi
 
 # Setup
 if [ "$SETUP" == true ]; then
+  if [ -z "$N_NODE" ]; then
+    echo "Please specify the number of nodes"
+    exit 1
+  fi
   if [ "$RUN" == true ]; then
     sleep 8
   fi
   if tmux has-session -t $s 2>/dev/null; then
     # window for the setup
-    tmux send-keys -t $s:$((0)) "./setupnNode.sh -n $N_NODE" C-m
     GREEN='\033[0;32m'
     NC='\033[0m' # No Color
 
@@ -288,8 +300,6 @@ if [ "$SETUP" == true ]; then
     fi
   fi
 fi
-
-#tmux send-keys -t $s:$((0)) "./setupnNode.sh -n $N_NODE" C-m
 
 if [ "$ATTACH" == true ]; then
   tmux a
