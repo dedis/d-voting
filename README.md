@@ -355,6 +355,27 @@ results.
             <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2022/07/report-2022-1-capucine-badr-d-voting-frontend.pdf">Report</a>,
             <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2022/07/presentation-2022-1-capucine-badr-d-voting-frontend.pdf">Presentation</a>
         </td>
+    </tr> 
+    <tr>
+        <td>Fall 2022</td>
+        <td>Students: Amine Benaziz, Albert Troussard<br>Supervisor: Noémien Kocher, Pierluca Borso<br>Assistant: Emilien Duc</td></td>
+        <td></td>
+        <td>
+        </td>
+    </tr>
+    <tr>
+        <td>Fall 2022</td>
+        <td>Students: Ahmed Elalamy, Ghita Tagemouati, Khadija Tagemouati<br>Supervisor: Noémien Kocher</td></td>
+        <td></td>
+        <td>
+        </td>
+    </tr>
+    <tr>
+        <td>Fall 2022</td>
+        <td>Students: Chen Chang Lew<br>Supervisor: Noémien Kocher, Pierluca Borso</td></td>
+        <td></td>
+        <td>
+        </td>
     </tr>
 </table>
 
@@ -377,11 +398,8 @@ added to you path (like with `export PATH=$PATH:/Users/david/go/bin`).
 
 # Setup a simple system with 5 nodes (Linux and MacOS)
 
-If you are using Windows and cannot use tmux, you need to do the actions of the
-scripts in point _1_ and _2_ manually: open 3 terminal sessions and run the
-commands from the section _Run the nodes_ below (1 command LLVL=info memcoin etc.
-per terminal and then launch the setup script in another terminal). You can then
-follow the instructions below starting from point _3_.
+If you are using Windows and cannot use tmux, you need to follow the instructions in [this](#Setup-a-simple-system-with-5-nodes-(Windows))
+ section.
 
 1: Only for the first time
 ```sh
@@ -393,7 +411,7 @@ npm install
 cd ../..
 ```
 
-1: Then run the following script to start and setup the nodes and the web server:
+2: Then run the following script to start and setup the nodes and the web server:
 
 
 
@@ -401,48 +419,47 @@ cd ../..
 ./runSystems.sh -n 5
 ```
 
-This will run 4 terminal sessions. You can navigate by hitting
+This will run 8 terminal sessions. You can navigate by hitting
 <kbd>CTRL</kbd>+<kbd>B</kbd> and then <kbd>S</kbd>. Use the arrows to select a
 window.
 
-2: Launch the setup
 
-From the first terminal sessions, run:
+3: Stop nodes
+If you want to stop the system, you can use the following command: 
 
-```sh
-./setupnNode.sh -n 3
-```
+(If you forgot, this will be done automatically when you start a new system)
 
-
-
-5: Stop nodes
 
 ```sh
 ./kill_test.sh
 ```
 
-6: Troubleshoot
+4: Troubleshoot
 
 If while running
 
 ```sh
-npm start
+./runSystems.sh -n 5
 ```
 
-in the web backend folder, you get this error:
+You get this error:
 
 ```sh
 Error: listen EADDRINUSE: address already in use :::5000
 ```
 
-then run this instead:
+then in the file runSystems.sh, replace the line:
 
 ```sh
-PORT=4000 npm start
+tmux send-keys -t $s:{end} "cd web/backend && npm start" C-m
+```
+with
+```sh
+tmux send-keys -t $s:{end} "cd web/backend && PORT=4000 npm start" C-m
 #or any other available port
 ```
 
-and in the web/frontend/src/setupProxy.js file, change :
+And in the web/frontend/src/setupProxy.js file, change :
 
 ```sh
 target: 'http://localhost:5000',
@@ -454,7 +471,7 @@ with
 target: 'http://localhost:4000',
 ```
 
-# Setup a simple system with 5 nodes (Windows)
+# Setup a simple system with 3 nodes (Windows)
 
 In three different terminal sessions, from the root folder:
 
@@ -518,22 +535,9 @@ form.
 
 # Testing
 
-## Automate the previous setup using `tmux`
-
-If you have `tmux` installed, you can start a `tmux` session that will
-execute the above setup by running in the project root `./runNode.sh -n 3`.
-This command takes as argument the number of nodes.
-Once the session is started, you can move around the panes with
-`Ctrl+B` followed by arrow keys or by `N`. You can also have an overview of the
-windows with `Ctrl+B` followed by `S`.
-
-To end the session, run `./kill_test.sh`,
-which will kill each window then the `tmux` session (which you can do manually
-with `Ctrl+D`), then delete the node data (i.e. the files `/tmp/node{1,2,3}`).
-
 ## Run the scenario test
 
-If nodes are running and `setup.sh` or `./setupnNode.sh -n 3` has been called,
+If nodes are running and `setup.sh` or `./runSystem.sh -n 3 --backend false --frontend false` (for this test you don't want the user interface so the web components are not needed)  has been called,
 you can run a test scenario:
 
 ```sh
@@ -554,7 +558,10 @@ Public key: `adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3`
 
 Secret key: `28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409`
 
-## Run the scenario test with docker
+<!---
+Currently not working
+
+## Run the scenario test with docker 
 
 Use the following commands to launch and set up nodes, and start the scenario
 test with user defined number of nodes.
@@ -584,6 +591,8 @@ N.B. run following commands to get help
 ./setupnNode.sh -h
 ./autotest.sh -h
 ```
+
+-->
 
 # Use the frontend
 
