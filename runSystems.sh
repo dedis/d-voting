@@ -225,6 +225,7 @@ if [ "$SETUP" == true ]; then
       from=2
       to=$N_NODE
       while [ $from -le $to ]; do
+        node_name="node$from"
         ./memcoin --config /tmp/$node_name minogrpc join \
           --address //localhost:2001 $(./memcoin --config /tmp/node1 minogrpc token)
 
@@ -237,7 +238,7 @@ if [ "$SETUP" == true ]; then
       from=1
       to=$N_NODE
       while [ $from -le $to ]; do
-      node_name="node$from"
+        node_name="node$from"
         ARRAY+="--member "
         ARRAY+="$(./memcoin --config /tmp/$node_name ordering export) "
 
@@ -251,6 +252,7 @@ if [ "$SETUP" == true ]; then
       from=1
 
       while [ $from -le $to ]; do
+        node_name="node$from"
         ./memcoin --config /tmp/$node_name access add \
           --identity $(crypto bls signer read --path private.key --format BASE64_PUBKEY)
 
@@ -266,6 +268,7 @@ if [ "$SETUP" == true ]; then
 
       while [ $from -le $to ]; do
 
+        node_name="node$from"
         ./memcoin --config /tmp/node1 pool add --key private.key --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $(crypto bls signer read --path /tmp/$node_name/private.key --format BASE64_PUBKEY) \
           --args access:command --args GRANT
 
