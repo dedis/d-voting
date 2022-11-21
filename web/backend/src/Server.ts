@@ -186,10 +186,10 @@ app.post('/api/logout', (req, res) => {
 // the react. This endpoint serves to send to the client (actually to react)
 // the information of the current user.
 app.get('/api/personal_info', (req, res) => {
-  let m = new Map<String, Array<String>>();
+  const m = new Map<String, Array<String>>();
   enf.getFilteredPolicy(0, String(req.session.userid)).then((list) => {
-    for (let i = 0; i < list.length; i++) {
-      for (let j = 1; j < list[0].length; j = j + 2) {
+    for (let i = 0; i < list.length; ++i) {
+      for (let j = 1; j < list[0].length; j += +2) {
         console.log(list[i][j]);
         if (m.has(list[i][j])) {
           m.get(list[i][j])?.push(list[i][j + 1]);
