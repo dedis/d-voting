@@ -626,18 +626,18 @@ func getForm(ctx serde.Context, formFac serde.Factory, formIDHex string,
 
 // submitAndWaitForTxn submits a transaction and waits for it to be included.
 // Returns the transaction ID.
-func (h *form) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
+func (formProxy *form) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
 	cmdArg string, payload []byte) ([]byte, error) {
 
-	h.Lock()
-	defer h.Unlock()
+	formProxy.Lock()
+	defer formProxy.Unlock()
 
-	err := h.mngr.Sync()
+	err := formProxy.mngr.Sync()
 	if err != nil {
 		return nil, xerrors.Errorf("failed to sync manager: %v", err)
 	}
 
-	tx, err := createTransaction(h.mngr, cmd, cmdArg, payload)
+	tx, err := createTransaction(formProxy.mngr, cmd, cmdArg, payload)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to create transaction: %v", err)
 	}
@@ -647,7 +647,7 @@ func (h *form) submitAndWaitForTxn(ctx context.Context, cmd evoting.Command,
 
 	// events := h.orderingSvc.Watch(watchCtx) il faudra implementer ca lorsque l'on devra appeler checkTxnIncluded
 
-	err = h.pool.Add(tx)  //dans l'idee, on ajoute la transaction au pool et on sauvegarde le bloc qui debute,
+	err = formProxy.pool.Add(tx)  //dans l'idee, on ajoute la transaction au pool et on sauvegarde le bloc qui debute,
 						  // ensuite on dit au frontend que ca a bien ete added en lui transmettant le txnID
 						  // le frontend peut alors lui meme verifier si la transaction est bien incluse dans le bloc
 						  // en passant par le proxy et sa fonction checkTxnIncluded
