@@ -188,7 +188,7 @@ app.post('/api/logout', (req, res) => {
 app.get('/api/personal_info', (req, res) => {
   const m = new Map<String, Array<String>>();
   enf.getFilteredPolicy(0, String(req.session.userid)).then((list) => {
-    for (let i = 0; i < list.length; ++i) {
+    for (let i = 0; i < list.length; i += 1) {
       for (let j = 1; j < list[0].length; j += +2) {
         console.log(list[i][j]);
         if (m.has(list[i][j])) {
