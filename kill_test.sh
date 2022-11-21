@@ -11,8 +11,8 @@ while [[ $# -gt 0 ]]; do
         echo "This script is creating n dela voting nodes"
         echo "Options:"
         echo "-h  |  --help     program help (this file)"
-        echo "-f  |  --frontend setup the frontend true/false, by default true"
-        echo "-b  |  --backend  setup the backend true/false, by default true"
+        echo "-f  |  --frontend kill the frontend true/false, by default true"
+        echo "-b  |  --backend  kill the backend true/false, by default true"
         exit 0
         ;;
     -f | --frontend)

@@ -14,6 +14,7 @@ RUN=true
 SETUP=true
 FRONTEND=true
 BACKEND=true
+N_NODE=0
 
 POSITIONAL_ARGS=()
 
@@ -94,8 +95,13 @@ s="d-voting-test"
 from=0
 if [ "$RUN" == true ]; then
 
-  if [ -z "$N_NODE" ]; then
-    echo "Please specify the number of nodes"
+  #check that N_NODE is between 1 and 20
+  if [ "$N_NODE" -lt 1 ]; then
+    echo "N_NODE must be greater than 0"
+    exit 1
+  fi
+  if [ "$N_NODE" -gt 20 ]; then
+    echo "N_NODE must be less than 20"
     exit 1
   fi
 
@@ -109,13 +115,13 @@ if [ "$RUN" == true ]; then
 
   # Checks that we can afford to have at least one Byzantine node and keep the
   # system working, which is not possible with less than 4 nodes.
-  if [ $N_NODE -le 3 ]; then
-    echo "Warning: the number of nodes is less or equal than 3, it will not be resiliant if one node is down"
+  if [ $N_NODE -lt 4 ]; then
+    echo "Warning: the number of nodes is less than 4, it will not be resilient if one node is down"
   fi
 
   # Clean logs
-  rm -rf ./log/log
-  mkdir -p ./log/log
+  rm -rf ./log
+  mkdir -p ./log
 
   crypto bls signer new --save private.key --force
 
@@ -142,10 +148,11 @@ if [ "$RUN" == true ]; then
     echo $from
     tmux new-window -t $s
     window=$from
+    node_name="node$from"
 
     if [ "$DOCKER" == false ]; then
       tmux send-keys -t $s:$window "PROXY_LOG=info LLVL=info ./memcoin \
-        --config /tmp/node$from \
+        --config /tmp/$node_name \
         start \
         --postinstall \
         --promaddr :$((9099 + $from)) \
@@ -153,11 +160,11 @@ if [ "$RUN" == true ]; then
         --proxykey $pk \
         --listen tcp://0.0.0.0:$((2000 + $from)) \
         --routing tree \
-        --public //localhost:$((2000 + $from))| tee ./log/log/node$from.log" C-m
+        --public //localhost:$((2000 + $from))| tee ./log/$node_name.log" C-m
     else
-      docker run -d -it --env LLVL=info --name node$from --network evoting-net -v "$(pwd)"/nodedata:/tmp --publish $((9079 + $from)):9080 node
-      tmux send-keys -t $s:$window "docker exec node$from memcoin --config /tmp/node$from start --postinstall \
-    --promaddr :9100 --proxyaddr :9080 --proxykey $pk --listen tcp://0.0.0.0:2001 --public //$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' node$from):2001 | tee ./log/log/node$from.log" C-m
+      docker run -d -it --env LLVL=info --name $node_name --network evoting-net -v "$(pwd)"/nodedata:/tmp --publish $((9079 + $from)):9080 node
+      tmux send-keys -t $s:$window "docker exec $node_name memcoin --config /tmp/$node_name start --postinstall \
+    --promaddr :9100 --proxyaddr :9080 --proxykey $pk --listen tcp://0.0.0.0:2001 --public //$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $node_name):2001 | tee ./log/$node_name.log" C-m
     fi
 
     ((from++))
@@ -191,13 +198,22 @@ fi
 
 # Setup
 if [ "$SETUP" == true ]; then
-  if [ -z "$N_NODE" ]; then
-    echo "Please specify the number of nodes"
+
+  #check that N_NODE is between 1 and 20
+  if [ "$N_NODE" -lt 1 ]; then
+    echo "N_NODE must be greater than 0"
     exit 1
   fi
+  if [ "$N_NODE" -gt 20 ]; then
+    echo "N_NODE must be less than 20"
+    exit 1
+  fi
+
+  #If we runned the system as well, we should wait for it to be ready
   if [ "$RUN" == true ]; then
     sleep 8
   fi
+
   if tmux has-session -t $s 2>/dev/null; then
     # window for the setup
     GREEN='\033[0;32m'
@@ -209,7 +225,7 @@ if [ "$SETUP" == true ]; then
       from=2
       to=$N_NODE
       while [ $from -le $to ]; do
-        ./memcoin --config /tmp/node$from minogrpc join \
+        ./memcoin --config /tmp/$node_name minogrpc join \
           --address //localhost:2001 $(./memcoin --config /tmp/node1 minogrpc token)
 
         ((from++))
@@ -221,8 +237,9 @@ if [ "$SETUP" == true ]; then
       from=1
       to=$N_NODE
       while [ $from -le $to ]; do
+      node_name="node$from"
         ARRAY+="--member "
-        ARRAY+="$(./memcoin --config /tmp/node$from ordering export) "
+        ARRAY+="$(./memcoin --config /tmp/$node_name ordering export) "
 
         ((from++))
       done
@@ -234,7 +251,7 @@ if [ "$SETUP" == true ]; then
       from=1
 
       while [ $from -le $to ]; do
-        ./memcoin --config /tmp/node$from access add \
+        ./memcoin --config /tmp/$node_name access add \
           --identity $(crypto bls signer read --path private.key --format BASE64_PUBKEY)
 
         ((from++))
@@ -249,7 +266,7 @@ if [ "$SETUP" == true ]; then
 
       while [ $from -le $to ]; do
 
-        ./memcoin --config /tmp/node1 pool add --key private.key --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $(crypto bls signer read --path /tmp/node$from/private.key --format BASE64_PUBKEY) \
+        ./memcoin --config /tmp/node1 pool add --key private.key --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $(crypto bls signer read --path /tmp/$node_name/private.key --format BASE64_PUBKEY) \
           --args access:command --args GRANT
 
         ((from++))
