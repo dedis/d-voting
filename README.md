@@ -375,7 +375,7 @@ added to you path (like with `export PATH=$PATH:/Users/david/go/bin`).
 
 3: [Install tmux](https://github.com/tmux/tmux/wiki/Installing)
 
-# Setup a simple system with 3 nodes
+# Setup a simple system with 5 nodes (Linux and MacOS)
 
 If you are using Windows and cannot use tmux, you need to do the actions of the
 scripts in point _1_ and _2_ manually: open 3 terminal sessions and run the
@@ -383,10 +383,22 @@ commands from the section _Run the nodes_ below (1 command LLVL=info memcoin etc
 per terminal and then launch the setup script in another terminal). You can then
 follow the instructions below starting from point _3_.
 
-1: Run 3 nodes
+1: Only for the first time
+```sh
+cd web/backend
+npm install 
+cp config.env.template config.env
+cd ../frontend
+npm install
+cd ../..
+```
+
+1: Then run the following script to start and setup the nodes and the web server:
+
+
 
 ```sh
-./runNode.sh -n 3
+./runSystems.sh -n 5
 ```
 
 This will run 4 terminal sessions. You can navigate by hitting
@@ -401,30 +413,7 @@ From the first terminal sessions, run:
 ./setupnNode.sh -n 3
 ```
 
-3: Launch the web backend
 
-From a new terminal session, run:
-
-```sh
-cd web/backend
-# if this is the first time, run `npm install` and `cp config.env.template config.env` first
-npm start
-```
-
-4: Launch the web frontend
-
-From a new terminal session, run:
-
-```sh
-cd web/frontend
-# if this is the first time, run `npm install` first
-REACT_APP_PROXY=http://localhost:9081 REACT_APP_NOMOCK=on npm start
-```
-
-Note that you need to be on EPFL's network to login with Tequila. Additionally,
-once logged with Tequila, update the redirect URL and replace
-`dvoting-dev.dedis.ch` with `localhost`. Once logged, you can create an
-form.
 
 5: Stop nodes
 
@@ -465,7 +454,7 @@ with
 target: 'http://localhost:4000',
 ```
 
-# Run the nodes
+# Setup a simple system with 5 nodes (Windows)
 
 In three different terminal sessions, from the root folder:
 
@@ -501,6 +490,31 @@ remove the old state:
 ```sh
 rm -rf /tmp/node{1,2,3}
 ```
+
+3: Launch the web backend
+
+From a new terminal session, run:
+
+```sh
+cd web/backend
+# if this is the first time, run `npm install` and `cp config.env.template config.env` first
+npm start
+```
+
+4: Launch the web frontend
+
+From a new terminal session, run:
+
+```sh
+cd web/frontend
+# if this is the first time, run `npm install` first
+REACT_APP_PROXY=http://localhost:9081 REACT_APP_NOMOCK=on npm start
+```
+
+Note that you need to be on EPFL's network to login with Tequila. Additionally,
+once logged with Tequila, update the redirect URL and replace
+`dvoting-dev.dedis.ch` with `localhost`. Once logged, you can create an
+form.
 
 # Testing
 
