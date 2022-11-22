@@ -2,6 +2,7 @@ package types
 
 import (
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
+	btypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 )
 
 // CreateFormRequest defines the HTTP request for creating a form
@@ -20,6 +21,12 @@ type CastVoteRequest struct {
 	UserID string
 	// Marshalled representation of Ciphervote. It contains []{K:,C:}
 	Ballot CiphervoteJSON
+}
+
+// CastVoteResponse defines the HTTP response when casting a vote
+type CastVoteResponse struct {
+	TransactionID []byte
+	LastBlock btypes.BlockLink  // last block of the chain when the transaction was added to the pool
 }
 
 // CiphervoteJSON is the JSON representation of a ciphervote
