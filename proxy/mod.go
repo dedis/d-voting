@@ -34,6 +34,8 @@ type Form interface {
 	Form(http.ResponseWriter, *http.Request)
 	// DELETE /forms/{formID}
 	DeleteForm(http.ResponseWriter, *http.Request)
+	// GET /forms/transactions/{txID}
+	IsTxnIncluded(http.ResponseWriter, *http.Request)
 }
 
 // DKG defines the public HTTP API of the DKG service
