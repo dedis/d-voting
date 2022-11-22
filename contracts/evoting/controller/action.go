@@ -175,6 +175,7 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 	router.HandleFunc(formIDPath, eproxy.AllowCORS).Methods("OPTIONS")
 	router.HandleFunc(formIDPath, ep.DeleteForm).Methods("DELETE")
 	router.HandleFunc(formIDPath+"/vote", ep.NewFormVote).Methods("POST")
+	router.HandleFunc(formPath+"/transactions/{txnID}", ep.IsTxnIncluded).Methods("GET")
 
 	router.NotFoundHandler = http.HandlerFunc(eproxy.NotFoundHandler)
 	router.MethodNotAllowedHandler = http.HandlerFunc(eproxy.NotAllowedHandler)
