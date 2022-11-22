@@ -33,8 +33,8 @@ type EGPairJSON struct {
 	C []byte
 }
 
-// TransactionResponse defines the HTTP response when sending a transaction to the blockchain
-type TransactionResponse struct {
+// TransactionInfo defines the HTTP response when sending a transaction to the blockchain
+type TransactionInfo struct {
 	TransactionID []byte
 	LastBlock btypes.BlockLink  // last block of the chain when the transaction was added to the pool
 }
