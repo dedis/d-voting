@@ -24,6 +24,17 @@ import { Popover, Transition } from '@headlessui/react';
 import { LoginIcon, LogoutIcon, MenuIcon, XIcon } from '@heroicons/react/outline';
 import { PlusIcon } from '@heroicons/react/solid';
 
+const ELECTION = 'election';
+const CREATE = 'create';
+const ROLES = 'roles';
+const ADD = 'add';
+const LIST = 'list';
+
+function hasAuthorization(authCtx, subject: string, action: string): boolean {
+  return (
+    authCtx.authorization.has(subject) && authCtx.authorization.get(subject).indexOf(action) > -1
+  );
+}
 const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
   <Popover>
     <div className="-mr-2 -my-2 md:hidden">
@@ -67,7 +78,7 @@ const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
                     </Popover.Button>
                   </NavLink>
                 }
-                {authCtx.isLogged && authCtx.authorization.get('roles').indexOf('add') > -1 && (
+                {authCtx.isLogged && hasAuthorization(authCtx, ROLES, ADD) && (
                   <NavLink to={ROUTE_ADMIN}>
                     <Popover.Button className=" w-full -m-3 p-3 flex items-center rounded-md hover:bg-gray-50">
                       <span className="ml-3 text-base font-medium text-gray-900">
@@ -88,16 +99,14 @@ const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
               </nav>
             </div>
             <div className="pt-4">
-              {authCtx.isLogged &&
-                authCtx.authorization.has('election') &&
-                authCtx.authorization.get('election').indexOf('create') > -1 && (
-                  <NavLink to={ROUTE_FORM_CREATE}>
-                    <Popover.Button className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700">
-                      <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                      {t('navBarCreateForm')}
-                    </Popover.Button>
-                  </NavLink>
-                )}
+              {authCtx.isLogged && hasAuthorization(authCtx, ELECTION, CREATE) && (
+                <NavLink to={ROUTE_FORM_CREATE}>
+                  <Popover.Button className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                    <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                    {t('navBarCreateForm')}
+                  </Popover.Button>
+                </NavLink>
+              )}
             </div>
           </div>
 
@@ -150,16 +159,14 @@ const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
 
 const RightSideNavBar = ({ authCtx, handleLogout, fctx, t }) => (
   <div className="absolute hidden inset-y-0 right-0 flex items-center pr-2 md:static md:inset-auto md:flex md:ml-6 md:pr-0">
-    {authCtx.isLogged &&
-      authCtx.authorization.has('election') &&
-      authCtx.authorization.get('election').indexOf('create') > -1 && (
-        <NavLink title={t('navBarCreateForm')} to={ROUTE_FORM_CREATE}>
-          <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border-2 border-indigo-500 rounded-md shadow-sm text-base font-medium text-indigo-500 bg-white hover:bg-indigo-500 hover:text-white">
-            <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-            {t('navBarCreateForm')}
-          </div>
-        </NavLink>
-      )}
+    {authCtx.isLogged && hasAuthorization(authCtx, ELECTION, CREATE) && (
+      <NavLink title={t('navBarCreateForm')} to={ROUTE_FORM_CREATE}>
+        <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border-2 border-indigo-500 rounded-md shadow-sm text-base font-medium text-indigo-500 bg-white hover:bg-indigo-500 hover:text-white">
+          <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+          {t('navBarCreateForm')}
+        </div>
+      </NavLink>
+    )}
     <LanguageSelector />
     <Profile authCtx={authCtx} handleLogout={handleLogout} handleLogin={handleLogin} fctx={fctx} />
   </div>
@@ -181,7 +188,7 @@ const LeftSideNavBar = ({ authCtx, t }) => (
           className={'text-black text-lg hover:text-indigo-700'}>
           {t('navBarStatus')}
         </NavLink>
-        {authCtx.isLogged && authCtx.authorization.get('roles').indexOf('list') > -1 && (
+        {authCtx.isLogged && hasAuthorization(authCtx, ROLES, LIST) && (
           <NavLink to={ROUTE_ADMIN} className={'text-black text-lg hover:text-indigo-700'}>
             Admin
           </NavLink>
