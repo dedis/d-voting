@@ -29,7 +29,7 @@ import {
 } from './components/utils/countResult';
 
 // Functional component that displays the result of the votes
-const GroupedResult: FC = () => {
+const IndividualResult: FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { formId } = useParams();
@@ -40,6 +40,7 @@ const GroupedResult: FC = () => {
   const [rankResult, setRankResult] = useState<RankResults>(null);
   const [selectResult, setSelectResult] = useState<SelectResults>(null);
   const [textResult, setTextResult] = useState<TextResults>(null);
+  const [currentID, setCurrentID] = useState<number>(0);
 
   // Group the different results by the ID of the question,
   const groupByID = (
@@ -173,23 +174,25 @@ const GroupedResult: FC = () => {
       <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
         <h2 className="text-lg pb-2">{element.Title}</h2>
         {element.Type === RANK && rankResult.has(element.ID) && (
-          <RankResult rank={element as RankQuestion} rankResult={rankResult.get(element.ID)} />
+          <RankResult
+            rank={element as RankQuestion}
+            rankResult={[rankResult.get(element.ID)[currentID]]}
+          />
         )}
         {element.Type === SELECT && selectResult.has(element.ID) && (
           <SelectResult
             select={element as SelectQuestion}
-            selectResult={selectResult.get(element.ID)}
+            selectResult={[selectResult.get(element.ID)[currentID]]}
           />
         )}
         {element.Type === TEXT && textResult.has(element.ID) && (
-          <TextResult textResult={textResult.get(element.ID)} />
+          <TextResult textResult={[textResult.get(element.ID)[currentID]]} />
         )}
       </div>
     );
   };
 
   const displayResults = (subject: Subject) => {
-    console.log(rankResult);
     return (
       <div key={subject.ID}>
         <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
@@ -229,8 +232,8 @@ const GroupedResult: FC = () => {
   );
 };
 
-GroupedResult.propTypes = {
+IndividualResult.propTypes = {
   location: PropTypes.any,
 };
 
-export default GroupedResult;
+export default IndividualResult;

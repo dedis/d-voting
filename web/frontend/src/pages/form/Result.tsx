@@ -12,6 +12,7 @@ import Loading from 'pages/Loading';
 import ResultExplanation from './components/ResultExplanation';
 import { Tab } from '@headlessui/react';
 import GroupedResult from './GroupedResult';
+import IndividualResult from './IndividualResult';
 
 // Functional component that displays the result of the votes
 const FormResult: FC = () => {
@@ -50,20 +51,23 @@ const FormResult: FC = () => {
                         ? 'w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-white bg-indigo-500 shadow'
                         : 'w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-gray-700 hover:bg-indigo-100 hover:text-indigo-500'
                     }>
-                    {t('resIndiv')}
+                    {t('resGroup')}
                   </Tab>
                   <Tab
                     key="individual"
                     className={({ selected }) =>
                       selected
                         ? 'w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-white bg-indigo-500 shadow'
-                        : 'w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-indigo-500 text-gray-600 hover:bg-indigo-100 hover:text-indigo-500'
+                        : 'w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-gray-600 hover:bg-indigo-100 hover:text-indigo-500'
                     }>
-                    {t('resGroup')}
+                    {t('resIndiv')}
                   </Tab>
                 </Tab.List>
                 <Tab.Panel>
                   <GroupedResult />
+                </Tab.Panel>
+                <Tab.Panel>
+                  <IndividualResult />
                 </Tab.Panel>
               </Tab.Group>
             </div>
