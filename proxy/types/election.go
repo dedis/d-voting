@@ -2,7 +2,6 @@ package types
 
 import (
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
-	btypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 )
 
 // CreateFormRequest defines the HTTP request for creating a form
@@ -36,7 +35,7 @@ type EGPairJSON struct {
 // TransactionInfo defines the HTTP response when sending a transaction to the blockchain
 type TransactionInfo struct {
 	TransactionID []byte
-	LastBlock btypes.BlockLink  // last block of the chain when the transaction was added to the pool
+	LastBlockIdx uint64  // last block of the chain when the transaction was added to the pool
 }
 
 // UpdateFormRequest defines the HTTP request for updating a form

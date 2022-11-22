@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 
 	"github.com/dedis/d-voting/contracts/evoting"
@@ -574,7 +575,36 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 
 //IsTxnIncluded
 func (h *form) IsTxnIncluded(w http.ResponseWriter, r *http.Request) {
+	// fetch the transactionID and block link
+	vars := mux.Vars(r)
+
+	// check if the transactionID and block link are present
+	if vars == nil || vars["transactionID"] == "" || vars["blockLink"] == "" {
+		http.Error(w, fmt.Sprintf("transactionID or blockLink not found: %v", vars), http.StatusInternalServerError)
+		return
+	}
+
+	// get the transactionID as a []byte and the block link as a uint64
+	transactionID, err := hex.DecodeString(vars["transactionID"])
+	if err != nil {
+		http.Error(w, "failed to decode transactionID: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	blockLink, err := strconv.ParseUint(vars["blockLink"], 10, 64)
+	if err != nil {
+		http.Error(w, "failed to parse blockLink: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 	
+	fmt.Println("transactionID",transactionID)
+	fmt.Println("blockLink",blockLink)
+
+
+	
+
+	
+
 
 }
 
@@ -659,19 +689,19 @@ func getForm(ctx serde.Context, formFac serde.Factory, formIDHex string,
 // submitTxn submits a transaction and waits for it to be included.
 // Returns the transaction ID.
 func (h *form) submitTxn(ctx context.Context, cmd evoting.Command,
-	cmdArg string, payload []byte) ([]byte, btypes.BlockLink, error) {
+	cmdArg string, payload []byte) ([]byte, uint64, error) {
 
 	h.Lock()
 	defer h.Unlock()
 
 	err := h.mngr.Sync()
 	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to sync manager: %v", err)
+		return nil, 0, xerrors.Errorf("failed to sync manager: %v", err)
 	}
 
 	tx, err := createTransaction(h.mngr, cmd, cmdArg, payload)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to create transaction: %v", err)
+		return nil, 0, xerrors.Errorf("failed to create transaction: %v", err)
 	}
 
 	//watchCtx, cancel := context.WithTimeout(ctx, inclusionTimeout) //plus besoin de timeout
@@ -681,8 +711,9 @@ func (h *form) submitTxn(ctx context.Context, cmd evoting.Command,
 
 	lastBlock, err := h.blocks.Last()
 	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to get last block: %v", err)
+		return nil, 0, xerrors.Errorf("failed to get last block: %v", err)
 	}
+	lastBlockIdx:=lastBlock.GetBlock().GetIndex()
 
 	err = h.pool.Add(tx) //dans l'idee, on ajoute la transaction au pool et on sauvegarde le bloc qui debute,
 	// ensuite on dit au frontend que ca a bien ete added en lui transmettant le txnID
@@ -690,7 +721,7 @@ func (h *form) submitTxn(ctx context.Context, cmd evoting.Command,
 	// en passant par le proxy et sa fonction checkTxnIncluded
 
 	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to add transaction to the pool: %v", err)
+		return nil, 0, xerrors.Errorf("failed to add transaction to the pool: %v", err)
 	}
 	/*
 		err = h.waitForTxnID(events, tx.GetID())
@@ -699,7 +730,7 @@ func (h *form) submitTxn(ctx context.Context, cmd evoting.Command,
 		}
 	*/
 
-	return tx.GetID(), lastBlock, nil
+	return tx.GetID(), lastBlockIdx, nil
 }
 
 // A function that checks if a transaction is included in a block
@@ -722,10 +753,10 @@ func (h *form) checkTxnIncluded(events <-chan ordering.Event, ID []byte) (bool, 
 	return false, nil
 }
 
-func sendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBlock btypes.BlockLink) {
+func sendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBlockIdx uint64) {
 	response := ptypes.TransactionInfo{
 		TransactionID: txnID,
-		LastBlock:     lastBlock,
+		LastBlockIdx:     lastBlockIdx,
 	}
 
 	// sign the response
