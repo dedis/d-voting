@@ -102,7 +102,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create the transaction and add it to the pool
-	txID, _, err := h.submitTxn(r.Context(), evoting.CmdCreateForm, evoting.FormArg, data)
+	txnID, _, err := h.submitTxn(r.Context(), evoting.CmdCreateForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -112,7 +112,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 
 	// hash the transaction
 	hash := sha256.New()
-	hash.Write(txID)
+	hash.Write(txnID)
 	formID := hash.Sum(nil)
 
 	// return the formID
@@ -211,14 +211,14 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create the transaction and add it to the pool
-	txID,lastBlock, err := h.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
+	txnID,lastBlock, err := h.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//send the transaction
-	sendTransactionResponse(w, txID, lastBlock)
+	sendTransactionResponse(w, txnID, lastBlock)
 
 }
 
@@ -292,14 +292,14 @@ func (h *form) openForm(formID string, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create the transaction and add it to the pool
-	txID,lastBlock, err := h.submitTxn(r.Context(), evoting.CmdOpenForm, evoting.FormArg, data)
+	txnID,lastBlock, err := h.submitTxn(r.Context(), evoting.CmdOpenForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//send the transaction
-	sendTransactionResponse(w, txID, lastBlock)
+	sendTransactionResponse(w, txnID, lastBlock)
 }
 
 // closeForm closes a form.
@@ -318,14 +318,14 @@ func (h *form) closeForm(formIDHex string, w http.ResponseWriter, r *http.Reques
 	}
 
 	// create the transaction and add it to the pool
-	txID,lastBlock, err := h.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
+	txnID,lastBlock, err := h.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//send the transaction
-	sendTransactionResponse(w, txID, lastBlock)
+	sendTransactionResponse(w, txnID, lastBlock)
 
 }
 
@@ -357,14 +357,14 @@ func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Re
 	}
 
 	// create the transaction and add it to the pool
-	txID,lastBlock, err := h.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
+	txnID,lastBlock, err := h.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//send the transaction
-	sendTransactionResponse(w, txID, lastBlock)
+	sendTransactionResponse(w, txnID, lastBlock)
 }
 
 // cancelForm cancels a form.
@@ -383,14 +383,14 @@ func (h *form) cancelForm(formIDHex string, w http.ResponseWriter, r *http.Reque
 	}
 
 	// create the transaction and add it to the pool
-	txID,lastBlock, err := h.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
+	txnID,lastBlock, err := h.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//send the transaction
-	sendTransactionResponse(w, txID, lastBlock)
+	sendTransactionResponse(w, txnID, lastBlock)
 }
 
 // Form implements proxy.Proxy. The request should not be signed because it
@@ -562,14 +562,14 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create the transaction and add it to the pool
-	txID,lastBlock, err := h.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
+	txnID,lastBlock, err := h.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//send the transaction
-	sendTransactionResponse(w, txID, lastBlock)
+	sendTransactionResponse(w, txnID, lastBlock)
 }
 
 // waitForTxnID blocks until `ID` is included or `events` is closed.
