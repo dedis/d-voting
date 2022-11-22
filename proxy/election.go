@@ -572,6 +572,12 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 	sendTransactionResponse(w, txnID, lastBlock)
 }
 
+//IsTxnIncluded
+func (h *form) IsTxnIncluded(w http.ResponseWriter, r *http.Request) {
+	
+
+}
+
 // waitForTxnID blocks until `ID` is included or `events` is closed.
 func (h *form) waitForTxnID(events <-chan ordering.Event, ID []byte) error {
 	for event := range events {
