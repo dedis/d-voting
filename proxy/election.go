@@ -108,6 +108,8 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: wait for the transaction to be included in a block??
+
 	// hash the transaction
 	hash := sha256.New()
 	hash.Write(txID)
@@ -209,26 +211,14 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create the transaction and add it to the pool
-	transactionID, lastBlock, err := h.submitTxn(r.Context(), evoting.CmdCastVote, evoting.FormArg, data)
+	txID,lastBlock, err := h.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// send the transactionID and the LastBlock link to the client
-	response := ptypes.CastVoteResponse{
-		TransactionID: transactionID,
-		LastBlock:     lastBlock,
-	}
-
-	// sign the response
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
-			http.StatusInternalServerError)
-		return
-	}
+	//send the transaction
+	sendTransactionResponse(w, txID, lastBlock)
 
 }
 
@@ -288,9 +278,9 @@ func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
 
 // openForm allows opening a form, which sets the public key based on
 // the DKG actor.
-func (h *form) openForm(elecID string, w http.ResponseWriter, r *http.Request) {
+func (h *form) openForm(formID string, w http.ResponseWriter, r *http.Request) {
 	openForm := types.OpenForm{
-		FormID: elecID,
+		FormID: formID,
 	}
 
 	// serialize the transaction
@@ -308,7 +298,8 @@ func (h *form) openForm(elecID string, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
+	//send the transaction
+	sendTransactionResponse(w, txID, lastBlock)
 }
 
 // closeForm closes a form.
@@ -327,11 +318,14 @@ func (h *form) closeForm(formIDHex string, w http.ResponseWriter, r *http.Reques
 	}
 
 	// create the transaction and add it to the pool
-	_, _, err = h.submitTxn(r.Context(), evoting.CmdCloseForm, evoting.FormArg, data)
+	txID,lastBlock, err := h.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	//send the transaction
+	sendTransactionResponse(w, txID, lastBlock)
 
 }
 
@@ -363,11 +357,14 @@ func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Re
 	}
 
 	// create the transaction and add it to the pool
-	_, _, err = h.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
+	txID,lastBlock, err := h.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	//send the transaction
+	sendTransactionResponse(w, txID, lastBlock)
 }
 
 // cancelForm cancels a form.
@@ -386,11 +383,14 @@ func (h *form) cancelForm(formIDHex string, w http.ResponseWriter, r *http.Reque
 	}
 
 	// create the transaction and add it to the pool
-	_, _, err = h.submitTxn(r.Context(), evoting.CmdCancelForm, evoting.FormArg, data)
+	txID,lastBlock, err := h.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	//send the transaction
+	sendTransactionResponse(w, txID, lastBlock)
 }
 
 // Form implements proxy.Proxy. The request should not be signed because it
@@ -562,11 +562,14 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create the transaction and add it to the pool
-	_, _, err = h.submitTxn(r.Context(), evoting.CmdDeleteForm, evoting.FormArg, data)
+	txID,lastBlock, err := h.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	//send the transaction
+	sendTransactionResponse(w, txID, lastBlock)
 }
 
 // waitForTxnID blocks until `ID` is included or `events` is closed.
@@ -712,6 +715,24 @@ func (h *form) checkTxnIncluded(events <-chan ordering.Event, ID []byte) (bool, 
 
 	return false, nil
 }
+
+func sendTransactionResponse(w http.ResponseWriter, txnID []byte, lastBlock btypes.BlockLink) {
+	response := ptypes.TransactionResponse{
+		TransactionID: txnID,
+		LastBlock:     lastBlock,
+	}
+
+	// sign the response
+	w.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
+			http.StatusInternalServerError)
+		return
+	}
+
+}
+
 
 // createTransaction creates a transaction with the given command and payload.
 func createTransaction(manager txn.Manager, commandType evoting.Command,
