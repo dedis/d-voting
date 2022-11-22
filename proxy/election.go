@@ -218,7 +218,7 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//send the transaction
-	sendTransactionResponse(w, txnID, lastBlock)
+	sendTransactionInfo(w, txnID, lastBlock)
 
 }
 
@@ -299,7 +299,7 @@ func (h *form) openForm(formID string, w http.ResponseWriter, r *http.Request) {
 	}
 
 	//send the transaction
-	sendTransactionResponse(w, txnID, lastBlock)
+	sendTransactionInfo(w, txnID, lastBlock)
 }
 
 // closeForm closes a form.
@@ -325,7 +325,7 @@ func (h *form) closeForm(formIDHex string, w http.ResponseWriter, r *http.Reques
 	}
 
 	//send the transaction
-	sendTransactionResponse(w, txnID, lastBlock)
+	sendTransactionInfo(w, txnID, lastBlock)
 
 }
 
@@ -364,7 +364,7 @@ func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Re
 	}
 
 	//send the transaction
-	sendTransactionResponse(w, txnID, lastBlock)
+	sendTransactionInfo(w, txnID, lastBlock)
 }
 
 // cancelForm cancels a form.
@@ -390,7 +390,7 @@ func (h *form) cancelForm(formIDHex string, w http.ResponseWriter, r *http.Reque
 	}
 
 	//send the transaction
-	sendTransactionResponse(w, txnID, lastBlock)
+	sendTransactionInfo(w, txnID, lastBlock)
 }
 
 // Form implements proxy.Proxy. The request should not be signed because it
@@ -569,7 +569,7 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//send the transaction
-	sendTransactionResponse(w, txnID, lastBlock)
+	sendTransactionInfo(w, txnID, lastBlock)
 }
 
 //IsTxnIncluded
@@ -722,8 +722,8 @@ func (h *form) checkTxnIncluded(events <-chan ordering.Event, ID []byte) (bool, 
 	return false, nil
 }
 
-func sendTransactionResponse(w http.ResponseWriter, txnID []byte, lastBlock btypes.BlockLink) {
-	response := ptypes.TransactionResponse{
+func sendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBlock btypes.BlockLink) {
+	response := ptypes.TransactionInfo{
 		TransactionID: txnID,
 		LastBlock:     lastBlock,
 	}
