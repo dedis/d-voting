@@ -32,22 +32,6 @@ type shuffle struct {
 
 // EditShuffle implements proxy.Shuffle
 func (s shuffle) EditShuffle(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	// check if the formID is present
-	if vars == nil || vars["formID"] == "" {
-		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
-		return
-	}
-
-	formID := vars["formID"]
-
-	buff, err := hex.DecodeString(formID)
-	if err != nil {
-		http.Error(w, "failed to decode formID: "+formID, http.StatusInternalServerError)
-		return
-	}
-
 	var req types.UpdateShuffle
 
 	// Read the request
@@ -61,6 +45,22 @@ func (s shuffle) EditShuffle(w http.ResponseWriter, r *http.Request) {
 	err = signed.GetAndVerify(s.pk, &req)
 	if err != nil {
 		InternalError(w, r, getSignedErr(err), nil)
+		return
+	}
+
+	vars := mux.Vars(r)
+
+	// check if the formID is present
+	if vars == nil || vars["formID"] == "" {
+		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
+		return
+	}
+
+	formID := vars["formID"]
+
+	buff, err := hex.DecodeString(formID)
+	if err != nil {
+		http.Error(w, "failed to decode formID: "+formID, http.StatusInternalServerError)
 		return
 	}
 

@@ -44,7 +44,7 @@ func NewForm(srv ordering.Service, mngr txn.Manager, p pool.Pool,
 		logger:      logger,
 		orderingSvc: srv,
 		context:     ctx,
-		formFac: fac,
+		formFac:     fac,
 		mngr:        mngr,
 		pool:        p,
 		pk:          pk,
@@ -60,7 +60,7 @@ type form struct {
 	orderingSvc ordering.Service
 	logger      zerolog.Logger
 	context     serde.Context
-	formFac serde.Factory
+	formFac     serde.Factory
 	mngr        txn.Manager
 	pool        pool.Pool
 	pk          kyber.Point
@@ -126,16 +126,6 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 
 // NewFormVote implements proxy.Proxy
 func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	// check if the formID is valid
-	if vars == nil || vars["formID"] == "" {
-		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
-		return
-	}
-
-	formID := vars["formID"]
-
 	var req ptypes.CastVoteRequest
 
 	// get the signed request
@@ -152,6 +142,16 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	vars := mux.Vars(r)
+
+	// check if the formID is valid
+	if vars == nil || vars["formID"] == "" {
+		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
+		return
+	}
+
+	formID := vars["formID"]
+
 	elecMD, err := h.getFormsMetadata()
 	if err != nil {
 		http.Error(w, "failed to get form metadata", http.StatusNotFound)
@@ -166,7 +166,7 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 
 	ciphervote := make(types.Ciphervote, len(req.Ballot))
 
-	// encrypt the vote 
+	// encrypt the vote
 	for i, egpair := range req.Ballot {
 		k := suite.Point()
 
@@ -192,8 +192,8 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 
 	castVote := types.CastVote{
 		FormID: formID,
-		UserID:     req.UserID,
-		Ballot:     ciphervote,
+		UserID: req.UserID,
+		Ballot: ciphervote,
 	}
 
 	// serialize the vote
@@ -214,6 +214,22 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 
 // EditForm implements proxy.Proxy
 func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
+	var req ptypes.UpdateFormRequest
+
+	// get the signed request
+	signed, err := ptypes.NewSignedRequest(r.Body)
+	if err != nil {
+		InternalError(w, r, newSignedErr(err), nil)
+		return
+	}
+
+	// get the request and verify the signature
+	err = signed.GetAndVerify(h.pk, &req)
+	if err != nil {
+		InternalError(w, r, getSignedErr(err), nil)
+		return
+	}
+
 	vars := mux.Vars(r)
 
 	//check if the formID is valid
@@ -236,21 +252,6 @@ func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req ptypes.UpdateFormRequest
-
-	// get the signed request
-	signed, err := ptypes.NewSignedRequest(r.Body)
-	if err != nil {
-		InternalError(w, r, newSignedErr(err), nil)
-		return
-	}
-
-	// get the request and verify the signature
-	err = signed.GetAndVerify(h.pk, &req)
-	if err != nil {
-		InternalError(w, r, getSignedErr(err), nil)
-		return
-	}
 	switch req.Action {
 	case "open":
 		h.openForm(formID, w, r)
@@ -413,7 +414,7 @@ func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := ptypes.GetFormResponse{
-		FormID:      string(form.FormID),
+		FormID:          string(form.FormID),
 		Configuration:   form.Configuration,
 		Status:          uint16(form.Status),
 		Pubkey:          hex.EncodeToString(pubkeyBuf),
@@ -468,9 +469,9 @@ func (h *form) Forms(w http.ResponseWriter, r *http.Request) {
 
 		info := ptypes.LightForm{
 			FormID: string(form.FormID),
-			Title:      form.Configuration.MainTitle,
-			Status:     uint16(form.Status),
-			Pubkey:     hex.EncodeToString(pubkeyBuf),
+			Title:  form.Configuration.MainTitle,
+			Status: uint16(form.Status),
+			Pubkey: hex.EncodeToString(pubkeyBuf),
 		}
 
 		allFormsInfo[i] = info

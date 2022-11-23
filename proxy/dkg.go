@@ -64,7 +64,6 @@ func (d dkg) NewDKGActor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	if len(formIDBuf) == 0 {
 		http.Error(w, "formID is empty", http.StatusBadRequest)
 		return
@@ -145,8 +144,23 @@ func (d dkg) Actor(w http.ResponseWriter, r *http.Request) {
 // EditDKGActor implements proxy.DKG
 // Setups the DKG actor or begins decryption
 func (d dkg) EditDKGActor(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
+	var req types.UpdateDKG
 
+	// Read the request
+	signed, err := types.NewSignedRequest(r.Body)
+	if err != nil {
+		InternalError(w, r, newSignedErr(err), nil)
+		return
+	}
+
+	// Verify the signature
+	err = signed.GetAndVerify(d.pk, &req)
+	if err != nil {
+		InternalError(w, r, getSignedErr(err), nil)
+		return
+	}
+
+	vars := mux.Vars(r)
 	if vars == nil || vars["formID"] == "" {
 		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
@@ -164,22 +178,6 @@ func (d dkg) EditDKGActor(w http.ResponseWriter, r *http.Request) {
 	a, exists := d.dkgService.GetActor(formIDBuf)
 	if !exists {
 		http.Error(w, "actor does not exist", http.StatusInternalServerError)
-		return
-	}
-
-	var req types.UpdateDKG
-
-	// Read the request
-	signed, err := types.NewSignedRequest(r.Body)
-	if err != nil {
-		InternalError(w, r, newSignedErr(err), nil)
-		return
-	}
-
-	// Verify the signature
-	err = signed.GetAndVerify(d.pk, &req)
-	if err != nil {
-		InternalError(w, r, getSignedErr(err), nil)
 		return
 	}
 
