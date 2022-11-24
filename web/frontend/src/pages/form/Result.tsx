@@ -223,6 +223,7 @@ const FormResult: FC = () => {
                     rankResult={rankResult}
                     selectResult={selectResult}
                     textResult={textResult}
+                    ballotNumber={result.length}
                   />
                 </Tab.Panel>
               </Tab.Group>
