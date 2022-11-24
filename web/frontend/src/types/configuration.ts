@@ -54,10 +54,9 @@ interface Subject extends SubjectElement {
 interface Configuration {
   MainTitle: string;
   Scaffold: Subject[];
-  TitleLg1: string;
-  TitleLg2: string;
- // ScaffoldFr: Subject[];
-  //ScaffoldDe: Subject[];
+  TitleFr: string;
+  TitleDe: string;
+ 
 }
 
 // Answers describes the current answers for each type of question

@@ -88,19 +88,28 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
   const deleteChoice = (index: number) => {
     if (Choices.length > MinN) {
       const filteredChoices = Choices.filter((item: string, idx: number) => idx !== index);
-    if (ChoicesFr.length > MinN) {
-        const filteredChoicesFr = ChoicesFr.filter((item: string, idx: number) => idx !== index);    
-    if (ChoicesDe.length > MinN) {
-        const filteredChoicesDe = ChoicesDe.filter((item: string, idx: number) => idx !== index);
-        setState({
+      setState({
         ...state,
         Choices: filteredChoices,
-        ChoicesFr: filteredChoicesFr,
-        ChoicesDe: filteredChoicesDe,
-        MaxN: filteredChoices.length,
+        MaxN: Math.max(filteredChoices.length + 1,ChoicesFr.length + 1, ChoicesDe.length + 1),
       });
     }
-    }}};
+    if (ChoicesFr.length > MinN) {
+        const filteredChoicesFr = ChoicesFr.filter((item: string, idx: number) => idx !== index);   
+        setState({
+            ...state,
+            ChoicesFr: filteredChoicesFr,
+            MaxN: Math.max(Choices.length + 1,filteredChoicesFr.length + 1, ChoicesDe.length + 1),
+          });
+    } 
+    if (ChoicesDe.length > MinN) {
+        const filteredChoicesDe = ChoicesDe.filter((item: string, idx: number) => idx !== index);    
+        setState({
+           ...state,
+           ChoicesDe: filteredChoicesDe,
+           MaxN: Math.max(Choices.length + 1,ChoicesFr.length + 1, filteredChoicesDe.length + 1),
+         });
+    }};
 
   // update the choice at the given index
   const updateChoice = (index: number,lang: string) => (e) => {

@@ -8,9 +8,10 @@ type TextProps = {
   text: TextQuestion;
   answers: Answers;
   setAnswers: (answers: Answers) => void;
+  language: string;
 };
 
-const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
+const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
   const { t } = useTranslation();
   const [charCounts, setCharCounts] = useState(new Array<number>(text.Choices.length).fill(0));
 
@@ -77,6 +78,16 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answers]);
 
+  const [titles, setTitles] = useState<any>({});
+  useEffect(() => {
+    try {
+      const ts = JSON.parse(text.Title);
+      setTitles(ts);
+    } catch (e) {
+      console.log('error', e);
+    }
+  }, [text]);
+
   const choiceDisplay = (choice: string, choiceIndex: number) => {
     const columns = text.MaxLength > 50 ? 50 : text.MaxLength;
     return (
@@ -100,17 +111,17 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
   return (
     <div>
       <h3 className="text-lg break-words text-gray-600">
-        {i18n.language == 'en' && text.Title}
-        {i18n.language == 'fr' && text.TitleFr}
-        {i18n.language == 'de' && text.TitleDe}</h3>
+        {language == 'en' && titles.en}
+        {language == 'fr' && titles.fr}
+        {language == 'de' && titles.de}</h3>
       {hintDisplay()}
-      {i18n.language == 'en' && (<div className="sm:pl-8 mt-2 pl-6">
+      {language == 'en' && (<div className="sm:pl-8 mt-2 pl-6">
         {text.Choices.map((choice, index) => choiceDisplay(choice, index))}
       </div>)}
-      {i18n.language == 'fr' && (<div className="sm:pl-8 mt-2 pl-6">
+      {language == 'fr' && (<div className="sm:pl-8 mt-2 pl-6">
         {text.ChoicesFr.map((choice, index) => choiceDisplay(choice, index))}
       </div>)}
-      {i18n.language == 'de' && (<div className="sm:pl-8 mt-2 pl-6">
+      {language == 'de' && (<div className="sm:pl-8 mt-2 pl-6">
         {text.ChoicesDe.map((choice, index) => choiceDisplay(choice, index))}
       </div>)}
       <div className="text-red-600 text-sm py-2 sm:pl-2 pl-1">{answers.Errors.get(text.ID)}</div>

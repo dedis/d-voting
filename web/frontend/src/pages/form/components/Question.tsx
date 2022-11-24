@@ -7,7 +7,7 @@ import { RankQuestion, SelectQuestion, TextQuestion } from 'types/configuration'
 import SubjectDropdown from './SubjectDropdown';
 import AddQuestionModal from './AddQuestionModal';
 import DisplayTypeIcon from './DisplayTypeIcon';
-
+import { default as i18n } from 'i18next';
 type QuestionProps = {
   question: RankQuestion | SelectQuestion | TextQuestion;
   notifyParent(question: RankQuestion | SelectQuestion | TextQuestion): void;
@@ -15,7 +15,7 @@ type QuestionProps = {
 };
 
 const Question: FC<QuestionProps> = ({ question, notifyParent, removeQuestion }) => {
-  const { Title, Type } = question;
+  const { Title, Type ,TitleFr, TitleDe} = question;
   const [openModal, setOpenModal] = useState<boolean>(false);
 
   const dropdownContent: {
@@ -53,7 +53,9 @@ const Question: FC<QuestionProps> = ({ question, notifyParent, removeQuestion })
               <DisplayTypeIcon Type={Type} />
             </div>
             <div className="pt-1.5 max-w-md pr-8 truncate">
-              {Title.length ? Title : `Enter ${Type} title`}
+              {i18n.language === 'en' && (Title.length ? Title : `Enter ${Type} title`)}
+              {i18n.language === 'fr' && (TitleFr.length ? TitleFr : `Enter ${Type} title`)}
+              {i18n.language === 'de' && (TitleDe.length ? TitleDe : `Enter ${Type} title`)}
             </div>
           </div>
 

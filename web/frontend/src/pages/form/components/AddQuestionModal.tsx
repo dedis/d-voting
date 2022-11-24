@@ -34,6 +34,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
   setOpen,
   handleClose,
   notifyParent,
+  
 }) => {
   const { ID, Type } = question;
   const { t } = useTranslation();
@@ -102,6 +103,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
         break;
       default:
         deleteChoice(index);
+        console.log(Choices)
         break;
     }
   };

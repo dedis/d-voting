@@ -21,6 +21,7 @@ const useFillFormInfo = (formData: FormInfo) => {
       formData.Configuration.TitleEn = title.en;
       formData.Configuration.TitleFr = title.fr;
       formData.Configuration.TitleDe = title.de;  
+      console.log('ok')
       setId(formData.FormID);
       setStatus(formData.Status);
       setPubKey(formData.Pubkey);

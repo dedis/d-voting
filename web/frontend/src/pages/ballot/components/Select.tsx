@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Answers, SelectQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
@@ -7,9 +7,10 @@ type SelectProps = {
   select: SelectQuestion;
   answers: Answers;
   setAnswers: (answers: Answers) => void;
+  language: string;
 };
 
-const Select: FC<SelectProps> = ({ select, answers, setAnswers }) => {
+const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
   const { t } = useTranslation();
 
   const handleChecks = (e: React.ChangeEvent<HTMLInputElement>, choiceIndex: number) => {
@@ -54,7 +55,15 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers }) => {
 
     return <div className="text-sm pl-2 pb-2 sm:pl-4 text-gray-400">{hint}</div>;
   };
-
+  const [titles, setTitles] = useState<any>({});
+  useEffect(() => {
+    try {
+      const ts = JSON.parse(select.Title);
+      setTitles(ts);
+    } catch (e) {
+      console.log('error', e);
+    }
+  }, [select]);
   const choiceDisplay = (isChecked: boolean, choice: string, choiceIndex: number) => {
     return (
       <div key={choice}>
@@ -76,18 +85,18 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers }) => {
   return (
     <div>
       <h3 className="text-lg break-words text-gray-600">
-        {i18n.language == 'en' && select.Title}
-        {i18n.language == 'fr' && select.TitleFr}
-        {i18n.language == 'de' && select.TitleDe}</h3>
+        {language == 'en' && select.Title}
+        {language == 'fr' && select.TitleFr}
+        {language == 'de' && select.TitleDe}</h3>
       {hintDisplay()}
       <div className="sm:pl-8 pl-6">
         {Array.from(answers.SelectAnswers.get(select.ID).entries()).map(
           ([choiceIndex, isChecked]) =>{
-            if(i18n.language == 'en' )
+            if(language == 'en' )
                 return choiceDisplay(isChecked, select.Choices[choiceIndex], choiceIndex)
-            else if(i18n.language == 'fr')
+            else if(language == 'fr')
                 return choiceDisplay(isChecked, select.ChoicesFr[choiceIndex], choiceIndex)
-            else if(i18n.language == 'de') 
+            else if(language == 'de') 
                 return choiceDisplay(isChecked, select.ChoicesDe[choiceIndex], choiceIndex)
           }
          

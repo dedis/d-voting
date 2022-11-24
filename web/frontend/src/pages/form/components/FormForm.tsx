@@ -21,7 +21,7 @@ import { useConfiguration } from 'components/utils/useConfiguration';
 import BallotDisplay from 'pages/ballot/components/BallotDisplay';
 
 import { availableLanguages } from 'language/Configuration';
-
+import { default as i18n } from 'i18next';
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
 
@@ -47,13 +47,9 @@ const FormForm: FC<FormFormProps> = () => {
   const [marshalledConf, setMarshalledConf] = useState<any>(marshalConfig(conf));
   const { configuration: previewConf, answers, setAnswers } = useConfiguration(marshalledConf);
 
-  const { MainTitle, Scaffold, TitleLg1,TitleLg2,} = conf; 
+  const { MainTitle, Scaffold, TitleFr, TitleDe } = conf;
 
-  const [language, setLanguage] = useState('en');
-  //const [titleChanging1, setTitleChanging1] = useState<boolean>(true);
- // const [titleChanging2, setTitleChanging2] = useState<boolean>(true);
-  //const TitleLg1 = '';
-  //const TitleLg2 = '';ScaffoldFr, ScaffoldDe 
+  const [language, setLanguage] = useState(i18n.language);
 
   useEffect(() => {
     setMarshalledConf(marshalConfig(conf));
@@ -123,16 +119,11 @@ const FormForm: FC<FormFormProps> = () => {
     newSubjects[newSubjects.findIndex((s) => s.ID === subject.ID)] = subject;
     setConf({ ...conf, Scaffold: newSubjects });
   };
-// languages: string
+  // languages: string
   const addSubject = () => {
-   const newSubjectsEn = [...Scaffold]; 
-   //const newSubjectsFr = [...ScaffoldFr];
-   //const newSubjectsDe = [...ScaffoldDe];
-  // if (languages === 'en'){
+    const newSubjectsEn = [...Scaffold];
     newSubjectsEn.push(newSubject());
     setConf({ ...conf, Scaffold: newSubjectsEn });
-   //}
-    
   };
 
   const handleConfirmRemoveSubject = () => {
@@ -151,50 +142,54 @@ const FormForm: FC<FormFormProps> = () => {
             {titleChanging ? (
               <>
                 <div className="py-6 px-5 space-y-6">
-                    <form className="flex gap-y-4 gap-x-8">
-                        {availableLanguages.map(
-                            (lang,index) =>
-                                  <label id={'lang'+ lang}>
-                                    <input className="hidden peer" type="radio" key={index} id={'lang'+ lang} name="lang"></input>
-                                    <div
-                                        className="peer-checked:bg-gray-300 text-base font-small text-gray-900 hover:text-gray-700"
-                                        onClick={() => setLanguage(lang)}>
-                                        {t(lang)}
-                                    </div>
-                                  </label>
-                    
-                  
-              )}
-            </form>
-          </div>
+                  <form className="flex gap-y-4 gap-x-8">
+                    {availableLanguages.map((lang, index) => (
+                      <label id={'lang' + lang}>
+                        <input
+                          className="hidden peer"
+                          type="radio"
+                          key={index}
+                          id={'lang' + lang}
+                          name="lang"></input>
+                        <div
+                          className="peer-checked:bg-gray-300 text-base font-small text-gray-900 hover:text-gray-700"
+                          onClick={() => setLanguage(lang)}>
+                          {t(lang)}
+                        </div>
+                      </label>
+                    ))}
+                  </form>
+                </div>
                 {language === 'en' && (
-                    <input
-                  value={MainTitle}
-                  onChange={(e) => setConf({ ...conf, MainTitle: e.target.value })}
-                  name="MainTitle"
-                  type="text"
-                  placeholder={t('enterMainTitleLg')}
-                  className="m-3 px-1 w-100 text-lg border rounded-md"
-                />
+                  <input
+                    value={MainTitle}
+                    onChange={(e) => setConf({ ...conf, MainTitle: e.target.value })}
+                    name="MainTitle"
+                    type="text"
+                    placeholder={t('enterMainTitleLg')}
+                    className="m-3 px-1 w-100 text-lg border rounded-md"
+                  />
                 )}
                 {language === 'fr' && (
-                <input
-                  value={TitleLg1}
-                  onChange={(e) => setConf({ ...conf, TitleLg1: e.target.value })}
-                  name="MainTitle1"
-                  type="text"
-                  placeholder={t('enterMainTitleLg1')}
-                  className="m-3 px-1 w-100 text-lg border rounded-md"
-                />)}
+                  <input
+                    value={TitleFr}
+                    onChange={(e) => setConf({ ...conf, TitleFr: e.target.value })}
+                    name="MainTitle1"
+                    type="text"
+                    placeholder={t('enterMainTitleLg1')}
+                    className="m-3 px-1 w-100 text-lg border rounded-md"
+                  />
+                )}
                 {language === 'de' && (
-                <input
-                  value={TitleLg2}
-                  onChange={(e) => setConf({ ...conf, TitleLg2: e.target.value })}
-                  name="MainTitle2"
-                  type="text"
-                  placeholder={t('enterMainTitleLg2')}
-                  className="m-3 px-1 w-100 text-lg border rounded-md"
-                />)}
+                  <input
+                    value={TitleDe}
+                    onChange={(e) => setConf({ ...conf, TitleDe: e.target.value })}
+                    name="MainTitle2"
+                    type="text"
+                    placeholder={t('enterMainTitleLg2')}
+                    className="m-3 px-1 w-100 text-lg border rounded-md"
+                  />
+                )}
                 <div className="ml-1">
                   <button
                     className={`border p-1 rounded-md ${
@@ -211,7 +206,9 @@ const FormForm: FC<FormFormProps> = () => {
                 <div
                   className="mt-1 ml-3 w-[90%] break-words"
                   onClick={() => setTitleChanging(true)}>
-                  {MainTitle}
+                  {language === 'en' && MainTitle}
+                  {language === 'fr' && TitleFr}
+                  {language === 'de' && TitleDe}
                 </div>
                 <div className="ml-1">
                   <button
@@ -234,6 +231,7 @@ const FormForm: FC<FormFormProps> = () => {
               }}
               nestedLevel={0}
               key={subject.ID}
+              language={language}
             />
           ))}
           <button
@@ -281,6 +279,7 @@ const FormForm: FC<FormFormProps> = () => {
               answers={answers}
               setAnswers={setAnswers}
               userErrors=""
+              language={language}
             />
           </div>
         </div>

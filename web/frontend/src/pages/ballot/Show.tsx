@@ -21,6 +21,7 @@ import BallotDisplay from './components/BallotDisplay';
 import FormClosed from './components/FormClosed';
 import Loading from 'pages/Loading';
 import RedirectToModal from 'components/modal/RedirectToModal';
+import { default as i18n } from 'i18next';
 
 const Ballot: FC = () => {
   const { t } = useTranslation();
@@ -139,6 +140,7 @@ const Ballot: FC = () => {
                 answers={answers}
                 setAnswers={setAnswers}
                 userErrors={userErrors}
+                language={i18n.language}
               />
 
               <div className="flex mb-4 sm:mb-6">

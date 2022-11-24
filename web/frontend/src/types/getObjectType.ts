@@ -8,9 +8,9 @@ const emptyConfiguration = (): types.Configuration => {
   return {
     MainTitle: '',
     Scaffold: [],
-    TitleLg1: '',
+    TitleFr: '',
     //ScaffoldFr: [],
-    TitleLg2: '',
+    TitleDe: '',
     //ScaffoldDe: [],
   };
 };
@@ -105,20 +105,36 @@ const toArraysOfSubjectElement = (
   const selectQuestion: types.SelectQuestion[] = [];
   const textQuestion: types.TextQuestion[] = [];
   const subjects: types.Subject[] = [];
-
+  let title = '';
   elements.forEach((element) => {
     switch (element.Type) {
       case RANK:
-        rankQuestion.push(element as types.RankQuestion);
+        title = JSON.stringify({en : element.Title, fr : element.TitleFr, de : element.TitleDe});
+        rankQuestion.push({...element as types.RankQuestion, Title: title});
+
         break;
       case SELECT:
-        selectQuestion.push(element as types.SelectQuestion);
+        title = JSON.stringify({en : element.Title, fr : element.TitleFr, de : element.TitleDe});
+        selectQuestion.push({...element as types.SelectQuestion, Title : title});
         break;
       case TEXT:
-        textQuestion.push(element as types.TextQuestion);
+        title = JSON.stringify({en : element.Title, fr : element.TitleFr, de : element.TitleDe});
+
+        textQuestion.push({
+            ...element as types.TextQuestion,
+            Title: title,
+        });
+        console.log('ok')
         break;
       case SUBJECT:
-        subjects.push(element as types.Subject);
+        title = JSON.stringify({en : element.Title, fr : element.TitleFr, de : element.TitleDe});
+        
+        subjects.push({
+            ...element as types.Subject,
+            Title: title,
+        
+        });
+        console.log('ok')
         break;
     }
   });

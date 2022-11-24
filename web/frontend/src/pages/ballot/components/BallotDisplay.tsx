@@ -5,15 +5,13 @@ import Rank, { handleOnDragEnd } from './Rank';
 import Select from './Select';
 import Text from './Text';
 import { DragDropContext } from 'react-beautiful-dnd';
-import { default as i18n } from 'i18next';
-
-
 
 type BallotDisplayProps = {
   configuration: Configuration;
   answers: Answers;
   setAnswers: (answers: Answers) => void;
   userErrors: string;
+  language: string;
 };
 
 const BallotDisplay: FC<BallotDisplayProps> = ({
@@ -21,31 +19,32 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
   answers,
   setAnswers,
   userErrors,
+  language,
 }) => {
-  const [titles,setTitles]= useState<any>({});
-  useEffect (()=> {
-    try{
-      console.log('config', configuration.MainTitle)
-      const ts = JSON.parse(configuration.MainTitle)
-      setTitles(ts)   
-    }catch(e){
-        console.log('error',e)
+  const [titles, setTitles] = useState<any>({});
+  useEffect(() => {
+    try {
+      console.log('config', configuration.MainTitle);
+      const ts = JSON.parse(configuration.MainTitle);
+      setTitles(ts);
+    } catch (e) {
+      console.log('error', e);
     }
-   
-  }, [configuration])
+  }, [configuration]);
   const SubjectElementDisplay = (element: types.SubjectElement) => {
     return (
       <div className="pl-4 sm:pl-6">
-        {element.Type === RANK && <Rank rank={element as types.RankQuestion} answers={answers} />}
+        {element.Type === RANK && <Rank rank={element as types.RankQuestion} answers={answers} language={language}/>}
         {element.Type === SELECT && (
           <Select
             select={element as types.SelectQuestion}
             answers={answers}
             setAnswers={setAnswers}
+            language={language}
           />
         )}
         {element.Type === TEXT && (
-          <Text text={element as types.TextQuestion} answers={answers} setAnswers={setAnswers} />
+          <Text text={element as types.TextQuestion} answers={answers} setAnswers={setAnswers} language={language} />
         )}
       </div>
     );
@@ -55,9 +54,9 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
     return (
       <div key={subject.ID}>
         <h3 className="text-xl break-all pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-          {i18n.language == 'en' && subject.Title}
-          {i18n.language == 'fr' && subject.TitleFr}
-          {i18n.language == 'de' && subject.TitleDe}
+          {language === 'en' && subject.Title}
+          {language === 'fr' && subject.TitleFr}
+          {language === 'de' && subject.TitleDe}
         </h3>
         {subject.Order.map((id: ID) => (
           <div key={id}>
@@ -72,24 +71,22 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
         ))}
       </div>
     );
+  };
+  try {
+    console.log('subjects', configuration.Scaffold[0].Title);
+  } catch (e) {
+    console.log('erreur', e);
   }
-    try{
-        console.log("subjects", configuration.Scaffold);  
-    }catch(e){
-        console.log("erreur",e)
-    }
-   
+
   return (
     <DragDropContext onDragEnd={(dropRes) => handleOnDragEnd(dropRes, answers, setAnswers)}>
       <div className="w-full mb-0 sm:mb-4 mt-4 sm:mt-6">
         <h3 className="pb-6 break-all text-2xl text-center text-gray-700">
-          {i18n.language == 'en' && titles.en}
-          {i18n.language == 'fr' && titles.fr}
-          {i18n.language == 'de' && titles.de}
-          
+          {language === 'en' && titles.en}
+          {language === 'fr' && titles.fr}
+          {language === 'de' && titles.de}
         </h3>
         <div className="flex flex-col">
-          
           {configuration.Scaffold.map((subject: types.Subject) => SubjectTree(subject))}
           <div className="text-red-600 text-sm pt-3 pb-1">{userErrors}</div>
         </div>

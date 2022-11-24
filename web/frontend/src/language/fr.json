@@ -200,7 +200,7 @@
     "resultExplanation1": "Les résultats des questions sélectives et textuelles sont donnés en pourcentage du nombre de voix pour un candidat divisé par le nombre de bulletins de vote. ",
     "resultExplanation2": "Les résultats de la question de classement correspondent au pourcentage de la note d'un candidat. Chaque électeur donne des points aux candidats en les classant de 1 à N (le plus bas est le mieux). ",
     "resultExplanation3": "Le score correspond à la somme des points obtenus par un candidat et est divisé par le nombre total de points attribués sur l'ensemble des bulletins, puis soustrait à un",
-    "shuffle": "Mélanfez",
+    "shuffle": "Mélangez",
     "decrypt": "Décryptez",
     "seeResult": "Voir les résultats",
     "totalNumberOfVotes": "Nombre total de votes : {{votes}}",

@@ -111,9 +111,9 @@ const unmarshalConfig = (json: any): types.Configuration => {
   const conf = {
     MainTitle: json.MainTitle,
     Scaffold: [],
-    TitleLg1: json.TitleLg1,
+    TitleFr: json.TitleFr,
    // ScaffoldFr: [],
-    TitleLg2: json.TitleLg2,
+    TitleDe: json.TitleDe,
     //ScaffoldDe: [],
   };
   for (const subject of json.Scaffold) {
@@ -145,12 +145,13 @@ const unmarshalConfigAndCreateAnswers = (
 };
 
 const marshalText = (text: types.TextQuestion): any => {
-  const newText: any = { ...text };
+  const choice = JSON.stringify({en: text.Choices, fr: text.ChoicesFr, de: text.ChoicesDe})  
+  const newText: any = { ...text,choice };
   delete newText.Type;
   return newText;
 };
 
-const marshalRank = (rank: types.RankQuestion): any => {
+const marshalRank = (rank: types.RankQuestion): any => { 
   const newRank: any = { ...rank };
   delete newRank.Type;
   return newRank;
@@ -166,6 +167,8 @@ const marshalSubject = (subject: types.Subject): any => {
   const newSubject: any = { ...subject };
   const { rankQuestion, selectQuestion, textQuestion, subjects } =
     toArraysOfSubjectElement(subject.Elements);
+  console.log('toArray', toArraysOfSubjectElement(subject.Elements))  
+  
   delete newSubject.Type;
   delete newSubject.Elements;
 
@@ -175,6 +178,7 @@ const marshalSubject = (subject: types.Subject): any => {
   newSubject.Subjects = new Array<any>();
 
   rankQuestion.forEach((rank) => newSubject.Ranks.push(marshalRank(rank)));
+  console.log('rank',rankQuestion)
   selectQuestion.forEach((select) =>
     newSubject.Selects.push(marshalSelect(select))
   );
@@ -185,13 +189,15 @@ const marshalSubject = (subject: types.Subject): any => {
 };
 
 const marshalConfig = (configuration: types.Configuration): any => {
-  const title = {en : configuration.MainTitle, fr : configuration.TitleLg1, de : configuration.TitleLg2};
+  const title = {en : configuration.MainTitle, fr : configuration.TitleFr, de : configuration.TitleDe};
   console.log('marshall' ,JSON.stringify(title))
-
+  //const scaffold ={en : configuration.Scaffold[0]}  
   const conf = { MainTitle:JSON.stringify(title), Scaffold: [] };
   for (const subject of configuration.Scaffold) {
     conf.Scaffold.push(marshalSubject(subject));
   }
+  console.log('maintitle', conf.MainTitle)
+  console.log('scaffold',conf.Scaffold)
   return conf;
 };
 

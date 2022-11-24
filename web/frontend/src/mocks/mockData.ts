@@ -23,35 +23,35 @@ const mockRoster: string[] = [
 ];
 
 const mockForm1: any = {
-  MainTitle: 'Life on the campus',
+  MainTitle: '{ "en" : "Life on the campus", "fr" : "Vie sur le campus", "de" : "Vie sur le campus"}',
   Scaffold: [
     {
       ID: (0xa2ab).toString(),
-      Title: 'Rate the course',
+      Title: '{ "en" : "Rate the course", "fr" : "Note la course", "de" : "Rate the course"}',
       Order: [(0x3fb2).toString(), (0x41e2).toString(), (0xcd13).toString(), (0xff31).toString()],
       Subjects: [
         {
-          Title: "Let's talk about the food",
+          Title: '{ "en" : "Let s talk about the food", "fr" : "Parlons de la nourriture", "de" : "Let s talk about food"}',
           ID: (0xff31).toString(),
           Order: [(0xa319).toString(), (0x19c7).toString()],
           Subjects: [],
           Texts: [],
           Selects: [
             {
-              Title: 'Select your ingredients',
+              Title: '{ "en" : "Select your ingredients", "fr" : "Choisi tes ingrédients", "de" : "Select your ingredients"}',
               ID: (0xa319).toString(),
               MaxN: 2,
               MinN: 1,
-              Choices: ['tomato', 'salad', 'onion'],
+              Choices: {'en': ['tomato', 'salad', 'onion'], 'fr': ['tomate','salade','oignon'], 'de': ['tomato', 'salad', 'onion']},
             },
           ],
           Ranks: [
             {
-              Title: 'Rank the cafeteria',
+              Title: '{ "en" : "Rank the cafeteria", "fr" : "Ordonne les cafet", "de" : "Rank the cafeteria"}',
               ID: (0x19c7).toString(),
               MaxN: 3,
               MinN: 3,
-              Choices: ['BC', 'SV', 'Parmentier'],
+              Choices: {'en': ['BC', 'SV', 'Parmentier'], 'fr':['BC', 'SV', 'Parmentier'], 'de' : ['BC', 'SV', 'Parmentier']},
             },
           ],
         },
@@ -63,25 +63,25 @@ const mockForm1: any = {
           ID: (0x3fb2).toString(),
           MaxN: 1,
           MinN: 1,
-          Choices: ['1', '2', '3', '4', '5'],
+          Choices: {'en': ['1', '2', '3', '4', '5'],'fr': ['1', '2', '3', '4', '5'],'de': ['1', '2', '3', '4', '5']},
         },
         {
           Title: 'How did you find the teaching ?',
           ID: (0x41e2).toString(),
           MaxN: 1,
           MinN: 1,
-          Choices: ['bad', 'normal', 'good'],
+          Choices: {'en' : ['bad', 'normal', 'good'], 'fr': ['mauvais', 'normal', 'super'],'de' : ['bad', 'normal', 'good']},
         },
       ],
       Texts: [
         {
-          Title: 'Who were the two best TAs ?',
+          Title: '{ "en" : Who were the two best TAs ?, "fr" : "Quels sont les deux meilleurs TA ? "de" : Who were the two best TAs ?} ',
           ID: (0xcd13).toString(),
           MaxLength: 20,
           MaxN: 2,
           MinN: 1,
           Regex: '',
-          Choices: ['TA1', 'TA2'],
+          Choices: {'en':['TA1', 'TA2'],'fr':['TA1', 'TA2'],'de': ['TA1', 'TA2']},
         },
       ],
     },

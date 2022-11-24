@@ -128,6 +128,7 @@ const FormResult: FC = () => {
                 return { Candidate: rank.Choices[index], Percentage: `${percent}%` };
               }
             );
+            
             dataToDownload.push({ Title: element.Title, Results: res });
           }
           break;

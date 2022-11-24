@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { Draggable, DropResult, Droppable } from 'react-beautiful-dnd';
 import { Answers, ID, RankQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
@@ -27,9 +27,10 @@ export const handleOnDragEnd = (
 type RankProps = {
   rank: RankQuestion;
   answers: Answers;
+  language : string;
 };
 
-const Rank: FC<RankProps> = ({ rank, answers }) => {
+const Rank: FC<RankProps> = ({ rank, answers,language }) => {
   const RankListIcon = () => {
     return (
       <svg
@@ -53,7 +54,15 @@ const Rank: FC<RankProps> = ({ rank, answers }) => {
       </svg>
     );
   };
-
+  const [titles, setTitles] = useState<any>({});
+  useEffect(() => {
+    try {
+      const ts = JSON.parse(rank.Title);
+      setTitles(ts);
+    } catch (e) {
+      console.log('error', e);
+    }
+  }, [rank]);
   const choiceDisplay = (choice: string, rankIndex: number) => {
     return (
       <Draggable key={choice} draggableId={choice} index={rankIndex}>
@@ -80,9 +89,9 @@ const Rank: FC<RankProps> = ({ rank, answers }) => {
   return (
     <div className="mb-6">
       <h3 className="text-lg break-words text-gray-600">
-        {i18n.language == 'en' && rank.Title}
-        {i18n.language == 'fr' && rank.TitleFr}
-        {i18n.language == 'de' && rank.TitleDe}
+        {language === 'en' && titles.en}
+        {language === 'fr' && titles.fr}
+        {language === 'de' && titles.de}
       </h3>
       <div className="mt-5 px-4 max-w-[300px] sm:pl-8 sm:max-w-md">
         <>
@@ -91,14 +100,8 @@ const Rank: FC<RankProps> = ({ rank, answers }) => {
               <ul className={rank.ID} {...provided.droppableProps} ref={provided.innerRef}>
                 {Array.from(answers.RankAnswers.get(rank.ID).entries()).map(
                   ([rankIndex, choiceIndex]) => {
-                    if(i18n.language == 'en')
-                        return choiceDisplay(rank.Choices[choiceIndex], rankIndex)
-                    else if (i18n.language == 'fr')    
-                        return choiceDisplay(rank.ChoicesFr[choiceIndex], rankIndex)
-                    else if (i18n.language == 'de')    
-                        return choiceDisplay(rank.ChoicesDe[choiceIndex], rankIndex)    
+                    return choiceDisplay(rank.Choices[choiceIndex], rankIndex);
                   }
-                  
                 )}
                 {provided.placeholder}
               </ul>
