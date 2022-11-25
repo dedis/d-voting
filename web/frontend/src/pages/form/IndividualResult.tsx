@@ -91,21 +91,22 @@ const IndividualResult: FC<IndividualResultProps> = ({
   };
 
   const handlePrevious = (): void => {
-    setCurrentID((currentID - 1) % ballotNumber);
+    setCurrentID((currentID - 1 + ballotNumber) % ballotNumber);
   };
+
   return (
     <div>
       <div className="flex flex-col">
-        <div className="flex-1 flex justify-between sm:justify-end">
+        <div className="grid grid-cols-9 font-medium rounded-md border-t stext-sm text-center align-center justify-middle text-gray-700 bg-white py-2">
           <button
             onClick={handlePrevious}
-            className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            className="items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
             {t('previous')}
           </button>
-          {'Ballot ' + (currentID + 1)}
+          <div className="grow col-span-7 p-2">{'Ballot ' + (currentID + 1)}</div>
           <button
             onClick={handleNext}
-            className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            className="ml-3 relative align-right items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
             {t('next')}
           </button>
         </div>
