@@ -29,6 +29,7 @@ type CreateFormRequest struct {
 // CreateFormResponse defines the HTTP response when creating a form
 type CreateFormResponse struct {
 	FormID string // hex-encoded
+	TransactionInfo TransactionInfo
 }
 
 // CastVoteRequest defines the HTTP request for casting a vote

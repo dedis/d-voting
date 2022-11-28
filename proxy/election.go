@@ -21,9 +21,9 @@ import (
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
-	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/schnorr"
@@ -110,7 +110,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create the transaction and add it to the pool
-	txnID, _, err := h.submitTxn(r.Context(), evoting.CmdCreateForm, evoting.FormArg, data)
+	txnID, blockIdx, err := h.submitTxn(r.Context(), evoting.CmdCreateForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -123,19 +123,22 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 	hash.Write(txnID)
 	formID := hash.Sum(nil)
 
+	
+	transactionInfo, err :=h.CreateTransactionInfo(txnID, blockIdx, ptypes.UnknownTransactionStatus)
+	if err != nil {
+		http.Error(w, "failed to create transaction info: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	// return the formID
 	response := ptypes.CreateFormResponse{
 		FormID: hex.EncodeToString(formID),
+		TransactionInfo : transactionInfo,
+
 	}
 
 	// sign the response
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
-			http.StatusInternalServerError)
-		return
-	}
+	sendResponse(w, response)
 }
 
 // NewFormVote implements proxy.Proxy
@@ -455,14 +458,9 @@ func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 		Voters:          form.Suffragia.UserIDs,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
-			http.StatusInternalServerError)
-		return
-	}
+	sendResponse(w, response)
+
 }
 
 // Forms implements proxy.Proxy. The request should not be signed because it
@@ -509,13 +507,8 @@ func (h *form) Forms(w http.ResponseWriter, r *http.Request) {
 
 	response := ptypes.GetFormsResponse{Forms: allFormsInfo}
 
-	w.Header().Set("Content-Type", "application/json")
+	sendResponse(w, response)
 
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		InternalError(w, r, xerrors.Errorf("failed to write response: %v", err), nil)
-		return
-	}
 }
 
 // DeleteForm implements proxy.Proxy
@@ -582,70 +575,30 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 
 //IsTxnIncluded
 func (h *form) IsTxnIncluded(w http.ResponseWriter, r *http.Request) {
-	// fetch the transactionID and block link
-	vars := mux.Vars(r)
 
-	// check if the all the parameters from the TransactionInfo struct are present
-	if vars == nil || vars["Status"] == "" || vars["transactionID"] == "" || vars["LastBlockIdx"] == "" || vars["Time"] == "" || vars["Hash"] == "" || vars["Signature"] == "" {
-		http.Error(w, fmt.Sprintf("transactionID, LastBlockIdx, Time or Hash not found: %v", vars ), http.StatusInternalServerError)
+	var content ptypes.TransactionInfo
+
+	
+
+	err := json.NewDecoder(r.Body).Decode(&content)
+	if err != nil {
+		http.Error(w, "failed to decode request: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+
+
 
 	// get the status of the transaction as byte
-	var status ptypes.TransactionStatus
-	switch vars["Status"] {
-	case "0":
-		status = ptypes.UnknownTransactionStatus
-	case "1": // Accepted
-		http.Error(w, fmt.Sprintf("transaction already included: %v", vars ), http.StatusInternalServerError)
-	case "2": // Rejected
-		http.Error(w, fmt.Sprintf("transaction won't be included: %v", vars ), http.StatusInternalServerError)
-		
-	default:
-		http.Error(w, fmt.Sprintf("transaction status not found: %v", vars["Status"]), http.StatusInternalServerError)
+	if content.Status != ptypes.UnknownTransactionStatus {
+		http.Error(w, "the transaction status is not unknown", http.StatusBadRequest)
 		return
 	}
 
 
 
-	// get the transactionID as []byte
-	transactionID, err := hex.DecodeString(vars["transactionID"])
-	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to decode transactionID: %v", err), http.StatusInternalServerError)
-		return
-	}
+	
 
-	// get the LastBlockIdx as uint64
-	lastBlockIdx, err := strconv.ParseUint(vars["LastBlockIdx"], 10, 64)
-
-	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to parse LastBlockIdx: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	// get the Time as int64
-	transactionTime, err := strconv.ParseInt(vars["Time"], 10, 64)
-
-	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to parse Time: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	// get the Hash as []byte
-	hash, err := hex.DecodeString(vars["Hash"])
-	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to decode Hash: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	// get the Signature as []byte
-	signatureBin, err := hex.DecodeString(vars["Signature"])
-	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to decode Signature: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	signature,err := h.signer.GetSignatureFactory().SignatureOf(h.context, signatureBin)
+	signature,err := h.signer.GetSignatureFactory().SignatureOf(h.context, content.Signature)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to get Signature: %v", err), http.StatusInternalServerError)
 		return
@@ -653,33 +606,33 @@ func (h *form) IsTxnIncluded(w http.ResponseWriter, r *http.Request) {
 	
 
 	// check if the hash is valid
-	if !h.checkHash(status, transactionID, lastBlockIdx, transactionTime, hash) {
+	if !h.checkHash(content.Status, content.TransactionID, content.LastBlockIdx, content.Time, content.Hash) {
 		http.Error(w, "invalid hash", http.StatusInternalServerError)
 		return
 	}
 
 	// check if the signature is valid
-	if !h.checkSignature(hash, signature) {
+	if !h.checkSignature(content.Hash, signature) {
 		http.Error(w, "invalid signature", http.StatusInternalServerError)
 		return
 	}
 
 	// check if if was submited not to long ago
-	if  time.Now().Unix() - transactionTime > int64(maxTimeTransactionCheck) {
+	if  time.Now().Unix() - content.Time > int64(maxTimeTransactionCheck) {
 		http.Error(w, "the transaction is too old", http.StatusInternalServerError)
 		return
 	}
 
-	if time.Now().Unix() - transactionTime < 0 {
+	if time.Now().Unix() - content.Time < 0 {
 		http.Error(w, "the transaction is from the future", http.StatusInternalServerError)
 		return
 	}
 
 	// check if the transaction is included in the blockchain
-	newStatus, idx := h.checkTxnIncluded(transactionID, lastBlockIdx)
+	newStatus, idx := h.checkTxnIncluded(content.TransactionID, content.LastBlockIdx)
 
 
-	err = h.sendTransactionInfo(w, transactionID, idx,newStatus)
+	err = h.sendTransactionInfo(w, content.TransactionID, idx,newStatus)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to send transaction info: %v", err), http.StatusInternalServerError)
 		return
@@ -822,7 +775,7 @@ func getForm(ctx serde.Context, formFac serde.Factory, formIDHex string,
 	return form, nil
 }
 
-// submitTxn submits a transaction and waits for it to be included.
+// submitTxn submits a transaction 
 // Returns the transaction ID.
 func (h *form) submitTxn(ctx context.Context, cmd evoting.Command,
 	cmdArg string, payload []byte) ([]byte, uint64, error) {
@@ -891,6 +844,17 @@ func (h *form) submitTxn(ctx context.Context, cmd evoting.Command,
 
 func (h *form) sendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBlockIdx uint64, status ptypes.TransactionStatus) (error) {
 
+	response,err := h.CreateTransactionInfo(txnID, lastBlockIdx, status)
+	if err != nil {
+		return xerrors.Errorf("failed to create transaction info: %v", err)
+	}
+
+	return sendResponse(w, response)
+
+}
+
+func (h *form) CreateTransactionInfo( txnID []byte, lastBlockIdx uint64, status ptypes.TransactionStatus) (ptypes.TransactionInfo,error) {
+
 	time:=time.Now().Unix()
 	hash:=sha256.New()
 
@@ -905,17 +869,15 @@ func (h *form) sendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBloc
 	signature,err:=h.signer.Sign(finalHash)
 
 	if err!=nil{
-		return xerrors.Errorf("failed to sign transaction info: %v", err)
+		return ptypes.TransactionInfo{} , xerrors.Errorf("failed to sign transaction info: %v", err)
 	}
 	//convert signature to []byte
 	signatureBin,err :=signature.MarshalBinary()
 	
 	if err!=nil{
-		return xerrors.Errorf("failed to marshal signature: %v", err)
+		return ptypes.TransactionInfo{} , xerrors.Errorf("failed to marshal signature: %v", err)
 	}
 	
-
-
 
 	response := ptypes.TransactionInfo{
 		Status: status,
@@ -927,8 +889,12 @@ func (h *form) sendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBloc
 
 	}
 
+	return response,nil
+}
+
+func sendResponse(w http.ResponseWriter, response any) (error){
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(response)
+	err := json.NewEncoder(w).Encode(response)
 	if err != nil {
 		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
 			http.StatusInternalServerError)
@@ -936,7 +902,6 @@ func (h *form) sendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBloc
 	}
 
 	return nil
-
 }
 
 

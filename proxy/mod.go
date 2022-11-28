@@ -34,7 +34,7 @@ type Form interface {
 	Form(http.ResponseWriter, *http.Request)
 	// DELETE /forms/{formID}
 	DeleteForm(http.ResponseWriter, *http.Request)
-	// GET /forms/transactions/{txnID}
+	// GET /transactions
 	IsTxnIncluded(http.ResponseWriter, *http.Request)
 }
 
