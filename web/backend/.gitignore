@@ -14,6 +14,7 @@
 
 #config
 config.env
+config_export.env
 .env
 
 # misc
