@@ -205,7 +205,7 @@ function setMapAuthorization(list: string[][]) {
 // the react. This endpoint serves to send to the client (actually to react)
 // the information of the current user.
 app.get('/api/personal_info', (req, res) => {
-  let m = new Map<String, Array<String>>();
+  const m = new Map<String, Array<String>>();
   enf.getFilteredPolicy(0, String(req.session.userid)).then((list) => {
     res.set('Access-Control-Allow-Origin', '*');
     if (req.session.userid) {
