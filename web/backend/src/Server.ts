@@ -187,14 +187,16 @@ app.post('/api/logout', (req, res) => {
 // returned by the casbin function getFilteredPolicy to a map that link
 // an object to the action authorized
 // list[0] contains the policies so list[i][0] is the sciper
-// list[i][1] is the object and list[i][2] is the action
-function setMapAuthorization(list: string[][]) {
+// list[i][1] is the subject and list[i][2] is the action
+function setMapAuthorization(list: string[][]): Map<String, Array<String>> {
   const m = new Map<String, Array<String>>();
   for (let i = 0; i < list.length; i += 1) {
-    if (m.has(list[i][1])) {
-      m.get(list[i][1])?.push(list[i][2]);
+    const subject = list[i][1];
+    const action = list[i][2];
+    if (m.has(subject)) {
+      m.get(subject)?.push(action);
     } else {
-      m.set(list[i][1], [list[i][2]]);
+      m.set(subject, [action]);
     }
   }
   console.log(m);
@@ -205,7 +207,6 @@ function setMapAuthorization(list: string[][]) {
 // the react. This endpoint serves to send to the client (actually to react)
 // the information of the current user.
 app.get('/api/personal_info', (req, res) => {
-  const m = new Map<String, Array<String>>();
   enf.getFilteredPolicy(0, String(req.session.userid)).then((list) => {
     res.set('Access-Control-Allow-Origin', '*');
     if (req.session.userid) {
@@ -224,7 +225,7 @@ app.get('/api/personal_info', (req, res) => {
         firstname: '',
         role: '',
         islogged: false,
-        authorization: Object.fromEntries(m),
+        authorization: {},
       });
     }
   });
