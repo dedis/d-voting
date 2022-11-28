@@ -11,16 +11,17 @@ import createMemoryStore from 'memorystore';
 import { Enforcer, newEnforcer } from 'casbin';
 
 const MemoryStore = createMemoryStore(session);
-const ROLES = 'roles';
-const LIST = 'list';
-const REMOVE = 'remove';
-const ADD = 'add';
-const PROXIES = 'proxies';
-const PUT = 'put';
-const POST = 'post';
-const DELETE = 'delete';
-const ELECTION = 'election';
-const CREATE = 'create';
+const SUBJECT_ROLES = 'roles';
+const SUBJECT_PROXIES = 'proxies';
+const SUBJECT_ELECTION = 'election';
+
+const ACTION_LIST = 'list';
+const ACTION_ACTION_REMOVE = 'remove';
+const ACTION_ADD = 'add';
+const ACTION_PUT = 'put';
+const ACTION_POST = 'post';
+const ACTION_DELETE = 'delete';
+const ACTION_CREATE = 'create';
 // store is used to store the session
 const store = new MemoryStore({
   checkPeriod: 86400000, // prune expired entries every 24h
@@ -182,28 +183,30 @@ app.post('/api/logout', (req, res) => {
   });
 });
 
-// As the user is logged on the app via this express but must also be logged in
-// the react. This endpoint serves to send to the client (actually to react)
-// the information of the current user.
+// This function helps us convert the double list of the authorization
+// returned by the casbin function getFilteredPolicy to a map that link
+// an object to the action authorized
+// list[0] contains the policies so list[i][0] is the sciper
+// list[i][1] is the object and list[i][2] is the action
 function setMapAuthorization(list: string[][]) {
   const m = new Map<String, Array<String>>();
   for (let i = 0; i < list.length; i += 1) {
-    for (let j = 1; j < list[0].length; j += +2) {
-      console.log(list[i][j]);
-      if (m.has(list[i][j])) {
-        m.get(list[i][j])?.push(list[i][j + 1]);
-      } else {
-        m.set(list[i][j], [list[i][j + 1]]);
-      }
+    if (m.has(list[i][1])) {
+      m.get(list[i][1])?.push(list[i][2]);
+    } else {
+      m.set(list[i][1], [list[i][2]]);
     }
   }
   console.log(m);
   return m;
 }
+
+// As the user is logged on the app via this express but must also be logged in
+// the react. This endpoint serves to send to the client (actually to react)
+// the information of the current user.
 app.get('/api/personal_info', (req, res) => {
   let m = new Map<String, Array<String>>();
   enf.getFilteredPolicy(0, String(req.session.userid)).then((list) => {
-    m = setMapAuthorization(list);
     res.set('Access-Control-Allow-Origin', '*');
     if (req.session.userid) {
       res.json({
@@ -212,7 +215,7 @@ app.get('/api/personal_info', (req, res) => {
         firstname: req.session.firstname,
         role: req.session.role,
         islogged: true,
-        authorization: Object.fromEntries(m),
+        authorization: Object.fromEntries(setMapAuthorization(list)),
       });
     } else {
       res.json({
@@ -233,7 +236,7 @@ app.get('/api/personal_info', (req, res) => {
 // This call allow a user that is admin to get the list of the people that have
 // a special role (not a voter).
 app.get('/api/user_rights', (req, res) => {
-  if (!isAuthorized(req.session.userid, ROLES, LIST)) {
+  if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_LIST)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
@@ -246,7 +249,7 @@ app.get('/api/user_rights', (req, res) => {
 
 // This call (only for admins) allow an admin to add a role to a voter.
 app.post('/api/add_role', (req, res) => {
-  if (!isAuthorized(req.session.userid, ROLES, ADD)) {
+  if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_ADD)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
@@ -262,7 +265,7 @@ app.post('/api/add_role', (req, res) => {
 
 // This call (only for admins) allow an admin to remove a role to a user.
 app.post('/api/remove_role', (req, res) => {
-  if (!isAuthorized(req.session.userid, ROLES, REMOVE)) {
+  if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_ACTION_REMOVE)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
@@ -295,7 +298,7 @@ app.post('/api/remove_role', (req, res) => {
 // ---
 const proxiesDB = lmdb.open<string, string>({ path: `${process.env.DB_PATH}proxies` });
 app.post('/api/proxies', (req, res) => {
-  if (!isAuthorized(req.session.userid, PROXIES, POST)) {
+  if (!isAuthorized(req.session.userid, SUBJECT_PROXIES, ACTION_POST)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
   }
@@ -310,7 +313,7 @@ app.post('/api/proxies', (req, res) => {
 });
 
 app.put('/api/proxies/:nodeAddr', (req, res) => {
-  if (!isAuthorized(req.session.userid, PROXIES, PUT)) {
+  if (!isAuthorized(req.session.userid, SUBJECT_PROXIES, ACTION_PUT)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
   }
@@ -341,7 +344,7 @@ app.put('/api/proxies/:nodeAddr', (req, res) => {
 });
 
 app.delete('/api/proxies/:nodeAddr', (req, res) => {
-  if (!isAuthorized(req.session.userid, PROXIES, DELETE)) {
+  if (!isAuthorized(req.session.userid, SUBJECT_PROXIES, ACTION_DELETE)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
   }
@@ -494,7 +497,7 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
 
 // Secure /api/evoting to admins and operators
 app.use('/api/evoting/*', (req, res, next) => {
-  if (!isAuthorized(req.session.userid, ELECTION, CREATE)) {
+  if (!isAuthorized(req.session.userid, SUBJECT_ELECTION, ACTION_CREATE)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
   }
