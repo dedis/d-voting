@@ -1,7 +1,6 @@
 // Package controller implements a minimal controller for cosipbft.
 //
 // Documentation Last Review: 13.10.2020
-//
 package controller
 
 import (
@@ -36,7 +35,10 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const privateKeyFile = "private.key"
+const (
+	privateKeyFile = "private.key"
+	errInjector    = "injector: %v"
+)
 
 // valueAccessKey is the access key used for the value contract.
 var valueAccessKey = [32]byte{2}
@@ -111,7 +113,7 @@ func (m miniController) OnStart(flags cli.Flags, inj node.Injector) error {
 	var onet mino.Mino
 	err := inj.Resolve(&onet)
 	if err != nil {
-		return xerrors.Errorf("injector: %v", err)
+		return xerrors.Errorf(errInjector, err)
 	}
 
 	signer, err := m.getSigner(flags)
@@ -141,7 +143,7 @@ func (m miniController) OnStart(flags cli.Flags, inj node.Injector) error {
 	var db kv.DB
 	err = inj.Resolve(&db)
 	if err != nil {
-		return xerrors.Errorf("injector: %v", err)
+		return xerrors.Errorf(errInjector, err)
 	}
 
 	tree := binprefix.NewMerkleTree(db, binprefix.Nonce{})
@@ -202,7 +204,7 @@ func (miniController) OnStop(inj node.Injector) error {
 	var srvc ordering.Service
 	err := inj.Resolve(&srvc)
 	if err != nil {
-		return xerrors.Errorf("injector: %v", err)
+		return xerrors.Errorf(errInjector, err)
 	}
 
 	err = srvc.Close()
@@ -213,7 +215,7 @@ func (miniController) OnStop(inj node.Injector) error {
 	var p pool.Pool
 	err = inj.Resolve(&p)
 	if err != nil {
-		return xerrors.Errorf("injector: %v", err)
+		return xerrors.Errorf(errInjector, err)
 	}
 
 	err = p.Close()

@@ -338,6 +338,8 @@ func TestPedersen_Setup(t *testing.T) {
 		},
 		context: serdecontext,
 		formFac: formFac,
+		status: &dkg.Status{},
+
 	}
 
 	// Wrong formID

@@ -53,7 +53,7 @@ func (a setupAction) Execute(ctx node.Context) error {
 	var srvc Service
 	err = ctx.Injector.Resolve(&srvc)
 	if err != nil {
-		return xerrors.Errorf("injector: %v", err)
+		return xerrors.Errorf(errInjector, err)
 	}
 
 	timeout := ctx.Flags.Duration("timeout")
@@ -100,7 +100,7 @@ func (a exportAction) Execute(ctx node.Context) error {
 	var m mino.Mino
 	err := ctx.Injector.Resolve(&m)
 	if err != nil {
-		return xerrors.Errorf("injector: %v", err)
+		return xerrors.Errorf(errInjector, err)
 	}
 
 	addr, err := m.GetAddress().MarshalText()
@@ -111,7 +111,7 @@ func (a exportAction) Execute(ctx node.Context) error {
 	var c cosi.CollectiveSigning
 	err = ctx.Injector.Resolve(&c)
 	if err != nil {
-		return xerrors.Errorf("injector: %v", err)
+		return xerrors.Errorf(errInjector, err)
 	}
 
 	pubkey, err := c.GetSigner().GetPublicKey().MarshalBinary()
@@ -139,7 +139,7 @@ func (rosterAddAction) Execute(ctx node.Context) error {
 	var srvc Service
 	err := ctx.Injector.Resolve(&srvc)
 	if err != nil {
-		return xerrors.Errorf("injector: %v", err)
+		return xerrors.Errorf(errInjector, err)
 	}
 
 	tx, err := prepareRosterTx(ctx, srvc)
@@ -150,7 +150,7 @@ func (rosterAddAction) Execute(ctx node.Context) error {
 	var p pool.Pool
 	err = ctx.Injector.Resolve(&p)
 	if err != nil {
-		return xerrors.Errorf("injector: %v", err)
+		return xerrors.Errorf(errInjector, err)
 	}
 
 	wait := ctx.Flags.Duration("wait")
@@ -228,7 +228,7 @@ func makeManager(ctx node.Context) (txn.Manager, error) {
 	var mgr txn.Manager
 	err := ctx.Injector.Resolve(&mgr)
 	if err != nil {
-		return nil, xerrors.Errorf("injector: %v", err)
+		return nil, xerrors.Errorf(errInjector, err)
 	}
 
 	// Synchronize the manager with the latest state of the chain so that it can
@@ -251,7 +251,7 @@ func decodeMember(ctx node.Context, str string) (mino.Address, crypto.PublicKey,
 	var m mino.Mino
 	err := ctx.Injector.Resolve(&m)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("injector: %v", err)
+		return nil, nil, xerrors.Errorf(errInjector, err)
 	}
 
 	addrBuf, err := base64.StdEncoding.DecodeString(parts[0])
@@ -265,7 +265,7 @@ func decodeMember(ctx node.Context, str string) (mino.Address, crypto.PublicKey,
 	var c cosi.CollectiveSigning
 	err = ctx.Injector.Resolve(&c)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("injector: %v", err)
+		return nil, nil, xerrors.Errorf(errInjector, err)
 	}
 
 	pubkeyBuf, err := base64.StdEncoding.DecodeString(parts[1])
