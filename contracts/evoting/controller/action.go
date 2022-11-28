@@ -97,6 +97,7 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve blockstore.InDisk: %v", err)
 	}
 
+
 	var ordering ordering.Service
 
 	err = ctx.Injector.Resolve(&ordering)
@@ -163,7 +164,7 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to unmarshal proxy key: %v", err)
 	}
 
-	ep := eproxy.NewForm(ordering, mngr, p, sjson.NewContext(), formFac, proxykey,blocks)
+	ep := eproxy.NewForm(ordering, mngr, p, sjson.NewContext(), formFac, proxykey,blocks,signer)
 
 	router := mux.NewRouter()
 

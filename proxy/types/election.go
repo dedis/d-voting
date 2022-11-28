@@ -4,6 +4,22 @@ import (
 	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 )
 
+// TransactionStatus is the status of a transaction
+type TransactionStatus byte
+
+const (
+	// UnknownTransactionStatus is the basic status of a transaction
+	UnknownTransactionStatus TransactionStatus = 0
+	// IncludedTransaction is the status of a transaction that has been included
+	IncludedTransaction TransactionStatus = 1
+	// RejectedTransaction is the status of a transaction that is not included and will never be
+	RejectedTransaction TransactionStatus = 2
+)
+
+
+
+
+
 // CreateFormRequest defines the HTTP request for creating a form
 type CreateFormRequest struct {
 	AdminID       string
@@ -34,9 +50,15 @@ type EGPairJSON struct {
 
 // TransactionInfo defines the HTTP response when sending a transaction to the blockchain
 type TransactionInfo struct {
+	Status TransactionStatus // 0 if not yet included, 1 if included, 2 if rejected
 	TransactionID []byte
 	LastBlockIdx uint64  // last block of the chain when the transaction was added to the pool
+	Time 	   int64 // time when the transaction was added to the pool
+	Hash    []byte // signature of the transaction
+	Signature []byte // signature of the transaction
 }
+
+
 
 // UpdateFormRequest defines the HTTP request for updating a form
 type UpdateFormRequest struct {
