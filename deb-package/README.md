@@ -6,7 +6,7 @@ You need to have node 18.x version.
 
 ```sh
 cd web/frontend
-npm install --production
+npm install
 NODE_ENV=production ./node_modules/.bin/tsc --outDir build
 ```
 
@@ -41,7 +41,7 @@ You need to have node 18.x version.
 
 ```sh
 cd web/frontend
-npm install --production
+npm install
 NODE_ENV=production HTTPS=true BUILD_PATH=x/y/build ./node_modules/.bin/react-scripts build
 ```
 
@@ -65,6 +65,25 @@ web backend. For example with nginx:
 ```
 
 # Configure a network of nodes
+
+## Run a node
+
+Check how a node is started in `pkg/opt/dedis/dvoting/bin/start-voting`. For
+example:
+
+```sh
+LLVL=info ./memcoin-darwin-amd64-v0_4_5-alpha \
+    --config /tmp/node8 \
+    start \
+    --postinstall \
+    --promaddr 0.0.0.0:9101 \
+    --proxyaddr 0.0.0.0:9080 \
+    --listen //0.0.0.0:9000 \
+    --public //localhost:9000 \
+    --routing flat \
+    --noTLS=true \
+    --proxykey adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3
+```
 
 ## Network config
 
@@ -153,7 +172,7 @@ To be done on each node.
 ```sh
 PK=<> # taken from the "ordering export", the part after ":"
 sudo memcoin --config /var/opt/dedis/dvoting/data/dela pool add \
-    --key /home/dedis/private.key \
+    --key $keypath \
     --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access \
     --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 \
     --args access:grant_contract --args go.dedis.ch/dela.Evoting \
@@ -196,3 +215,15 @@ make deb
 Make sure that a git tag exist, i.e `git describe` shows your tag.
 
 The resulting .deb can be found in the `dist/` folder.
+
+## Debian deployment
+
+A package registry with debian packages is available at http://apt.dedis.ch.
+To install a package run the following:
+
+```sh
+echo "deb http://apt.dedis.ch/ squeeze main" >> /etc/apt/sources.list
+wget -q -O- http://apt.dedis.ch/dvoting-release.pgp | sudo apt-key add -
+sudo apt update
+sudo apt install dedis-dvoting
+```
