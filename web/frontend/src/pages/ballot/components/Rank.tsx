@@ -96,7 +96,6 @@ const Rank: FC<RankProps> = ({ rank, answers,language }) => {
         {language === 'fr' && titles.fr}
         {language === 'de' && titles.de}
       </h3>
-
         </div>
         <div>
           <HintButton text={rank.Hint} />
@@ -109,7 +108,12 @@ const Rank: FC<RankProps> = ({ rank, answers,language }) => {
               <ul className={rank.ID} {...provided.droppableProps} ref={provided.innerRef}>
                 {Array.from(answers.RankAnswers.get(rank.ID).entries()).map(
                   ([rankIndex, choiceIndex]) => {
-                    return choiceDisplay(rank.Choices[choiceIndex], rankIndex);
+                    if(language == 'en')
+                    return choiceDisplay(rank.Choices[choiceIndex], rankIndex)
+                else if (language == 'fr')    
+                    return choiceDisplay(rank.ChoicesFr[choiceIndex], rankIndex)
+                else if (language == 'de')    
+                    return choiceDisplay(rank.ChoicesDe[choiceIndex], rankIndex)  
                   }
                 )}
                 {provided.placeholder}

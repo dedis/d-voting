@@ -23,7 +23,8 @@ const mockRoster: string[] = [
 ];
 
 const mockForm1: any = {
-  MainTitle: '{ "en" : "Life on the campus", "fr" : "Vie sur le campus", "de" : "Vie sur le campus"}',
+  MainTitle:
+    '{ "en" : "Life on the campus", "fr" : "Vie sur le campus", "de" : "Vie sur le campus"}',
   Scaffold: [
     {
       ID: (0xa2ab).toString(),
@@ -31,18 +32,20 @@ const mockForm1: any = {
       Order: [(0x3fb2).toString(), (0x41e2).toString(), (0xcd13).toString(), (0xff31).toString()],
       Subjects: [
         {
-          Title: '{ "en" : "Let s talk about the food", "fr" : "Parlons de la nourriture", "de" : "Let s talk about food"}',
+          Title: 
+           '{ "en" : "Let s talk about the food", "fr" : "Parlons de la nourriture", "de" : "Let s talk about food"}',
           ID: (0xff31).toString(),
           Order: [(0xa319).toString(), (0x19c7).toString()],
           Subjects: [],
           Texts: [],
           Selects: [
             {
-              Title: '{ "en" : "Select your ingredients", "fr" : "Choisi tes ingrédients", "de" : "Select your ingredients"}',
+              Title:
+               '{ "en" : "Select your ingredients", "fr" : "Choisi tes ingrédients", "de" : "Select your ingredients"}',
               ID: (0xa319).toString(),
               MaxN: 2,
               MinN: 1,
-              Choices: {'en': ['tomato', 'salad', 'onion'], 'fr': ['tomate','salade','oignon'], 'de': ['tomato', 'salad', 'onion']},
+              Choices: {"en": ['tomato', 'salad', 'onion'], "fr": ['tomate','salade','oignon'], "de": ['tomato', 'salad', 'onion']},
             },
           ],
           Ranks: [

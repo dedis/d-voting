@@ -19,7 +19,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
     let selectAnswers = newAnswers.SelectAnswers.get(select.ID);
 
     if (select.MaxN === 1) {
-      selectAnswers = new Array<boolean>(select.Choices.get('en').length).fill(false);
+      selectAnswers = new Array<boolean>(select.Choices.length).fill(false);
     }
 
     selectAnswers[choiceIndex] = e.target.checked;

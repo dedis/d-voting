@@ -17,7 +17,10 @@ interface SubjectElement {
 interface RankQuestion extends SubjectElement {
   MaxN: number;
   MinN: number;
-  Choices: Map<string,string[]>;
+  Choices: string[]
+  ChoicesFr: string[]
+  ChoicesDe: string[]
+  //Map<string,string[]>;
   Hint: string;
 }
 // Text describes a "text" question, which allows the user to enter free text.
@@ -26,7 +29,10 @@ interface TextQuestion extends SubjectElement {
   MinN: number;
   MaxLength: number;
   Regex: string;
-  Choices: Map<string,string[]>;
+  Choices: string[]
+  ChoicesFr: string[]
+  ChoicesDe: string[]
+  //Choices: Map<string,string[]>;
   Hint: string;
 }
 
@@ -35,7 +41,10 @@ interface TextQuestion extends SubjectElement {
 interface SelectQuestion extends SubjectElement {
   MaxN: number;
   MinN: number;
-  Choices: Map<string,string[]>;
+  Choices: string[]
+  ChoicesFr: string[]
+  ChoicesDe: string[]
+  //Choices: Map<string,string[]>;
   Hint: string;
 
 }

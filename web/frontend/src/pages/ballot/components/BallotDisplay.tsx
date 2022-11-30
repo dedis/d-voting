@@ -34,7 +34,9 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
   const SubjectElementDisplay = (element: types.SubjectElement) => {
     return (
       <div className="pl-4 sm:pl-6">
-        {element.Type === RANK && <Rank rank={element as types.RankQuestion} answers={answers} language={language}/>}
+        {element.Type === RANK && (
+          <Rank rank={element as types.RankQuestion} answers={answers} language={language} />
+        )}
         {element.Type === SELECT && (
           <Select
             select={element as types.SelectQuestion}
@@ -44,7 +46,12 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
           />
         )}
         {element.Type === TEXT && (
-          <Text text={element as types.TextQuestion} answers={answers} setAnswers={setAnswers} language={language} />
+          <Text
+            text={element as types.TextQuestion}
+            answers={answers}
+            setAnswers={setAnswers}
+            language={language}
+          />
         )}
       </div>
     );

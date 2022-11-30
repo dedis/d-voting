@@ -74,7 +74,7 @@ const unmarshalSubjectAndCreateAnswers = (
     elements.set(rank.ID, rank);
     answerMap.RankAnswers.set(
       rank.ID,
-      Array.from(Array(rank.Choices.get('en').length).keys())
+      Array.from(Array(rank.Choices.length).keys())
     );
     answerMap.Errors.set(rank.ID, '');
   }
@@ -85,7 +85,7 @@ const unmarshalSubjectAndCreateAnswers = (
     elements.set(select.ID, select);
     answerMap.SelectAnswers.set(
       select.ID,
-      new Array<boolean>(select.Choices.get('en').length).fill(false)
+      new Array<boolean>(select.Choices.length).fill(false)
     );
     answerMap.Errors.set(select.ID, '');
   }
@@ -95,7 +95,7 @@ const unmarshalSubjectAndCreateAnswers = (
     elements.set(text.ID, text);
     answerMap.TextAnswers.set(
       text.ID,
-      new Array<string>(text.Choices.get('en').length).fill('')
+      new Array<string>(text.Choices.length).fill('')
     );
     answerMap.Errors.set(text.ID, '');
   }

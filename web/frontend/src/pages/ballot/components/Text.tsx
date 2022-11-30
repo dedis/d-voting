@@ -114,9 +114,9 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
       <div className="grid grid-rows-1 grid-flow-col">
         <div>
           <h3 className="text-lg break-words text-gray-600 w-96">
-        {language == 'en' && titles.en}
-        {language == 'fr' && titles.fr}
-        {language == 'de' && titles.de}</h3>
+        {language === 'en' && titles.en}
+        {language === 'fr' && titles.fr}
+        {language === 'de' && titles.de}</h3>
         </div>
         <div>
           <HintButton text={text.Hint} />

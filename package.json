@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "casbin": "^5.19.2"
+  }
+}

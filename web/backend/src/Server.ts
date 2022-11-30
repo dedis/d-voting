@@ -215,7 +215,7 @@ app.get('/api/personal_info', (req, res) => {
         sciper: req.session.userid,
         lastname: req.session.lastname,
         firstname: req.session.firstname,
-        role: req.session.role,
+        role: 'admin',
         islogged: true,
         authorization: Object.fromEntries(setMapAuthorization(list)),
       });
