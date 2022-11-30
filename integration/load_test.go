@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
@@ -411,11 +410,9 @@ func cast(isRetry bool, castVoteRequest ptypes.CastVoteRequest, contentType, ran
 		return
 	}
 
-	responseBody,err:=ioutil.ReadAll(resp.Body)
-	require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected status: %s %s", resp.Status,responseBody)
-
-	_, err = io.ReadAll(resp.Body)
+	responseBody,err:=io.ReadAll(resp.Body)
 	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected status: %s %s", resp.Status,responseBody)
 
 	resp.Body.Close()
 }
