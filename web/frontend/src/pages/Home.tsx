@@ -44,7 +44,7 @@ const Home: FC = () => {
         </div>
 
         <div className="sm:mx-auto sm:max-w-3xl sm:px-6">
-          <div className="py-12 sm:relative sm:mt-12 sm:py-16 lg:absolute lg:inset-y-0 lg:right-0 lg:w-3/5">
+          <div className="py-12 sm:relative sm:mt-12 sm:py-16 lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
             <div className="hidden sm:block">
               <svg
                 className="absolute top-8 right-1/2 -mr-3 lg:m-0 lg:left-0"
@@ -75,7 +75,7 @@ const Home: FC = () => {
             </div>
             <div className="relative pl-4 -mr-40 sm:mx-auto sm:max-w-3xl sm:px-0 lg:max-w-none lg:h-full lg:pl-12">
               <img
-                className="w-full rounded-md shadow-xl ring-1 ring-black ring-opacity-5 lg:h-full lg:w-auto lg:max-w-none"
+                className="w-full rounded-md shadow-xl ring-1 ring-black ring-opacity-5 lg:h-5/6 lg:w-auto lg:max-w-none"
                 src={introductionImage}
                 alt=""
               />
