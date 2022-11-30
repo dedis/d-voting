@@ -46,9 +46,16 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
     updateChoice,
   } = useQuestionForm(question);
   const [language, setLanguage] = useState('en');
-  const { Title, TitleDe, TitleFr, MaxN, MinN, Choices, ChoicesFr, ChoicesDe } = values;
+  const { Title, TitleDe, TitleFr, MaxN, MinN, Choices } = values;
   const [errors, setErrors] = useState([]);
-
+  let obj = {
+    'en': [''],
+    'fr': [''],
+    'de': ['']
+  }
+  Object.keys(obj).forEach(key=>{
+    Choices.set(key, obj[key])
+  })
   const handleSave = async () => {
     try {
       switch (Type) {
@@ -298,9 +305,8 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                  
       {language === 'en' && (
             <div className="pb-2">
-                {Choices.map((choice: string, idx: number) => (
+                {Choices.get('en').map((choice: string, idx: number) => (
                 <div className="flex w-60" key={`${ID}wrapper${idx}`}>
-        
                     <input
                     key={`${ID}choice${idx}`}
                     value={choice}
@@ -313,7 +319,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                     />
                     
                     <div className="flex ml-1 mt-1.2">
-                    {Choices.length > 1 && (
+                    {Choices.get('en').length > 1 && (
                         <button
                         key={`${ID}deleteChoice${idx}`}
                         type="button"
@@ -322,7 +328,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                         <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
                         </button>
                     )}
-                    {idx === Choices.length - 1 && (
+                    {idx === Choices.get('en').length - 1 && (
                         <button
                         key={`${ID}addChoice${idx}`}
                         type="button"
@@ -337,7 +343,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                 </div>)}
                 {language === 'fr' && (
                     <div className="pb-2">
-                        {ChoicesFr.map((choice: string, idx: number) => (
+                        {Choices.get('fr').map((choice: string, idx: number) => (
                         <div className="flex w-60" key={`${ID}wrapper${idx}`}>
                 
                             <input
@@ -352,7 +358,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                             />
                             
                             <div className="flex ml-1 mt-1.2">
-                            {ChoicesFr.length > 1 && (
+                            {Choices.get('fr').length > 1 && (
                                 <button
                                 key={`${ID}deleteChoice${idx}`}
                                 type="button"
@@ -361,7 +367,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                                 <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
                                 </button>
                             )}
-                            {idx === ChoicesFr.length - 1 && (
+                            {idx === Choices.get('fr').length - 1 && (
                                 <button
                                 key={`${ID}addChoice${idx}`}
                                 type="button"
@@ -376,7 +382,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                         </div>)}  
                         {language === 'de' && (
                             <div className="pb-2">
-                                {ChoicesDe.map((choice: string, idx: number) => (
+                                {Choices.get('de').map((choice: string, idx: number) => (
                                 <div className="flex w-60" key={`${ID}wrapper${idx}`}>
                         
                                     <input
@@ -391,7 +397,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                                     />
                                     
                                     <div className="flex ml-1 mt-1.2">
-                                    {ChoicesDe.length > 1 && (
+                                    {Choices.get('de').length > 1 && (
                                         <button
                                         key={`${ID}deleteChoice${idx}`}
                                         type="button"
@@ -400,7 +406,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                                         <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
                                         </button>
                                     )}
-                                    {idx === ChoicesDe.length - 1 && (
+                                    {idx === Choices.get('de').length - 1 && (
                                         <button
                                         key={`${ID}addChoice${idx}`}
                                         type="button"

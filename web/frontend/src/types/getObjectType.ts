@@ -35,9 +35,7 @@ const newRank = (): types.RankQuestion => {
     TitleDe: '',
     MaxN: 2,
     MinN: 2,
-    Choices: ['', ''],
-    ChoicesDe: ['',''],
-    ChoicesFr: ['',''],
+    Choices: new Map(),
     Type: RANK,
   };
 };
@@ -50,9 +48,7 @@ const newSelect = (): types.SelectQuestion => {
     TitleFr: '',
     MaxN: 1,
     MinN: 1,
-    Choices: [''],
-    ChoicesDe: [''],
-    ChoicesFr: [''],
+    Choices: new Map(),
     Type: SELECT,
   };
 };
@@ -67,9 +63,7 @@ const newText = (): types.TextQuestion => {
     MinN: 0,
     MaxLength: 50,
     Regex: '',
-    Choices: [''],
-    ChoicesDe: [''],
-    ChoicesFr: [''],
+    Choices: new Map([['en', ['']],['fr', ['']],['de', ['']]]),
     Type: TEXT,
   };
 };

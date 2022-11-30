@@ -98,7 +98,7 @@
     "enterSubjectTitleLg2": "Entrer le Titre du sujet en Allemand",
     "errorCandidates": "Vous devez ajouter au moins un candidat!",
     "errorNewCandidate": "Vous êtes de sûr de ne pas vouloir ajouter ",
-    "errorRetrievingElections": "Une erreur semble s'être produite lors de la récupération des sondages sur notre serveur. Contactez l'administrateur de ce site. Erreur: ",
+    "errorRetrievingForms": "Une erreur semble s'être produite lors de la récupération des sondages sur notre serveur. Contactez l'administrateur de ce site. Erreur: ",
     "errorRetrievingForm": "Une erreur semble s'être produite lors de la récupération du sondage sur notre serveur. Contactez l'administrateur de ce site. Erreur:",
     "errorRetrievingProxy": "Une erreur semble s'ếtre produite lors de la récupération des addresses du proxy sur notre serveur. Contactez l'administrateur de ce site.",
     "errorRetrievingNodes": "Une erreur semble s'être produite lors de la récupération des statuts des noeux sur notre serveur. Contactez l'administrateur de ce site.",
