@@ -1,9 +1,7 @@
-import React, { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import { DownloadedResults, RankResults, SelectResults, TextResults } from 'types/form';
-import SelectResult from './components/SelectResult';
-import RankResult from './components/RankResult';
-import TextResult from './components/TextResult';
 import { default as i18n } from 'i18next';
 import {
   ID,
@@ -13,23 +11,24 @@ import {
   SUBJECT,
   SelectQuestion,
   Subject,
-  SubjectElement,
   TEXT,
 } from 'types/configuration';
-import DownloadButton from 'components/buttons/DownloadButton';
-import { useTranslation } from 'react-i18next';
-import saveAs from 'file-saver';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router';
 import useForm from 'components/utils/useForm';
 import { useConfigurationOnly } from 'components/utils/useConfiguration';
+import DownloadButton from 'components/buttons/DownloadButton';
+import Loading from 'pages/Loading';
+import saveAs from 'file-saver';
+import ResultExplanation from './components/ResultExplanation';
+import { Tab } from '@headlessui/react';
+import GroupedResult from './GroupedResult';
+import IndividualResult from './IndividualResult';
 import {
   countRankResult,
   countSelectResult,
   countTextResult,
 } from './components/utils/countResult';
-import Loading from 'pages/Loading';
-import ResultExplanation from './components/ResultExplanation';
 
 // Functional component that displays the result of the votes
 const FormResult: FC = () => {
@@ -43,6 +42,54 @@ const FormResult: FC = () => {
   const [rankResult, setRankResult] = useState<RankResults>(null);
   const [selectResult, setSelectResult] = useState<SelectResults>(null);
   const [textResult, setTextResult] = useState<TextResults>(null);
+
+  const getResultData = (subject: Subject, dataToDownload: DownloadedResults[]) => {
+    dataToDownload.push({ Title: subject.Title });
+
+    subject.Order.forEach((id: ID) => {
+      const element = subject.Elements.get(id);
+      let res = undefined;
+
+      switch (element.Type) {
+        case RANK:
+          const rank = element as RankQuestion;
+
+          if (rankResult.has(id)) {
+            res = countRankResult(rankResult.get(id), element as RankQuestion).resultsInPercent.map(
+              (percent, index) => {
+                return { Candidate: rank.Choices[index], Percentage: `${percent}%` };
+              }
+            );
+            dataToDownload.push({ Title: element.Title, Results: res });
+          }
+          break;
+
+        case SELECT:
+          const select = element as SelectQuestion;
+
+          if (selectResult.has(id)) {
+            res = countSelectResult(selectResult.get(id)).resultsInPercent.map((percent, index) => {
+              return { Candidate: select.Choices[index], Percentage: `${percent}%` };
+            });
+            dataToDownload.push({ Title: element.Title, Results: res });
+          }
+          break;
+
+        case SUBJECT:
+          getResultData(element as Subject, dataToDownload);
+          break;
+
+        case TEXT:
+          if (textResult.has(id)) {
+            res = Array.from(countTextResult(textResult.get(id)).resultsInPercent).map((r) => {
+              return { Candidate: r[0], Percentage: `${r[1]}%` };
+            });
+            dataToDownload.push({ Title: element.Title, Results: res });
+          }
+          break;
+      }
+    });
+  };
 
   // Group the different results by the ID of the question,
   const groupByID = (
@@ -111,55 +158,6 @@ const FormResult: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result]);
 
-  const getResultData = (subject: Subject, dataToDownload: DownloadedResults[]) => {
-    dataToDownload.push({ Title: subject.Title });
-
-    subject.Order.forEach((id: ID) => {
-      const element = subject.Elements.get(id);
-      let res = undefined;
-
-      switch (element.Type) {
-        case RANK:
-          const rank = element as RankQuestion;
-
-          if (rankResult.has(id)) {
-            res = countRankResult(rankResult.get(id), element as RankQuestion).resultsInPercent.map(
-              (percent, index) => {
-                return { Candidate: rank.Choices[index], Percentage: `${percent}%` };
-              }
-            );
-            
-            dataToDownload.push({ Title: element.Title, Results: res });
-          }
-          break;
-
-        case SELECT:
-          const select = element as SelectQuestion;
-
-          if (selectResult.has(id)) {
-            res = countSelectResult(selectResult.get(id)).resultsInPercent.map((percent, index) => {
-              return { Candidate: select.Choices[index], Percentage: `${percent}%` };
-            });
-            dataToDownload.push({ Title: element.Title, Results: res });
-          }
-          break;
-
-        case SUBJECT:
-          getResultData(element as Subject, dataToDownload);
-          break;
-
-        case TEXT:
-          if (textResult.has(id)) {
-            res = Array.from(countTextResult(textResult.get(id)).resultsInPercent).map((r) => {
-              return { Candidate: r[0], Percentage: `${r[1]}%` };
-            });
-            dataToDownload.push({ Title: element.Title, Results: res });
-          }
-          break;
-      }
-    });
-  };
-
   const exportJSONData = () => {
     const fileName = 'result.json';
 
@@ -184,47 +182,6 @@ const FormResult: FC = () => {
     saveAs(fileToSave, fileName);
   };
 
-  const SubjectElementResultDisplay = (element: SubjectElement) => {
-    return (
-      <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
-        <h2 className="text-lg pb-2">{element.Title}</h2>
-        {element.Type === RANK && rankResult.has(element.ID) && (
-          <RankResult rank={element as RankQuestion} rankResult={rankResult.get(element.ID)} />
-        )}
-        {element.Type === SELECT && selectResult.has(element.ID) && (
-          <SelectResult
-            select={element as SelectQuestion}
-            selectResult={selectResult.get(element.ID)}
-          />
-        )}
-        {element.Type === TEXT && textResult.has(element.ID) && (
-          <TextResult textResult={textResult.get(element.ID)} />
-        )}
-      </div>
-    );
-  };
-
-  const displayResults = (subject: Subject) => {
-    return (
-      <div key={subject.ID}>
-        <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-          {subject.Title}
-        </h2>
-        {subject.Order.map((id: ID) => (
-          <div key={id}>
-            {subject.Elements.get(id).Type === SUBJECT ? (
-              <div className="pl-4 sm:pl-6">
-                {displayResults(subject.Elements.get(id) as Subject)}
-              </div>
-            ) : (
-              SubjectElementResultDisplay(subject.Elements.get(id))
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   return (
     <div className="w-[60rem] font-sans px-4 pt-8 pb-4">
       {!loading ? (
@@ -237,7 +194,6 @@ const FormResult: FC = () => {
               <ResultExplanation />
             </div>
           </div>
-
           <div className="w-full pb-4 my-0 sm:my-4">
             <h2 className="text-lg mt-2 sm:mt-4 sm:mb-6 mb-4">
               {t('totalNumberOfVotes', { votes: result.length })}
@@ -246,10 +202,47 @@ const FormResult: FC = () => {
                 {i18n.language == 'en' && titles.en}
                 {i18n.language == 'fr' && titles.fr}
                 {i18n.language == 'de' && titles.de}
+
             </h3>
 
-            <div className="flex flex-col">
-              {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
+            <div>
+              <Tab.Group>
+                <Tab.List className="flex space-x-1 rounded-xl p-1">
+                  <Tab
+                    key="grouped"
+                    className={({ selected }) =>
+                      selected
+                        ? 'w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-white bg-indigo-500 shadow'
+                        : 'w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-gray-700 hover:bg-indigo-100 hover:text-indigo-500'
+                    }>
+                    {t('resGroup')}
+                  </Tab>
+                  <Tab
+                    key="individual"
+                    className={({ selected }) =>
+                      selected
+                        ? 'w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-white bg-indigo-500 shadow'
+                        : 'w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-gray-600 hover:bg-indigo-100 hover:text-indigo-500'
+                    }>
+                    {t('resIndiv')}
+                  </Tab>
+                </Tab.List>
+                <Tab.Panel>
+                  <GroupedResult
+                    rankResult={rankResult}
+                    selectResult={selectResult}
+                    textResult={textResult}
+                  />
+                </Tab.Panel>
+                <Tab.Panel>
+                  <IndividualResult
+                    rankResult={rankResult}
+                    selectResult={selectResult}
+                    textResult={textResult}
+                    ballotNumber={result.length}
+                  />
+                </Tab.Panel>
+              </Tab.Group>
             </div>
           </div>
           <div className="flex my-4">

@@ -2,6 +2,7 @@ import { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Answers, TextQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
+import HintButton from 'components/buttons/HintButton';
 import { default as i18n } from 'i18next';
 
 type TextProps = {
@@ -15,23 +16,23 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
   const { t } = useTranslation();
   const [charCounts, setCharCounts] = useState(new Array<number>(text.Choices.length).fill(0));
 
-  const hintDisplay = () => {
-    let hint = '';
+  const requirementsDisplay = () => {
+    let requirements = '';
     const min = text.MinN;
     const max = text.MaxN;
 
     if (min !== max) {
-      hint =
+      requirements =
         min > 1
           ? t('minText', { minText: min, singularPlural: t('pluralAnswers') })
           : t('minText', { minText: min, singularPlural: t('singularAnswer') });
     } else {
-      hint =
+      requirements =
         min > 1
           ? t('fillText', { minText: min, singularPlural: t('pluralAnswers') })
           : t('fillText', { minText: min, singularPlural: t('singularAnswer') });
     }
-    return <div className="text-sm pl-2 pb-2 text-gray-400">{hint}</div>;
+    return <div className="text-sm pl-2 pb-2 sm:pl-4 text-gray-400">{requirements}</div>;
   };
 
   const handleTextInput = (e: React.ChangeEvent<HTMLTextAreaElement>, choiceIndex: number) => {
@@ -110,11 +111,18 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
 
   return (
     <div>
-      <h3 className="text-lg break-words text-gray-600">
+      <div className="grid grid-rows-1 grid-flow-col">
+        <div>
+          <h3 className="text-lg break-words text-gray-600 w-96">
         {language == 'en' && titles.en}
         {language == 'fr' && titles.fr}
         {language == 'de' && titles.de}</h3>
-      {hintDisplay()}
+        </div>
+        <div>
+          <HintButton text={text.Hint} />
+        </div>
+      </div>
+      <div className="pt-1">{requirementsDisplay()}</div>
       {language == 'en' && (<div className="sm:pl-8 mt-2 pl-6">
         {text.Choices.map((choice, index) => choiceDisplay(choice, index))}
       </div>)}

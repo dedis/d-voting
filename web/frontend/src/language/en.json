@@ -41,6 +41,7 @@
     "enterMaxN": "Enter the MaxN",
     "enterRegex": "Enter your regex",
     "enterTitle": "Enter your Title",
+    "enterHint": "Enter your Hint (optionnal)",
     "mainProperties": "Main properties",
     "additionalProperties": "Additional properties",
     "removeSubject": "Remove subject",
@@ -262,6 +263,8 @@
 
     "actionTextVoter1": "The form is not open yet, you can come back later to vote once it is open.",
     "actionTextVoter2": "The results of the form are not available yet.",
+    "resIndiv": "Individual",
+    "resGroup": "Grouped",
     "choice": "Choice"
   }
 }

@@ -19,8 +19,8 @@ if (process.env.NODE_ENV !== 'production' && process.env.REACT_APP_NOMOCK !== 'o
   const { dvotingserver } = require('./mocks/dvotingserver');
   dvotingserver.start();
 }
-
-const defaultAuth = { isLogged: false, firstname: '', lastname: '', role: '' };
+const arr = new Map<String, Array<String>>();
+const defaultAuth = { isLogged: false, firstname: '', lastname: '', role: '', authorization: arr };
 
 // AuthContext is a global state containing the authentication state. React
 // Context is a way to manage state globally, without having to pass props to
@@ -33,6 +33,7 @@ export interface AuthState {
   firstname: string;
   lastname: string;
   role: string;
+  authorization: Map<String, Array<String>>;
 }
 
 export interface FlashState {
@@ -232,6 +233,7 @@ const AppContainer = () => {
           firstname: result.firstname,
           lastname: result.lastname,
           role: result.role,
+          authorization: new Map(Object.entries(result.authorization)),
         });
 
         // wait for the default proxy to be set

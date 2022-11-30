@@ -3,6 +3,7 @@ import { Draggable, DropResult, Droppable } from 'react-beautiful-dnd';
 import { Answers, ID, RankQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
 import { default as i18n } from 'i18next';
+import HintButton from 'components/buttons/HintButton';
 
 export const handleOnDragEnd = (
   result: DropResult,
@@ -88,11 +89,19 @@ const Rank: FC<RankProps> = ({ rank, answers,language }) => {
 
   return (
     <div className="mb-6">
-      <h3 className="text-lg break-words text-gray-600">
+     <div className="grid grid-rows-1 grid-flow-col">
+        <div>
+        <h3 className="text-lg break-words text-gray-600">
         {language === 'en' && titles.en}
         {language === 'fr' && titles.fr}
         {language === 'de' && titles.de}
       </h3>
+
+        </div>
+        <div>
+          <HintButton text={rank.Hint} />
+        </div>
+      </div>
       <div className="mt-5 px-4 max-w-[300px] sm:pl-8 sm:max-w-md">
         <>
           <Droppable droppableId={String(rank.ID)}>

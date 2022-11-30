@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Answers, SelectQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
 import { default as i18n } from 'i18next';
+import HintButton from 'components/buttons/HintButton';
 type SelectProps = {
   select: SelectQuestion;
   answers: Answers;
@@ -34,26 +35,26 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
     setAnswers(newAnswers);
   };
 
-  const hintDisplay = () => {
-    let hint = '';
+  const requirementsDisplay = () => {
+    let requirements = '';
     const max = select.MaxN;
     const min = select.MinN;
 
     if (max === min) {
-      hint =
+      requirements =
         max > 1
           ? t('selectMin', { minSelect: min, singularPlural: t('pluralAnswers') })
           : t('selectMin', { minSelect: min, singularPlural: t('singularAnswer') });
     } else if (min === 0) {
-      hint =
+      requirements =
         max > 1
           ? t('selectMax', { maxSelect: max, singularPlural: t('pluralAnswers') })
           : t('selectMax', { maxSelect: max, singularPlural: t('singularAnswer') });
     } else {
-      hint = t('selectBetween', { minSelect: min, maxSelect: max });
+      requirements = t('selectBetween', { minSelect: min, maxSelect: max });
     }
 
-    return <div className="text-sm pl-2 pb-2 sm:pl-4 text-gray-400">{hint}</div>;
+    return <div className="text-sm pl-2 pb-2 sm:pl-4 text-gray-400">{requirements}</div>;
   };
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
@@ -84,12 +85,19 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
 
   return (
     <div>
-      <h3 className="text-lg break-words text-gray-600">
-        {language == 'en' && select.Title}
-        {language == 'fr' && select.TitleFr}
-        {language == 'de' && select.TitleDe}</h3>
-      {hintDisplay()}
-      <div className="sm:pl-8 pl-6">
+      <div className="grid grid-rows-1 grid-flow-col">
+        <div>
+          <h3 className="text-lg break-words text-gray-600">
+            {language == 'en' && select.Title}
+            {language == 'fr' && select.TitleFr}
+            {language == 'de' && select.TitleDe}</h3>
+        </div>
+        <div>
+          <HintButton text={select.Hint} />
+        </div>
+      </div>
+      <div className="pt-1">{requirementsDisplay()}</div>
+      <div className="sm:pl-8 mt-2 pl-6">
         {Array.from(answers.SelectAnswers.get(select.ID).entries()).map(
           ([choiceIndex, isChecked]) =>{
             if(language == 'en' )
