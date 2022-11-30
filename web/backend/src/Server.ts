@@ -8,9 +8,20 @@ import crypto from 'crypto';
 import lmdb, { RangeOptions } from 'lmdb';
 import xss from 'xss';
 import createMemoryStore from 'memorystore';
+import { Enforcer, newEnforcer } from 'casbin';
 
 const MemoryStore = createMemoryStore(session);
+const SUBJECT_ROLES = 'roles';
+const SUBJECT_PROXIES = 'proxies';
+const SUBJECT_ELECTION = 'election';
 
+const ACTION_LIST = 'list';
+const ACTION_ACTION_REMOVE = 'remove';
+const ACTION_ADD = 'add';
+const ACTION_PUT = 'put';
+const ACTION_POST = 'post';
+const ACTION_DELETE = 'delete';
+const ACTION_CREATE = 'create';
 // store is used to store the session
 const store = new MemoryStore({
   checkPeriod: 86400000, // prune expired entries every 24h
@@ -24,6 +35,26 @@ const sciper2sess = new Map<number, Set<string>>();
 const app = express();
 
 app.use(morgan('tiny'));
+
+let enf: Enforcer;
+
+const enforcerLoading = newEnforcer('model.conf', 'policy.csv');
+const port = process.env.PORT || 5000;
+
+Promise.all([enforcerLoading])
+  .then((res) => {
+    [enf] = res;
+    console.log(`🛡 Casbin loaded`);
+    app.listen(port);
+    console.log(`🚀 App is listening on port ${port}`);
+  })
+  .catch((err) => {
+    console.error('❌ failed to start:', err);
+  });
+
+function isAuthorized(sciper: number | undefined, subject: string, action: string): boolean {
+  return enf.enforceSync(sciper, subject, action);
+}
 
 declare module 'express-session' {
   export interface SessionData {
@@ -71,6 +102,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // This endpoint allows anyone to get a "default" proxy. Clients can still use
 // the proxy of their choice thought.
+
 app.get('/api/config/proxy', (req, res) => {
   res.status(200).send(process.env.DELA_NODE_URL);
 });
@@ -151,52 +183,64 @@ app.post('/api/logout', (req, res) => {
   });
 });
 
+// This function helps us convert the double list of the authorization
+// returned by the casbin function getFilteredPolicy to a map that link
+// an object to the action authorized
+// list[0] contains the policies so list[i][0] is the sciper
+// list[i][1] is the subject and list[i][2] is the action
+function setMapAuthorization(list: string[][]): Map<String, Array<String>> {
+  const m = new Map<String, Array<String>>();
+  for (let i = 0; i < list.length; i += 1) {
+    const subject = list[i][1];
+    const action = list[i][2];
+    if (m.has(subject)) {
+      m.get(subject)?.push(action);
+    } else {
+      m.set(subject, [action]);
+    }
+  }
+  console.log(m);
+  return m;
+}
+
 // As the user is logged on the app via this express but must also be logged in
 // the react. This endpoint serves to send to the client (actually to react)
 // the information of the current user.
 app.get('/api/personal_info', (req, res) => {
-  res.set('Access-Control-Allow-Origin', '*');
-  if (req.session.userid) {
-    res.json({
-      sciper: req.session.userid,
-      lastname: req.session.lastname,
-      firstname: req.session.firstname,
-      role: req.session.role,
-      islogged: true,
-    });
-  } else {
-    res.json({
-      sciper: 0,
-      lastname: '',
-      firstname: '',
-      role: '',
-      islogged: false,
-    });
-  }
+  enf.getFilteredPolicy(0, String(req.session.userid)).then((list) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    if (req.session.userid) {
+      res.json({
+        sciper: req.session.userid,
+        lastname: req.session.lastname,
+        firstname: req.session.firstname,
+        role: req.session.role,
+        islogged: true,
+        authorization: Object.fromEntries(setMapAuthorization(list)),
+      });
+    } else {
+      res.json({
+        sciper: 0,
+        lastname: '',
+        firstname: '',
+        role: '',
+        islogged: false,
+        authorization: {},
+      });
+    }
+  });
 });
-
-function isAuthorized(roles: string[], req: express.Request): boolean {
-  if (!req.session || !req.session.userid) {
-    return false;
-  }
-
-  const { role } = req.session;
-
-  return roles.includes(role as string);
-}
 
 // ---
 // Users role
 // ---
-
 // This call allow a user that is admin to get the list of the people that have
 // a special role (not a voter).
 app.get('/api/user_rights', (req, res) => {
-  if (!isAuthorized(['admin'], req)) {
+  if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_LIST)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
-
   const opts: RangeOptions = {};
   const users = Array.from(
     usersDB.getRange(opts).map(({ key, value }) => ({ id: '0', sciper: key, role: value }))
@@ -206,12 +250,10 @@ app.get('/api/user_rights', (req, res) => {
 
 // This call (only for admins) allow an admin to add a role to a voter.
 app.post('/api/add_role', (req, res) => {
-  if (!isAuthorized(['admin'], req)) {
+  if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_ADD)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
-
-  // {sciper: xxx, role: xxx}
 
   const { sciper } = req.body;
   const { role } = req.body;
@@ -224,13 +266,12 @@ app.post('/api/add_role', (req, res) => {
 
 // This call (only for admins) allow an admin to remove a role to a user.
 app.post('/api/remove_role', (req, res) => {
-  if (!isAuthorized(['admin'], req)) {
+  if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_ACTION_REMOVE)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
 
   const { sciper } = req.body;
-
   usersDB
     .remove(sciper)
     .then(() => {
@@ -256,8 +297,78 @@ app.post('/api/remove_role', (req, res) => {
 // ---
 // Proxies
 // ---
-
 const proxiesDB = lmdb.open<string, string>({ path: `${process.env.DB_PATH}proxies` });
+app.post('/api/proxies', (req, res) => {
+  if (!isAuthorized(req.session.userid, SUBJECT_PROXIES, ACTION_POST)) {
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
+  }
+  try {
+    const bodydata = req.body;
+    proxiesDB.put(bodydata.NodeAddr, bodydata.Proxy);
+    console.log('put', bodydata.NodeAddr, '=>', bodydata.Proxy);
+    res.status(200).send('ok');
+  } catch (error: any) {
+    res.status(500).send(error.toString());
+  }
+});
+
+app.put('/api/proxies/:nodeAddr', (req, res) => {
+  if (!isAuthorized(req.session.userid, SUBJECT_PROXIES, ACTION_PUT)) {
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
+  }
+
+  let { nodeAddr } = req.params;
+
+  nodeAddr = decodeURIComponent(nodeAddr);
+
+  const proxy = proxiesDB.get(nodeAddr);
+
+  if (proxy === undefined) {
+    res.status(404).send('not found');
+    return;
+  }
+  try {
+    const bodydata = req.body;
+    if (bodydata.Proxy === undefined) {
+      res.status(400).send('bad request, proxy is undefined');
+      return;
+    }
+
+    proxiesDB.put(nodeAddr, bodydata.Proxy);
+    console.log('put', nodeAddr, '=>', bodydata.Proxy);
+    res.status(200).send('ok');
+  } catch (error: any) {
+    res.status(500).send(error.toString());
+  }
+});
+
+app.delete('/api/proxies/:nodeAddr', (req, res) => {
+  if (!isAuthorized(req.session.userid, SUBJECT_PROXIES, ACTION_DELETE)) {
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
+  }
+
+  let { nodeAddr } = req.params;
+
+  nodeAddr = decodeURIComponent(nodeAddr);
+
+  const proxy = proxiesDB.get(nodeAddr);
+
+  if (proxy === undefined) {
+    res.status(404).send('not found');
+    return;
+  }
+
+  try {
+    proxiesDB.remove(nodeAddr);
+    console.log('remove', nodeAddr, '=>', proxy);
+    res.status(200).send('ok');
+  } catch (error: any) {
+    res.status(500).send(error.toString());
+  }
+});
 
 app.get('/api/proxies', (req, res) => {
   const output = new Map<string, string>();
@@ -282,80 +393,6 @@ app.get('/api/proxies/:nodeAddr', (req, res) => {
     NodeAddr: nodeAddr,
     Proxy: proxy,
   });
-});
-
-app.post('/api/proxies', (req, res) => {
-  if (!isAuthorized(['admin', 'operator'], req)) {
-    res.status(400).send('Unauthorized - only admins and operators allowed');
-    return;
-  }
-
-  try {
-    const bodydata = req.body;
-    proxiesDB.put(bodydata.NodeAddr, bodydata.Proxy);
-    console.log('put', bodydata.NodeAddr, '=>', bodydata.Proxy);
-    res.status(200).send('ok');
-  } catch (error: any) {
-    res.status(500).send(error.toString());
-  }
-});
-
-app.put('/api/proxies/:nodeAddr', (req, res) => {
-  if (!isAuthorized(['admin', 'operator'], req)) {
-    res.status(400).send('Unauthorized - only admins and operators allowed');
-    return;
-  }
-
-  let { nodeAddr } = req.params;
-
-  nodeAddr = decodeURIComponent(nodeAddr);
-
-  const proxy = proxiesDB.get(nodeAddr);
-
-  if (proxy === undefined) {
-    res.status(404).send('not found');
-    return;
-  }
-
-  try {
-    const bodydata = req.body;
-    if (bodydata.Proxy === undefined) {
-      res.status(400).send('bad request, proxy is undefined');
-      return;
-    }
-
-    proxiesDB.put(nodeAddr, bodydata.Proxy);
-    console.log('put', nodeAddr, '=>', bodydata.Proxy);
-    res.status(200).send('ok');
-  } catch (error: any) {
-    res.status(500).send(error.toString());
-  }
-});
-
-app.delete('/api/proxies/:nodeAddr', (req, res) => {
-  if (!isAuthorized(['admin', 'operator'], req)) {
-    res.status(400).send('Unauthorized - only admins and operators allowed');
-    return;
-  }
-
-  let { nodeAddr } = req.params;
-
-  nodeAddr = decodeURIComponent(nodeAddr);
-
-  const proxy = proxiesDB.get(nodeAddr);
-
-  if (proxy === undefined) {
-    res.status(404).send('not found');
-    return;
-  }
-
-  try {
-    proxiesDB.remove(nodeAddr);
-    console.log('remove', nodeAddr, '=>', proxy);
-    res.status(200).send('ok');
-  } catch (error: any) {
-    res.status(500).send(error.toString());
-  }
 });
 
 // ---
@@ -461,12 +498,10 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
 
 // Secure /api/evoting to admins and operators
 app.use('/api/evoting/*', (req, res, next) => {
-  if (!isAuthorized(['admin', 'operator'], req)) {
-    console.log('role is:', req.session.role);
+  if (!isAuthorized(req.session.userid, SUBJECT_ELECTION, ACTION_CREATE)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
   }
-
   next();
 });
 
@@ -560,8 +595,3 @@ app.get('*', (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   res.status(404).send(`not found ${xss(url.toString())}`);
 });
-
-const port = process.env.PORT || 5000;
-app.listen(port);
-
-console.log(`App is listening on port ${port}`);
