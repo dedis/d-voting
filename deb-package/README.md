@@ -60,7 +60,6 @@ web backend. For example with nginx:
 
     location /api {
         proxy_pass http://127.0.0.1:6000;
-
     }
 ```
 

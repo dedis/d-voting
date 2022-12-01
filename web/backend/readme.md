@@ -4,7 +4,7 @@ Once the project cloned type `npm install` to install the packages.
 
 # Config
 
-Copy `config.env.template` to `config.en` and replace the variables as needed.
+Copy `config.env.template` to `config.env` and replace the variables as needed.
 
 ## Generate a keypair
 
