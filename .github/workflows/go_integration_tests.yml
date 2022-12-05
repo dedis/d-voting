@@ -21,4 +21,15 @@ jobs:
         uses: actions/checkout@v2
         
       - name: Run the integration test
-        run: go test -timeout 15m -run TestIntegration ./integration/...
+        run: go test -timeout 10m -run TestIntegration ./integration/... 
+
+      - name: Run the crash test
+        run: go test -timeout 10m -run TestCrash ./integration/...
+
+      - name: Run the revote test
+        run: go test -timeout 10m -run TestRevote ./integration/...
+
+      - name: Run the bad vote test
+        run: go test -timeout 10m -run TestBadVote ./integration/...
+
+         
