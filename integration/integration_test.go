@@ -16,8 +16,6 @@ import (
 	delaPkg "go.dedis.ch/dela"
 )
 
-
-
 // Check the shuffled votes versus the cast votes on a few nodes
 func TestIntegration(t *testing.T) {
 	t.Run("3 nodes, 3 votes", getIntegrationTest(3, 3))
@@ -28,10 +26,6 @@ func TestCrash(t *testing.T) {
 	t.Run("5 nodes, 5 votes, 1 fail", getIntegrationTestCrash(5, 5, 1))
 	t.Run("5 nodes, 5 votes, 2 fails", getIntegrationTestCrash(5, 5, 2))
 	t.Run("10 nodes, 5 votes, 3 fails", getIntegrationTestCrash(10, 5, 3))
-}
-
-func TestAddNodes(t *testing.T) {
-	t.Run("5 nodes, 10 votes add 2 node during the process", getIntegrationTestAddNodes(5, 10, 2))
 }
 
 func BenchmarkIntegration(b *testing.B) {
@@ -341,150 +335,6 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 	}
 }
 
-func getIntegrationTestAddNodes(numNodes, numVotes, numNewNodes int) func(*testing.T) {
-	return func(t *testing.T) {
-		t.Parallel()
-
-		adminID := "first admin"
-
-		// ##### SETUP ENV #####
-		// make tests reproducible
-		rand.Seed(1)
-
-		delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
-
-		dirPath, err := os.MkdirTemp(os.TempDir(), "d-voting-three-votes")
-		require.NoError(t, err)
-
-		defer os.RemoveAll(dirPath)
-
-		t.Logf("using temp dir %s", dirPath)
-
-		// ##### CREATE NODES #####
-		nodes := setupDVotingNodes(t, numNodes, dirPath, nil)
-
-		signer := createDVotingAccess(t, nodes, dirPath)
-
-		m := newTxManager(signer, nodes[0], time.Second*time.Duration(numNodes/2+1), numNodes*4)
-
-		err = grantAccess(m, signer)
-		require.NoError(t, err)
-
-		for _, n := range nodes {
-			err = grantAccess(m, n.GetShuffleSigner())
-			require.NoError(t, err)
-		}
-
-		// ##### CREATE FORM #####
-		formID, err := createForm(m, "Three votes form", adminID)
-		require.NoError(t, err)
-
-		time.Sleep(time.Second * 1)
-
-		// ##### SETUP DKG #####
-		actor, err := initDkg(nodes, formID, m.m)
-		require.NoError(t, err)
-
-		// ##### OPEN FORM #####
-		err = openForm(m, formID)
-		require.NoError(t, err)
-
-		formFac := types.NewFormFactory(types.CiphervoteFactory{}, nodes[0].GetRosterFac())
-
-		t.Logf("start casting votes")
-		form, err := getForm(formFac, formID, nodes[0].GetOrdering())
-		require.NoError(t, err)
-
-		newNodes := setupDVotingNodes(t, numNewNodes, dirPath, nodes[0])
-		nodes = append(nodes, newNodes...)
-
-		castedVotes, err := castVotesRandomly(m, actor, form, numVotes)
-		require.NoError(t, err)
-
-		fmt.Println("casted votes:", castedVotes)
-
-		// ##### CLOSE FORM #####
-		err = closeForm(m, formID, adminID)
-		require.NoError(t, err)
-
-		err = waitForStatus(types.Closed, formFac, formID, nodes, numNodes,
-			5*time.Second)
-		require.NoError(t, err)
-
-		// ##### SHUFFLE BALLOTS #####
-		t.Logf("initializing shuffle")
-		sActor, err := initShuffle(nodes)
-		require.NoError(t, err)
-
-		time.Sleep(time.Second * 1)
-
-		t.Logf("shuffling")
-		err = sActor.Shuffle(formID)
-		require.NoError(t, err)
-
-		err = waitForStatus(types.ShuffledBallots, formFac, formID, nodes,
-			numNodes, 2*time.Second*time.Duration(numNodes))
-		require.NoError(t, err)
-
-		// ##### SUBMIT PUBLIC SHARES #####
-		t.Logf("submitting public shares")
-
-		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
-		require.NoError(t, err)
-		err = actor.ComputePubshares()
-		require.NoError(t, err)
-
-		err = waitForStatus(types.PubSharesSubmitted, formFac, formID, nodes,
-			numNodes, 6*time.Second*time.Duration(numNodes))
-		require.NoError(t, err)
-
-		// ##### DECRYPT BALLOTS #####
-		t.Logf("decrypting")
-
-		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
-		t.Logf("PubsharesUnit: %v", form.PubsharesUnits)
-		require.NoError(t, err)
-		err = decryptBallots(m, actor, form)
-		require.NoError(t, err)
-
-		err = waitForStatus(types.ResultAvailable, formFac, formID, nodes,
-			numNodes, 1500*time.Millisecond*time.Duration(numVotes))
-		require.NoError(t, err)
-
-		t.Logf("get vote proof")
-		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
-		require.NoError(t, err)
-
-		fmt.Println("Title of the form : " + form.Configuration.MainTitle)
-		fmt.Println("ID of the form : " + string(form.FormID))
-		fmt.Println("Status of the form : " + strconv.Itoa(int(form.Status)))
-		fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(form.DecryptedBallots)))
-
-		require.Len(t, form.DecryptedBallots, len(castedVotes))
-
-		for _, b := range form.DecryptedBallots {
-			ok := false
-			for i, casted := range castedVotes {
-				if b.Equal(casted) {
-					//remove the casted vote from the list
-					castedVotes = append(castedVotes[:i], castedVotes[i+1:]...)
-					ok = true
-					break
-				}
-			}
-			require.True(t, ok)
-		}
-		require.Empty(t, castedVotes)
-
-		fmt.Println("closing nodes")
-
-		err = closeNodes(nodes)
-		require.NoError(t, err)
-
-		fmt.Println("test done")
-	}
-}
-
 func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 	return func(b *testing.B) {
 
@@ -616,6 +466,3 @@ func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 		fmt.Println("test done")
 	}
 }
-
-// -----------------------------------------------------------------------------
-// Utility functions
