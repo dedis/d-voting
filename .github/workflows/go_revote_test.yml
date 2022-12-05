@@ -19,7 +19,8 @@ jobs:
         
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
-        
-      - name: Run the integration test
-        run: go test -timeout 10m -run TestIntegration ./integration/... 
+
+      - name: Run the revote test
+        run: go test -timeout 10m -run TestRevote ./integration/...
+
          
