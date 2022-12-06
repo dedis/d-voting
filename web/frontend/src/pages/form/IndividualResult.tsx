@@ -41,7 +41,6 @@ const IndividualResult: FC<IndividualResultProps> = ({
   const [currentID, setCurrentID] = useState<number>(0);
 
   const SubjectElementResultDisplay = (element: SubjectElement) => {
-    console.log(element.Type == SELECT ? selectResult.get(element.ID) : 'none');
     return (
       <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
         <h2 className="text-lg pb-2">{element.Title}</h2>
@@ -96,6 +95,33 @@ const IndividualResult: FC<IndividualResultProps> = ({
     setCurrentID((currentID - 1 + ballotNumber) % ballotNumber);
   };
 
+  const handleBlur = (e) => {
+    //console.log(e);
+    try {
+      const value = parseInt(e.target.value);
+    } catch (error) {
+      e.target.value = currentID + 1;
+      return;
+    }
+    if (e.target.value > ballotNumber) {
+      setCurrentID(ballotNumber - 1);
+    } else if (e.target.value < 1) {
+      setCurrentID(0);
+    } else {
+      console.log('in range');
+      setCurrentID(e.target.value - 1);
+    }
+    console.log('ID', currentID);
+    e.target.value = currentID + 1;
+  };
+
+  const handleEnter = (e) => {
+    if (e.key === 'Enter') {
+      handleBlur(e);
+    }
+  };
+
+  // <div className="grow col-span-7 p-2">{'Ballot ' + (currentID + 1)}</div>
   return !loading ? (
     <div>
       <div className="flex flex-col">
@@ -105,7 +131,13 @@ const IndividualResult: FC<IndividualResultProps> = ({
             className="items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
             {t('previous')}
           </button>
-          <div className="grow col-span-7 p-2">{'Ballot ' + (currentID + 1)}</div>
+          <input
+            type="text"
+            min={1}
+            max={ballotNumber}
+            onBlur={(e) => handleBlur(e)}
+            onKeyDown={(e) => handleEnter(e)}
+            className="col-span-7 text-center"></input>
           <button
             onClick={handleNext}
             className="ml-3 relative align-right items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
