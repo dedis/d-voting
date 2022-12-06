@@ -17,6 +17,7 @@ import {
 import { useParams } from 'react-router-dom';
 import useForm from 'components/utils/useForm';
 import { useConfigurationOnly } from 'components/utils/useConfiguration';
+import Loading from 'pages/Loading';
 
 type GroupedResultProps = {
   rankResult: RankResults;
@@ -28,7 +29,7 @@ type GroupedResultProps = {
 const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textResult }) => {
   const { formId } = useParams();
 
-  const { result, configObj } = useForm(formId);
+  const { loading, configObj } = useForm(formId);
   const configuration = useConfigurationOnly(configObj);
 
   const SubjectElementResultDisplay = (element: SubjectElement) => {
@@ -52,7 +53,6 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
   };
 
   const displayResults = (subject: Subject) => {
-    console.log(result);
     return (
       <div key={subject.ID}>
         <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
@@ -73,13 +73,15 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
     );
   };
 
-  return (
+  return !loading ? (
     <div>
       <div className="flex flex-col">
         {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
       </div>
       <div className="flex my-4"></div>
     </div>
+  ) : (
+    <Loading />
   );
 };
 

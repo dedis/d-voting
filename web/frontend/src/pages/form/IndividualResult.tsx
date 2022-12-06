@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from 'react';
 import { RankResults, SelectResults, TextResults } from 'types/form';
-import SelectResult from './components/SelectResult';
+import { IndividualSelectResult } from './components/SelectResult';
 import RankResult from './components/RankResult';
 import TextResult from './components/TextResult';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +18,7 @@ import {
 import { useParams } from 'react-router-dom';
 import useForm from 'components/utils/useForm';
 import { useConfigurationOnly } from 'components/utils/useConfiguration';
+import Loading from 'pages/Loading';
 
 type IndividualResultProps = {
   rankResult: RankResults;
@@ -34,12 +35,13 @@ const IndividualResult: FC<IndividualResultProps> = ({
 }) => {
   const { formId } = useParams();
   const { t } = useTranslation();
-  const { configObj } = useForm(formId);
+  const { loading, configObj } = useForm(formId);
   const configuration = useConfigurationOnly(configObj);
 
   const [currentID, setCurrentID] = useState<number>(0);
 
   const SubjectElementResultDisplay = (element: SubjectElement) => {
+    console.log(element.Type == SELECT ? selectResult.get(element.ID) : 'none');
     return (
       <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
         <h2 className="text-lg pb-2">{element.Title}</h2>
@@ -50,7 +52,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
           />
         )}
         {element.Type === SELECT && selectResult.has(element.ID) && (
-          <SelectResult
+          <IndividualSelectResult
             select={element as SelectQuestion}
             selectResult={[selectResult.get(element.ID)[currentID]]}
           />
@@ -94,7 +96,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
     setCurrentID((currentID - 1 + ballotNumber) % ballotNumber);
   };
 
-  return (
+  return !loading ? (
     <div>
       <div className="flex flex-col">
         <div className="grid grid-cols-9 font-medium rounded-md border-t stext-sm text-center align-center justify-middle text-gray-700 bg-white py-2">
@@ -113,6 +115,8 @@ const IndividualResult: FC<IndividualResultProps> = ({
         {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
       </div>
     </div>
+  ) : (
+    <Loading />
   );
 };
 

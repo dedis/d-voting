@@ -34,4 +34,30 @@ const SelectResult: FC<SelectResultProps> = ({ select, selectResult }) => {
   );
 };
 
+export const IndividualSelectResult: FC<SelectResultProps> = ({ select, selectResult }) => {
+  const displayChoices = (result, index) => {
+    return (
+      <div>
+        <input type="checkbox" checked={result} readOnly />
+      </div>
+    );
+  };
+  return (
+    <div>
+      {selectResult[0].map((result, index) => {
+        return (
+          <React.Fragment>
+            <div className="grid grid-cols-10 px-2 sm:px-4 break-words max-w-xs w-max">
+              <div className="grow col-span-1 h-4 w-4 mr-2 accent-indigo-500 ">
+                {displayChoices(result, index)}
+              </div>
+              <div className="grow col-span-9">{select.Choices[index]}</div>
+            </div>
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+};
+
 export default SelectResult;
