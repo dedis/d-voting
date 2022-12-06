@@ -1,7 +1,8 @@
 import { FC, useEffect, useState } from 'react';
 import { RankResults, SelectResults, TextResults } from 'types/form';
 import { IndividualSelectResult } from './components/SelectResult';
-import RankResult from './components/RankResult';
+import { IndividualTextResult } from './components/TextResult';
+import { IndividualRankResult } from './components/RankResult';
 import { useTranslation } from 'react-i18next';
 import {
   ID,
@@ -19,7 +20,6 @@ import { useParams } from 'react-router-dom';
 import useForm from 'components/utils/useForm';
 import { useConfigurationOnly } from 'components/utils/useConfiguration';
 import Loading from 'pages/Loading';
-import { IndividualTextResult } from './components/TextResult';
 
 type IndividualResultProps = {
   rankResult: RankResults;
@@ -42,12 +42,11 @@ const IndividualResult: FC<IndividualResultProps> = ({
   const [currentID, setCurrentID] = useState<number>(0);
 
   const SubjectElementResultDisplay = (element: SubjectElement) => {
-    console.log(element);
     return (
       <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
         <h2 className="text-lg pb-2">{element.Title}</h2>
         {element.Type === RANK && rankResult.has(element.ID) && (
-          <RankResult
+          <IndividualRankResult
             rank={element as RankQuestion}
             rankResult={[rankResult.get(element.ID)[currentID]]}
           />

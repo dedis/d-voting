@@ -4,13 +4,15 @@ import ProgressBar from './ProgressBar';
 import { countTextResult } from './utils/countResult';
 
 type TextResultProps = {
+  textResult: string[][];
+};
+type IndividualTextResultProps = {
   text: TextQuestion;
   textResult: string[][];
 };
 
 // Display the results of a text question.
-const TextResult: FC<TextResultProps> = ({ text, textResult }) => {
-  console.log('should not be here');
+const TextResult: FC<TextResultProps> = ({ textResult }) => {
   const { resultsInPercent, maxKey } = countTextResult(textResult);
 
   const displayResults = () => {
@@ -35,15 +37,14 @@ const TextResult: FC<TextResultProps> = ({ text, textResult }) => {
   );
 };
 
-export const IndividualTextResult: FC<TextResultProps> = ({ text, textResult }) => {
-  console.log('here');
+export const IndividualTextResult: FC<IndividualTextResultProps> = ({ text, textResult }) => {
   return (
     <div>
       {textResult[0].map((result, index) => {
         return (
           <React.Fragment>
             <div className="flex flex-row px-2 sm:px-4 break-words max-w-xs w-max">
-              <div className="mr-2">{text.Choices[index]}:</div>
+              <div className="mr-2 font-bold">{text.Choices[index]}:</div>
               <div>{result}</div>
             </div>
           </React.Fragment>

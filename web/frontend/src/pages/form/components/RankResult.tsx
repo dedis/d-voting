@@ -34,4 +34,21 @@ const RankResult: FC<RankResultProps> = ({ rank, rankResult }) => {
   );
 };
 
+export const IndividualRankResult: FC<RankResultProps> = ({ rank, rankResult }) => {
+  return (
+    <div>
+      {rankResult[0].map((result, index) => {
+        return (
+          <React.Fragment>
+            <div className="flex flex-row px-2 sm:px-4 break-words max-w-xs w-max">
+              <div className="mr-2 font-bold">{index + 1}:</div>
+              <div>{rank.Choices[rankResult[0].indexOf(index)]}</div>
+            </div>
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+};
+
 export default RankResult;
