@@ -38,7 +38,7 @@ export const IndividualSelectResult: FC<SelectResultProps> = ({ select, selectRe
   const displayChoices = (result, index) => {
     return (
       <div>
-        <input type="checkbox" checked={result} readOnly />
+        <input type="checkbox" key={index} checked={result} readOnly />
       </div>
     );
   };
@@ -47,11 +47,9 @@ export const IndividualSelectResult: FC<SelectResultProps> = ({ select, selectRe
       {selectResult[0].map((result, index) => {
         return (
           <React.Fragment>
-            <div className="grid grid-cols-10 px-2 sm:px-4 break-words max-w-xs w-max">
-              <div className="grow col-span-1 h-4 w-4 mr-2 accent-indigo-500 ">
-                {displayChoices(result, index)}
-              </div>
-              <div className="grow col-span-9">{select.Choices[index]}</div>
+            <div className="flex flex-row px-2 sm:px-4 break-words max-w-xs w-max">
+              <div className="h-4 w-4 mr-2 accent-indigo-500 ">{displayChoices(result, index)}</div>
+              <div>{select.Choices[index]}</div>
             </div>
           </React.Fragment>
         );

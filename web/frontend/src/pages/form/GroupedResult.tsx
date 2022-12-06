@@ -13,6 +13,7 @@ import {
   Subject,
   SubjectElement,
   TEXT,
+  TextQuestion,
 } from 'types/configuration';
 import { useParams } from 'react-router-dom';
 import useForm from 'components/utils/useForm';
@@ -46,7 +47,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
           />
         )}
         {element.Type === TEXT && textResult.has(element.ID) && (
-          <TextResult textResult={textResult.get(element.ID)} />
+          <TextResult text={element as TextQuestion} textResult={textResult.get(element.ID)} />
         )}
       </div>
     );

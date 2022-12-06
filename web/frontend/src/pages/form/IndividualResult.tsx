@@ -2,7 +2,6 @@ import { FC, useEffect, useState } from 'react';
 import { RankResults, SelectResults, TextResults } from 'types/form';
 import { IndividualSelectResult } from './components/SelectResult';
 import RankResult from './components/RankResult';
-import TextResult from './components/TextResult';
 import { useTranslation } from 'react-i18next';
 import {
   ID,
@@ -14,11 +13,13 @@ import {
   Subject,
   SubjectElement,
   TEXT,
+  TextQuestion,
 } from 'types/configuration';
 import { useParams } from 'react-router-dom';
 import useForm from 'components/utils/useForm';
 import { useConfigurationOnly } from 'components/utils/useConfiguration';
 import Loading from 'pages/Loading';
+import { IndividualTextResult } from './components/TextResult';
 
 type IndividualResultProps = {
   rankResult: RankResults;
@@ -41,6 +42,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
   const [currentID, setCurrentID] = useState<number>(0);
 
   const SubjectElementResultDisplay = (element: SubjectElement) => {
+    console.log(element);
     return (
       <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
         <h2 className="text-lg pb-2">{element.Title}</h2>
@@ -57,7 +59,10 @@ const IndividualResult: FC<IndividualResultProps> = ({
           />
         )}
         {element.Type === TEXT && textResult.has(element.ID) && (
-          <TextResult textResult={[textResult.get(element.ID)[currentID]]} />
+          <IndividualTextResult
+            text={element as TextQuestion}
+            textResult={[textResult.get(element.ID)[currentID]]}
+          />
         )}
       </div>
     );
@@ -131,13 +136,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
             className="items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
             {t('previous')}
           </button>
-          <input
-            type="text"
-            min={1}
-            max={ballotNumber}
-            onBlur={(e) => handleBlur(e)}
-            onKeyDown={(e) => handleEnter(e)}
-            className="col-span-7 text-center"></input>
+
           <button
             onClick={handleNext}
             className="ml-3 relative align-right items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
@@ -151,5 +150,12 @@ const IndividualResult: FC<IndividualResultProps> = ({
     <Loading />
   );
 };
+/*          <input
+            type="text"
+            min={1}
+            max={ballotNumber}
+            onBlur={(e) => handleBlur(e)}
+            onKeyDown={(e) => handleEnter(e)}
+            className="col-span-7 text-center"></input>*/
 
 export default IndividualResult;
