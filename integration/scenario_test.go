@@ -206,7 +206,7 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 		var bMarshal types.Ballot
 		form := types.Form{
 			Configuration: fakeConfiguration,
-			FormID:    formID,
+			FormID:        formID,
 			BallotSize:    BallotSize,
 		}
 

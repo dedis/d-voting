@@ -95,9 +95,7 @@ func startFormProcessLoad(wg *sync.WaitGroup, numNodes, numVotesPerSec, numSec i
 	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s  %s", resp.Status,body)
-
-	
+	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s  %s", resp.Status, body)
 
 	t.Log("response body:", string(body))
 	resp.Body.Close()
@@ -369,19 +367,18 @@ func castVotesLoad(numVotesPerSec, numSec, BallotSize, chunksPerBallot int, form
 
 	for i := 0; i < numSec; i++ {
 		// send the votes asynchrounously and wait for the response
-		
+
 		for j := 0; j < numVotesPerSec; j++ {
 			randomproxy := proxyArray[rand.Intn(proxyCount)]
 			castVoteRequest := ptypes.CastVoteRequest{
-				UserID: "user"+strconv.Itoa(i*numVotesPerSec+j),
+				UserID: "user" + strconv.Itoa(i*numVotesPerSec+j),
 				Ballot: ballot,
 			}
-			go cast(false,castVoteRequest, contentType, randomproxy, formID, secret, t)
+			go cast(false, castVoteRequest, contentType, randomproxy, formID, secret, t)
 
 		}
 		t.Logf("casted votes %d", (i+1)*numVotesPerSec)
 		time.Sleep(time.Second)
-
 
 	}
 
@@ -390,11 +387,8 @@ func castVotesLoad(numVotesPerSec, numSec, BallotSize, chunksPerBallot int, form
 	return votesfrontend
 }
 
+func cast(isRetry bool, castVoteRequest ptypes.CastVoteRequest, contentType, randomproxy, formID string, secret kyber.Scalar, t *testing.T) {
 
-func cast(isRetry bool, castVoteRequest ptypes.CastVoteRequest, contentType, randomproxy, formID string, secret kyber.Scalar, t *testing.T)  {
-	
-
-	
 	t.Logf("cast ballot to proxy %v", randomproxy)
 
 	// t.Logf("vote is: %v", castVoteRequest)
@@ -403,16 +397,16 @@ func cast(isRetry bool, castVoteRequest ptypes.CastVoteRequest, contentType, ran
 
 	resp, err := http.Post(randomproxy+"/evoting/forms/"+formID+"/vote", contentType, bytes.NewBuffer(signed))
 	require.NoError(t, err)
-	
+
 	if http.StatusOK != resp.StatusCode && !isRetry {
 		t.Logf("unexpected status: %s retry", resp.Status)
-		cast(true,castVoteRequest, contentType, randomproxy, formID, secret, t)
+		cast(true, castVoteRequest, contentType, randomproxy, formID, secret, t)
 		return
 	}
 
-	responseBody,err:=io.ReadAll(resp.Body)
+	responseBody, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected status: %s %s", resp.Status,responseBody)
+	require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected status: %s %s", resp.Status, responseBody)
 
 	resp.Body.Close()
 }

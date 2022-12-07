@@ -19,7 +19,7 @@ import (
 // Check the shuffled votes versus the cast votes on a few nodes
 func TestIntegration(t *testing.T) {
 	t.Run("3 nodes, 3 votes", getIntegrationTest(4, 5))
-	
+
 }
 
 func TestCrash(t *testing.T) {

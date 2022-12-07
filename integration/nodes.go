@@ -34,7 +34,6 @@ func closeNodes(nodes []dVotingCosiDela) error {
 	}
 }
 
-
 // waitForStatus polls the nodes until they all updated to the expected status
 // for the given form. An error is raised if the timeout expires.
 func waitForStatus(status types.Status, formFac types.FormFactory,
