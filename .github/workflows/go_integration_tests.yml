@@ -22,8 +22,6 @@ jobs:
         
       - name: Run the integration test
         run: go test -timeout 10m -run TestIntegration ./integration/... 
-         
-
   test:
     name: TestBadVote
     runs-on: ubuntu-latest
