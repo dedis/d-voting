@@ -8,8 +8,8 @@ on:
 
 jobs:
 
-  test:
-    name: TestIntegration
+  integration:
+    name: Test Integration
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go ^1.17
@@ -22,8 +22,8 @@ jobs:
         
       - name: Run the integration test
         run: go test -timeout 10m -run TestIntegration ./integration/... 
-  test:
-    name: TestBadVote
+  bad_vote:
+    name: Test bad vote
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go ^1.17
@@ -36,8 +36,8 @@ jobs:
 
       - name: Run the bad vote test
         run: go test -timeout 10m -run TestBadVote ./integration/...
-  test:
-    name: TestCrash
+  crash:
+    name: Test crash
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go ^1.17
@@ -50,8 +50,8 @@ jobs:
         
       - name: Run the crash test
         run: go test -timeout 10m -run TestCrash ./integration/...
-  test:
-    name: TestRevote
+  revote:
+    name: Test revote
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go ^1.17
