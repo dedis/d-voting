@@ -232,12 +232,15 @@ app.post('/api/add_role', (req, res) => {
         return;
       }
 
-      usersDB.put(sciper, role).catch((error) => {
+      usersDB
+      .put(sciper, role)
+      .then(()=>res.status(200).send('Role added'))
+      .catch((error) => {
         res.status(500).send('Failed to add role');
         console.log(error);
       });
 
-      res.status(200).send('Role added');
+      
     })
     .catch((error) => {
       res.status(500).send('Failed to check Sciper');
