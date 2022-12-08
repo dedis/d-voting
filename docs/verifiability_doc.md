@@ -33,7 +33,7 @@ The current d-voting (version num) didn't have this design yet. The current encr
     Backend ->>- User: 200 OK text/plain
 ```
 
-As the picture show, the Frontend will encrypt the ballot using Elgamal encryption which has a nondeterministic result, and then sends it to the Backend to verify and sign. After that, the backend will send the encrypted + signed ballot to the blockchain node to put it on the chain. However, since the encryption is nondeterministic thus the user will not able to verify their casted ballot stored in the node.
+As the picture show, the Frontend will encrypt the ballot using Elgamal encryption which has a nondeterministic result and then sends it to the Backend to verify and sign. After that, the backend will send the encrypted + signed ballot to the blockchain node to put it on the chain. However, since the encryption is nondeterministic thus the user will not able to verify their casted ballot stored in the node.
 
 In this document, we aim to design an implementation to achieve verifiability of the voters' encrypted vote without leaking ballot information to others.
 
@@ -78,6 +78,66 @@ sequenceDiagram
 
 ```
 
+
+## Proposed solution
+According to our requirements, we assume that the frontend is trusted. If frontend is compromised, the adversary can already know the plaintext of the ballot which breaks the confidentiality of the ballot.
+
+When the frontend after the frontend encrypted the ballot (use default non-deterministic encryption), it can hash the encrypted ballot and show the hash str of the encrypted ballot. The frontend sends the encrypted ballot to the backend.
+
+A user can then check the hash of the vote by looking at the details of the form if the hash of the vote matches the one he received.
+
+
+```mermaid
+sequenceDiagram
+    autonumber
+
+    participant User
+    participant Backend
+    participant NodeX
+    participant NodeY
+
+    User ->>+ NodeX: GET election info
+    NodeX ->>- User: Return election info.
+
+    User ->>+ Backend: POST /api/evoting/elections/<electionId>
+    Note over User: data: {"Ballot": ...}
+    Note over User: encrypt ballot via Elgamal encryption using electionPubKey
+    Note over User: generate hash of encrypted ballot and show to user
+    Note over User, Backend: data = encrypted ballot
+    Note over Backend: check role and sign payload.
+    Note over Backend: add userID inside payload.
+    Note over Backend: sign = kyber.sign.schnorr.sign(edCurve, scalar, hash);
+    Backend ->>+ NodeX: POST /evoting/elections/
+
+    Note over Backend, NodeX: data: {"Payload": dataStrB64, "Signature": ""}
+    Note over NodeX: verify and execute, then boardcast 
+    NodeX ->> NodeY: boardcase via gRPC
+
+    NodeX ->>- Backend: 200 OK text/plain
+    Backend ->>- User: 200 OK text/plain + voteSecret
+
+    User ->>+ NodeX: get form details 
+    NodeX ->>- User: return form details and hash of encrypted vote.
+    Note over User: check the hash of the vote is the same or not.
+```
+
+However, this design is still not perfect because it didn't have coercion resistance property because coercers will know the Hash of encrypted ballot during the vote. We can achieve coercion resistance via moved the encryption process to the backend and use benaloh challenge protocol to encrypt the vote. But currently our system didn't require coercion resistance thus we will not implement this.
+
+### frontend
+- Edit the submit vote function
+    - hash the encrypted ballot and show to the user.
+- Edit form details page to show the hash of ballot.
+    - A user can select an election to see the details.
+    - In the detail page, it show who is the voter and the hash of their ballot.
+    - User can check if the hash they received is the same as the hash on the details.
+
+### Blockchain node
+- edit api "/evoting/forms/{formID}", add the hash of the ballot to the form structure.
+
+
+## Extension coercion protection
+Here we proposed a solution to protect against coercion. However, this will not be implemented because it will need to change most of the current architecture. We will implement the Benaloh challenge in this design.
+
 ### Benaloh Challenge
 [Benaloh Challenge](https://docs.rs/benaloh-challenge/latest/benaloh_challenge/) (also known as an Interactive Device Challenge), a crytographic technique to ensure the honesty of an untrusted device. While orignially conceived in the context of voting using an electronic device, it is useful for all untrusted computations that are deterministic with the exception of using an RNG. Most cryptography fits in this category.
 
@@ -110,64 +170,16 @@ sequenceDiagram
     Note Over User, TrustedDevice: can repeat the protocol as many as they wish until casts her ballot.
 ```
 
-The voting machine must produce the commitment before it knows wether it will be challanged or not. If the voting machine tries to cheat (change the vote), it does not know if it will be challanged or if the vote will be cast before it must commit to the ciphertext of the encrytpted vote. This means that any attempt at cheating by the voting machine will have a chance of being caught.
+The voting machine must produce the commitment before it knows whether it will be challenged or not. If the voting machine tries to cheat (change the vote), it does not know if it will be challenged or if the vote will be cast before it must commit to the ciphertext of the encrypted vote. This means that any attempt at cheating by the voting machine will have a chance of being caught.
 
-In the context of an election, the Benaloh Challange ensues that systematic cheating by voting machines will be discoverd with a very high probability. Changing a few votes has a decent chance of going undetected, but every time the voting machine cheats, it risks being caught if misjudges when a user might choose to challenge.
+In the context of an election, the Benaloh Challenge ensues that systematic cheating by voting machines will be discovered with a very high probability. Changing a few votes has a decent chance of going undetected, but every time the voting machine cheats, it risks being caught if misjudges when a user might choose to challenge.
 
+### Proposed solution
 
-## Proposed solution 1
-When frontend encrypt the ballot, it randomly generate an voteSecret (UUID) for the ballot and then used it as a random seed as a parameter for the Elgamal Curve. After the vote been encrypted and send to backend, User will receive a message the voteSecret. The user later can use the voteSecret during the verification process to check if its vote has been casted correctly or not.
+Just like the Benaloh challenge, a user can assume that the backend is untrusted, and they have a Benaloh challenge with the backend.
 
-```mermaid
-sequenceDiagram
-    autonumber
+The user first encrypts their ballot using the election public key and then sent it to the backend. Then the backend encrypted the encrypted ballot again with a randomly generated seed and sends the hash of the enc(enc(ballot)) to the user. 
 
-    participant User
-    participant Backend
-    participant NodeX
-    participant NodeY
+Then the user can choose to challenge (which backend reveals the random seed) or accept (which backend executes the vote).
 
-    User ->>+ NodeX: GET election info
-    NodeX ->>- User: Return election info.
-
-    User ->>+ Backend: POST /api/evoting/elections/<electionId>
-    Note over User: data: {"Ballot": ...}
-    Note over User: generate random voteSecret, used it as Elgamal seed
-    Note over User: encrypt ballot via Elgamal encryption using electionPubKey
-    Note over User, Backend: data = encrypted ballot
-    Note over Backend: check role and sign payload.
-    Note over Backend: add userID inside payload.
-    Note over Backend: sign = kyber.sign.schnorr.sign(edCurve, scalar, hash);
-    Backend ->>+ NodeX: POST /evoting/elections/
-
-    Note over Backend, NodeX: data: {"Payload": dataStrB64, "Signature": ""}
-    Note over NodeX: verify and execute, then boardcast 
-    NodeX ->> NodeY: boardcase via gRPC
-
-    NodeX ->>- Backend: 200 OK text/plain
-    Backend ->>- User: 200 OK text/plain + voteSecret
-
-    Note over User: use voteSecret as an input for verification function.
-    User ->>+ NodeX: get encrypted ballot for that user.
-    NodeX ->>- User: return encrypted ballot.
-```
-
-However, this design is still not perfect because it didn't have coercion resistance property because coercers will know the voteSecret during the vote. We can achieve coercion resistance via moved the encryption process to the backend and use benaloh challenge protocol to encrypt the vote. But currently our system didn't require coercion resistance thus we will not implement this.
-
-### frontend
-- Edit the submit vote function
-    - generate a random voteSecret
-        - can use either UUID or short UUID.
-        - make sure to use cryptographically secure pseudorandom number generator library to generate this number
-    - use the voteSecret as a random seed input to the encryption function.
-    - show the voteSecret to user after the frontend send the request to the backend.
-- Create a page for verify the ballot
-    - A user can select the specific election they want to verify.
-    - The user fill the election form and last input the voteSecret.
-    - The frontend will create a ciphertext using the voteSecret and the ballot choice.
-    - The frontend request the encrypted vote from the node and check if the encrypted vote is same as the ciphertext.
-    - The frontend will show the compare result to the user.
-
-### Blockchain node
-- edit api "/evoting/forms/{formID}", add the hash of the ballot.
-
+With this approach implemented, we are able to have coercion protection. However, the node will need to decrypt the ballot two times which requires changing the decryption process and increasing the execution time.
