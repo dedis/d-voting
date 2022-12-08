@@ -99,29 +99,33 @@ const IndividualResult: FC<IndividualResultProps> = ({
     setCurrentID((currentID - 1 + ballotNumber) % ballotNumber);
   };
 
-  const handleBlur = (e) => {
+  const handleBlur = () => {
     //console.log(e);
+    let value = -1;
+    console.log('bef', document.getElementById('ballotNumber').getAttribute('value'));
+    document.getElementById('ballotNumber').setAttribute('value', '-1');
+    console.log('aft', document.getElementById('ballotNumber').getAttribute('value'));
     try {
-      const value = parseInt(e.target.value);
+      value = parseInt(document.getElementById('ballotNumber').getAttribute('value'));
+      if (value > ballotNumber) {
+        setCurrentID(ballotNumber - 1);
+      } else if (value < 1) {
+        setCurrentID(0);
+      } else {
+        setCurrentID(value - 1);
+      }
     } catch (error) {
-      e.target.value = currentID + 1;
-      return;
+      document.getElementById('ballotNumber').setAttribute('value', (currentID + 1).toString());
     }
-    if (e.target.value > ballotNumber) {
-      setCurrentID(ballotNumber - 1);
-    } else if (e.target.value < 1) {
-      setCurrentID(0);
-    } else {
-      console.log('in range');
-      setCurrentID(e.target.value - 1);
-    }
-    console.log('ID', currentID);
-    e.target.value = currentID + 1;
+    document.getElementById('ballotNumber').setAttribute('value', (currentID + 1).toString());
+    console.log(document.getElementById('ballotNumber').getAttribute('value'));
+    console.log('ID', (currentID + 1).toString());
+    console.log('bN', ballotNumber);
   };
 
   const handleEnter = (e) => {
     if (e.key === 'Enter') {
-      handleBlur(e);
+      handleBlur();
     }
   };
 
@@ -135,7 +139,14 @@ const IndividualResult: FC<IndividualResultProps> = ({
             className="items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
             {t('previous')}
           </button>
-
+          <input
+            type="text"
+            id="ballotNumber"
+            onBlur={(e) => handleBlur()}
+            onKeyDown={(e) => handleEnter(e)}
+            className="col-span-7 text-center"
+            defaultValue={currentID + 1}
+          />
           <button
             onClick={handleNext}
             className="ml-3 relative align-right items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">

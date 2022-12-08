@@ -229,7 +229,7 @@ const FormResult: FC = () => {
               </Tab.Group>
             </div>
           </div>
-          <div className="flex my-4">
+          <div className="flex my-4" hidden={loading}>
             <button
               type="button"
               onClick={() => navigate(-1)}
