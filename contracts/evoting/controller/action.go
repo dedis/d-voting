@@ -169,7 +169,7 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 	router := mux.NewRouter()
 
 	router.HandleFunc(formPath, ep.NewForm).Methods("POST")
-	router.HandleFunc("/evoting/transactions", ep.IsTxnIncluded).Methods("GET")
+	router.HandleFunc("/evoting/transactions/{token}", ep.IsTxnIncluded).Methods("GET")
 	router.HandleFunc(formPath, ep.Forms).Methods("GET")
 	router.HandleFunc(formPath, eproxy.AllowCORS).Methods("OPTIONS")
 	router.HandleFunc(formIDPath, ep.Form).Methods("GET")
@@ -184,6 +184,7 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 	proxy.RegisterHandler(formPath, router.ServeHTTP)
 	proxy.RegisterHandler(formPathSlash, router.ServeHTTP)
 	proxy.RegisterHandler("/evoting/transactions", router.ServeHTTP)
+	proxy.RegisterHandler("/evoting/transactions/", router.ServeHTTP)
 
 	dela.Logger.Info().Msg("d-voting proxy handlers registered")
 

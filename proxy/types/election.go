@@ -29,7 +29,7 @@ type CreateFormRequest struct {
 // CreateFormResponse defines the HTTP response when creating a form
 type CreateFormResponse struct {
 	FormID string // hex-encoded
-	TransactionInfo TransactionInfo
+	Token string
 }
 
 // CastVoteRequest defines the HTTP request for casting a vote
@@ -49,7 +49,7 @@ type EGPairJSON struct {
 	C []byte
 }
 
-// TransactionInfo defines the HTTP response when sending a transaction to the blockchain
+// TransactionInfo defines the information of a transaction 
 type TransactionInfo struct {
 	Status TransactionStatus // 0 if not yet included, 1 if included, 2 if rejected
 	TransactionID []byte
@@ -58,6 +58,13 @@ type TransactionInfo struct {
 	Hash    []byte // signature of the transaction
 	Signature []byte // signature of the transaction
 }
+
+// TransactionInfoToSend defines the HTTP response when sending transaction infos to the client
+type TransactionInfoToSend struct {
+	Status TransactionStatus // 0 if not yet included, 1 if included, 2 if rejected
+	Token string
+}
+
 
 
 

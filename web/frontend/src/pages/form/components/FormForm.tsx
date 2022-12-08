@@ -83,9 +83,9 @@ const FormForm: FC<FormFormProps> = () => {
 
         console.log(response);
 
-        console.log(response.TransactionInfo);
+        console.log(response.Token);
 
-        pollTransaction(checkTransaction, response.TransactionInfo, 1000, 30).then(
+        pollTransaction(checkTransaction, response.Token, 1000, 30).then(
           () => {
             setNavigateDestination('/forms/' + response.FormID);
             setTextModal(`${t('successCreateForm')} ${response.FormID}`);

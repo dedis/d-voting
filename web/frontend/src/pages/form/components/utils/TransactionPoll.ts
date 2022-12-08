@@ -1,5 +1,5 @@
 const pollTransaction = (
-  endpoint: RequestInfo,
+  endpoint: (token: string) => string,
   data: any,
   interval: number,
   maxAttempts: number
@@ -9,27 +9,27 @@ const pollTransaction = (
   const request = {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
-    data: data,
   };
 
-  const executePoll = async (resolve, reject) => {
+  const executePoll = async (resolve, reject): Promise<any> => {
     try {
       attempts += 1;
       console.log('Request:' + JSON.stringify(request));
-      const response = await fetch(endpoint, request);
+      const response = await fetch(endpoint(data), request);
       const result = await response.json();
+      console.log('Result:' + JSON.stringify(result));
 
       if (!response.ok) {
         throw new Error(JSON.stringify(result));
       }
 
-      request.data = result;
+      data = result.Token;
 
-      if (result.Status === '1') {
+      if (result.Status === 1) {
         return resolve(result);
       }
 
-      if (result.Status === '2') {
+      if (result.Status === 2) {
         throw new Error('Transaction Rejected');
       }
 
