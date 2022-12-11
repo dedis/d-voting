@@ -10,13 +10,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/dedis/d-voting/proxy/types"
 	"go.dedis.ch/kyber/v3/suites"
 )
-
-const inclusionTimeout = 10 * time.Second
 
 var suite = suites.MustFind("ed25519")
 

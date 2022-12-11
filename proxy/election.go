@@ -655,11 +655,7 @@ func (h *form) checkHash(status ptypes.TransactionStatus, transactionID []byte, 
 	hash.Write([]byte(strconv.FormatInt(Time, 10)))
 
 	// check if the hash is valid
-	if !bytes.Equal(hash.Sum(nil), Hash) {
-		return false
-	}
-
-	return true
+	return bytes.Equal(hash.Sum(nil), Hash)
 }
 
 // checkSignature checks if the signature is valid
@@ -674,7 +670,7 @@ func (h *form) checkTxnIncluded(transactionID []byte, lastBlockIdx uint64) (ptyp
 	// first get the block
 	idx := lastBlockIdx
 
-	for true {
+	for {
 
 		blockLink, err := h.blocks.GetByIndex(idx)
 		// if we reached the end of the blockchain
@@ -692,29 +688,6 @@ func (h *form) checkTxnIncluded(transactionID []byte, lastBlockIdx uint64) (ptyp
 
 		idx++
 	}
-
-	return ptypes.RejectedTransaction, idx - 1
-
-}
-
-// waitForTxnID blocks until `ID` is included or `events` is closed.
-func (h *form) waitForTxnID(events <-chan ordering.Event, ID []byte) error {
-	for event := range events {
-		for _, res := range event.Transactions {
-			if !bytes.Equal(res.GetTransaction().GetID(), ID) {
-				continue
-			}
-
-			ok, msg := res.GetStatus()
-			if !ok {
-				return xerrors.Errorf("transaction %x denied : %s", ID, msg)
-			}
-
-			return nil
-		}
-	}
-
-	return xerrors.New("transaction not found")
 }
 
 func (h *form) getFormsMetadata() (types.FormsMetadata, error) {
@@ -904,7 +877,7 @@ func sendResponse(w http.ResponseWriter, response any) error {
 	w.Header().Set("Content-Type", "application/json")
 
 	// Status et token
-	
+
 	err := json.NewEncoder(w).Encode(response)
 	if err != nil {
 		http.Error(w, "failed to write in ResponseWriter: "+err.Error(),
