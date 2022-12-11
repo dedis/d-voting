@@ -38,7 +38,7 @@ export const IndividualSelectResult: FC<SelectResultProps> = ({ select, selectRe
   const displayChoices = (result, index) => {
     return (
       <div>
-        <input type="checkbox" key={index} checked={result} readOnly />
+        <input type="checkbox" key={index} checked={result} disabled />
       </div>
     );
   };

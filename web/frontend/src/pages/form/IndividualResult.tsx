@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from 'react';
-import { RankResults, SelectResults, TextResults } from 'types/form';
+import { DownloadedResults, RankResults, SelectResults, TextResults } from 'types/form';
 import { IndividualSelectResult } from './components/SelectResult';
 import { IndividualTextResult } from './components/TextResult';
 import { IndividualRankResult } from './components/RankResult';
@@ -16,10 +16,13 @@ import {
   TEXT,
   TextQuestion,
 } from 'types/configuration';
+import DownloadButton from 'components/buttons/DownloadButton';
 import { useParams } from 'react-router-dom';
 import useForm from 'components/utils/useForm';
 import { useConfigurationOnly } from 'components/utils/useConfiguration';
 import Loading from 'pages/Loading';
+import saveAs from 'file-saver';
+import { useNavigate } from 'react-router';
 
 type IndividualResultProps = {
   rankResult: RankResults;
@@ -36,7 +39,8 @@ const IndividualResult: FC<IndividualResultProps> = ({
 }) => {
   const { formId } = useParams();
   const { t } = useTranslation();
-  const { loading, configObj } = useForm(formId);
+  const navigate = useNavigate();
+  const { loading, result, configObj } = useForm(formId);
   const configuration = useConfigurationOnly(configObj);
 
   const [currentID, setCurrentID] = useState<number>(0);
@@ -87,45 +91,108 @@ const IndividualResult: FC<IndividualResultProps> = ({
       </div>
     );
   };
+
+  const getResultData = (subject: Subject, dataToDownload: DownloadedResults[]) => {
+    dataToDownload.push({ Title: subject.Title });
+
+    subject.Order.forEach((id: ID) => {
+      const element = subject.Elements.get(id);
+      let res = undefined;
+
+      switch (element.Type) {
+        case RANK:
+          const rankQues = element as RankQuestion;
+
+          if (rankResult.has(id)) {
+            res = rankResult.get(id)[currentID].map((rank, index) => {
+              return {
+                Placement: `${index + 1}`,
+                Holder: rankQues.Choices[rankResult.get(id)[currentID].indexOf(index)],
+              };
+            });
+            dataToDownload.push({ Title: element.Title, Results: res });
+          }
+          break;
+
+        case SELECT:
+          const selectQues = element as SelectQuestion;
+
+          if (selectResult.has(id)) {
+            res = selectResult.get(id)[currentID].map((select, index) => {
+              const checked = select ? 'True' : 'False';
+              return { Candidate: selectQues.Choices[index], Checked: checked };
+            });
+            dataToDownload.push({ Title: element.Title, Results: res });
+          }
+          break;
+
+        case SUBJECT:
+          getResultData(element as Subject, dataToDownload);
+          break;
+
+        case TEXT:
+          const textQues = element as TextQuestion;
+
+          if (textResult.has(id)) {
+            res = textResult.get(id)[currentID].map((text, index) => {
+              return { Field: textQues.Choices[index], Answer: text };
+            });
+            dataToDownload.push({ Title: element.Title, Results: res });
+          }
+          break;
+      }
+    });
+  };
+
+  const exportJSONData = () => {
+    const fileName = `result_${configuration.MainTitle}_Ballot${currentID + 1}.json`;
+
+    const dataToDownload: DownloadedResults[] = [];
+
+    configuration.Scaffold.forEach((subject: Subject) => {
+      getResultData(subject, dataToDownload);
+    });
+
+    const data = {
+      Title: configuration.MainTitle,
+      BallotNumber: currentID + 1,
+      Results: dataToDownload,
+    };
+
+    const fileToSave = new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json',
+    });
+
+    saveAs(fileToSave, fileName);
+  };
+
   useEffect(() => {
     configuration.Scaffold.map((subject: Subject) => displayResults(subject));
   }, [currentID]);
 
   const handleNext = (): void => {
-    setCurrentID((currentID + 1) % ballotNumber);
+    setCurrentID(currentID + 1);
   };
 
   const handlePrevious = (): void => {
-    setCurrentID((currentID - 1 + ballotNumber) % ballotNumber);
+    setCurrentID(currentID - 1);
   };
 
-  const handleBlur = () => {
-    //console.log(e);
-    let value = -1;
-    console.log('bef', document.getElementById('ballotNumber').getAttribute('value'));
-    document.getElementById('ballotNumber').setAttribute('value', '-1');
-    console.log('aft', document.getElementById('ballotNumber').getAttribute('value'));
-    try {
-      value = parseInt(document.getElementById('ballotNumber').getAttribute('value'));
-      if (value > ballotNumber) {
-        setCurrentID(ballotNumber - 1);
-      } else if (value < 1) {
-        setCurrentID(0);
-      } else {
-        setCurrentID(value - 1);
-      }
-    } catch (error) {
-      document.getElementById('ballotNumber').setAttribute('value', (currentID + 1).toString());
-    }
-    document.getElementById('ballotNumber').setAttribute('value', (currentID + 1).toString());
-    console.log(document.getElementById('ballotNumber').getAttribute('value'));
-    console.log('ID', (currentID + 1).toString());
-    console.log('bN', ballotNumber);
+  const handleBlur = (e) => {
+    setCurrentID(e.target.value - 1);
   };
 
   const handleEnter = (e) => {
-    if (e.key === 'Enter') {
-      handleBlur();
+    switch (e.key) {
+      case 'Enter':
+        handleBlur(e);
+        break;
+      case 'ArrowUp':
+        handleNext();
+        break;
+      case 'ArrowDown':
+        handlePrevious();
+        break;
     }
   };
 
@@ -134,26 +201,29 @@ const IndividualResult: FC<IndividualResultProps> = ({
     <div>
       <div className="flex flex-col">
         <div className="grid grid-cols-9 font-medium rounded-md border-t stext-sm text-center align-center justify-middle text-gray-700 bg-white py-2">
-          <button
-            onClick={handlePrevious}
-            className="items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-            {t('previous')}
-          </button>
           <input
             type="text"
-            id="ballotNumber"
-            onBlur={(e) => handleBlur()}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            title="Please enter a number"
+            onChange={(e) => console.log(e.target.value)}
+            onBlur={(e) => handleBlur(e)}
             onKeyDown={(e) => handleEnter(e)}
-            className="col-span-7 text-center"
-            defaultValue={currentID + 1}
+            className="col-span-7 col-start-2 text-center"
+            value={1}
           />
-          <button
-            onClick={handleNext}
-            className="ml-3 relative align-right items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-            {t('next')}
-          </button>
         </div>
         {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
+      </div>
+      <div className="flex my-4">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="text-gray-700 my-2 mr-2 items-center px-4 py-2 border rounded-md text-sm hover:text-indigo-500">
+          {t('back')}
+        </button>
+
+        <DownloadButton exportData={exportJSONData}>{t('exportJSON')}</DownloadButton>
       </div>
     </div>
   ) : (
