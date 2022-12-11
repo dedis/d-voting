@@ -136,17 +136,16 @@ const FormResult: FC = () => {
 
     return { rankRes, selectRes, textRes };
   };
-  const [titles,setTitles]= useState<any>({});
-  useEffect (()=> {
-    try{
-      console.log('config', configuration.MainTitle)
-      const ts = JSON.parse(configuration.MainTitle)
-      setTitles(ts)   
-    }catch(e){
-        console.log('error',e)
+  const [titles, setTitles] = useState<any>({});
+  useEffect(() => {
+    try {
+      console.log('config', configuration.MainTitle);
+      const ts = JSON.parse(configuration.MainTitle);
+      setTitles(ts);
+    } catch (e) {
+      console.log('error', e);
     }
-   
-  }, [configuration])
+  }, [configuration]);
   useEffect(() => {
     if (result !== null) {
       const { rankRes, selectRes, textRes } = groupResultsByID();
@@ -199,10 +198,9 @@ const FormResult: FC = () => {
               {t('totalNumberOfVotes', { votes: result.length })}
             </h2>
             <h3 className="py-6 border-t text-2xl text-center text-gray-700">
-                {i18n.language == 'en' && titles.en}
-                {i18n.language == 'fr' && titles.fr}
-                {i18n.language == 'de' && titles.de}
-
+              {i18n.language === 'en' && titles.en}
+              {i18n.language === 'fr' && titles.fr}
+              {i18n.language === 'de' && titles.de}
             </h3>
 
             <div>

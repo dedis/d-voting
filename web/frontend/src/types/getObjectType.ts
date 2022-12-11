@@ -1,3 +1,4 @@
+import { string } from 'prop-types';
 import ShortUniqueId from 'short-unique-id';
 import * as types from './configuration';
 import { ID, RANK, SELECT, SUBJECT, TEXT } from './configuration';
@@ -24,9 +25,10 @@ const newSubject = (): types.Subject => {
     Order: [],
     Type: SUBJECT,
     Elements: new Map(),
+    Choice: '',
   };
 };
-
+const obj = {'en': [''], 'fr': [''], 'de' : ['']}
 const newRank = (): types.RankQuestion => {
   return {
     ID: uid(),
@@ -35,11 +37,12 @@ const newRank = (): types.RankQuestion => {
     TitleDe: '',
     MaxN: 2,
     MinN: 2,
-    Choices: [''],
-    ChoicesFr: [''],
-    ChoicesDe: [''],
+    Choices: new Map(Object.entries(obj)),
     Type: RANK,
     Hint: '',
+    HintFr: '',
+    HintDe: '',
+    Choice: '',
   };
 };
 
@@ -51,12 +54,12 @@ const newSelect = (): types.SelectQuestion => {
     TitleFr: '',
     MaxN: 1,
     MinN: 1,
-    //Choices: new Map(),
-    Choices: [''],
-    ChoicesFr: [''],
-    ChoicesDe: [''],
+    Choices: new Map(Object.entries(obj)),
     Type: SELECT,
     Hint: '',
+    HintFr: '',
+    HintDe: '',
+    Choice: '',
   };
 };
 
@@ -70,12 +73,12 @@ const newText = (): types.TextQuestion => {
     MinN: 0,
     MaxLength: 50,
     Regex: '',
-    //Choices: new Map([['en', ['']],['fr', ['']],['de', ['']]]),
-    Choices: [''],
-    ChoicesFr: [''],
-    ChoicesDe: [''],
+    Choices: new Map(Object.entries(obj)),
     Type: TEXT,
     Hint: '',
+    HintFr: '',
+    HintDe: '',
+    Choice: '',
   };
 };
 
@@ -111,35 +114,59 @@ const toArraysOfSubjectElement = (
   const textQuestion: types.TextQuestion[] = [];
   const subjects: types.Subject[] = [];
   let title = '';
+  let choice = '';
   elements.forEach((element) => {
     switch (element.Type) {
       case RANK:
-        title = JSON.stringify({en : element.Title, fr : element.TitleFr, de : element.TitleDe});
-        rankQuestion.push({...element as types.RankQuestion, Title: title});
+        console.log('je suis passer par la')
+        title = JSON.stringify({
+          en: element.Title,
+          fr: element.TitleFr,
+          de: element.TitleDe,
+        });
+        choice =JSON.stringify({
+          en : (element as types.RankQuestion).Choices.get('en'),
+          fr : (element as types.RankQuestion).Choices.get('fr'),
+          de : (element as types.RankQuestion).Choices.get('de')
+        });
+        
+        rankQuestion.push({ ...(element as types.RankQuestion), Title: title,Choice : choice});
 
         break;
       case SELECT:
-        title = JSON.stringify({en : element.Title, fr : element.TitleFr, de : element.TitleDe});
-        selectQuestion.push({...element as types.SelectQuestion, Title : title});
+        title = JSON.stringify({
+          en: element.Title,
+          fr: element.TitleFr,
+          de: element.TitleDe,
+        });
+        selectQuestion.push({
+          ...(element as types.SelectQuestion),
+          Title: title,
+        });
         break;
       case TEXT:
-        title = JSON.stringify({en : element.Title, fr : element.TitleFr, de : element.TitleDe});
-
-        textQuestion.push({
-            ...element as types.TextQuestion,
-            Title: title,
+        title = JSON.stringify({
+          en: element.Title,
+          fr: element.TitleFr,
+          de: element.TitleDe,
         });
-        console.log('ok')
+        textQuestion.push({
+          ...(element as types.TextQuestion),
+          Title: title,
+        });
+        console.log('ok');
         break;
       case SUBJECT:
-        title = JSON.stringify({en : element.Title, fr : element.TitleFr, de : element.TitleDe});
-        
-        subjects.push({
-            ...element as types.Subject,
-            Title: title,
-        
+        title = JSON.stringify({
+          en: element.Title,
+          fr: element.TitleFr,
+          de: element.TitleDe,
         });
-        console.log('ok')
+        subjects.push({
+          ...(element as types.Subject),
+          Title: title,
+        });
+        console.log('ok');
         break;
     }
   });

@@ -20,7 +20,6 @@ import { PencilIcon } from '@heroicons/react/solid';
 import AddQuestionModal from './AddQuestionModal';
 import { useTranslation } from 'react-i18next';
 import RemoveElementModal from './RemoveElementModal';
-import { default as i18n } from 'i18next';
 const MAX_NESTED_SUBJECT = 1;
 
 type SubjectComponentProps = {

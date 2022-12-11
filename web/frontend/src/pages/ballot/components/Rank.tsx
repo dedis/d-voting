@@ -2,7 +2,6 @@ import { FC, useEffect, useState } from 'react';
 import { Draggable, DropResult, Droppable } from 'react-beautiful-dnd';
 import { Answers, ID, RankQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
-import { default as i18n } from 'i18next';
 import HintButton from 'components/buttons/HintButton';
 
 export const handleOnDragEnd = (
@@ -28,10 +27,10 @@ export const handleOnDragEnd = (
 type RankProps = {
   rank: RankQuestion;
   answers: Answers;
-  language : string;
+  language: string;
 };
 
-const Rank: FC<RankProps> = ({ rank, answers,language }) => {
+const Rank: FC<RankProps> = ({ rank, answers, language }) => {
   const RankListIcon = () => {
     return (
       <svg
@@ -89,13 +88,13 @@ const Rank: FC<RankProps> = ({ rank, answers,language }) => {
 
   return (
     <div className="mb-6">
-     <div className="grid grid-rows-1 grid-flow-col">
+      <div className="grid grid-rows-1 grid-flow-col">
         <div>
-        <h3 className="text-lg break-words text-gray-600">
-        {language === 'en' && titles.en}
-        {language === 'fr' && titles.fr}
-        {language === 'de' && titles.de}
-      </h3>
+          <h3 className="text-lg break-words text-gray-600">
+            {language === 'en' && titles.en}
+            {language === 'fr' && titles.fr}
+            {language === 'de' && titles.de}
+          </h3>
         </div>
         <div>
           <HintButton text={rank.Hint} />
@@ -108,12 +107,12 @@ const Rank: FC<RankProps> = ({ rank, answers,language }) => {
               <ul className={rank.ID} {...provided.droppableProps} ref={provided.innerRef}>
                 {Array.from(answers.RankAnswers.get(rank.ID).entries()).map(
                   ([rankIndex, choiceIndex]) => {
-                    if(language == 'en')
-                    return choiceDisplay(rank.Choices[choiceIndex], rankIndex)
-                else if (language == 'fr')    
-                    return choiceDisplay(rank.ChoicesFr[choiceIndex], rankIndex)
-                else if (language == 'de')    
-                    return choiceDisplay(rank.ChoicesDe[choiceIndex], rankIndex)  
+                    if (language == 'en')
+                      return choiceDisplay(rank.Choices.get('en')[choiceIndex], rankIndex);
+                    else if (language == 'fr')
+                      return choiceDisplay(rank.Choices.get('fr')[choiceIndex], rankIndex);
+                    else if (language == 'de')
+                      return choiceDisplay(rank.Choices.get('de')[choiceIndex], rankIndex);
                   }
                 )}
                 {provided.placeholder}

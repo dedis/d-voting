@@ -15,7 +15,7 @@ type QuestionProps = {
 };
 
 const Question: FC<QuestionProps> = ({ question, notifyParent, removeQuestion }) => {
-  const { Title, Type ,TitleFr, TitleDe} = question;
+  const { Title, Type, TitleFr, TitleDe } = question;
   const [openModal, setOpenModal] = useState<boolean>(false);
 
   const dropdownContent: {

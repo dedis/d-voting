@@ -36,7 +36,7 @@ const selectsSchema = yup.object({
           });
         }
 
-        if (MaxN > Choices.length) {
+        if (MaxN > Choices.get('en').length) {
           return this.createError({
             path,
             message: `MaxN should be less or equal to Choices length in selects [objectID: ${ID}]`,
@@ -83,13 +83,13 @@ const selectsSchema = yup.object({
         const { path, parent } = this;
         const { MaxN, Choices, ID } = parent;
 
-        if (Choices.length < MaxN) {
+        if (Choices.get('en').length < MaxN) {
           return this.createError({
             path,
             message: `Choices array length should be at least equal to Max in selects [objectID: ${ID}]`,
           });
         }
-        if (Choices.includes('')) {
+        if (Choices.get('en').includes('') || Choices.get('fr').includes('') || Choices.get('de').includes('')) {
           return this.createError({
             path,
             message: `Choices should not be empty in selects [objectID: ${ID}]`,
@@ -181,13 +181,13 @@ const ranksSchema = yup.object({
         const { path, parent } = this;
         const { MinN, MaxN, Choices, ID } = parent;
 
-        if (Choices.length !== MaxN || Choices.length !== MinN) {
+        if (Choices.get('en').length !== MaxN || Choices.get('en').length !== MinN) {
           return this.createError({
             path,
             message: `Choices array length should be equal to MaxN and MinN in ranks [objectID: ${ID}]`,
           });
         }
-        if (Choices.includes('')) {
+        if (Choices.get('en').includes('') || Choices.get('fr').includes('') || Choices.get('de').includes('')) {
           return this.createError({
             path,
             message: `Choices should not be empty in ranks [objectID: ${ID}]`,
@@ -301,7 +301,7 @@ const textsSchema = yup.object({
         const { path, parent } = this;
         const { MaxN, Choices, ID } = parent;
 
-        if (Choices.length !== MaxN) {
+        if (Choices.get('en').length !== MaxN) {
           return this.createError({
             path,
             message: `Choices array length should be equal to the number of choices [objectID: ${ID}]`,

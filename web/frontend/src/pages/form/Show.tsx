@@ -52,7 +52,6 @@ const FormShow: FC = () => {
   const ongoingItem = 'ongoingAction' + formID;
   const nodeToSetupItem = 'nodeToSetup' + formID;
 
-  
   // called by a DKG row
   const notifyDKGState = (node: string, info: InternalDKGInfo) => {
     if (

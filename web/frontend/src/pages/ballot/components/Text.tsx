@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { Answers, TextQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
 import HintButton from 'components/buttons/HintButton';
-import { default as i18n } from 'i18next';
 
 type TextProps = {
   text: TextQuestion;
@@ -14,7 +13,7 @@ type TextProps = {
 
 const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
   const { t } = useTranslation();
-  const [charCounts, setCharCounts] = useState(new Array<number>(text.Choices.length).fill(0));
+  const [charCounts, setCharCounts] = useState(new Array<number>(text.Choices.get('en').length).fill(0));
 
   const requirementsDisplay = () => {
     let requirements = '';
@@ -114,24 +113,31 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
       <div className="grid grid-rows-1 grid-flow-col">
         <div>
           <h3 className="text-lg break-words text-gray-600 w-96">
-        {language === 'en' && titles.en}
-        {language === 'fr' && titles.fr}
-        {language === 'de' && titles.de}</h3>
+            {language === 'en' && titles.en}
+            {language === 'fr' && titles.fr}
+            {language === 'de' && titles.de}
+          </h3>
         </div>
         <div>
           <HintButton text={text.Hint} />
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>
-      {language == 'en' && (<div className="sm:pl-8 mt-2 pl-6">
-        {text.Choices.map((choice, index) => choiceDisplay(choice, index))}
-      </div>)}
-      {language == 'fr' && (<div className="sm:pl-8 mt-2 pl-6">
-        {text.ChoicesFr.map((choice, index) => choiceDisplay(choice, index))}
-      </div>)}
-      {language == 'de' && (<div className="sm:pl-8 mt-2 pl-6">
-        {text.ChoicesDe.map((choice, index) => choiceDisplay(choice, index))}
-      </div>)}
+      {language == 'en' && (
+        <div className="sm:pl-8 mt-2 pl-6">
+          {text.Choices.get('en').map((choice, index) => choiceDisplay(choice, index))}
+        </div>
+      )}
+      {language == 'fr' && (
+        <div className="sm:pl-8 mt-2 pl-6">
+          {text.Choices.get('fr').map((choice, index) => choiceDisplay(choice, index))}
+        </div>
+      )}
+      {language == 'de' && (
+        <div className="sm:pl-8 mt-2 pl-6">
+          {text.Choices.get('de').map((choice, index) => choiceDisplay(choice, index))}
+        </div>
+      )}
       <div className="text-red-600 text-sm py-2 sm:pl-2 pl-1">{answers.Errors.get(text.ID)}</div>
     </div>
   );

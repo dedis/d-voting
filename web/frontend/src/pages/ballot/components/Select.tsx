@@ -2,7 +2,6 @@ import { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Answers, SelectQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
-import { default as i18n } from 'i18next';
 import HintButton from 'components/buttons/HintButton';
 type SelectProps = {
   select: SelectQuestion;
@@ -19,7 +18,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
     let selectAnswers = newAnswers.SelectAnswers.get(select.ID);
 
     if (select.MaxN === 1) {
-      selectAnswers = new Array<boolean>(select.Choices.length).fill(false);
+      selectAnswers = new Array<boolean>(select.Choices.get('en').length).fill(false);
     }
 
     selectAnswers[choiceIndex] = e.target.checked;
@@ -90,7 +89,8 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
           <h3 className="text-lg break-words text-gray-600">
             {language == 'en' && select.Title}
             {language == 'fr' && select.TitleFr}
-            {language == 'de' && select.TitleDe}</h3>
+            {language == 'de' && select.TitleDe}
+          </h3>
         </div>
         <div>
           <HintButton text={select.Hint} />
@@ -99,15 +99,14 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
       <div className="pt-1">{requirementsDisplay()}</div>
       <div className="sm:pl-8 mt-2 pl-6">
         {Array.from(answers.SelectAnswers.get(select.ID).entries()).map(
-          ([choiceIndex, isChecked]) =>{
-            if(language == 'en' )
-                return choiceDisplay(isChecked, select.Choices[choiceIndex], choiceIndex)
-            else if(language == 'fr')
-                return choiceDisplay(isChecked, select.Choices[choiceIndex], choiceIndex)
-            else if(language == 'de') 
-                return choiceDisplay(isChecked, select.Choices[choiceIndex], choiceIndex)
+          ([choiceIndex, isChecked]) => {
+            if (language === 'en')
+              return choiceDisplay(isChecked, select.Choices[choiceIndex], choiceIndex);
+            else if (language === 'fr')
+              return choiceDisplay(isChecked, select.Choices[choiceIndex], choiceIndex);
+            else if (language === 'de')
+              return choiceDisplay(isChecked, select.Choices[choiceIndex], choiceIndex);
           }
-         
         )}
       </div>
       <div className="text-red-600 text-sm py-2 sm:pl-4 pl-2">{answers.Errors.get(select.ID)}</div>
