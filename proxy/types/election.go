@@ -12,7 +12,7 @@ const (
 	UnknownTransactionStatus TransactionStatus = 0
 	// IncludedTransaction is the status of a transaction that has been included
 	IncludedTransaction TransactionStatus = 1
-	// RejectedTransaction is the status of a transaction that is not included and will never be
+	// RejectedTransaction is the status of a transaction will never be included
 	RejectedTransaction TransactionStatus = 2
 )
 
@@ -59,7 +59,11 @@ type TransactionInfo struct {
 	Signature []byte // signature of the transaction
 }
 
-// TransactionInfoToSend defines the HTTP response when sending transaction infos to the client
+// TransactionInfoToSend defines the HTTP response when sending 
+// transaction infos to the client so that he can use the status
+// of the transaction to know if it has been included or not
+// and if it has not been included, he can just use the token
+// and ask again later
 type TransactionInfoToSend struct {
 	Status TransactionStatus // 0 if not yet included, 1 if included, 2 if rejected
 	Token string

@@ -586,9 +586,6 @@ app.use('/api/evoting/*', (req, res) => {
   sendToDela(dataStr, req, res);
 });
 
-
-
-
 // Handles any requests that don't match the ones above
 app.get('*', (req, res) => {
   console.log('404 not found');

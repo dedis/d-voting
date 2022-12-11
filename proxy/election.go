@@ -766,54 +766,20 @@ func (h *form) submitTxn(ctx context.Context, cmd evoting.Command,
 		return nil, 0, xerrors.Errorf("failed to create transaction: %v", err)
 	}
 
-	//watchCtx, cancel := context.WithTimeout(ctx, inclusionTimeout) //plus besoin de timeout
-	//defer cancel()
-
-	// events := h.orderingSvc.Watch(watchCtx) il faudra implementer ca lorsque l'on devra appeler checkTxnIncluded
-
+	// get the last block
 	lastBlock, err := h.blocks.Last()
 	if err != nil {
 		return nil, 0, xerrors.Errorf("failed to get last block: %v", err)
 	}
 	lastBlockIdx := lastBlock.GetBlock().GetIndex()
 
-	err = h.pool.Add(tx) //dans l'idee, on ajoute la transaction au pool et on sauvegarde le bloc qui debute,
-	// ensuite on dit au frontend que ca a bien ete added en lui transmettant le txnID
-	// le frontend peut alors lui meme verifier si la transaction est bien incluse dans le bloc
-	// en passant par le proxy et sa fonction checkTxnIncluded
-
+	err = h.pool.Add(tx)
 	if err != nil {
 		return nil, 0, xerrors.Errorf("failed to add transaction to the pool: %v", err)
 	}
-	/*
-		err = h.waitForTxnID(events, tx.GetID())
-		if err != nil {
-			return nil, xerrors.Errorf("failed to wait for transaction: %v", err)
-		}
-	*/
 
 	return tx.GetID(), lastBlockIdx, nil
 }
-
-// A function that checks if a transaction is included in a block
-/*func (h *form) checkTxnIncluded(events <-chan ordering.Event, ID []byte) (bool, error) {
-	for event := range events {
-		for _, res := range event.Transactions {
-			if !bytes.Equal(res.GetTransaction().GetID(), ID) {
-				continue
-			}
-
-			ok, msg := res.GetStatus()
-			if !ok {
-				return false, xerrors.Errorf("transaction %x denied : %s", ID, msg)
-			}
-
-			return true, nil
-		}
-	}
-
-	return false, nil
-}*/
 
 func (h *form) sendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBlockIdx uint64, status ptypes.TransactionStatus) error {
 
