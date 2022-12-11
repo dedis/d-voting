@@ -105,7 +105,9 @@ const FormForm: FC<FormFormProps> = () => {
     const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(JSON.stringify(data))}`;
     const link = document.createElement('a');
     link.href = jsonString;
-    link.download = MainTitle + '.json';
+    const regexPattern = /[^a-zA-Z0-9]/g;
+    const title = MainTitle.replace(regexPattern, '_').slice(0, 99); // replace spaces with underscores
+    link.download = title + '.json';
     link.click();
   };
 
