@@ -110,7 +110,6 @@ const Ballot: FC = () => {
     setUserErrors('');
     sendBallot();
     event.currentTarget.disabled = true;
-    console.log('button clicked');
   };
 
   return (
