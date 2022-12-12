@@ -7,10 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"io"
-	"math/rand"
 	"net/http"
-	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -18,7 +15,6 @@ import (
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	ptypes "github.com/dedis/d-voting/proxy/types"
-	"github.com/dedis/d-voting/services/dkg"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
@@ -26,6 +22,7 @@ import (
 	"go.dedis.ch/dela/serde"
 	jsonDela "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/sign/schnorr"
 	"golang.org/x/xerrors"
 )
 
@@ -33,12 +30,6 @@ var serdecontext = jsonDela.NewContext()
 
 func encodeID(ID string) types.ID {
 	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
-}
-
-func ballotIsNull(ballot types.Ballot) bool {
-	return ballot.SelectResultIDs == nil && ballot.SelectResult == nil &&
-		ballot.RankResultIDs == nil && ballot.RankResult == nil &&
-		ballot.TextResultIDs == nil && ballot.TextResult == nil
 }
 
 // for integration tests
@@ -165,143 +156,6 @@ func getForm(formFac serde.Factory, formID []byte,
 	return form, nil
 }
 
-func castVotesRandomly(m txManager, actor dkg.Actor, form types.Form,
-	numberOfVotes int) ([]types.Ballot, error) {
-
-	possibleBallots := []string{
-		string("select:" + encodeID("bb") + ":0,0,1,0\n" +
-			"text:" + encodeID("ee") + ":eWVz\n\n"), //encoding of "yes"
-		string("select:" + encodeID("bb") + ":1,1,0,0\n" +
-			"text:" + encodeID("ee") + ":amE=\n\n"), //encoding of "ja
-		string("select:" + encodeID("bb") + ":0,0,0,1\n" +
-			"text:" + encodeID("ee") + ":b3Vp\n\n"), //encoding of "oui"
-	}
-
-	votes := make([]types.Ballot, numberOfVotes)
-
-	for i := 0; i < numberOfVotes; i++ {
-		randomIndex := rand.Intn(len(possibleBallots))
-		vote := possibleBallots[randomIndex]
-
-		ciphervote, err := marshallBallot(strings.NewReader(vote), actor, form.ChunksPerBallot())
-		if err != nil {
-			return nil, xerrors.Errorf("failed to marshallBallot: %v", err)
-		}
-
-		userID := "user " + strconv.Itoa(i)
-
-		castVote := types.CastVote{
-			FormID: form.FormID,
-			UserID: userID,
-			Ballot: ciphervote,
-		}
-
-		data, err := castVote.Serialize(serdecontext)
-		if err != nil {
-			return nil, xerrors.Errorf("failed to serialize cast vote: %v", err)
-		}
-
-		args := []txn.Arg{
-			{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
-			{Key: evoting.FormArg, Value: data},
-			{Key: evoting.CmdArg, Value: []byte(evoting.CmdCastVote)},
-		}
-
-		_, err = m.addAndWait(args...)
-		if err != nil {
-			return nil, xerrors.Errorf(addAndWaitErr, err)
-		}
-
-		var ballot types.Ballot
-		err = ballot.Unmarshal(vote, form)
-		if err != nil {
-			return nil, xerrors.Errorf("failed to unmarshal ballot: %v", err)
-		}
-
-		votes[i] = ballot
-	}
-
-	return votes, nil
-}
-
-func castBadVote(m txManager, actor dkg.Actor, form types.Form, numberOfBadVotes int) error {
-
-	possibleBallots := []string{
-		string("select:" + encodeID("bb") + ":1,0,1,1\n" +
-			"text:" + encodeID("ee") + ":bm9ub25vbm8=\n\n"), //encoding of "nononono"
-		string("select:" + encodeID("bb") + ":1,1,1,1\n" +
-			"text:" + encodeID("ee") + ":bm8=\n\n"), //encoding of "no"
-
-	}
-
-	for i := 0; i < numberOfBadVotes; i++ {
-		randomIndex := rand.Intn(len(possibleBallots))
-		vote := possibleBallots[randomIndex]
-
-		ciphervote, err := marshallBallot(strings.NewReader(vote), actor, form.ChunksPerBallot())
-		if err != nil {
-			return xerrors.Errorf("failed to marshallBallot: %v", err)
-		}
-
-		userID := "badUser " + strconv.Itoa(i)
-
-		castVote := types.CastVote{
-			FormID: form.FormID,
-			UserID: userID,
-			Ballot: ciphervote,
-		}
-
-		data, err := castVote.Serialize(serdecontext)
-		if err != nil {
-			return xerrors.Errorf("failed to serialize cast vote: %v", err)
-		}
-
-		args := []txn.Arg{
-			{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
-			{Key: evoting.FormArg, Value: data},
-			{Key: evoting.CmdArg, Value: []byte(evoting.CmdCastVote)},
-		}
-
-		_, err = m.addAndWait(args...)
-		if err != nil {
-			return xerrors.Errorf(addAndWaitErr, err)
-		}
-
-		//votes[i] = ballot
-	}
-
-	return nil
-}
-
-func marshallBallot(vote io.Reader, actor dkg.Actor, chunks int) (types.Ciphervote, error) {
-
-	var ballot = make([]types.EGPair, chunks)
-
-	buf := make([]byte, 29)
-
-	for i := 0; i < chunks; i++ {
-		var K, C kyber.Point
-		var err error
-
-		n, err := vote.Read(buf)
-		if err != nil {
-			return nil, xerrors.Errorf("failed to read: %v", err)
-		}
-
-		K, C, _, err = actor.Encrypt(buf[:n])
-		if err != nil {
-			return types.Ciphervote{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
-		}
-
-		ballot[i] = types.EGPair{
-			K: K,
-			C: C,
-		}
-	}
-
-	return ballot, nil
-}
-
 func closeForm(m txManager, formID []byte, admin string) error {
 	closeForm := &types.CloseForm{
 		FormID: hex.EncodeToString(formID),
@@ -322,34 +176,6 @@ func closeForm(m txManager, formID []byte, admin string) error {
 	_, err = m.addAndWait(args...)
 	if err != nil {
 		return xerrors.Errorf("failed to Marshall closeForm: %v", err)
-	}
-
-	return nil
-}
-
-func decryptBallots(m txManager, actor dkg.Actor, form types.Form) error {
-	if form.Status != types.PubSharesSubmitted {
-		return xerrors.Errorf("cannot decrypt: not all pubShares submitted")
-	}
-
-	decryptBallots := types.CombineShares{
-		FormID: form.FormID,
-	}
-
-	data, err := decryptBallots.Serialize(serdecontext)
-	if err != nil {
-		return xerrors.Errorf("failed to serialize ballots: %v", err)
-	}
-
-	args := []txn.Arg{
-		{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
-		{Key: evoting.FormArg, Value: data},
-		{Key: evoting.CmdArg, Value: []byte(evoting.CmdCombineShares)},
-	}
-
-	_, err = m.addAndWait(args...)
-	if err != nil {
-		return xerrors.Errorf(addAndWaitErr, err)
 	}
 
 	return nil
@@ -427,4 +253,35 @@ func getFormInfo(proxyAddr, formID string, t *testing.T) ptypes.GetFormResponse 
 
 	return infoForm
 
+}
+
+func createSignedRequest(secret kyber.Scalar, msg interface{}) ([]byte, error) {
+	jsonMsg, err := json.Marshal(msg)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to marshal json: %v", err)
+	}
+
+	payload := base64.URLEncoding.EncodeToString(jsonMsg)
+
+	hash := sha256.New()
+
+	hash.Write([]byte(payload))
+	md := hash.Sum(nil)
+
+	signature, err := schnorr.Sign(suite, secret, md)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to sign: %v", err)
+	}
+
+	signed := ptypes.SignedRequest{
+		Payload:   payload,
+		Signature: hex.EncodeToString(signature),
+	}
+
+	signedJSON, err := json.Marshal(signed)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to create json signed: %v", err)
+	}
+
+	return signedJSON, nil
 }

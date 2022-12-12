@@ -2,10 +2,7 @@ package integration
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"math/rand"
@@ -13,24 +10,17 @@ import (
 	"os"
 	"reflect"
 	"strconv"
-	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/internal/testing/fake"
 	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/sign/schnorr"
-	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/encoding"
-	"go.dedis.ch/kyber/v3/util/random"
-	"golang.org/x/xerrors"
 )
 
-var suite = suites.MustFind("Ed25519")
 
 const defaultNodes = 5
 
@@ -38,6 +28,7 @@ const defaultNodes = 5
 func TestScenario(t *testing.T) {
 	var err error
 	numNodes := defaultNodes
+	t.Log("Start")
 
 	n, ok := os.LookupEnv("NNODES")
 	if ok {
@@ -63,7 +54,7 @@ func getScenarioTest(numNodes int, numVotes int, numForm int) func(*testing.T) {
 			t.Log("Starting worker", i)
 			wg.Add(1)
 
-			go startFormProcess(&wg, numNodes, numVotes, proxyList, t, numForm)
+			go startFormProcess(&wg, numNodes, numVotes, proxyList, t, numForm, castVotesScenario(numVotes))
 			time.Sleep(2 * time.Second)
 
 		}
@@ -74,7 +65,7 @@ func getScenarioTest(numNodes int, numVotes int, numForm int) func(*testing.T) {
 	}
 }
 
-func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray []string, t *testing.T, numForm int) {
+func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray []string, t *testing.T, numForm int, castFunc func(int,int, string, string, []string, kyber.Point, kyber.Scalar, *testing.T) []types.Ballot) {
 	defer wg.Done()
 	rand.Seed(0)
 
@@ -135,14 +126,14 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 	formpubkey := getFormResponse.Pubkey
 	formStatus := getFormResponse.Status
 	BallotSize := getFormResponse.BallotSize
-	Chunksperballot := chunksPerBallot(BallotSize)
+	chunksPerBallot := chunksPerBallot(BallotSize)
 
 	t.Logf("Publickey of the form : " + formpubkey)
 	t.Logf("Status of the form : %v", formStatus)
 
 	require.NoError(t, err)
 	t.Logf("BallotSize of the form : %v", BallotSize)
-	t.Logf("Chunksperballot of the form : %v", Chunksperballot)
+	t.Logf("chunksPerBallot of the form : %v", chunksPerBallot)
 
 	// Get form public key
 	pubKey, err := encoding.StringHexToPoint(suite, formpubkey)
@@ -154,68 +145,8 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 
 	oldTime = time.Now()
 
-	//make List of ballots
-	b1 := string("select:" + encodeIDBallot("bb") + ":0,0,1,0\n" + "text:" + encodeIDBallot("ee") + ":eWVz\n\n") //encoding of "yes"
-
-	ballotList := make([]string, numVotes)
-	for i := 1; i <= numVotes; i++ {
-		ballotList[i-1] = b1
-	}
-
-	votesfrontend := make([]types.Ballot, numVotes)
-
-	fakeConfiguration := fake.BasicConfiguration
-
-	for i := 0; i < numVotes; i++ {
-
-		var bMarshal types.Ballot
-		form := types.Form{
-			Configuration: fakeConfiguration,
-			FormID:        formID,
-			BallotSize:    BallotSize,
-		}
-
-		err = bMarshal.Unmarshal(ballotList[i], form)
-		require.NoError(t, err)
-
-		votesfrontend[i] = bMarshal
-	}
-
-	for i := 0; i < numVotes; i++ {
-
-		ballot, err := marshallBallotManual(ballotList[i], pubKey, Chunksperballot)
-		require.NoError(t, err)
-
-		castVoteRequest := ptypes.CastVoteRequest{
-			UserID: "user" + strconv.Itoa(i+1),
-			Ballot: ballot,
-		}
-
-		randomproxy = proxyArray[rand.Intn(len(proxyArray))]
-		t.Logf("cast ballot to proxy %v", randomproxy)
-
-		signed, err := createSignedRequest(secret, castVoteRequest)
-		require.NoError(t, err)
-
-		resp, err := http.Post(randomproxy+"/evoting/forms/"+formID+"/vote", contentType, bytes.NewBuffer(signed))
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected status: %s", resp.Status)
-
-		body, err := io.ReadAll(resp.Body)
-		require.NoError(t, err)
-
-		var infos ptypes.TransactionInfoToSend
-		err = json.Unmarshal(body, &infos)
-		require.NoError(t, err)
-
-		ok, err = pollTxnInclusion(randomproxy, infos.Token, t)
-		require.NoError(t, err)
-		require.True(t, ok)
-
-		resp.Body.Close()
-
-	}
-
+	votesfrontend := castFunc(BallotSize, chunksPerBallot, formID,contentType, proxyArray, pubKey,secret, t)
+	
 	timeTable[step] = time.Since(oldTime).Seconds()
 	t.Logf("Casting %v ballots takes: %v sec", numVotes, timeTable[step])
 
@@ -395,103 +326,4 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 	t.Logf("Requesting public shares takes %v sec", timeTable[6])
 	t.Logf("Decrypting ballots takes %v sec", timeTable[7])
 
-}
-
-// -----------------------------------------------------------------------------
-// Utility functions
-func marshallBallotManual(voteStr string, pubkey kyber.Point, chunks int) (ptypes.CiphervoteJSON, error) {
-
-	ballot := make(ptypes.CiphervoteJSON, chunks)
-	vote := strings.NewReader(voteStr)
-	fmt.Printf("votestr is: %v", voteStr)
-
-	buf := make([]byte, 29)
-
-	for i := 0; i < chunks; i++ {
-		var K, C kyber.Point
-		var err error
-
-		n, err := vote.Read(buf)
-		if err != nil {
-			return nil, xerrors.Errorf("failed to read: %v", err)
-		}
-
-		K, C, _, err = encryptManual(buf[:n], pubkey)
-
-		if err != nil {
-			return ptypes.CiphervoteJSON{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
-		}
-
-		kbuff, err := K.MarshalBinary()
-		if err != nil {
-			return ptypes.CiphervoteJSON{}, xerrors.Errorf("failed to marshal K: %v", err)
-		}
-
-		cbuff, err := C.MarshalBinary()
-		if err != nil {
-			return ptypes.CiphervoteJSON{}, xerrors.Errorf("failed to marshal C: %v", err)
-		}
-
-		ballot[i] = ptypes.EGPairJSON{
-			K: kbuff,
-			C: cbuff,
-		}
-	}
-
-	return ballot, nil
-}
-
-func encryptManual(message []byte, pubkey kyber.Point) (K, C kyber.Point, remainder []byte, err error) {
-
-	// Embed the message (or as much of it as will fit) into a curve point.
-	M := suite.Point().Embed(message, random.New())
-	max := suite.Point().EmbedLen()
-	if max > len(message) {
-		max = len(message)
-	}
-	remainder = message[max:]
-	// ElGamal-encrypt the point to produce ciphertext (K,C).
-	k := suite.Scalar().Pick(random.New()) // ephemeral private key
-	K = suite.Point().Mul(k, nil)          // ephemeral DH public key
-	S := suite.Point().Mul(k, pubkey)      // ephemeral DH shared secret
-	C = S.Add(S, M)                        // message blinded with secret
-
-	return K, C, remainder, nil
-}
-
-func chunksPerBallot(size int) int { return (size-1)/29 + 1 }
-
-func encodeIDBallot(ID string) types.ID {
-	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
-}
-
-func createSignedRequest(secret kyber.Scalar, msg interface{}) ([]byte, error) {
-	jsonMsg, err := json.Marshal(msg)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to marshal json: %v", err)
-	}
-
-	payload := base64.URLEncoding.EncodeToString(jsonMsg)
-
-	hash := sha256.New()
-
-	hash.Write([]byte(payload))
-	md := hash.Sum(nil)
-
-	signature, err := schnorr.Sign(suite, secret, md)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to sign: %v", err)
-	}
-
-	signed := ptypes.SignedRequest{
-		Payload:   payload,
-		Signature: hex.EncodeToString(signature),
-	}
-
-	signedJSON, err := json.Marshal(signed)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to create json signed: %v", err)
-	}
-
-	return signedJSON, nil
 }

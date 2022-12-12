@@ -1,5 +1,5 @@
 package integration
-
+/*
 import (
 	"bytes"
 	"encoding/hex"
@@ -15,11 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/encoding"
 )
 
@@ -328,85 +326,4 @@ func startFormProcessLoad(wg *sync.WaitGroup, numNodes, numVotesPerSec, numSec i
 	t.Logf("decryption time : %v", timeTable[3])
 }
 
-func castVotesLoad(numVotesPerSec, numSec, BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
-	t.Log("cast ballots")
-
-	//make List of ballots
-	b1 := string("select:" + encodeIDBallot("bb") + ":0,0,1,0\n" + "text:" + encodeIDBallot("ee") + ":eWVz\n\n") //encoding of "yes"
-
-	numVotes := numVotesPerSec * numSec
-
-	ballotList := make([]string, numVotes)
-	for i := 1; i <= numVotes; i++ {
-		ballotList[i-1] = b1
-	}
-
-	votesfrontend := make([]types.Ballot, numVotes)
-
-	fakeConfiguration := fake.BasicConfiguration
-
-	for i := 0; i < numVotes; i++ {
-
-		var bMarshal types.Ballot
-		form := types.Form{
-			Configuration: fakeConfiguration,
-			FormID:        formID,
-			BallotSize:    BallotSize,
-		}
-
-		err := bMarshal.Unmarshal(ballotList[i], form)
-		require.NoError(t, err)
-
-		votesfrontend[i] = bMarshal
-	}
-	proxyCount := len(proxyArray)
-
-	// all ballots are identical
-	ballot, err := marshallBallotManual(b1, pubKey, chunksPerBallot)
-	require.NoError(t, err)
-
-	for i := 0; i < numSec; i++ {
-		// send the votes asynchrounously and wait for the response
-
-		for j := 0; j < numVotesPerSec; j++ {
-			randomproxy := proxyArray[rand.Intn(proxyCount)]
-			castVoteRequest := ptypes.CastVoteRequest{
-				UserID: "user" + strconv.Itoa(i*numVotesPerSec+j),
-				Ballot: ballot,
-			}
-			go cast(false, castVoteRequest, contentType, randomproxy, formID, secret, t)
-
-		}
-		t.Logf("casted votes %d", (i+1)*numVotesPerSec)
-		time.Sleep(time.Second)
-
-	}
-
-	time.Sleep(time.Second * 30)
-
-	return votesfrontend
-}
-
-func cast(isRetry bool, castVoteRequest ptypes.CastVoteRequest, contentType, randomproxy, formID string, secret kyber.Scalar, t *testing.T) {
-
-	t.Logf("cast ballot to proxy %v", randomproxy)
-
-	// t.Logf("vote is: %v", castVoteRequest)
-	signed, err := createSignedRequest(secret, castVoteRequest)
-	require.NoError(t, err)
-
-	resp, err := http.Post(randomproxy+"/evoting/forms/"+formID+"/vote", contentType, bytes.NewBuffer(signed))
-	require.NoError(t, err)
-
-	if http.StatusOK != resp.StatusCode && !isRetry {
-		t.Logf("unexpected status: %s retry", resp.Status)
-		cast(true, castVoteRequest, contentType, randomproxy, formID, secret, t)
-		return
-	}
-
-	responseBody, err := io.ReadAll(resp.Body)
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected status: %s %s", resp.Status, responseBody)
-
-	resp.Body.Close()
-}
+*/

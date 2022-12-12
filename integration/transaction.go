@@ -23,8 +23,8 @@ import (
 
 const (
 	addAndWaitErr = "failed to addAndWait: %v"
-	maxPollCount  = 20
-	interPollWait = 100 * time.Millisecond
+	maxPollCount  = 50
+	interPollWait = 200 * time.Millisecond
 )
 
 func newTxManager(signer crypto.Signer, firstNode dVotingCosiDela,
