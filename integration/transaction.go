@@ -5,17 +5,27 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
+	"io"
+	"net/http"
+	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
+	ptypes "github.com/dedis/d-voting/proxy/types"
 	"golang.org/x/xerrors"
 )
 
-const addAndWaitErr = "failed to addAndWait: %v"
+const (
+	addAndWaitErr = "failed to addAndWait: %v"
+	maxPollCount  = 20
+	interPollWait = 100 * time.Millisecond
+)
 
 func newTxManager(signer crypto.Signer, firstNode dVotingCosiDela,
 	timeout time.Duration, retry int) txManager {
@@ -40,6 +50,58 @@ type txManager struct {
 	retry int
 }
 
+// For scenarioTest
+func pollTxnInclusion(proxyAddr, token string, t *testing.T) (bool, error) {
+
+	for i := 0; i < maxPollCount; i++ {
+		timeBegin := time.Now()
+
+		req, err := http.NewRequest(http.MethodGet, proxyAddr+"/evoting/transactions/"+token, bytes.NewBuffer([]byte("")))
+		if err != nil {
+			return false, xerrors.Errorf("failed to create request: %v", err)
+		}
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return false, xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
+		}
+		
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return false, xerrors.Errorf("failed to read response body: %v", err)
+		}
+		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", body)
+
+		//get the body of the response as json
+		var result ptypes.TransactionInfoToSend
+		err = json.Unmarshal(body, &result)
+		if err != nil {
+			return false, xerrors.Errorf("failed to unmarshal response body: %v", err)
+		}
+
+		//check if the transaction is included in the blockchain
+
+		switch result.Status {
+			case 2:
+				return false, nil
+			case 1:
+				return true, nil
+			case 0:
+				token = result.Token
+		}
+
+		if (time.Now().Sub(timeBegin) < interPollWait) {
+			time.Sleep(interPollWait - time.Now().Sub(timeBegin))
+		}
+
+	}
+
+	return false, xerrors.Errorf("transaction not included after timeout")
+}
+
+
+// For integrationTest
 func (m txManager) addAndWait(args ...txn.Arg) ([]byte, error) {
 	for i := 0; i < m.retry; i++ {
 		sentTxn, err := m.m.Make(args...)

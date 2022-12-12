@@ -103,10 +103,12 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 
 	resp, err := http.Post(proxyArray[0]+"/evoting/forms", contentType, bytes.NewBuffer(signed))
 	require.NoError(t, err)
-	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
-
 	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
+
+	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", body)
+
+	
 
 	t.Log("response body:", string(body))
 	resp.Body.Close()
@@ -117,6 +119,10 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 	require.NoError(t, err)
 
 	formID := createFormResponse.FormID
+
+	ok, err := pollTxnInclusion(proxyArray[1], createFormResponse.Token, t)
+	require.NoError(t, err)
+	require.True(t, ok)
 
 	t.Logf("ID of the form : " + formID)
 
@@ -162,8 +168,9 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 	randomproxy := "http://localhost:9081"
 	t.Logf("Open form send to proxy %v", randomproxy)
 
-	_, err = updateForm(secret, randomproxy, formID, "open", t)
+	ok, err = updateForm(secret, randomproxy, formID, "open", t)
 	require.NoError(t, err)
+	require.True(t, ok)
 	// ##################################### GET FORM INFO #################
 
 	proxyAddr1 := proxyArray[0]
@@ -187,6 +194,7 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 	require.NoError(t, err)
 
 	// ##################################### CAST BALLOTS ######################
+
 	t.Log("cast ballots")
 
 	//make List of ballots
@@ -240,8 +248,16 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected status: %s", resp.Status)
 
-		_, err = io.ReadAll(resp.Body)
+		body, err = io.ReadAll(resp.Body)
 		require.NoError(t, err)
+
+		var infos ptypes.TransactionInfoToSend
+		err = json.Unmarshal(body, &infos)
+		require.NoError(t, err)
+
+		ok, err = pollTxnInclusion(randomproxy, infos.Token, t)
+		require.NoError(t, err)
+		require.True(t, ok)
 
 		resp.Body.Close()
 
@@ -269,8 +285,9 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 
 	t.Logf("Close form (for real) send to proxy %v", randomproxy)
 
-	_, err = updateForm(secret, randomproxy, formID, "close", t)
+	ok, err = updateForm(secret, randomproxy, formID, "close", t)
 	require.NoError(t, err)
+	require.True(t, ok)
 
 	time.Sleep(time.Second * 3)
 
@@ -363,8 +380,9 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 	randomproxy = proxyArray[rand.Intn(len(proxyArray))]
 	oldTime = time.Now()
 
-	_, err = updateForm(secret, randomproxy, formID, "combineShares", t)
+	ok, err = updateForm(secret, randomproxy, formID, "combineShares", t)
 	require.NoError(t, err)
+	require.True(t, ok)
 
 	currentTime = time.Now()
 	diff = currentTime.Sub(oldTime)
@@ -528,7 +546,7 @@ func initDKG(secret kyber.Scalar, proxyAddr, formIDHex string, t *testing.T) err
 	return nil
 }
 
-func updateForm(secret kyber.Scalar, proxyAddr, formIDHex, action string, t *testing.T) (int, error) {
+func updateForm(secret kyber.Scalar, proxyAddr, formIDHex, action string, t *testing.T) (bool, error) {
 	msg := ptypes.UpdateFormRequest{
 		Action: action,
 	}
@@ -538,20 +556,28 @@ func updateForm(secret kyber.Scalar, proxyAddr, formIDHex, action string, t *tes
 
 	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/forms/"+formIDHex, bytes.NewBuffer(signed))
 	if err != nil {
-		return 0, xerrors.Errorf("failed to create request: %v", err)
+		return false, xerrors.Errorf("failed to create request: %v", err)
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return 0, xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
+		return false, xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return 0, xerrors.Errorf("failed to read response body: %v", err)
+		return false, xerrors.Errorf("failed to read response body: %v", err)
 	}
 	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", body)
 
-	return 0, nil
+	//use the pollTxnInclusion func
+	var result map[string]interface{}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return false, xerrors.Errorf("failed to unmarshal response body: %v", err)
+	}
+
+	return pollTxnInclusion(proxyAddr, result["Token"].(string), t)
+
 }
 
 func updateDKG(secret kyber.Scalar, proxyAddr, formIDHex, action string, t *testing.T) (int, error) {
