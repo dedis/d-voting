@@ -7,7 +7,6 @@ const usePostCall = (setError) => {
     let success = true;
     const response = await fetch(endpoint, request);
     const result = await response.json();
-    console.log('result:', result);
 
     if (!response.ok) {
       const txt = await response.text();

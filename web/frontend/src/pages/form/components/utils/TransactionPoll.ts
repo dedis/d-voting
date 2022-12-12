@@ -14,11 +14,9 @@ const pollTransaction = (
   const executePoll = async (resolve, reject): Promise<any> => {
     try {
       attempts += 1;
-      console.log('Request:' + JSON.stringify(request));
       const response = await fetch(endpoint(data), request);
       const result = await response.json();
-      console.log('Result:' + JSON.stringify(result));
-
+      
       if (!response.ok) {
         throw new Error(JSON.stringify(result));
       }
