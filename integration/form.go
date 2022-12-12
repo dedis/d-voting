@@ -96,7 +96,7 @@ func createFormScenario(contentType, proxy string, secret kyber.Scalar, t *testi
 
 	formID := createFormResponse.FormID
 
-	ok, err := pollTxnInclusion(proxy, createFormResponse.Token, t)
+	ok, err := pollTxnInclusion(60, time.Second, proxy, createFormResponse.Token, t)
 	require.NoError(t, err)
 	require.True(t, ok)
 
@@ -232,7 +232,7 @@ func updateForm(secret kyber.Scalar, proxyAddr, formIDHex, action string, t *tes
 		return false, xerrors.Errorf("failed to unmarshal response body: %v", err)
 	}
 
-	return pollTxnInclusion(proxyAddr, result["Token"].(string), t)
+	return pollTxnInclusion(60,time.Second, proxyAddr, result["Token"].(string), t)
 
 }
 

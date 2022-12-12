@@ -25,6 +25,7 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/random"
 	"golang.org/x/xerrors"
+	"sync/atomic"
 )
 
 var suite = suites.MustFind("Ed25519")
@@ -308,11 +309,8 @@ func castVotesLoad(numVotesPerSec, numSec int) func(BallotSize, chunksPerBallot 
 
 		// we want to send all the votes and then check if it was included
 		// in the blockchain
-		// we will create a list of bools of size numVotes and we will
-		// set the value to true when we receive the response from the
-		// blockchain
 
-		inclusionArray := make([]bool, numVotes)
+		var includedVoteCount uint64
 
 		for i := 0; i < numSec; i++ {
 			// send the votes asynchrounously and wait for the response
@@ -323,7 +321,7 @@ func castVotesLoad(numVotesPerSec, numSec int) func(BallotSize, chunksPerBallot 
 					UserID: "user" + strconv.Itoa(i*numVotesPerSec+j),
 					Ballot: ballot,
 				}
-				go cast(i*numVotesPerSec+j, castVoteRequest, contentType, randomproxy, formID, secret, inclusionArray, t)
+				go cast(i*numVotesPerSec+j, castVoteRequest, contentType, randomproxy, formID, secret, &includedVoteCount, t)
 
 			}
 			t.Logf("casted votes %d", (i+1)*numVotesPerSec)
@@ -331,13 +329,28 @@ func castVotesLoad(numVotesPerSec, numSec int) func(BallotSize, chunksPerBallot 
 
 		}
 
+		time.Sleep(time.Second * 20)
+		
+		//wait until includedVoteCount == numVotes
+		for {
+			if atomic.LoadUint64(&includedVoteCount) == uint64(numVotes) {
+				break
+			}
+			// check every 10 seconds
+			time.Sleep(time.Second*10)
+			t.Log("waiting for all votes to be included in the blockchain")
+		}
+
+
+
+
 		time.Sleep(time.Second * 30)
 
 		return votesfrontend
 	})
 }
 
-func cast(idx int, castVoteRequest ptypes.CastVoteRequest, contentType, randomproxy, formID string, secret kyber.Scalar, inclusionArray []bool, t *testing.T) {
+func cast(idx int, castVoteRequest ptypes.CastVoteRequest, contentType, randomproxy, formID string, secret kyber.Scalar, includedVoteCount *uint64, t *testing.T) {
 
 	t.Logf("cast ballot to proxy %v", randomproxy)
 
@@ -356,10 +369,12 @@ func cast(idx int, castVoteRequest ptypes.CastVoteRequest, contentType, randompr
 	err = json.Unmarshal(body, &infos)
 	require.NoError(t, err)
 
-	ok, err := pollTxnInclusion(randomproxy, infos.Token, t)
+	ok, err := pollTxnInclusion(120,2*time.Second,randomproxy, infos.Token, t)
 	require.NoError(t, err)
 	if ok {
-		inclusionArray[idx] = true
+		atomic.AddUint64(includedVoteCount, 1)
+		t.Logf("vote %d included", idx)
+		t.Logf("included votes %d", atomic.LoadUint64(includedVoteCount))
 	}
 
 }
@@ -420,7 +435,7 @@ func castVotesScenario(numVotes int) func(BallotSize, chunksPerBallot int, formI
 			err = json.Unmarshal(body, &infos)
 			require.NoError(t, err)
 
-			ok, err := pollTxnInclusion(randomproxy, infos.Token, t)
+			ok, err := pollTxnInclusion(60,1*time.Second,randomproxy, infos.Token, t)
 			require.NoError(t, err)
 			require.True(t, ok)
 

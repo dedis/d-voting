@@ -64,6 +64,13 @@ func getScenarioTest(numNodes int, numVotes int, numForm int) func(*testing.T) {
 	}
 }
 
+
+
+
+
+
+
+
 func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray []string, t *testing.T, numForm int, castFunc func(int, int, string, string, []string, kyber.Point, kyber.Scalar, *testing.T) []types.Ballot) {
 	defer wg.Done()
 	rand.Seed(0)
