@@ -93,8 +93,8 @@ func pollTxnInclusion(proxyAddr, token string, t *testing.T) (bool, error) {
 				token = result.Token
 		}
 
-		if (time.Now().Sub(timeBegin) < interPollWait) {
-			time.Sleep(interPollWait - time.Now().Sub(timeBegin))
+		if (time.Since(timeBegin) < interPollWait) {
+			time.Sleep(interPollWait - time.Since(timeBegin))
 		}
 
 	}

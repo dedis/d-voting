@@ -32,8 +32,8 @@ jobs:
       - name: Install memcoin
         run: make build
 
-      - name: Start and setup 3 nodes
-        run: ./runSystems.sh -n 3 --docker false --backend false --frontend false --attach false
+      - name: Start and setup 5 nodes
+        run: ./runSystems.sh -n 5 --docker false --backend false --frontend false --attach false
 
       - name: Run the scenario Test
         run: go test -timeout 7m -run TestScenario ./integration/...
