@@ -43,7 +43,15 @@ const IndividualResult: FC<IndividualResultProps> = ({
   const { loading, result, configObj } = useForm(formId);
   const configuration = useConfigurationOnly(configObj);
 
-  const [currentID, setCurrentID] = useState<number>(0);
+  const [currentID, setCurrentID] = useState<string>('1');
+  const [isValid, setIsValid] = useState<ValidityType>(0);
+  const [internalID, setInternalID] = useState<number>(0);
+
+  enum ValidityType {
+    VALID = 0,
+    UNPARSABLE = 1,
+    OUT_OF_BOUNDS = 2,
+  }
 
   const SubjectElementResultDisplay = (element: SubjectElement) => {
     return (
@@ -52,19 +60,19 @@ const IndividualResult: FC<IndividualResultProps> = ({
         {element.Type === RANK && rankResult.has(element.ID) && (
           <IndividualRankResult
             rank={element as RankQuestion}
-            rankResult={[rankResult.get(element.ID)[currentID]]}
+            rankResult={[rankResult.get(element.ID)[internalID]]}
           />
         )}
         {element.Type === SELECT && selectResult.has(element.ID) && (
           <IndividualSelectResult
             select={element as SelectQuestion}
-            selectResult={[selectResult.get(element.ID)[currentID]]}
+            selectResult={[selectResult.get(element.ID)[internalID]]}
           />
         )}
         {element.Type === TEXT && textResult.has(element.ID) && (
           <IndividualTextResult
             text={element as TextQuestion}
-            textResult={[textResult.get(element.ID)[currentID]]}
+            textResult={[textResult.get(element.ID)[internalID]]}
           />
         )}
       </div>
@@ -104,10 +112,11 @@ const IndividualResult: FC<IndividualResultProps> = ({
           const rankQues = element as RankQuestion;
 
           if (rankResult.has(id)) {
-            res = rankResult.get(id)[currentID].map((rank, index) => {
+            res = rankResult.get(id)[internalID].map((rank, index) => {
               return {
+                // TODO: Change to Rank and ???
                 Placement: `${index + 1}`,
-                Holder: rankQues.Choices[rankResult.get(id)[currentID].indexOf(index)],
+                Holder: rankQues.Choices[rankResult.get(id)[internalID].indexOf(index)],
               };
             });
             dataToDownload.push({ Title: element.Title, Results: res });
@@ -118,7 +127,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
           const selectQues = element as SelectQuestion;
 
           if (selectResult.has(id)) {
-            res = selectResult.get(id)[currentID].map((select, index) => {
+            res = selectResult.get(id)[internalID].map((select, index) => {
               const checked = select ? 'True' : 'False';
               return { Candidate: selectQues.Choices[index], Checked: checked };
             });
@@ -134,7 +143,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
           const textQues = element as TextQuestion;
 
           if (textResult.has(id)) {
-            res = textResult.get(id)[currentID].map((text, index) => {
+            res = textResult.get(id)[internalID].map((text, index) => {
               return { Field: textQues.Choices[index], Answer: text };
             });
             dataToDownload.push({ Title: element.Title, Results: res });
@@ -145,7 +154,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
   };
 
   const exportJSONData = () => {
-    const fileName = `result_${configuration.MainTitle}_Ballot${currentID + 1}.json`;
+    const fileName = `result_${configuration.MainTitle}_Ballot${currentID}.json`;
 
     const dataToDownload: DownloadedResults[] = [];
 
@@ -155,7 +164,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
 
     const data = {
       Title: configuration.MainTitle,
-      BallotNumber: currentID + 1,
+      BallotNumber: internalID + 1,
       Results: dataToDownload,
     };
 
@@ -165,35 +174,35 @@ const IndividualResult: FC<IndividualResultProps> = ({
 
     saveAs(fileToSave, fileName);
   };
+  // TODO : Check if currentID is correct here
+  useEffect(() => {
+    let value: number;
+    value = parseInt(currentID);
+    if (isNaN(value)) {
+      console.log("Couldn't parse currentID");
+      setIsValid(1);
+    } else if (value < 1 || value > ballotNumber) {
+      console.log('Out of bounds');
+      setIsValid(2);
+    } else {
+      console.log('value', value);
+      setIsValid(0);
+      setInternalID(value - 1);
+    }
+  }, [currentID]);
+
+  useEffect(() => {}, [isValid]);
 
   useEffect(() => {
     configuration.Scaffold.map((subject: Subject) => displayResults(subject));
-  }, [currentID]);
+  }, [internalID]);
 
   const handleNext = (): void => {
-    setCurrentID(currentID + 1);
+    setCurrentID((((internalID + 1) % ballotNumber) + 1).toString());
   };
 
   const handlePrevious = (): void => {
-    setCurrentID(currentID - 1);
-  };
-
-  const handleBlur = (e) => {
-    setCurrentID(e.target.value - 1);
-  };
-
-  const handleEnter = (e) => {
-    switch (e.key) {
-      case 'Enter':
-        handleBlur(e);
-        break;
-      case 'ArrowUp':
-        handleNext();
-        break;
-      case 'ArrowDown':
-        handlePrevious();
-        break;
-    }
+    setCurrentID((((internalID - 1 + ballotNumber) % ballotNumber) + 1).toString());
   };
 
   // <div className="grow col-span-7 p-2">{'Ballot ' + (currentID + 1)}</div>
@@ -201,17 +210,30 @@ const IndividualResult: FC<IndividualResultProps> = ({
     <div>
       <div className="flex flex-col">
         <div className="grid grid-cols-9 font-medium rounded-md border-t stext-sm text-center align-center justify-middle text-gray-700 bg-white py-2">
+          <button
+            onClick={handlePrevious}
+            className="col-span-2 items-center mx-3 px-2 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            {t('previous')}
+          </button>
           <input
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
             title="Please enter a number"
-            onChange={(e) => console.log(e.target.value)}
-            onBlur={(e) => handleBlur(e)}
-            onKeyDown={(e) => handleEnter(e)}
-            className="col-span-7 col-start-2 text-center"
-            value={1}
+            onChange={(e) => {
+              setCurrentID(e.target.value);
+            }}
+            className={
+              'col-span-5 col-start-3 text-center border border-gray-300 rounded-md ring-transparent' +
+              (isValid !== 0 ? ' border-red-500' : '')
+            }
+            value={currentID}
           />
+          <button
+            onClick={handleNext}
+            className="col-span-2 mx-3 relative align-right items-center px-2 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            {t('next')}
+          </button>
         </div>
         {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
       </div>
@@ -237,5 +259,17 @@ const IndividualResult: FC<IndividualResultProps> = ({
             onBlur={(e) => handleBlur(e)}
             onKeyDown={(e) => handleEnter(e)}
             className="col-span-7 text-center"></input>*/
+
+/*<input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            title="Please enter a number"
+            onChange={(e) => console.log(e.target.value)}
+            onBlur={(e) => handleBlur(e)}
+            onKeyDown={(e) => handleEnter(e)}
+            className="col-span-7 col-start-2 text-center"
+            value={1}
+          />*/
 
 export default IndividualResult;
