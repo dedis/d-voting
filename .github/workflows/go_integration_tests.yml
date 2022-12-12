@@ -7,10 +7,6 @@ on:
     branches: [main]
 
 jobs:
-<<<<<<< HEAD
-=======
-
->>>>>>> 1cfffaf (fix github action)
   integration:
     name: Test Integration
     runs-on: ubuntu-latest
@@ -24,11 +20,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Run the integration test
-<<<<<<< HEAD
-        run: go test -timeout 10m -run TestIntegration ./integration/...
-=======
         run: go test -timeout 10m -run TestIntegration ./integration/... 
->>>>>>> 1cfffaf (fix github action)
   bad_vote:
     name: Test bad vote
     runs-on: ubuntu-latest
