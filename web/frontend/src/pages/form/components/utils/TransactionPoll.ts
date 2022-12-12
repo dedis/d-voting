@@ -16,7 +16,7 @@ const pollTransaction = (
       attempts += 1;
       const response = await fetch(endpoint(data), request);
       const result = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(JSON.stringify(result));
       }
