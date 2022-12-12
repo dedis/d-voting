@@ -46,7 +46,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	b.Logf("using temp dir %s", dirPath)
 
 	// ##### CREATE NODES #####
-	nodes := setupDVotingNodes(b, numNodes, dirPath)
+	nodes := setupDVotingNodes(b, numNodes, dirPath, nil)
 
 	signer := createDVotingAccess(b, nodes, dirPath)
 
@@ -233,8 +233,8 @@ func castVotesNChunks(m txManager, actor dkg.Actor, form types.Form,
 
 		castVote := types.CastVote{
 			FormID: form.FormID,
-			UserID:     userID,
-			Ballot:     ballot,
+			UserID: userID,
+			Ballot: ballot,
 		}
 
 		data, err := castVote.Serialize(serdecontext)
