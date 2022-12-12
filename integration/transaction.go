@@ -11,13 +11,13 @@ import (
 	"testing"
 	"time"
 
+	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
-	ptypes "github.com/dedis/d-voting/proxy/types"
 	"golang.org/x/xerrors"
 )
 
@@ -52,7 +52,7 @@ type txManager struct {
 
 // For scenarioTest
 func pollTxnInclusion(proxyAddr, token string, t *testing.T) (bool, error) {
-	
+
 	for i := 0; i < maxPollCount; i++ {
 		t.Logf("Polling for transaction inclusion: %d/%d", i+1, maxPollCount)
 		timeBegin := time.Now()
@@ -66,7 +66,6 @@ func pollTxnInclusion(proxyAddr, token string, t *testing.T) (bool, error) {
 		if err != nil {
 			return false, xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
 		}
-		
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
@@ -84,16 +83,16 @@ func pollTxnInclusion(proxyAddr, token string, t *testing.T) (bool, error) {
 		//check if the transaction is included in the blockchain
 
 		switch result.Status {
-			case 2:
-				return false, nil
-			case 1:
-				t.Log("Transaction included in the blockchain")
-				return true, nil
-			case 0:
-				token = result.Token
+		case 2:
+			return false, nil
+		case 1:
+			t.Log("Transaction included in the blockchain")
+			return true, nil
+		case 0:
+			token = result.Token
 		}
 
-		if (time.Since(timeBegin) < interPollWait) {
+		if time.Since(timeBegin) < interPollWait {
 			time.Sleep(interPollWait - time.Since(timeBegin))
 		}
 
@@ -101,7 +100,6 @@ func pollTxnInclusion(proxyAddr, token string, t *testing.T) (bool, error) {
 
 	return false, xerrors.Errorf("transaction not included after timeout")
 }
-
 
 // For integrationTest
 func (m txManager) addAndWait(args ...txn.Arg) ([]byte, error) {

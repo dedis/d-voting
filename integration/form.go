@@ -1,28 +1,35 @@
 package integration
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"io"
 	"math/rand"
+	"net/http"
 	"strconv"
 	"strings"
+	"testing"
+	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
+	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/dedis/d-voting/services/dkg"
+	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/serde"
-	"go.dedis.ch/dela/serde/json"
+	jsonDela "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
 )
 
-var serdecontext = json.NewContext()
+var serdecontext = jsonDela.NewContext()
 
 func encodeID(ID string) types.ID {
 	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
@@ -34,6 +41,7 @@ func ballotIsNull(ballot types.Ballot) bool {
 		ballot.TextResultIDs == nil && ballot.TextResult == nil
 }
 
+// for integration tests
 func createForm(m txManager, title string, admin string) ([]byte, error) {
 	// Define the configuration :
 	configuration := fake.BasicConfiguration
@@ -65,6 +73,45 @@ func createForm(m txManager, title string, admin string) ([]byte, error) {
 	formID := hash.Sum(nil)
 
 	return formID, nil
+}
+
+func createFormScenario(contentType, proxy string, secret kyber.Scalar, t *testing.T) string {
+	t.Log("Create form")
+
+	configuration := fake.BasicConfiguration
+
+	createSimpleFormRequest := ptypes.CreateFormRequest{
+		Configuration: configuration,
+		AdminID:       "adminId",
+	}
+
+	signed, err := createSignedRequest(secret, createSimpleFormRequest)
+	require.NoError(t, err)
+
+	resp, err := http.Post(proxy+"/evoting/forms", contentType, bytes.NewBuffer(signed))
+	require.NoError(t, err)
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", body)
+
+	t.Log("response body:", string(body))
+	resp.Body.Close()
+
+	var createFormResponse ptypes.CreateFormResponse
+
+	err = json.Unmarshal(body, &createFormResponse)
+	require.NoError(t, err)
+
+	formID := createFormResponse.FormID
+
+	ok, err := pollTxnInclusion(proxy, createFormResponse.Token, t)
+	require.NoError(t, err)
+	require.True(t, ok)
+
+	t.Logf("ID of the form : " + formID)
+
+	return formID
 }
 
 func openForm(m txManager, formID []byte) error {
@@ -306,4 +353,78 @@ func decryptBallots(m txManager, actor dkg.Actor, form types.Form) error {
 	}
 
 	return nil
+}
+
+// for Scenario
+func waitForFormStatus(proxyAddr, formID string, status uint16, timeOut time.Duration, t *testing.T) error {
+	expired := time.Now().Add(timeOut)
+
+	isOK := func() bool {
+		infoForm := getFormInfo(proxyAddr, formID, t)
+		return infoForm.Status == status
+	}
+
+	for !isOK() {
+		if time.Now().After(expired) {
+			return xerrors.New("expired")
+		}
+
+		time.Sleep(time.Millisecond * 1000)
+	}
+
+	return nil
+}
+
+// for Scenario
+func updateForm(secret kyber.Scalar, proxyAddr, formIDHex, action string, t *testing.T) (bool, error) {
+	msg := ptypes.UpdateFormRequest{
+		Action: action,
+	}
+
+	signed, err := createSignedRequest(secret, msg)
+	require.NoError(t, err)
+
+	req, err := http.NewRequest(http.MethodPut, proxyAddr+"/evoting/forms/"+formIDHex, bytes.NewBuffer(signed))
+	if err != nil {
+		return false, xerrors.Errorf("failed to create request: %v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return false, xerrors.Errorf("failed retrieve the decryption from the server: %v", err)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, xerrors.Errorf("failed to read response body: %v", err)
+	}
+	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", body)
+
+	//use the pollTxnInclusion func
+	var result map[string]interface{}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return false, xerrors.Errorf("failed to unmarshal response body: %v", err)
+	}
+
+	return pollTxnInclusion(proxyAddr, result["Token"].(string), t)
+
+}
+
+// for Scenario
+func getFormInfo(proxyAddr, formID string, t *testing.T) ptypes.GetFormResponse {
+	// t.Log("Get form info")
+
+	resp, err := http.Get(proxyAddr + "/evoting/forms" + "/" + formID)
+	require.NoError(t, err)
+
+	var infoForm ptypes.GetFormResponse
+	decoder := json.NewDecoder(resp.Body)
+
+	err = decoder.Decode(&infoForm)
+	require.NoError(t, err)
+
+	resp.Body.Close()
+
+	return infoForm
+
 }

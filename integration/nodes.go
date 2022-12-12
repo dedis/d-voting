@@ -1,10 +1,14 @@
 package integration
 
 import (
+	"fmt"
+	"os/exec"
 	"sync"
+	"testing"
 	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 )
 
@@ -72,4 +76,34 @@ func waitForStatus(status types.Status, formFac types.FormFactory,
 
 		time.Sleep(time.Millisecond * 100)
 	}
+}
+
+// for Scenario
+func killNode(proxyArray []string, nodeNub int, t *testing.T) []string {
+
+	proxyArray[nodeNub-1] = proxyArray[len(proxyArray)-1]
+	proxyArray[len(proxyArray)-1] = ""
+	proxyArray = proxyArray[:len(proxyArray)-1]
+
+	cmd := exec.Command("docker", "kill", fmt.Sprintf("node%v", nodeNub))
+	err := cmd.Run()
+	require.NoError(t, err)
+
+	return proxyArray
+}
+
+// for Scenario
+func restartNode(nodeNub int, t *testing.T) {
+	cmd := exec.Command("docker", "restart", fmt.Sprintf("node%v", nodeNub))
+	err := cmd.Run()
+	require.NoError(t, err)
+
+	// Replace the relative path
+	cmd = exec.Command("rm", fmt.Sprintf("/Users/jean-baptistezhang/EPFL_cours/semestre_2/d-voting/nodedata/node%v/daemon.sock", nodeNub))
+	err = cmd.Run()
+	require.NoError(t, err)
+
+	cmd = exec.Command("bash", "-c", fmt.Sprintf("docker exec -d node%v memcoin --config /tmp/node%v start --postinstall --promaddr :9100 --proxyaddr :9080 --proxykey adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3 --listen tcp://0.0.0.0:2001 --public //172.18.0.%v:2001", nodeNub, nodeNub, nodeNub+1))
+	err = cmd.Run()
+	require.NoError(t, err)
 }
