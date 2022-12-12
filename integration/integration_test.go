@@ -156,6 +156,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 					//remove the casted vote from the list
 					castedVotes = append(castedVotes[:i], castedVotes[i+1:]...)
 					ok = true
+					break
 				}
 			}
 			require.True(t, ok)
