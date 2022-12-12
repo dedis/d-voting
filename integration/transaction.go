@@ -52,8 +52,9 @@ type txManager struct {
 
 // For scenarioTest
 func pollTxnInclusion(proxyAddr, token string, t *testing.T) (bool, error) {
-
+	
 	for i := 0; i < maxPollCount; i++ {
+		t.Logf("Polling for transaction inclusion: %d/%d", i+1, maxPollCount)
 		timeBegin := time.Now()
 
 		req, err := http.NewRequest(http.MethodGet, proxyAddr+"/evoting/transactions/"+token, bytes.NewBuffer([]byte("")))
@@ -86,6 +87,7 @@ func pollTxnInclusion(proxyAddr, token string, t *testing.T) (bool, error) {
 			case 2:
 				return false, nil
 			case 1:
+				t.Log("Transaction included in the blockchain")
 				return true, nil
 			case 0:
 				token = result.Token

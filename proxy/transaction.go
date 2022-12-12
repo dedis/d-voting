@@ -71,7 +71,7 @@ func (h *form) IsTxnIncluded(w http.ResponseWriter, r *http.Request) {
 
 	// check if the signature is valid
 	if !h.checkSignature(content.Hash, signature) {
-		http.Error(w, "invalid signature", http.StatusInternalServerError)
+		http.Error(w, "invalid signaturee", http.StatusInternalServerError)
 		return
 	}
 

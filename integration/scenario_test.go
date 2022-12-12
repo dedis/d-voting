@@ -33,7 +33,7 @@ import (
 
 var suite = suites.MustFind("Ed25519")
 
-const defaultNodes = 3
+const defaultNodes = 5
 
 // Check the shuffled votes versus the cast votes on a few nodes
 func TestScenario(t *testing.T) {
@@ -120,7 +120,7 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 
 	formID := createFormResponse.FormID
 
-	ok, err := pollTxnInclusion(proxyArray[1], createFormResponse.Token, t)
+	ok, err := pollTxnInclusion(proxyArray[0], createFormResponse.Token, t)
 	require.NoError(t, err)
 	require.True(t, ok)
 
@@ -148,11 +148,13 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 	req, err := http.NewRequest(http.MethodPut, proxyArray[0]+"/evoting/services/dkg/actors/"+formID, bytes.NewBuffer(signed))
 	require.NoError(t, err)
 
+	t.Log("Sending")
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
 	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", resp.Status)
 
 	// ##################################### OPEN FORM #####################
+	t.Log("Open form")
 	// Wait for DKG setup
 	timeTable := make([]float64, 5)
 	oldTime := time.Now()
@@ -168,6 +170,7 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 	randomproxy := "http://localhost:9081"
 	t.Logf("Open form send to proxy %v", randomproxy)
 
+	t.Log("Open form")
 	ok, err = updateForm(secret, randomproxy, formID, "open", t)
 	require.NoError(t, err)
 	require.True(t, ok)
@@ -671,10 +674,14 @@ func waitForDKG(proxyAddr, formID string, timeOut time.Duration, t *testing.T) e
 
 	isOK := func() bool {
 		infoDKG := getDKGInfo(proxyAddr, formID, t)
+		t.Logf("DKG info: %+v", infoDKG)
+		
+
 		return infoDKG.Status == 1
 	}
 
 	for !isOK() {
+		
 		if time.Now().After(expired) {
 			return xerrors.New("expired")
 		}
