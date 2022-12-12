@@ -627,4 +627,3 @@ func getForm(ctx serde.Context, formFac serde.Factory, formIDHex string,
 
 	return form, nil
 }
-

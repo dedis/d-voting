@@ -108,8 +108,6 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 
 	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", body)
 
-	
-
 	t.Log("response body:", string(body))
 	resp.Body.Close()
 
@@ -675,13 +673,12 @@ func waitForDKG(proxyAddr, formID string, timeOut time.Duration, t *testing.T) e
 	isOK := func() bool {
 		infoDKG := getDKGInfo(proxyAddr, formID, t)
 		t.Logf("DKG info: %+v", infoDKG)
-		
 
 		return infoDKG.Status == 1
 	}
 
 	for !isOK() {
-		
+
 		if time.Now().After(expired) {
 			return xerrors.New("expired")
 		}
