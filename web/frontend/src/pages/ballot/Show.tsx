@@ -100,7 +100,7 @@ const Ballot: FC = () => {
     setCastVoteLoading(false);
   };
 
-  const handleClick = () => {
+  const handleClick = (event) => {
     if (!ballotIsValid(configuration, answers, setAnswers)) {
       setUserErrors(t('incompleteBallot'));
       return;
@@ -109,6 +109,7 @@ const Ballot: FC = () => {
 
     setUserErrors('');
     sendBallot();
+    event.currentTarget.disabled = true;
   };
 
   return (
