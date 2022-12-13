@@ -44,8 +44,9 @@ func TestEditShuffle(t *testing.T) {
 	}
   }
 
-//------------------------------------------------------------MOCKS------------------------------------------------------------
-///////////////////////////////////////////mockActor///////////////////////////////////////////
+//------------------------------------------------------------MOCKS------------
+
+///////////////////////////////////////////mockActor///////////////////////////
 
 // mockActor is a mock implementation of the shuffleSrv.Actor interface
 type mockActor struct{}
@@ -55,7 +56,7 @@ func (a mockActor) Shuffle(formID []byte) error {
   // Return nil to indicate that the shuffle was successful
   return nil
 }
-///////////////////////////////////////////mockPK///////////////////////////////////////////
+///////////////////////////////////////////mockPK//////////////////////////////
 
 type mockPK struct {
 	// This field can be used to store any data that the mock public key needs to
