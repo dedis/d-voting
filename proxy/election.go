@@ -114,7 +114,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 		FormID: hex.EncodeToString(formID),
 	}
 
-	// sign the response
+   // encode the response and write it in the ResponseWriter
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
