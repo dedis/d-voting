@@ -166,7 +166,7 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 
 	ciphervote := make(types.Ciphervote, len(req.Ballot))
 
-	// encrypt the vote 
+	// Unmarshalling the ballots and keys from the request.
 	for i, egpair := range req.Ballot {
 		k := suite.Point()
 
