@@ -9,6 +9,9 @@ import lmdb, { RangeOptions } from 'lmdb';
 import xss from 'xss';
 import createMemoryStore from 'memorystore';
 import { Enforcer, newEnforcer } from 'casbin';
+import { SequelizeAdapter } from 'casbin-sequelize-adapter';
+import pg from 'pg';
+import PostgresAdapter from 'casbin-pg-adapter';
 
 const MemoryStore = createMemoryStore(session);
 const SUBJECT_ROLES = 'roles';
@@ -37,11 +40,16 @@ const app = express();
 app.use(morgan('tiny'));
 
 let enf: Enforcer;
+async function myFunc() {
+  const a = await PostgresAdapter.newAdapter({
+    connectionString: 'postgres://dvoting:dvoting@localhost:5432/casbin',
+  });
 
-const enforcerLoading = newEnforcer('model.conf', 'policy.csv');
+  const enforcerLoading = newEnforcer('model.conf', a);
+  return enforcerLoading;
+}
 const port = process.env.PORT || 5000;
-
-Promise.all([enforcerLoading])
+Promise.all([myFunc()])
   .then((res) => {
     [enf] = res;
     console.log(`🛡 Casbin loaded`);
@@ -206,7 +214,7 @@ function setMapAuthorization(list: string[][]): Map<String, Array<String>> {
 // As the user is logged on the app via this express but must also be logged in
 // the react. This endpoint serves to send to the client (actually to react)
 // the information of the current user.
-app.get('/api/personal_info', (req, res) => {
+app.get('/api/personal_info', async (req, res) => {
   enf.getFilteredPolicy(0, String(req.session.userid)).then((list) => {
     res.set('Access-Control-Allow-Origin', '*');
     if (req.session.userid) {
