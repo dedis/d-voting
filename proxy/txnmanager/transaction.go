@@ -34,11 +34,11 @@ const (
 
 // NewTransaction returns a new initialized transaction proxy
 func NewTransaction(mngr txn.Manager, p pool.Pool,
-	ctx serde.Context, pk kyber.Point, blocks blockstore.BlockStore, signer crypto.Signer) TxnManager {
+	ctx serde.Context, pk kyber.Point, blocks blockstore.BlockStore, signer crypto.Signer) Manager {
 
 	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
 
-	return &transaction{
+	return &manager{
 		logger:      logger,
 		context:     ctx,	
 		mngr:        mngr,
@@ -52,7 +52,7 @@ func NewTransaction(mngr txn.Manager, p pool.Pool,
 // form defines HTTP handlers to manipulate the evoting smart contract
 //
 // - implements proxy.Transaction
-type transaction struct {
+type manager struct {
 	sync.Mutex
 
 	logger      zerolog.Logger
@@ -66,7 +66,7 @@ type transaction struct {
 
 // IsTxnIncluded
 // Check if the transaction is included in the blockchain
-func (h *transaction) IsTxnIncluded(w http.ResponseWriter, r *http.Request) {
+func (h *manager) IsTxnIncluded(w http.ResponseWriter, r *http.Request) {
 	// get the token from the url
 	vars := mux.Vars(r)
 	
@@ -149,7 +149,7 @@ func (h *transaction) IsTxnIncluded(w http.ResponseWriter, r *http.Request) {
 }
 
 // checkHash checks if the hash is valid
-func (h *transaction) checkHash(status ptypes.TransactionStatus, transactionID []byte, LastBlockIdx uint64, Time int64, Hash []byte) bool {
+func (h *manager) checkHash(status ptypes.TransactionStatus, transactionID []byte, LastBlockIdx uint64, Time int64, Hash []byte) bool {
 	// create the hash
 	hash := sha256.New()
 	hash.Write([]byte{byte(status)})
@@ -162,12 +162,12 @@ func (h *transaction) checkHash(status ptypes.TransactionStatus, transactionID [
 }
 
 // checkSignature checks if the signature is valid
-func (h *transaction) checkSignature(Hash []byte, Signature crypto.Signature) bool {
+func (h *manager) checkSignature(Hash []byte, Signature crypto.Signature) bool {
 	return h.signer.GetPublicKey().Verify(Hash, Signature) == nil
 }
 
 // checkTxnIncluded checks if the transaction is included in the blockchain
-func (h *transaction) checkTxnIncluded(transactionID []byte, lastBlockIdx uint64) (ptypes.TransactionStatus, uint64) {
+func (h *manager) checkTxnIncluded(transactionID []byte, lastBlockIdx uint64) (ptypes.TransactionStatus, uint64) {
 	// we start at the last block index
 	// which is the index of the last block that was checked
 	// or the last block before the transaction was submited
@@ -197,7 +197,7 @@ func (h *transaction) checkTxnIncluded(transactionID []byte, lastBlockIdx uint64
 
 // submitTxn submits a transaction
 // Returns the transaction ID.
-func (h *transaction) submitTxn(ctx context.Context, cmd evoting.Command,
+func (h *manager) submitTxn(ctx context.Context, cmd evoting.Command,
 	cmdArg string, payload []byte) ([]byte, uint64, error) {
 
 	h.Lock()
@@ -228,7 +228,7 @@ func (h *transaction) submitTxn(ctx context.Context, cmd evoting.Command,
 	return tx.GetID(), lastBlockIdx, nil
 }
 
-func (h *transaction) sendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBlockIdx uint64, status ptypes.TransactionStatus) error {
+func (h *manager) sendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBlockIdx uint64, status ptypes.TransactionStatus) error {
 
 	response, err := h.CreateTransactionInfoToSend(txnID, lastBlockIdx, status)
 	if err != nil {
@@ -238,7 +238,7 @@ func (h *transaction) sendTransactionInfo(w http.ResponseWriter, txnID []byte, l
 
 }
 
-func (h *transaction) CreateTransactionInfoToSend(txnID []byte, lastBlockIdx uint64, status ptypes.TransactionStatus) (ptypes.TransactionInfoToSend, error) {
+func (h *manager) CreateTransactionInfoToSend(txnID []byte, lastBlockIdx uint64, status ptypes.TransactionStatus) (ptypes.TransactionInfoToSend, error) {
 
 	time := time.Now().Unix()
 	hash := sha256.New()

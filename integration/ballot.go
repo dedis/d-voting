@@ -329,7 +329,7 @@ func castVotesLoad(numVotesPerSec, numSec int) func(BallotSize, chunksPerBallot 
 
 		}
 
-		time.Sleep(time.Second * 20)
+		//time.Sleep(time.Second * 20)
 
 		//wait until includedVoteCount == numVotes
 		for {
@@ -338,6 +338,9 @@ func castVotesLoad(numVotesPerSec, numSec int) func(BallotSize, chunksPerBallot 
 			}
 
 			t.Logf("Waiting... included votes %d", atomic.LoadUint64(&includedVoteCount))
+			 infos := getFormInfo(proxyArray[0],formID, t)
+			t.Logf("Voters count: %v", len(infos.Voters))
+			t.Logf("Voters: %v", infos.Voters)
 			// check every 10 seconds
 			time.Sleep(time.Second * 10)
 		}

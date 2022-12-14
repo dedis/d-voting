@@ -217,6 +217,7 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 	// create the transaction and add it to the pool
 	txnID, lastBlock, err := h.transactionProxy.submitTxn(r.Context(), evoting.CmdCastVote, evoting.FormArg, data)
 	if err != nil {
+		h.logger.Err(err).Msg("failed to submit txn")
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
