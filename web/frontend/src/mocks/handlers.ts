@@ -109,7 +109,7 @@ export const handlers = [
     const { FormID } = req.params;
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    return res(ctx.status(200), ctx.json({ FormID: mockForms.get(FormID as ID), Token: "blabla" }));
+    return res(ctx.status(200), ctx.json({ FormID: mockForms.get(FormID as ID), Token: 'blabla' }));
     return res(ctx.status(200), ctx.json(mockForms.get(FormID as ID)));
   }),
 
@@ -145,7 +145,7 @@ export const handlers = [
       return newFormID;
     };
 
-    return res(ctx.status(200), ctx.json({ Status: 0, Token: "blabla" }));
+    return res(ctx.status(200), ctx.json({ Status: 0, Token: 'blabla' }));
   }),
 
   rest.post(endpoints.newFormVote(':FormID'), async (req, res, ctx) => {

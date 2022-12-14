@@ -18,7 +18,6 @@ import (
 	"github.com/rs/zerolog"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/execution/native"
-	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
