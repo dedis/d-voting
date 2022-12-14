@@ -7,11 +7,14 @@
 package proxy
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
+	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/proxy/types"
+	ptypes "github.com/dedis/d-voting/proxy/types"
 	"go.dedis.ch/kyber/v3/suites"
 )
 
@@ -31,8 +34,15 @@ type Form interface {
 	Form(http.ResponseWriter, *http.Request)
 	// DELETE /forms/{formID}
 	DeleteForm(http.ResponseWriter, *http.Request)
+}
+
+type Transaction interface {
 	// GET /transactions/{token}
 	IsTxnIncluded(http.ResponseWriter, *http.Request)
+	submitTxn(ctx context.Context, cmd evoting.Command, cmdArg string, payload []byte) ([]byte, uint64, error)
+	CreateTransactionInfoToSend(txnID []byte, lastBlockIdx uint64, status ptypes.TransactionStatus) (ptypes.TransactionInfoToSend, error)
+	sendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBlockIdx uint64, status ptypes.TransactionStatus) error
+
 }
 
 // DKG defines the public HTTP API of the DKG service

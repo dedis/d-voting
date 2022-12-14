@@ -321,7 +321,7 @@ func castVotesLoad(numVotesPerSec, numSec int) func(BallotSize, chunksPerBallot 
 					UserID: "user" + strconv.Itoa(i*numVotesPerSec+j),
 					Ballot: ballot,
 				}
-				go cast(i*numVotesPerSec+j, castVoteRequest, contentType, randomproxy, formID, secret, &includedVoteCount, t)
+				go cast(false, i*numVotesPerSec+j, castVoteRequest, contentType, randomproxy, formID, secret, &includedVoteCount, t)
 
 			}
 			t.Logf("casted votes %d", (i+1)*numVotesPerSec)
@@ -330,19 +330,17 @@ func castVotesLoad(numVotesPerSec, numSec int) func(BallotSize, chunksPerBallot 
 		}
 
 		time.Sleep(time.Second * 20)
-		
+
 		//wait until includedVoteCount == numVotes
 		for {
 			if atomic.LoadUint64(&includedVoteCount) == uint64(numVotes) {
 				break
 			}
+
+			t.Logf("Waiting... included votes %d", atomic.LoadUint64(&includedVoteCount))
 			// check every 10 seconds
-			time.Sleep(time.Second*10)
-			t.Log("waiting for all votes to be included in the blockchain")
+			time.Sleep(time.Second * 10)
 		}
-
-
-
 
 		time.Sleep(time.Second * 30)
 
@@ -350,7 +348,7 @@ func castVotesLoad(numVotesPerSec, numSec int) func(BallotSize, chunksPerBallot 
 	})
 }
 
-func cast(idx int, castVoteRequest ptypes.CastVoteRequest, contentType, randomproxy, formID string, secret kyber.Scalar, includedVoteCount *uint64, t *testing.T) {
+func cast(isRetry bool, idx int, castVoteRequest ptypes.CastVoteRequest, contentType, randomproxy, formID string, secret kyber.Scalar, includedVoteCount *uint64, t *testing.T) {
 
 	t.Logf("cast ballot to proxy %v", randomproxy)
 
@@ -369,14 +367,18 @@ func cast(idx int, castVoteRequest ptypes.CastVoteRequest, contentType, randompr
 	err = json.Unmarshal(body, &infos)
 	require.NoError(t, err)
 
-	ok, err := pollTxnInclusion(120,2*time.Second,randomproxy, infos.Token, t)
-	require.NoError(t, err)
-	if ok {
-		atomic.AddUint64(includedVoteCount, 1)
-		t.Logf("vote %d included", idx)
-		t.Logf("included votes %d", atomic.LoadUint64(includedVoteCount))
+	ok, err := pollTxnInclusion(30, 2*time.Second, randomproxy, infos.Token, t)
+	if !ok && !isRetry {
+		t.Logf("retrying vote %d", idx)
+		cast(true, idx, castVoteRequest, contentType, randomproxy, formID, secret, includedVoteCount, t)
+		return
 	}
 
+	require.NoError(t, err)
+	if ok {
+		count := atomic.AddUint64(includedVoteCount, 1)
+		t.Logf("vote %d included, TOTAL: %d", idx,count)
+	}
 }
 
 func castVotesScenario(numVotes int) func(BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
@@ -435,7 +437,7 @@ func castVotesScenario(numVotes int) func(BallotSize, chunksPerBallot int, formI
 			err = json.Unmarshal(body, &infos)
 			require.NoError(t, err)
 
-			ok, err := pollTxnInclusion(60,1*time.Second,randomproxy, infos.Token, t)
+			ok, err := pollTxnInclusion(60, 1*time.Second, randomproxy, infos.Token, t)
 			require.NoError(t, err)
 			require.True(t, ok)
 

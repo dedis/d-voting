@@ -9,23 +9,63 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/gorilla/mux"
+	"github.com/rs/zerolog"
+	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
 	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/serde"
+	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
 )
 
+// NewTransaction returns a new initialized transaction proxy
+func NewTransaction(mngr txn.Manager, p pool.Pool,
+	ctx serde.Context, pk kyber.Point, blocks blockstore.BlockStore, signer crypto.Signer) Transaction {
+
+	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
+
+	return &transaction{
+		logger:      logger,
+		context:     ctx,	
+		mngr:        mngr,
+		pool:        p,
+		pk:          pk,
+		blocks:      blocks,
+		signer:      signer,
+	}
+}
+
+// form defines HTTP handlers to manipulate the evoting smart contract
+//
+// - implements proxy.Form
+type transaction struct {
+	sync.Mutex
+
+	logger      zerolog.Logger
+	context     serde.Context
+	mngr        txn.Manager
+	pool        pool.Pool
+	pk          kyber.Point
+	blocks      blockstore.BlockStore
+	signer      crypto.Signer
+}
+
 // IsTxnIncluded
 // Check if the transaction is included in the blockchain
-func (h *form) IsTxnIncluded(w http.ResponseWriter, r *http.Request) {
+func (h *transaction) IsTxnIncluded(w http.ResponseWriter, r *http.Request) {
 	// get the token from the url
 	vars := mux.Vars(r)
-
+	
 	// check if the token is valid
 	if vars == nil || vars["token"] == "" {
 		http.Error(w, fmt.Sprintf("token not found: %v", vars), http.StatusInternalServerError)
@@ -105,7 +145,7 @@ func (h *form) IsTxnIncluded(w http.ResponseWriter, r *http.Request) {
 }
 
 // checkHash checks if the hash is valid
-func (h *form) checkHash(status ptypes.TransactionStatus, transactionID []byte, LastBlockIdx uint64, Time int64, Hash []byte) bool {
+func (h *transaction) checkHash(status ptypes.TransactionStatus, transactionID []byte, LastBlockIdx uint64, Time int64, Hash []byte) bool {
 	// create the hash
 	hash := sha256.New()
 	hash.Write([]byte{byte(status)})
@@ -118,12 +158,12 @@ func (h *form) checkHash(status ptypes.TransactionStatus, transactionID []byte, 
 }
 
 // checkSignature checks if the signature is valid
-func (h *form) checkSignature(Hash []byte, Signature crypto.Signature) bool {
+func (h *transaction) checkSignature(Hash []byte, Signature crypto.Signature) bool {
 	return h.signer.GetPublicKey().Verify(Hash, Signature) == nil
 }
 
 // checkTxnIncluded checks if the transaction is included in the blockchain
-func (h *form) checkTxnIncluded(transactionID []byte, lastBlockIdx uint64) (ptypes.TransactionStatus, uint64) {
+func (h *transaction) checkTxnIncluded(transactionID []byte, lastBlockIdx uint64) (ptypes.TransactionStatus, uint64) {
 	// we start at the last block index
 	// which is the index of the last block that was checked
 	// or the last block before the transaction was submited
@@ -153,7 +193,7 @@ func (h *form) checkTxnIncluded(transactionID []byte, lastBlockIdx uint64) (ptyp
 
 // submitTxn submits a transaction
 // Returns the transaction ID.
-func (h *form) submitTxn(ctx context.Context, cmd evoting.Command,
+func (h *transaction) submitTxn(ctx context.Context, cmd evoting.Command,
 	cmdArg string, payload []byte) ([]byte, uint64, error) {
 
 	h.Lock()
@@ -184,7 +224,7 @@ func (h *form) submitTxn(ctx context.Context, cmd evoting.Command,
 	return tx.GetID(), lastBlockIdx, nil
 }
 
-func (h *form) sendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBlockIdx uint64, status ptypes.TransactionStatus) error {
+func (h *transaction) sendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBlockIdx uint64, status ptypes.TransactionStatus) error {
 
 	response, err := h.CreateTransactionInfoToSend(txnID, lastBlockIdx, status)
 	if err != nil {
@@ -194,7 +234,7 @@ func (h *form) sendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBloc
 
 }
 
-func (h *form) CreateTransactionInfoToSend(txnID []byte, lastBlockIdx uint64, status ptypes.TransactionStatus) (ptypes.TransactionInfoToSend, error) {
+func (h *transaction) CreateTransactionInfoToSend(txnID []byte, lastBlockIdx uint64, status ptypes.TransactionStatus) (ptypes.TransactionInfoToSend, error) {
 
 	time := time.Now().Unix()
 	hash := sha256.New()
