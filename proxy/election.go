@@ -114,7 +114,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 		FormID: hex.EncodeToString(formID),
 	}
 
-   // encode the response and write it in the ResponseWriter
+	// encode the response and write it in the ResponseWriter
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
@@ -166,7 +166,7 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 
 	ciphervote := make(types.Ciphervote, len(req.Ballot))
 
-	// Unmarshalling the ballots and keys from the request.
+	// unmarshalling the ballots and keys from the request.
 	for i, egpair := range req.Ballot {
 		k := suite.Point()
 
