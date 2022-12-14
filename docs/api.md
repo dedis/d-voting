@@ -89,7 +89,7 @@ In case of error:
 
 Return:
 
-`200 OK` `application/json`
+`200 OK` `{Status, Token}`
 
 ```json
 {
@@ -107,7 +107,7 @@ Return:
 
 Return:
 
-`200 OK` `application/json`
+`200 OK` `{Status, Token}`
 
 ```json
 {
@@ -148,7 +148,7 @@ Return:
 
 Return:
 
-`200 OK` `text/plain`
+`200 OK` `{Status, Token}`
 
 ```
 
@@ -176,7 +176,7 @@ Return:
 
 Return:
 
-`200 OK` `text/plain`
+`200 OK` `{Status, Token}`
 
 ```
 
@@ -198,7 +198,7 @@ Return:
 
 Return:
 
-`200 OK` `text/plain`
+`200 OK` `{Status, Token}` 
 
 ```
 
@@ -220,7 +220,7 @@ Return:
 
 Return:
 
-`200 OK` `text/plain`
+`200 OK` `{Status, Token}`
 
 ```
 
@@ -242,7 +242,7 @@ Return:
 
 Return:
 
-`200 OK` `text/plain`
+`200 OK` `{Status, Token}`
 
 ```
 
@@ -264,7 +264,7 @@ Return:
 
 Return:
 
-`200 OK` `text/plain`
+`200 OK` `{Status, Token}`
 
 ```
 
@@ -288,7 +288,7 @@ formID:
 
 Return:
 
-`200 OK` `text/plain`
+`200 OK` `{Status, Token}`
 
 ```
 
@@ -336,7 +336,7 @@ Return:
 
 Return:
 
-`200 OK` `text/plain`
+`200 OK` `{Status, Token}`
 
 ```
 
