@@ -35,7 +35,7 @@ type Form interface {
 	DeleteForm(http.ResponseWriter, *http.Request)
 }
 
-// Transaction defines the public HTTP API of the transaction verification service
+// Transaction defines the public HTTP API of the transaction service
 type Transaction interface {
 	// GET /transactions/{token}
 	IsTxnIncluded(http.ResponseWriter, *http.Request)
