@@ -91,11 +91,12 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve ordering.Service: %v", err)
 	}
 
-	var blocks *blockstore.InDisk
+	var blocks blockstore.BlockStore
 	err = ctx.Injector.Resolve(&blocks)
 	if err != nil {
 		return xerrors.Errorf("failed to resolve blockstore.InDisk: %v", err)
 	}
+
 
 	var ordering ordering.Service
 
@@ -163,11 +164,12 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to unmarshal proxy key: %v", err)
 	}
 
-	ep := eproxy.NewForm(ordering, mngr, p, sjson.NewContext(), formFac, proxykey)
+	ep := eproxy.NewForm(ordering, mngr, p, sjson.NewContext(), formFac, proxykey,blocks,signer)
 
 	router := mux.NewRouter()
 
 	router.HandleFunc(formPath, ep.NewForm).Methods("POST")
+	router.HandleFunc("/evoting/transactions/{token}", ep.IsTxnIncluded).Methods("GET")
 	router.HandleFunc(formPath, ep.Forms).Methods("GET")
 	router.HandleFunc(formPath, eproxy.AllowCORS).Methods("OPTIONS")
 	router.HandleFunc(formIDPath, ep.Form).Methods("GET")
@@ -181,6 +183,8 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 
 	proxy.RegisterHandler(formPath, router.ServeHTTP)
 	proxy.RegisterHandler(formPathSlash, router.ServeHTTP)
+	proxy.RegisterHandler("/evoting/transactions", router.ServeHTTP)
+	proxy.RegisterHandler("/evoting/transactions/", router.ServeHTTP)
 
 	dela.Logger.Info().Msg("d-voting proxy handlers registered")
 

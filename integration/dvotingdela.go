@@ -109,7 +109,7 @@ type dVotingNode struct {
 
 // Creates n dela nodes using tempDir as root to file path and returns an array
 // of nodes or error
-func setupDVotingNodes(t require.TestingT, numberOfNodes int, tempDir string) []dVotingCosiDela {
+func setupDVotingNodes(t require.TestingT, numberOfNodes int, tempDir string, nodeSetup dVotingCosiDela) []dVotingCosiDela {
 
 	wait := sync.WaitGroup{}
 
@@ -137,7 +137,12 @@ func setupDVotingNodes(t require.TestingT, numberOfNodes int, tempDir string) []
 		delaNodes = append(delaNodes, node)
 		dVotingNodes = append(dVotingNodes, node)
 	}
-	delaNodes[0].Setup(delaNodes[1:]...)
+
+	if nodeSetup != nil {
+		nodeSetup.Setup(delaNodes...)
+	} else {
+		delaNodes[0].Setup(delaNodes[1:]...)
+	}
 
 	return dVotingNodes
 }
