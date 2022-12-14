@@ -288,7 +288,7 @@ formID:
 
 Return:
 
-`200 OK` `{Status, Token}`
+`200 OK` `{ Status, Token}`
 
 ```
 
