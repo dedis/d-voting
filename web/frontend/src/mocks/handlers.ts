@@ -110,7 +110,6 @@ export const handlers = [
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(ctx.status(200), ctx.json({ FormID: mockForms.get(FormID as ID), Token: 'blabla' }));
-    return res(ctx.status(200), ctx.json(mockForms.get(FormID as ID)));
   }),
 
   rest.post(endpoints.newForm, async (req, res, ctx) => {
