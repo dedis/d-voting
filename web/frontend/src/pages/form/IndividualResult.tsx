@@ -215,20 +215,28 @@ const IndividualResult: FC<IndividualResultProps> = ({
             className="col-span-2 items-center mx-3 px-2 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
             {t('previous')}
           </button>
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            title="Please enter a number"
-            onChange={(e) => {
-              setCurrentID(e.target.value);
-            }}
-            className={
-              'col-span-5 col-start-3 text-center border border-gray-300 rounded-md ring-transparent' +
-              (isValid !== 0 ? ' border-red-500' : '')
-            }
-            value={currentID}
-          />
+          <div className="flex flex-col align-middle col-span-5 col-start-3">
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              title="Please enter a number in the range of ballot numbers"
+              onChange={(e) => {
+                setCurrentID(e.target.value);
+              }}
+              className={
+                'grow align-middle text-center border border-gray-300 rounded-md ring-transparent focus:ring-0' +
+                (isValid !== 0 ? ' border-red-500 border-1 text-red-600' : '')
+              }
+              value={currentID}
+            />
+            {isValid !== 0 && (
+              <p role="alert" className="py-0 text-left text-xs text-red-600">
+                {t('invalidInput', { max: ballotNumber })}
+              </p>
+            )}
+          </div>
+
           <button
             onClick={handleNext}
             className="col-span-2 mx-3 relative align-right items-center px-2 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
@@ -270,6 +278,11 @@ const IndividualResult: FC<IndividualResultProps> = ({
             onKeyDown={(e) => handleEnter(e)}
             className="col-span-7 col-start-2 text-center"
             value={1}
-          />*/
+          />
+          
+          
+          <div className="text-red-500 text-xs" hidden={isValid === ValidityType.VALID}>
+              {isValid}
+            </div>*/
 
 export default IndividualResult;
