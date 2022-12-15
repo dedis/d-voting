@@ -2,9 +2,9 @@
 
 ## Introduction
 
-Verifiability is an important property to allows voters to check their vote has been cast unaltered, and that it has been registered correctly in the electronic ballot box.
+Verifiability is an important property that enables a voters to check their vote has been cast unaltered, and that it has been registered correctly in the electronic ballot box.
 
-The current d-voting (version num) didn't have this design yet. The current encrypted ballot logic is shown as follows:
+The current d-voting [latest commit](https://github.com/dedis/d-voting/commit/39a2d3363dd064a95186b0c31a44dfdea3325002) did not have this design yet. The current encrypted ballot logic is as follows:
 
 ```mermaid
  sequenceDiagram
@@ -30,31 +30,31 @@ The current d-voting (version num) didn't have this design yet. The current encr
     Backend ->>- User: 200 OK text/plain
 ```
 
-As the picture show, the Frontend will encrypt the ballot using Elgamal encryption which has a nondeterministic result and then sends it to the Backend to verify and sign. After that, the backend will send the encrypted + signed ballot to the blockchain node to put it on the chain. However, since the encryption is nondeterministic thus the user will not able to verify their casted ballot stored in the node.
+As the picture shows, the frontend encrypts the ballot using Elgamal encryption which has a nondeterministic result and then sends it to the backend to verify and sign. After that, the backend sends the encrypted + signed ballot to the blockchain node to put it on the chain. However, since the encryption is nondeterministic thus the user will not be able to verify their casted ballot stored in the node.
 
 In this document, we aim to design an implementation to achieve verifiability of the voters' encrypted vote without leaking ballot information to others.
 
 ## Requirements
 
-The voter should able to verify their encrypted ballot in Frontend.
-The encrypted vote remain confidentiality from others.
-The Node shall have an endpoint to get voter encrypted ballot.
+The voter should be able to verify their encrypted ballot in the frontend.
+The encrypted vote remains confidential from everyone except the voter.
+The Node shall be able to show voters’ encrypted ballot.
 
 ## Related work
 
 ### Strawman approach
 
-The strawman design is just using a fixed seed to encrypt the ballot which make the encrypted ballot deterministic. Then the user can verify the encrypted ballot on the chain by just encrypt a new ballot with the same option.
+The strawman design is just using a fixed seed to encrypt the ballot which makes the encrypted ballot deterministic. Then the user can verify the encrypted ballot on the chain by just encrypting a new ballot with the same option.
 
-However this design actually will break the confidentialy property of our d-voting system. An adversary be able to decrypt the user's ballot by recording the ciphertext of the encrypted ballot in every possible choice. Then the adversary can just check the ciphertext on the chain and will notify the voter ballot.
+However this design actually will break the confidentiality property of our d-voting system. An adversary is able to decrypt the user's ballot by recording the ciphertext of the encrypted ballot in every possible choice. Then the adversary can just check the ciphertext on the chain and will notify the voter ballot.
 
-Thus we should keep some secret only to the voter himselves or the backend to prevent adversary unlock the ballot.
+Thus we should keep some secret only to the voter themselves or the backend to prevent adversaries unlocking the ballot.
 
 ### Swiss POST evoting system
 
-Swiss POST implement their own [evoting system](https://www.evoting.ch/en) which support the verifiability of the casted ballot.
+Swiss POST implement their own [e-voting system](https://www.evoting.ch/en) which support the verifiability of the casted ballot.
 
-Their protocol takes place between a User, a trusted device, and an untrusted device. In this example the user will be Alice, the trusted device will be her cellphone, and the untrucsted device will be the evoting backend system. After casting the vote, user will received a encBallotReport (via QR code). Then the user can verify if their vote has been cast correctly or not.
+Their protocol takes place between a User, a trusted device, and an untrusted device. In this example the user will be Alice, the trusted device will be her cellphone, and the untrusted device will be the e-voting backend system. After casting the vote, user will receive a encBallotReport (via QR code). Then the user can verify if their vote has been cast correctly or not.
 
 ```mermaid
 sequenceDiagram
@@ -75,7 +75,7 @@ sequenceDiagram
 
 ## Proposed solution
 
-According to our requirements, we assume that the frontend is trusted. If frontend is compromised, the adversary can already know the plaintext of the ballot which breaks the confidentiality of the ballot.
+According to our requirements, we assume that the frontend is trusted. If the frontend is compromised, the adversary can already know the plaintext of the ballot which breaks the confidentiality of the ballot.
 
 When the frontend after the frontend encrypted the ballot (use default non-deterministic encryption), it can hash the encrypted ballot and show the hash str of the encrypted ballot. The frontend sends the encrypted ballot to the backend.
 
@@ -109,16 +109,16 @@ sequenceDiagram
     Note over User: check the hash of the vote is the same or not.
 ```
 
-However, this design is still not perfect because it didn't have coercion resistance property because coercers will know the Hash of encrypted ballot during the vote. We can achieve coercion resistance via moved the encryption process to the backend and use benaloh challenge protocol to encrypt the vote. But currently our system didn't require coercion resistance thus we will not implement this.
+However, this design is still not perfect because it doesn't have a coercion resistance property. After all, coercers will know the Hash of the encrypted ballot during the vote. We can achieve coercion resistance by moving the encryption process to the backend and using the Benaloh challenge protocol to encrypt the vote. But currently, our system doesn't require coercion resistance thus we will not implement this.
 
 ### frontend
 
 - Edit the submit vote function
-    - hash the encrypted ballot and show to the user.
-- Edit form details page to show the hash of ballot.
+    - hash the encrypted ballot and show it to the user.
+- Edit the form details page to show the hash of the ballot.
     - A user can select an election to see the details.
-    - In the detail page, it show who is the voter and the hash of their ballot.
-    - User can check if the hash they received is the same as the hash on the details.
+    - In the detail page, it shows the voter and the hash of their ballot.
+    - Users can check if the hash they received is the same as the hash on the details.
 
 ### Blockchain node
 
@@ -165,7 +165,7 @@ In the context of an election, the Benaloh Challenge ensues that systematic chea
 
 Just like the Benaloh challenge, a user can assume that the backend is untrusted, and they have a Benaloh challenge with the backend.
 
-The user first encrypts their ballot using the election public key and then sent it to the backend. Then the backend encrypted the encrypted ballot again with a randomly generated seed and sends the hash of the enc(enc(ballot)) to the user. 
+The user first encrypts their ballot using the election public key and then sends it to the backend. Then the backend encrypts the encrypted ballot again with a randomly generated seed and sends the hash of the enc(enc(ballot)) to the user.
 
 Then the user can choose to challenge (which backend reveals the random seed) or accept (which backend executes the vote).
 
