@@ -20,6 +20,7 @@ import (
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	eproxy "github.com/dedis/d-voting/proxy"
+	"github.com/dedis/d-voting/proxy/txnmanager"
 	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/shuffle"
@@ -164,8 +165,8 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to unmarshal proxy key: %v", err)
 	}
 
-	transactionProxy := eproxy.NewTransaction(mngr, p, sjson.NewContext(), proxykey,blocks,signer)
-	ep := eproxy.NewForm(ordering, mngr, p, sjson.NewContext(), formFac, proxykey,transactionProxy)
+	transactionProxy := txnmanager.NewTransactionManager(mngr, p, sjson.NewContext(), proxykey,blocks,signer)
+	ep := eproxy.NewForm(ordering, p, sjson.NewContext(), formFac, proxykey,transactionProxy)
 
 	router := mux.NewRouter()
 
