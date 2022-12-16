@@ -13,7 +13,8 @@ type Manager interface {
 	IsTxnIncluded(http.ResponseWriter, *http.Request)
 
 	// submit the transaction to the blockchain
-	// return the transactionID and the index of the last block when it was submitted
+	// return the transactionID and 
+	// the index of the last block when it was submitted
 	SubmitTxn(ctx context.Context, cmd evoting.Command, cmdArg string, payload []byte) ([]byte, uint64, error)
 
 	// create the json to send to the 
