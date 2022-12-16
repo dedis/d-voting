@@ -31,7 +31,6 @@ const (
 	maxTimeTransactionCheck = 10 * time.Minute
 )
 
-
 // NewTransactionManager returns a new initialized transaction manager
 func NewTransactionManager(mngr txn.Manager, p pool.Pool,
 	ctx serde.Context, pk kyber.Point, blocks blockstore.BlockStore, signer crypto.Signer) Manager {
@@ -39,13 +38,13 @@ func NewTransactionManager(mngr txn.Manager, p pool.Pool,
 	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
 
 	return &manager{
-		logger:      logger,
-		context:     ctx,	
-		mngr:        mngr,
-		pool:        p,
-		pk:          pk,
-		blocks:      blocks,
-		signer:      signer,
+		logger:  logger,
+		context: ctx,
+		mngr:    mngr,
+		pool:    p,
+		pk:      pk,
+		blocks:  blocks,
+		signer:  signer,
 	}
 }
 
@@ -55,13 +54,13 @@ func NewTransactionManager(mngr txn.Manager, p pool.Pool,
 type manager struct {
 	sync.Mutex
 
-	logger      zerolog.Logger
-	context     serde.Context
-	mngr        txn.Manager
-	pool        pool.Pool
-	pk          kyber.Point
-	blocks      blockstore.BlockStore
-	signer      crypto.Signer
+	logger  zerolog.Logger
+	context serde.Context
+	mngr    txn.Manager
+	pool    pool.Pool
+	pk      kyber.Point
+	blocks  blockstore.BlockStore
+	signer  crypto.Signer
 }
 
 // IsTxnIncluded
@@ -69,7 +68,7 @@ type manager struct {
 func (h *manager) IsTxnIncluded(w http.ResponseWriter, r *http.Request) {
 	// get the token from the url
 	vars := mux.Vars(r)
-	
+
 	// check if the token is valid
 	if vars == nil || vars["token"] == "" {
 		http.Error(w, fmt.Sprintf("token not found: %v", vars), http.StatusInternalServerError)

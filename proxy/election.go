@@ -26,10 +26,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const (
-	maxTimeTransactionCheck = 10 * time.Minute
-)
-
 func newSignedErr(err error) error {
 	return xerrors.Errorf("failed to created signed request: %v", err)
 }
@@ -45,13 +41,13 @@ func NewForm(srv ordering.Service, p pool.Pool,
 	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
 
 	return &form{
-		logger:           logger,
-		orderingSvc:      srv,
-		context:          ctx,
-		formFac:          fac,
-		mngr:             txnManaxer,
-		pool:             p,
-		pk:               pk,
+		logger:      logger,
+		orderingSvc: srv,
+		context:     ctx,
+		formFac:     fac,
+		mngr:        txnManaxer,
+		pool:        p,
+		pk:          pk,
 	}
 }
 
@@ -61,13 +57,13 @@ func NewForm(srv ordering.Service, p pool.Pool,
 type form struct {
 	sync.Mutex
 
-	orderingSvc      ordering.Service
-	logger           zerolog.Logger
-	context          serde.Context
-	formFac          serde.Factory
-	mngr             txnmanager.Manager
-	pool             pool.Pool
-	pk               kyber.Point
+	orderingSvc ordering.Service
+	logger      zerolog.Logger
+	context     serde.Context
+	formFac     serde.Factory
+	mngr        txnmanager.Manager
+	pool        pool.Pool
+	pk          kyber.Point
 }
 
 // NewForm implements proxy.Proxy

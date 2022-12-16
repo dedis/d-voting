@@ -15,6 +15,4 @@ type Manager interface {
 	SubmitTxn(ctx context.Context, cmd evoting.Command, cmdArg string, payload []byte) ([]byte, uint64, error)
 	CreateTransactionInfoToSend(txnID []byte, lastBlockIdx uint64, status types.TransactionStatus) (types.TransactionInfoToSend, error)
 	SendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBlockIdx uint64, status types.TransactionStatus) error
-	//SendResponse(w http.ResponseWriter, response any) error
-
 }
