@@ -46,7 +46,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	b.Logf("using temp dir %s", dirPath)
 
 	// ##### CREATE NODES #####
-	nodes := setupDVotingNodes(b, numNodes, dirPath, nil)
+	nodes := setupDVotingNodes(b, numNodes, dirPath)
 
 	signer := createDVotingAccess(b, nodes, dirPath)
 

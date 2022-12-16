@@ -27,7 +27,6 @@ const defaultNodes = 5
 func TestScenario(t *testing.T) {
 	var err error
 	numNodes := defaultNodes
-	t.Log("Start")
 
 	n, ok := os.LookupEnv("NNODES")
 	if ok {

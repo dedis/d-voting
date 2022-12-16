@@ -5,8 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-
-	//"io"
 	"net/http"
 	"sync"
 
@@ -103,26 +101,24 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: wait for the transaction to be included in a block??
-
 	// hash the transaction
 	hash := sha256.New()
 	hash.Write(txnID)
 	formID := hash.Sum(nil)
 
-	transactionInfoToSend, err := h.mngr.CreateTransactionInfoToSend(txnID, blockIdx, ptypes.UnknownTransactionStatus)
+	// create it to get the  token
+	transactionInfoToSend, err := h.mngr.CreateTransactionInfoToSend(txnID, blockIdx, txnmanager.UnknownTransactionStatus)
 	if err != nil {
 		http.Error(w, "failed to create transaction info: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// return the formID
 	response := ptypes.CreateFormResponse{
 		FormID: hex.EncodeToString(formID),
 		Token:  transactionInfoToSend.Token,
 	}
 
-	// sign the response
+	// send the response json
 	txnmanager.SendResponse(w, response)
 }
 
@@ -214,8 +210,8 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//send the transaction
-	h.mngr.SendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
+	//send the transaction's informations
+	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 
 }
 
@@ -296,8 +292,8 @@ func (h *form) openForm(formID string, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//send the transaction
-	h.mngr.SendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
+	//send the transaction's informations
+	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 }
 
 // closeForm closes a form.
@@ -322,8 +318,8 @@ func (h *form) closeForm(formIDHex string, w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	//send the transaction
-	h.mngr.SendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
+	//send the transaction's informations
+	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 
 }
 
@@ -361,8 +357,8 @@ func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	//send the transaction
-	h.mngr.SendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
+	//send the transaction's informations
+	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 }
 
 // cancelForm cancels a form.
@@ -387,8 +383,8 @@ func (h *form) cancelForm(formIDHex string, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	//send the transaction
-	h.mngr.SendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
+	//send the transaction's informations
+	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 }
 
 // Form implements proxy.Proxy. The request should not be signed because it
@@ -555,8 +551,8 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//send the transaction
-	h.mngr.SendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
+	//send the transaction's informations
+	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 }
 
 func (h *form) getFormsMetadata() (types.FormsMetadata, error) {

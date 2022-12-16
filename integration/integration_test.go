@@ -18,7 +18,7 @@ import (
 
 // Check the shuffled votes versus the cast votes on a few nodes
 func TestIntegration(t *testing.T) {
-	t.Run("3 nodes, 3 votes", getIntegrationTest(4, 5))
+	t.Run("4 nodes, 5 votes", getIntegrationTest(4, 5))
 
 }
 
@@ -51,7 +51,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		t.Logf("using temp dir %s", dirPath)
 
 		// ##### CREATE NODES #####
-		nodes := setupDVotingNodes(t, numNodes, dirPath, nil)
+		nodes := setupDVotingNodes(t, numNodes, dirPath)
 
 		signer := createDVotingAccess(t, nodes, dirPath)
 
@@ -192,7 +192,7 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		t.Logf("using temp dir %s", dirPath)
 
 		// ##### CREATE NODES #####
-		nodes := setupDVotingNodes(t, numNodes, dirPath, nil)
+		nodes := setupDVotingNodes(t, numNodes, dirPath)
 
 		signer := createDVotingAccess(t, nodes, dirPath)
 
@@ -351,7 +351,7 @@ func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 		defer os.RemoveAll(dirPath)
 
 		// ##### CREATE NODES #####
-		nodes := setupDVotingNodes(b, numNodes, dirPath, nil)
+		nodes := setupDVotingNodes(b, numNodes, dirPath)
 
 		signer := createDVotingAccess(b, nodes, dirPath)
 

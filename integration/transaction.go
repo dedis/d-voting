@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	ptypes "github.com/dedis/d-voting/proxy/types"
+	"github.com/dedis/d-voting/proxy/txnmanager"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
@@ -19,12 +19,6 @@ import (
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"golang.org/x/xerrors"
-)
-
-const (
-	addAndWaitErr = "failed to addAndWait: %v"
-	maxPollCount  = 50
-	interPollWait = 1 * time.Second
 )
 
 func newTxManager(signer crypto.Signer, firstNode dVotingCosiDela,
@@ -51,11 +45,11 @@ type txManager struct {
 }
 
 // For scenarioTest
-func pollTxnInclusion(maxPollCount int ,interPollWait time.Duration,proxyAddr, token string, t *testing.T) (bool, error) {
+func pollTxnInclusion(maxPollCount int, interPollWait time.Duration, proxyAddr, token string, t *testing.T) (bool, error) {
 	t.Logf("Starting polling for transaction inclusion")
 	for i := 0; i < maxPollCount; i++ {
 		if i%10 == 0 {
-			t.Logf("Polling for transaction inclusion: %d/%d", i,maxPollCount)
+			t.Logf("Polling for transaction inclusion: %d/%d", i, maxPollCount)
 		}
 		timeBegin := time.Now()
 
@@ -76,7 +70,7 @@ func pollTxnInclusion(maxPollCount int ,interPollWait time.Duration,proxyAddr, t
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", body)
 
 		//get the body of the response as json
-		var result ptypes.TransactionInfoToSend
+		var result txnmanager.TransactionInfoToSend
 		err = json.Unmarshal(body, &result)
 		if err != nil {
 			return false, xerrors.Errorf("failed to unmarshal response body: %v", err)
@@ -88,7 +82,7 @@ func pollTxnInclusion(maxPollCount int ,interPollWait time.Duration,proxyAddr, t
 		case 2:
 			return false, nil
 		case 1:
-			t.Logf("Transaction included in the blockchain at iteration: %d/%d", i,maxPollCount)
+			t.Logf("Transaction included in the blockchain at iteration: %d/%d", i, maxPollCount)
 			return true, nil
 		case 0:
 			token = result.Token

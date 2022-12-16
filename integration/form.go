@@ -66,6 +66,7 @@ func createForm(m txManager, title string, admin string) ([]byte, error) {
 	return formID, nil
 }
 
+// for scenario/load test
 func createFormScenario(contentType, proxy string, secret kyber.Scalar, t *testing.T) string {
 	t.Log("Create form")
 
@@ -96,6 +97,7 @@ func createFormScenario(contentType, proxy string, secret kyber.Scalar, t *testi
 
 	formID := createFormResponse.FormID
 
+	// wait for the election to be created
 	ok, err := pollTxnInclusion(60, time.Second, proxy, createFormResponse.Token, t)
 	require.NoError(t, err)
 	require.True(t, ok)
@@ -105,6 +107,7 @@ func createFormScenario(contentType, proxy string, secret kyber.Scalar, t *testi
 	return formID
 }
 
+// for integration tests
 func openForm(m txManager, formID []byte) error {
 	openForm := &types.OpenForm{
 		FormID: hex.EncodeToString(formID),
@@ -156,6 +159,7 @@ func getForm(formFac serde.Factory, formID []byte,
 	return form, nil
 }
 
+// for integration tests
 func closeForm(m txManager, formID []byte, admin string) error {
 	closeForm := &types.CloseForm{
 		FormID: hex.EncodeToString(formID),
@@ -232,6 +236,7 @@ func updateForm(secret kyber.Scalar, proxyAddr, formIDHex, action string, t *tes
 		return false, xerrors.Errorf("failed to unmarshal response body: %v", err)
 	}
 
+	// wait until the update is completed
 	return pollTxnInclusion(60,time.Second, proxyAddr, result["Token"].(string), t)
 
 }

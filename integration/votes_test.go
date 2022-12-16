@@ -45,7 +45,7 @@ func getIntegrationTestBadVote(numNodes, numVotes, numBadVotes int) func(*testin
 		t.Logf("using temp dir %s", dirPath)
 
 		// ##### CREATE NODES #####
-		nodes := setupDVotingNodes(t, numNodes, dirPath, nil)
+		nodes := setupDVotingNodes(t, numNodes, dirPath)
 
 		signer := createDVotingAccess(t, nodes, dirPath)
 
@@ -191,7 +191,7 @@ func getIntegrationTestRevote(numNodes, numVotes, numRevotes int) func(*testing.
 		t.Logf("using temp dir %s", dirPath)
 
 		// ##### CREATE NODES #####
-		nodes := setupDVotingNodes(t, numNodes, dirPath, nil)
+		nodes := setupDVotingNodes(t, numNodes, dirPath)
 
 		signer := createDVotingAccess(t, nodes, dirPath)
 

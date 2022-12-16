@@ -188,7 +188,7 @@ if [ "$FRONTEND" == true ]; then
   if tmux has-session -t $s 2>/dev/null; then
     tmux new-window -t $s -n "frontend"
     tmux send-keys -t $s:{end} "cd web/frontend && npm install && REACT_APP_PROXY=http://localhost:9081 REACT_APP_NOMOCK=on npm start" C-m
-    
+
   else
     #run it in the current shell
     cd web/frontend && REACT_APP_PROXY=http://localhost:9081 REACT_APP_NOMOCK=on npm start

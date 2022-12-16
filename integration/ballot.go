@@ -13,9 +13,12 @@ import (
 	"testing"
 	"time"
 
+	"sync/atomic"
+
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
+	"github.com/dedis/d-voting/proxy/txnmanager"
 	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/stretchr/testify/require"
@@ -25,17 +28,20 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/random"
 	"golang.org/x/xerrors"
-	"sync/atomic"
 )
+
+const addAndWaitErr = "failed to addAndWait: %v"
 
 var suite = suites.MustFind("Ed25519")
 
+// Check if a ballot is empty i.e. if all his fields are empty
 func ballotIsNull(ballot types.Ballot) bool {
 	return ballot.SelectResultIDs == nil && ballot.SelectResult == nil &&
 		ballot.RankResultIDs == nil && ballot.RankResult == nil &&
 		ballot.TextResultIDs == nil && ballot.TextResult == nil
 }
 
+// Choose randomly numberOfVotes predefined ballots and cast them
 func castVotesRandomly(m txManager, actor dkg.Actor, form types.Form,
 	numberOfVotes int) ([]types.Ballot, error) {
 
@@ -95,6 +101,7 @@ func castVotesRandomly(m txManager, actor dkg.Actor, form types.Form,
 	return votes, nil
 }
 
+// cast a vote with the good format but invalid content
 func castBadVote(m txManager, actor dkg.Actor, form types.Form, numberOfBadVotes int) error {
 
 	possibleBallots := []string{
@@ -137,8 +144,6 @@ func castBadVote(m txManager, actor dkg.Actor, form types.Form, numberOfBadVotes
 		if err != nil {
 			return xerrors.Errorf(addAndWaitErr, err)
 		}
-
-		//votes[i] = ballot
 	}
 
 	return nil
@@ -267,12 +272,15 @@ func marshallBallotManual(voteStr string, pubkey kyber.Point, chunks int) (ptype
 	return ballot, nil
 }
 
+// cast vote for the load test
+// return a function to provide a common implementation for
+// the load test and the scenario test
 func castVotesLoad(numVotesPerSec, numSec int) func(BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
 	return (func(BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
 
 		t.Log("cast ballots")
 
-		//make List of ballots
+		//make List of identical valid ballots
 		b1 := string("select:" + encodeIDBallot("bb") + ":0,0,1,0\n" + "text:" + encodeIDBallot("ee") + ":eWVz\n\n") //encoding of "yes"
 
 		numVotes := numVotesPerSec * numSec
@@ -307,9 +315,7 @@ func castVotesLoad(numVotesPerSec, numSec int) func(BallotSize, chunksPerBallot 
 		ballot, err := marshallBallotManual(b1, pubKey, chunksPerBallot)
 		require.NoError(t, err)
 
-		// we want to send all the votes and then check if it was included
-		// in the blockchain
-
+		// atomic counter
 		var includedVoteCount uint64
 
 		for i := 0; i < numSec; i++ {
@@ -321,6 +327,8 @@ func castVotesLoad(numVotesPerSec, numSec int) func(BallotSize, chunksPerBallot 
 					UserID: "user" + strconv.Itoa(i*numVotesPerSec+j),
 					Ballot: ballot,
 				}
+				// cast asynchrounously and increment includedVoteCount
+				// if the cast was succesfull
 				go cast(false, i*numVotesPerSec+j, castVoteRequest, contentType, randomproxy, formID, secret, &includedVoteCount, t)
 
 			}
@@ -329,18 +337,17 @@ func castVotesLoad(numVotesPerSec, numSec int) func(BallotSize, chunksPerBallot 
 
 		}
 
-		//time.Sleep(time.Second * 20)
-
-		//wait until includedVoteCount == numVotes
+		// wait until includedVoteCount == numVotes
+		// i.e. that every votes has been included
 		for {
 			if atomic.LoadUint64(&includedVoteCount) == uint64(numVotes) {
 				break
 			}
 
 			t.Logf("Waiting... included votes %d", atomic.LoadUint64(&includedVoteCount))
-			 infos := getFormInfo(proxyArray[0],formID, t)
+			infos := getFormInfo(proxyArray[0], formID, t)
+			// check that our counter is synchronized with the blockchain
 			t.Logf("Voters count: %v", len(infos.Voters))
-			t.Logf("Voters: %v", infos.Voters)
 			// check every 10 seconds
 			time.Sleep(time.Second * 10)
 		}
@@ -355,7 +362,6 @@ func cast(isRetry bool, idx int, castVoteRequest ptypes.CastVoteRequest, content
 
 	t.Logf("cast ballot to proxy %v", randomproxy)
 
-	// t.Logf("vote is: %v", castVoteRequest)
 	signed, err := createSignedRequest(secret, castVoteRequest)
 	require.NoError(t, err)
 
@@ -366,11 +372,12 @@ func cast(isRetry bool, idx int, castVoteRequest ptypes.CastVoteRequest, content
 	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	var infos ptypes.TransactionInfoToSend
+	var infos txnmanager.TransactionInfoToSend
 	err = json.Unmarshal(body, &infos)
 	require.NoError(t, err)
 
 	ok, err := pollTxnInclusion(30, 2*time.Second, randomproxy, infos.Token, t)
+	// if the transaction was not included after 60s, we retry once
 	if !ok && !isRetry {
 		t.Logf("retrying vote %d", idx)
 		cast(true, idx, castVoteRequest, contentType, randomproxy, formID, secret, includedVoteCount, t)
@@ -380,10 +387,13 @@ func cast(isRetry bool, idx int, castVoteRequest ptypes.CastVoteRequest, content
 	require.NoError(t, err)
 	if ok {
 		count := atomic.AddUint64(includedVoteCount, 1)
-		t.Logf("vote %d included, TOTAL: %d", idx,count)
+		t.Logf("vote %d included, TOTAL: %d", idx, count)
 	}
 }
 
+// cast vote for the scenario test
+// return a function to provide a common implementation for
+// the load test and the scenario test
 func castVotesScenario(numVotes int) func(BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
 	return (func(BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
 		// make List of ballots
@@ -436,10 +446,12 @@ func castVotesScenario(numVotes int) func(BallotSize, chunksPerBallot int, formI
 			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
-			var infos ptypes.TransactionInfoToSend
+			var infos txnmanager.TransactionInfoToSend
 			err = json.Unmarshal(body, &infos)
 			require.NoError(t, err)
 
+			// send the votes 1 by 1 and wait for it to be included
+			// to send the next one
 			ok, err := pollTxnInclusion(60, 1*time.Second, randomproxy, infos.Token, t)
 			require.NoError(t, err)
 			require.True(t, ok)

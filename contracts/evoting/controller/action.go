@@ -92,12 +92,13 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve ordering.Service: %v", err)
 	}
 
+	// The BlockStore will be used to parse the blockchain
+	// to check if a transaction was included
 	var blocks blockstore.BlockStore
 	err = ctx.Injector.Resolve(&blocks)
 	if err != nil {
 		return xerrors.Errorf("failed to resolve blockstore.InDisk: %v", err)
 	}
-
 
 	var ordering ordering.Service
 
@@ -165,8 +166,9 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to unmarshal proxy key: %v", err)
 	}
 
-	transactionManager := txnmanager.NewTransactionManager(mngr, p, sjson.NewContext(), proxykey,blocks,signer)
-	ep := eproxy.NewForm(ordering, p, sjson.NewContext(), formFac, proxykey,transactionManager)
+	transactionManager := txnmanager.NewTransactionManager(mngr, p, sjson.NewContext(), proxykey, blocks, signer)
+
+	ep := eproxy.NewForm(ordering, p, sjson.NewContext(), formFac, proxykey, transactionManager)
 
 	router := mux.NewRouter()
 
@@ -185,7 +187,6 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 
 	proxy.RegisterHandler(formPath, router.ServeHTTP)
 	proxy.RegisterHandler(formPathSlash, router.ServeHTTP)
-	proxy.RegisterHandler("/evoting/transactions", router.ServeHTTP)
 	proxy.RegisterHandler("/evoting/transactions/", router.ServeHTTP)
 
 	dela.Logger.Info().Msg("d-voting proxy handlers registered")
