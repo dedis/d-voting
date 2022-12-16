@@ -134,16 +134,6 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 
 // NewFormVote implements proxy.Proxy
 func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	// check if the formID is valid
-	if vars == nil || vars["formID"] == "" {
-		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
-		return
-	}
-
-	formID := vars["formID"]
-
 	var req ptypes.CastVoteRequest
 
 	// get the signed request
@@ -160,7 +150,15 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Info().Msg(fmt.Sprintf("NewFormVote: %v", req))
+	vars := mux.Vars(r)
+
+	// check if the formID is valid
+	if vars == nil || vars["formID"] == "" {
+		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
+		return
+	}
+
+	formID := vars["formID"]
 
 	elecMD, err := h.getFormsMetadata()
 	if err != nil {
@@ -229,6 +227,22 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 
 // EditForm implements proxy.Proxy
 func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
+	var req ptypes.UpdateFormRequest
+
+	// get the signed request
+	signed, err := ptypes.NewSignedRequest(r.Body)
+	if err != nil {
+		InternalError(w, r, newSignedErr(err), nil)
+		return
+	}
+
+	// get the request and verify the signature
+	err = signed.GetAndVerify(h.pk, &req)
+	if err != nil {
+		InternalError(w, r, getSignedErr(err), nil)
+		return
+	}
+
 	vars := mux.Vars(r)
 
 	//check if the formID is valid
@@ -248,22 +262,6 @@ func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
 	// check if the form exists
 	if elecMD.FormsIDs.Contains(formID) < 0 {
 		http.Error(w, "the form does not exist", http.StatusNotFound)
-		return
-	}
-
-	var req ptypes.UpdateFormRequest
-
-	// get the signed request
-	signed, err := ptypes.NewSignedRequest(r.Body)
-	if err != nil {
-		InternalError(w, r, newSignedErr(err), nil)
-		return
-	}
-
-	// get the request and verify the signature
-	err = signed.GetAndVerify(h.pk, &req)
-	if err != nil {
-		InternalError(w, r, getSignedErr(err), nil)
 		return
 	}
 

@@ -1,38 +1,90 @@
-# Packaging D-Voting in an installable .deb file
+# Run the web backend
 
-## Requirements
+You need to have node 18.x version.
 
-- gem
-- build-essential
-- git
-- fpm (`sudo gem install fpm`)
-- go (see https://go.dev/doc/install)
+1) Install dependencies and transpile:
 
 ```sh
-sudo apt install rubygems build-essential git
+cd web/frontend
+npm install
+NODE_ENV=production ./node_modules/.bin/tsc --outDir build
 ```
 
-## Get the code
+2) Copy `node_modules`, `config.env`, and `dbUtil.js` somewhere.
+
+3) Run the web backend:
 
 ```sh
-git clone --branch packaging https://github.com/dedis/d-voting.git --recursive 
+source x/y/config.env && \
+    NODE_ENV=production PORT=6000 NODE_PATH=x/y/node_modules \
+    /usr/bin/node /x/y/build/Server.js
 ```
 
-## Build the deb package
+`Server.js` is the result of the transpilation. Replace locations appropriately
+and be sure to *export* variables in `config.env` (i.e do `export xx=yy`).
+However it is recommended to use a service manager such as systemd to run the
+app.
 
-from the root folder, use make:
+4) Use dbUtils.js
+
+You can manually update the rights with `dbUtils.js`:
 
 ```sh
-make deb
+NODE_PATH=./node_modules node -e 'require("./dbUtils").listEls("../data/dvoting-users")'
 ```
 
-Make sure that a git tag exist, i.e `git describe` shows your tag.
+# Run the web frontend
 
-The resulting .deb can be found in the `dist/` folder.
+You need to have node 18.x version.
 
-## Things to do after install
+1) Install dependencies and transpile:
 
-### Network config
+```sh
+cd web/frontend
+npm install
+NODE_ENV=production HTTPS=true BUILD_PATH=x/y/build ./node_modules/.bin/react-scripts build
+```
+
+2) Configure an HTTP server
+
+You should server the `x/y/build` folder and proxy all requests on `/api` to the
+web backend. For example with nginx:
+
+```
+    location / {
+        root   /x/y/build;
+        index  index.html;
+        autoindex on;
+        try_files $uri /index.html;
+    }
+
+    location /api {
+        proxy_pass http://127.0.0.1:6000;
+    }
+```
+
+# Configure a network of nodes
+
+## Run a node
+
+Check how a node is started in `pkg/opt/dedis/dvoting/bin/start-voting`. For
+example:
+
+```sh
+LLVL=info ./memcoin-darwin-amd64-v0_4_5-alpha \
+    --config /tmp/node8 \
+    start \
+    --postinstall \
+    --promaddr 0.0.0.0:9101 \
+    --proxyaddr 0.0.0.0:9080 \
+    --listen //0.0.0.0:9000 \
+    --public //localhost:9000 \
+    --routing flat \
+    --noTLS=true \
+    --proxykey adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3
+```
+
+## Network config
 
 Ensure that the public address is correct. For instance, in
 `/etc/dedis/dvoting/config.env`, replace:
@@ -49,7 +101,18 @@ export dela_public="//172.16.253.150:9000"
 
 and don't forget to restart the service!
 
-### Leader's node
+```sh
+service d-voting restart
+```
+
+## Create a roster
+
+If you keep TLS encryption at the gRPC level, you must share the certificates
+between the nodes. To do that you generate credentials on the first node, and
+make all other nodes send their certificates to the first node using the
+credentials.
+
+**generate credentials** (on the first node):
 
 Get the token and certificate (24h * 30 = 720):
 
@@ -64,7 +127,7 @@ This result, which looks like as follow, will be given to node's operators:
 --token b6VhdQEPXKOtZHpng8E8jw== --cert-hash oNeyrA864P2cP+TT6IE6GvkeEI/Ec4rOlZWEWiQkQKk=
 ```
 
-### Participants (node's operators)
+**share certificates** (all other nodes):
 
 Join the network. This operation will make the node share its certificate to the
 MASTER node, which, in turn, will share its known certificates to the node. Note
@@ -78,7 +141,9 @@ sudo memcoin --config /var/opt/dedis/dvoting/data/dela minogrpc join \
 
 Example of `<MASTER NODE ADDRESS>`: `'//172.16.253.150:9000'`
 
-Get the node's address and public key:
+## Setup the chain
+
+First get the address of all nodes by running:
 
 ```sh
 sudo memcoin --config /var/opt/dedis/dvoting/data/dela ordering export
@@ -86,13 +151,11 @@ sudo memcoin --config /var/opt/dedis/dvoting/data/dela ordering export
 
 This will yield a base64 encoded string `<ADDRESS>:<PUB KEY>`.
 
-It will have to be provided to EPFL.
-
-## Setup the chain, from EPFL
+From the first node.
 
 **1: Create the chain**:
 
-Do not forget to include ourself, the EPFL node!
+Include ALL nodes, the first and all other nodes.
 
 ```sh
 sudo memcoin --config /var/opt/dedis/dvoting/data/dela ordering setup \
@@ -103,10 +166,12 @@ sudo memcoin --config /var/opt/dedis/dvoting/data/dela ordering setup \
 
 **2: grant access for each node to sign transactions on the evoting smart contract**:
 
+To be done on each node.
+
 ```sh
 PK=<> # taken from the "ordering export", the part after ":"
 sudo memcoin --config /var/opt/dedis/dvoting/data/dela pool add \
-    --key /home/dedis/private.key \
+    --key $keypath \
     --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access \
     --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 \
     --args access:grant_contract --args go.dedis.ch/dela.Evoting \
@@ -115,13 +180,49 @@ sudo memcoin --config /var/opt/dedis/dvoting/data/dela pool add \
     --args access:command --args GRANT
 ```
 
-You should also grant access to the master key.
+# Package D-Voting in an installable .deb file
 
-### Test
+A .deb package is created by the CI upon the creation of a release. You might
+want to check `deb-package/upload-artifacts.sh` and the `go_release.yml` action.
+
+## Requirements
+
+- gem
+- build-essential
+- git
+- fpm (`sudo gem install fpm`)
+- go (see https://go.dev/doc/install)
 
 ```sh
-sudo memcoin --config /var/opt/dedis/dvoting/data/dela e-voting scenarioTest \
-    --proxy-addr1 "http://192.168.232.133:9080" \
-    --proxy-addr2 "http://192.168.232.134:9080" \
-    --proxy-addr3 "http://192.168.232.135:9080"
+sudo apt install rubygems build-essential git
+```
+
+## Get the code
+
+```sh
+git clone https://github.com/dedis/d-voting.git 
+```
+
+## Build the deb package
+
+from the root folder, use make:
+
+```sh
+make deb
+```
+
+Make sure that a git tag exist, i.e `git describe` shows your tag.
+
+The resulting .deb can be found in the `dist/` folder.
+
+## Debian deployment
+
+A package registry with debian packages is available at http://apt.dedis.ch.
+To install a package run the following:
+
+```sh
+echo "deb http://apt.dedis.ch/ squeeze main" >> /etc/apt/sources.list
+wget -q -O- http://apt.dedis.ch/dvoting-release.pgp | sudo apt-key add -
+sudo apt update
+sudo apt install dedis-dvoting
 ```

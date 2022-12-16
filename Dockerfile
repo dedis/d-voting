@@ -3,7 +3,7 @@
 ##
 ## Build
 ##
-FROM golang:1.17.7-alpine AS build
+FROM golang:1.18.7-alpine AS build
 
 ENV PATH="${GOPATH}/bin:${PATH}"
 ENV LLVL=info

@@ -47,7 +47,7 @@ const FormForm: FC<FormFormProps> = () => {
   const { configuration: previewConf, answers, setAnswers } = useConfiguration(marshalledConf);
 
   const { MainTitle, Scaffold } = conf;
-
+  const regexPattern = /[^a-zA-Z0-9]/g;
   useEffect(() => {
     setMarshalledConf(marshalConfig(conf));
   }, [conf]);
@@ -109,6 +109,7 @@ const FormForm: FC<FormFormProps> = () => {
 
   // exports the data to a JSON file, marshall the configuration state object
   // before exporting it
+
   const exportData = async () => {
     const data = marshalConfig(conf);
     try {
@@ -121,7 +122,8 @@ const FormForm: FC<FormFormProps> = () => {
     const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(JSON.stringify(data))}`;
     const link = document.createElement('a');
     link.href = jsonString;
-    link.download = 'form_configuration.json';
+    const title = MainTitle.replace(regexPattern, '_').slice(0, 99); // replace spaces with underscores
+    link.download = title + '.json';
     link.click();
   };
 
