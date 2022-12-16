@@ -165,13 +165,13 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to unmarshal proxy key: %v", err)
 	}
 
-	transactionProxy := txnmanager.NewTransactionManager(mngr, p, sjson.NewContext(), proxykey,blocks,signer)
-	ep := eproxy.NewForm(ordering, p, sjson.NewContext(), formFac, proxykey,transactionProxy)
+	transactionManager := txnmanager.NewTransactionManager(mngr, p, sjson.NewContext(), proxykey,blocks,signer)
+	ep := eproxy.NewForm(ordering, p, sjson.NewContext(), formFac, proxykey,transactionManager)
 
 	router := mux.NewRouter()
 
 	router.HandleFunc(formPath, ep.NewForm).Methods("POST")
-	router.HandleFunc("/evoting/transactions/{token}", transactionProxy.IsTxnIncluded).Methods("GET")
+	router.HandleFunc("/evoting/transactions/{token}", transactionManager.IsTxnIncluded).Methods("GET")
 	router.HandleFunc(formPath, ep.Forms).Methods("GET")
 	router.HandleFunc(formPath, eproxy.AllowCORS).Methods("OPTIONS")
 	router.HandleFunc(formIDPath, ep.Form).Methods("GET")
