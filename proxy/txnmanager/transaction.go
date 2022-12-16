@@ -32,8 +32,8 @@ const (
 )
 
 
-// NewTransaction returns a new initialized transaction proxy
-func NewTransaction(mngr txn.Manager, p pool.Pool,
+// NewTransactionManager returns a new initialized transaction manager
+func NewTransactionManager(mngr txn.Manager, p pool.Pool,
 	ctx serde.Context, pk kyber.Point, blocks blockstore.BlockStore, signer crypto.Signer) Manager {
 
 	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
@@ -122,7 +122,7 @@ func (h *manager) IsTxnIncluded(w http.ResponseWriter, r *http.Request) {
 	// check if if was submited not to long ago
 	if time.Now().Unix()-content.Time > int64(maxTimeTransactionCheck) {
 		// if it was submited to long ago, we reject the transaction
-		err = h.sendTransactionInfo(w, content.TransactionID, 0, ptypes.RejectedTransaction)
+		err = h.SendTransactionInfo(w, content.TransactionID, 0, ptypes.RejectedTransaction)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed to send transaction info: %v", err), http.StatusInternalServerError)
 			return
@@ -140,7 +140,7 @@ func (h *manager) IsTxnIncluded(w http.ResponseWriter, r *http.Request) {
 	newStatus, idx := h.checkTxnIncluded(content.TransactionID, content.LastBlockIdx)
 
 	// send the transaction info
-	err = h.sendTransactionInfo(w, content.TransactionID, idx, newStatus)
+	err = h.SendTransactionInfo(w, content.TransactionID, idx, newStatus)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to send transaction info: %v", err), http.StatusInternalServerError)
 		return
@@ -197,7 +197,7 @@ func (h *manager) checkTxnIncluded(transactionID []byte, lastBlockIdx uint64) (p
 
 // submitTxn submits a transaction
 // Returns the transaction ID.
-func (h *manager) submitTxn(ctx context.Context, cmd evoting.Command,
+func (h *manager) SubmitTxn(ctx context.Context, cmd evoting.Command,
 	cmdArg string, payload []byte) ([]byte, uint64, error) {
 
 	h.Lock()
@@ -228,13 +228,13 @@ func (h *manager) submitTxn(ctx context.Context, cmd evoting.Command,
 	return tx.GetID(), lastBlockIdx, nil
 }
 
-func (h *manager) sendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBlockIdx uint64, status ptypes.TransactionStatus) error {
+func (h *manager) SendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBlockIdx uint64, status ptypes.TransactionStatus) error {
 
 	response, err := h.CreateTransactionInfoToSend(txnID, lastBlockIdx, status)
 	if err != nil {
 		return xerrors.Errorf("failed to create transaction info: %v", err)
 	}
-	return sendResponse(w, response)
+	return SendResponse(w, response)
 
 }
 
@@ -288,7 +288,8 @@ func (h *manager) CreateTransactionInfoToSend(txnID []byte, lastBlockIdx uint64,
 	return response, nil
 }
 
-func sendResponse(w http.ResponseWriter, response any) error {
+// SendResponse sends a response to the client.
+func SendResponse(w http.ResponseWriter, response any) error {
 
 	w.Header().Set("Content-Type", "application/json")
 

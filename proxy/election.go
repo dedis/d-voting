@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+
 	//"io"
 	"net/http"
 	"sync"
@@ -12,12 +13,12 @@ import (
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/proxy/txnmanager"
 	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
-	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3"
@@ -38,8 +39,8 @@ func getSignedErr(err error) error {
 }
 
 // NewForm returns a new initialized form proxy
-func NewForm(srv ordering.Service, mngr txn.Manager, p pool.Pool,
-	ctx serde.Context, fac serde.Factory, pk kyber.Point, transactionProxy Transaction) Form {
+func NewForm(srv ordering.Service, p pool.Pool,
+	ctx serde.Context, fac serde.Factory, pk kyber.Point, txnManaxer txnmanager.Manager) Form {
 
 	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
 
@@ -48,10 +49,9 @@ func NewForm(srv ordering.Service, mngr txn.Manager, p pool.Pool,
 		orderingSvc:      srv,
 		context:          ctx,
 		formFac:          fac,
-		mngr:             mngr,
+		mngr:             txnManaxer,
 		pool:             p,
 		pk:               pk,
-		transactionProxy: transactionProxy,
 	}
 }
 
@@ -65,10 +65,9 @@ type form struct {
 	logger           zerolog.Logger
 	context          serde.Context
 	formFac          serde.Factory
-	mngr             txn.Manager
+	mngr             txnmanager.Manager
 	pool             pool.Pool
 	pk               kyber.Point
-	transactionProxy Transaction
 }
 
 // NewForm implements proxy.Proxy
@@ -103,7 +102,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create the transaction and add it to the pool
-	txnID, blockIdx, err := h.transactionProxy.submitTxn(r.Context(), evoting.CmdCreateForm, evoting.FormArg, data)
+	txnID, blockIdx, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdCreateForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -116,7 +115,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 	hash.Write(txnID)
 	formID := hash.Sum(nil)
 
-	transactionInfoToSend, err := h.transactionProxy.CreateTransactionInfoToSend(txnID, blockIdx, ptypes.UnknownTransactionStatus)
+	transactionInfoToSend, err := h.mngr.CreateTransactionInfoToSend(txnID, blockIdx, ptypes.UnknownTransactionStatus)
 	if err != nil {
 		http.Error(w, "failed to create transaction info: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -129,7 +128,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// sign the response
-	sendResponse(w, response)
+	txnmanager.SendResponse(w, response)
 }
 
 // NewFormVote implements proxy.Proxy
@@ -213,7 +212,7 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create the transaction and add it to the pool
-	txnID, lastBlock, err := h.transactionProxy.submitTxn(r.Context(), evoting.CmdCastVote, evoting.FormArg, data)
+	txnID, lastBlock, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdCastVote, evoting.FormArg, data)
 	if err != nil {
 		h.logger.Err(err).Msg("failed to submit txn")
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
@@ -221,7 +220,7 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//send the transaction
-	h.transactionProxy.sendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
+	h.mngr.SendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
 
 }
 
@@ -296,14 +295,14 @@ func (h *form) openForm(formID string, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create the transaction and add it to the pool
-	txnID, lastBlock, err := h.transactionProxy.submitTxn(r.Context(), evoting.CmdOpenForm, evoting.FormArg, data)
+	txnID, lastBlock, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdOpenForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//send the transaction
-	h.transactionProxy.sendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
+	h.mngr.SendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
 }
 
 // closeForm closes a form.
@@ -322,14 +321,14 @@ func (h *form) closeForm(formIDHex string, w http.ResponseWriter, r *http.Reques
 	}
 
 	// create the transaction and add it to the pool
-	txnID, lastBlock, err := h.transactionProxy.submitTxn(r.Context(), evoting.CmdCloseForm, evoting.FormArg, data)
+	txnID, lastBlock, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdCloseForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//send the transaction
-	h.transactionProxy.sendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
+	h.mngr.SendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
 
 }
 
@@ -361,14 +360,14 @@ func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Re
 	}
 
 	// create the transaction and add it to the pool
-	txnID, lastBlock, err := h.transactionProxy.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
+	txnID, lastBlock, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//send the transaction
-	h.transactionProxy.sendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
+	h.mngr.SendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
 }
 
 // cancelForm cancels a form.
@@ -387,14 +386,14 @@ func (h *form) cancelForm(formIDHex string, w http.ResponseWriter, r *http.Reque
 	}
 
 	// create the transaction and add it to the pool
-	txnID, lastBlock, err := h.transactionProxy.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
+	txnID, lastBlock, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//send the transaction
-	h.transactionProxy.sendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
+	h.mngr.SendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
 }
 
 // Form implements proxy.Proxy. The request should not be signed because it
@@ -451,7 +450,7 @@ func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 		Voters:          form.Suffragia.UserIDs,
 	}
 
-	sendResponse(w, response)
+	txnmanager.SendResponse(w, response)
 
 }
 
@@ -499,7 +498,7 @@ func (h *form) Forms(w http.ResponseWriter, r *http.Request) {
 
 	response := ptypes.GetFormsResponse{Forms: allFormsInfo}
 
-	sendResponse(w, response)
+	txnmanager.SendResponse(w, response)
 
 }
 
@@ -555,14 +554,14 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create the transaction and add it to the pool
-	txnID, lastBlock, err := h.transactionProxy.submitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
+	txnID, lastBlock, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//send the transaction
-	h.transactionProxy.sendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
+	h.mngr.SendTransactionInfo(w, txnID, lastBlock, ptypes.UnknownTransactionStatus)
 }
 
 func (h *form) getFormsMetadata() (types.FormsMetadata, error) {
