@@ -20,8 +20,8 @@ func NewForm(formID string) types.Form {
 			MainTitle: "dummyTitle",
 		},
 		FormID: formID,
-		Status:     types.Closed,
-		Pubkey:     pubKey,
+		Status: types.Closed,
+		Pubkey: pubKey,
 		Suffragia: types.Suffragia{
 			Ciphervotes: []types.Ciphervote{},
 		},
