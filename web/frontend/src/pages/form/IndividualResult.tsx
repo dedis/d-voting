@@ -1,5 +1,11 @@
 import { FC, useEffect, useState } from 'react';
-import { DownloadedResults, RankResults, SelectResults, TextResults } from 'types/form';
+import {
+  BallotResults,
+  DownloadedResults,
+  RankResults,
+  SelectResults,
+  TextResults,
+} from 'types/form';
 import { IndividualSelectResult } from './components/SelectResult';
 import { IndividualTextResult } from './components/TextResult';
 import { IndividualRankResult } from './components/RankResult';
@@ -100,7 +106,11 @@ const IndividualResult: FC<IndividualResultProps> = ({
     );
   };
 
-  const getResultData = (subject: Subject, dataToDownload: DownloadedResults[]) => {
+  const getResultData = (
+    subject: Subject,
+    dataToDownload: DownloadedResults[],
+    BallotID: number
+  ) => {
     dataToDownload.push({ Title: subject.Title });
 
     subject.Order.forEach((id: ID) => {
@@ -112,11 +122,11 @@ const IndividualResult: FC<IndividualResultProps> = ({
           const rankQues = element as RankQuestion;
 
           if (rankResult.has(id)) {
-            res = rankResult.get(id)[internalID].map((rank, index) => {
+            res = rankResult.get(id)[BallotID].map((rank, index) => {
               return {
                 // TODO: Change to Rank and ???
                 Placement: `${index + 1}`,
-                Holder: rankQues.Choices[rankResult.get(id)[internalID].indexOf(index)],
+                Holder: rankQues.Choices[rankResult.get(id)[BallotID].indexOf(index)],
               };
             });
             dataToDownload.push({ Title: element.Title, Results: res });
@@ -127,7 +137,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
           const selectQues = element as SelectQuestion;
 
           if (selectResult.has(id)) {
-            res = selectResult.get(id)[internalID].map((select, index) => {
+            res = selectResult.get(id)[BallotID].map((select, index) => {
               const checked = select ? 'True' : 'False';
               return { Candidate: selectQues.Choices[index], Checked: checked };
             });
@@ -136,14 +146,14 @@ const IndividualResult: FC<IndividualResultProps> = ({
           break;
 
         case SUBJECT:
-          getResultData(element as Subject, dataToDownload);
+          getResultData(element as Subject, dataToDownload, BallotID);
           break;
 
         case TEXT:
           const textQues = element as TextQuestion;
 
           if (textResult.has(id)) {
-            res = textResult.get(id)[internalID].map((text, index) => {
+            res = textResult.get(id)[BallotID].map((text, index) => {
               return { Field: textQues.Choices[index], Answer: text };
             });
             dataToDownload.push({ Title: element.Title, Results: res });
@@ -154,18 +164,25 @@ const IndividualResult: FC<IndividualResultProps> = ({
   };
 
   const exportJSONData = () => {
-    const fileName = `result_${configuration.MainTitle}_Ballot${currentID}.json`;
+    const fileName = `result_${configuration.MainTitle.replace(/[^a-zA-Z0-9]/g, '_').slice(
+      0,
+      99
+    )}_byBallot`;
+    const ballotsToDownload: BallotResults[] = [];
 
-    const dataToDownload: DownloadedResults[] = [];
-
-    configuration.Scaffold.forEach((subject: Subject) => {
-      getResultData(subject, dataToDownload);
+    const indices: number[] = [...Array(ballotNumber).keys()];
+    indices.forEach((BallotID) => {
+      const dataToDownload: DownloadedResults[] = [];
+      configuration.Scaffold.forEach((subject: Subject) => {
+        getResultData(subject, dataToDownload, BallotID);
+      });
+      ballotsToDownload.push({ BallotNumber: BallotID + 1, Results: dataToDownload });
     });
 
     const data = {
       Title: configuration.MainTitle,
-      BallotNumber: internalID + 1,
-      Results: dataToDownload,
+      NumberOfVotes: result.length,
+      Ballots: ballotsToDownload,
     };
 
     const fileToSave = new Blob([JSON.stringify(data, null, 2)], {

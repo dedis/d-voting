@@ -132,7 +132,10 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
   };
 
   const exportJSONData = () => {
-    const fileName = `result_${configuration.MainTitle}.json`;
+    const fileName = `result_${configuration.MainTitle.replace(/[^a-zA-Z0-9]/g, '_').slice(
+      0,
+      99
+    )}_byQuestion`; // replace spaces with underscores;
 
     const dataToDownload: DownloadedResults[] = [];
 
