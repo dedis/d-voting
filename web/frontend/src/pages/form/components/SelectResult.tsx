@@ -46,7 +46,7 @@ export const IndividualSelectResult: FC<SelectResultProps> = ({ select, selectRe
     <div>
       {selectResult[0].map((result, index) => {
         return (
-          <React.Fragment>
+          <React.Fragment key={`select_${index}`}>
             <div className="flex flex-row px-2 sm:px-4 break-words max-w-xs w-max">
               <div className="h-4 w-4 mr-2 accent-indigo-500 ">{displayChoices(result, index)}</div>
               <div>{select.Choices[index]}</div>

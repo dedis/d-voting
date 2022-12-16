@@ -42,7 +42,7 @@ export const IndividualTextResult: FC<IndividualTextResultProps> = ({ text, text
     <div>
       {textResult[0].map((result, index) => {
         return (
-          <React.Fragment>
+          <React.Fragment key={`txt_${index}`}>
             <div className="flex flex-row px-2 sm:px-4 break-words max-w-xs w-max">
               <div className="mr-2 font-bold">{text.Choices[index]}:</div>
               <div>{result}</div>

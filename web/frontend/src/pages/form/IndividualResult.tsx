@@ -181,7 +181,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
 
     const data = {
       Title: configuration.MainTitle,
-      NumberOfVotes: result.length,
+      NumberOfVotes: ballotNumber,
       Ballots: ballotsToDownload,
     };
 
