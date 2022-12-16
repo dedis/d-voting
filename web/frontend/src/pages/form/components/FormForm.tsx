@@ -79,7 +79,7 @@ const FormForm: FC<FormFormProps> = () => {
         setShowModal(true);
       } else {
         const response = await res.json();
-        
+
         pollTransaction(checkTransaction, response.Token, 1000, 30).then(
           () => {
             setNavigateDestination('/forms/' + response.FormID);
@@ -95,7 +95,6 @@ const FormForm: FC<FormFormProps> = () => {
           }
         );
       }
-      
     } catch (error) {
       setTextModal(error.message);
       setShowModal(true);
