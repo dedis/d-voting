@@ -8,7 +8,7 @@ import (
 	"github.com/dedis/d-voting/proxy/types"
 )
 
-// TxnManager defines the public HTTP API of the transaction service
+// Manager defines the public HTTP API of the transaction service
 type Manager interface {
 	// GET /transactions/{token}
 	IsTxnIncluded(http.ResponseWriter, *http.Request)

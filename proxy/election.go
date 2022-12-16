@@ -9,7 +9,6 @@ import (
 	//"io"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/dedis/d-voting/contracts/evoting/types"
