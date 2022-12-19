@@ -231,7 +231,6 @@ const IndividualResult: FC<IndividualResultProps> = ({
     setCurrentID((((internalID - 1 + ballotNumber) % ballotNumber) + 1).toString());
   };
 
-  // <div className="grow col-span-7 p-2">{'Ballot ' + (currentID + 1)}</div>
   return !loading ? (
     <div>
       <div className="flex flex-col">
@@ -286,29 +285,5 @@ const IndividualResult: FC<IndividualResultProps> = ({
     <Loading />
   );
 };
-/*          <input
-            type="text"
-            min={1}
-            max={ballotNumber}
-            onBlur={(e) => handleBlur(e)}
-            onKeyDown={(e) => handleEnter(e)}
-            className="col-span-7 text-center"></input>*/
-
-/*<input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            title="Please enter a number"
-            onChange={(e) => console.log(e.target.value)}
-            onBlur={(e) => handleBlur(e)}
-            onKeyDown={(e) => handleEnter(e)}
-            className="col-span-7 col-start-2 text-center"
-            value={1}
-          />
-          
-          
-          <div className="text-red-500 text-xs" hidden={isValid === ValidityType.VALID}>
-              {isValid}
-            </div>*/
 
 export default IndividualResult;
