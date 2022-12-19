@@ -13,7 +13,7 @@ type TextProps = {
 
 const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
   const { t } = useTranslation();
-  const [charCounts, setCharCounts] = useState(new Array<number>(text.Choices.get('en').length).fill(0));
+  const [charCounts, setCharCounts] = useState(new Array<number>(text.ChoicesMap.get('en').length).fill(0));
 
   const requirementsDisplay = () => {
     let requirements = '';
@@ -87,6 +87,15 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
       console.log('error', e);
     }
   }, [text]);
+  const [hint, setHint] = useState<any>({});
+  useEffect(() => {
+    try {
+      const h = JSON.parse(text.Hint);
+      setHint(h);
+    } catch (e) {
+      console.log('error', e);
+    }
+  }, [text]);
 
   const choiceDisplay = (choice: string, choiceIndex: number) => {
     const columns = text.MaxLength > 50 ? 50 : text.MaxLength;
@@ -119,23 +128,25 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
           </h3>
         </div>
         <div>
-          <HintButton text={text.Hint} />
+          {language === 'en' && <HintButton text ={hint.en} />}
+          {language === 'fr' && <HintButton text ={hint.fr} />}
+          {language === 'de' && <HintButton text ={hint.de} />}
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>
       {language == 'en' && (
         <div className="sm:pl-8 mt-2 pl-6">
-          {text.Choices.get('en').map((choice, index) => choiceDisplay(choice, index))}
+          {text.ChoicesMap.get('en').map((choice, index) => choiceDisplay(choice, index))}
         </div>
       )}
       {language == 'fr' && (
         <div className="sm:pl-8 mt-2 pl-6">
-          {text.Choices.get('fr').map((choice, index) => choiceDisplay(choice, index))}
+          {text.ChoicesMap.get('fr').map((choice, index) => choiceDisplay(choice, index))}
         </div>
       )}
       {language == 'de' && (
         <div className="sm:pl-8 mt-2 pl-6">
-          {text.Choices.get('de').map((choice, index) => choiceDisplay(choice, index))}
+          {text.ChoicesMap.get('de').map((choice, index) => choiceDisplay(choice, index))}
         </div>
       )}
       <div className="text-red-600 text-sm py-2 sm:pl-2 pl-1">{answers.Errors.get(text.ID)}</div>

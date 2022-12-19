@@ -45,14 +45,8 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
     updateChoice,
   } = useQuestionForm(question);
   const [language, setLanguage] = useState('en');
-  const { Title, TitleDe, TitleFr, MaxN, MinN, Choices, Hint, HintFr, HintDe } = values;
-
+  const { Title, TitleDe, TitleFr, MaxN, MinN, Choices, ChoicesMap, Hint, HintFr, HintDe } = values;
   const [errors, setErrors] = useState([]);
-  //const obj = Object.fromEntries(Choices)
-  /*const newChoices = new Map(Object.entries(Choices))
-  newChoices.set('en', [''])
-  newChoices.set('fr', [''])
-  newChoices.set('de', [''])*/
   const handleSave = async () => {
     try {
       switch (Type) {
@@ -72,6 +66,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
       notifyParent(values);
       setOpen(false);
     } catch (err) {
+      console.log('erreur',err);
       setErrors(err.errors);
     }
   };
@@ -94,7 +89,6 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
         break;
       default:
         deleteChoice(index);
-        console.log(Choices);
         break;
     }
   };
@@ -287,33 +281,36 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                     </div>
                     <div>
                       <label className="block text-md mt font-medium text-gray-500">Hint</label>
-                      {language=== 'en' && (
-                      <input
-                        value={Hint}
-                        onChange={handleChange()}
-                        name="Hint"
-                        type="text"
-                        placeholder={t('enterHint')}
-                        className="my-1 px-1 w-60 ml-1 border rounded-md"
-                      />)}
-                      {language=== 'fr' && (
-                      <input
-                        value={HintFr}
-                        onChange={handleChange()}
-                        name="HintFr"
-                        type="text"
-                        placeholder={t('enterHint')}
-                        className="my-1 px-1 w-60 ml-1 border rounded-md"
-                      />)}
-                      {language=== 'de' && (
-                      <input
-                        value={HintDe}
-                        onChange={handleChange()}
-                        name="HintDe"
-                        type="text"
-                        placeholder={t('enterHint')}
-                        className="my-1 px-1 w-60 ml-1 border rounded-md"
-                      />)}
+                      {language === 'en' && (
+                        <input
+                          value={Hint}
+                          onChange={handleChange()}
+                          name="Hint"
+                          type="text"
+                          placeholder={t('enterHint')}
+                          className="my-1 px-1 w-60 ml-1 border rounded-md"
+                        />
+                      )}
+                      {language === 'fr' && (
+                        <input
+                          value={HintFr}
+                          onChange={handleChange()}
+                          name="HintFr"
+                          type="text"
+                          placeholder={t('enterHint')}
+                          className="my-1 px-1 w-60 ml-1 border rounded-md"
+                        />
+                      )}
+                      {language === 'de' && (
+                        <input
+                          value={HintDe}
+                          onChange={handleChange()}
+                          name="HintDe"
+                          type="text"
+                          placeholder={t('enterHint')}
+                          className="my-1 px-1 w-60 ml-1 border rounded-md"
+                        />
+                      )}
                     </div>
                     <label className="flex pt-2 text-md font-medium text-gray-500">
                       {Type !== TEXT ? t('choices') : t('answers')}
@@ -321,7 +318,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
 
                     {language === 'en' && (
                       <div className="pb-2">
-                        {Choices.get('en').map((choice: string, idx: number) => (
+                        {ChoicesMap.get('en').map((choice: string, idx: number) => (
                           <div className="flex w-60" key={`${ID}wrapper${idx}`}>
                             <input
                               key={`${ID}choice${idx}`}
@@ -335,7 +332,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                               className="my-1 px-1 w-60 ml-2 border rounded-md"
                             />
                             <div className="flex ml-1 mt-1.2">
-                              {Choices.get('en').length > 1 && (
+                              {ChoicesMap.get('en').length > 1 && (
                                 <button
                                   key={`${ID}deleteChoice${idx}`}
                                   type="button"
@@ -344,7 +341,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                                   <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
                                 </button>
                               )}
-                              {idx === Choices.get('en').length - 1 && (
+                              {idx === ChoicesMap.get('en').length - 1 && (
                                 <button
                                   key={`${ID}addChoice${idx}`}
                                   type="button"
@@ -360,7 +357,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                     )}
                     {language === 'fr' && (
                       <div className="pb-2">
-                        {Choices.get('fr').map((choice: string, idx: number) => (
+                        {ChoicesMap.get('fr').map((choice: string, idx: number) => (
                           <div className="flex w-60" key={`${ID}wrapper${idx}`}>
                             <input
                               key={`${ID}choice${idx}`}
@@ -374,7 +371,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                               className="my-1 px-1 w-60 ml-2 border rounded-md"
                             />
                             <div className="flex ml-1 mt-1.2">
-                              {Choices.get('fr').length > 1 && (
+                              {ChoicesMap.get('fr').length > 1 && (
                                 <button
                                   key={`${ID}deleteChoice${idx}`}
                                   type="button"
@@ -383,7 +380,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                                   <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
                                 </button>
                               )}
-                              {idx === Choices.get('fr').length - 1 && (
+                              {idx === ChoicesMap.get('fr').length - 1 && (
                                 <button
                                   key={`${ID}addChoice${idx}`}
                                   type="button"
@@ -399,7 +396,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                     )}
                     {language === 'de' && (
                       <div className="pb-2">
-                        {Choices.get('de').map((choice: string, idx: number) => (
+                        {ChoicesMap.get('de').map((choice: string, idx: number) => (
                           <div className="flex w-60" key={`${ID}wrapper${idx}`}>
                             <input
                               key={`${ID}choice${idx}`}
@@ -413,7 +410,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                               className="my-1 px-1 w-60 ml-2 border rounded-md"
                             />
                             <div className="flex ml-1 mt-1.2">
-                              {Choices.get('de').length > 1 && (
+                              {ChoicesMap.get('de').length > 1 && (
                                 <button
                                   key={`${ID}deleteChoice${idx}`}
                                   type="button"
@@ -422,7 +419,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                                   <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
                                 </button>
                               )}
-                              {idx === Choices.get('de').length - 1 && (
+                              {idx === ChoicesMap.get('de').length - 1 && (
                                 <button
                                   key={`${ID}addChoice${idx}`}
                                   type="button"

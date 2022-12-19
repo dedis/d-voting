@@ -5,7 +5,6 @@ import Rank, { handleOnDragEnd } from './Rank';
 import Select from './Select';
 import Text from './Text';
 import { DragDropContext } from 'react-beautiful-dnd';
-import RemoveElementModal from 'pages/form/components/RemoveElementModal';
 
 type BallotDisplayProps = {
   configuration: Configuration;
@@ -25,32 +24,18 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
     try {
-      console.log('config', configuration.MainTitle);
       const ts = JSON.parse(configuration.MainTitle);
       setTitles(ts);
     } catch (e) {
       console.log('error', e);
     }
   }, [configuration]);
-  
+
   const SubjectElementDisplay = (element: types.SubjectElement) => {
-    const[choices, setChoices]= useState<any>({});
-    useEffect(() => {
-      try {
-        const choice = JSON.parse(element.Choice)
-        setChoices(choice);
-      } catch (e) {
-        console.log('error', e);
-      }
-    }, [element]);
     return (
       <div className="pl-4 sm:pl-6">
-        {element.Type === RANK && (
-          (element as types.RankQuestion).Choices.set('en',choices.en),
-          (element as types.RankQuestion).Choices.set('en',choices.fr),
-          (element as types.RankQuestion).Choices.set('en',choices.de),
-          <Rank rank={element as types.RankQuestion} answers={answers} language={language} />
-        )}
+        {element.Type === RANK &&
+          (<Rank rank={element as types.RankQuestion} answers={answers} language={language} />)}
         {element.Type === SELECT && (
           <Select
             select={element as types.SelectQuestion}
@@ -93,11 +78,6 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
       </div>
     );
   };
-  try {
-    console.log('subjects', configuration.Scaffold[0].Title);
-  } catch (e) {
-    console.log('erreur', e);
-  }
 
   return (
     <DragDropContext onDragEnd={(dropRes) => handleOnDragEnd(dropRes, answers, setAnswers)}>

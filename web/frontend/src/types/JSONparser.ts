@@ -10,10 +10,17 @@ const unmarshalText = (text: any): types.TextQuestion => {
 };
 
 const unmarshalRank = (rank: any): types.RankQuestion => {
-  const choice = JSON
+  const ChoicesMap= new Map<string, string[]>();
+  for(let i = 0; i < rank.Choices.length; i++) {
+      const choice = JSON.parse(rank.Choices[i]);
+      const choiceMap = new Map<string, string>(Object.entries(choice));
+      for (let key in choiceMap) {
+        ChoicesMap.set(key, choice.get[key]);
+  }
+}
   return {
     ...rank,
-    Choices : {'en': rank.Choice.en, 'fr': rank.Choice.fr, 'de': rank.Choice.de},
+    ChoicesMap: ChoicesMap,
     Type: RANK,
   };
 };
@@ -76,7 +83,7 @@ const unmarshalSubjectAndCreateAnswers = (
     elements.set(rank.ID, rank);
     answerMap.RankAnswers.set(
       rank.ID,
-      Array.from(Array(rank.Choices.get('en').length).keys())
+      Array.from(Array(rank.Choices.length).keys())
     );
     answerMap.Errors.set(rank.ID, '');
   }
@@ -87,7 +94,7 @@ const unmarshalSubjectAndCreateAnswers = (
     elements.set(select.ID, select);
     answerMap.SelectAnswers.set(
       select.ID,
-      new Array<boolean>(select.Choices.get('en').length).fill(false)
+      new Array<boolean>(select.Choices.length).fill(false)
     );
     answerMap.Errors.set(select.ID, '');
   }
@@ -97,7 +104,7 @@ const unmarshalSubjectAndCreateAnswers = (
     elements.set(text.ID, text);
     answerMap.TextAnswers.set(
       text.ID,
-      new Array<string>(text.Choices.get('en').length).fill('')
+      new Array<string>(text.Choices.length).fill('')
     );
     answerMap.Errors.set(text.ID, '');
   }
@@ -193,13 +200,10 @@ const marshalConfig = (configuration: types.Configuration): any => {
     fr: configuration.TitleFr,
     de: configuration.TitleDe,
   };
-  console.log('marshall', JSON.stringify(title));
-  //const scaffold ={en : configuration.Scaffold[0]}
   const conf = { MainTitle: JSON.stringify(title), Scaffold: [] };
   for (const subject of configuration.Scaffold) {
     conf.Scaffold.push(marshalSubject(subject));
   }
-  console.log('maintitle', conf.MainTitle);
   console.log('scaffold', conf.Scaffold);
   return conf;
 };

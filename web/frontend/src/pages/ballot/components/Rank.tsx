@@ -63,6 +63,15 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
       console.log('error', e);
     }
   }, [rank]);
+  const [hint, setHint] = useState<any>({});
+  useEffect(() => {
+    try {
+      const h = JSON.parse(rank.Hint);
+      setHint(h);
+    } catch (e) {
+      console.log('error', e);
+    }
+  }, [rank]);
   const choiceDisplay = (choice: string, rankIndex: number) => {
     return (
       <Draggable key={choice} draggableId={choice} index={rankIndex}>
@@ -85,7 +94,8 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
       </Draggable>
     );
   };
-
+  const obj = Object.fromEntries(rank.ChoicesMap);
+  const newChoicesMap = new Map(Object.entries(obj));
   return (
     <div className="mb-6">
       <div className="grid grid-rows-1 grid-flow-col">
@@ -97,7 +107,9 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
           </h3>
         </div>
         <div>
-          <HintButton text={rank.Hint} />
+         {language === 'en' && <HintButton text ={hint.en} />}
+         {language === 'fr' && <HintButton text ={hint.fr} />}
+         {language === 'de' && <HintButton text ={hint.de} />}
         </div>
       </div>
       <div className="mt-5 px-4 max-w-[300px] sm:pl-8 sm:max-w-md">
@@ -107,12 +119,16 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
               <ul className={rank.ID} {...provided.droppableProps} ref={provided.innerRef}>
                 {Array.from(answers.RankAnswers.get(rank.ID).entries()).map(
                   ([rankIndex, choiceIndex]) => {
+                    {console.log('newChoicesMap', [...newChoicesMap.entries()])}
+                    if(newChoicesMap.get('en') == undefined){
+                        return <div></div>
+                    }
                     if (language == 'en')
-                      return choiceDisplay(rank.Choices.get('en')[choiceIndex], rankIndex);
+                      return choiceDisplay(newChoicesMap.get('en')[choiceIndex], rankIndex);
                     else if (language == 'fr')
-                      return choiceDisplay(rank.Choices.get('fr')[choiceIndex], rankIndex);
+                      return choiceDisplay(newChoicesMap.get('fr')[choiceIndex], rankIndex);
                     else if (language == 'de')
-                      return choiceDisplay(rank.Choices.get('de')[choiceIndex], rankIndex);
+                      return choiceDisplay(newChoicesMap.get('de')[choiceIndex], rankIndex);
                   }
                 )}
                 {provided.placeholder}

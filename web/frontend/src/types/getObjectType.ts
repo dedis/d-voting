@@ -1,4 +1,3 @@
-import { string } from 'prop-types';
 import ShortUniqueId from 'short-unique-id';
 import * as types from './configuration';
 import { ID, RANK, SELECT, SUBJECT, TEXT } from './configuration';
@@ -28,7 +27,7 @@ const newSubject = (): types.Subject => {
     Choice: '',
   };
 };
-const obj = {'en': [''], 'fr': [''], 'de' : ['']}
+const obj = { en: [''], fr: [''], de: [''] };
 const newRank = (): types.RankQuestion => {
   return {
     ID: uid(),
@@ -37,7 +36,8 @@ const newRank = (): types.RankQuestion => {
     TitleDe: '',
     MaxN: 2,
     MinN: 2,
-    Choices: new Map(Object.entries(obj)),
+    Choices: ['',''],
+    ChoicesMap: new Map(Object.entries(obj)),
     Type: RANK,
     Hint: '',
     HintFr: '',
@@ -54,7 +54,8 @@ const newSelect = (): types.SelectQuestion => {
     TitleFr: '',
     MaxN: 1,
     MinN: 1,
-    Choices: new Map(Object.entries(obj)),
+    Choices:[''],
+    ChoicesMap: new Map(Object.entries(obj)),
     Type: SELECT,
     Hint: '',
     HintFr: '',
@@ -73,7 +74,8 @@ const newText = (): types.TextQuestion => {
     MinN: 0,
     MaxLength: 50,
     Regex: '',
-    Choices: new Map(Object.entries(obj)),
+    Choices:[''],
+    ChoicesMap: new Map(Object.entries(obj)),
     Type: TEXT,
     Hint: '',
     HintFr: '',
@@ -100,7 +102,22 @@ const answersFrom = (answers: types.Answers): types.Answers => {
     Errors: new Map(answers.Errors),
   };
 };
+const choicesMapToChoices = (ChoicesMap : Map<string,string[]>): string[] => {
+  let choices : string[]= [];
+  for (let i = 0; i < ChoicesMap.get('en').length; i++) {
+    const choiceMap = new Map <string, string>();
+    for(let key of ChoicesMap.keys()){
+      if(ChoicesMap.get(key)[i] === ''){
+        continue;
+      }
+      choiceMap.set(key,ChoicesMap.get(key)[i]);
+    }
+    const s =JSON.stringify(Object.fromEntries(choiceMap));
+    choices.push(s);
 
+  }
+  return choices;
+}
 const toArraysOfSubjectElement = (
   elements: Map<ID, types.SubjectElement>
 ): {
@@ -114,24 +131,28 @@ const toArraysOfSubjectElement = (
   const textQuestion: types.TextQuestion[] = [];
   const subjects: types.Subject[] = [];
   let title = '';
-  let choice = '';
+  let hint = '';
   elements.forEach((element) => {
     switch (element.Type) {
       case RANK:
-        console.log('je suis passer par la')
+        console.log('je suis passer par la');
         title = JSON.stringify({
           en: element.Title,
           fr: element.TitleFr,
           de: element.TitleDe,
         });
-        choice =JSON.stringify({
-          en : (element as types.RankQuestion).Choices.get('en'),
-          fr : (element as types.RankQuestion).Choices.get('fr'),
-          de : (element as types.RankQuestion).Choices.get('de')
+       hint = JSON.stringify({
+            en: (element as types.RankQuestion).Hint,
+            fr: (element as types.RankQuestion).HintFr,
+            de: (element as types.RankQuestion).HintDe,
+            });
+        rankQuestion.push({
+          ...(element as types.RankQuestion),
+          Title: title,
+          Choices: choicesMapToChoices((element as types.RankQuestion).ChoicesMap),
+          Hint: hint,
         });
-        
-        rankQuestion.push({ ...(element as types.RankQuestion), Title: title,Choice : choice});
-
+        console.log('rankQuestion',rankQuestion);
         break;
       case SELECT:
         title = JSON.stringify({
@@ -183,4 +204,5 @@ export {
   newText,
   answersFrom,
   toArraysOfSubjectElement,
+  choicesMapToChoices,
 };

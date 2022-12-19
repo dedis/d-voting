@@ -260,11 +260,11 @@
     "statusLoading": "Status loading...",
     "actionNotAvailable": "Action not available",
     "uninitialized": "Uninitialized",
-
     "actionTextVoter1": "The form is not open yet, you can come back later to vote once it is open.",
     "actionTextVoter2": "The results of the form are not available yet.",
     "resIndiv": "Individual",
     "resGroup": "Grouped",
-    "choice": "Choice"
+    "choice": "Choice",
+    "logoutWarning": "You are about to log out. Are you sure you want to continue?"
   }
 }

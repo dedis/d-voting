@@ -18,7 +18,8 @@ interface SubjectElement {
 interface RankQuestion extends SubjectElement {
   MaxN: number;
   MinN: number;
-  Choices: Map<string,string[]>;
+  Choices: string[];
+  ChoicesMap: Map<string, string[]>;
   Hint: string;
   HintFr: string;
   HintDe: string;
@@ -29,7 +30,8 @@ interface TextQuestion extends SubjectElement {
   MinN: number;
   MaxLength: number;
   Regex: string;
-  Choices: Map<string,string[]>;
+  Choices: string[];
+  ChoicesMap: Map<string, string[]>;
   Hint: string;
   HintFr: string;
   HintDe: string;
@@ -40,7 +42,8 @@ interface TextQuestion extends SubjectElement {
 interface SelectQuestion extends SubjectElement {
   MaxN: number;
   MinN: number;
-  Choices: Map<string,string[]>;
+  Choices: string[];
+  ChoicesMap: Map<string, string[]>;
   Hint: string;
   HintFr: string;
   HintDe: string;

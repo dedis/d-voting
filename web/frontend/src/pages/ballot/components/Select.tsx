@@ -18,7 +18,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
     let selectAnswers = newAnswers.SelectAnswers.get(select.ID);
 
     if (select.MaxN === 1) {
-      selectAnswers = new Array<boolean>(select.Choices.get('en').length).fill(false);
+      selectAnswers = new Array<boolean>(select.ChoicesMap.get('en').length).fill(false);
     }
 
     selectAnswers[choiceIndex] = e.target.checked;
@@ -64,6 +64,15 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
       console.log('error', e);
     }
   }, [select]);
+  const [hint, setHint] = useState<any>({});
+  useEffect(() => {
+    try {
+      const h = JSON.parse(select.Hint);
+      setHint(h);
+    } catch (e) {
+      console.log('error', e);
+    }
+  }, [select]);
   const choiceDisplay = (isChecked: boolean, choice: string, choiceIndex: number) => {
     return (
       <div key={choice}>
@@ -93,7 +102,9 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
           </h3>
         </div>
         <div>
-          <HintButton text={select.Hint} />
+          {language === 'en' && <HintButton text ={hint.en} />}
+          {language === 'fr' && <HintButton text ={hint.fr} />}
+          {language === 'de' && <HintButton text ={hint.de} />}
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>
@@ -101,11 +112,11 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
         {Array.from(answers.SelectAnswers.get(select.ID).entries()).map(
           ([choiceIndex, isChecked]) => {
             if (language === 'en')
-              return choiceDisplay(isChecked, select.Choices[choiceIndex], choiceIndex);
+              return choiceDisplay(isChecked, select.ChoicesMap.get('en')[choiceIndex], choiceIndex);
             else if (language === 'fr')
-              return choiceDisplay(isChecked, select.Choices[choiceIndex], choiceIndex);
+              return choiceDisplay(isChecked, select.ChoicesMap.get('fr')[choiceIndex], choiceIndex);
             else if (language === 'de')
-              return choiceDisplay(isChecked, select.Choices[choiceIndex], choiceIndex);
+              return choiceDisplay(isChecked, select.ChoicesMap.get('de')[choiceIndex], choiceIndex);
           }
         )}
       </div>

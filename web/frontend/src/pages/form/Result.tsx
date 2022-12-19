@@ -139,7 +139,6 @@ const FormResult: FC = () => {
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
     try {
-      console.log('config', configuration.MainTitle);
       const ts = JSON.parse(configuration.MainTitle);
       setTitles(ts);
     } catch (e) {
