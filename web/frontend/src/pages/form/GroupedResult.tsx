@@ -22,6 +22,7 @@ import { useConfigurationOnly } from 'components/utils/useConfiguration';
 import DownloadButton from 'components/buttons/DownloadButton';
 import Loading from 'pages/Loading';
 import saveAs from 'file-saver';
+import { CursorClickIcon, MenuAlt1Icon, SwitchVerticalIcon } from '@heroicons/react/outline';
 import {
   countRankResult,
   countSelectResult,
@@ -42,10 +43,21 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
   const { loading, result, configObj } = useForm(formId);
   const configuration = useConfigurationOnly(configObj);
 
+  const questionIcons = {
+    [RANK]: <SwitchVerticalIcon />,
+    [SELECT]: <CursorClickIcon />,
+    [TEXT]: <MenuAlt1Icon />,
+  };
+
   const SubjectElementResultDisplay = (element: SubjectElement) => {
     return (
       <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
-        <h2 className="text-lg pb-2">{element.Title}</h2>
+        <div className="flex flex-row">
+          <div className="align-text-middle flex mt-1 mr-2 h-5 w-5" aria-hidden="true">
+            {questionIcons[element.Type]}
+          </div>
+          <h2 className="text-lg pb-2">{element.Title}</h2>
+        </div>
         {element.Type === RANK && rankResult.has(element.ID) && (
           <RankResult rank={element as RankQuestion} rankResult={rankResult.get(element.ID)} />
         )}

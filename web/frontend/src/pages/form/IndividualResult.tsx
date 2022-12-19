@@ -22,6 +22,7 @@ import {
   TEXT,
   TextQuestion,
 } from 'types/configuration';
+import { CursorClickIcon, MenuAlt1Icon, SwitchVerticalIcon } from '@heroicons/react/outline';
 import DownloadButton from 'components/buttons/DownloadButton';
 import { useParams } from 'react-router-dom';
 import useForm from 'components/utils/useForm';
@@ -59,10 +60,21 @@ const IndividualResult: FC<IndividualResultProps> = ({
     OUT_OF_BOUNDS = 2,
   }
 
+  const questionIcons = {
+    [RANK]: <SwitchVerticalIcon />,
+    [SELECT]: <CursorClickIcon />,
+    [TEXT]: <MenuAlt1Icon />,
+  };
+
   const SubjectElementResultDisplay = (element: SubjectElement) => {
     return (
       <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
-        <h2 className="text-lg pb-2">{element.Title}</h2>
+        <div className="flex flex-row">
+          <div className="align-text-middle flex mt-1 mr-2 h-5 w-5" aria-hidden="true">
+            {questionIcons[element.Type]}
+          </div>
+          <h2 className="flex align-text-middle text-lg pb-2">{element.Title}</h2>
+        </div>
         {element.Type === RANK && rankResult.has(element.ID) && (
           <IndividualRankResult
             rank={element as RankQuestion}
@@ -206,8 +218,6 @@ const IndividualResult: FC<IndividualResultProps> = ({
       setInternalID(value - 1);
     }
   }, [currentID]);
-
-  useEffect(() => {}, [isValid]);
 
   useEffect(() => {
     configuration.Scaffold.map((subject: Subject) => displayResults(subject));
