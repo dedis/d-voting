@@ -46,7 +46,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
   const { formId } = useParams();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { loading, result, configObj } = useForm(formId);
+  const { loading, configObj } = useForm(formId);
   const configuration = useConfigurationOnly(configObj);
 
   const [currentID, setCurrentID] = useState<string>('1');
@@ -124,9 +124,8 @@ const IndividualResult: FC<IndividualResultProps> = ({
           if (rankResult.has(id)) {
             res = rankResult.get(id)[BallotID].map((rank, index) => {
               return {
-                // TODO: Change to Rank and ???
-                Placement: `${index + 1}`,
-                Holder: rankQues.Choices[rankResult.get(id)[BallotID].indexOf(index)],
+                Rank: `${index + 1}`,
+                Choice: rankQues.Choices[rankResult.get(id)[BallotID].indexOf(index)],
               };
             });
             dataToDownload.push({ Title: element.Title, Results: res });
@@ -191,7 +190,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
 
     saveAs(fileToSave, fileName);
   };
-  // TODO : Check if currentID is correct here
+
   useEffect(() => {
     let value: number;
     value = parseInt(currentID);
