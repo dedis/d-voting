@@ -18,8 +18,8 @@ const Logged: FC = () => {
     } else {
       fctx.addMessage(t('notLoggedIn'), FlashLevel.Error);
     }
-
     navigate('/');
+
   });
 
   return <></>;

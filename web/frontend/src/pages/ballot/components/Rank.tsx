@@ -55,6 +55,7 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
     );
   };
   const [titles, setTitles] = useState<any>({});
+  
   useEffect(() => {
     try {
       const ts = JSON.parse(rank.Title);
@@ -120,9 +121,6 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
                 {Array.from(answers.RankAnswers.get(rank.ID).entries()).map(
                   ([rankIndex, choiceIndex]) => {
                     {console.log('newChoicesMap', [...newChoicesMap.entries()])}
-                    if(newChoicesMap.get('en') == undefined){
-                        return <div></div>
-                    }
                     if (language == 'en')
                       return choiceDisplay(newChoicesMap.get('en')[choiceIndex], rankIndex);
                     else if (language == 'fr')
