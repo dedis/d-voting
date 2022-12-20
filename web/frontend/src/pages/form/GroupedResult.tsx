@@ -147,7 +147,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
     const fileName = `result_${configuration.MainTitle.replace(/[^a-zA-Z0-9]/g, '_').slice(
       0,
       99
-    )}_byQuestion`; // replace spaces with underscores;
+    )}__grouped`; // replace spaces with underscores;
 
     const dataToDownload: DownloadedResults[] = [];
 

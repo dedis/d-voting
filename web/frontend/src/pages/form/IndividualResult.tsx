@@ -178,7 +178,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
     const fileName = `result_${configuration.MainTitle.replace(/[^a-zA-Z0-9]/g, '_').slice(
       0,
       99
-    )}_byBallot`;
+    )}__individual`;
     const ballotsToDownload: BallotResults[] = [];
 
     const indices: number[] = [...Array(ballotNumber).keys()];
@@ -207,14 +207,11 @@ const IndividualResult: FC<IndividualResultProps> = ({
     let value: number;
     value = parseInt(currentID);
     if (isNaN(value)) {
-      console.log("Couldn't parse currentID");
-      setIsValid(1);
+      setIsValid(ValidityType.UNPARSABLE);
     } else if (value < 1 || value > ballotNumber) {
-      console.log('Out of bounds');
-      setIsValid(2);
+      setIsValid(ValidityType.OUT_OF_BOUNDS);
     } else {
-      console.log('value', value);
-      setIsValid(0);
+      setIsValid(ValidityType.VALID);
       setInternalID(value - 1);
     }
   }, [currentID]);
