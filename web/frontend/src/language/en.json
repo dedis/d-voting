@@ -259,6 +259,7 @@
     "actionTextVoter1": "The form is not open yet, you can come back later to vote once it is open.",
     "actionTextVoter2": "The results of the form are not available yet.",
     "resIndiv": "Individual",
-    "resGroup": "Grouped"
+    "resGroup": "Grouped",
+    "invalidInput": "Please enter a number between 1 and {{max}}."
   }
 }

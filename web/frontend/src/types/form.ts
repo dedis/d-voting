@@ -82,6 +82,10 @@ interface DownloadedResults {
   Title: string;
   Results?: { Candidate: string; Percentage: string }[];
 }
+interface BallotResults {
+  BallotNumber: number;
+  Results: DownloadedResults[];
+}
 
 export type {
   LightFormInfo,
@@ -91,4 +95,5 @@ export type {
   TextResults,
   SelectResults,
   DownloadedResults,
+  BallotResults,
 };
