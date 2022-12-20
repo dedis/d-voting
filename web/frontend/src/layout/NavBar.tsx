@@ -1,4 +1,4 @@
-import React, { FC, Fragment, useContext } from 'react';
+import React, { FC, Fragment, useContext, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { default as i18n } from 'i18next';
@@ -12,6 +12,7 @@ import {
   ROUTE_HOME,
 } from '../Routes';
 
+import WarningModal from './components/WarningModal';
 import { AuthContext, FlashContext, FlashLevel } from '..';
 import handleLogin from 'pages/session/HandleLogin';
 import Profile from './components/Profile';
@@ -198,25 +199,30 @@ const NavBar: FC = () => {
   const navigate = useNavigate();
 
   const fctx = useContext(FlashContext);
+  const [isShown, setIsShown] = useState(false);
 
+  const logout = async () => {
+
+      const opts = { method: 'POST' };
+    
+      const res = await fetch(ENDPOINT_LOGOUT, opts);
+      if (res.status !== 200) {
+        fctx.addMessage(t('logOutError', { error: res.statusText }), FlashLevel.Error);
+      } else {
+        fctx.addMessage(t('logOutSuccessful'), FlashLevel.Info);
+      }
+      // TODO: should be a setAuth function passed to AuthContext rather than
+      // changing the state directly
+      authCtx.isLogged = false;
+      authCtx.firstname = undefined;
+      authCtx.role = undefined;
+      authCtx.lastname = undefined;
+      navigate('/');
+  };
   const handleLogout = async (e) => {
     e.preventDefault();
+    setIsShown(true);
 
-    const opts = { method: 'POST' };
-
-    const res = await fetch(ENDPOINT_LOGOUT, opts);
-    if (res.status !== 200) {
-      fctx.addMessage(t('logOutError', { error: res.statusText }), FlashLevel.Error);
-    } else {
-      fctx.addMessage(t('logOutSuccessful'), FlashLevel.Info);
-    }
-    // TODO: should be a setAuth function passed to AuthContext rather than
-    // changing the state directly
-    authCtx.isLogged = false;
-    authCtx.firstname = undefined;
-    authCtx.role = undefined;
-    authCtx.lastname = undefined;
-    navigate('/');
   };
 
   return (
@@ -224,9 +230,9 @@ const NavBar: FC = () => {
       <div className="max-w-7xl mx-auto px-2 md:px-6 lg:px-8">
         <div className="relative flex items-center justify-between h-16">
           <MobileMenu authCtx={authCtx} handleLogout={handleLogout} fctx={fctx} t={t} />
-
           <LeftSideNavBar authCtx={authCtx} t={t} />
           <RightSideNavBar authCtx={authCtx} handleLogout={handleLogout} fctx={fctx} t={t} />
+          <WarningModal isShown={isShown} setIsShown={setIsShown} action={async () => await logout()} message={t('logoutWarning')} />
         </div>
       </div>
     </nav>
