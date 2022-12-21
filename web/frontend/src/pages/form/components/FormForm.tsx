@@ -88,7 +88,7 @@ const FormForm: FC<FormFormProps> = () => {
         setConf(emptyConf);
       }
       setLoading(false);
-    } catch (error:any) {
+    } catch (error: any) {
       setTextModal(error.message);
       setShowModal(true);
       setLoading(false);
@@ -101,7 +101,7 @@ const FormForm: FC<FormFormProps> = () => {
     const data = marshalConfig(conf);
     try {
       await configurationSchema.validate(data);
-    } catch (err:any) {
+    } catch (err: any) {
       setTextModal(t('errorIncorrectConfSchema') + err.errors.join(','));
       setShowModal(true);
       return;

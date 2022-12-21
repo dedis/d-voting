@@ -10,14 +10,14 @@ const unmarshalText = (text: any): types.TextQuestion => {
 };
 
 const unmarshalRank = (rank: any): types.RankQuestion => {
-  const ChoicesMap= new Map<string, string[]>();
-  for(let i = 0; i < rank.Choices.length; i++) {
-      const choice = JSON.parse(rank.Choices[i]);
-      const choiceMap = new Map<string, string>(Object.entries(choice));
-      for (let key in choiceMap) {
-        ChoicesMap.set(key, choice.get[key]);
+  const ChoicesMap = new Map<string, string[]>();
+  for (let i = 0; i < rank.Choices.length; i++) {
+    const choice = JSON.parse(rank.Choices[i]);
+    const choiceMap = new Map<string, string>(Object.entries(choice));
+    for (let key in choiceMap.keys()) {
+      ChoicesMap.set(key, choice.get[key]);
+    }
   }
-}
   return {
     ...rank,
     ChoicesMap: ChoicesMap,

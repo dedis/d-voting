@@ -65,8 +65,8 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
       setErrors([]);
       notifyParent(values);
       setOpen(false);
-    } catch (err:any) {
-      console.log('erreur',err);
+    } catch (err: any) {
+      console.log('erreur', err);
       setErrors(err.errors);
     }
   };

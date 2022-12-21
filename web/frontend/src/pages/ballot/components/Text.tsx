@@ -13,7 +13,9 @@ type TextProps = {
 
 const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
   const { t } = useTranslation();
-  const [charCounts, setCharCounts] = useState(new Array<number>(text.ChoicesMap.get('en').length).fill(0));
+  const [charCounts, setCharCounts] = useState(
+    new Array<number>(text.ChoicesMap.get('en').length).fill(0)
+  );
 
   const requirementsDisplay = () => {
     let requirements = '';
@@ -128,9 +130,9 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
           </h3>
         </div>
         <div>
-          {language === 'en' && <HintButton text ={hint.en} />}
-          {language === 'fr' && <HintButton text ={hint.fr} />}
-          {language === 'de' && <HintButton text ={hint.de} />}
+          {language === 'en' && <HintButton text={hint.en} />}
+          {language === 'fr' && <HintButton text={hint.fr} />}
+          {language === 'de' && <HintButton text={hint.de} />}
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>

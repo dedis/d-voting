@@ -85,13 +85,13 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
     const newElements = new Map(Elements);
     const newSubj = newSubject();
     newElements.set(newSubj.ID, newSubj);
-    setSubject({ ...subject, Elements: newElements, Order: [...Order, newSubj.ID]});
+    setSubject({ ...subject, Elements: newElements, Order: [...Order, newSubj.ID] });
   };
 
   const addQuestion = (question: types.SubjectElement) => {
     const newElements = new Map(Elements);
     newElements.set(question.ID, question);
-    setSubject({ ...subject, Elements: newElements, Order: [...Order, question.ID]  });
+    setSubject({ ...subject, Elements: newElements, Order: [...Order, question.ID] });
   };
 
   const localRemoveSubject = (subjID: types.ID) => () => {

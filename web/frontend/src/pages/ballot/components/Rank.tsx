@@ -16,9 +16,9 @@ export const handleOnDragEnd = (
   const rankID = result.destination.droppableId as ID;
   const newAnswers = answersFrom(answers);
   const rankAnswer = newAnswers.RankAnswers.get(rankID);
-  if(rankAnswer === undefined) {
+  if (rankAnswer === undefined) {
     throw new Error(`RankAnswer with ID ${rankID} not found`);
-  }else{
+  } else {
     const [reorderedItem] = rankAnswer.splice(result.source.index, 1);
     rankAnswer.splice(result.destination.index, 0, reorderedItem);
     newAnswers.RankAnswers.set(rankID, rankAnswer);
@@ -57,7 +57,7 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
     );
   };
   const [titles, setTitles] = useState<any>({});
-  
+
   useEffect(() => {
     try {
       const ts = JSON.parse(rank.Title);
@@ -110,9 +110,9 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
           </h3>
         </div>
         <div>
-         {language === 'en' && <HintButton text ={hint.en} />}
-         {language === 'fr' && <HintButton text ={hint.fr} />}
-         {language === 'de' && <HintButton text ={hint.de} />}
+          {language === 'en' && <HintButton text={hint.en} />}
+          {language === 'fr' && <HintButton text={hint.fr} />}
+          {language === 'de' && <HintButton text={hint.de} />}
         </div>
       </div>
       <div className="mt-5 px-4 max-w-[300px] sm:pl-8 sm:max-w-md">
@@ -122,7 +122,10 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
               <ul className={rank.ID} {...provided.droppableProps} ref={provided.innerRef}>
                 {Array.from(answers.RankAnswers.get(rank.ID).entries()).map(
                   ([rankIndex, choiceIndex]) => {
-                    {console.log('newChoicesMap', [...newChoicesMap.entries()])}
+                    {
+                      console.log('newChoicesMap', [...newChoicesMap.entries()]);
+                    }
+
                     if (language == 'en')
                       return choiceDisplay(newChoicesMap.get('en')[choiceIndex], rankIndex);
                     else if (language == 'fr')

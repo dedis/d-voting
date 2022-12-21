@@ -19,7 +19,6 @@ const Logged: FC = () => {
       fctx.addMessage(t('notLoggedIn'), FlashLevel.Error);
     }
     navigate('/');
-
   });
 
   return <></>;

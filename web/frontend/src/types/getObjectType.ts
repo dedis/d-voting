@@ -36,7 +36,7 @@ const newRank = (): types.RankQuestion => {
     TitleDe: '',
     MaxN: 2,
     MinN: 2,
-    Choices: ['',''],
+    Choices: ['', ''],
     ChoicesMap: new Map(Object.entries(obj)),
     Type: RANK,
     Hint: '',
@@ -54,7 +54,7 @@ const newSelect = (): types.SelectQuestion => {
     TitleFr: '',
     MaxN: 1,
     MinN: 1,
-    Choices:[''],
+    Choices: [''],
     ChoicesMap: new Map(Object.entries(obj)),
     Type: SELECT,
     Hint: '',
@@ -74,7 +74,7 @@ const newText = (): types.TextQuestion => {
     MinN: 0,
     MaxLength: 50,
     Regex: '',
-    Choices:[''],
+    Choices: [''],
     ChoicesMap: new Map(Object.entries(obj)),
     Type: TEXT,
     Hint: '',
@@ -102,22 +102,21 @@ const answersFrom = (answers: types.Answers): types.Answers => {
     Errors: new Map(answers.Errors),
   };
 };
-const choicesMapToChoices = (ChoicesMap : Map<string,string[]>): string[] => {
-  let choices : string[]= [];
+const choicesMapToChoices = (ChoicesMap: Map<string, string[]>): string[] => {
+  let choices: string[] = [];
   for (let i = 0; i < ChoicesMap.get('en').length; i++) {
-    const choiceMap = new Map <string, string>();
-    for(let key of ChoicesMap.keys()){
-      if(ChoicesMap.get(key)[i] === ''){
+    const choiceMap = new Map<string, string>();
+    for (let key of ChoicesMap.keys()) {
+      if (ChoicesMap.get(key)[i] === '') {
         continue;
       }
-      choiceMap.set(key,ChoicesMap.get(key)[i]);
+      choiceMap.set(key, ChoicesMap.get(key)[i]);
     }
-    const s =JSON.stringify(Object.fromEntries(choiceMap));
+    const s = JSON.stringify(Object.fromEntries(choiceMap));
     choices.push(s);
-
   }
   return choices;
-}
+};
 const toArraysOfSubjectElement = (
   elements: Map<ID, types.SubjectElement>
 ): {
@@ -141,18 +140,20 @@ const toArraysOfSubjectElement = (
           fr: element.TitleFr,
           de: element.TitleDe,
         });
-       hint = JSON.stringify({
-            en: (element as types.RankQuestion).Hint,
-            fr: (element as types.RankQuestion).HintFr,
-            de: (element as types.RankQuestion).HintDe,
-            });
+        hint = JSON.stringify({
+          en: (element as types.RankQuestion).Hint,
+          fr: (element as types.RankQuestion).HintFr,
+          de: (element as types.RankQuestion).HintDe,
+        });
         rankQuestion.push({
           ...(element as types.RankQuestion),
           Title: title,
-          Choices: choicesMapToChoices((element as types.RankQuestion).ChoicesMap),
+          Choices: choicesMapToChoices(
+            (element as types.RankQuestion).ChoicesMap
+          ),
           Hint: hint,
         });
-        console.log('rankQuestion',rankQuestion);
+        console.log('rankQuestion', rankQuestion);
         break;
       case SELECT:
         title = JSON.stringify({

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { RankQuestion, SelectQuestion, TextQuestion } from 'types/configuration';
 import { choicesMapToChoices } from '../../../../types/getObjectType';
 
@@ -47,7 +47,11 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
           const filteredChoicesMapDe = ChoicesMap.get('de').filter(
             (item: string, idx: number) => idx !== optionnalValues
           );
-          const newState = { en: filteredChoicesMap, fr: filteredChoicesMapFr, de: filteredChoicesMapDe };
+          const newState = {
+            en: filteredChoicesMap,
+            fr: filteredChoicesMapFr,
+            de: filteredChoicesMapDe,
+          };
           setState({
             ...state,
             ChoicesMap: new Map(Object.entries(newState)),
@@ -164,11 +168,14 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
       case 'en':
       case 'fr':
       case 'de':
-        const newChoicesMap = new Map(Object.entries({
-          ...obj,
-          [lang]: obj[lang].map((item: string, idx: number) =>
-          (idx === index ? e.target.value : item)),
-        }));
+        const newChoicesMap = new Map(
+          Object.entries({
+            ...obj,
+            [lang]: obj[lang].map((item: string, idx: number) =>
+              idx === index ? e.target.value : item
+            ),
+          })
+        );
         setState({
           ...state,
           ChoicesMap: newChoicesMap,
@@ -176,11 +183,10 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
         });
         break;
       default:
-        console.error('WROOONG')
+        console.error('WROOONG');
     }
-
   };
-  console.log('state',state);
+  console.log('state', state);
   return { state, handleChange, addChoice, deleteChoice, updateChoice };
 };
 
