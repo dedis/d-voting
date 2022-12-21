@@ -77,7 +77,7 @@ const App = () => {
               <Route
                 path={ROUTE_BALLOT_SHOW + '/:formId'}
                 element={
-                  <RequireAuth roles={null}>
+                  <RequireAuth roles={[]}>
                     <BallotShow />
                   </RequireAuth>
                 }

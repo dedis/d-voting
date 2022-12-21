@@ -43,7 +43,7 @@ const FormForm: FC<FormFormProps> = () => {
   const [currentTab, setCurrentTab] = useState<string>('formForm');
   const [subjectIdToRemove, setSubjectIdToRemove] = useState<ID>('');
   const [titleChanging, setTitleChanging] = useState<boolean>(true);
-  const [navigateDestination, setNavigateDestination] = useState(null);
+  const [navigateDestination, setNavigateDestination] = useState('');
   const [marshalledConf, setMarshalledConf] = useState<any>(marshalConfig(conf));
   const { configuration: previewConf, answers, setAnswers } = useConfiguration(marshalledConf);
 
@@ -67,7 +67,7 @@ const FormForm: FC<FormFormProps> = () => {
 
     try {
       await configurationSchema.validate(data.Configuration);
-    } catch (err) {
+    } catch (err: any) {
       setTextModal(t('errorIncorrectConfSchema') + err.errors.join(','));
       setShowModal(true);
       return;
@@ -88,7 +88,7 @@ const FormForm: FC<FormFormProps> = () => {
         setConf(emptyConf);
       }
       setLoading(false);
-    } catch (error) {
+    } catch (error:any) {
       setTextModal(error.message);
       setShowModal(true);
       setLoading(false);
@@ -101,7 +101,7 @@ const FormForm: FC<FormFormProps> = () => {
     const data = marshalConfig(conf);
     try {
       await configurationSchema.validate(data);
-    } catch (err) {
+    } catch (err:any) {
       setTextModal(t('errorIncorrectConfSchema') + err.errors.join(','));
       setShowModal(true);
       return;

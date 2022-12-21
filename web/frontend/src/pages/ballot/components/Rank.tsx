@@ -16,12 +16,14 @@ export const handleOnDragEnd = (
   const rankID = result.destination.droppableId as ID;
   const newAnswers = answersFrom(answers);
   const rankAnswer = newAnswers.RankAnswers.get(rankID);
-
-  const [reorderedItem] = rankAnswer.splice(result.source.index, 1);
-  rankAnswer.splice(result.destination.index, 0, reorderedItem);
-  newAnswers.RankAnswers.set(rankID, rankAnswer);
-
-  setAnswers(newAnswers);
+  if(rankAnswer === undefined) {
+    throw new Error(`RankAnswer with ID ${rankID} not found`);
+  }else{
+    const [reorderedItem] = rankAnswer.splice(result.source.index, 1);
+    rankAnswer.splice(result.destination.index, 0, reorderedItem);
+    newAnswers.RankAnswers.set(rankID, rankAnswer);
+    setAnswers(newAnswers);
+  }
 };
 
 type RankProps = {
