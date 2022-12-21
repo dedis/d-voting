@@ -1,15 +1,13 @@
-import { type } from "os";
-import React, { FC } from "react";
-import {Dialog} from "@headlessui/react";
+import React, { FC } from 'react';
+import { Dialog } from '@headlessui/react';
 import { useTranslation } from 'react-i18next';
 
 type WarningModalProps = {
-    message: string;
-    isShown: boolean;
-    setIsShown: (isShown: boolean) => void;
-    action: () => void;
-}
-
+  message: string;
+  isShown: boolean;
+  setIsShown: (isShown: boolean) => void;
+  action: () => void;
+};
 
 const WarningModal : FC<WarningModalProps> = ({message,isShown,setIsShown,action}) => {
     const { t } = useTranslation();
