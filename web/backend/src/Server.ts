@@ -9,6 +9,7 @@ import lmdb, { RangeOptions } from 'lmdb';
 import xss from 'xss';
 import createMemoryStore from 'memorystore';
 import { Enforcer, newEnforcer } from 'casbin';
+import { PostgresAdapter } from 'casbin-pg-adapter';
 
 const MemoryStore = createMemoryStore(session);
 const SUBJECT_ROLES = 'roles';
@@ -37,11 +38,18 @@ const app = express();
 app.use(morgan('tiny'));
 
 let enf: Enforcer;
+async function myFunc() {
+  const a = await PostgresAdapter.newAdapter({
+    connectionString: 'postgres://dvoting:dvoting@localhost:5432/casbin',
+    migrate: false,
+  });
 
-const enforcerLoading = newEnforcer('model.conf', 'policy.csv');
+  const enforcerLoading = newEnforcer('model.conf', a);
+  return enforcerLoading;
+}
 const port = process.env.PORT || 5000;
 
-Promise.all([enforcerLoading])
+Promise.all([myFunc()])
   .then((res) => {
     [enf] = res;
     console.log(`🛡 Casbin loaded`);
