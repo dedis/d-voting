@@ -67,7 +67,7 @@ export const handlers = [
           firstname: 'Alice',
           role: UserRole.Admin,
           sciper: userId,
-          authorization: auth,
+          authorization: new Map(Object.entries(auth)),
         }
       : {};
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));

@@ -9,7 +9,7 @@ import lmdb, { RangeOptions } from 'lmdb';
 import xss from 'xss';
 import createMemoryStore from 'memorystore';
 import { Enforcer, newEnforcer } from 'casbin';
-import { PostgresAdapter } from 'casbin-pg-adapter';
+import PostgresAdapter from 'casbin-pg-adapter';
 
 const MemoryStore = createMemoryStore(session);
 const SUBJECT_ROLES = 'roles';
