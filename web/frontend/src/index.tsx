@@ -229,7 +229,7 @@ const AppContainer = () => {
           firstname: result.firstname,
           lastname: result.lastname,
           role: result.role,
-          authorization: result.islogged ? new Map(result.authorization) : arr,
+          authorization: result.islogged ? new Map(Object.entries(result.authorization)) : arr,
         });
 
         // wait for the default proxy to be set

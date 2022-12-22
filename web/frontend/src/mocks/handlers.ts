@@ -68,11 +68,7 @@ export const handlers = [
           firstname: 'Alice',
           role: UserRole.Admin,
           sciper: userId,
-          authorization: Object.entries({
-            roles: ['list', 'remove', 'add'],
-            proxy: ['list', 'remove', 'add'],
-            election: ['create'],
-          }),
+          authorization: Object.fromEntries(auth),
         }
       : {};
     console.log('userINfos', userInfos);
