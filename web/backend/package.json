@@ -19,6 +19,7 @@
   "dependencies": {
     "@dedis/kyber": "^3.4.4",
     "axios": "^0.24.0",
+    "casbin": "^5.19.1",
     "cookie-parser": "^1.4.6",
     "crypto": "^1.0.1",
     "express": "^4.17.2",

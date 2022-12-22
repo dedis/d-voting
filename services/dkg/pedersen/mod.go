@@ -213,6 +213,12 @@ func (a *Actor) Setup() (kyber.Point, error) {
 		return nil, err
 	}
 
+	if form.Roster.Len() == 0 {
+		err := xerrors.Errorf("the roster is empty")
+		a.setErr(err, nil)
+		return nil, err
+	}
+
 	addrs := make([]mino.Address, 0, form.Roster.Len())
 	addrIter := form.Roster.AddressIterator()
 	for addrIter.HasNext() {
@@ -364,6 +370,9 @@ func (a *Actor) ComputePubshares() error {
 	}
 
 	players := mino.NewAddresses(a.handler.startRes.GetParticipants()...)
+	if players.Len() == 0 {
+		return xerrors.Errorf("the list of Participants is empty")
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), decryptTimeout)
 	defer cancel()

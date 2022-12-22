@@ -99,6 +99,7 @@ const selectsSchema = yup.object({
       },
     })
     .required(),
+  Hint: yup.lazy(() => yup.string()),
 });
 
 const ranksSchema = yup.object({
@@ -196,6 +197,7 @@ const ranksSchema = yup.object({
       },
     })
     .required(),
+  Hint: yup.lazy(() => yup.string()),
 });
 
 const textsSchema = yup.object({
@@ -309,6 +311,7 @@ const textsSchema = yup.object({
       },
     })
     .required(),
+  Hint: yup.lazy(() => yup.string()),
 });
 
 const subjectSchema = yup.object({
