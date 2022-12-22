@@ -43,7 +43,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
     updateChoice,
   } = useQuestionForm(question);
 
-  const { Title, MaxN, MinN, Choices } = values;
+  const { Title, MaxN, MinN, Choices, Hint } = values;
   const [errors, setErrors] = useState([]);
 
   const handleSave = async () => {
@@ -188,6 +188,17 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                         .map((v, i) => (
                           <div key={i}>{v}</div>
                         ))}
+                    </div>
+                    <div>
+                      <label className="block text-md mt font-medium text-gray-500">Hint</label>
+                      <input
+                        value={Hint}
+                        onChange={handleChange()}
+                        name="Hint"
+                        type="text"
+                        placeholder={t('enterHint')}
+                        className="my-1 px-1 w-60 ml-1 border rounded-md"
+                      />
                     </div>
                     <label className="flex pt-2 text-md font-medium text-gray-500">
                       {Type !== TEXT ? t('choices') : t('answers')}
