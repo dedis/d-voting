@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC,useState,useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DownloadedResults, RankResults, SelectResults, TextResults } from 'types/form';
 import SelectResult from './components/SelectResult';
@@ -28,6 +28,7 @@ import {
   countSelectResult,
   countTextResult,
 } from './components/utils/countResult';
+import { default as i18n } from 'i18next';
 
 type GroupedResultProps = {
   rankResult: RankResults;
@@ -48,6 +49,16 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
     [SELECT]: <CursorClickIcon />,
     [TEXT]: <MenuAlt1Icon />,
   };
+
+  const [titles, setTitles] = useState<any>({});
+  useEffect(() => {
+    try {
+      const ts = JSON.parse(configuration.MainTitle);
+      setTitles(ts);
+    } catch (e) {
+      console.log('error', e);
+    }
+  }, [configuration]);
 
   const SubjectElementResultDisplay = (element: SubjectElement) => {
     return (
@@ -156,7 +167,9 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
     });
 
     const data = {
-      Title: configuration.MainTitle,
+      TitleEn: i18n.language === 'en' && titles.en,
+      TitleFr: i18n.language === 'fr' && titles.fr,
+      TitleDe: i18n.language === 'de' && titles.de,
       NumberOfVotes: result.length,
       Results: dataToDownload,
     };

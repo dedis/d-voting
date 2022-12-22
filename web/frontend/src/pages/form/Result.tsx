@@ -20,6 +20,7 @@ import ResultExplanation from './components/ResultExplanation';
 import { Tab } from '@headlessui/react';
 import GroupedResult from './GroupedResult';
 import IndividualResult from './IndividualResult';
+import { default as i18n } from 'i18next';
 
 // Functional component that displays the result of the votes
 const FormResult: FC = () => {
@@ -98,29 +99,7 @@ const FormResult: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result]);
 
-  const exportJSONData = () => {
-    const fileName = 'result.json';
 
-    const dataToDownload: DownloadedResults[] = [];
-
-    configuration.Scaffold.forEach((subject: Subject) => {
-      getResultData(subject, dataToDownload);
-    });
-
-    const data = {
-      TitleEn: i18n.language == 'en' && titles.en,
-      TitleFr: i18n.language == 'fr' && titles.fr,
-      TitleDe: i18n.language == 'en' && titles.de,
-      NumberOfVotes: result.length,
-      Results: dataToDownload,
-    };
-
-    const fileToSave = new Blob([JSON.stringify(data, null, 2)], {
-      type: 'application/json',
-    });
-
-    saveAs(fileToSave, fileName);
-  };
 
   return (
     <div className="w-[60rem] font-sans px-4 pt-8 pb-4">

@@ -30,6 +30,7 @@ import { useConfigurationOnly } from 'components/utils/useConfiguration';
 import Loading from 'pages/Loading';
 import saveAs from 'file-saver';
 import { useNavigate } from 'react-router';
+import { default as i18n } from 'i18next';
 
 type IndividualResultProps = {
   rankResult: RankResults;
@@ -65,7 +66,16 @@ const IndividualResult: FC<IndividualResultProps> = ({
     [SELECT]: <CursorClickIcon />,
     [TEXT]: <MenuAlt1Icon />,
   };
-
+  
+  const [titles, setTitles] = useState<any>({});
+   useEffect(() => {
+      try {
+          const ts = JSON.parse(configuration.MainTitle);
+          setTitles(ts);
+      } catch (e) {
+          console.log(e);
+      }
+  }, [configuration.MainTitle]);
   const SubjectElementResultDisplay = (element: SubjectElement) => {
     return (
       <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
@@ -191,7 +201,9 @@ const IndividualResult: FC<IndividualResultProps> = ({
     });
 
     const data = {
-      Title: configuration.MainTitle,
+      TitleEn: i18n.language === 'en' && titles.en,
+      TitleFr: i18n.language === 'fr' && titles.fr,
+      TitleDe: i18n.language === 'de' && titles.de,
       NumberOfVotes: ballotNumber,
       Ballots: ballotsToDownload,
     };
