@@ -71,7 +71,6 @@ export const handlers = [
           authorization: Object.fromEntries(auth),
         }
       : {};
-    console.log('userINfos', userInfos);
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(
