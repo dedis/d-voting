@@ -32,7 +32,7 @@ const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({
   const handleCancel = () => {
     setOpen(false);
     setError(null);
-    };
+  };
   const sendFetchRequest = usePostCall(setPostError);
 
   useEffect(() => {
@@ -44,34 +44,32 @@ const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({
   const usersToBeRemoved = [sciper];
   const saveMapping = async () => {
     const request = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(usersToBeRemoved),
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(usersToBeRemoved),
     };
     return sendFetchRequest(ENDPOINT_REMOVE_ROLE, request, setIsPosting);
   };
-  const handleDelete =  async() => {
-   setLoading(true);
-   if(sciper !== 0){
-   try{
-    setError(null);
-    const res =  await saveMapping();
-      console.log(res);
-      if (!res) {
-        handleRemoveRoleUser(usersToBeRemoved);
-        fctx.addMessage(t('successRemoveUser'), FlashLevel.Info);
-      } 
-      setOpen(false);
-   }catch {
+  const handleDelete = async () => {
+    setLoading(true);
+    if (sciper !== 0) {
+      try {
+        setError(null);
+        const res = await saveMapping();
+        console.log(res);
+        if (!res) {
+          handleRemoveRoleUser(usersToBeRemoved);
+          fctx.addMessage(t('successRemoveUser'), FlashLevel.Info);
+        }
+        setOpen(false);
+      } catch {
         fctx.addMessage(t('errorRemoveUser'), FlashLevel.Error);
-       
-   }
-}else {
-    setError(t('errorRemoveUser'));
-}
-      
-      setLoading(false);
-    
+      }
+    } else {
+      setError(t('errorRemoveUser'));
+    }
+
+    setLoading(false);
   };
 
   const modalBody = (

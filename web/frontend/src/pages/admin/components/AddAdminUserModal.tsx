@@ -35,9 +35,9 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen, handleAd
   const [selectedRole, setSelectedRole] = useState(roles[0]);
 
   const handleCancel = () => {
-    setOpen(false)
+    setOpen(false);
     setError(null);
-};
+  };
   const sendFetchRequest = usePostCall(setPostError);
 
   useEffect(() => {
@@ -54,30 +54,30 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen, handleAd
     const request = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({userToAdd}),
+      body: JSON.stringify({ userToAdd }),
     };
     return sendFetchRequest(ENDPOINT_ADD_ROLE, request, setIsPosting);
   };
   const handleAddUser = async () => {
     setLoading(true);
-    if(sciperValue !== '' ) {
-    try {
-      setError(null);  
-      const res = await saveMapping();
-      console.log('res', res)
-      if (!res) {
-        setSciperValue('');
-        setSelectedRole(roles[0]);
-        handleAddRoleUser(userToAdd);
-        console.log('sciperValue', sciperValue)
-        fctx.addMessage(`${t('successAddUser')}`, FlashLevel.Info);
-      }
-      setOpen(false);
-    } catch  {
+    if (sciperValue !== '') {
+      try {
+        setError(null);
+        const res = await saveMapping();
+        console.log('res', res);
+        if (!res) {
+          setSciperValue('');
+          setSelectedRole(roles[0]);
+          handleAddRoleUser(userToAdd);
+          console.log('sciperValue', sciperValue);
+          fctx.addMessage(`${t('successAddUser')}`, FlashLevel.Info);
+        }
+        setOpen(false);
+      } catch {
         fctx.addMessage(`${t('errorAddRoleError')}`, FlashLevel.Error);
-    }
-    }else{
-        setError(t('addRoleError'));
+      }
+    } else {
+      setError(t('addRoleError'));
     }
     setLoading(false);
   };
