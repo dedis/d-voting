@@ -1,4 +1,4 @@
-import React, { FC, useContext, useState, useEffect } from 'react';
+import React, { FC, useContext, useEffect, useState } from 'react';
 import { ENDPOINT_REMOVE_ROLE } from 'components/utils/Endpoints';
 import PropTypes from 'prop-types';
 import { Dialog } from '@headlessui/react';
@@ -27,7 +27,7 @@ const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({
   const [postError, setPostError] = useState(null);
   const [, setIsPosting] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [, setError] = useState(null);
 
   const handleCancel = () => {
     setOpen(false);

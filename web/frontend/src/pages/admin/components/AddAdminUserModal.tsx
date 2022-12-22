@@ -1,4 +1,4 @@
-import React, { FC, Fragment, useContext, useState, useEffect } from 'react';
+import React, { FC, Fragment, useContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Dialog, Listbox, Transition } from '@headlessui/react';
 import { CheckIcon, SelectorIcon } from '@heroicons/react/solid';
@@ -27,7 +27,7 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen, handleAd
   const { t } = useTranslation();
   const fctx = useContext(FlashContext);
 
-  const [error, setError] = useState(null);
+  const [, setError] = useState(null);
   const [postError, setPostError] = useState(null);
   const [, setIsPosting] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -42,7 +42,7 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen, handleAd
 
   useEffect(() => {
     if (postError !== null) {
-      fctx.addMessage(t('addRoleError') + postError, FlashLevel.Error);
+      fctx.addMessage(t('errorAddUser') + postError, FlashLevel.Error);
       setPostError(null);
     }
   }, [postError]);
@@ -74,7 +74,7 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen, handleAd
         }
         setOpen(false);
       } catch {
-        fctx.addMessage(`${t('errorAddRoleError')}`, FlashLevel.Error);
+        fctx.addMessage(`${t('errorAddUser')}`, FlashLevel.Error);
       }
     } else {
       setError(t('addRoleError'));
