@@ -1,4 +1,4 @@
-import React, { FC, Fragment, useContext, useState } from 'react';
+import React, { FC, Fragment, useContext, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Dialog, Listbox, Transition } from '@headlessui/react';
 import { CheckIcon, SelectorIcon } from '@heroicons/react/solid';
@@ -11,6 +11,7 @@ import { FlashContext, FlashLevel } from 'index';
 import { UserRole } from 'types/userRole';
 import { ENDPOINT_ADD_ROLE } from 'components/utils/Endpoints';
 import AdminModal from './AdminModal';
+import usePostCall from 'components/utils/usePostCall';
 
 const uid = new ShortUniqueId({ length: 8 });
 
@@ -26,44 +27,59 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen, handleAd
   const { t } = useTranslation();
   const fctx = useContext(FlashContext);
 
+  const [error, setError] = useState(null);
+  const [postError, setPostError] = useState(null);
+  const [, setIsPosting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sciperValue, setSciperValue] = useState('');
   const [selectedRole, setSelectedRole] = useState(roles[0]);
 
-  const handleCancel = () => setOpen(false);
+  const handleCancel = () => {
+    setOpen(false)
+    setError(null);
+};
+  const sendFetchRequest = usePostCall(setPostError);
 
+  useEffect(() => {
+    if (postError !== null) {
+      fctx.addMessage(t('addRoleError') + postError, FlashLevel.Error);
+      setPostError(null);
+    }
+  }, [postError]);
   const handleUserInput = (e: any) => {
     setSciperValue(e.target.value);
   };
-
-  const handleAddUser = async () => {
-    const userToAdd = { id: uid(), sciper: sciperValue, role: selectedRole };
-    const requestOptions = {
+  const userToAdd = { id: uid(), sciper: sciperValue, role: selectedRole };
+  const saveMapping = async () => {
+    const request = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userToAdd),
+      body: JSON.stringify({userToAdd}),
     };
-
+    return sendFetchRequest(ENDPOINT_ADD_ROLE, request, setIsPosting);
+  };
+  const handleAddUser = async () => {
+    setLoading(true);
+    if(sciperValue !== '' ) {
     try {
-      setLoading(true);
-      const res = await fetch(ENDPOINT_ADD_ROLE, requestOptions);
-      if (res.status !== 200) {
-        const response = await res.text();
-        fctx.addMessage(
-          `Error HTTP ${res.status} (${res.statusText}) : ${response}`,
-          FlashLevel.Error
-        );
-      } else {
+      setError(null);  
+      const res = await saveMapping();
+      console.log('res', res)
+      if (!res) {
         setSciperValue('');
         setSelectedRole(roles[0]);
         handleAddRoleUser(userToAdd);
+        console.log('sciperValue', sciperValue)
         fctx.addMessage(`${t('successAddUser')}`, FlashLevel.Info);
       }
-    } catch (error) {
-      fctx.addMessage(`${t('errorAddUser')}: ${error.message}`, FlashLevel.Error);
+      setOpen(false);
+    } catch  {
+        fctx.addMessage(`${t('errorAddRoleError')}`, FlashLevel.Error);
+    }
+    }else{
+        setError(t('addRoleError'));
     }
     setLoading(false);
-    setOpen(false);
   };
 
   const modalBody = (
