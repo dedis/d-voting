@@ -25,6 +25,7 @@ const defaultAuth = { isLogged: false, firstname: '', lastname: '', role: '', au
 // components. This context is set when loading the app by asking the backend if
 // the user is logged.
 export const AuthContext = createContext<AuthState>(defaultAuth);
+export const [RedirectToLogin, setRedir] = useState<string>('/');
 
 export interface AuthState {
   isLogged: boolean;
@@ -227,7 +228,7 @@ const AppContainer = () => {
           firstname: result.firstname,
           lastname: result.lastname,
           role: result.role,
-          authorization: result.islogged ? new Map(Object.entries(result.authorization)) : arr,
+          authorization: result.islogged ? new Map(result.authorization) : arr,
         });
 
         // wait for the default proxy to be set
