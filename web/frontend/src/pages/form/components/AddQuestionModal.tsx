@@ -1,4 +1,4 @@
-import { FC, Fragment, useRef, useState } from 'react';
+import { FC, Fragment, useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Dialog, Transition } from '@headlessui/react';
 
@@ -91,6 +91,30 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
     }
   };
 
+  const [currentMax, setCurrentMax] = useState<string>('1');
+  const [isValid, setIsValid] = useState<ValidityType>(0);
+
+  enum ValidityType {
+    Valid = 0,
+    UNPARSABLE = 1,
+    OUT_OF_BOUNDS = 2,
+  }
+
+  useEffect(() => {
+    let value: number;
+    value = parseInt(currentMax);
+    if (isNaN(value)) {
+      console.log('Could not parse currentMax');
+      setIsValid(1);
+    } else if (value < 1 || value > 1000) {
+      console.log('currentMax out of bounds');
+      setIsValid(2);
+    } else {
+      console.log('value', value);
+      setIsValid(0);
+    }
+  }, [currentMax]);
+  useEffect(() => {}, [isValid]);
   const cancelButtonRef = useRef(null);
 
   const displayExtraFields = () => {
@@ -101,13 +125,19 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
           <>
             <label className="block text-md font-medium text-gray-500">MaxLength</label>
             <input
-              value={tq.MaxLength}
-              onChange={handleChange('TextMaxLength')}
+              value={currentMax}
+              onChange={(e) => {
+                handleChange()(e);
+                setCurrentMax(e.target.value);
+              }}
               name="MaxLength"
               min="1"
               type="number"
               placeholder={t('enterMaxLength')}
-              className="my-1 px-1 w-32 ml-1 border rounded-md"
+              className={
+                'my-1 px-1 w-32 ml-1 border rounded-md' +
+                (isValid !== 0 ? ' border-red-500 border-1 text-red-600' : '')
+              }
             />
             <label className="block text-md font-medium text-gray-500">Regex</label>
             <input

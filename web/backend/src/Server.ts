@@ -41,6 +41,7 @@ let enf: Enforcer;
 async function myFunc() {
   const a = await PostgresAdapter.newAdapter({
     connectionString: 'postgres://dvoting:dvoting@localhost:5432/casbin',
+    migrate: false,
   });
 
   const enforcerLoading = newEnforcer('model.conf', a);
@@ -213,6 +214,13 @@ function setMapAuthorization(list: string[][]): Map<String, Array<String>> {
 // the react. This endpoint serves to send to the client (actually to react)
 // the information of the current user.
 app.get('/api/personal_info', async (req, res) => {
+  //enf.addPolicy(String(req.session.userid), 'election', 'create');
+  //enf.addPolicy(String(req.session.userid), 'proxies', 'put');
+  //enf.addPolicy(String(req.session.userid), 'proxies', 'delete');
+  //enf.addPolicy(String(req.session.userid), 'proxies', 'post');
+  //enf.addPolicy(String(req.session.userid), 'roles', 'add');
+  //enf.addPolicy(String(req.session.userid), 'roles', 'remove');
+  //enf.addPolicy(String(req.session.userid), 'roles', 'list');
   enf.getFilteredPolicy(0, String(req.session.userid)).then((list) => {
     res.set('Access-Control-Allow-Origin', '*');
     if (req.session.userid) {
@@ -324,9 +332,8 @@ app.put('/api/proxies/:nodeAddr', (req, res) => {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
   }
-
   let { nodeAddr } = req.params;
-
+  console.log('nodeAddr', nodeAddr);
   nodeAddr = decodeURIComponent(nodeAddr);
 
   const proxy = proxiesDB.get(nodeAddr);
@@ -341,7 +348,11 @@ app.put('/api/proxies/:nodeAddr', (req, res) => {
       res.status(400).send('bad request, proxy is undefined');
       return;
     }
-
+    const NewNode = bodydata.NewNode;
+    if (NewNode !== nodeAddr) {
+      proxiesDB.remove(nodeAddr);
+      nodeAddr = NewNode;
+    }
     proxiesDB.put(nodeAddr, bodydata.Proxy);
     console.log('put', nodeAddr, '=>', bodydata.Proxy);
     res.status(200).send('ok');
@@ -502,12 +513,20 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
     });
 }
 
+app.put('/api/evoting/authorizations', (req, res) => {
+  const formID = req.body;
+  console.log('adding policy', req.session.userid, formID, ACTION_CREATE);
+  enf.addPolicy(String(req.session.userid), formID, ACTION_CREATE);
+  console.log('added policy', req.session.userid, formID, ACTION_CREATE);
+});
+
 // Secure /api/evoting to admins and operators
 app.use('/api/evoting/*', (req, res, next) => {
   if (!isAuthorized(req.session.userid, SUBJECT_ELECTION, ACTION_CREATE)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
   }
+
   next();
 });
 
@@ -521,6 +540,15 @@ function makeid(length: number) {
   }
   return result;
 }
+app.put('/api/evoting/forms/:formID', (req, res, next) => {
+  const { formID } = req.params;
+  console.log('hey', formID);
+  if (!isAuthorized(req.session.userid, formID, ACTION_CREATE)) {
+    //  res.status(400).send('Unauthorized - only admins and operators allowed');
+    //return;
+  }
+  next();
+});
 
 app.delete('/api/evoting/forms/:formID', (req, res) => {
   const { formID } = req.params;

@@ -19,6 +19,7 @@ if (process.env.NODE_ENV !== 'production' && process.env.REACT_APP_NOMOCK !== 'o
 }
 const arr = new Map<String, Array<String>>();
 const defaultAuth = { isLogged: false, firstname: '', lastname: '', role: '', authorization: arr };
+//role: '',
 
 // AuthContext is a global state containing the authentication state. React
 // Context is a way to manage state globally, without having to pass props to

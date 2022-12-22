@@ -74,6 +74,8 @@ const FormShow: FC = () => {
 
   // Fetch result when available after a status change
   useEffect(() => {
+    console.log('Im in useEffect');
+    console.log(isResultAvailable);
     if (status === Status.ResultAvailable && isResultAvailable) {
       getResults(formID, setError, setResult, setIsResultSet);
     }

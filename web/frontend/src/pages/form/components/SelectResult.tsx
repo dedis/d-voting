@@ -11,7 +11,7 @@ type SelectResultProps = {
 // Display the results of a select question.
 const SelectResult: FC<SelectResultProps> = ({ select, selectResult }) => {
   const { resultsInPercent, maxIndices } = countSelectResult(selectResult);
-
+  console.log('Im in select result;');
   const displayResults = () => {
     return resultsInPercent.map((percent, index) => {
       const isBest = maxIndices.includes(index);

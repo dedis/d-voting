@@ -191,21 +191,36 @@ const FormResult: FC = () => {
   };
 
   const displayResults = (subject: Subject) => {
+    console.log(result);
     return (
       <div key={subject.ID}>
         <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
           {subject.Title}
         </h2>
+        <h3 className="py-6 border-t text-2xl text-center text-gray-700">{"I'm now here"}</h3>
         {subject.Order.map((id: ID) => (
-          <div key={id}>
-            {subject.Elements.get(id).Type === SUBJECT ? (
-              <div className="pl-4 sm:pl-6">
-                {displayResults(subject.Elements.get(id) as Subject)}
-              </div>
-            ) : (
-              SubjectElementResultDisplay(subject.Elements.get(id))
-            )}
-          </div>
+          <>
+            <h3 className="py-6 border-t text-2xl text-center text-gray-700">
+              {'subject is ' + subject.Elements.get(id).Type}
+            </h3>
+            <div key={id}>
+              {subject.Elements.get(id).Type === SUBJECT ? (
+                <>
+                  <div className="pl-4 sm:pl-6">
+                    {displayResults(subject.Elements.get(id) as Subject)}
+                  </div>
+                  <h3 className="py-6 border-t text-2xl text-center text-gray-700">
+                    {"I'm in of display results"}
+                  </h3>
+                </>
+              ) : (
+                SubjectElementResultDisplay(subject.Elements.get(id))
+              )}
+              <h3 className="py-6 border-t text-2xl text-center text-gray-700">
+                {"I'm in the end of display results"}
+              </h3>
+            </div>
+          </>
         ))}
       </div>
     );
@@ -234,6 +249,7 @@ const FormResult: FC = () => {
 
             <div className="flex flex-col">
               {configuration.Scaffold.map((subject: Subject) => displayResults(subject))}
+              <h3 className="py-6 border-t text-2xl text-center text-gray-700">{"I'm here"}</h3>
             </div>
           </div>
           <div className="flex my-4">

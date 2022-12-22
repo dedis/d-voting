@@ -53,7 +53,10 @@ const isAuthorized = (roles: UserRole[]): boolean => {
   }
   return false;
 };
-
+const auth = new Map<String, Array<String>>();
+auth.set('roles', ['list', 'remove', 'add']);
+auth.set('proxy', ['list', 'remove', 'add']);
+auth.set('election', ['create']);
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, async (req, res, ctx) => {
     const isLogged = sessionStorage.getItem('is-authenticated') === 'true';
@@ -64,6 +67,7 @@ export const handlers = [
           firstname: 'Alice',
           role: UserRole.Admin,
           sciper: userId,
+          authorization: auth,
         }
       : {};
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
@@ -182,9 +186,9 @@ export const handlers = [
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
-      return res(ctx.status(403), ctx.json({ message: 'You are not authorized to update a form' }));
-    }
+    //if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
+    //return res(ctx.status(403), ctx.json({ message: 'You are not authorized to update a form' }));
+    //}
 
     switch (body.Action) {
       case Action.Open:
@@ -363,9 +367,9 @@ export const handlers = [
   rest.put(endpoints.editShuffle(':FormID'), async (req, res, ctx) => {
     const { FormID } = req.params;
 
-    if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
-      return res(ctx.status(403), ctx.json({ message: 'You are not authorized to update a form' }));
-    }
+    //if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
+    //return res(ctx.status(403), ctx.json({ message: 'You are not authorized to update a form' }));
+    //}
 
     setTimeout(
       () =>
@@ -384,12 +388,12 @@ export const handlers = [
   rest.get(endpoints.ENDPOINT_USER_RIGHTS, async (req, res, ctx) => {
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([UserRole.Admin])) {
-      return res(
-        ctx.status(403),
-        ctx.json({ message: 'You are not authorized to get users rights' })
-      );
-    }
+    //if (!isAuthorized([UserRole.Admin])) {
+    //return res(
+    //ctx.status(403),
+    //ctx.json({ message: 'You are not authorized to get users rights' })
+    //);
+    //}
 
     return res(ctx.status(200), ctx.json(mockUserDB.filter((user) => user.role !== 'voter')));
   }),
@@ -399,9 +403,9 @@ export const handlers = [
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([UserRole.Admin])) {
-      return res(ctx.status(403), ctx.json({ message: 'You are not authorized to add a role' }));
-    }
+    //if (!isAuthorized([UserRole.Admin])) {
+    //return res(ctx.status(403), ctx.json({ message: 'You are not authorized to add a role' }));
+    //}
 
     mockUserDB.push({ id: uid(), ...body });
 
@@ -412,9 +416,9 @@ export const handlers = [
     const body = req.body as RemoveUserRole;
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([UserRole.Admin])) {
-      return res(ctx.status(403), ctx.json({ message: 'You are not authorized to remove a role' }));
-    }
+    //if (!isAuthorized([UserRole.Admin])) {
+    //return res(ctx.status(403), ctx.json({ message: 'You are not authorized to remove a role' }));
+    //}
     mockUserDB = mockUserDB.filter((user) => user.sciper !== body.sciper);
 
     return res(ctx.status(200));

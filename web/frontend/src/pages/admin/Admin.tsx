@@ -40,6 +40,7 @@ const Admin: FC = () => {
       const newNodeProxyAddresses = new Map();
 
       const proxies = nodeProxyObject.Proxies;
+      console.log(proxies);
 
       for (const [node, proxy] of Object.entries(proxies)) {
         newNodeProxyAddresses.set(node, proxy);

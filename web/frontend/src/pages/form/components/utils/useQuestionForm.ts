@@ -36,8 +36,10 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
           });
           break;
         case 'TextMaxLength':
-          if (Number(value) >= 1) {
+          if (Number(value) >= 1 && Number(value) <= 1000) {
             setState({ ...state, MaxLength: Number(value) });
+          } else {
+            setState({ ...state, MaxLength: 1 });
           }
           break;
         default:
