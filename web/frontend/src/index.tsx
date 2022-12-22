@@ -227,13 +227,12 @@ const AppContainer = () => {
         }
 
         const result = await res.json();
-
         setAuth({
           isLogged: result.islogged,
           firstname: result.firstname,
           lastname: result.lastname,
           role: result.role,
-          authorization: new Map(Object.entries(result.authorization)),
+          authorization: result.islogged ? new Map(Object.entries(result.authorization)) : arr,
         });
 
         // wait for the default proxy to be set

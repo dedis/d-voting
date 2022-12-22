@@ -259,10 +259,34 @@ app.post('/api/add_role', (req, res) => {
   const { sciper } = req.body;
   const { role } = req.body;
 
-  usersDB.put(sciper, role).catch((error) => {
-    res.status(500).send('Failed to add role');
-    console.log(error);
-  });
+  // The sciper has to contain 6 numbers
+  if (sciper > 999999 || sciper < 100000) {
+    res.status(400).send('Sciper length is incorrect');
+    return;
+  }
+
+  // Call https://search-api.epfl.ch/api/ldap?q=228271, if the answer is
+  // empty then sciper unknown, otherwise add it in userDB
+  axios
+    .get(`https://search-api.epfl.ch/api/ldap?q=${sciper}`)
+    .then((response) => {
+      if (response.data.length === 0) {
+        res.status(400).send('Unknown Sciper');
+        return;
+      }
+
+      usersDB
+        .put(sciper, role)
+        .then(() => res.status(200).send('Role added'))
+        .catch((error) => {
+          res.status(500).send('Failed to add role');
+          console.log(error);
+        });
+    })
+    .catch((error) => {
+      res.status(500).send('Failed to check Sciper');
+      console.log(error);
+    });
 });
 
 // This call (only for admins) allow an admin to remove a role to a user.
