@@ -215,6 +215,7 @@ const AppContainer = () => {
     async function fetchData() {
       try {
         const res = await fetch(ENDPOINT_PERSONAL_INFO, req);
+        console.log('res:', res);
 
         if (res.status !== 200) {
           const txt = await res.text();
@@ -222,12 +223,13 @@ const AppContainer = () => {
         }
 
         const result = await res.json();
+        console.log('result:', result);
         setAuth({
           isLogged: result.islogged,
           firstname: result.firstname,
           lastname: result.lastname,
           role: result.role,
-          authorization: result.islogged ? new Map(Object.entries(result.authorization)) : arr,
+          authorization: result.islogged ? new Map(result.authorization) : arr,
         });
 
         // wait for the default proxy to be set

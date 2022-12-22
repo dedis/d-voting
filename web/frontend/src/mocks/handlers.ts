@@ -53,12 +53,13 @@ const isAuthorized = (roles: UserRole[]): boolean => {
   }
   return false;
 };
-const auth = new Map<String, Array<String>>();
-auth.set('roles', ['list', 'remove', 'add']);
-auth.set('proxy', ['list', 'remove', 'add']);
-auth.set('election', ['create']);
+
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, async (req, res, ctx) => {
+    const auth = new Map<String, Array<String>>();
+    auth.set('roles', ['list', 'remove', 'add']);
+    auth.set('proxy', ['list', 'remove', 'add']);
+    auth.set('election', ['create']);
     const isLogged = sessionStorage.getItem('is-authenticated') === 'true';
     const userId = isLogged ? mockUserID : 0;
     const userInfos = isLogged
@@ -67,9 +68,14 @@ export const handlers = [
           firstname: 'Alice',
           role: UserRole.Admin,
           sciper: userId,
-          authorization: new Map(Object.entries(auth)),
+          authorization: Object.entries({
+            roles: ['list', 'remove', 'add'],
+            proxy: ['list', 'remove', 'add'],
+            election: ['create'],
+          }),
         }
       : {};
+    console.log('userINfos', userInfos);
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     return res(
