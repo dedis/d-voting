@@ -71,7 +71,7 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen, handleAd
         fctx.addMessage(`${t('errorAddUser')}`, FlashLevel.Error);
       }
     } else {
-        fctx.addMessage(`${t('errorAddUser')}`, FlashLevel.Error);
+      fctx.addMessage(`${t('errorAddUser')}`, FlashLevel.Error);
     }
     setLoading(false);
   };

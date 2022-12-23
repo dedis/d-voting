@@ -62,7 +62,7 @@ const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({
         fctx.addMessage(t('errorRemoveUser'), FlashLevel.Error);
       }
     } else {
-        fctx.addMessage(t('errorRemoveUser'), FlashLevel.Error);
+      fctx.addMessage(t('errorRemoveUser'), FlashLevel.Error);
     }
 
     setLoading(false);
