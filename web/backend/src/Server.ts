@@ -38,7 +38,13 @@ const app = express();
 app.use(morgan('tiny'));
 
 let enf: Enforcer;
-async function myFunc() {
+
+// we use the postgres adapter to store the casbin policies
+// we initalize the adapter with the connection string and the migrate option
+// the connection string has the following format:
+// postgres://username:password@host:port/database
+// the migrate option is used to create the tables if they don't exist, we set it to false because we create the tables manually
+async function initEnf() {
   const a = await PostgresAdapter.newAdapter({
     connectionString: 'postgres://dvoting:dvoting@localhost:5432/casbin',
     migrate: false,
@@ -49,7 +55,7 @@ async function myFunc() {
 }
 const port = process.env.PORT || 5000;
 
-Promise.all([myFunc()])
+Promise.all([initEnf()])
   .then((res) => {
     [enf] = res;
     console.log(`🛡 Casbin loaded`);
