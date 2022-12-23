@@ -69,14 +69,14 @@ func pollTxnInclusion(maxPollCount int, interPollWait time.Duration, proxyAddr, 
 		}
 		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", body)
 
-		//get the body of the response as json
+		// get the body of the response as json
 		var result txnmanager.TransactionInfoToSend
 		err = json.Unmarshal(body, &result)
 		if err != nil {
 			return false, xerrors.Errorf("failed to unmarshal response body: %v", err)
 		}
 
-		//check if the transaction is included in the blockchain
+		// check if the transaction is included in the blockchain
 
 		switch result.Status {
 		case 2:

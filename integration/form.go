@@ -229,7 +229,7 @@ func updateForm(secret kyber.Scalar, proxyAddr, formIDHex, action string, t *tes
 	}
 	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", body)
 
-	//use the pollTxnInclusion func
+	// use the pollTxnInclusion func
 	var result map[string]interface{}
 	err = json.Unmarshal(body, &result)
 	if err != nil {

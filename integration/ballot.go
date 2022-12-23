@@ -169,10 +169,13 @@ func marshallBallot(vote io.Reader, actor dkg.Actor, chunks int) (types.Ciphervo
 			return types.Ciphervote{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
 		}
 
-		ballot[i] = types.EGPair{
+		pair := types.EGPair{
 			K: K,
 			C: C,
 		}
+
+		ballot[i] = pair
+		
 	}
 
 	return ballot, nil
@@ -226,7 +229,7 @@ func encryptManual(message []byte, pubkey kyber.Point) (K, C kyber.Point, remain
 
 func chunksPerBallot(size int) int { return (size-1)/29 + 1 }
 
-func encodeIDBallot(ID string) types.ID {
+func encodeBallotID(ID string) types.ID {
 	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
 }
 
@@ -280,8 +283,8 @@ func castVotesLoad(numVotesPerSec, numSec int) func(BallotSize, chunksPerBallot 
 
 		t.Log("cast ballots")
 
-		//make List of identical valid ballots
-		b1 := string("select:" + encodeIDBallot("bb") + ":0,0,1,0\n" + "text:" + encodeIDBallot("ee") + ":eWVz\n\n") //encoding of "yes"
+		// make List of identical valid ballots
+		b1 := string("select:" + encodeBallotID("bb") + ":0,0,1,0\n" + "text:" + encodeBallotID("ee") + ":eWVz\n\n") //encoding of "yes"
 
 		numVotes := numVotesPerSec * numSec
 
@@ -322,15 +325,20 @@ func castVotesLoad(numVotesPerSec, numSec int) func(BallotSize, chunksPerBallot 
 			// send the votes asynchrounously and wait for the response
 
 			for j := 0; j < numVotesPerSec; j++ {
+				idx:=i*numVotesPerSec+j
 				randomproxy := proxyArray[rand.Intn(proxyCount)]
 				castVoteRequest := ptypes.CastVoteRequest{
-					UserID: "user" + strconv.Itoa(i*numVotesPerSec+j),
+					UserID: "user" + strconv.Itoa(idx),
 					Ballot: ballot,
 				}
 				// cast asynchrounously and increment includedVoteCount
 				// if the cast was succesfull
-				go cast(false, i*numVotesPerSec+j, castVoteRequest, contentType, randomproxy, formID, secret, &includedVoteCount, t)
-
+				go func() {
+					accepted := cast(false, idx, castVoteRequest, contentType, randomproxy, formID, secret, t)
+					if accepted {
+					  atomic.AddUint64(&includedVoteCount, 1)
+					}
+				  }()
 			}
 			t.Logf("casted votes %d", (i+1)*numVotesPerSec)
 			time.Sleep(time.Second)
@@ -358,7 +366,7 @@ func castVotesLoad(numVotesPerSec, numSec int) func(BallotSize, chunksPerBallot 
 	})
 }
 
-func cast(isRetry bool, idx int, castVoteRequest ptypes.CastVoteRequest, contentType, randomproxy, formID string, secret kyber.Scalar, includedVoteCount *uint64, t *testing.T) {
+func cast(isRetry bool, idx int, castVoteRequest ptypes.CastVoteRequest, contentType, randomproxy, formID string, secret kyber.Scalar, t *testing.T) (accepted bool){
 
 	t.Logf("cast ballot to proxy %v", randomproxy)
 
@@ -380,15 +388,12 @@ func cast(isRetry bool, idx int, castVoteRequest ptypes.CastVoteRequest, content
 	// if the transaction was not included after 60s, we retry once
 	if !ok && !isRetry {
 		t.Logf("retrying vote %d", idx)
-		cast(true, idx, castVoteRequest, contentType, randomproxy, formID, secret, includedVoteCount, t)
-		return
+		return cast(true, idx, castVoteRequest, contentType, randomproxy, formID, secret, t)
+		
 	}
 
 	require.NoError(t, err)
-	if ok {
-		count := atomic.AddUint64(includedVoteCount, 1)
-		t.Logf("vote %d included, TOTAL: %d", idx, count)
-	}
+	return ok
 }
 
 // cast vote for the scenario test
@@ -397,7 +402,7 @@ func cast(isRetry bool, idx int, castVoteRequest ptypes.CastVoteRequest, content
 func castVotesScenario(numVotes int) func(BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
 	return (func(BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
 		// make List of ballots
-		b1 := string("select:" + encodeIDBallot("bb") + ":0,0,1,0\n" + "text:" + encodeIDBallot("ee") + ":eWVz\n\n") //encoding of "yes"
+		b1 := string("select:" + encodeBallotID("bb") + ":0,0,1,0\n" + "text:" + encodeBallotID("ee") + ":eWVz\n\n") //encoding of "yes"
 
 		ballotList := make([]string, numVotes)
 		for i := 1; i <= numVotes; i++ {
