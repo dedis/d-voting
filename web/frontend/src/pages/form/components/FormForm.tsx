@@ -47,7 +47,6 @@ const FormForm: FC<FormFormProps> = () => {
   const [marshalledConf, setMarshalledConf] = useState<any>(marshalConfig(conf));
   const { configuration: previewConf, answers, setAnswers } = useConfiguration(marshalledConf);
 
-
   const { MainTitle, Scaffold, TitleFr, TitleDe } = conf;
 
   const [language, setLanguage] = useState(i18n.language);

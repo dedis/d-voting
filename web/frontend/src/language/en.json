@@ -267,6 +267,5 @@
     "choice": "Choice",
     "logoutWarning": "You are about to log out. Are you sure you want to continue?",
     "invalidInput": "Please enter a number between 1 and {{max}}."
-
   }
 }

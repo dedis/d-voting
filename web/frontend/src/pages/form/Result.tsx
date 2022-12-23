@@ -99,8 +99,6 @@ const FormResult: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result]);
 
-
-
   return (
     <div className="w-[60rem] font-sans px-4 pt-8 pb-4">
       {!loading ? (

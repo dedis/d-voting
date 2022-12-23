@@ -1,4 +1,4 @@
-import { FC,useState,useEffect } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DownloadedResults, RankResults, SelectResults, TextResults } from 'types/form';
 import SelectResult from './components/SelectResult';

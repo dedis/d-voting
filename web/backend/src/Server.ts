@@ -148,7 +148,6 @@ app.get('/api/control_key', (req, res) => {
 
       const role = usersDB.get(sciper) || '';
 
-      
       req.session.userid = parseInt(sciper, 10);
       req.session.lastname = lastname;
       req.session.firstname = firstname;
@@ -215,7 +214,7 @@ app.get('/api/personal_info', (req, res) => {
         sciper: req.session.userid,
         lastname: req.session.lastname,
         firstname: req.session.firstname,
-        role: 'admin',
+        role: req.session.role,
         islogged: true,
         authorization: Object.fromEntries(setMapAuthorization(list)),
       });

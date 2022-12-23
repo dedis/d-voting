@@ -66,15 +66,15 @@ const IndividualResult: FC<IndividualResultProps> = ({
     [SELECT]: <CursorClickIcon />,
     [TEXT]: <MenuAlt1Icon />,
   };
-  
+
   const [titles, setTitles] = useState<any>({});
-   useEffect(() => {
-      try {
-          const ts = JSON.parse(configuration.MainTitle);
-          setTitles(ts);
-      } catch (e) {
-          console.log(e);
-      }
+  useEffect(() => {
+    try {
+      const ts = JSON.parse(configuration.MainTitle);
+      setTitles(ts);
+    } catch (e) {
+      console.log(e);
+    }
   }, [configuration.MainTitle]);
   const SubjectElementResultDisplay = (element: SubjectElement) => {
     return (
