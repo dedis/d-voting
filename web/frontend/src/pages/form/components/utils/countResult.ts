@@ -8,6 +8,7 @@ const countRankResult = (rankResult: number[][], rank: RankQuestion) => {
   const resultsInPercent: string[] = [];
   const minIndices: number[] = [];
   // the maximum score achievable is (number of choices - 1) * number of ballots
+
   let min = (rank.ChoicesMap.get('en').length - 1) * rankResult.length;
 
   const results = rankResult.reduce((a, b) => {

@@ -1,9 +1,7 @@
-import { FC, useState, useEffect } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DownloadedResults, RankResults, SelectResults, TextResults } from 'types/form';
-import SelectResult from './components/SelectResult';
 import RankResult from './components/RankResult';
-import TextResult from './components/TextResult';
 import {
   ID,
   RANK,
@@ -29,6 +27,8 @@ import {
   countTextResult,
 } from './components/utils/countResult';
 import { default as i18n } from 'i18next';
+import SelectResult from './components/SelectResult';
+import TextResult from './components/TextResult';
 
 type GroupedResultProps = {
   rankResult: RankResults;
@@ -53,6 +53,10 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
     try {
+      if (configuration.MainTitle === '') {
+        return;
+      }
+
       const ts = JSON.parse(configuration.MainTitle);
       setTitles(ts);
     } catch (e) {

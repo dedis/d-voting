@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { ID } from 'types/configuration';
-
 import { FormInfo, LightFormInfo, Results, Status } from 'types/form';
 
 const useFillFormInfo = (formData: FormInfo) => {
@@ -16,24 +15,27 @@ const useFillFormInfo = (formData: FormInfo) => {
   const [isResultSet, setIsResultSet] = useState<boolean>(false);
 
   useEffect(() => {
-    if (formData !== null) {
-      const title = JSON.parse(formData.Configuration.MainTitle);
-      formData.Configuration.TitleEn = title.en;
-      formData.Configuration.TitleFr = title.fr;
-      formData.Configuration.TitleDe = title.de;
-      setId(formData.FormID);
-      setStatus(formData.Status);
-      setPubKey(formData.Pubkey);
-      setRoster(formData.Roster);
-      setResult(formData.Result);
-      setChunksPerBallot(formData.ChunksPerBallot);
-      setBallotSize(formData.BallotSize);
-      setConfigObj(formData.Configuration);
-      setVoters(formData.Voters);
+    if (formData === null) {
+      return;
+    }
 
-      if (formData.Result.length > 0) {
-        setIsResultSet(true);
-      }
+    const title = JSON.parse(formData.Configuration.MainTitle);
+    formData.Configuration.TitleEn = title.en;
+    formData.Configuration.TitleFr = title.fr;
+    formData.Configuration.TitleDe = title.de;
+
+    setId(formData.FormID);
+    setStatus(formData.Status);
+    setPubKey(formData.Pubkey);
+    setRoster(formData.Roster);
+    setResult(formData.Result);
+    setChunksPerBallot(formData.ChunksPerBallot);
+    setBallotSize(formData.BallotSize);
+    setConfigObj(formData.Configuration);
+    setVoters(formData.Voters);
+
+    if (formData.Result.length > 0) {
+      setIsResultSet(true);
     }
   }, [formData]);
 

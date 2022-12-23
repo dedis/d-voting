@@ -1,33 +1,37 @@
 import { ID, RANK, SELECT, SUBJECT, TEXT } from 'types/configuration';
 import * as types from 'types/configuration';
-import { newAnswer, toArraysOfSubjectElement } from './getObjectType';
+import {
+  choicesToChoicesMap,
+  newAnswer,
+  toArraysOfSubjectElement,
+} from './getObjectType';
 
 const unmarshalText = (text: any): types.TextQuestion => {
+  const t = text as types.TextQuestion;
+
   return {
     ...text,
+    ChoicesMap: choicesToChoicesMap(t.Choices),
     Type: TEXT,
   };
 };
 
 const unmarshalRank = (rank: any): types.RankQuestion => {
-  const ChoicesMap = new Map<string, string[]>();
-  for (let i = 0; i < rank.Choices.length; i++) {
-    const choice = JSON.parse(rank.Choices[i]);
-    const choiceMap = new Map<string, string>(Object.entries(choice));
-    for (let key in choiceMap.keys()) {
-      ChoicesMap.set(key, choice.get[key]);
-    }
-  }
+  const r = rank as types.RankQuestion;
+
   return {
     ...rank,
-    ChoicesMap: ChoicesMap,
+    ChoicesMap: choicesToChoicesMap(r.Choices),
     Type: RANK,
   };
 };
 
 const unmarshalSelect = (select: any): types.SelectQuestion => {
+  const s = select as types.SelectQuestion;
+
   return {
     ...select,
+    ChoicesMap: choicesToChoicesMap(s.Choices),
     Type: SELECT,
   };
 };

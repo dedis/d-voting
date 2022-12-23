@@ -126,11 +126,11 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
                       console.log('newChoicesMap', [...newChoicesMap.entries()]);
                     }
 
-                    if (language == 'en')
+                    if (language === 'en')
                       return choiceDisplay(newChoicesMap.get('en')[choiceIndex], rankIndex);
-                    else if (language == 'fr')
+                    else if (language === 'fr')
                       return choiceDisplay(newChoicesMap.get('fr')[choiceIndex], rankIndex);
-                    else if (language == 'de')
+                    else if (language === 'de')
                       return choiceDisplay(newChoicesMap.get('de')[choiceIndex], rankIndex);
                   }
                 )}

@@ -102,6 +102,25 @@ const answersFrom = (answers: types.Answers): types.Answers => {
     Errors: new Map(answers.Errors),
   };
 };
+
+const choicesToChoicesMap = (choices: string[]): Map<string, string[]> => {
+  const choicesMap = new Map<string, string[]>();
+
+  // choices is of form `{"en": "choice1", "fr": "choix1"}`
+  choices.forEach((choice) => {
+    const choiceObj = JSON.parse(choice) as { [key: string]: string };
+    for (const [lang, c] of Object.entries(choiceObj)) {
+      if (!choicesMap.has(lang)) {
+        choicesMap.set(lang, [c]);
+      } else {
+        choicesMap.get(lang).push(c);
+      }
+    }
+  });
+
+  return choicesMap;
+};
+
 const choicesMapToChoices = (ChoicesMap: Map<string, string[]>): string[] => {
   let choices: string[] = [];
   for (let i = 0; i < ChoicesMap.get('en').length; i++) {
@@ -205,5 +224,6 @@ export {
   newText,
   answersFrom,
   toArraysOfSubjectElement,
+  choicesToChoicesMap,
   choicesMapToChoices,
 };

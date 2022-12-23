@@ -1,26 +1,17 @@
 import { FC, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { DownloadedResults, RankResults, SelectResults, TextResults } from 'types/form';
-import {
-  ID,
-  RANK,
-  RankQuestion,
-  SELECT,
-  SUBJECT,
-  SelectQuestion,
-  Subject,
-  TEXT,
-} from 'types/configuration';
+import { RankResults, SelectResults, TextResults } from 'types/form';
+import { ID } from 'types/configuration';
 import { useParams } from 'react-router-dom';
 import useForm from 'components/utils/useForm';
 import { useConfigurationOnly } from 'components/utils/useConfiguration';
 import Loading from 'pages/Loading';
 import ResultExplanation from './components/ResultExplanation';
 import { Tab } from '@headlessui/react';
-import GroupedResult from './GroupedResult';
 import IndividualResult from './IndividualResult';
 import { default as i18n } from 'i18next';
+import GroupedResult from './GroupedResult';
 
 // Functional component that displays the result of the votes
 const FormResult: FC = () => {
@@ -82,6 +73,10 @@ const FormResult: FC = () => {
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
     try {
+      if (configuration.MainTitle === '') {
+        return;
+      }
+
       const ts = JSON.parse(configuration.MainTitle);
       setTitles(ts);
     } catch (e) {
