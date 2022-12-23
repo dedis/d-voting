@@ -30,13 +30,19 @@ import Flash from './Flash';
 import ClientError from './ClientError';
 import { UserRole } from 'types/userRole';
 
+function hasAuthorization(authCtx, subject: string, action: string): boolean {
+  console.log(authCtx.authorization);
+  return (
+    authCtx.authorization.has(subject) && authCtx.authorization.get(subject).indexOf(action) !== -1
+  );
+}
 const App = () => {
   const RequireAuth = ({
     children,
-    roles,
+    auth,
   }: {
     children: JSX.Element;
-    roles?: string[];
+    auth?: string[];
   }): JSX.Element => {
     let location = useLocation();
 
@@ -45,11 +51,12 @@ const App = () => {
     if (!authCtx.isLogged) {
       return <Navigate to={ROUTE_LOGIN} state={{ from: location }} replace />;
     } else {
-      if (roles && !roles.includes(authCtx.role)) {
+      if (auth && !hasAuthorization(authCtx, auth[0], auth[1])) {
+        console.log('unauthorized');
         return <Navigate to={ROUTE_UNAUTHORIZED} state={{ from: location }} replace />;
       }
     }
-
+    console.log('authorized');
     return children;
   };
 
@@ -67,7 +74,7 @@ const App = () => {
               <Route
                 path={ROUTE_FORM_CREATE}
                 element={
-                  <RequireAuth roles={[UserRole.Admin, UserRole.Operator]}>
+                  <RequireAuth auth={['election', 'create']}>
                     <FormCreate />
                   </RequireAuth>
                 }
@@ -77,7 +84,7 @@ const App = () => {
               <Route
                 path={ROUTE_BALLOT_SHOW + '/:formId'}
                 element={
-                  <RequireAuth roles={null}>
+                  <RequireAuth auth={null}>
                     <BallotShow />
                   </RequireAuth>
                 }
@@ -85,7 +92,7 @@ const App = () => {
               <Route
                 path={ROUTE_ADMIN}
                 element={
-                  <RequireAuth roles={[UserRole.Admin]}>
+                  <RequireAuth auth={['roles', 'list']}>
                     <Admin />
                   </RequireAuth>
                 }

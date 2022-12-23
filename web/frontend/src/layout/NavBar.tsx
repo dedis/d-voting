@@ -225,7 +225,6 @@ const NavBar: FC = () => {
     // changing the state directly
     authCtx.isLogged = false;
     authCtx.firstname = undefined;
-    authCtx.role = undefined;
     authCtx.lastname = undefined;
     navigate('/');
   };

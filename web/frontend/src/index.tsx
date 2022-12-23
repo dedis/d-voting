@@ -18,7 +18,7 @@ if (process.env.NODE_ENV !== 'production' && process.env.REACT_APP_NOMOCK !== 'o
   dvotingserver.start();
 }
 const arr = new Map<String, Array<String>>();
-const defaultAuth = { isLogged: false, firstname: '', lastname: '', role: '', authorization: arr };
+const defaultAuth = { isLogged: false, firstname: '', lastname: '', authorization: arr };
 
 // AuthContext is a global state containing the authentication state. React
 // Context is a way to manage state globally, without having to pass props to
@@ -30,7 +30,6 @@ export interface AuthState {
   isLogged: boolean;
   firstname: string;
   lastname: string;
-  role: string;
   authorization: Map<String, Array<String>>;
 }
 
@@ -226,7 +225,6 @@ const AppContainer = () => {
           isLogged: result.islogged,
           firstname: result.firstname,
           lastname: result.lastname,
-          role: result.role,
           authorization: result.islogged ? new Map(Object.entries(result.authorization)) : arr,
         });
 

@@ -6,14 +6,20 @@ import { OngoingAction, Status } from 'types/form';
 import { UserRole } from 'types/userRole';
 import ActionButton from './ActionButton';
 
+function hasAuthorization(authCtx, subject: string, action: string): boolean {
+  return (
+    authCtx.authorization.has(subject) && authCtx.authorization.get(subject).indexOf(action) !== -1
+  );
+}
+
 const OpenButton = ({ status, handleOpen, ongoingAction }) => {
   const authCtx = useContext(AuthContext);
   const { t } = useTranslation();
 
-  const isAuthorized = authCtx.role === UserRole.Admin || authCtx.role === UserRole.Operator;
+  //const isAuthorized = authCtx.role === UserRole.Admin || authCtx.role === UserRole.Operator;
 
   return (
-    isAuthorized &&
+    hasAuthorization(authCtx, 'election', 'create') &&
     status === Status.Setup && (
       <ActionButton
         handleClick={handleOpen}

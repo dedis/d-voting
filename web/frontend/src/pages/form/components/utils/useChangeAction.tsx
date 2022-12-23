@@ -62,7 +62,7 @@ const useChangeAction = (
   const fctx = useContext(FlashContext);
   const navigate = useNavigate();
   const pctx = useContext(ProxyContext);
-  const { role, isLogged } = useContext(AuthContext);
+  const { isLogged } = useContext(AuthContext);
 
   const POLLING_INTERVAL = 1000;
   const MAX_ATTEMPTS = 20;
@@ -405,11 +405,11 @@ const useChangeAction = (
     }
 
     // Voters cannot perform any actions except voting and seeing the result
-    if (role === UserRole.Voter && (status < Status.Open || status > Status.Canceled)) {
+    if ((status < Status.Open || status > Status.Canceled)) {
       return <div>{t('actionTextVoter1')}</div>;
     }
 
-    if (role === UserRole.Voter && status >= Status.Closed && status < Status.ResultAvailable) {
+    if (status >= Status.Closed && status < Status.ResultAvailable) {
       return <div>{t('actionTextVoter2')}</div>;
     }
 

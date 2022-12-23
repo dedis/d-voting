@@ -8,14 +8,10 @@ import { Status } from 'types/form';
 import { UserRole } from 'types/userRole';
 
 const VoteButton = ({ status, formID }) => {
-  const { role, isLogged } = useContext(AuthContext);
+  const { isLogged } = useContext(AuthContext);
   const { t } = useTranslation();
 
-  const isAuthorized =
-    role === UserRole.Admin || role === UserRole.Operator || role === UserRole.Voter;
-
   return (
-    isAuthorized &&
     status === Status.Open &&
     isLogged && (
       <Link to={ROUTE_BALLOT_SHOW + '/' + formID}>

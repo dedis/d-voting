@@ -61,7 +61,6 @@ declare module 'express-session' {
     userid: number;
     firstname: string;
     lastname: string;
-    role: string;
   }
 }
 
@@ -107,10 +106,10 @@ app.get('/api/config/proxy', (req, res) => {
   res.status(200).send(process.env.DELA_NODE_URL);
 });
 
-const usersDB = lmdb.open<'admin' | 'operator', number>({
+/*const usersDB = lmdb.open<'admin' | 'operator', number>({
   path: `${process.env.DB_PATH}dvoting-users`,
 });
-
+*/
 // This is via this endpoint that the client request the tequila key, this key
 // will then be used for redirection on the tequila server
 app.get('/api/get_teq_key', (req, res) => {
@@ -146,12 +145,9 @@ app.get('/api/control_key', (req, res) => {
       const lastname = resa.data.split('\nname=')[1].split('\n')[0];
       const firstname = resa.data.split('\nfirstname=')[1].split('\n')[0];
 
-      const role = usersDB.get(sciper) || '';
-
       req.session.userid = parseInt(sciper, 10);
       req.session.lastname = lastname;
       req.session.firstname = firstname;
-      req.session.role = role;
 
       const a = sciper2sess.get(req.session.userid) || new Set<string>();
       a.add(req.sessionID);
@@ -214,7 +210,6 @@ app.get('/api/personal_info', (req, res) => {
         sciper: req.session.userid,
         lastname: req.session.lastname,
         firstname: req.session.firstname,
-        role: req.session.role,
         islogged: true,
         authorization: Object.fromEntries(setMapAuthorization(list)),
       });
@@ -223,7 +218,7 @@ app.get('/api/personal_info', (req, res) => {
         sciper: 0,
         lastname: '',
         firstname: '',
-        role: '',
+
         islogged: false,
         authorization: {},
       });
@@ -236,20 +231,21 @@ app.get('/api/personal_info', (req, res) => {
 // ---
 // This call allow a user that is admin to get the list of the people that have
 // a special role (not a voter).
-app.get('/api/user_rights', (req, res) => {
+app.get('/api/user_rights', (req, res, next) => {
   if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_LIST)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
-  const opts: RangeOptions = {};
+  next();
+  /*const opts: RangeOptions = {};
   const users = Array.from(
     usersDB.getRange(opts).map(({ key, value }) => ({ id: '0', sciper: key, role: value }))
   );
-  res.json(users);
+  res.json(users);*/
 });
 
 // This call (only for admins) allow an admin to add a role to a voter.
-app.post('/api/add_role', (req, res) => {
+app.post('/api/add_role', (req, res, next) => {
   if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_ADD)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
@@ -263,10 +259,10 @@ app.post('/api/add_role', (req, res) => {
     res.status(400).send('Sciper length is incorrect');
     return;
   }
-
+  next();
   // Call https://search-api.epfl.ch/api/ldap?q=228271, if the answer is
   // empty then sciper unknown, otherwise add it in userDB
-  axios
+  /* axios
     .get(`https://search-api.epfl.ch/api/ldap?q=${sciper}`)
     .then((response) => {
       if (response.data.length === 0) {
@@ -286,16 +282,17 @@ app.post('/api/add_role', (req, res) => {
       res.status(500).send('Failed to check Sciper');
       console.log(error);
     });
+    */
 });
 
 // This call (only for admins) allow an admin to remove a role to a user.
-app.post('/api/remove_role', (req, res) => {
+app.post('/api/remove_role', (req, res, next) => {
   if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_ACTION_REMOVE)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
-
-  const { sciper } = req.body;
+  next();
+  /*const { sciper } = req.body;
   usersDB
     .remove(sciper)
     .then(() => {
@@ -312,6 +309,7 @@ app.post('/api/remove_role', (req, res) => {
       res.status(500).send('Remove role failed');
       console.log(error);
     });
+    */
 });
 
 // ---
