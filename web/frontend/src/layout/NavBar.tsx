@@ -31,7 +31,6 @@ const ACTION_ADD = 'add';
 const ACTION_LIST = 'list';
 
 function hasAuthorization(authCtx, subject: string, action: string): boolean {
-  console.log('authctx', authCtx);
   return (
     authCtx.authorization.has(subject) && authCtx.authorization.get(subject).indexOf(action) !== -1
   );
