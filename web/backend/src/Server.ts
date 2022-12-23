@@ -10,6 +10,7 @@ import xss from 'xss';
 import createMemoryStore from 'memorystore';
 import { Enforcer, newEnforcer } from 'casbin';
 import PostgresAdapter from 'casbin-pg-adapter';
+import { SequelizeAdapter } from 'casbin-sequelize-adapter';
 
 const MemoryStore = createMemoryStore(session);
 const SUBJECT_ROLES = 'roles';
@@ -39,10 +40,18 @@ app.use(morgan('tiny'));
 
 let enf: Enforcer;
 async function myFunc() {
-  const a = await PostgresAdapter.newAdapter({
-    connectionString: 'postgres://dvoting:dvoting@localhost:5432/casbin',
-    migrate: false,
+  const a = await SequelizeAdapter.newAdapter({
+    dialect: 'postgres',
+    host: 'localhost',
+    port: 5432,
+    username: 'dvoting',
+    password: 'dvoting',
+    database: 'casbin',
   });
+  //const a = await PostgresAdapter.newAdapter({
+  //connectionString: 'postgres://dvoting:dvoting@localhost:5432/casbin',
+  //migrate: false,
+  //});
 
   const enforcerLoading = newEnforcer('model.conf', a);
   return enforcerLoading;
@@ -54,6 +63,11 @@ Promise.all([myFunc()])
     console.log(`🛡 Casbin loaded`);
     app.listen(port);
     console.log(`🚀 App is listening on port ${port}`);
+    enf.removePolicy(
+      '330383',
+      'a30f79d191ce607de7267469731de988879c9a5656573216dccfe8a45cac83ff',
+      'create'
+    );
   })
   .catch((err) => {
     console.error('❌ failed to start:', err);
@@ -214,13 +228,6 @@ function setMapAuthorization(list: string[][]): Map<String, Array<String>> {
 // the react. This endpoint serves to send to the client (actually to react)
 // the information of the current user.
 app.get('/api/personal_info', async (req, res) => {
-  //enf.addPolicy(String(req.session.userid), 'election', 'create');
-  //enf.addPolicy(String(req.session.userid), 'proxies', 'put');
-  //enf.addPolicy(String(req.session.userid), 'proxies', 'delete');
-  //enf.addPolicy(String(req.session.userid), 'proxies', 'post');
-  //enf.addPolicy(String(req.session.userid), 'roles', 'add');
-  //enf.addPolicy(String(req.session.userid), 'roles', 'remove');
-  //enf.addPolicy(String(req.session.userid), 'roles', 'list');
   enf.getFilteredPolicy(0, String(req.session.userid)).then((list) => {
     res.set('Access-Control-Allow-Origin', '*');
     if (req.session.userid) {
@@ -514,21 +521,24 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
 }
 
 app.put('/api/evoting/authorizations', (req, res) => {
-  const formID = req.body;
-  console.log('adding policy', req.session.userid, formID, ACTION_CREATE);
-  enf.addPolicy(String(req.session.userid), formID, ACTION_CREATE);
-  console.log('added policy', req.session.userid, formID, ACTION_CREATE);
+  const formID = req.body.formID;
+
+  try {
+    enf.addPolicy(String(req.session.userid), formID, ACTION_CREATE);
+  } catch (e) {
+    console.log('error adding policy', e);
+  }
 });
 
 // Secure /api/evoting to admins and operators
-app.use('/api/evoting/*', (req, res, next) => {
-  if (!isAuthorized(req.session.userid, SUBJECT_ELECTION, ACTION_CREATE)) {
-    res.status(400).send('Unauthorized - only admins and operators allowed');
-    return;
-  }
+//app.use('/api/evoting/*', (req, res, next) => {
+//if (!isAuthorized(req.session.userid, SUBJECT_ELECTION, ACTION_CREATE)) {
+//res.status(400).send('Unauthorized - only admins and operators allowed');
+//return;
+//}
 
-  next();
-});
+//next();
+//});
 
 // https://stackoverflow.com/a/1349426
 function makeid(length: number) {
@@ -543,15 +553,47 @@ function makeid(length: number) {
 app.put('/api/evoting/forms/:formID', (req, res, next) => {
   const { formID } = req.params;
   console.log('hey', formID);
+  console.log("I'm testing the auth");
   if (!isAuthorized(req.session.userid, formID, ACTION_CREATE)) {
-    //  res.status(400).send('Unauthorized - only admins and operators allowed');
-    //return;
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
+  }
+  next();
+});
+
+app.post('/api/evoting/services/dkg/actors', (req, res, next) => {
+  console.log("I'm testing the auth");
+  console.log('req.body', req.body);
+  const formID = req.body.FormID;
+  console.log('formid', formID);
+  if (formID === undefined) {
+    return;
+  }
+  if (!isAuthorized(req.session.userid, formID, ACTION_CREATE)) {
+    console.log('not authorized2');
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
+  }
+  next();
+});
+app.use('/api/evoting/services/dkg/actors/:formID', (req, res, next) => {
+  console.log("I'm testing the auth 2");
+  const { formID } = req.params;
+  console.log('hey', formID);
+  if (!isAuthorized(req.session.userid, formID, ACTION_CREATE)) {
+    console.log('not authorized');
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
   }
   next();
 });
 
 app.delete('/api/evoting/forms/:formID', (req, res) => {
   const { formID } = req.params;
+  if (!isAuthorized(req.session.userid, formID, ACTION_CREATE)) {
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
+  }
 
   const edCurve = kyber.curve.newCurve('edwards25519');
 

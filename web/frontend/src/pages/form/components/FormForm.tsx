@@ -97,7 +97,7 @@ const FormForm: FC<FormFormProps> = () => {
       } else {
         const response = await res.json();
         console.log("I'm here");
-        await AuthorizationUpdate(response.FormID);
+        AuthorizationUpdate(response.FormID);
         setNavigateDestination('/forms/' + response.FormID);
         setTextModal(`${t('successCreateForm')} ${response.FormID}`);
         setShowModal(true);
