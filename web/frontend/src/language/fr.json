@@ -260,8 +260,10 @@
     "statusLoading": "Chargement du statut...",
     "actionNotAvailable": "Action pas disponible",
     "uninitialized": "Non initialisé",
-    "actionTextVoter1": "TLe sondage n'est pas encore ouvert, vous pouvez revenir plus tard pour voter lorsque ce sera ouvert.",
+    "actionTextVoter1": "Le sondage n'est pas encore ouvert, vous pouvez revenir plus tard pour voter lorsque ce sera ouvert.",
     "actionTextVoter2": "Les résultats du sondage ne sont pas encore disponible.",
-    "choice": "Choix"
+    "choice": "Choix",
+    "logoutWarning": "Vous êtes sur le point de vous déconnecter. Êtes vous sûr de vouloir continuer ?",
+    "continue": "Continuer"
   }
 }

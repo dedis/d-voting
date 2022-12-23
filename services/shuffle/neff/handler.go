@@ -38,7 +38,7 @@ type Handler struct {
 	txmngr        txn.Manager
 	shuffleSigner crypto.Signer
 	context       serde.Context
-	formFac   serde.Factory
+	formFac       serde.Factory
 }
 
 // NewHandler creates a new handler
@@ -53,7 +53,7 @@ func NewHandler(me mino.Address, service ordering.Service, p pool.Pool,
 		txmngr:        txmngr,
 		shuffleSigner: shuffleSigner,
 		context:       ctx,
-		formFac:   formFac,
+		formFac:       formFac,
 	}
 }
 
@@ -131,18 +131,16 @@ func (h *Handler) handleStartShuffle(formID string) error {
 
 		accepted, msg := watchTx(events, tx.GetID())
 
-		if !accepted {
-			err = h.txmngr.Sync()
-			if err != nil {
-				return xerrors.Errorf("failed to sync manager: %v", err.Error())
-			}
-		}
-
 		if accepted {
 			dela.Logger.Info().Msg("our shuffling contribution has " +
 				"been accepted, we are exiting the process")
 
 			return nil
+		}
+
+		err = h.txmngr.Sync()
+		if err != nil {
+			return xerrors.Errorf("failed to sync manager: %v", err.Error())
 		}
 
 		dela.Logger.Info().Msg("shuffling contribution denied : " + msg)
@@ -160,7 +158,7 @@ func makeTx(ctx serde.Context, form *etypes.Form, manager txn.Manager,
 	}
 
 	shuffleBallots := etypes.ShuffleBallots{
-		FormID:      form.FormID,
+		FormID:          form.FormID,
 		Round:           len(form.ShuffleInstances),
 		ShuffledBallots: shuffledBallots,
 	}
