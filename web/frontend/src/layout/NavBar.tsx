@@ -1,4 +1,4 @@
-import React, { FC, Fragment, useContext } from 'react';
+import React, { FC, Fragment, useContext, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { default as i18n } from 'i18next';
@@ -12,6 +12,7 @@ import {
   ROUTE_HOME,
 } from '../Routes';
 
+import WarningModal from './components/WarningModal';
 import { AuthContext, FlashContext, FlashLevel } from '..';
 import handleLogin from 'pages/session/HandleLogin';
 import Profile from './components/Profile';
@@ -24,6 +25,17 @@ import { Popover, Transition } from '@headlessui/react';
 import { LoginIcon, LogoutIcon, MenuIcon, XIcon } from '@heroicons/react/outline';
 import { PlusIcon } from '@heroicons/react/solid';
 
+const SUBJECT_ELECTION = 'election';
+const ACTION_CREATE = 'create';
+const SUBJECT_ROLES = 'roles';
+const ACTION_ADD = 'add';
+const ACTION_LIST = 'list';
+
+function hasAuthorization(authCtx, subject: string, action: string): boolean {
+  return (
+    authCtx.authorization.has(subject) && authCtx.authorization.get(subject).indexOf(action) !== -1
+  );
+}
 const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
   <Popover>
     <div className="-mr-2 -my-2 md:hidden">
@@ -67,7 +79,7 @@ const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
                     </Popover.Button>
                   </NavLink>
                 }
-                {authCtx.isLogged && (authCtx.role === 'admin' || authCtx.role === 'operator') && (
+                {authCtx.isLogged && hasAuthorization(authCtx, SUBJECT_ROLES, ACTION_ADD) && (
                   <NavLink to={ROUTE_ADMIN}>
                     <Popover.Button className=" w-full -m-3 p-3 flex items-center rounded-md hover:bg-gray-50">
                       <span className="ml-3 text-base font-medium text-gray-900">
@@ -88,7 +100,7 @@ const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
               </nav>
             </div>
             <div className="pt-4">
-              {authCtx.isLogged && (authCtx.role === 'admin' || authCtx.role === 'operator') && (
+              {authCtx.isLogged && hasAuthorization(authCtx, SUBJECT_ELECTION, ACTION_CREATE) && (
                 <NavLink to={ROUTE_FORM_CREATE}>
                   <Popover.Button className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700">
                     <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
@@ -148,7 +160,7 @@ const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
 
 const RightSideNavBar = ({ authCtx, handleLogout, fctx, t }) => (
   <div className="absolute hidden inset-y-0 right-0 flex items-center pr-2 md:static md:inset-auto md:flex md:ml-6 md:pr-0">
-    {authCtx.isLogged && (authCtx.role === 'admin' || authCtx.role === 'operator') && (
+    {authCtx.isLogged && hasAuthorization(authCtx, SUBJECT_ELECTION, ACTION_CREATE) && (
       <NavLink title={t('navBarCreateForm')} to={ROUTE_FORM_CREATE}>
         <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border-2 border-indigo-500 rounded-md shadow-sm text-base font-medium text-indigo-500 bg-white hover:bg-indigo-500 hover:text-white">
           <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
@@ -177,7 +189,7 @@ const LeftSideNavBar = ({ authCtx, t }) => (
           className={'text-black text-lg hover:text-indigo-700'}>
           {t('navBarStatus')}
         </NavLink>
-        {authCtx.role === 'admin' && authCtx.isLogged && (
+        {authCtx.isLogged && hasAuthorization(authCtx, SUBJECT_ROLES, ACTION_LIST) && (
           <NavLink to={ROUTE_ADMIN} className={'text-black text-lg hover:text-indigo-700'}>
             Admin
           </NavLink>
@@ -198,10 +210,9 @@ const NavBar: FC = () => {
   const navigate = useNavigate();
 
   const fctx = useContext(FlashContext);
+  const [isShown, setIsShown] = useState(false);
 
-  const handleLogout = async (e) => {
-    e.preventDefault();
-
+  const logout = async () => {
     const opts = { method: 'POST' };
 
     const res = await fetch(ENDPOINT_LOGOUT, opts);
@@ -218,15 +229,24 @@ const NavBar: FC = () => {
     authCtx.lastname = undefined;
     navigate('/');
   };
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    setIsShown(true);
+  };
 
   return (
     <nav className="w-full border-b">
       <div className="max-w-7xl mx-auto px-2 md:px-6 lg:px-8">
         <div className="relative flex items-center justify-between h-16">
           <MobileMenu authCtx={authCtx} handleLogout={handleLogout} fctx={fctx} t={t} />
-
           <LeftSideNavBar authCtx={authCtx} t={t} />
           <RightSideNavBar authCtx={authCtx} handleLogout={handleLogout} fctx={fctx} t={t} />
+          <WarningModal
+            isShown={isShown}
+            setIsShown={setIsShown}
+            action={async () => logout()}
+            message={t('logoutWarning')}
+          />
         </div>
       </div>
     </nav>

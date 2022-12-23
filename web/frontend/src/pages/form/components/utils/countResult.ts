@@ -54,7 +54,7 @@ const countSelectResult = (selectResult: number[][]) => {
       }
       return current;
     });
-  });
+  }, new Array(selectResult[0].length).fill(0));
 
   results.forEach((count, index) => {
     if (count === max) {

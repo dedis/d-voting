@@ -23,8 +23,7 @@ const UploadFile = ({ updateForm, setShowModal, setTextModal }) => {
     var reader = new FileReader();
 
     reader.onload = async function (param) {
-      const result: any = JSON.parse(param.target.result.toString());
-
+      const result: string = JSON.parse(param.target.result.toString());
       if (!validateJSONSchema(result)) {
         setTextModal('Invalid schema JSON file');
         setShowModal(true);

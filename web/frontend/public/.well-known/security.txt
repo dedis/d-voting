@@ -1,0 +1,3 @@
+Contact: mailto:dedis-security@epfl.ch
+Expires: 2023-12-31T22:59:00.000Z
+Preferred-Languages: en, fr
