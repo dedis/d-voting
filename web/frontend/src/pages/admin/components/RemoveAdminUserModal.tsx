@@ -35,7 +35,7 @@ const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({
 
   useEffect(() => {
     if (postError !== null) {
-      fctx.addMessage(t('addRoleError') + postError, FlashLevel.Error);
+      fctx.addMessage(t('errorRemoveUser') + postError, FlashLevel.Error);
       setPostError(null);
     }
   }, [postError]);
