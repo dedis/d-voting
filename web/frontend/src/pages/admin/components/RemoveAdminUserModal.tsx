@@ -27,11 +27,9 @@ const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({
   const [postError, setPostError] = useState(null);
   const [, setIsPosting] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [, setError] = useState(null);
 
   const handleCancel = () => {
     setOpen(false);
-    setError(null);
   };
   const sendFetchRequest = usePostCall(setPostError);
 
@@ -54,9 +52,7 @@ const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({
     setLoading(true);
     if (sciper !== 0) {
       try {
-        setError(null);
         const res = await saveMapping();
-        console.log(res);
         if (!res) {
           handleRemoveRoleUser(usersToBeRemoved);
           fctx.addMessage(t('successRemoveUser'), FlashLevel.Info);
@@ -66,7 +62,7 @@ const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({
         fctx.addMessage(t('errorRemoveUser'), FlashLevel.Error);
       }
     } else {
-      setError(t('errorRemoveUser'));
+        fctx.addMessage(t('errorRemoveUser'), FlashLevel.Error);
     }
 
     setLoading(false);
