@@ -2,7 +2,6 @@ import { AuthContext } from 'index';
 import { FC, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OngoingAction, Status } from 'types/form';
-import { UserRole } from 'types/userRole';
 
 type StatusTimelineProps = {
   status: Status;

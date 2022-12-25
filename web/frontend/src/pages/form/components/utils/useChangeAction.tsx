@@ -24,7 +24,6 @@ import ResultButton from '../ActionButtons/ResultButton';
 import ShuffleButton from '../ActionButtons/ShuffleButton';
 import VoteButton from '../ActionButtons/VoteButton';
 import handleLogin from 'pages/session/HandleLogin';
-import { UserRole } from 'types/userRole';
 
 const useChangeAction = (
   status: Status,
@@ -405,7 +404,7 @@ const useChangeAction = (
     }
 
     // Voters cannot perform any actions except voting and seeing the result
-    if ((status < Status.Open || status > Status.Canceled)) {
+    if (status < Status.Open || status > Status.Canceled) {
       return <div>{t('actionTextVoter1')}</div>;
     }
 

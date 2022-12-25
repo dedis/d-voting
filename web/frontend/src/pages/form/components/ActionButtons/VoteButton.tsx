@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { ROUTE_BALLOT_SHOW } from 'Routes';
 import { Status } from 'types/form';
-import { UserRole } from 'types/userRole';
 
 const VoteButton = ({ status, formID }) => {
   const { isLogged } = useContext(AuthContext);

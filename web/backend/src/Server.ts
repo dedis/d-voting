@@ -5,7 +5,7 @@ import session from 'express-session';
 import morgan from 'morgan';
 import kyber from '@dedis/kyber';
 import crypto from 'crypto';
-import lmdb, { RangeOptions } from 'lmdb';
+import lmdb from 'lmdb';
 import xss from 'xss';
 import createMemoryStore from 'memorystore';
 import { Enforcer, newEnforcer } from 'casbin';
@@ -106,7 +106,7 @@ app.get('/api/config/proxy', (req, res) => {
   res.status(200).send(process.env.DELA_NODE_URL);
 });
 
-/*const usersDB = lmdb.open<'admin' | 'operator', number>({
+/* const usersDB = lmdb.open<'admin' | 'operator', number>({
   path: `${process.env.DB_PATH}dvoting-users`,
 });
 */
@@ -237,7 +237,7 @@ app.get('/api/user_rights', (req, res, next) => {
     return;
   }
   next();
-  /*const opts: RangeOptions = {};
+  /* const opts: RangeOptions = {};
   const users = Array.from(
     usersDB.getRange(opts).map(({ key, value }) => ({ id: '0', sciper: key, role: value }))
   );
@@ -252,7 +252,7 @@ app.post('/api/add_role', (req, res, next) => {
   }
 
   const { sciper } = req.body;
-  const { role } = req.body;
+  // const { role } = req.body;
 
   // The sciper has to contain 6 numbers
   if (sciper > 999999 || sciper < 100000) {
@@ -292,7 +292,7 @@ app.post('/api/remove_role', (req, res, next) => {
     return;
   }
   next();
-  /*const { sciper } = req.body;
+  /* const { sciper } = req.body;
   usersDB
     .remove(sciper)
     .then(() => {

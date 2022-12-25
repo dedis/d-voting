@@ -28,7 +28,6 @@ import { AuthContext } from '..';
 import Logged from 'pages/session/Logged';
 import Flash from './Flash';
 import ClientError from './ClientError';
-import { UserRole } from 'types/userRole';
 
 function hasAuthorization(authCtx, subject: string, action: string): boolean {
   console.log(authCtx.authorization);
