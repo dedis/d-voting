@@ -9,7 +9,7 @@ import lmdb, { RangeOptions } from 'lmdb';
 import xss from 'xss';
 import createMemoryStore from 'memorystore';
 import { Enforcer, newEnforcer } from 'casbin';
-import PostgresAdapter from 'casbin-pg-adapter';
+import { SequelizeAdapter } from 'casbin-sequelize-adapter';
 
 const MemoryStore = createMemoryStore(session);
 const SUBJECT_ROLES = 'roles';
@@ -45,9 +45,13 @@ let enf: Enforcer;
 // postgres://username:password@host:port/database
 // the migrate option is used to create the tables if they don't exist, we set it to false because we create the tables manually
 async function initEnf() {
-  const a = await PostgresAdapter.newAdapter({
-    connectionString: 'postgres://dvoting:dvoting@localhost:5432/casbin',
-    migrate: false,
+  const a = await SequelizeAdapter.newAdapter({
+    dialect: 'postgres',
+    host: 'localhost',
+    port: 5432,
+    username: 'dvoting',
+    password: 'dvoting',
+    database: 'casbin',
   });
 
   const enforcerLoading = newEnforcer('model.conf', a);
@@ -535,13 +539,13 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
 }
 
 // Secure /api/evoting to admins and operators
-app.use('/api/evoting/*', (req, res, next) => {
+/* app.use('/api/evoting/*', (req, res, next) => {
   if (!isAuthorized(req.session.userid, SUBJECT_ELECTION, ACTION_CREATE)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
   }
   next();
-});
+}); */
 
 // https://stackoverflow.com/a/1349426
 function makeid(length: number) {
@@ -553,6 +557,43 @@ function makeid(length: number) {
   }
   return result;
 }
+app.put('/api/evoting/forms/:formID', (req, res, next) => {
+  const { formID } = req.params;
+  console.log('hey', formID);
+  console.log("I'm testing the auth");
+  if (!isAuthorized(req.session.userid, formID, ACTION_CREATE)) {
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
+  }
+  next();
+});
+
+app.post('/api/evoting/services/dkg/actors', (req, res, next) => {
+  console.log("I'm testing the auth");
+  console.log('req.body', req.body);
+  const formID = req.body.FormID;
+  console.log('formid', formID);
+  if (formID === undefined) {
+    return;
+  }
+  if (!isAuthorized(req.session.userid, formID, ACTION_CREATE)) {
+    console.log('not authorized2');
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
+  }
+  next();
+});
+app.use('/api/evoting/services/dkg/actors/:formID', (req, res, next) => {
+  console.log("I'm testing the auth 2");
+  const { formID } = req.params;
+  console.log('hey', formID);
+  if (!isAuthorized(req.session.userid, formID, ACTION_CREATE)) {
+    console.log('not authorized');
+    res.status(400).send('Unauthorized - only admins and operators allowed');
+    return;
+  }
+  next();
+});
 
 app.delete('/api/evoting/forms/:formID', (req, res) => {
   const { formID } = req.params;

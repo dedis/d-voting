@@ -19,6 +19,8 @@ import Tabs from './Tabs';
 import RemoveElementModal from './RemoveElementModal';
 import { useConfiguration } from 'components/utils/useConfiguration';
 import BallotDisplay from 'pages/ballot/components/BallotDisplay';
+import usePostCall from 'components/utils/usePostCall';
+import * as endpoints from 'components/utils/Endpoints';
 
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
@@ -47,6 +49,24 @@ const FormForm: FC<FormFormProps> = () => {
 
   const { MainTitle, Scaffold } = conf;
   const regexPattern = /[^a-zA-Z0-9]/g;
+
+  const [postError, setPostError] = useState(null);
+  const [, setIsPosting] = useState(false);
+  const sendFetchRequest = usePostCall(setPostError);
+  const AuthorizationUpdate = (formID: string): Promise<boolean> => {
+    const req = {
+      method: 'PUT',
+      body: JSON.stringify({
+        formID,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+
+    return sendFetchRequest(endpoints.addFormAuthorization, req, setIsPosting);
+  };
+
   useEffect(() => {
     setMarshalledConf(marshalConfig(conf));
   }, [conf]);
@@ -78,6 +98,7 @@ const FormForm: FC<FormFormProps> = () => {
         setShowModal(true);
       } else {
         const response = await res.json();
+        AuthorizationUpdate(response.FormID);
         setNavigateDestination('/forms/' + response.FormID);
         setTextModal(`${t('successCreateForm')} ${response.FormID}`);
         setShowModal(true);
