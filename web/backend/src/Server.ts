@@ -537,7 +537,15 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
         .send(`failed to proxy request: ${req.method} ${uri} - ${error.message} - ${resp}`);
     });
 }
+app.put('/api/evoting/authorizations', (req, res) => {
+  const formID = req.body.formID;
 
+  try {
+    enf.addPolicy(String(req.session.userid), formID, ACTION_CREATE);
+  } catch (e) {
+    console.log('error adding policy', e);
+  }
+});
 // Secure /api/evoting to admins and operators
 /* app.use('/api/evoting/*', (req, res, next) => {
   if (!isAuthorized(req.session.userid, SUBJECT_ELECTION, ACTION_CREATE)) {
@@ -562,7 +570,7 @@ app.put('/api/evoting/forms/:formID', (req, res, next) => {
   console.log('hey', formID);
   console.log("I'm testing the auth");
   if (!isAuthorized(req.session.userid, formID, ACTION_CREATE)) {
-    res.status(400).send('Unauthorized - only admins and operators allowed');
+    res.status(400).send('Unauthorized');
     return;
   }
   next();
@@ -578,7 +586,7 @@ app.post('/api/evoting/services/dkg/actors', (req, res, next) => {
   }
   if (!isAuthorized(req.session.userid, formID, ACTION_CREATE)) {
     console.log('not authorized2');
-    res.status(400).send('Unauthorized - only admins and operators allowed');
+    res.status(400).send('Unauthorized');
     return;
   }
   next();
@@ -589,12 +597,22 @@ app.use('/api/evoting/services/dkg/actors/:formID', (req, res, next) => {
   console.log('hey', formID);
   if (!isAuthorized(req.session.userid, formID, ACTION_CREATE)) {
     console.log('not authorized');
-    res.status(400).send('Unauthorized - only admins and operators allowed');
+    res.status(400).send('Unauthorized');
     return;
   }
   next();
 });
-
+app.use('/api/evoting/services/shuffle/:formID', (req, res, next) => {
+  console.log("I'm testing the auth 2");
+  const { formID } = req.params;
+  console.log('hey', formID);
+  if (!isAuthorized(req.session.userid, formID, ACTION_CREATE)) {
+    console.log('not authorized');
+    res.status(400).send('Unauthorized');
+    return;
+  }
+  next();
+});
 app.delete('/api/evoting/forms/:formID', (req, res) => {
   const { formID } = req.params;
 
