@@ -2,7 +2,6 @@ import { TrashIcon } from '@heroicons/react/outline';
 import { AuthContext } from 'index';
 import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
-import { UserRole } from 'types/userRole';
 
 function hasAuthorization(authCtx, subject: string, action: string): boolean {
   return (

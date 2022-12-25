@@ -3,7 +3,6 @@ import { AuthContext } from 'index';
 import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OngoingAction, Status } from 'types/form';
-import { UserRole } from 'types/userRole';
 import ActionButton from './ActionButton';
 
 function hasAuthorization(authCtx, subject: string, action: string): boolean {
@@ -19,7 +18,7 @@ const DecryptButton = ({ status, handleDecrypt, ongoingAction }) => {
   //const isAuthorized = authCtx.role === UserRole.Admin || authCtx.role === UserRole.Operator;
 
   return (
-    hasAuthorization(authCtx,'election','create') &&
+    hasAuthorization(authCtx, 'election', 'create') &&
     status === Status.ShuffledBallots && (
       <ActionButton
         handleClick={handleDecrypt}

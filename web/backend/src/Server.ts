@@ -241,7 +241,7 @@ app.get('/api/user_rights', (req, res, next) => {
   const users = Array.from(
     usersDB.getRange(opts).map(({ key, value }) => ({ id: '0', sciper: key, role: value }))
   );
-  res.json(users);*/
+  res.json(users); */
 });
 
 // This call (only for admins) allow an admin to add a role to a voter.
