@@ -121,23 +121,21 @@ const unmarshalSubjectAndCreateAnswers = (
 };
 
 const unmarshalConfig = (json: any): types.Configuration => {
+  let title;
+  try {
+    title = JSON.parse(json.MainTitle);
+  } catch (e) {
+    title = json.MainTitle;
+  }
   const conf = {
-    MainTitle: json.MainTitle,
+    MainTitle: title.en,
+    TitleFr: title.fr,
+    TitleDe: title.de,
     Scaffold: [],
-    TitleFr: json.TitleFr,
-    // ScaffoldFr: [],
-    TitleDe: json.TitleDe,
-    //ScaffoldDe: [],
   };
   for (const subject of json.Scaffold) {
     conf.Scaffold.push(unmarshalSubject(subject));
   }
-  /*for (const subject of json.ScaffoldFr) {
-    conf.ScaffoldFr.push(unmarshalSubject(subject));
-  }
-  for (const subject of json.ScaffoldDe) {
-    conf.ScaffoldDe.push(unmarshalSubject(subject));
-  }*/
   return conf;
 };
 

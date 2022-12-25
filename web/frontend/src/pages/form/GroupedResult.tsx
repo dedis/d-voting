@@ -65,13 +65,18 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
   }, [configuration]);
 
   const SubjectElementResultDisplay = (element: SubjectElement) => {
+    const el = JSON.parse(element.Title);
     return (
       <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
         <div className="flex flex-row">
           <div className="align-text-middle flex mt-1 mr-2 h-5 w-5" aria-hidden="true">
             {questionIcons[element.Type]}
           </div>
-          <h2 className="text-lg pb-2">{element.Title}</h2>
+          <h2 className="text-lg pb-2">
+            {i18n.language === 'en' && el.en}
+            {i18n.language === 'fr' && el.fr}
+            {i18n.language === 'de' && el.de}
+          </h2>
         </div>
         {element.Type === RANK && rankResult.has(element.ID) && (
           <RankResult rank={element as RankQuestion} rankResult={rankResult.get(element.ID)} />
@@ -90,10 +95,13 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
   };
 
   const displayResults = (subject: Subject) => {
+    const sbj = JSON.parse(subject.Title);
     return (
       <div key={subject.ID}>
         <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-          {subject.Title}
+          {i18n.language === 'en' && sbj.en}
+          {i18n.language === 'fr' && sbj.fr}
+          {i18n.language === 'de' && sbj.de}
         </h2>
         {subject.Order.map((id: ID) => (
           <div key={id}>
@@ -171,7 +179,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
     });
 
     const data = {
-      TitleEn: i18n.language === 'en' && titles.en,
+      MainTitle: i18n.language === 'en' && titles.en,
       TitleFr: i18n.language === 'fr' && titles.fr,
       TitleDe: i18n.language === 'de' && titles.de,
       NumberOfVotes: result.length,

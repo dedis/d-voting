@@ -2,6 +2,7 @@ import React, { FC } from 'react';
 import { SelectQuestion } from 'types/configuration';
 import ProgressBar from './ProgressBar';
 import { countSelectResult } from './utils/countResult';
+import { default as i18n } from 'i18next';
 
 type SelectResultProps = {
   select: SelectQuestion;
@@ -19,7 +20,12 @@ const SelectResult: FC<SelectResultProps> = ({ select, selectResult }) => {
       return (
         <React.Fragment key={index}>
           <div className="px-2 sm:px-4 break-words max-w-xs w-max">
-            <span>{select.Choices[index]}</span>:
+            <span>
+              {i18n.language === 'en' && select.ChoicesMap.get('en')[index]}
+              {i18n.language === 'fr' && select.ChoicesMap.get('fr')[index]}
+              {i18n.language === 'de' && select.ChoicesMap.get('de')[index]}
+            </span>
+            :
           </div>
           <ProgressBar isBest={isBest}>{percent}</ProgressBar>
         </React.Fragment>

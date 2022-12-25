@@ -201,7 +201,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
     });
 
     const data = {
-      TitleEn: i18n.language === 'en' && titles.en,
+      MainTitle: i18n.language === 'en' && titles.en,
       TitleFr: i18n.language === 'fr' && titles.fr,
       TitleDe: i18n.language === 'de' && titles.de,
       NumberOfVotes: ballotNumber,

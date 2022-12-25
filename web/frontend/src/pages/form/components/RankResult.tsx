@@ -2,6 +2,7 @@ import React, { FC } from 'react';
 import { RankQuestion } from 'types/configuration';
 import ProgressBar from './ProgressBar';
 import { countRankResult } from './utils/countResult';
+import { default as i18n } from 'i18next';
 
 type RankResultProps = {
   rank: RankQuestion;
@@ -19,7 +20,12 @@ const RankResult: FC<RankResultProps> = ({ rank, rankResult }) => {
       return (
         <React.Fragment key={index}>
           <div className="px-2 sm:px-4 break-words max-w-xs w-max">
-            <span>{rank.Choices[index]}</span>:
+            <span>
+              {i18n.language === 'en' && rank.ChoicesMap.get('en')[index]}
+              {i18n.language === 'fr' && rank.ChoicesMap.get('fr')[index]}
+              {i18n.language === 'de' && rank.ChoicesMap.get('de')[index]}
+            </span>
+            :
           </div>
           <ProgressBar isBest={isBest}>{percent}</ProgressBar>
         </React.Fragment>

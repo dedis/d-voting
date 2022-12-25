@@ -154,7 +154,7 @@ const mockForm2: any = {
       Selects: [
         {
           Title:
-            '{"How did you find the provided material, from 1 (bad) to 5 (excellent) ?", "fr" : "Comment trouves-tu le matériel fourni, de 1 (mauvais) à 5 (excellent) ?", "de" : "How did you find the provided material, from 1 (bad) to 5 (excellent) ?"}',
+            '{"en": "How did you find the provided material, from 1 (bad) to 5 (excellent) ?", "fr" : "Comment trouves-tu le matériel fourni, de 1 (mauvais) à 5 (excellent) ?", "de" : "How did you find the provided material, from 1 (bad) to 5 (excellent) ?"}',
           ID: (0x3fb2).toString(),
           MaxN: 1,
           MinN: 1,
@@ -169,7 +169,8 @@ const mockForm2: any = {
       ],
       Texts: [
         {
-          Title: 'Who were the two best TAs ?',
+          Title:
+            '{"en" : "Who were the two best TAs ?", "fr" : "Quels sont les deux meilleurs TA ?", "de" : "Who were the two best TAs ?"}',
           ID: (0xcd13).toString(),
           MaxLength: 40,
           MaxN: 2,
@@ -187,12 +188,12 @@ const mockForm2: any = {
     },
     {
       ID: (0x1234).toString(),
-      Title: '{"Tough choices", "fr": "Choix difficiles", "de": "Tough choices"}',
+      Title: '{"en": "Tough choices", "fr": "Choix difficiles", "de": "Tough choices"}',
       Order: [(0xa319).toString(), (0xcafe).toString(), (0xbeef).toString()],
       Selects: [
         {
           Title:
-            '{"Select your ingredients", "fr": "Choisis tes ingrédients", "de": "Select your ingredients"}',
+            '{"en": "Select your ingredients", "fr": "Choisis tes ingrédients", "de": "Select your ingredients"}',
           ID: (0xa319).toString(),
           MaxN: 3,
           MinN: 0,

@@ -14,7 +14,7 @@ import useGetResults from './components/utils/useGetResults';
 import UserIDTable from './components/UserIDTable';
 import DKGStatusTable from './components/DKGStatusTable';
 import LoadingButton from './components/LoadingButton';
-//import { json } from 'node:stream/consumers';
+import { default as i18n } from 'i18next';
 
 const FormShow: FC = () => {
   const { t } = useTranslation();
@@ -209,7 +209,9 @@ const FormShow: FC = () => {
       {!loading ? (
         <>
           <div className="pt-8 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-            {configObj.TitleEn}
+            {i18n.language === 'en' && configObj.MainTitle}
+            {i18n.language === 'fr' && configObj.TitleFr}
+            {i18n.language === 'en' && configObj.TitleDe}
           </div>
 
           <div className="pt-2 break-all">Form ID : {formId}</div>

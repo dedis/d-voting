@@ -100,6 +100,8 @@ const toLightFormInfo = (mockForms: Map<ID, FormInfo>, formID: ID): LightFormInf
   return {
     FormID: formID,
     Title: form.Configuration.MainTitle,
+    TitleDe: form.Configuration.TitleDe,
+    TitleFr: form.Configuration.TitleFr,
     Status: form.Status,
     Pubkey: form.Pubkey,
   };

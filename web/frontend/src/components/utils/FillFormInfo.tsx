@@ -18,12 +18,6 @@ const useFillFormInfo = (formData: FormInfo) => {
     if (formData === null) {
       return;
     }
-
-    const title = JSON.parse(formData.Configuration.MainTitle);
-    formData.Configuration.TitleEn = title.en;
-    formData.Configuration.TitleFr = title.fr;
-    formData.Configuration.TitleDe = title.de;
-
     setId(formData.FormID);
     setStatus(formData.Status);
     setPubKey(formData.Pubkey);
