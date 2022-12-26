@@ -37,14 +37,14 @@ type SignedRequest struct {
 // GetMessage JSON unmarshals the payload to the given element. The given
 // element MUST be a pointer.
 func (s SignedRequest) GetMessage(el interface{}) error {
-	buf, err := base64.URLEncoding.DecodeString(s.Payload)
+	payloadBuf, err := base64.URLEncoding.DecodeString(s.Payload)
 	if err != nil {
 		return xerrors.Errorf("failed to decode base64: %v", err)
 	}
 
-	err = json.Unmarshal(buf, el)
+	err = json.Unmarshal(payloadBuf, el)
 	if err != nil {
-		return xerrors.Errorf("failed to unmarshal json %q to %T: %v", buf, el, err)
+		return xerrors.Errorf("failed to unmarshal json %q to %T: %v", payloadBuf, el, err)
 	}
 
 	return nil
