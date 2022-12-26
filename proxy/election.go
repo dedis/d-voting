@@ -107,7 +107,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 	formID := hash.Sum(nil)
 
 	// create it to get the  token
-	transactionInfoToSend, err := h.mngr.CreateTransactionInfoToSend(txnID, blockIdx, txnmanager.UnknownTransactionStatus)
+	transactionClientInfo, err := h.mngr.CreateTransactionResult(txnID, blockIdx, txnmanager.UnknownTransactionStatus)
 	if err != nil {
 		http.Error(w, "failed to create transaction info: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -115,7 +115,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 
 	response := ptypes.CreateFormResponse{
 		FormID: hex.EncodeToString(formID),
-		Token:  transactionInfoToSend.Token,
+		Token:  transactionClientInfo.Token,
 	}
 
 	// send the response json
@@ -210,7 +210,7 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//send the transaction's informations
+	// send the transaction's informations
 	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 
 }
@@ -235,7 +235,7 @@ func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 
-	//check if the formID is valid
+	// check if the formID is valid
 	if vars == nil || vars["formID"] == "" {
 		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
@@ -292,7 +292,7 @@ func (h *form) openForm(formID string, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//send the transaction's informations
+	// send the transaction's informations
 	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 }
 
@@ -318,7 +318,7 @@ func (h *form) closeForm(formIDHex string, w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	//send the transaction's informations
+	// send the transaction's informations
 	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 
 }
@@ -357,7 +357,7 @@ func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	//send the transaction's informations
+	// send the transaction's informations
 	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 }
 
@@ -383,7 +383,7 @@ func (h *form) cancelForm(formIDHex string, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	//send the transaction's informations
+	// send the transaction's informations
 	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 }
 
@@ -551,7 +551,7 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//send the transaction's informations
+	// send the transaction's informations
 	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 }
 

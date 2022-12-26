@@ -47,8 +47,11 @@ import (
 const (
 	contentType            = "application/json"
 	formPath               = "/evoting/forms"
-	formPathSlash          = formPath + "/"
-	formIDPath             = formPathSlash + "{formID}"
+	// FormPathSlash is the path to the form with a trailing slash
+	FormPathSlash          = formPath + "/"
+	formIDPath             = FormPathSlash + "{formID}"
+	transactionSlash       = "/evoting/transactions/"
+	transactionPath        = transactionSlash + "{txID}"
 	unexpectedStatus       = "unexpected status: %s, body: %s"
 	failRetrieveDecryption = "failed to retrieve decryption key: %v"
 	selectString           = "select:"
@@ -173,7 +176,6 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 	router := mux.NewRouter()
 
 	router.HandleFunc(formPath, ep.NewForm).Methods("POST")
-	router.HandleFunc("/evoting/transactions/{token}", transactionManager.IsTxnIncluded).Methods("GET")
 	router.HandleFunc(formPath, ep.Forms).Methods("GET")
 	router.HandleFunc(formPath, eproxy.AllowCORS).Methods("OPTIONS")
 	router.HandleFunc(formIDPath, ep.Form).Methods("GET")
@@ -181,13 +183,14 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 	router.HandleFunc(formIDPath, eproxy.AllowCORS).Methods("OPTIONS")
 	router.HandleFunc(formIDPath, ep.DeleteForm).Methods("DELETE")
 	router.HandleFunc(formIDPath+"/vote", ep.NewFormVote).Methods("POST")
+	router.HandleFunc(transactionPath, transactionManager.StatusHandlerGet).Methods("GET")
 
 	router.NotFoundHandler = http.HandlerFunc(eproxy.NotFoundHandler)
 	router.MethodNotAllowedHandler = http.HandlerFunc(eproxy.NotAllowedHandler)
 
 	proxy.RegisterHandler(formPath, router.ServeHTTP)
-	proxy.RegisterHandler(formPathSlash, router.ServeHTTP)
-	proxy.RegisterHandler("/evoting/transactions/", router.ServeHTTP)
+	proxy.RegisterHandler(FormPathSlash, router.ServeHTTP)
+	proxy.RegisterHandler(transactionSlash, router.ServeHTTP)
 
 	dela.Logger.Info().Msg("d-voting proxy handlers registered")
 
@@ -699,7 +702,7 @@ func marshallBallot(voteStr string, actor dkg.Actor, chunks int) (ptypes.Cipherv
 
 // formID is hex-encoded
 func castVote(formID string, signed []byte, proxyAddr string) (string, error) {
-	resp, err := http.Post(proxyAddr+formPathSlash+formID+"/vote", contentType, bytes.NewBuffer(signed))
+	resp, err := http.Post(proxyAddr+FormPathSlash+formID+"/vote", contentType, bytes.NewBuffer(signed))
 
 	if err != nil {
 		return "", xerrors.Errorf(failRetrieveDecryption, err)
@@ -730,7 +733,7 @@ func updateForm(secret kyber.Scalar, proxyAddr, formIDHex, action string) (int, 
 		return 0, createSignedErr(err)
 	}
 
-	req, err := http.NewRequest(http.MethodPut, proxyAddr+formPathSlash+formIDHex, bytes.NewBuffer(signed))
+	req, err := http.NewRequest(http.MethodPut, proxyAddr+FormPathSlash+formIDHex, bytes.NewBuffer(signed))
 
 	if err != nil {
 		return 0, xerrors.Errorf("failed to create request: %v", err)

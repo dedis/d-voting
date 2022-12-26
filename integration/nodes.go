@@ -107,3 +107,7 @@ func restartNode(nodeNub int, t *testing.T) {
 	err = cmd.Run()
 	require.NoError(t, err)
 }
+
+func getThreshold(numNodes int) int {
+	return numNodes/3
+}

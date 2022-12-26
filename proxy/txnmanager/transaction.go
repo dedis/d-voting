@@ -34,7 +34,7 @@ const (
 func NewTransactionManager(mngr txn.Manager, p pool.Pool,
 	ctx serde.Context, pk kyber.Point, blocks blockstore.BlockStore, signer crypto.Signer) Manager {
 
-	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
+	logger := dela.Logger.With().Timestamp().Str("role", "proxy-txmanager").Logger()
 
 	return &manager{
 		logger:  logger,
@@ -47,7 +47,7 @@ func NewTransactionManager(mngr txn.Manager, p pool.Pool,
 	}
 }
 
-// form defines HTTP handlers to manipulate the evoting smart contract
+// manager defines the HTTP handlers to manage transactions
 //
 // - implements proxy.Transaction
 type manager struct {
@@ -62,9 +62,8 @@ type manager struct {
 	signer  crypto.Signer
 }
 
-// IsTxnIncluded
-// Check if the transaction is included in the blockchain
-func (h *manager) IsTxnIncluded(w http.ResponseWriter, r *http.Request) {
+// StatusHandlerGet checks if the transaction is included in the blockchain
+func (h *manager) StatusHandlerGet(w http.ResponseWriter, r *http.Request) {
 	// get the token from the url
 	vars := mux.Vars(r)
 
@@ -84,36 +83,16 @@ func (h *manager) IsTxnIncluded(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// unmarshall the token to get the json with all the informations
-	var content TransactionInfo
+	var content transactionInternalInfo
 	err = json.Unmarshal(marshall, &content)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to unmarshall token: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// check if the transaction status is unknown
-	// if it is not unknown, it means that the transaction was already checked
-	if content.Status != UnknownTransactionStatus {
-		http.Error(w, "the transaction status is known", http.StatusBadRequest)
-		return
-	}
-
-	// get the signature as a crypto.Signature
-	signature, err := h.signer.GetSignatureFactory().SignatureOf(h.context, content.Signature)
+	err = content.validate(h)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to get Signature: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	// check if the hash is valid
-	if !h.checkHash(content.Status, content.TransactionID, content.LastBlockIdx, content.Time, content.Hash) {
-		http.Error(w, "invalid hash", http.StatusInternalServerError)
-		return
-	}
-
-	// check if the signature is valid
-	if !h.checkSignature(content.Hash, signature) {
-		http.Error(w, "invalid signaturee", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Invalid content: %v", err), http.StatusBadRequest)
 		return
 	}
 
@@ -146,17 +125,40 @@ func (h *manager) IsTxnIncluded(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// validate checks if the transaction is valid
+func (content transactionInternalInfo) validate(h *manager) error {
+	// check if the transaction status is unknown
+	// if it is not unknown, it means that the transaction was already checked
+	if content.Status != UnknownTransactionStatus {
+		return xerrors.Errorf("the transaction status is known")
+	}
+
+	// get the signature as a crypto.Signature
+	signature, err := h.signer.GetSignatureFactory().SignatureOf(h.context, content.Signature)
+	if err != nil {
+		return xerrors.Errorf(fmt.Sprintf("failed to get Signature: %v", err))
+	}
+
+	// check if the hash is valid
+	if !h.checkHash(content.Status, content.TransactionID, content.LastBlockIdx, content.Time, content.Hash) {
+		return xerrors.Errorf("invalid hash")
+	}
+
+	// check if the signature is valid
+	if !h.checkSignature(content.Hash, signature) {
+		return xerrors.Errorf("invalid signature")
+	}
+
+	return nil
+}
+
 // checkHash checks if the hash is valid
 func (h *manager) checkHash(status TransactionStatus, transactionID []byte, LastBlockIdx uint64, Time int64, Hash []byte) bool {
 	// create the hash
-	hash := sha256.New()
-	hash.Write([]byte{byte(status)})
-	hash.Write(transactionID)
-	hash.Write([]byte(strconv.FormatUint(LastBlockIdx, 10)))
-	hash.Write([]byte(strconv.FormatInt(Time, 10)))
+	myHash := hashInfos(status, transactionID, LastBlockIdx, Time)
 
 	// check if the hash is valid
-	return bytes.Equal(hash.Sum(nil), Hash)
+	return bytes.Equal(myHash, Hash)
 }
 
 // checkSignature checks if the signature is valid
@@ -228,7 +230,7 @@ func (h *manager) SubmitTxn(ctx context.Context, cmd evoting.Command,
 
 func (h *manager) SendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBlockIdx uint64, status TransactionStatus) error {
 
-	response, err := h.CreateTransactionInfoToSend(txnID, lastBlockIdx, status)
+	response, err := h.CreateTransactionResult(txnID, lastBlockIdx, status)
 	if err != nil {
 		return xerrors.Errorf("failed to create transaction info: %v", err)
 	}
@@ -236,50 +238,40 @@ func (h *manager) SendTransactionInfo(w http.ResponseWriter, txnID []byte, lastB
 
 }
 
-func (h *manager) CreateTransactionInfoToSend(txnID []byte, lastBlockIdx uint64, status TransactionStatus) (TransactionInfoToSend, error) {
+func (h *manager) CreateTransactionResult(txnID []byte, lastBlockIdx uint64, status TransactionStatus) (TransactionClientInfo, error) {
 
 	time := time.Now().Unix()
-	hash := sha256.New()
-
-	// create the hash
-	hash.Write([]byte{byte(status)})
-	hash.Write(txnID)
-	hash.Write([]byte(strconv.FormatUint(lastBlockIdx, 10)))
-	hash.Write([]byte(strconv.FormatInt(time, 10)))
-
-	finalHash := hash.Sum(nil)
-
-	// sign the hash
-	signature, err := h.signer.Sign(finalHash)
+	hash := hashInfos(status, txnID, lastBlockIdx, time)
+	signature, err := h.signer.Sign(hash)
 
 	if err != nil {
-		return TransactionInfoToSend{}, xerrors.Errorf("failed to sign transaction info: %v", err)
+		return TransactionClientInfo{}, xerrors.Errorf("failed to sign transaction info: %v", err)
 	}
 
-	//convert signature to []byte
+	// convert signature to []byte
 	signatureBin, err := signature.Serialize(h.context)
 	if err != nil {
-		return TransactionInfoToSend{}, xerrors.Errorf("failed to marshal signature: %v", err)
+		return TransactionClientInfo{}, xerrors.Errorf("failed to marshal signature: %v", err)
 	}
 
-	infos := TransactionInfo{
+	infos := transactionInternalInfo{
 		Status:        status,
 		TransactionID: txnID,
 		LastBlockIdx:  lastBlockIdx,
 		Time:          time,
-		Hash:          finalHash,
+		Hash:          hash,
 		Signature:     signatureBin,
 	}
 
 	marshal, err := json.Marshal(infos)
 	if err != nil {
-		return TransactionInfoToSend{}, xerrors.Errorf("failed to marshal transaction info: %v", err)
+		return TransactionClientInfo{}, xerrors.Errorf("failed to marshal transaction info: %v", err)
 	}
 
 	// encode the transaction info so that the client just has to send it back
 	token := b64.URLEncoding.EncodeToString(marshal)
 
-	response := TransactionInfoToSend{
+	response := TransactionClientInfo{
 		Status: status,
 		Token:  token,
 	}
@@ -326,4 +318,16 @@ func createTransaction(manager txn.Manager, commandType evoting.Command,
 	}
 
 	return tx, nil
+}
+
+func hashInfos(status TransactionStatus, txnID []byte, lastBlockIdx uint64, time int64) []byte {
+	hash := sha256.New()
+
+	// create the hash
+	hash.Write([]byte{byte(status)})
+	hash.Write(txnID)
+	hash.Write([]byte(strconv.FormatUint(lastBlockIdx, 10)))
+	hash.Write([]byte(strconv.FormatInt(time, 10)))
+
+	return hash.Sum(nil)
 }

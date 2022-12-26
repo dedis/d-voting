@@ -16,6 +16,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// initDkg initializes the DKG for all nodes
 func initDkg(nodes []dVotingCosiDela, formID []byte, m txn.Manager) (dkg.Actor, error) {
 	var actor dkg.Actor
 	var err error
@@ -38,6 +39,7 @@ func initDkg(nodes []dVotingCosiDela, formID []byte, m txn.Manager) (dkg.Actor, 
 	return actor, nil
 }
 
+// startDKGScenario starts the DKG for all nodes in the scenario tests
 func startDKGScenario(numNodes int, timeTable []float64, formID string, secret kyber.Scalar, proxyArray []string, t *testing.T) {
 	t.Log("Init DKG")
 
@@ -69,7 +71,7 @@ func startDKGScenario(numNodes int, timeTable []float64, formID string, secret k
 
 }
 
-// for Scenario
+// initDkg initializes the DKG for all nodes for Scenario tests
 func initDKG(secret kyber.Scalar, proxyAddr, formIDHex string, t *testing.T) error {
 	setupDKG := ptypes.NewDKGRequest{
 		FormID: formIDHex,
@@ -87,7 +89,7 @@ func initDKG(secret kyber.Scalar, proxyAddr, formIDHex string, t *testing.T) err
 	return nil
 }
 
-// for Scenario
+// updateDKG updates the DKG step for Scenario tests
 func updateDKG(secret kyber.Scalar, proxyAddr, formIDHex, action string, t *testing.T) (int, error) {
 	msg := ptypes.UpdateDKG{
 		Action: action,
@@ -111,7 +113,7 @@ func updateDKG(secret kyber.Scalar, proxyAddr, formIDHex, action string, t *test
 	return 0, nil
 }
 
-// for Scenario
+// getDKGInfo gets the DKG info for the scenario tests
 func getDKGInfo(proxyAddr, formID string, t *testing.T) ptypes.GetActorInfo {
 
 	resp, err := http.Get(proxyAddr + "/evoting/services/dkg/actors" + "/" + formID)
@@ -129,13 +131,12 @@ func getDKGInfo(proxyAddr, formID string, t *testing.T) ptypes.GetActorInfo {
 
 }
 
-// for Scenario
+// waitForDKG waits for the DKG to be setup for the scenario tests
 func waitForDKG(proxyAddr, formID string, timeOut time.Duration, t *testing.T) error {
 	expired := time.Now().Add(timeOut)
 
 	isOK := func() bool {
 		infoDKG := getDKGInfo(proxyAddr, formID, t)
-
 		return infoDKG.Status == 1
 	}
 

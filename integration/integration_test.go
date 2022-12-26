@@ -210,8 +210,6 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		formID, err := createForm(m, "Three votes form", adminID)
 		require.NoError(t, err)
 
-		time.Sleep(time.Second * 1)
-
 		// ##### SETUP DKG #####
 		actor, err := initDkg(nodes, formID, m.m)
 		require.NoError(t, err)
@@ -263,8 +261,9 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 
 		// If the number of failing nodes is greater
 		// than the threshold, the shuffle will fail
-		fmt.Println("threshold: ", numNodes/3)
-		if failingNodes > numNodes/3 {
+		threshold := getThreshold(numNodes)
+		fmt.Println("threshold: ", threshold)
+		if failingNodes > threshold {
 			require.Error(t, err)
 			return
 		}
@@ -309,21 +308,7 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		fmt.Println("Status of the form : " + strconv.Itoa(int(form.Status)))
 		fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(form.DecryptedBallots)))
 
-		require.Len(t, form.DecryptedBallots, len(castedVotes))
-
-		for _, b := range form.DecryptedBallots {
-			ok := false
-			for i, casted := range castedVotes {
-				if b.Equal(casted) {
-					//remove the casted vote from the list
-					castedVotes = append(castedVotes[:i], castedVotes[i+1:]...)
-					ok = true
-					break
-				}
-			}
-			require.True(t, ok)
-		}
-		require.Empty(t, castedVotes)
+		checkBallots(form.DecryptedBallots, castedVotes, t)
 
 		fmt.Println("closing nodes")
 

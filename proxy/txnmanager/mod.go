@@ -10,15 +10,15 @@ import (
 // Manager defines the public HTTP API of the transaction manager
 type Manager interface {
 	// GET /transactions/{token}
-	IsTxnIncluded(http.ResponseWriter, *http.Request)
+	StatusHandlerGet(http.ResponseWriter, *http.Request)
 
 	// submit the transaction to the blockchain
 	// return the transactionID and 
 	// the index of the last block when it was submitted
 	SubmitTxn(ctx context.Context, cmd evoting.Command, cmdArg string, payload []byte) ([]byte, uint64, error)
 
-	// create the json to send to the 
-	CreateTransactionInfoToSend(txnID []byte, lastBlockIdx uint64, status TransactionStatus) (TransactionInfoToSend, error)
+	// CreateTransactionResult create the json to send to the client 
+	CreateTransactionResult(txnID []byte, lastBlockIdx uint64, status TransactionStatus) (TransactionClientInfo, error)
 	SendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBlockIdx uint64, status TransactionStatus) error
 }
 
@@ -34,8 +34,8 @@ const (
 	RejectedTransaction TransactionStatus = 2
 )
 
-// TransactionInfo defines the information of a transaction
-type TransactionInfo struct {
+// transactionInternalInfo defines the information of a transaction
+type transactionInternalInfo struct {
 	Status        TransactionStatus // 0 if not yet included, 1 if included, 2 if rejected
 	TransactionID []byte
 	LastBlockIdx  uint64 // last block of the chain when the transaction was added to the pool
@@ -44,12 +44,14 @@ type TransactionInfo struct {
 	Signature     []byte // signature of the transaction
 }
 
-// TransactionInfoToSend defines the HTTP response when sending
+
+
+// TransactionClientInfo defines the HTTP response when sending
 // transaction infos to the client so that he can use the status
 // of the transaction to know if it has been included or not
 // and if it has not been included, he can just use the token
 // and ask again later
-type TransactionInfoToSend struct {
+type TransactionClientInfo struct {
 	Status TransactionStatus // 0 if not yet included, 1 if included, 2 if rejected
 	Token  string
 }

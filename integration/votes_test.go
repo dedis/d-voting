@@ -79,17 +79,13 @@ func getIntegrationTestBadVote(numNodes, numVotes, numBadVotes int) func(*testin
 		form, err := getForm(formFac, formID, nodes[0].GetOrdering())
 		require.NoError(t, err)
 
-		//cast a vote with wrong answers: Should not be taken into account
+		// cast a vote with wrong answers: Should not be taken into account
 
 		_, err = castVotesRandomly(m, actor, form, numVotes-numBadVotes)
 		require.NoError(t, err)
 
 		err = castBadVote(m, actor, form, numBadVotes)
 		require.NoError(t, err)
-
-		//castedVotes = append(castedVotes, badVotes...)
-
-		//fmt.Println("casted votes:", castedVotes)
 
 		// ##### CLOSE FORM #####
 		err = closeForm(m, formID, adminID)
@@ -148,14 +144,12 @@ func getIntegrationTestBadVote(numNodes, numVotes, numBadVotes int) func(*testin
 		fmt.Println("Status of the form : " + strconv.Itoa(int(form.Status)))
 		fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(form.DecryptedBallots)))
 
-		//require.Len(t, form.DecryptedBallots, numVotes-numBadVotes)
-		//should contains numBadVotes empty ballots
+		// should contains numBadVotes empty ballots
 		count := 0
 		for _, ballot := range form.DecryptedBallots {
 			if ballotIsNull(ballot) {
 				count++
 			}
-			//fmt.Println(fmt.Sprintf("%#v", ballot))
 		}
 		fmt.Println(form.DecryptedBallots)
 
@@ -290,20 +284,7 @@ func getIntegrationTestRevote(numNodes, numVotes, numRevotes int) func(*testing.
 		fmt.Println("Status of the form : " + strconv.Itoa(int(form.Status)))
 		fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(form.DecryptedBallots)))
 
-		require.Len(t, form.DecryptedBallots, len(castedVotes))
-
-		for _, b := range form.DecryptedBallots {
-			ok := false
-			for i, casted := range castedVotes {
-				if b.Equal(casted) {
-					ok = true
-					//remove the casted vote from the list
-					castedVotes = append(castedVotes[:i], castedVotes[i+1:]...)
-					break
-				}
-			}
-			require.True(t, ok)
-		}
+		checkBallots(form.DecryptedBallots, castedVotes, t)
 
 		fmt.Println("closing nodes")
 

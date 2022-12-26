@@ -15,6 +15,7 @@ import (
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	ptypes "github.com/dedis/d-voting/proxy/types"
+	"github.com/dedis/d-voting/proxy/txnmanager"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
@@ -205,7 +206,7 @@ func waitForFormStatus(proxyAddr, formID string, status uint16, timeOut time.Dur
 	return nil
 }
 
-// for Scenario
+// updateForm updates the form with the given action for the scenario tests
 func updateForm(secret kyber.Scalar, proxyAddr, formIDHex, action string, t *testing.T) (bool, error) {
 	msg := ptypes.UpdateFormRequest{
 		Action: action,
@@ -230,14 +231,14 @@ func updateForm(secret kyber.Scalar, proxyAddr, formIDHex, action string, t *tes
 	require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", body)
 
 	// use the pollTxnInclusion func
-	var result map[string]interface{}
+	var result txnmanager.TransactionClientInfo
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return false, xerrors.Errorf("failed to unmarshal response body: %v", err)
 	}
 
 	// wait until the update is completed
-	return pollTxnInclusion(60,time.Second, proxyAddr, result["Token"].(string), t)
+	return pollTxnInclusion(60,time.Second, proxyAddr, result.Token, t)
 
 }
 

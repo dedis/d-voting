@@ -131,7 +131,8 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 	formpubkey := getFormResponse.Pubkey
 	formStatus := getFormResponse.Status
 	BallotSize := getFormResponse.BallotSize
-	chunksPerBallot := chunksPerBallot(BallotSize)
+
+	chunksPerBallot :=  chunksPerBallot(BallotSize)
 
 	t.Logf("Publickey of the form : " + formpubkey)
 	t.Logf("Status of the form : %v", formStatus)
