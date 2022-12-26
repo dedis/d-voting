@@ -118,7 +118,6 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
       </div>
     );
   };
-
   return (
     <div>
       <div className="grid grid-rows-1 grid-flow-col">
@@ -136,17 +135,18 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>
-      {language == 'en' && (
+      if(text.ChoicesMap.get('en')=== undefined)return;
+      {language == 'en' && text.ChoicesMap.has('en') && (
         <div className="sm:pl-8 mt-2 pl-6">
           {text.ChoicesMap.get('en').map((choice, index) => choiceDisplay(choice, index))}
         </div>
       )}
-      {language == 'fr' && (
+      {language == 'fr' && text.ChoicesMap.has('fr') &&  (
         <div className="sm:pl-8 mt-2 pl-6">
           {text.ChoicesMap.get('fr').map((choice, index) => choiceDisplay(choice, index))}
         </div>
       )}
-      {language == 'de' && (
+      {language == 'de' && text.ChoicesMap.has('de') && (
         <div className="sm:pl-8 mt-2 pl-6">
           {text.ChoicesMap.get('de').map((choice, index) => choiceDisplay(choice, index))}
         </div>

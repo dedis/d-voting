@@ -97,8 +97,6 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
       </Draggable>
     );
   };
-  const obj = Object.fromEntries(rank.ChoicesMap);
-  const newChoicesMap = new Map(Object.entries(obj));
   return (
     <div className="mb-6">
       <div className="grid grid-rows-1 grid-flow-col">
@@ -122,16 +120,13 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
               <ul className={rank.ID} {...provided.droppableProps} ref={provided.innerRef}>
                 {Array.from(answers.RankAnswers.get(rank.ID).entries()).map(
                   ([rankIndex, choiceIndex]) => {
-                    {
-                      console.log('newChoicesMap', [...newChoicesMap.entries()]);
-                    }
-
-                    if (language === 'en')
-                      return choiceDisplay(newChoicesMap.get('en')[choiceIndex], rankIndex);
-                    else if (language === 'fr')
-                      return choiceDisplay(newChoicesMap.get('fr')[choiceIndex], rankIndex);
-                    else if (language === 'de')
-                      return choiceDisplay(newChoicesMap.get('de')[choiceIndex], rankIndex);
+                    if(rank.ChoicesMap.get('en')=== undefined)return;
+                    if (language === 'en' && rank.ChoicesMap.has('en'))
+                        return choiceDisplay(rank.ChoicesMap.get('en')[choiceIndex], rankIndex);
+                    else if (language === 'fr' && rank.ChoicesMap.has('fr'))
+                      return choiceDisplay(rank.ChoicesMap.get('fr')[choiceIndex], rankIndex);
+                    else if (language === 'de' && rank.ChoicesMap.has('de'))
+                      return choiceDisplay(rank.ChoicesMap.get('de')[choiceIndex], rankIndex);
                   }
                 )}
                 {provided.placeholder}

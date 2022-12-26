@@ -24,6 +24,8 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
     try {
+      if(configuration.MainTitle === '') return;  
+      console.log('configuration.MainTitle', configuration.MainTitle)   
       const ts = JSON.parse(configuration.MainTitle);
       setTitles(ts);
     } catch (e) {

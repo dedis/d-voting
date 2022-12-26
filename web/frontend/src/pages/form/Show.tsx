@@ -197,7 +197,17 @@ const FormShow: FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error]);
-
+  const [titles, setTitles] = useState<any>({});
+  useEffect(() => {
+    try {
+      if(configObj.MainTitle === '') return;  
+      console.log('configuration.MainTitle', configObj.MainTitle)   
+      const ts = JSON.parse(configObj.MainTitle);
+      setTitles(ts);
+    } catch (e) {
+      console.log('error', e);
+    }
+  }, [configObj]);
   return (
     <div className="w-[60rem] font-sans px-4 py-4">
       <Modal
@@ -209,9 +219,10 @@ const FormShow: FC = () => {
       {!loading ? (
         <>
           <div className="pt-8 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-            {i18n.language === 'en' && configObj.MainTitle}
-            {i18n.language === 'fr' && configObj.TitleFr}
-            {i18n.language === 'en' && configObj.TitleDe}
+            
+            {i18n.language === 'en' && titles.en}
+            {i18n.language === 'fr' && titles.fr}
+            {i18n.language === 'de' && titles.de}
           </div>
 
           <div className="pt-2 break-all">Form ID : {formId}</div>

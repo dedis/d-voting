@@ -1,23 +1,35 @@
-import React, { FC } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { LightFormInfo } from 'types/form';
 import { Link } from 'react-router-dom';
 import FormStatus from './FormStatus';
 import QuickAction from './QuickAction';
 import { default as i18n } from 'i18next';
+import { form } from 'components/utils/Endpoints';
 
 type FormRowProps = {
   form: LightFormInfo;
 };
 
 const FormRow: FC<FormRowProps> = ({ form }) => {
+  const [titles, setTitles] = useState<any>({});
+  useEffect(() => {
+    try {
+      if (form.Title === '') return;
+      console.log('configuration.MainTitle', form.Title);
+      const ts = JSON.parse(form.Title);
+      setTitles(ts);
+    } catch (e) {
+      console.log('error', e);
+    }
+  }, [form]);
   return (
     <tr className="bg-white border-b hover:bg-gray-50 ">
       <td className="px-1.5 sm:px-6 py-4 font-medium text-gray-900 whitespace-nowrap truncate">
         <Link className="text-gray-700 hover:text-indigo-500" to={`/forms/${form.FormID}`}>
           <div className="max-w-[20vw] truncate">
-            {i18n.language === 'en' && form.Title}
-            {i18n.language === 'fr' && form.TitleFr}
-            {i18n.language === 'de' && form.TitleDe}
+            {i18n.language === 'en' && titles.en}
+            {i18n.language === 'fr' && titles.fr}
+            {i18n.language === 'de' && titles.de}
           </div>
         </Link>
       </td>

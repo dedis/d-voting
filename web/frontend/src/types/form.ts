@@ -59,8 +59,6 @@ interface FormInfo {
 interface LightFormInfo {
   FormID: ID;
   Title: string;
-  TitleDe: string;
-  TitleFr: string;
   Status: Status;
   Pubkey: string;
 }

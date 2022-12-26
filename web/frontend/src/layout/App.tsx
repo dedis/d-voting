@@ -41,7 +41,6 @@ const App = () => {
     let location = useLocation();
 
     const authCtx = useContext(AuthContext);
-
     if (!authCtx.isLogged) {
       return <Navigate to={ROUTE_LOGIN} state={{ from: location }} replace />;
     } else {
@@ -77,7 +76,7 @@ const App = () => {
               <Route
                 path={ROUTE_BALLOT_SHOW + '/:formId'}
                 element={
-                  <RequireAuth roles={[]}>
+                  <RequireAuth roles={null}>
                     <BallotShow />
                   </RequireAuth>
                 }

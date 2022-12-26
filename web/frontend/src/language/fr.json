@@ -192,7 +192,7 @@
     "pluralAnswers": "réponses",
     "rankRange": "La réponse doit être entre 1 et {{max}}. ",
     "castVote": "Voter",
-    "voteExplanation": "Vous pouvez voter autant de fois que vous le souhaitez tant que le sondage est ouverte. Seul votre dernier vote sera pris en compte.",
+    "voteExplanation": "Vous pouvez voter autant de fois que vous le souhaitez tant que le sondage est ouvert. Seul votre dernier vote sera pris en compte.",
     "noVote": "Il y a actuellement rien à voter.",
     "voteAllowed": "Vous êtes autorisés à voter sur les sondages ci-dessous. Cliquez sur le titre d'un sondage pour afficher son bulletin de vote et voter.",
     "displayResults": "Les résultats de(s) sondage(s) listé(s) ci-dessous sont disponibles. Clique sur le titre d'un sondage pour y avoir accès.",

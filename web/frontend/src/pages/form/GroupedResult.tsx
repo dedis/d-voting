@@ -50,20 +50,6 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
     [TEXT]: <MenuAlt1Icon />,
   };
 
-  const [titles, setTitles] = useState<any>({});
-  useEffect(() => {
-    try {
-      if (configuration.MainTitle === '') {
-        return;
-      }
-
-      const ts = JSON.parse(configuration.MainTitle);
-      setTitles(ts);
-    } catch (e) {
-      console.log('error', e);
-    }
-  }, [configuration]);
-
   const SubjectElementResultDisplay = (element: SubjectElement) => {
     const el = JSON.parse(element.Title);
     return (
@@ -95,13 +81,14 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
   };
 
   const displayResults = (subject: Subject) => {
-    const sbj = JSON.parse(subject.Title);
+    console.log(subject.Title)
+    //const sbj = JSON.parse(subject.Title);
     return (
       <div key={subject.ID}>
         <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-          {i18n.language === 'en' && sbj.en}
-          {i18n.language === 'fr' && sbj.fr}
-          {i18n.language === 'de' && sbj.de}
+          {i18n.language === 'en' && subject.Title}
+          {i18n.language === 'fr' && subject.TitleFr}
+          {i18n.language === 'de' && subject.TitleDe}
         </h2>
         {subject.Order.map((id: ID) => (
           <div key={id}>
@@ -179,9 +166,9 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
     });
 
     const data = {
-      MainTitle: i18n.language === 'en' && titles.en,
-      TitleFr: i18n.language === 'fr' && titles.fr,
-      TitleDe: i18n.language === 'de' && titles.de,
+      MainTitle: configuration.MainTitle,
+      TitleFr: configuration.TitleFr,
+      TitleDe: configuration.TitleDe,
       NumberOfVotes: result.length,
       Results: dataToDownload,
     };

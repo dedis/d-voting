@@ -127,6 +127,7 @@ const Ballot: FC = () => {
         <Loading />
       ) : (
         <>
+
           {status === Status.Open && (
             <div className="w-[60rem] font-sans px-4 pt-8 pb-4">
               <div className="pb-2">

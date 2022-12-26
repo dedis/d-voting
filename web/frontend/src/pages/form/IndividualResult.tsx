@@ -50,7 +50,8 @@ const IndividualResult: FC<IndividualResultProps> = ({
   const navigate = useNavigate();
   const { loading, configObj } = useForm(formId);
   const configuration = useConfigurationOnly(configObj);
-
+  
+  console.log(configuration)
   const [currentID, setCurrentID] = useState<string>('1');
   const [isValid, setIsValid] = useState<ValidityType>(0);
   const [internalID, setInternalID] = useState<number>(0);
@@ -67,23 +68,19 @@ const IndividualResult: FC<IndividualResultProps> = ({
     [TEXT]: <MenuAlt1Icon />,
   };
 
-  const [titles, setTitles] = useState<any>({});
-  useEffect(() => {
-    try {
-      const ts = JSON.parse(configuration.MainTitle);
-      setTitles(ts);
-    } catch (e) {
-      console.log(e);
-    }
-  }, [configuration.MainTitle]);
   const SubjectElementResultDisplay = (element: SubjectElement) => {
+    const el = JSON.parse(element.Title);
     return (
       <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
         <div className="flex flex-row">
           <div className="align-text-middle flex mt-1 mr-2 h-5 w-5" aria-hidden="true">
             {questionIcons[element.Type]}
           </div>
-          <h2 className="flex align-text-middle text-lg pb-2">{element.Title}</h2>
+          <h2 className="flex align-text-middle text-lg pb-2">
+            {i18n.language === 'en' && el.en}
+            {i18n.language === 'fr' && el.fr}
+            {i18n.language === 'de' && el.de}
+            </h2>
         </div>
         {element.Type === RANK && rankResult.has(element.ID) && (
           <IndividualRankResult
@@ -108,10 +105,13 @@ const IndividualResult: FC<IndividualResultProps> = ({
   };
 
   const displayResults = (subject: Subject) => {
+    //const sbj = JSON.parse(subject.Title);
     return (
       <div key={subject.ID}>
         <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-          {subject.Title}
+          {i18n.language === 'en' && subject.Title}
+          {i18n.language === 'fr' && subject.TitleFr}
+          {i18n.language === 'de' && subject.TitleDe}
         </h2>
         {subject.Order.map((id: ID) => (
           <div key={id}>
@@ -201,9 +201,9 @@ const IndividualResult: FC<IndividualResultProps> = ({
     });
 
     const data = {
-      MainTitle: i18n.language === 'en' && titles.en,
-      TitleFr: i18n.language === 'fr' && titles.fr,
-      TitleDe: i18n.language === 'de' && titles.de,
+      MainTitle: configuration.MainTitle,
+      TitleFr: configuration.TitleFr,
+      TitleDe: configuration.TitleDe,
       NumberOfVotes: ballotNumber,
       Ballots: ballotsToDownload,
     };

@@ -90,15 +90,14 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
       </div>
     );
   };
-
   return (
     <div>
       <div className="grid grid-rows-1 grid-flow-col">
         <div>
           <h3 className="text-lg break-words text-gray-600">
-            {language == 'en' && select.Title}
-            {language == 'fr' && select.TitleFr}
-            {language == 'de' && select.TitleDe}
+            {language == 'en' && titles.en}
+            {language == 'fr' && titles.fr}
+            {language == 'de' && titles.de}
           </h3>
         </div>
         <div>
@@ -111,19 +110,20 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
       <div className="sm:pl-8 mt-2 pl-6">
         {Array.from(answers.SelectAnswers.get(select.ID).entries()).map(
           ([choiceIndex, isChecked]) => {
-            if (language === 'en')
+            if(select.ChoicesMap.get('en') == undefined) return;
+            if (language === 'en' && select.ChoicesMap.has('en'))
               return choiceDisplay(
                 isChecked,
                 select.ChoicesMap.get('en')[choiceIndex],
                 choiceIndex
               );
-            else if (language === 'fr')
+            else if (language === 'fr' && select.ChoicesMap.has('fr'))
               return choiceDisplay(
                 isChecked,
                 select.ChoicesMap.get('fr')[choiceIndex],
                 choiceIndex
               );
-            else if (language === 'de')
+            else if (language === 'de' && select.ChoicesMap.has('de'))
               return choiceDisplay(
                 isChecked,
                 select.ChoicesMap.get('de')[choiceIndex],
