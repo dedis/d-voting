@@ -60,7 +60,6 @@ type Actor interface {
 	// setup has not been done.
 	GetPublicKey() (kyber.Point, error)
 
-	Encrypt(message []byte) (K, C kyber.Point, remainder []byte, err error)
 
 	// ComputePubshares sends a decryption request to all nodes. Nodes will then
 	// publish their public shares on the smart contract.
