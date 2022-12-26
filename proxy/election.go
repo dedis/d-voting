@@ -516,14 +516,14 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 	// ID
 	auth := r.Header.Get("Authorization")
 
-	sig, err := hex.DecodeString(auth)
+	signature, err := hex.DecodeString(auth)
 	if err != nil {
 		BadRequestError(w, r, xerrors.Errorf("failed to decode auth: %v", err), nil)
 		return
 	}
 
 	// check if the signature is valid
-	err = schnorr.Verify(suite, h.pk, []byte(formID), sig)
+	err = schnorr.Verify(suite, h.pk, []byte(formID), signature)
 	if err != nil {
 		ForbiddenError(w, r, xerrors.Errorf("signature verification failed: %v", err), nil)
 		return
@@ -597,12 +597,12 @@ func getForm(ctx serde.Context, formFac serde.Factory, formIDHex string,
 
 	var form types.Form
 
-	formID, err := hex.DecodeString(formIDHex)
+	formIDBuf, err := hex.DecodeString(formIDHex)
 	if err != nil {
 		return form, xerrors.Errorf("failed to decode formIDHex: %v", err)
 	}
 
-	proof, err := srv.GetProof(formID)
+	proof, err := srv.GetProof(formIDBuf)
 	if err != nil {
 		return form, xerrors.Errorf("failed to get proof: %v", err)
 	}
