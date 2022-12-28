@@ -27,7 +27,6 @@ import (
 	jsonserde "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
-	"go.dedis.ch/kyber/v3/util/random"
 	"golang.org/x/net/context"
 	"golang.org/x/xerrors"
 
@@ -338,6 +337,7 @@ func (a *Actor) GetPublicKey() (kyber.Point, error) {
 
 // Encrypt implements dkg.Actor. It uses the DKG public key to encrypt a
 // message.
+/*
 func (a *Actor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte,
 	err error) {
 
@@ -359,7 +359,7 @@ func (a *Actor) Encrypt(message []byte) (K, C kyber.Point, remainder []byte,
 	C = S.Add(S, M)                                            // message blinded with secret
 
 	return K, C, remainder, nil
-}
+}*/
 
 // ComputePubshares implements dkg.Actor. It sends a decrypt request to all
 // the nodes taking part.
