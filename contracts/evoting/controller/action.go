@@ -10,7 +10,6 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"go.dedis.ch/kyber/v3"
@@ -250,7 +249,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	// ###################################### CREATE SIMPLE FORM ######
 
-	formID, form, formIDBuf, err := setupSimpleForm(ctx, secret,
+	formID, form, _, err := setupSimpleForm(ctx, secret,
 		proxyAddr1, serdecontext, formFac, service)
 
 	if err != nil {
@@ -315,14 +314,14 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	fmt.Fprintln(ctx.Out, "cast ballots")
 
 	// Create the ballots
-	b1 := string(selectString + encodeID("bb") + ":0,0,1,0\n" +
-		"text:" + encodeID("ee") + ":eWVz\n\n") //encoding of "yes"
+	//b1 := string(selectString + encodeID("bb") + ":0,0,1,0\n" +
+		//"text:" + encodeID("ee") + ":eWVz\n\n") //encoding of "yes"
 
-	b2 := string(selectString + encodeID("bb") + ":1,1,0,0\n" +
-		"text:" + encodeID("ee") + ":amE=\n\n") //encoding of "ja
+	//b2 := string(selectString + encodeID("bb") + ":1,1,0,0\n" +
+		//"text:" + encodeID("ee") + ":amE=\n\n") //encoding of "ja
 
-	b3 := string(selectString + encodeID("bb") + ":0,0,0,1\n" +
-		"text:" + encodeID("ee") + ":b3Vp\n\n") //encoding of "oui"
+	//todo b3 := string(selectString + encodeID("bb") + ":0,0,0,1\n" +
+	//	"text:" + encodeID("ee") + ":b3Vp\n\n") //encoding of "oui"
 
 	var dkg dkg.DKG
 	err = ctx.Injector.Resolve(&dkg)
@@ -330,20 +329,20 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve DKG: %v", err)
 	}
 
-	dkgActor, exists := dkg.GetActor(formIDBuf)
-	if !exists {
-		return xerrors.Errorf("failed to get actor: %v", err)
-	}
+	//dkgActor, exists := dkg.GetActor(formIDBuf)
+	//if !exists {
+	//	return xerrors.Errorf("failed to get actor: %v", err)
+	//}
 
 	// Ballot 1
-	ballot1, err := marshallBallot(b1, dkgActor, form.ChunksPerBallot())
-	if err != nil {
-		return xerrors.Errorf("failed to marshall ballot : %v", err)
-	}
+//todo	ballot1, err := marshallBallot(b1, dkgActor, form.ChunksPerBallot())
+	//if err != nil {
+	//	return xerrors.Errorf("failed to marshall ballot : %v", err)
+	//}
 
 	castVoteRequest := ptypes.CastVoteRequest{
 		UserID: "user1",
-		Ballot: ballot1,
+//		Ballot: ballot1,
 	}
 
 	signed, err := createSignedRequest(secret, castVoteRequest)
@@ -361,14 +360,14 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg(responseBody + respBody)
 
 	// Ballot 2
-	ballot2, err := marshallBallot(b2, dkgActor, form.ChunksPerBallot())
-	if err != nil {
-		return xerrors.Errorf("failed to marshall ballot : %v", err)
-	}
+	//ballot2, err := marshallBallot(b2, dkgActor, form.ChunksPerBallot())
+	//if err != nil {
+	//	return xerrors.Errorf("failed to marshall ballot : %v", err)
+	//}
 
 	castVoteRequest = ptypes.CastVoteRequest{
 		UserID: "user2",
-		Ballot: ballot2,
+	//	Ballot: ballot2,
 	}
 
 	signed, err = createSignedRequest(secret, castVoteRequest)
@@ -386,14 +385,14 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	dela.Logger.Info().Msg(responseBody + respBody)
 
 	// Ballot 3
-	ballot3, err := marshallBallot(b3, dkgActor, form.ChunksPerBallot())
-	if err != nil {
-		return xerrors.Errorf("failed to marshall ballot: %v", err)
-	}
+	//ballot3, err := marshallBallot(b3, dkgActor, form.ChunksPerBallot())
+	//if err != nil {
+	//	return xerrors.Errorf("failed to marshall ballot: %v", err)
+	//}
 
 	castVoteRequest = ptypes.CastVoteRequest{
 		UserID: "user3",
-		Ballot: ballot3,
+	//	Ballot: ballot3,
 	}
 
 	signed, err = createSignedRequest(secret, castVoteRequest)
@@ -649,6 +648,7 @@ func encodeID(ID string) types.ID {
 	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
 }
 
+/*
 func marshallBallot(voteStr string, actor dkg.Actor, chunks int) (ptypes.CiphervoteJSON, error) {
 
 	var ballot = make(ptypes.CiphervoteJSON, chunks)
@@ -689,6 +689,7 @@ func marshallBallot(voteStr string, actor dkg.Actor, chunks int) (ptypes.Cipherv
 
 	return ballot, nil
 }
+*/
 
 // formID is hex-encoded
 func castVote(formID string, signed []byte, proxyAddr string) (string, error) {

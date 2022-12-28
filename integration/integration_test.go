@@ -427,14 +427,16 @@ func castVotesRandomly(m txManager, actor dkg.Actor, form types.Form,
 	return votes, nil
 }
 
-func marshallBallot(vote io.Reader, actor dkg.Actor, chunks int) (types.Ciphervote, error) {
 
+
+func marshallBallot(vote io.Reader, a dkg.Actor, chunks int) (types.Ciphervote, error) {
 	var ballot = make([]types.EGPair, chunks)
 
 	buf := make([]byte, 29)
 
 	for i := 0; i < chunks; i++ {
 		var K, C kyber.Point
+		//var remainder []byte
 		var err error
 
 		n, err := vote.Read(buf)
@@ -442,7 +444,8 @@ func marshallBallot(vote io.Reader, actor dkg.Actor, chunks int) (types.Ciphervo
 			return nil, xerrors.Errorf("failed to read: %v", err)
 		}
 
-		K, C, _, err = actor.Encrypt(buf[:n])
+		// Use the Encrypt function to encrypt the data
+		K, C, _, err = Encrypt(buf[:n])
 		if err != nil {
 			return types.Ciphervote{}, xerrors.Errorf("failed to encrypt the plaintext: %v", err)
 		}
@@ -455,6 +458,7 @@ func marshallBallot(vote io.Reader, actor dkg.Actor, chunks int) (types.Ciphervo
 
 	return ballot, nil
 }
+
 
 func closeForm(m txManager, formID []byte, admin string) error {
 	closeForm := &types.CloseForm{
