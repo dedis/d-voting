@@ -9,7 +9,6 @@ import lmdb, { RangeOptions } from 'lmdb';
 import xss from 'xss';
 import createMemoryStore from 'memorystore';
 import { Enforcer, newEnforcer } from 'casbin';
-import PostgresAdapter from 'casbin-pg-adapter';
 import { SequelizeAdapter } from 'casbin-sequelize-adapter';
 
 const MemoryStore = createMemoryStore(session);
