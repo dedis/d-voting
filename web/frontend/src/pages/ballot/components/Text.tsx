@@ -135,13 +135,12 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>
-      if(text.ChoicesMap.get('en')=== undefined)return;
       {language == 'en' && text.ChoicesMap.has('en') && (
         <div className="sm:pl-8 mt-2 pl-6">
           {text.ChoicesMap.get('en').map((choice, index) => choiceDisplay(choice, index))}
         </div>
       )}
-      {language == 'fr' && text.ChoicesMap.has('fr') &&  (
+      {language == 'fr' && text.ChoicesMap.has('fr') && (
         <div className="sm:pl-8 mt-2 pl-6">
           {text.ChoicesMap.get('fr').map((choice, index) => choiceDisplay(choice, index))}
         </div>

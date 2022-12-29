@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DownloadedResults, RankResults, SelectResults, TextResults } from 'types/form';
 import RankResult from './components/RankResult';
@@ -81,8 +81,6 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
   };
 
   const displayResults = (subject: Subject) => {
-    console.log(subject.Title)
-    //const sbj = JSON.parse(subject.Title);
     return (
       <div key={subject.ID}>
         <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">

@@ -200,8 +200,7 @@ const FormShow: FC = () => {
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
     try {
-      if(configObj.MainTitle === '') return;  
-      console.log('configuration.MainTitle', configObj.MainTitle)   
+      if (configObj.MainTitle === '') return;
       const ts = JSON.parse(configObj.MainTitle);
       setTitles(ts);
     } catch (e) {
@@ -219,7 +218,6 @@ const FormShow: FC = () => {
       {!loading ? (
         <>
           <div className="pt-8 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-            
             {i18n.language === 'en' && titles.en}
             {i18n.language === 'fr' && titles.fr}
             {i18n.language === 'de' && titles.de}

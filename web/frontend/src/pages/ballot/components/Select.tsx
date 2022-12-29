@@ -110,7 +110,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
       <div className="sm:pl-8 mt-2 pl-6">
         {Array.from(answers.SelectAnswers.get(select.ID).entries()).map(
           ([choiceIndex, isChecked]) => {
-            if(select.ChoicesMap.get('en') == undefined) return;
+            if (select.ChoicesMap.get('en') == undefined) return;
             if (language === 'en' && select.ChoicesMap.has('en'))
               return choiceDisplay(
                 isChecked,

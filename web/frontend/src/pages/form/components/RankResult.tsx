@@ -49,9 +49,10 @@ export const IndividualRankResult: FC<RankResultProps> = ({ rank, rankResult }) 
             <div className="flex flex-row px-2 sm:px-4 break-words max-w-xs w-max">
               <div className="mr-2 font-bold">{index + 1}:</div>
               <div>
-              {i18n.language === 'en' && rank.ChoicesMap.get('en')[rankResult[0].indexOf(index)]}
-              {i18n.language === 'fr' && rank.ChoicesMap.get('fr')[rankResult[0].indexOf(index)]}
-              {i18n.language === 'de' && rank.ChoicesMap.get('de')[rankResult[0].indexOf(index)]}</div>
+                {i18n.language === 'en' && rank.ChoicesMap.get('en')[rankResult[0].indexOf(index)]}
+                {i18n.language === 'fr' && rank.ChoicesMap.get('fr')[rankResult[0].indexOf(index)]}
+                {i18n.language === 'de' && rank.ChoicesMap.get('de')[rankResult[0].indexOf(index)]}
+              </div>
             </div>
           </React.Fragment>
         );

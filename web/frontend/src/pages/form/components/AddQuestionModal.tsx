@@ -240,14 +240,16 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                     </div>
                     <div className="pb-4">{t('mainProperties')} </div>
                     <div>
-                      <label className="block text-md mt font-medium text-gray-500">Title</label>
+                      <label className="block text-md mt font-medium text-gray-500">
+                        {t('title')}
+                      </label>
                       {language === 'en' && (
                         <input
                           value={Title}
                           onChange={handleChange()}
                           name="Title"
                           type="text"
-                          placeholder={'Enter your Title'}
+                          placeholder={t('enterTitleLg')}
                           className="my-1 px-1 w-60 ml-1 border rounded-md"
                         />
                       )}
@@ -257,7 +259,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                           onChange={handleChange()}
                           name="TitleFr"
                           type="text"
-                          placeholder={'Entrer votre Titre'}
+                          placeholder={t('enterTitleLg1')}
                           className="my-1 px-1 w-60 ml-1 border rounded-md"
                         />
                       )}
@@ -267,7 +269,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                           onChange={handleChange()}
                           name="TitleDe"
                           type="text"
-                          placeholder={'enterTitle'}
+                          placeholder={t('enterTitleLg2')}
                           className="my-1 px-1 w-60 ml-1 border rounded-md"
                         />
                       )}
@@ -280,14 +282,16 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                         ))}
                     </div>
                     <div>
-                      <label className="block text-md mt font-medium text-gray-500">Hint</label>
+                      <label className="block text-md mt font-medium text-gray-500">
+                        {t('hint')}
+                      </label>
                       {language === 'en' && (
                         <input
                           value={Hint}
                           onChange={handleChange()}
                           name="Hint"
                           type="text"
-                          placeholder={t('enterHint')}
+                          placeholder={t('enterHintLg')}
                           className="my-1 px-1 w-60 ml-1 border rounded-md"
                         />
                       )}
@@ -297,7 +301,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                           onChange={handleChange()}
                           name="HintFr"
                           type="text"
-                          placeholder={t('enterHint')}
+                          placeholder={t('enterHintLg1')}
                           className="my-1 px-1 w-60 ml-1 border rounded-md"
                         />
                       )}
@@ -307,7 +311,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                           onChange={handleChange()}
                           name="HintDe"
                           type="text"
-                          placeholder={t('enterHint')}
+                          placeholder={t('enterHintLg2')}
                           className="my-1 px-1 w-60 ml-1 border rounded-md"
                         />
                       )}
@@ -327,7 +331,9 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                               name="Choice"
                               type="text"
                               placeholder={
-                                Type !== TEXT ? `${'Choice'}` + ` ${idx + 1}` : `Answer ${idx + 1}`
+                                Type !== TEXT
+                                  ? `${t('choices')}` + ` ${idx + 1}`
+                                  : `Answer ${idx + 1}`
                               }
                               className="my-1 px-1 w-60 ml-2 border rounded-md"
                             />
@@ -366,7 +372,9 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                               name="Choice"
                               type="text"
                               placeholder={
-                                Type !== TEXT ? `${'Choix'}` + ` ${idx + 1}` : `Answer ${idx + 1}`
+                                Type !== TEXT
+                                  ? `${t('choices')}` + ` ${idx + 1}`
+                                  : `Answer ${idx + 1}`
                               }
                               className="my-1 px-1 w-60 ml-2 border rounded-md"
                             />

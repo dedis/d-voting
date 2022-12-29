@@ -50,8 +50,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
   const navigate = useNavigate();
   const { loading, configObj } = useForm(formId);
   const configuration = useConfigurationOnly(configObj);
-  
-  console.log(configuration)
+
   const [currentID, setCurrentID] = useState<string>('1');
   const [isValid, setIsValid] = useState<ValidityType>(0);
   const [internalID, setInternalID] = useState<number>(0);
@@ -80,7 +79,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
             {i18n.language === 'en' && el.en}
             {i18n.language === 'fr' && el.fr}
             {i18n.language === 'de' && el.de}
-            </h2>
+          </h2>
         </div>
         {element.Type === RANK && rankResult.has(element.ID) && (
           <IndividualRankResult

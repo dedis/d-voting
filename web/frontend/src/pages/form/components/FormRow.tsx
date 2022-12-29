@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import FormStatus from './FormStatus';
 import QuickAction from './QuickAction';
 import { default as i18n } from 'i18next';
-import { form } from 'components/utils/Endpoints';
 
 type FormRowProps = {
   form: LightFormInfo;

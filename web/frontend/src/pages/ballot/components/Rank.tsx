@@ -120,9 +120,9 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
               <ul className={rank.ID} {...provided.droppableProps} ref={provided.innerRef}>
                 {Array.from(answers.RankAnswers.get(rank.ID).entries()).map(
                   ([rankIndex, choiceIndex]) => {
-                    if(rank.ChoicesMap.get('en')=== undefined)return;
+                    if (rank.ChoicesMap.get('en') === undefined) return;
                     if (language === 'en' && rank.ChoicesMap.has('en'))
-                        return choiceDisplay(rank.ChoicesMap.get('en')[choiceIndex], rankIndex);
+                      return choiceDisplay(rank.ChoicesMap.get('en')[choiceIndex], rankIndex);
                     else if (language === 'fr' && rank.ChoicesMap.has('fr'))
                       return choiceDisplay(rank.ChoicesMap.get('fr')[choiceIndex], rankIndex);
                     else if (language === 'de' && rank.ChoicesMap.has('de'))

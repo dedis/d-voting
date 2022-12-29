@@ -44,7 +44,6 @@
     "enterMinN": "Entrer le MinN",
     "enterMaxN": "Entrer le MaxN",
     "enterRegex": "Entrer votre regex",
-    "enterTitle": "Entrer votre Titre",
     "mainProperties": "Principales propriétés",
     "additionalProperties": "Propriétés additionnels",
     "removeSubject": "Suprimer un sujet",
@@ -96,6 +95,9 @@
     "enterSubjectTitleLg1": "Entrer le Titre du sujet en Français",
     "enterSubjectTitleLg": "Entrer le Titre du sujet en Anglais",
     "enterSubjectTitleLg2": "Entrer le Titre du sujet en Allemand",
+    "enterTitleLg1": "Entrer le Titre en Français",
+    "enterTitleLg": "Entrer le Titre en Anglais",
+    "enterTitleLg2": "Entrer le Titre en Allemand",
     "errorCandidates": "Vous devez ajouter au moins un candidat!",
     "errorNewCandidate": "Vous êtes de sûr de ne pas vouloir ajouter ",
     "errorRetrievingForms": "Une erreur semble s'être produite lors de la récupération des sondages sur notre serveur. Contactez l'administrateur de ce site. Erreur: ",
@@ -264,6 +266,11 @@
     "actionTextVoter2": "Les résultats du sondage ne sont pas encore disponible.",
     "choice": "Choix",
     "logoutWarning": "Vous êtes sur le point de vous déconnecter. Êtes vous sûr de vouloir continuer ?",
-    "continue": "Continuer"
+    "continue": "Continuer",
+    "enterHintLg": "Entrer une indication en Anglais (optionnel)",
+    "enterHintLg1": "Entrer une indication en Français (optionnel)",
+    "enterHintLg2": "Entrer une indication en Allemand (optionnel)",
+    "hint": "Indication",
+    "invalidInput": "Entrer s'il vous plaît un nombre entre 1 et {{max}}"
   }
 }
