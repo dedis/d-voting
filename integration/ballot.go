@@ -42,7 +42,8 @@ func ballotIsNull(ballot types.Ballot) bool {
 		ballot.TextResultIDs == nil && ballot.TextResult == nil
 }
 
-// castVotesRandomly chooses numberOfVotes predefined ballots randomly  and cast them
+// castVotesRandomly chooses numberOfVotes predefined ballots randomly
+// and cast them
 func castVotesRandomly(m txManager, actor dkg.Actor, form types.Form,
 	numberOfVotes int) ([]types.Ballot, error) {
 
@@ -230,9 +231,6 @@ func encryptManual(message []byte, pubkey kyber.Point) (K, C kyber.Point, remain
 	return K, C, remainder, nil
 }
 
-// chunksPerBallot returns the number of chunks per ballot
-func chunksPerBallot(size int) int { return (size-1)/29 + 1 }
-
 // encodeBallotID encodes the ballotID
 func encodeBallotID(ID string) types.ID {
 	return types.ID(base64.StdEncoding.EncodeToString([]byte(ID)))
@@ -281,7 +279,8 @@ func marshallBallotManual(voteStr string, pubkey kyber.Point, chunks int) (ptype
 	return ballot, nil
 }
 
-// checkBallots check that the decrypted ballots are correct and match the casted votes
+// checkBallots check that the decrypted ballots are correct 
+// and match the casted votes
 func checkBallots(decryptedBallots, castedVotes []types.Ballot, t *testing.T) {
 	require.Len(t, decryptedBallots, len(castedVotes))
 
