@@ -1,5 +1,6 @@
 import { ENDPOINT_GET_TEQ_KEY } from 'components/utils/Endpoints';
-import { FlashLevel, FlashState, RedirectToLogin, setRedir } from 'index';
+import { FlashLevel, FlashState } from 'index';
+import { setRedirectToLogin } from './loginRedirectLocation';
 
 // The backend will provide the client the URL to make a Tequila authentication.
 // We therefore redirect to this address.
@@ -7,7 +8,7 @@ const handleLogin = async (fctx: FlashState) => {
   try {
     const res = await fetch(ENDPOINT_GET_TEQ_KEY);
 
-    setRedir(window.location.pathname);
+    setRedirectToLogin(window.location.pathname);
 
     if (res.status !== 200) {
       const txt = await res.text();

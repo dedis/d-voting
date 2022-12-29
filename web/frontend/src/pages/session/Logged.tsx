@@ -1,4 +1,5 @@
-import { AuthContext, FlashContext, FlashLevel, RedirectToLogin } from 'index';
+import { AuthContext, FlashContext, FlashLevel } from 'index';
+import { getRedirectToLogin } from 'pages/session/loginRedirectLocation';
 import React, { FC, useContext, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -19,7 +20,7 @@ const Logged: FC = () => {
       fctx.addMessage(t('notLoggedIn'), FlashLevel.Error);
     }
 
-    navigate(RedirectToLogin);
+    navigate(getRedirectToLogin());
   });
 
   return <></>;
