@@ -51,7 +51,7 @@ class InternalDKGInfo {
 
     return (
       this.error.Title + ' - ' + this.error.Code + ' - ' + this.error.Message
-    );     
+    );
   }
 
   getStatus(): NodeStatus {
