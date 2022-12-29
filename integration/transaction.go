@@ -68,7 +68,6 @@ func pollTxnInclusion(maxPollCount int, interPollWait time.Duration, proxyAddr, 
 		if err != nil {
 			return false, xerrors.Errorf("failed to read response body: %v", err)
 		}
-		t.Log("Response body: ", string(body))
 		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected status: %s", body)
 
 		// get the body of the response as json
