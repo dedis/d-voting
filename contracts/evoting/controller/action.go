@@ -51,7 +51,7 @@ const (
 	FormPathSlash          = formPath + "/"
 	formIDPath             = FormPathSlash + "{formID}"
 	transactionSlash       = "/evoting/transactions/"
-	transactionPath        = transactionSlash + "{txID}"
+	transactionPath        = transactionSlash + "{token}"
 	unexpectedStatus       = "unexpected status: %s, body: %s"
 	failRetrieveDecryption = "failed to retrieve decryption key: %v"
 	selectString           = "select:"

@@ -52,7 +52,7 @@ func pollTxnInclusion(maxPollCount int, interPollWait time.Duration, proxyAddr, 
 			t.Logf("Polling for transaction inclusion: %d/%d", i, maxPollCount)
 		}
 		timeBegin := time.Now()
-		
+
 
 		req, err := http.NewRequest(http.MethodGet, proxyAddr+"/evoting/transactions/"+token, bytes.NewBuffer([]byte("")))
 		if err != nil {
@@ -68,7 +68,8 @@ func pollTxnInclusion(maxPollCount int, interPollWait time.Duration, proxyAddr, 
 		if err != nil {
 			return false, xerrors.Errorf("failed to read response body: %v", err)
 		}
-		require.Equal(t, resp.StatusCode, http.StatusOK, "unexpected status: %s", body)
+		t.Log("Response body: ", string(body))
+		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected status: %s", body)
 
 		// get the body of the response as json
 		var result txnmanager.TransactionClientInfo
