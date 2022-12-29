@@ -502,16 +502,14 @@ func (h *Handler) handleDecryptRequest(formID string) error {
 
 		accepted, msg := watchTx(events, tx.GetID())
 
-		if !accepted {
-			err = h.txmnger.Sync()
-			if err != nil {
-				return xerrors.Errorf("failed to sync manager: %v", err)
-			}
-		}
-
 		if accepted {
 			dela.Logger.Info().Msgf("pubShares accepted on the chain (index: %d)", h.privShare.I)
 			return nil
+		}
+
+		err = h.txmnger.Sync()
+		if err != nil {
+			return xerrors.Errorf("failed to sync manager: %v", err)
 		}
 
 		dela.Logger.Info().Msgf("submission of pubShares denied: %s", msg)
