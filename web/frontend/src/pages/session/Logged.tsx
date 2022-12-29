@@ -1,6 +1,5 @@
 import { AuthContext, FlashContext, FlashLevel } from 'index';
-import { getRedirectToLogin } from 'pages/session/loginRedirectLocation';
-import React, { FC, useContext, useEffect } from 'react';
+import { FC, useContext, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,14 +12,31 @@ const Logged: FC = () => {
   const authCtx = useContext(AuthContext);
   const fctx = useContext(FlashContext);
 
+  const getCookie = () => {
+    let name = 'redirect' + '=';
+    let decodedCookie = decodeURIComponent(document.cookie);
+    let ca = decodedCookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return '';
+  };
+
   useEffect(() => {
     if (authCtx.isLogged) {
       fctx.addMessage(t('loggedIn'), FlashLevel.Info);
     } else {
       fctx.addMessage(t('notLoggedIn'), FlashLevel.Error);
     }
-
-    navigate(getRedirectToLogin());
+    const redir = getCookie();
+    console.log('Logged: redirecting to', redir);
+    navigate(redir);
   });
 
   return <></>;
