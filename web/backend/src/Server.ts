@@ -14,7 +14,6 @@ import { SequelizeAdapter } from 'casbin-sequelize-adapter';
 const MemoryStore = createMemoryStore(session);
 const SUBJECT_ROLES = 'roles';
 const SUBJECT_PROXIES = 'proxies';
-const SUBJECT_ELECTION = 'election';
 
 const ACTION_LIST = 'list';
 const ACTION_ACTION_REMOVE = 'remove';
@@ -22,7 +21,7 @@ const ACTION_ADD = 'add';
 const ACTION_PUT = 'put';
 const ACTION_POST = 'post';
 const ACTION_DELETE = 'delete';
-const ACTION_CREATE = 'create';
+const ACTION_OWN = 'own';
 // store is used to store the session
 const store = new MemoryStore({
   checkPeriod: 86400000, // prune expired entries every 24h
@@ -541,14 +540,14 @@ app.put('/api/evoting/authorizations', (req, res) => {
   const formID = req.body.formID;
 
   try {
-    enf.addPolicy(String(req.session.userid), formID, ACTION_CREATE);
+    enf.addPolicy(String(req.session.userid), formID, ACTION_OWN);
   } catch (e) {
     console.log('error adding policy', e);
   }
 });
 // Secure /api/evoting to admins and operators
 /* app.use('/api/evoting/*', (req, res, next) => {
-  if (!isAuthorized(req.session.userid, SUBJECT_ELECTION, ACTION_CREATE)) {
+  if (!isAuthorized(req.session.userid, SUBJECT_ELECTION, ACTION_OWN)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
   }
@@ -569,7 +568,7 @@ app.put('/api/evoting/forms/:formID', (req, res, next) => {
   const { formID } = req.params;
   console.log('hey', formID);
   console.log("I'm testing the auth");
-  if (!isAuthorized(req.session.userid, formID, ACTION_CREATE)) {
+  if (!isAuthorized(req.session.userid, formID, ACTION_OWN)) {
     res.status(400).send('Unauthorized');
     return;
   }
@@ -577,37 +576,27 @@ app.put('/api/evoting/forms/:formID', (req, res, next) => {
 });
 
 app.post('/api/evoting/services/dkg/actors', (req, res, next) => {
-  console.log("I'm testing the auth");
-  console.log('req.body', req.body);
   const formID = req.body.FormID;
-  console.log('formid', formID);
   if (formID === undefined) {
     return;
   }
-  if (!isAuthorized(req.session.userid, formID, ACTION_CREATE)) {
-    console.log('not authorized2');
+  if (!isAuthorized(req.session.userid, formID, ACTION_OWN)) {
     res.status(400).send('Unauthorized');
     return;
   }
   next();
 });
 app.use('/api/evoting/services/dkg/actors/:formID', (req, res, next) => {
-  console.log("I'm testing the auth 2");
   const { formID } = req.params;
-  console.log('hey', formID);
-  if (!isAuthorized(req.session.userid, formID, ACTION_CREATE)) {
-    console.log('not authorized');
+  if (!isAuthorized(req.session.userid, formID, ACTION_OWN)) {
     res.status(400).send('Unauthorized');
     return;
   }
   next();
 });
 app.use('/api/evoting/services/shuffle/:formID', (req, res, next) => {
-  console.log("I'm testing the auth 2");
   const { formID } = req.params;
-  console.log('hey', formID);
-  if (!isAuthorized(req.session.userid, formID, ACTION_CREATE)) {
-    console.log('not authorized');
+  if (!isAuthorized(req.session.userid, formID, ACTION_OWN)) {
     res.status(400).send('Unauthorized');
     return;
   }
