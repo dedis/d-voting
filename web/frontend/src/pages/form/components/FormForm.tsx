@@ -53,11 +53,11 @@ const FormForm: FC<FormFormProps> = () => {
   const [postError, setPostError] = useState(null);
   const [, setIsPosting] = useState(false);
   const sendFetchRequest = usePostCall(setPostError);
-  const AuthorizationUpdate = (formID: string): Promise<boolean> => {
+  const AuthorizationUpdate = (FormID: string): Promise<boolean> => {
     const req = {
       method: 'PUT',
       body: JSON.stringify({
-        formID,
+        FormID,
       }),
       headers: {
         'Content-Type': 'application/json',
