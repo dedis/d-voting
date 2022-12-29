@@ -16,8 +16,7 @@ const Logged: FC = () => {
     let name = 'redirect' + '=';
     let decodedCookie = decodeURIComponent(document.cookie);
     let ca = decodedCookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-      let c = ca[i];
+    for (let c of ca) {
       while (c.charAt(0) == ' ') {
         c = c.substring(1);
       }
@@ -25,7 +24,7 @@ const Logged: FC = () => {
         return c.substring(name.length, c.length);
       }
     }
-    return '';
+    return '/'; // default value is the home page
   };
 
   useEffect(() => {
@@ -35,7 +34,6 @@ const Logged: FC = () => {
       fctx.addMessage(t('notLoggedIn'), FlashLevel.Error);
     }
     const redir = getCookie();
-    console.log('Logged: redirecting to', redir);
     navigate(redir);
   });
 
