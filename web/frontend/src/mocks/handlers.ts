@@ -171,9 +171,12 @@ export const handlers = [
       Voters,
     });
 
+    const BallotID = uid();
+
     return res(
       ctx.status(200),
       ctx.json({
+        BallotID: BallotID,
         Ballot: Ballot,
       })
     );
