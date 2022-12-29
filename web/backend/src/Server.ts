@@ -536,7 +536,7 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
         .send(`failed to proxy request: ${req.method} ${uri} - ${error.message} - ${resp}`);
     });
 }
-app.put('/api/evoting/authorizations', (req, res) => {
+app.put('/api/evoting/authorizations', (req) => {
   const formID = req.body.formID;
 
   try {
