@@ -267,10 +267,10 @@
     "choice": "Choix",
     "logoutWarning": "Vous êtes sur le point de vous déconnecter. Êtes vous sûr de vouloir continuer ?",
     "continue": "Continuer",
+    "hint": "Indication",
     "enterHintLg": "Entrer une indication en Anglais (optionnel)",
     "enterHintLg1": "Entrer une indication en Français (optionnel)",
     "enterHintLg2": "Entrer une indication en Allemand (optionnel)",
-    "hint": "Indication",
     "invalidInput": "Entrer s'il vous plaît un nombre entre 1 et {{max}}"
   }
 }
