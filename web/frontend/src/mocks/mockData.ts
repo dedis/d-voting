@@ -43,6 +43,7 @@ const mockForm1: any = {
               MaxN: 2,
               MinN: 1,
               Choices: ['tomato', 'salad', 'onion'],
+              Hint: '',
             },
           ],
           Ranks: [
@@ -52,6 +53,7 @@ const mockForm1: any = {
               MaxN: 3,
               MinN: 3,
               Choices: ['BC', 'SV', 'Parmentier'],
+              Hint: '',
             },
           ],
         },
@@ -64,6 +66,7 @@ const mockForm1: any = {
           MaxN: 1,
           MinN: 1,
           Choices: ['1', '2', '3', '4', '5'],
+          Hint: '',
         },
         {
           Title: 'How did you find the teaching ?',
@@ -71,6 +74,7 @@ const mockForm1: any = {
           MaxN: 1,
           MinN: 1,
           Choices: ['bad', 'normal', 'good'],
+          Hint: '',
         },
       ],
       Texts: [
@@ -82,6 +86,7 @@ const mockForm1: any = {
           MinN: 1,
           Regex: '',
           Choices: ['TA1', 'TA2'],
+          Hint: '',
         },
       ],
     },
@@ -129,6 +134,7 @@ const mockForm2: any = {
           MaxN: 1,
           MinN: 1,
           Choices: ['1', '2', '3', '4', '5'],
+          Hint: '',
         },
       ],
       Texts: [
@@ -140,6 +146,7 @@ const mockForm2: any = {
           MinN: 2,
           Choices: ['TA1', 'TA2'],
           Regex: '^[A-Z][a-z]+$',
+          Hint: '',
         },
       ],
 
@@ -157,6 +164,7 @@ const mockForm2: any = {
           MaxN: 3,
           MinN: 0,
           Choices: ['tomato', 'salad', 'onion', 'falafel'],
+          Hint: '',
         },
       ],
 
@@ -167,6 +175,7 @@ const mockForm2: any = {
           MaxN: 4,
           MinN: 1,
           Choices: ['Esplanade', 'Giacometti', 'Arcadie', 'Montreux Jazz Cafe'],
+          Hint: '',
         },
         {
           Title: 'IN or SC ?',
@@ -174,6 +183,7 @@ const mockForm2: any = {
           MaxN: 2,
           MinN: 1,
           Choices: ['IN', 'SC'],
+          Hint: '',
         },
       ],
       Texts: [],
@@ -200,6 +210,7 @@ const mockForm3: any = {
           MaxLength: 50,
           Regex: '',
           Choices: ['Firstname', 'Main 🍕', 'Drink 🧃', 'Dessert 🍰'],
+          Hint: '',
         },
       ],
       Subjects: [],
