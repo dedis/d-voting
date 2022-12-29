@@ -17,11 +17,12 @@ const Logged: FC = () => {
     let decodedCookie = decodeURIComponent(document.cookie);
     let ca = decodedCookie.split(';');
     for (let c of ca) {
-      while (c.charAt(0) == ' ') {
-        c = c.substring(1);
+      let char = c;
+      while (char.charAt(0) == ' ') {
+        char = char.substring(1);
       }
-      if (c.indexOf(name) == 0) {
-        return c.substring(name.length, c.length);
+      if (char.indexOf(name) == 0) {
+        return char.substring(name.length, char.length);
       }
     }
     return '/'; // default value is the home page
