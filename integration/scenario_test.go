@@ -63,13 +63,6 @@ func getScenarioTest(numNodes int, numVotes int, numForm int) func(*testing.T) {
 	}
 }
 
-
-
-
-
-
-
-
 func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray []string, t *testing.T, numForm int, castFunc func(int, int, string, string, []string, kyber.Point, kyber.Scalar, *testing.T) []types.Ballot) {
 	defer wg.Done()
 	rand.Seed(0)
@@ -135,14 +128,14 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 	// Get form public key
 	pubKey, err := encoding.StringHexToPoint(suite, formpubkey)
 	require.NoError(t, err)
-	
-    form := types.Form{
- 		Pubkey:  pubKey, 
- 		Status: types.Status(formStatus),
- 		BallotSize: getFormResponse.BallotSize,
- 	}
 
-	chunksPerBallot :=  form.ChunksPerBallot()
+	form := types.Form{
+		Pubkey:     pubKey,
+		Status:     types.Status(formStatus),
+		BallotSize: getFormResponse.BallotSize,
+	}
+
+	chunksPerBallot := form.ChunksPerBallot()
 
 	t.Logf("Publickey of the form : " + formpubkey)
 	t.Logf("Status of the form : %v", formStatus)
@@ -150,7 +143,6 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 	require.NoError(t, err)
 	t.Logf("BallotSize of the form : %v", BallotSize)
 	t.Logf("chunksPerBallot of the form : %v", chunksPerBallot)
-
 
 	// ##################################### CAST BALLOTS ######################
 

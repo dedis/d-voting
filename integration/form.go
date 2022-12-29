@@ -96,6 +96,7 @@ func createFormScenario(contentType, proxy string, secret kyber.Scalar, t *testi
 	err = json.Unmarshal(body, &createFormResponse)
 	require.NoError(t, err)
 
+	t.Log("response token:", createFormResponse.Token)
 	formID := createFormResponse.FormID
 
 	// wait for the election to be created

@@ -52,6 +52,7 @@ func pollTxnInclusion(maxPollCount int, interPollWait time.Duration, proxyAddr, 
 			t.Logf("Polling for transaction inclusion: %d/%d", i, maxPollCount)
 		}
 		timeBegin := time.Now()
+		
 
 		req, err := http.NewRequest(http.MethodGet, proxyAddr+"/evoting/transactions/"+token, bytes.NewBuffer([]byte("")))
 		if err != nil {
