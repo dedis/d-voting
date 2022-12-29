@@ -31,7 +31,7 @@ import { NodeStatus } from 'types/node';
 
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;
-const fakeToken = "fake token";
+const fakeToken = 'fake token';
 
 const { mockForms, mockResults, mockDKG, mockNodeProxyAddresses } = setupMockForm();
 
@@ -110,7 +110,10 @@ export const handlers = [
     const { FormID } = req.params;
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    return res(ctx.status(200), ctx.json({ FormID: mockForms.get(FormID as ID), Token: fakeToken }));
+    return res(
+      ctx.status(200),
+      ctx.json({ FormID: mockForms.get(FormID as ID), Token: fakeToken })
+    );
   }),
 
   rest.post(endpoints.newForm, async (req, res, ctx) => {
