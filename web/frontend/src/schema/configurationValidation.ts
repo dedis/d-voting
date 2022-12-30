@@ -280,10 +280,16 @@ const textsSchema = yup.object({
             message: `MaxLength should be an integer in texts [objectID: ${ID}]`,
           });
         }
-        if (MaxLength < 0) {
+        if (MaxLength <= 0) {
           return this.createError({
             path,
             message: `MaxLength should be at least equal to 1 in texts [objectID: ${ID}]`,
+          });
+        }
+        if (MaxLength > 1000) {
+          return this.createError({
+            path,
+            message: `MaxLength should be less than 1000 in texts [objectID: ${ID}]`,
           });
         }
         return true;
