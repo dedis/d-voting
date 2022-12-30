@@ -109,6 +109,13 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
               placeholder={t('enterMaxLength')}
               className="my-1 px-1 w-32 ml-1 border rounded-md"
             />
+            <div className="text-red-600">
+              {errors
+                .filter((err) => err.startsWith('MaxLength'))
+                .map((v, i) => (
+                  <div key={i}>{v}</div>
+                ))}
+            </div>
             <label className="block text-md font-medium text-gray-500">Regex</label>
             <input
               value={tq.Regex}
@@ -264,7 +271,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                         />
                         <div className="text-red-600">
                           {errors
-                            .filter((err) => err.startsWith('Max'))
+                            .filter((err) => err.startsWith('Max '))
                             .map((v, i) => (
                               <div key={i}>{v}</div>
                             ))}
