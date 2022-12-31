@@ -17,11 +17,17 @@ import (
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/encoding"
 )
 
 const defaultNodes = 5
+
+type testType int
+
+const (
+	SCENARIO testType = iota
+	LOAD
+)
 
 // Check the shuffled votes versus the cast votes on a few nodes
 func TestScenario(t *testing.T) {
@@ -52,7 +58,7 @@ func getScenarioTest(numNodes int, numVotes int, numForm int) func(*testing.T) {
 			t.Log("Starting worker", i)
 			wg.Add(1)
 
-			go startFormProcess(&wg, numNodes, numVotes, proxyList, t, numForm, castVotesScenario(numVotes))
+			go startFormProcess(&wg, numNodes, numVotes, 0 , proxyList, t, numForm, SCENARIO)
 			time.Sleep(2 * time.Second)
 
 		}
@@ -63,7 +69,7 @@ func getScenarioTest(numNodes int, numVotes int, numForm int) func(*testing.T) {
 	}
 }
 
-func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray []string, t *testing.T, numForm int, castFunc func(int, int, string, string, []string, kyber.Point, kyber.Scalar, *testing.T) []types.Ballot) {
+func startFormProcess(wg *sync.WaitGroup, numNodes, numSec, numVotes int, proxyArray []string, t *testing.T, numForm int, testType testType) {
 	defer wg.Done()
 	rand.Seed(0)
 
@@ -150,7 +156,14 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 
 	oldTime = time.Now()
 
-	votesfrontend := castFunc(BallotSize, chunksPerBallot, formID, contentType, proxyArray, pubKey, secret, t)
+	var votesfrontend []types.Ballot
+
+	switch testType {
+		case SCENARIO:
+			votesfrontend = castVotesScenario(numVotes, BallotSize, chunksPerBallot, formID, contentType, proxyArray, pubKey, secret, t)
+		case LOAD:
+			votesfrontend = castVotesLoad(numVotes/numSec, numSec, BallotSize, chunksPerBallot, formID, contentType, proxyArray, pubKey, secret, t)
+	}
 
 	timeTable[step] = time.Since(oldTime).Seconds()
 	t.Logf("Casting %v ballots takes: %v sec", numVotes, timeTable[step])
@@ -309,12 +322,7 @@ func startFormProcess(wg *sync.WaitGroup, numNodes int, numVotes int, proxyArray
 		tmpComp := ballotIntem
 		tmpCount = false
 		for _, voteFront := range votesfrontend {
-			// t.Logf("voteFront: %v", voteFront)
-			// t.Logf("tmpComp: %v", tmpComp)
-
 			tmpCount = reflect.DeepEqual(tmpComp, voteFront)
-			// t.Logf("tmpCount: %v", tmpCount)
-
 			if tmpCount {
 				break
 			}

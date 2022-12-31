@@ -279,7 +279,7 @@ func marshallBallotManual(voteStr string, pubkey kyber.Point, chunks int) (ptype
 	return ballot, nil
 }
 
-// checkBallots checks that the decrypted ballots are correct 
+// checkBallots checks that the decrypted ballots are correct
 // and match the casted votes
 func checkBallots(decryptedBallots, castedVotes []types.Ballot, t *testing.T) {
 	require.Len(t, decryptedBallots, len(castedVotes))
@@ -302,90 +302,89 @@ func checkBallots(decryptedBallots, castedVotes []types.Ballot, t *testing.T) {
 
 // castVotesLoad casts vote for the load test and returns a function to provide
 // a common implementation for the load test and the scenario test
-func castVotesLoad(numVotesPerSec, numSec int) func(BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
-	return (func(BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
+func castVotesLoad(numVotesPerSec, numSec, BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
 
-		t.Log("cast ballots")
+	t.Log("cast ballots")
 
-		// make List of identical valid ballots
-		b1 := string("select:" + encodeBallotID("bb") + ":0,0,1,0\n" + "text:" + encodeBallotID("ee") + ":eWVz\n\n") //encoding of "yes"
+	// make List of identical valid ballots
+	b1 := string("select:" + encodeBallotID("bb") + ":0,0,1,0\n" + "text:" + encodeBallotID("ee") + ":eWVz\n\n") //encoding of "yes"
 
-		numVotes := numVotesPerSec * numSec
+	numVotes := numVotesPerSec * numSec
 
-		// create all the ballots
-		ballotList := make([]string, numVotes)
-		for i := 1; i <= numVotes; i++ {
-			ballotList[i-1] = b1
+	// create all the ballots
+	ballotList := make([]string, numVotes)
+	for i := 1; i <= numVotes; i++ {
+		ballotList[i-1] = b1
+	}
+
+	votesfrontend := make([]types.Ballot, numVotes)
+
+	fakeConfiguration := fake.BasicConfiguration
+
+	for i := 0; i < numVotes; i++ {
+
+		var bMarshal types.Ballot
+		form := types.Form{
+			Configuration: fakeConfiguration,
+			FormID:        formID,
+			BallotSize:    BallotSize,
 		}
 
-		votesfrontend := make([]types.Ballot, numVotes)
-
-		fakeConfiguration := fake.BasicConfiguration
-
-		for i := 0; i < numVotes; i++ {
-
-			var bMarshal types.Ballot
-			form := types.Form{
-				Configuration: fakeConfiguration,
-				FormID:        formID,
-				BallotSize:    BallotSize,
-			}
-
-			err := bMarshal.Unmarshal(ballotList[i], form)
-			require.NoError(t, err)
-
-			votesfrontend[i] = bMarshal
-		}
-		proxyCount := len(proxyArray)
-
-		// all ballots are identical
-		ballot, err := marshallBallotManual(b1, pubKey, chunksPerBallot)
+		err := bMarshal.Unmarshal(ballotList[i], form)
 		require.NoError(t, err)
 
-		// atomic counter
-		var includedVoteCount uint64
+		votesfrontend[i] = bMarshal
+	}
+	proxyCount := len(proxyArray)
 
-		for i := 0; i < numSec; i++ {
-			// send the votes asynchrounously and wait for the response
+	// all ballots are identical
+	ballot, err := marshallBallotManual(b1, pubKey, chunksPerBallot)
+	require.NoError(t, err)
 
-			for j := 0; j < numVotesPerSec; j++ {
-				idx := i*numVotesPerSec + j
-				randomproxy := proxyArray[rand.Intn(proxyCount)]
-				castVoteRequest := ptypes.CastVoteRequest{
-					UserID: "user" + strconv.Itoa(idx),
-					Ballot: ballot,
+	// atomic counter
+	var includedVoteCount uint64
+
+	for i := 0; i < numSec; i++ {
+		// send the votes asynchrounously and wait for the response
+
+		for j := 0; j < numVotesPerSec; j++ {
+			idx := i*numVotesPerSec + j
+			randomproxy := proxyArray[rand.Intn(proxyCount)]
+			castVoteRequest := ptypes.CastVoteRequest{
+				UserID: "user" + strconv.Itoa(idx),
+				Ballot: ballot,
+			}
+			// cast asynchrounously and increment includedVoteCount
+			// if the cast was succesfull
+			go func() {
+				accepted := cast(idx, castVoteRequest, contentType, randomproxy, formID, secret, false, t)
+				if accepted {
+					atomic.AddUint64(&includedVoteCount, 1)
 				}
-				// cast asynchrounously and increment includedVoteCount
-				// if the cast was succesfull
-				go func() {
-					accepted := cast(idx, castVoteRequest, contentType, randomproxy, formID, secret, false, t)
-					if accepted {
-						atomic.AddUint64(&includedVoteCount, 1)
-					}
-				}()
-			}
-			t.Logf("casted votes %d", (i+1)*numVotesPerSec)
-			time.Sleep(time.Second)
+			}()
+		}
+		t.Logf("casted votes %d", (i+1)*numVotesPerSec)
+		time.Sleep(time.Second)
 
+	}
+
+	// wait until includedVoteCount == numVotes
+	// i.e. that every votes has been included
+	for {
+		if atomic.LoadUint64(&includedVoteCount) == uint64(numVotes) {
+			break
 		}
 
-		// wait until includedVoteCount == numVotes
-		// i.e. that every votes has been included
-		for {
-			if atomic.LoadUint64(&includedVoteCount) == uint64(numVotes) {
-				break
-			}
+		t.Logf("Waiting... included votes %d", atomic.LoadUint64(&includedVoteCount))
+		infos := getFormInfo(proxyArray[0], formID, t)
+		// check that our counter is synchronized with the blockchain
+		t.Logf("Voters count: %v", len(infos.Voters))
+		// check every 10 seconds
+		time.Sleep(time.Second * 10)
+	}
 
-			t.Logf("Waiting... included votes %d", atomic.LoadUint64(&includedVoteCount))
-			infos := getFormInfo(proxyArray[0], formID, t)
-			// check that our counter is synchronized with the blockchain
-			t.Logf("Voters count: %v", len(infos.Voters))
-			// check every 10 seconds
-			time.Sleep(time.Second * 10)
-		}
+	return votesfrontend
 
-		return votesfrontend
-	})
 }
 
 // cast casts a vote for the load test
@@ -421,72 +420,70 @@ func cast(idx int, castVoteRequest ptypes.CastVoteRequest, contentType, randompr
 
 // castVotesScenario casts votes for the scenario test and returns a function to
 // provide a common implementation for the load test and the scenario test
-func castVotesScenario(numVotes int) func(BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
-	return (func(BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
-		// make List of ballots
-		b1 := string("select:" + encodeBallotID("bb") + ":0,0,1,0\n" + "text:" + encodeBallotID("ee") + ":eWVz\n\n") //encoding of "yes"
+func castVotesScenario(numVotes, BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
+	// make List of ballots
+	b1 := string("select:" + encodeBallotID("bb") + ":0,0,1,0\n" + "text:" + encodeBallotID("ee") + ":eWVz\n\n") //encoding of "yes"
 
-		ballotList := make([]string, numVotes)
-		for i := 1; i <= numVotes; i++ {
-			ballotList[i-1] = b1
+	ballotList := make([]string, numVotes)
+	for i := 1; i <= numVotes; i++ {
+		ballotList[i-1] = b1
+	}
+
+	votesfrontend := make([]types.Ballot, numVotes)
+
+	fakeConfiguration := fake.BasicConfiguration
+
+	for i := 0; i < numVotes; i++ {
+
+		var bMarshal types.Ballot
+		form := types.Form{
+			Configuration: fakeConfiguration,
+			FormID:        formID,
+			BallotSize:    BallotSize,
 		}
 
-		votesfrontend := make([]types.Ballot, numVotes)
+		err := bMarshal.Unmarshal(ballotList[i], form)
+		require.NoError(t, err)
 
-		fakeConfiguration := fake.BasicConfiguration
+		votesfrontend[i] = bMarshal
+	}
 
-		for i := 0; i < numVotes; i++ {
+	for i := 0; i < numVotes; i++ {
 
-			var bMarshal types.Ballot
-			form := types.Form{
-				Configuration: fakeConfiguration,
-				FormID:        formID,
-				BallotSize:    BallotSize,
-			}
+		ballot, err := marshallBallotManual(ballotList[i], pubKey, chunksPerBallot)
+		require.NoError(t, err)
 
-			err := bMarshal.Unmarshal(ballotList[i], form)
-			require.NoError(t, err)
-
-			votesfrontend[i] = bMarshal
+		castVoteRequest := ptypes.CastVoteRequest{
+			UserID: "user" + strconv.Itoa(i+1),
+			Ballot: ballot,
 		}
 
-		for i := 0; i < numVotes; i++ {
+		randomproxy := proxyArray[rand.Intn(len(proxyArray))]
+		t.Logf("cast ballot to proxy %v", randomproxy)
 
-			ballot, err := marshallBallotManual(ballotList[i], pubKey, chunksPerBallot)
-			require.NoError(t, err)
+		signed, err := createSignedRequest(secret, castVoteRequest)
+		require.NoError(t, err)
 
-			castVoteRequest := ptypes.CastVoteRequest{
-				UserID: "user" + strconv.Itoa(i+1),
-				Ballot: ballot,
-			}
+		resp, err := http.Post(randomproxy+"/evoting/forms/"+formID+"/vote", contentType, bytes.NewBuffer(signed))
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected status: %s", resp.Status)
 
-			randomproxy := proxyArray[rand.Intn(len(proxyArray))]
-			t.Logf("cast ballot to proxy %v", randomproxy)
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
 
-			signed, err := createSignedRequest(secret, castVoteRequest)
-			require.NoError(t, err)
+		var infos txnmanager.TransactionClientInfo
+		err = json.Unmarshal(body, &infos)
+		require.NoError(t, err)
 
-			resp, err := http.Post(randomproxy+"/evoting/forms/"+formID+"/vote", contentType, bytes.NewBuffer(signed))
-			require.NoError(t, err)
-			require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected status: %s", resp.Status)
+		// send the votes 1 by 1 and wait for it to be included
+		// to send the next one
+		ok, err := pollTxnInclusion(60, 1*time.Second, randomproxy, infos.Token, t)
+		require.NoError(t, err)
+		require.True(t, ok)
 
-			body, err := io.ReadAll(resp.Body)
-			require.NoError(t, err)
+		resp.Body.Close()
 
-			var infos txnmanager.TransactionClientInfo
-			err = json.Unmarshal(body, &infos)
-			require.NoError(t, err)
+	}
 
-			// send the votes 1 by 1 and wait for it to be included
-			// to send the next one
-			ok, err := pollTxnInclusion(60, 1*time.Second, randomproxy, infos.Token, t)
-			require.NoError(t, err)
-			require.True(t, ok)
-
-			resp.Body.Close()
-
-		}
-
-		return votesfrontend
-	})
+	return votesfrontend
 }

@@ -40,7 +40,7 @@ func getLoadTest(numNodes, numVotesPerSec, numSec, numForm int) func(*testing.T)
 			t.Log("Starting worker", i)
 			wg.Add(1)
 
-			go startFormProcess(&wg, numNodes, numVotesPerSec*numSec, proxyList, t, numForm, castVotesLoad(numVotesPerSec, numSec))
+			go startFormProcess(&wg, numNodes, numVotesPerSec*numSec,numSec, proxyList, t, numForm, LOAD)
 			time.Sleep(2 * time.Second)
 
 		}
