@@ -8,7 +8,7 @@ const handleLogin = async (fctx: FlashState) => {
     const res = await fetch(ENDPOINT_GET_TEQ_KEY);
 
     const d = new Date();
-    d.setTime(d.getTime() + 20000);
+    d.setTime(d.getTime() + 120000);
     let expires = 'expires=' + d.toUTCString();
     document.cookie = 'redirect' + '=' + window.location.pathname + ';' + expires + ';path=/';
 
