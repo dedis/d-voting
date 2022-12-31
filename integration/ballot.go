@@ -151,7 +151,7 @@ func castBadVote(m txManager, actor dkg.Actor, form types.Form, numberOfBadVotes
 	return nil
 }
 
-// marshallBallot marshall a ballot and encrypt it
+// marshallBallot marshals a ballot and encrypts it
 func marshallBallot(vote io.Reader, actor dkg.Actor, chunks int) (types.Ciphervote, error) {
 
 	var ballot = make([]types.EGPair, chunks)
@@ -279,7 +279,7 @@ func marshallBallotManual(voteStr string, pubkey kyber.Point, chunks int) (ptype
 	return ballot, nil
 }
 
-// checkBallots check that the decrypted ballots are correct 
+// checkBallots checks that the decrypted ballots are correct 
 // and match the casted votes
 func checkBallots(decryptedBallots, castedVotes []types.Ballot, t *testing.T) {
 	require.Len(t, decryptedBallots, len(castedVotes))
@@ -300,9 +300,8 @@ func checkBallots(decryptedBallots, castedVotes []types.Ballot, t *testing.T) {
 
 }
 
-// castVotesLoad casts vote for the load test
-// return a function to provide a common implementation for
-// the load test and the scenario test
+// castVotesLoad casts vote for the load test and returns a function to provide
+// a common implementation for the load test and the scenario test
 func castVotesLoad(numVotesPerSec, numSec int) func(BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
 	return (func(BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
 
@@ -420,9 +419,8 @@ func cast(idx int, castVoteRequest ptypes.CastVoteRequest, contentType, randompr
 	return ok
 }
 
-// castVotesScenario cast votes for the scenario test
-// return a function to provide a common implementation for
-// the load test and the scenario test
+// castVotesScenario casts votes for the scenario test and returns a function to
+// provide a common implementation for the load test and the scenario test
 func castVotesScenario(numVotes int) func(BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
 	return (func(BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
 		// make List of ballots

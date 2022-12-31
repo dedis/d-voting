@@ -40,8 +40,8 @@ type transactionInternalInfo struct {
 	TransactionID []byte
 	LastBlockIdx  uint64 // last block of the chain when the transaction was added to the pool
 	Time          int64  // time when the transaction was added to the pool
-	Hash          []byte // signature of the transaction
-	Signature     []byte // signature of the transaction
+	Hash          []byte // Hash of the previous fields
+	Signature     []byte // signature of the Hash
 }
 
 

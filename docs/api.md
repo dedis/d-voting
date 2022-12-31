@@ -21,7 +21,7 @@ Requests marked with 🔐 are encapsulated into a signed request as described in
 [msg_sig.md](msg_sig.md).
 
 ```
-Smart contract   DKG       Neff shuffle             transaction manager
+Smart contract   DKG       Neff shuffle             Transaction manager
 --------------   ---       ------------              ------------------
     │             │        NS1:Init (on startup)            ▲
     ▼             │              │                          │
@@ -74,7 +74,7 @@ In case of error:
 }
 ```
 
-For the election related responses, the `Status` field is indicating whether the transaction including the request was included in the blockchain or not. If the transaction was not included, the `Status` field is set to `0`. Otherwise, it is set to `1`.
+For the election related responses, the `Status` field is indicating whether the transaction for the request was included in the blockchain or not. If the transaction was not included, the `Status` field is set to `0`. Otherwise, it is set to `1`.
 The `Token` field is a URL encoded string that allows the proxy of the blockchain node to identify the transaction. It represents the URL encoding of the following structure:
 
 ```json
@@ -87,7 +87,7 @@ The `Token` field is a URL encoded string that allows the proxy of the blockchai
 	"Signature"     : "<hex encoded>"
 }
 ```
-Where `LastBlockIdx` is the index of the last block of the blockchain before the transaction was submitted, `Hash` is the hash all the above fields, and `Signature` is the signature of the hash by the proxy of the blockchain node.
+Where `LastBlockIdx` is the index of the last block of the blockchain before the transaction was submitted, `Hash` is the hash of all the above fields and `Signature` is the signature of the hash by the blockchain node's proxy.
 
 # SC1: Form create 🔐
 

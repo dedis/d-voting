@@ -16,7 +16,6 @@ import (
 	delaPkg "go.dedis.ch/dela"
 )
 
-// Check the shuffled votes versus the cast votes on a few nodes
 func TestIntegration(t *testing.T) {
 	t.Run("4 nodes, 5 votes", getIntegrationTest(4, 5))
 
