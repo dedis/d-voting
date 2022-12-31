@@ -165,8 +165,6 @@ func startFormProcess(wg *sync.WaitGroup, numNodes, numVotes, numSec int, proxyA
 		case LOAD:
 			votesfrontend = castVotesLoad(numVotes/numSec, numSec, BallotSize, chunksPerBallot, formID, contentType, proxyArray, pubKey, secret, t)
 			t.Log("Cast votes load")
-		default:
-			t.Fatal("Unknown test type")
 		}
 
 
