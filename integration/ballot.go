@@ -300,8 +300,7 @@ func checkBallots(decryptedBallots, castedVotes []types.Ballot, t *testing.T) {
 
 }
 
-// castVotesLoad casts vote for the load test and returns a function to provide
-// a common implementation for the load test and the scenario test
+// castVotesLoad casts vote for the load test 
 func castVotesLoad(numVotesPerSec, numSec, BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
 
 	t.Log("cast ballots")
@@ -418,8 +417,7 @@ func cast(idx int, castVoteRequest ptypes.CastVoteRequest, contentType, randompr
 	return ok
 }
 
-// castVotesScenario casts votes for the scenario test and returns a function to
-// provide a common implementation for the load test and the scenario test
+// castVotesScenario casts votes for the scenario test 
 func castVotesScenario(numVotes, BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
 	// make List of ballots
 	b1 := string("select:" + encodeBallotID("bb") + ":0,0,1,0\n" + "text:" + encodeBallotID("ee") + ":eWVz\n\n") //encoding of "yes"
