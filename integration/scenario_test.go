@@ -69,7 +69,7 @@ func getScenarioTest(numNodes int, numVotes int, numForm int) func(*testing.T) {
 	}
 }
 
-func startFormProcess(wg *sync.WaitGroup, numNodes, numSec, numVotes int, proxyArray []string, t *testing.T, numForm int, testType testType) {
+func startFormProcess(wg *sync.WaitGroup, numNodes, numVotes, numSec int, proxyArray []string, t *testing.T, numForm int, testType testType) {
 	defer wg.Done()
 	rand.Seed(0)
 
@@ -161,9 +161,15 @@ func startFormProcess(wg *sync.WaitGroup, numNodes, numSec, numVotes int, proxyA
 	switch testType {
 		case SCENARIO:
 			votesfrontend = castVotesScenario(numVotes, BallotSize, chunksPerBallot, formID, contentType, proxyArray, pubKey, secret, t)
+			t.Log("Cast votes scenario")
 		case LOAD:
 			votesfrontend = castVotesLoad(numVotes/numSec, numSec, BallotSize, chunksPerBallot, formID, contentType, proxyArray, pubKey, secret, t)
-	}
+			t.Log("Cast votes load")
+		default:
+			t.Fatal("Unknown test type")
+		}
+
+
 
 	timeTable[step] = time.Since(oldTime).Seconds()
 	t.Logf("Casting %v ballots takes: %v sec", numVotes, timeTable[step])
