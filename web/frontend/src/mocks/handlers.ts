@@ -31,6 +31,7 @@ import { NodeStatus } from 'types/node';
 
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;
+const fakeToken = 'fake token';
 
 const { mockForms, mockResults, mockDKG, mockNodeProxyAddresses } = setupMockForm();
 
@@ -114,7 +115,10 @@ export const handlers = [
     const { FormID } = req.params;
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    return res(ctx.status(200), ctx.json(mockForms.get(FormID as ID)));
+    return res(
+      ctx.status(200),
+      ctx.json({ FormID: mockForms.get(FormID as ID), Token: fakeToken })
+    );
   }),
 
   rest.post(endpoints.newForm, async (req, res, ctx) => {
@@ -149,12 +153,7 @@ export const handlers = [
       return newFormID;
     };
 
-    return res(
-      ctx.status(200),
-      ctx.json({
-        FormID: createForm(body.Configuration),
-      })
-    );
+    return res(ctx.status(200), ctx.json({ Status: 0, Token: fakeToken }));
   }),
 
   rest.post(endpoints.newFormVote(':FormID'), async (req, res, ctx) => {
@@ -171,12 +170,7 @@ export const handlers = [
       Voters,
     });
 
-    return res(
-      ctx.status(200),
-      ctx.json({
-        Ballot: Ballot,
-      })
-    );
+    return res(ctx.status(200), ctx.json({ Status: 0, Token: fakeToken }));
   }),
 
   rest.put(endpoints.editForm(':FormID'), async (req, res, ctx) => {
@@ -219,7 +213,7 @@ export const handlers = [
       CHANGE_STATUS_TIMER
     );
 
-    return res(ctx.status(200), ctx.text('Action successfully done'));
+    return res(ctx.status(200), ctx.json({ Status: 0, Token: fakeToken }));
   }),
 
   rest.delete(endpoints.editForm(':FormID'), async (req, res, ctx) => {
@@ -227,7 +221,7 @@ export const handlers = [
     mockForms.delete(FormID as string);
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    return res(ctx.status(200), ctx.text('Form deleted'));
+    return res(ctx.status(200), ctx.json({ Status: 0, Token: fakeToken }));
   }),
 
   rest.post(endpoints.dkgActors, async (req, res, ctx) => {
@@ -479,5 +473,11 @@ export const handlers = [
     const response = defaultProxy;
 
     return res(ctx.status(200), ctx.text(response));
+  }),
+
+  rest.get(endpoints.checkTransaction('*'), async (req, res, ctx) => {
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
+
+    return res(ctx.status(200), ctx.json({ Status: 1, Token: fakeToken }));
   }),
 ];
