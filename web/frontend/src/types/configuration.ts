@@ -11,7 +11,6 @@ interface SubjectElement {
   Title: string;
   TitleFr: string;
   TitleDe: string;
-  Choice: string;
 }
 
 // Rank describes a "rank" question, which requires the user to rank choices.
@@ -52,8 +51,6 @@ interface SelectQuestion extends SubjectElement {
 interface Subject extends SubjectElement {
   Order: Array<ID>;
   Elements: Map<ID, SubjectElement>;
-  //Title1: string;
-  //Title2: string;
 }
 
 // Configuration contains the configuration of a new poll.

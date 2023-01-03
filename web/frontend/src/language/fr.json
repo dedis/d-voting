@@ -265,7 +265,7 @@
     "actionTextVoter1": "Le sondage n'est pas encore ouvert, vous pouvez revenir plus tard pour voter lorsque ce sera ouvert.",
     "actionTextVoter2": "Les résultats du sondage ne sont pas encore disponible.",
     "choice": "Choix",
-    "logoutWarning": "Vous êtes sur le point de vous déconnecter. Êtes vous sûr de vouloir continuer ?",
+    "logoutWarning": "Vous êtes sur le point de vous déconnecter. Si vous êtes en train de remplir un sondage, nous vous suggérons d'exporter le sondage en JSON, sinon vous perdrez vos modifications. Êtes vous sûr de vouloir continuer ?",
     "continue": "Continuer",
     "hint": "Indication",
     "enterHintLg": "Entrer une indication en Anglais (optionnel)",

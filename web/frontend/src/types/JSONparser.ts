@@ -8,30 +8,54 @@ import {
 
 const unmarshalText = (text: any): types.TextQuestion => {
   const t = text as types.TextQuestion;
-
+  let hint;
+  try {
+    hint = JSON.parse(t.Hint);
+  } catch (e) {
+    hint = t.Hint;
+  }
   return {
     ...text,
     ChoicesMap: choicesToChoicesMap(t.Choices),
+    Hint: hint.en,
+    HintFr: hint.fr,
+    HintDe: hint.de,
     Type: TEXT,
   };
 };
 
 const unmarshalRank = (rank: any): types.RankQuestion => {
   const r = rank as types.RankQuestion;
-
+  let hint;
+  try {
+    hint = JSON.parse(r.Hint);
+  } catch (e) {
+    hint = r.Hint;
+  }
   return {
     ...rank,
     ChoicesMap: choicesToChoicesMap(r.Choices),
+    Hint: hint.en,
+    HintFr: hint.fr,
+    HintDe: hint.de,
     Type: RANK,
   };
 };
 
 const unmarshalSelect = (select: any): types.SelectQuestion => {
   const s = select as types.SelectQuestion;
-
+  let hint;
+  try {
+    hint = JSON.parse(s.Hint);
+  } catch (e) {
+    hint = s.Hint;
+  }
   return {
     ...select,
     ChoicesMap: choicesToChoicesMap(s.Choices),
+    Hint: hint.en,
+    HintFr: hint.fr,
+    HintDe: hint.de,
     Type: SELECT,
   };
 };
@@ -177,7 +201,6 @@ const marshalSubject = (subject: types.Subject): any => {
   const newSubject: any = { ...subject };
   const { rankQuestion, selectQuestion, textQuestion, subjects } =
     toArraysOfSubjectElement(subject.Elements);
-  console.log('toArray', toArraysOfSubjectElement(subject.Elements));
   delete newSubject.Type;
   delete newSubject.Elements;
 

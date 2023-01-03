@@ -9,9 +9,7 @@ const emptyConfiguration = (): types.Configuration => {
     MainTitle: '',
     Scaffold: [],
     TitleFr: '',
-    //ScaffoldFr: [],
     TitleDe: '',
-    //ScaffoldDe: [],
   };
 };
 
@@ -24,7 +22,6 @@ const newSubject = (): types.Subject => {
     Order: [],
     Type: SUBJECT,
     Elements: new Map(),
-    Choice: '',
   };
 };
 const obj = { en: [''], fr: [''], de: [''] };
@@ -42,7 +39,6 @@ const newRank = (): types.RankQuestion => {
     Hint: '',
     HintFr: '',
     HintDe: '',
-    Choice: '',
   };
 };
 
@@ -60,7 +56,6 @@ const newSelect = (): types.SelectQuestion => {
     Hint: '',
     HintFr: '',
     HintDe: '',
-    Choice: '',
   };
 };
 
@@ -80,7 +75,6 @@ const newText = (): types.TextQuestion => {
     Hint: '',
     HintFr: '',
     HintDe: '',
-    Choice: '',
   };
 };
 
@@ -153,7 +147,6 @@ const toArraysOfSubjectElement = (
   elements.forEach((element) => {
     switch (element.Type) {
       case RANK:
-        console.log('je suis passer par la');
         title = JSON.stringify({
           en: element.Title,
           fr: element.TitleFr,
@@ -172,7 +165,6 @@ const toArraysOfSubjectElement = (
           ),
           Hint: hint,
         });
-        console.log('rankQuestion', rankQuestion);
         break;
       case SELECT:
         title = JSON.stringify({
@@ -180,9 +172,18 @@ const toArraysOfSubjectElement = (
           fr: element.TitleFr,
           de: element.TitleDe,
         });
+        hint = JSON.stringify({
+          en: (element as types.SelectQuestion).Hint,
+          fr: (element as types.SelectQuestion).HintFr,
+          de: (element as types.SelectQuestion).HintDe,
+        });
         selectQuestion.push({
           ...(element as types.SelectQuestion),
           Title: title,
+          Choices: choicesMapToChoices(
+            (element as types.SelectQuestion).ChoicesMap
+          ),
+          Hint: hint,
         });
         break;
       case TEXT:
@@ -191,11 +192,19 @@ const toArraysOfSubjectElement = (
           fr: element.TitleFr,
           de: element.TitleDe,
         });
+        hint = JSON.stringify({
+          en: (element as types.TextQuestion).Hint,
+          fr: (element as types.TextQuestion).HintFr,
+          de: (element as types.TextQuestion).HintDe,
+        });
         textQuestion.push({
           ...(element as types.TextQuestion),
           Title: title,
+          Choices: choicesMapToChoices(
+            (element as types.TextQuestion).ChoicesMap
+          ),
+          Hint: hint,
         });
-        console.log('ok');
         break;
       case SUBJECT:
         title = JSON.stringify({
@@ -207,7 +216,6 @@ const toArraysOfSubjectElement = (
           ...(element as types.Subject),
           Title: title,
         });
-        console.log('ok');
         break;
     }
   });

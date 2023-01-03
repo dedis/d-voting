@@ -265,7 +265,7 @@
     "actionTextVoter1": "Das Formular ist noch nicht geöffnet, Sie können später wiederkommen, um abzustimmen, sobald es geöffnet ist.",
     "actionTextVoter2": "Die Ergebnisse des Formulars liegen noch nicht vor.",
     "choice": "Auswahl",
-    "logoutWarning": "Sie sind dabei, sich abzumelden. Sind Sie sicher, dass Sie fortfahren möchten?",
+    "logoutWarning": "Sie sind dabei, sich abzumelden. Wenn Sie gerade ein Formular ausfüllen, empfehlen wir Ihnen, das Formular als JSON zu exportieren, da Sie sonst Ihre Änderungen verlieren. Sind Sie sicher, dass Sie fortfahren möchten?",
     "continue": "Fortfahren",
     "enterHintLg1": "Geben Sie einen Hinweis auf Französisch ein (optional)",
     "enterHintLg": "Geben Sie einen Hinweis auf Englisch ein (optional)",
