@@ -231,7 +231,7 @@
     "resetFilter": "Reset filter",
     "showingNOverMOfXResults": "Showing {{n}}/{{m}} of {{x}} results.",
     "addProxy": "Add proxy",
-    "editProxy": "Edit the proxy address",
+    "editProxy": "Edit the node or the proxy address", 
     "proxy": "Proxy",
     "confirmDeleteProxy": "Do confirm deleting this node address",
     "nodeDetails": "Add, edit or remove the mapping between a node address and its proxy address.",
@@ -260,3 +260,4 @@
     "actionTextVoter2": "The results of the form are not available yet."
   }
 }
+// TODO : modify for the other language
