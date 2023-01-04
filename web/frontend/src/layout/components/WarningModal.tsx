@@ -16,7 +16,7 @@ const WarningModal: FC<WarningModalProps> = ({ message, isShown, setIsShown, act
       <Dialog open={isShown} onClose={() => {}}>
         <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
         <div className="fixed inset-0 flex items-center justify-center">
-          <div className="bg-white content-center rounded-lg shadow-lg p-3 w-81">
+          <div className="bg-white content-center rounded-lg shadow-lg p-3 w-80">
             <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
               Warning
             </Dialog.Title>

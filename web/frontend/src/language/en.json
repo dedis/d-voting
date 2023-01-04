@@ -269,7 +269,7 @@
     "resIndiv": "Individual",
     "resGroup": "Grouped",
     "choice": "Choice",
-    "logoutWarning": "You are about to log out. If you are currently filling a form, we suggest to you to export the form as a JSON, otherwise you will lose your modifications. Are you sure you want to continue?",
+    "logoutWarning": "You are about to log out. If you are currently filling a form, we suggest you to export the form as a JSON, otherwise you will lose your modifications. Are you sure you want to continue?",
     "continue": "Continue",
     "invalidInput": "Please enter a number between 1 and {{max}}.",
     "hint": "Hint"
