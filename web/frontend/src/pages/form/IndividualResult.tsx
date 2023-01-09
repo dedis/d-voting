@@ -104,7 +104,6 @@ const IndividualResult: FC<IndividualResultProps> = ({
   };
 
   const displayResults = (subject: Subject) => {
-    //const sbj = JSON.parse(subject.Title);
     return (
       <div key={subject.ID}>
         <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">

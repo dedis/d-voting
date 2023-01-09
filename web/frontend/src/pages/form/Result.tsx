@@ -80,7 +80,17 @@ const FormResult: FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result]);
-
+  const [titles, setTitles] = useState<any>({});
+  useEffect(() => {
+    try {
+      if (configuration.MainTitle === '') return;
+      console.log('configuration.MainTitle', configuration.MainTitle);
+      const ts = JSON.parse(configuration.MainTitle);
+      setTitles(ts);
+    } catch (e) {
+      console.log('error', e);
+    }
+  }, [configuration]);
   return (
     <div className="w-[60rem] font-sans px-4 pt-8 pb-4">
       {!loading ? (
@@ -98,9 +108,9 @@ const FormResult: FC = () => {
               {t('totalNumberOfVotes', { votes: result.length })}
             </h2>
             <h3 className="py-6 border-t text-2xl text-center text-gray-700">
-              {i18n.language === 'en' && configuration.MainTitle}
-              {i18n.language === 'fr' && configuration.TitleFr}
-              {i18n.language === 'de' && configuration.TitleDe}
+              {i18n.language === 'en' && titles.en}
+              {i18n.language === 'fr' && titles.fr}
+              {i18n.language === 'de' && titles.de}
             </h3>
 
             <div>

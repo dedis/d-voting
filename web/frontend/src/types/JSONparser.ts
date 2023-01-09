@@ -8,54 +8,27 @@ import {
 
 const unmarshalText = (text: any): types.TextQuestion => {
   const t = text as types.TextQuestion;
-  let hint;
-  try {
-    hint = JSON.parse(t.Hint);
-  } catch (e) {
-    hint = t.Hint;
-  }
   return {
     ...text,
     ChoicesMap: choicesToChoicesMap(t.Choices),
-    Hint: hint.en,
-    HintFr: hint.fr,
-    HintDe: hint.de,
     Type: TEXT,
   };
 };
 
 const unmarshalRank = (rank: any): types.RankQuestion => {
   const r = rank as types.RankQuestion;
-  let hint;
-  try {
-    hint = JSON.parse(r.Hint);
-  } catch (e) {
-    hint = r.Hint;
-  }
   return {
     ...rank,
     ChoicesMap: choicesToChoicesMap(r.Choices),
-    Hint: hint.en,
-    HintFr: hint.fr,
-    HintDe: hint.de,
     Type: RANK,
   };
 };
 
 const unmarshalSelect = (select: any): types.SelectQuestion => {
   const s = select as types.SelectQuestion;
-  let hint;
-  try {
-    hint = JSON.parse(s.Hint);
-  } catch (e) {
-    hint = s.Hint;
-  }
   return {
     ...select,
     ChoicesMap: choicesToChoicesMap(s.Choices),
-    Hint: hint.en,
-    HintFr: hint.fr,
-    HintDe: hint.de,
     Type: SELECT,
   };
 };
@@ -145,16 +118,16 @@ const unmarshalSubjectAndCreateAnswers = (
 };
 
 const unmarshalConfig = (json: any): types.Configuration => {
-  let title;
+  /* let title;
   try {
     title = JSON.parse(json.MainTitle);
   } catch (e) {
     title = json.MainTitle;
-  }
+  }*/
   const conf = {
-    MainTitle: title.en,
-    TitleFr: title.fr,
-    TitleDe: title.de,
+    MainTitle: json.MainTitle,
+    TitleFr: '',
+    TitleDe: '',
     Scaffold: [],
   };
   for (const subject of json.Scaffold) {

@@ -26,9 +26,9 @@ const FormRow: FC<FormRowProps> = ({ form }) => {
       <td className="px-1.5 sm:px-6 py-4 font-medium text-gray-900 whitespace-nowrap truncate">
         <Link className="text-gray-700 hover:text-indigo-500" to={`/forms/${form.FormID}`}>
           <div className="max-w-[20vw] truncate">
-            {i18n.language === 'en' && titles.en}
-            {i18n.language === 'fr' && titles.fr}
-            {i18n.language === 'de' && titles.de}
+            {i18n.language === 'en' && (titles.en || form.Title)}
+            {i18n.language === 'fr' && (titles.fr || form.Title)}
+            {i18n.language === 'de' && (titles.de || form.Title)}
           </div>
         </Link>
       </td>
