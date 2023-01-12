@@ -80,7 +80,7 @@ const Ballot: FC = () => {
           throw new Error(txt);
         }
         const res = await response.json();
-        setModalText(`${t('voteSuccess')}${res.BallotID}`);
+        setModalText(`${t('voteSuccess')} ${res.BallotID}`);
         setModalTitle(t('voteSuccessful'));
       } catch (error) {
         setPostError(error.message);
