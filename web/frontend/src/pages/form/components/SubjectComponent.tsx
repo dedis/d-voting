@@ -151,6 +151,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                 setTextRemoveElementModal(t(`confirmRemove${found.Type}`));
                 setShowRemoveElementModal(true);
               }}
+              language={language}
             />
           );
         case SUBJECT:
@@ -181,6 +182,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                 setTextRemoveElementModal(t(`confirmRemove${found.Type}`));
                 setShowRemoveElementModal(true);
               }}
+              language={language}
             />
           );
         case SELECT:
@@ -195,6 +197,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                 setTextRemoveElementModal(t(`confirmRemove${found.Type}`));
                 setShowRemoveElementModal(true);
               }}
+              language={language}
             />
           );
       }

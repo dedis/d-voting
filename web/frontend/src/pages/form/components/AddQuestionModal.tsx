@@ -413,7 +413,9 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                               name="Choice"
                               type="text"
                               placeholder={
-                                Type !== TEXT ? `${'Choix'}` + ` ${idx + 1}` : `Answer ${idx + 1}`
+                                Type !== TEXT
+                                  ? `${t('choices')}` + ` ${idx + 1}`
+                                  : `Answer ${idx + 1}`
                               }
                               className="my-1 px-1 w-60 ml-2 border rounded-md"
                             />
