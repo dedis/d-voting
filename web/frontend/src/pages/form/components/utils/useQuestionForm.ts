@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { RankQuestion, SelectQuestion, TextQuestion } from 'types/configuration';
 import { choicesMapToChoices } from '../../../../types/getObjectType';
+import { availableLanguages } from 'language/Configuration';
 
 // form hook that handles the form state for all types of questions
 const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion) => {
@@ -117,49 +118,23 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
 
   // remove a choice from the ChoicesMap array
   const deleteChoice = (index: number) => {
-    if (ChoicesMap.get('en').length > MinN) {
-      const filteredChoicesMap = ChoicesMap.get('en').filter(
+    const lang = availableLanguages;
+    lang.forEach((lang) => {
+      if(ChoicesMap.get(lang).length > MinN) {
+        const filteredChoicesMap = ChoicesMap.get(lang).filter(
         (item: string, idx: number) => idx !== index
       );
+      ChoicesMap.set(lang, filteredChoicesMap);
+      }
+    });
+    const maxN = Math.max(ChoicesMap.get('en').length + 1, ChoicesMap.get('fr').length + 1, ChoicesMap.get('de').length + 1);
       setState({
         ...state,
-        ChoicesMap: ChoicesMap.set('en', filteredChoicesMap),
-        MaxN: Math.max(
-          filteredChoicesMap.length + 1,
-          ChoicesMap.get('fr').length + 1,
-          ChoicesMap.get('de').length + 1
-        ),
+        ChoicesMap: ChoicesMap,
+        MaxN: maxN,
       });
     }
-    if (ChoicesMap.get('fr').length > MinN) {
-      const filteredChoicesMapFr = ChoicesMap.get('fr').filter(
-        (item: string, idx: number) => idx !== index
-      );
-      setState({
-        ...state,
-        ChoicesMap: ChoicesMap.set('fr', filteredChoicesMapFr),
-        MaxN: Math.max(
-          ChoicesMap.get('en').length + 1,
-          filteredChoicesMapFr.length + 1,
-          ChoicesMap.get('de').length + 1
-        ),
-      });
-    }
-    if (ChoicesMap.get('de').length > MinN) {
-      const filteredChoicesMapDe = ChoicesMap.get('de').filter(
-        (item: string, idx: number) => idx !== index
-      );
-      setState({
-        ...state,
-        ChoicesMap: ChoicesMap.set('de', filteredChoicesMapDe),
-        MaxN: Math.max(
-          ChoicesMap.get('en').length + 1,
-          ChoicesMap.get('de').length + 1,
-          filteredChoicesMapDe.length + 1
-        ),
-      });
-    }
-  };
+   
   // update the choice at the given index
   const updateChoice = (index: number, lang: string) => (e) => {
     e.persist();
@@ -182,11 +157,23 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
           Choices: choicesMapToChoices(newChoicesMap),
         });
         break;
+
       default:
-        console.error('WROOONG');
+        const newChoicesMapDefault = new Map(
+          Object.entries({
+            ...obj,
+            ['en']: obj['en'].map((item: string, idx: number) =>
+              idx === index ? e.target.value : item
+            ),
+          })
+        );
+        setState({
+          ...state,
+          ChoicesMap: newChoicesMapDefault,
+          Choices: choicesMapToChoices(newChoicesMapDefault),
+        });
     }
   };
-  console.log('state', state);
   return { state, handleChange, addChoice, deleteChoice, updateChoice };
 };
 

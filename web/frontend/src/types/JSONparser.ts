@@ -118,12 +118,6 @@ const unmarshalSubjectAndCreateAnswers = (
 };
 
 const unmarshalConfig = (json: any): types.Configuration => {
-  /* let title;
-  try {
-    title = JSON.parse(json.MainTitle);
-  } catch (e) {
-    title = json.MainTitle;
-  }*/
   const conf = {
     MainTitle: json.MainTitle,
     TitleFr: '',
@@ -202,7 +196,6 @@ const marshalConfig = (configuration: types.Configuration): any => {
   for (const subject of configuration.Scaffold) {
     conf.Scaffold.push(marshalSubject(subject));
   }
-  console.log('scaffold', conf.Scaffold);
   return conf;
 };
 
