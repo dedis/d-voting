@@ -14,6 +14,7 @@ type EditProxyModalProps = {
   nodeProxy: Map<string, string>;
   setNodeProxy: (nodeProxy: Map<string, string>) => void;
   node: string;
+  handleEditProxy(node: string, proxy: string): void;
 };
 
 const EditProxyModal: FC<EditProxyModalProps> = ({
@@ -22,10 +23,12 @@ const EditProxyModal: FC<EditProxyModalProps> = ({
   nodeProxy,
   setNodeProxy,
   node,
+  handleEditProxy,
 }) => {
   const { t } = useTranslation();
   const fctx = useContext(FlashContext);
   const [currentProxy, setCurrentProxy] = useState('');
+  const [currentNode, setCurrentNode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [, setIsPosting] = useState(false);
@@ -51,6 +54,7 @@ const EditProxyModal: FC<EditProxyModalProps> = ({
       method: 'PUT',
       body: JSON.stringify({
         Proxy: currentProxy,
+        NewNode: currentNode,
       }),
       headers: {
         'Content-Type': 'application/json',
@@ -62,6 +66,10 @@ const EditProxyModal: FC<EditProxyModalProps> = ({
 
   const handleTextInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCurrentProxy(e.target.value);
+    setError(null);
+  };
+  const handleNodeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCurrentNode(e.target.value);
     setError(null);
   };
 
@@ -76,8 +84,9 @@ const EditProxyModal: FC<EditProxyModalProps> = ({
 
         if (response) {
           const newNodeProxy = new Map(nodeProxy);
-          newNodeProxy.set(node, currentProxy);
+          newNodeProxy.set(currentNode, currentProxy);
           setNodeProxy(newNodeProxy);
+          handleEditProxy(currentNode, currentProxy);
           fctx.addMessage(t('proxySuccessfullyEdited'), FlashLevel.Info);
         }
 
@@ -101,22 +110,31 @@ const EditProxyModal: FC<EditProxyModalProps> = ({
       <Dialog.Title as="h3" className="text-lg leading-6 font-medium text-gray-900">
         {t('editProxy')}
       </Dialog.Title>
-      <div className="mt-10 text-left">
-        <p className="mb-4">
-          {t('node')}: {node}
-        </p>
+      <div className="mt-10 mb-4 flex items-center">
+        <label htmlFor={currentNode} className="mr-2">
+          {t('node')}:{' '}
+        </label>
+        <input
+          id={currentNode}
+          type="text"
+          className="border pl-2 w-1/2 py-1 flex rounded-lg"
+          onChange={(e) => handleNodeInput(e)}
+          placeholder="123.123..."
+          value={currentNode}
+        />
+      </div>
+      <div className="mt-10 mb-4 flex items-center">
         <label htmlFor={currentProxy} className="mr-2">
           {t('proxy')}:{' '}
         </label>
         <input
           id={currentProxy}
           type="text"
-          className="mb-6 flex-auto sm:text-md border rounded-md text-gray-900 w-[60%]"
+          className="border pl-2 w-1/2 py-1 flex rounded-lg"
           onChange={(e) => handleTextInput(e)}
           placeholder="https:// ..."
           value={currentProxy}
         />
-        {error !== null && <div className="text-red-600 text-sm my-2">{error}</div>}
       </div>
     </>
   );
