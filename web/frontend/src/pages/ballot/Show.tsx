@@ -32,7 +32,6 @@ const Ballot: FC = () => {
 
   const [userErrors, setUserErrors] = useState('');
   const edCurve = kyber.curve.newCurve('edwards25519');
-  const [postError, setPostError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [modalText, setModalText] = useState(t('voteSuccess') as string);
   const [modalTitle, setModalTitle] = useState('');
@@ -83,8 +82,7 @@ const Ballot: FC = () => {
         setModalText(`${t('voteSuccess')}${res.BallotID}`);
         setModalTitle(t('voteSuccessful'));
       } catch (error) {
-        setPostError(error.message);
-        if (postError.includes('ECONNREFUSED')) {
+        if (error.message.includes('ECONNREFUSED')) {
           setModalText(t('errorServerDown'));
         } else {
           setModalText(t('voteFailure'));
