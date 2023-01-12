@@ -9,6 +9,7 @@ The form workflow involves 3 actors:
 - Smart contract
 - DKG service
 - Neff shuffle service
+- transaction manager
 
 Services are side components that augment the smart contract functionalities.
 Services are accessed via the `evoting/services/<dkg>|<neff>/*` endpoint, and
@@ -20,41 +21,41 @@ Requests marked with 🔐 are encapsulated into a signed request as described in
 [msg_sig.md](msg_sig.md).
 
 ```
-Smart contract   DKG       Neff shuffle
---------------   ---       ------------
-    │             │        NS1:Init (on startup)
-    ▼             │              │
-SC1:Create        │              │
-    │             │              │
-    │             ▼              │
-    │          DK1:Init          │
-    │             │              │
-    │             ▼              │
-    │          DK2:Setup         │
-    │             │              │
-    │             ▼              │
-    │          DK3: DKG get info │
-    │             │              │
-    ▼             │              │
-SC3:Open          │              │
-    │             │              │
-    ▼             │              │
-SC4:Cast          │              │
-    │             │              │
-    ▼             │              │
-SC5:Close         │              │
-    │             │              │
-    │             │              ▼
-    │             │          NS2:Shuffle
-    │             │
-    │             ▼
-    │         DK4:ComputePubshares
-    │
-    ▼
-SC6:CombineShares
-    │
-    ▼
-SC2:FormGetInfo
+Smart contract   DKG       Neff shuffle             Transaction manager
+--------------   ---       ------------              ------------------
+    │             │        NS1:Init (on startup)            ▲
+    ▼             │              │                          │
+SC1:Create        │              │                          │
+    │             │              │                          │
+    │             ▼              │                          │
+    │          DK1:Init          │                          │
+    │             │              │                          │
+    │             ▼              │                          │
+    │          DK2:Setup         │                          │
+    │             │              │                          │
+    │             ▼              │                          │
+    │          DK3: DKG get info │                          │
+    │             │              │                          │
+    ▼             │              │                          │
+SC3:Open          │              │                          │
+    │             │              │                          │
+    ▼             │              │          T1:When the election checks if a transaction 
+SC4:Cast          │              │                included in the blockchain
+    │             │              │                          │
+    ▼             │              │                          │
+SC5:Close         │              │                          │
+    │             │              │                          │
+    │             │              ▼                          │
+    │             │          NS2:Shuffle                    │
+    │             │                                         │
+    │             ▼                                         │
+    │         DK4:ComputePubshares                          │
+    │                                                       │
+    ▼                                                       │
+SC6:CombineShares                                           │
+    │                                                       │
+    ▼                                                       │
+SC2:FormGetInfo                                             ▼
 
 
 
@@ -73,6 +74,21 @@ In case of error:
 }
 ```
 
+For the election related responses, the `Status` field is indicating whether the transaction for the request was included in the blockchain or not. If the transaction was not included, the `Status` field is set to `0`. Otherwise, it is set to `1`.
+The `Token` field is a URL encoded string that allows the proxy of the blockchain node to identify the transaction. It represents the URL encoding of the following structure:
+
+```json
+{
+  "Status" : "<uint>",   
+	"TransactionID" : "<hex encoded>",
+	"LastBlockIdx"  : "<uint>",
+	"Time"          : "<uint>",
+	"Hash"          : "<hex encoded>",
+	"Signature"     : "<hex encoded>"
+}
+```
+Where `LastBlockIdx` is the index of the last block of the blockchain before the transaction was submitted, `Hash` is the hash of all the above fields and `Signature` is the signature of the hash by the blockchain node's proxy.
+
 # SC1: Form create 🔐
 
 |        |                    |
@@ -89,11 +105,12 @@ In case of error:
 
 Return:
 
-`200 OK` `application/json`
+`200 OK` 
 
 ```json
 {
-  "FormID": "<hex encoded>"
+  "FormID": "<hex encoded>",
+  "Token" : "<URL encoded>"
 }
 ```
 
@@ -103,11 +120,10 @@ Return:
 | ------ | ------------------------- |
 | URL    | `/evoting/forms/{FormID}` |
 | Method | `GET`                     |
-| Input  |                           |
 
 Return:
 
-`200 OK` `application/json`
+`200 OK` 
 
 ```json
 {
@@ -148,10 +164,13 @@ Return:
 
 Return:
 
-`200 OK` `text/plain`
+`200 OK` 
 
-```
-
+```json
+{
+  "Status": 0,
+  "Token": "<URL encoded>"
+}
 ```
 
 # SC4: Form cast vote 🔐
@@ -176,10 +195,13 @@ Return:
 
 Return:
 
-`200 OK` `text/plain`
+`200 OK` 
 
-```
-
+```json
+{
+  "Status": 0,
+  "Token": "<URL encoded>"
+}
 ```
 
 # SC5: Form close 🔐
@@ -198,10 +220,12 @@ Return:
 
 Return:
 
-`200 OK` `text/plain`
-
-```
-
+`200 OK` 
+```json
+{
+  "Status": 0,
+  "Token": "<URL encoded>"
+}
 ```
 
 # NS2: Form shuffle 🔐
@@ -220,10 +244,12 @@ Return:
 
 Return:
 
-`200 OK` `text/plain`
-
-```
-
+`200 OK` 
+```json
+{
+  "Status": 0,
+  "Token": "<URL encoded>"
+}
 ```
 
 # SC6: Form combine shares 🔐
@@ -242,7 +268,7 @@ Return:
 
 Return:
 
-`200 OK` `text/plain`
+`200 OK` `{Status, Token}`
 
 ```
 
@@ -264,10 +290,12 @@ Return:
 
 Return:
 
-`200 OK` `text/plain`
-
-```
-
+`200 OK` 
+```json
+{
+  "Status": 0,
+  "Token": "<URL encoded>"
+}
 ```
 
 # SC?: Form delete
@@ -288,13 +316,15 @@ formID:
 
 Return:
 
-`200 OK` `text/plain`
-
+`200 OK` 
+```json
+{
+  "Status": 0,
+  "Token": "<URL encoded>"
+}
 ```
 
-```
-
-# SC?: Form get all infos
+# SC?: Form infos from all forms
 
 |        |                  |
 | ------ | ---------------- |
@@ -336,7 +366,7 @@ Return:
 
 Return:
 
-`200 OK` `text/plain`
+`200 OK` `{Status, Token}`
 
 ```
 
@@ -410,3 +440,30 @@ Return:
 ```
 
 ```
+
+# T1: Check election transaction included
+
+
+
+|        |                                |
+| ------ | -------------------------------|
+| URL    | `/evoting/transactions/{Token}` |
+| Method | `GET`                          |
+| Input  | `application/json`             |
+
+Return:
+
+`200 OK` 
+
+```json
+{
+  "Status": "<int>",
+  "Token": "<URL encoded>"
+}
+```
+Status can be:
+- 0: transaction not yet included
+- 1: transaction included
+- 2: transaction not included
+
+The token is an updated version of the token in the URL that can be used to check again the status of the transaction if it is not yet included.

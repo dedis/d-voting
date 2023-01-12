@@ -13,6 +13,7 @@ type CreateFormRequest struct {
 // CreateFormResponse defines the HTTP response when creating a form
 type CreateFormResponse struct {
 	FormID string // hex-encoded
+	Token  string
 }
 
 // CastVoteRequest defines the HTTP request for casting a vote
@@ -39,7 +40,7 @@ type UpdateFormRequest struct {
 // GetFormResponse defines the HTTP response when getting the form info
 type GetFormResponse struct {
 	// FormID is hex-encoded
-	FormID      string
+	FormID          string
 	Configuration   etypes.Configuration
 	Status          uint16
 	Pubkey          string
@@ -53,9 +54,9 @@ type GetFormResponse struct {
 // LightForm represents a light version of the form
 type LightForm struct {
 	FormID string
-	Title      string
-	Status     uint16
-	Pubkey     string
+	Title  string
+	Status uint16
+	Pubkey string
 }
 
 // GetFormsResponse defines the HTTP response when getting all forms
