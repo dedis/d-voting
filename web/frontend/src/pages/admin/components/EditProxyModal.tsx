@@ -45,6 +45,7 @@ const EditProxyModal: FC<EditProxyModalProps> = ({
 
   useEffect(() => {
     if (nodeProxy !== null) {
+      setCurrentNode(node);
       setCurrentProxy(nodeProxy.get(node));
     }
   }, [nodeProxy, node]);
@@ -135,6 +136,7 @@ const EditProxyModal: FC<EditProxyModalProps> = ({
           placeholder="https:// ..."
           value={currentProxy}
         />
+        {error !== null && <div className="text-red-600 text-sm my-2">{error}</div>}
       </div>
     </>
   );
