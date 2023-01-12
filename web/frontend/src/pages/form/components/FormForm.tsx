@@ -1,4 +1,4 @@
-import { FC, Fragment, useEffect, useState } from 'react';
+import { FC, useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { newForm } from 'components/utils/Endpoints';
 
@@ -21,7 +21,7 @@ import { useConfiguration } from 'components/utils/useConfiguration';
 import BallotDisplay from 'pages/ballot/components/BallotDisplay';
 import usePostCall from 'components/utils/usePostCall';
 import * as endpoints from 'components/utils/Endpoints';
-
+import { FlashContext, FlashLevel } from 'index';
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
 
@@ -49,9 +49,15 @@ const FormForm: FC<FormFormProps> = () => {
 
   const { MainTitle, Scaffold } = conf;
   const regexPattern = /[^a-zA-Z0-9]/g;
-
+  const fctx = useContext(FlashContext);
   const [postError, setPostError] = useState(null);
   const [, setIsPosting] = useState(false);
+  useEffect(() => {
+    if (postError !== null) {
+      fctx.addMessage(t('errorAddAuth') + postError, FlashLevel.Error);
+      setPostError(null);
+    }
+  }, [postError]);
   const sendFetchRequest = usePostCall(setPostError);
   const AuthorizationUpdate = (FormID: string): Promise<boolean> => {
     const req = {

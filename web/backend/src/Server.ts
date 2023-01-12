@@ -536,23 +536,12 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
         .send(`failed to proxy request: ${req.method} ${uri} - ${error.message} - ${resp}`);
     });
 }
+
+// Secure /api/evoting to admins and operators
 app.put('/api/evoting/authorizations', (req) => {
   const { FormID } = req.body;
-
-  try {
-    enf.addPolicy(String(req.session.userid), FormID, ACTION_OWN);
-  } catch (e) {
-    console.log('error adding policy', e);
-  }
+  enf.addPolicy(String(req.session.userid), FormID, ACTION_OWN);
 });
-// Secure /api/evoting to admins and operators
-/* app.use('/api/evoting/*', (req, res, next) => {
-  if (!isAuthorized(req.session.userid, SUBJECT_ELECTION, ACTION_OWN)) {
-    res.status(400).send('Unauthorized - only admins and operators allowed');
-    return;
-  }
-  next();
-}); */
 
 // https://stackoverflow.com/a/1349426
 function makeid(length: number) {
@@ -575,11 +564,11 @@ app.put('/api/evoting/forms/:formID', (req, res, next) => {
 
 app.post('/api/evoting/services/dkg/actors', (req, res, next) => {
   const { FormID } = req.body;
-  if (FormID === undefined) {
-    return;
-  }
   if (!isAuthorized(req.session.userid, FormID, ACTION_OWN)) {
     res.status(400).send('Unauthorized');
+    return;
+  }
+  if (FormID === undefined) {
     return;
   }
   next();

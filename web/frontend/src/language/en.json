@@ -89,6 +89,7 @@
     "uploadJSON": "uploading a JSON file",
     "enterMainTitle": "Enter the Main Title",
     "enterSubjectTitle": "Enter the Subject Title",
+    "errorAddAuth": "An error seems to have occurred while adding the authorization to manage your form. Contact the administrator of this website.",
     "errorCandidates": "You must add at least one candidate!",
     "errorNewCandidate": "Are you sure you don't want to add ",
     "errorRetrievingForms": "An error seems to have occurred while retrieving all the forms from our server. Contact the administrator of this website. Error: ",
