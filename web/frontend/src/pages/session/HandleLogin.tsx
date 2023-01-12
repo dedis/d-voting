@@ -9,8 +9,9 @@ const handleLogin = async (fctx: FlashState) => {
 
     const d = new Date();
     d.setTime(d.getTime() + 120000);
-    let expires = 'expires=' + d.toUTCString();
-    document.cookie = 'redirect' + '=' + window.location.pathname + ';' + expires + ';path=/';
+    let expires = d.toUTCString();
+    document.cookie =
+      'redirect' + '=' + window.location.pathname + '; expires=' + expires + ';path=/';
 
     if (res.status !== 200) {
       const txt = await res.text();
