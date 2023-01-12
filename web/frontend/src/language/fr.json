@@ -96,6 +96,7 @@
     "enterSubjectTitleLg1": "Entrer le Titre du sujet en Français",
     "enterSubjectTitleLg": "Entrer le Titre du sujet en Anglais",
     "enterSubjectTitleLg2": "Entrer le Titre du sujet en Allemand",
+    "errorAddAuth": "Une erreur semble s'être produite lors de l'ajout de l'authorisation donnant les accès de contrôle de votre sondage. Contactez l'administrateur de ce site.",
     "errorCandidates": "Vous devez ajouter au moins un candidat!",
     "errorNewCandidate": "Vous êtes de sûr de ne pas vouloir ajouter ",
     "errorRetrievingForms": "Une erreur semble s'être produite lors de la récupération des sondages sur notre serveur. Contactez l'administrateur de ce site. Erreur: ",

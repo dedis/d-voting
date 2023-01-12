@@ -96,6 +96,7 @@
     "enterSubjectTitleLg1": "Geben Sie den Titel des Themas Deutsch ein",
     "enterSubjectTitleLg": "Geben Sie den Titel des Themas Englisch ein",
     "enterSubjectTitleLg2": "Geben Sie den Titel des Themas Französisch ein",
+    "errorAddAuth": "Beim Hinzufügen der Berechtigung zum Verwalten Ihres Formulars scheint ein Fehler aufgetreten zu sein. Wenden Sie sich an den Administrator dieser Website.",
     "errorCandidates": "Sie müssen mindestens einen Kandidaten hinzufügen!",
     "errorNewCandidate": "Sind Sie sicher, dass Sie nichts hinzufügen möchten?",
     "errorRetrievingForms": "Beim Abrufen aller Formulare von unserem Server scheint ein Fehler aufgetreten zu sein. Wenden Sie sich an den Administrator dieser Website. Fehler:",
