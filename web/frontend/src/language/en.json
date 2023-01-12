@@ -87,8 +87,12 @@
     "noFile": "No file found",
     "createElecDesc": "Create a new form by filling out the information below or by",
     "uploadJSON": "uploading a JSON file",
-    "enterMainTitle": "Enter the Main Title",
-    "enterSubjectTitle": "Enter the Subject Title",
+    "enterMainTitleLg": "Enter the Main Title in English",
+    "enterMainTitleLg1": "Enter the Main Title in French",
+    "enterMainTitleLg2": "Enter the Main Title in Deutsch",
+    "enterSubjectTitleLg1": "Enter the Subject Title in French",
+    "enterSubjectTitleLg": "Enter the Subject Title in English",
+    "enterSubjectTitleLg2": "Enter the Subject Title in Deutsch",
     "errorCandidates": "You must add at least one candidate!",
     "errorNewCandidate": "Are you sure you don't want to add ",
     "errorRetrievingForms": "An error seems to have occurred while retrieving all the forms from our server. Contact the administrator of this website. Error: ",
@@ -260,6 +264,9 @@
     "actionTextVoter2": "The results of the form are not available yet.",
     "resIndiv": "Individual",
     "resGroup": "Grouped",
+    "choice": "Choice",
+    "logoutWarning": "You are about to log out. Are you sure you want to continue?",
+    "continue": "Continue",
     "invalidInput": "Please enter a number between 1 and {{max}}."
   }
 }

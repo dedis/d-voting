@@ -80,7 +80,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers }) => {
         <div>
           <h3 className="text-lg break-words text-gray-600 w-96">{select.Title}</h3>
         </div>
-        <div>
+        <div className="text-right">
           <HintButton text={select.Hint} />
         </div>
       </div>
