@@ -13,19 +13,9 @@ const Logged: FC = () => {
   const fctx = useContext(FlashContext);
 
   const getCookie = () => {
-    let name = 'redirect' + '=';
-    let decodedCookie = decodeURIComponent(document.cookie);
-    let ca = decodedCookie.split(';');
-    for (let c of ca) {
-      let char = c;
-      while (char.charAt(0) == ' ') {
-        char = char.substring(1);
-      }
-      if (char.indexOf(name) == 0) {
-        return char.substring(name.length, char.length);
-      }
-    }
-    return '/'; // default value is the home page
+    let decodedCookies = decodeURIComponent(document.cookie);
+    const redirectCookie = decodedCookies.split('; ').find((row) => row.startsWith('redirect'));
+    return redirectCookie ? redirectCookie.split('=')[1] : '/'; // default value is the home page
   };
 
   useEffect(() => {
