@@ -14,6 +14,7 @@ type EditProxyModalProps = {
   nodeProxy: Map<string, string>;
   setNodeProxy: (nodeProxy: Map<string, string>) => void;
   node: string;
+  handleEditProxy(node: string, proxy: string): void;
 };
 
 const EditProxyModal: FC<EditProxyModalProps> = ({
@@ -22,6 +23,7 @@ const EditProxyModal: FC<EditProxyModalProps> = ({
   nodeProxy,
   setNodeProxy,
   node,
+  handleEditProxy,
 }) => {
   const { t } = useTranslation();
   const fctx = useContext(FlashContext);
@@ -85,6 +87,7 @@ const EditProxyModal: FC<EditProxyModalProps> = ({
           const newNodeProxy = new Map(nodeProxy);
           newNodeProxy.set(currentNode, currentProxy);
           setNodeProxy(newNodeProxy);
+          handleEditProxy(currentNode, currentProxy);
           fctx.addMessage(t('proxySuccessfullyEdited'), FlashLevel.Info);
         }
 
@@ -102,7 +105,7 @@ const EditProxyModal: FC<EditProxyModalProps> = ({
     setError(null);
     setOpen(false);
   };
-
+  // TODO : modify other languages
   const modalBody = (
     <>
       <Dialog.Title as="h3" className="text-lg leading-6 font-medium text-gray-900">

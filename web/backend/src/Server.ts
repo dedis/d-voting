@@ -357,9 +357,12 @@ app.put('/api/proxies/:nodeAddr', (req, res) => {
     const NewNode = bodydata.NewNode;
     if (NewNode !== nodeAddr) {
       proxiesDB.remove(nodeAddr);
-      nodeAddr = NewNode;
+      //nodeAddr = NewNode;
+      // TODO : recheck
+      proxiesDB.put(NewNode, bodydata.Proxy);
+    } else {
+      proxiesDB.put(nodeAddr, bodydata.Proxy);
     }
-    proxiesDB.put(nodeAddr, bodydata.Proxy);
     console.log('put', nodeAddr, '=>', bodydata.Proxy);
     res.status(200).send('ok');
   } catch (error: any) {
