@@ -12,14 +12,9 @@ type FormRowProps = {
 const FormRow: FC<FormRowProps> = ({ form }) => {
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
-    try {
-      if (form.Title === '') return;
-      console.log('configuration.MainTitle', form.Title);
-      const ts = JSON.parse(form.Title);
-      setTitles(ts);
-    } catch (e) {
-      console.log('error', e);
-    }
+    if (form.Title === '') return;
+    const ts = JSON.parse(form.Title);
+    setTitles(ts);
   }, [form]);
   return (
     <tr className="bg-white border-b hover:bg-gray-50 ">

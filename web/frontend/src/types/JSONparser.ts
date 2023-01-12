@@ -8,8 +8,16 @@ import {
 
 const unmarshalText = (text: any): types.TextQuestion => {
   const t = text as types.TextQuestion;
+  const titles = JSON.parse(t.Title);
+  const hint = JSON.parse(t.Hint);
   return {
     ...text,
+    Title: titles.en,
+    TitleFr: titles.fr,
+    TitleDe: titles.de,
+    Hint: hint.en,
+    HintFr: hint.fr,
+    HintDe: hint.de,
     ChoicesMap: choicesToChoicesMap(t.Choices),
     Type: TEXT,
   };
@@ -17,8 +25,15 @@ const unmarshalText = (text: any): types.TextQuestion => {
 
 const unmarshalRank = (rank: any): types.RankQuestion => {
   const r = rank as types.RankQuestion;
+  const titles = JSON.parse(r.Title);
+  const hint = JSON.parse(r.Hint);
   return {
     ...rank,
+    TitleFr: titles.fr,
+    TitleDe: titles.de,
+    Hint: hint.en,
+    HintFr: hint.fr,
+    HintDe: hint.de,
     ChoicesMap: choicesToChoicesMap(r.Choices),
     Type: RANK,
   };
@@ -26,8 +41,15 @@ const unmarshalRank = (rank: any): types.RankQuestion => {
 
 const unmarshalSelect = (select: any): types.SelectQuestion => {
   const s = select as types.SelectQuestion;
+  const titles = JSON.parse(s.Title);
+  const hint = JSON.parse(s.Hint);
   return {
     ...select,
+    TitleFr: titles.fr,
+    TitleDe: titles.de,
+    Hint: hint.en,
+    HintFr: hint.fr,
+    HintDe: hint.de,
     ChoicesMap: choicesToChoicesMap(s.Choices),
     Type: SELECT,
   };
@@ -118,10 +140,12 @@ const unmarshalSubjectAndCreateAnswers = (
 };
 
 const unmarshalConfig = (json: any): types.Configuration => {
+  const titles = JSON.parse(json.MainTitle);
+
   const conf = {
-    MainTitle: json.MainTitle,
-    TitleFr: '',
-    TitleDe: '',
+    MainTitle: titles.en,
+    TitleFr: titles.fr,
+    TitleDe: titles.de,
     Scaffold: [],
   };
   for (const subject of json.Scaffold) {

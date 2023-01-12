@@ -23,13 +23,9 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
 }) => {
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
-    try {
-      if (configuration.MainTitle === '') return;
-      const ts = JSON.parse(configuration.MainTitle);
-      setTitles(ts);
-    } catch (e) {
-      console.log('error', e);
-    }
+    if (configuration.MainTitle === '') return;
+    const ts = JSON.parse(configuration.MainTitle);
+    setTitles(ts);
   }, [configuration]);
 
   const SubjectElementDisplay = (element: types.SubjectElement) => {
@@ -59,18 +55,12 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
   };
 
   const SubjectTree = (subject: types.Subject) => {
-    let sbj;
-    try {
-      sbj = JSON.parse(subject.Title);
-    } catch (e) {
-      sbj = subject.Title;
-    }
     return (
       <div key={subject.ID}>
         <h3 className="text-xl break-all pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-          {language === 'en' && sbj.en}
-          {language === 'fr' && sbj.fr}
-          {language === 'de' && sbj.de}
+          {language === 'en' && subject.Title}
+          {language === 'fr' && subject.TitleFr}
+          {language === 'de' && subject.TitleDe}
         </h3>
         {subject.Order.map((id: ID) => (
           <div key={id}>
