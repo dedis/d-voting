@@ -289,7 +289,7 @@ const textsSchema = yup.object({
         if (MaxLength > 1000) {
           return this.createError({
             path,
-            message: `MaxLength should be less than 1000 in texts [objectID: ${ID}]`,
+            message: `MaxLength should not exceed 1000 in texts [objectID: ${ID}]`,
           });
         }
         return true;
