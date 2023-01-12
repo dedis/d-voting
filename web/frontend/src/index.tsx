@@ -18,7 +18,13 @@ if (process.env.NODE_ENV !== 'production' && process.env.REACT_APP_NOMOCK !== 'o
   dvotingserver.start();
 }
 const arr = new Map<String, Array<String>>();
-const defaultAuth = { isLogged: false, firstname: '', lastname: '', authorization: arr };
+const defaultAuth = {
+  isLogged: false,
+  firstname: '',
+  lastname: '',
+  authorization: arr,
+  isAllowed: (authCtx: AuthState, subject: string, action: string) => false,
+};
 
 // AuthContext is a global state containing the authentication state. React
 // Context is a way to manage state globally, without having to pass props to
@@ -31,6 +37,7 @@ export interface AuthState {
   firstname: string;
   lastname: string;
   authorization: Map<String, Array<String>>;
+  isAllowed: (authCtx: AuthState, subject: string, action: string) => boolean;
 }
 
 export interface FlashState {
@@ -226,6 +233,12 @@ const AppContainer = () => {
           firstname: result.firstname,
           lastname: result.lastname,
           authorization: result.islogged ? new Map(Object.entries(result.authorization)) : arr,
+          isAllowed: (authCtx: AuthState, subject: string, action: string) => {
+            return (
+              authCtx.authorization.has(subject) &&
+              authCtx.authorization.get(subject).indexOf(action) !== -1
+            );
+          },
         });
 
         // wait for the default proxy to be set

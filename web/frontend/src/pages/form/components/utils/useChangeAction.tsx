@@ -64,7 +64,6 @@ const useChangeAction = (
   const { authorization, isLogged } = useContext(AuthContext);
 
   function hasAuthorization(subject: string, action: string): boolean {
-    console.log(authorization);
     return authorization.has(subject) && authorization.get(subject).indexOf(action) !== -1;
   }
 

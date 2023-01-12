@@ -106,10 +106,6 @@ app.get('/api/config/proxy', (req, res) => {
   res.status(200).send(process.env.DELA_NODE_URL);
 });
 
-/* const usersDB = lmdb.open<'admin' | 'operator', number>({
-  path: `${process.env.DB_PATH}dvoting-users`,
-});
-*/
 // This is via this endpoint that the client request the tequila key, this key
 // will then be used for redirection on the tequila server
 app.get('/api/get_teq_key', (req, res) => {
@@ -237,11 +233,6 @@ app.get('/api/user_rights', (req, res, next) => {
     return;
   }
   next();
-  /* const opts: RangeOptions = {};
-  const users = Array.from(
-    usersDB.getRange(opts).map(({ key, value }) => ({ id: '0', sciper: key, role: value }))
-  );
-  res.json(users); */
 });
 
 // This call (only for admins) allow an admin to add a role to a voter.
@@ -252,7 +243,6 @@ app.post('/api/add_role', (req, res, next) => {
   }
 
   const { sciper } = req.body;
-  // const { role } = req.body;
 
   // The sciper has to contain 6 numbers
   if (sciper > 999999 || sciper < 100000) {
@@ -262,27 +252,6 @@ app.post('/api/add_role', (req, res, next) => {
   next();
   // Call https://search-api.epfl.ch/api/ldap?q=228271, if the answer is
   // empty then sciper unknown, otherwise add it in userDB
-  /* axios
-    .get(`https://search-api.epfl.ch/api/ldap?q=${sciper}`)
-    .then((response) => {
-      if (response.data.length === 0) {
-        res.status(400).send('Unknown Sciper');
-        return;
-      }
-
-      usersDB
-        .put(sciper, role)
-        .then(() => res.status(200).send('Role added'))
-        .catch((error) => {
-          res.status(500).send('Failed to add role');
-          console.log(error);
-        });
-    })
-    .catch((error) => {
-      res.status(500).send('Failed to check Sciper');
-      console.log(error);
-    });
-    */
 });
 
 // This call (only for admins) allow an admin to remove a role to a user.
@@ -292,24 +261,6 @@ app.post('/api/remove_role', (req, res, next) => {
     return;
   }
   next();
-  /* const { sciper } = req.body;
-  usersDB
-    .remove(sciper)
-    .then(() => {
-      const sessionIDs = sciper2sess.get(sciper);
-      if (sessionIDs !== undefined) {
-        sessionIDs.forEach((_, sessionID) => {
-          store.destroy(sessionID);
-        });
-      }
-
-      res.status(200).send('Removed');
-    })
-    .catch((error) => {
-      res.status(500).send('Remove role failed');
-      console.log(error);
-    });
-    */
 });
 
 // ---

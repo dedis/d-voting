@@ -29,12 +29,6 @@ import Logged from 'pages/session/Logged';
 import Flash from './Flash';
 import ClientError from './ClientError';
 
-function hasAuthorization(authCtx, subject: string, action: string): boolean {
-  console.log(authCtx.authorization);
-  return (
-    authCtx.authorization.has(subject) && authCtx.authorization.get(subject).indexOf(action) !== -1
-  );
-}
 const App = () => {
   const RequireAuth = ({
     children,
@@ -50,12 +44,10 @@ const App = () => {
     if (!authCtx.isLogged) {
       return <Navigate to={ROUTE_LOGIN} state={{ from: location }} replace />;
     } else {
-      if (auth && !hasAuthorization(authCtx, auth[0], auth[1])) {
-        console.log('unauthorized');
+      if (auth && !authCtx.isAllowed(authCtx, auth[0], auth[1])) {
         return <Navigate to={ROUTE_UNAUTHORIZED} state={{ from: location }} replace />;
       }
     }
-    console.log('authorized');
     return children;
   };
 

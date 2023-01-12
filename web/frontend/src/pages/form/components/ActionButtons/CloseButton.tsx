@@ -4,19 +4,15 @@ import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OngoingAction, Status } from 'types/form';
 import ActionButton from './ActionButton';
-function hasAuthorization(authCtx, subject: string, action: string): boolean {
-  return (
-    authCtx.authorization.has(subject) && authCtx.authorization.get(subject).indexOf(action) !== -1
-  );
-}
+
+const SUBJECT_ELECTION = 'election';
+const ACTION_CREATE = 'create';
 const CloseButton = ({ status, handleClose, ongoingAction }) => {
   const authCtx = useContext(AuthContext);
   const { t } = useTranslation();
 
-  //const isAuthorized = authCtx.role === UserRole.Admin || authCtx.role === UserRole.Operator;
-
   return (
-    hasAuthorization(authCtx, 'election', 'create') &&
+    authCtx.isAllowed(authCtx, SUBJECT_ELECTION, ACTION_CREATE) &&
     status === Status.Open && (
       <ActionButton
         handleClick={handleClose}
