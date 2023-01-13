@@ -122,7 +122,7 @@ const FormForm: FC<FormFormProps> = () => {
     newSubjects[newSubjects.findIndex((s) => s.ID === subject.ID)] = subject;
     setConf({ ...conf, Scaffold: newSubjects });
   };
-  // languages: string
+
   const addSubject = () => {
     const newSubjectsEn = [...Scaffold];
     newSubjectsEn.push(newSubject());

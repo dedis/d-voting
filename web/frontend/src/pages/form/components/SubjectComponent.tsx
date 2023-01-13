@@ -55,7 +55,6 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
   const [components, setComponents] = useState<ReactElement[]>([]);
 
   const { Title, Order, Elements, TitleFr, TitleDe } = subject;
-  //const [language, setLanguage] = useState('en');
   // When a property changes, we notify the parent with the new subject object
   useEffect(() => {
     // We only notify the parent when the subject is mounted

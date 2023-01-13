@@ -17,7 +17,6 @@ import DisplayTypeIcon from './DisplayTypeIcon';
 
 import { availableLanguages } from 'language/Configuration';
 
-//import TranslatableInput from './TranslatableInput';
 type AddQuestionModalProps = {
   question: RankQuestion | SelectQuestion | TextQuestion;
   open: boolean;
@@ -66,7 +65,6 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
       notifyParent(values);
       setOpen(false);
     } catch (err: any) {
-      console.log('erreur', err);
       setErrors(err.errors);
     }
   };

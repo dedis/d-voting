@@ -39,7 +39,6 @@ const TextResult: FC<TextResultProps> = ({ textResult }) => {
 };
 
 export const IndividualTextResult: FC<IndividualTextResultProps> = ({ text, textResult }) => {
-  console.log(textResult);
   return (
     <div>
       {textResult[0].map((result, index) => {
