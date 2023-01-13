@@ -12,7 +12,7 @@ type SelectProps = {
 
 const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
   const { t } = useTranslation();
-
+  const [errors, setErrors] = useState([]);
   const handleChecks = (e: React.ChangeEvent<HTMLInputElement>, choiceIndex: number) => {
     const newAnswers = answersFrom(answers);
     let selectAnswers = newAnswers.SelectAnswers.get(select.ID);
@@ -60,19 +60,12 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
     try {
       const ts = JSON.parse(select.Title);
       setTitles(ts);
+      setErrors([]);
     } catch (e) {
-      console.log('error', e);
+      setErrors(e.errors);
     }
   }, [select]);
-  const [hint, setHint] = useState<any>({});
-  useEffect(() => {
-    try {
-      const h = JSON.parse(select.Hint);
-      setHint(h);
-    } catch (e) {
-      console.log('error', e);
-    }
-  }, [select]);
+  
   const choiceDisplay = (isChecked: boolean, choice: string, choiceIndex: number) => {
     return (
       <div key={choice}>
@@ -101,9 +94,9 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
           </h3>
         </div>
         <div>
-          {language === 'en' && <HintButton text={hint.en} />}
-          {language === 'fr' && <HintButton text={hint.fr} />}
-          {language === 'de' && <HintButton text={hint.de} />}
+          {language === 'en' && <HintButton text={select.Hint} />}
+          {language === 'fr' && <HintButton text={select.HintFr} />}
+          {language === 'de' && <HintButton text={select.HintDe} />}
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>

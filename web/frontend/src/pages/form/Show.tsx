@@ -201,7 +201,6 @@ const FormShow: FC = () => {
   useEffect(() => {
     try {
       if (configObj.MainTitle === '') return;
-      console.log('configObj.MainTitle', configObj.MainTitle);
       const ts = JSON.parse(configObj.MainTitle);
       setTitles(ts);
     } catch (e) {

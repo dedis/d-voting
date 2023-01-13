@@ -57,22 +57,15 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
     );
   };
   const [titles, setTitles] = useState<any>({});
+  const [errors, setErrors] = useState([]);
 
-  useEffect(() => {
+ useEffect(() => {
     try {
       const ts = JSON.parse(rank.Title);
       setTitles(ts);
+      setErrors([]);
     } catch (e) {
-      console.log('error', e);
-    }
-  }, [rank]);
-  const [hint, setHint] = useState<any>({});
-  useEffect(() => {
-    try {
-      const h = JSON.parse(rank.Hint);
-      setHint(h);
-    } catch (e) {
-      console.log('error', e);
+      setErrors(e.errors);
     }
   }, [rank]);
   const choiceDisplay = (choice: string, rankIndex: number) => {
@@ -108,9 +101,9 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
           </h3>
         </div>
         <div>
-          {language === 'en' && <HintButton text={hint.en} />}
-          {language === 'fr' && <HintButton text={hint.fr} />}
-          {language === 'de' && <HintButton text={hint.de} />}
+          {language === 'en' && <HintButton text={rank.Hint} />}
+          {language === 'fr' && <HintButton text={rank.HintFr} />}
+          {language === 'de' && <HintButton text={rank.HintDe} />}
         </div>
       </div>
       <div className="mt-5 px-4 max-w-[300px] sm:pl-8 sm:max-w-md">

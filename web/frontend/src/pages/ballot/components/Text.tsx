@@ -16,7 +16,6 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
   const [charCounts, setCharCounts] = useState(
     new Array<number>(text.ChoicesMap.get('en').length).fill(0)
   );
-
   const requirementsDisplay = () => {
     let requirements = '';
     const min = text.MinN;
@@ -80,25 +79,6 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answers]);
 
-  const [titles, setTitles] = useState<any>({});
-  useEffect(() => {
-    try {
-      const ts = JSON.parse(text.Title);
-      setTitles(ts);
-    } catch (e) {
-      console.log('error', e);
-    }
-  }, [text]);
-  const [hint, setHint] = useState<any>({});
-  useEffect(() => {
-    try {
-      const h = JSON.parse(text.Hint);
-      setHint(h);
-    } catch (e) {
-      console.log('error', e);
-    }
-  }, [text]);
-
   const choiceDisplay = (choice: string, choiceIndex: number) => {
     const columns = text.MaxLength > 50 ? 50 : text.MaxLength;
     return (
@@ -123,15 +103,15 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
       <div className="grid grid-rows-1 grid-flow-col">
         <div>
           <h3 className="text-lg break-words text-gray-600 w-96">
-            {language === 'en' && titles.en}
-            {language === 'fr' && titles.fr}
-            {language === 'de' && titles.de}
+            {language === 'en' && text.Title}
+            {language === 'fr' && text.TitleFr}
+            {language === 'de' && text.TitleDe}
           </h3>
         </div>
         <div>
-          {language === 'en' && <HintButton text={hint.en} />}
-          {language === 'fr' && <HintButton text={hint.fr} />}
-          {language === 'de' && <HintButton text={hint.de} />}
+          {language === 'en' && <HintButton text={text.Hint} />}
+          {language === 'fr' && <HintButton text={text.HintFr} />}
+          {language === 'de' && <HintButton text={text.HintDe} />}
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>
