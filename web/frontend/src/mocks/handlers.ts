@@ -170,7 +170,15 @@ export const handlers = [
       Voters,
     });
 
-    return res(ctx.status(200), ctx.json({ Status: 0, Token: fakeToken }));
+    const BallotID = uid();
+
+    return res(
+      ctx.status(200),
+      ctx.json({
+        BallotID: BallotID,
+        Ballot: Ballot,
+      })
+    );
   }),
 
   rest.put(endpoints.editForm(':FormID'), async (req, res, ctx) => {
