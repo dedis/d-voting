@@ -14,14 +14,16 @@ import { SequelizeAdapter } from 'casbin-sequelize-adapter';
 const MemoryStore = createMemoryStore(session);
 const SUBJECT_ROLES = 'roles';
 const SUBJECT_PROXIES = 'proxies';
+const SUBJECT_ELECTION = 'election';
 
 const ACTION_LIST = 'list';
-const ACTION_ACTION_REMOVE = 'remove';
+const ACTION_REMOVE = 'remove';
 const ACTION_ADD = 'add';
 const ACTION_PUT = 'put';
 const ACTION_POST = 'post';
 const ACTION_DELETE = 'delete';
 const ACTION_OWN = 'own';
+const ACTION_CREATE = 'create';
 // store is used to store the session
 const store = new MemoryStore({
   checkPeriod: 86400000, // prune expired entries every 24h
@@ -307,7 +309,7 @@ app.post('/api/add_role', (req, res) => {
 
 // This call (only for admins) allow an admin to remove a role to a user.
 app.post('/api/remove_role', (req, res) => {
-  if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_ACTION_REMOVE)) {
+  if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_REMOVE)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
@@ -538,7 +540,11 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
 }
 
 // Secure /api/evoting to admins and operators
-app.put('/api/evoting/authorizations', (req) => {
+app.put('/api/evoting/authorizations', (req, res) => {
+  if (!isAuthorized(req.session.userid, SUBJECT_ELECTION, ACTION_CREATE)) {
+    res.status(400).send('Unauthorized');
+    return;
+  }
   const { FormID } = req.body;
   enf.addPolicy(String(req.session.userid), FormID, ACTION_OWN);
 });
