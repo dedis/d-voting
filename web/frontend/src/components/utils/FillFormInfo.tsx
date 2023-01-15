@@ -53,6 +53,8 @@ const useFillFormInfo = (formData: FormInfo) => {
 const useFillLightFormInfo = (formData: LightFormInfo) => {
   const [id, setId] = useState<ID>('');
   const [title, setTitle] = useState<string>('');
+  const [titleFr, setTitleFr] = useState<string>('');
+  const [titleDe, setTitleDe] = useState<string>('');
   const [status, setStatus] = useState<Status>(null);
   const [pubKey, setPubKey] = useState<string>('');
 
@@ -62,12 +64,16 @@ const useFillLightFormInfo = (formData: LightFormInfo) => {
       setTitle(formData.Title);
       setStatus(formData.Status);
       setPubKey(formData.Pubkey);
+      setTitleFr(formData.TitleFr);
+      setTitleDe(formData.TitleDe);
     }
   }, [formData]);
 
   return {
     id,
     title,
+    titleFr,
+    titleDe,
     status,
     setStatus,
     pubKey,

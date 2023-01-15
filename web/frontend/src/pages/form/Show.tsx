@@ -197,14 +197,27 @@ const FormShow: FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error]);
+  const isJson = (str: string) => {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+  }
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
-    try {
+    try{      
       if (configObj.MainTitle === '') return;
-      const ts = JSON.parse(configObj.MainTitle);
-      setTitles(ts);
+      if(isJson(configObj.MainTitle)){
+        const ts = JSON.parse(configObj.MainTitle);
+        setTitles(ts);
+      }else {
+        const t = {en: configObj.MainTitle, fr: configObj.TitleFr, de: configObj.TitleDe};
+        setTitles(t);
+      }
     } catch (e) {
-      setError(e.errors);
+      setError(e.error)
     }
   }, [configObj]);
   return (
@@ -218,9 +231,9 @@ const FormShow: FC = () => {
       {!loading ? (
         <>
           <div className="pt-8 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-            {i18n.language === 'en' && titles.en}
-            {i18n.language === 'fr' && titles.fr}
-            {i18n.language === 'de' && titles.de}
+            {i18n.language === 'en' && titles.en }
+            {i18n.language === 'fr' && titles.fr }
+            {i18n.language === 'de' && titles.de }
           </div>
 
           <div className="pt-2 break-all">Form ID : {formId}</div>

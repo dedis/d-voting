@@ -21,12 +21,30 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
   userErrors,
   language,
 }) => {
+  const isJson = (str: string) => {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+  }
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
     if (configuration.MainTitle === '') return;
+    if(isJson(configuration.MainTitle)){
     const ts = JSON.parse(configuration.MainTitle);
     setTitles(ts);
+    }else{
+      const t = {en: configuration.MainTitle, fr: configuration.TitleFr, de: configuration.TitleDe};
+      setTitles(t);
+    }
+    
   }, [configuration]);
+
+  
+ 
+
 
   const SubjectElementDisplay = (element: types.SubjectElement) => {
     return (
@@ -55,12 +73,17 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
   };
 
   const SubjectTree = (subject: types.Subject) => {
+    let sbj;
+    if (isJson(subject.Title)) {
+      sbj = JSON.parse(subject.Title);
+    }
+    if(sbj=== undefined) sbj = {en: subject.Title, fr: subject.TitleFr, de: subject.TitleDe};
     return (
       <div key={subject.ID}>
         <h3 className="text-xl break-all pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-          {language === 'en' && subject.Title}
-          {language === 'fr' && subject.TitleFr}
-          {language === 'de' && subject.TitleDe}
+          {language === 'en' && sbj.en }
+          {language === 'fr' && sbj.fr }
+          {language === 'de' && sbj. de }
         </h3>
         {subject.Order.map((id: ID) => (
           <div key={id}>
@@ -81,9 +104,9 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
     <DragDropContext onDragEnd={(dropRes) => handleOnDragEnd(dropRes, answers, setAnswers)}>
       <div className="w-full mb-0 sm:mb-4 mt-4 sm:mt-6">
         <h3 className="pb-6 break-all text-2xl text-center text-gray-700">
-          {language === 'en' && titles.en}
-          {language === 'fr' && titles.fr}
-          {language === 'de' && titles.de}
+          {language === 'en' && titles.en }
+          {language === 'fr' && titles.fr }
+          {language === 'de' && titles.de }
         </h3>
         <div className="flex flex-col">
           {configuration.Scaffold.map((subject: types.Subject) => SubjectTree(subject))}

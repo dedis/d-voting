@@ -5,10 +5,24 @@ import {
   newAnswer,
   toArraysOfSubjectElement,
 } from './getObjectType';
-
+const isJson = (str: string) => {
+  try {
+    JSON.parse(str);
+  } catch (e) {
+    return false;
+  }
+  return true;
+};
 const unmarshalText = (text: any): types.TextQuestion => {
   const t = text as types.TextQuestion;
   const titles = JSON.parse(t.Title);
+  if (t.Hint === undefined) {
+    t.Hint = JSON.stringify({
+      en: '',
+      fr: '',
+      de: '',
+    });
+  }
   const hint = JSON.parse(t.Hint);
   return {
     ...text,
@@ -26,6 +40,13 @@ const unmarshalText = (text: any): types.TextQuestion => {
 const unmarshalRank = (rank: any): types.RankQuestion => {
   const r = rank as types.RankQuestion;
   const titles = JSON.parse(r.Title);
+  if (r.Hint === undefined) {
+    r.Hint = JSON.stringify({
+      en: '',
+      fr: '',
+      de: '',
+    });
+  }
   const hint = JSON.parse(r.Hint);
   return {
     ...rank,
@@ -42,6 +63,13 @@ const unmarshalRank = (rank: any): types.RankQuestion => {
 const unmarshalSelect = (select: any): types.SelectQuestion => {
   const s = select as types.SelectQuestion;
   const titles = JSON.parse(s.Title);
+  if (s.Hint === undefined) {
+    s.Hint = JSON.stringify({
+      en: '',
+      fr: '',
+      de: '',
+    });
+  }
   const hint = JSON.parse(s.Hint);
   return {
     ...select,
@@ -140,7 +168,15 @@ const unmarshalSubjectAndCreateAnswers = (
 };
 
 const unmarshalConfig = (json: any): types.Configuration => {
-  const titles = JSON.parse(json.MainTitle);
+  let titles;
+  if (isJson(json.MainTitle)) titles = JSON.parse(json.MainTitle);
+  else {
+    titles = {
+      en: json.MainTitle,
+      fr: json.TitleFr,
+      de: json.TitleDe,
+    };
+  }
 
   const conf = {
     MainTitle: titles.en,

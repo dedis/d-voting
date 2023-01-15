@@ -100,7 +100,7 @@ const mockForm1: any = {
       Texts: [
         {
           Title:
-            '{ "en" : Who were the two best TAs ?, "fr" : "Quels sont les deux meilleurs TA ? "de" : Who were the two best TAs ?} ',
+            '{ "en" : "Who were the two best TAs ?", "fr" : "Quels sont les deux meilleurs TA ?", "de" : "Who were the two best TAs ?"} ',
           ID: (0xcd13).toString(),
           MaxLength: 20,
           MaxN: 2,

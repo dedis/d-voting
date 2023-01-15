@@ -12,7 +12,6 @@ type SelectProps = {
 
 const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
   const { t } = useTranslation();
-  const [errors, setErrors] = useState([]);
   const handleChecks = (e: React.ChangeEvent<HTMLInputElement>, choiceIndex: number) => {
     const newAnswers = answersFrom(answers);
     let selectAnswers = newAnswers.SelectAnswers.get(select.ID);
@@ -55,14 +54,21 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
 
     return <div className="text-sm pl-2 pb-2 sm:pl-4 text-gray-400">{requirements}</div>;
   };
+  const isJson = (str: string) => {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+  }
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
-    try {
+    if(isJson(select.Title)){
       const ts = JSON.parse(select.Title);
       setTitles(ts);
-      setErrors([]);
-    } catch (e) {
-      setErrors(e.errors);
+    } else {
+      setTitles({en: select.Title, fr: select.TitleFr, de: select.TitleDe});
     }
   }, [select]);
   
