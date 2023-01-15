@@ -396,26 +396,49 @@ added to you path (like with `export PATH=$PATH:/Users/david/go/bin`).
 
 3: [Install tmux](https://github.com/tmux/tmux/wiki/Installing)
 
+4: The authorization are stored in a postgres database. We use Docker-compose to define it easily and allow us to start and stop all the services with a single command. You will then need to install docker compose using the command :
+
+```sh
+sudo snap install docker
+```
+
+And finish the installation by following the [steps](https://www.digitalocean.com/community/tutorial_collections/how-to-install-docker-compose) depending on your OS.
+
 # Setup a simple system with 5 nodes (Linux and MacOS)
 
-If you are using Windows and cannot use tmux, you need to follow the instructions in [this](#Setup-a-simple-system-with-5-nodes-(Windows))
- section.
+If you are using Windows and cannot use tmux, you need to follow the instructions in [this](<#Setup-a-simple-system-with-5-nodes-(Windows)>)
+section.
 
 1: Only for the first time
+
 ```sh
 cd web/backend
-npm install 
+npm install
 cp config.env.template config.env
 cd ../frontend
 npm install
 cd ../..
 ```
 
-2: Then run the following script to start and setup the nodes and the web server:
-
-
+2: In a new window, you will need to start the database:
 
 ```sh
+cd d-voting/web/backend/src
+sudo docker-compose up
+```
+
+If you want to stop the services you can use the following command:
+
+```sh
+sudo docker-compose down
+```
+
+If you want to have a way to check the database you can install [pgAdmin](https://www.pgadmin.org/download/).
+
+3: Then run the following script to start and setup the nodes and the web server:
+
+```sh
+cd d-voting
 ./runSystems.sh -n 5
 ```
 
@@ -423,18 +446,16 @@ This will run 8 terminal sessions. You can navigate by hitting
 <kbd>CTRL</kbd>+<kbd>B</kbd> and then <kbd>S</kbd>. Use the arrows to select a
 window.
 
-
-3: Stop nodes
-If you want to stop the system, you can use the following command: 
+4: Stop nodes
+If you want to stop the system, you can use the following command:
 
 (If you forgot, this will be done automatically when you start a new system)
-
 
 ```sh
 ./kill_test.sh
 ```
 
-4: Troubleshoot
+5: Troubleshoot
 
 If while running
 
@@ -453,7 +474,9 @@ then in the file runSystems.sh, replace the line:
 ```sh
 tmux send-keys -t $s:{end} "cd web/backend && npm start" C-m
 ```
+
 with
+
 ```sh
 tmux send-keys -t $s:{end} "cd web/backend && PORT=4000 npm start" C-m
 #or any other available port
@@ -537,7 +560,7 @@ form.
 
 ## Run the scenario test
 
-If nodes are running and `setup.sh` or `./runSystem.sh -n 3 --backend false --frontend false` (for this test you don't want the user interface so the web components are not needed)  has been called,
+If nodes are running and `setup.sh` or `./runSystem.sh -n 3 --backend false --frontend false` (for this test you don't want the user interface so the web components are not needed) has been called,
 you can run a test scenario:
 
 ```sh
@@ -561,7 +584,7 @@ Secret key: `28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409`
 <!---
 Currently not working
 
-## Run the scenario test with docker 
+## Run the scenario test with docker
 
 Use the following commands to launch and set up nodes, and start the scenario
 test with user defined number of nodes.
