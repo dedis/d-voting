@@ -23,7 +23,7 @@ const defaultAuth = {
   firstname: '',
   lastname: '',
   authorization: arr,
-  isAllowed: (authCtx: AuthState, subject: string, action: string) => false,
+  isAllowed: (subject: string, action: string) => false,
 };
 
 // AuthContext is a global state containing the authentication state. React
@@ -37,7 +37,7 @@ export interface AuthState {
   firstname: string;
   lastname: string;
   authorization: Map<String, Array<String>>;
-  isAllowed: (authCtx: AuthState, subject: string, action: string) => boolean;
+  isAllowed: (subject: string, action: string) => boolean;
 }
 
 export interface FlashState {
@@ -233,10 +233,10 @@ const AppContainer = () => {
           firstname: result.firstname,
           lastname: result.lastname,
           authorization: result.islogged ? new Map(Object.entries(result.authorization)) : arr,
-          isAllowed: (authCtx: AuthState, subject: string, action: string) => {
+          isAllowed: function (subject: string, action: string) {
             return (
-              authCtx.authorization.has(subject) &&
-              authCtx.authorization.get(subject).indexOf(action) !== -1
+              this.authorization.has(subject) &&
+              this.authorization.get(subject).indexOf(action) !== -1
             );
           },
         });

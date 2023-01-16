@@ -12,7 +12,7 @@ const ShuffleButton = ({ status, handleShuffle, ongoingAction }) => {
   const { t } = useTranslation();
 
   return (
-    authCtx.isAllowed(authCtx, SUBJECT_ELECTION, ACTION_CREATE) &&
+    authCtx.isAllowed(SUBJECT_ELECTION, ACTION_CREATE) &&
     status === Status.Closed && (
       <ActionButton
         handleClick={handleShuffle}

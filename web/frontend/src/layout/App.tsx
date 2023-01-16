@@ -44,7 +44,7 @@ const App = () => {
     if (!authCtx.isLogged) {
       return <Navigate to={ROUTE_LOGIN} state={{ from: location }} replace />;
     } else {
-      if (auth && !authCtx.isAllowed(authCtx, auth[0], auth[1])) {
+      if (auth && !authCtx.isAllowed(auth[0], auth[1])) {
         return <Navigate to={ROUTE_UNAUTHORIZED} state={{ from: location }} replace />;
       }
     }

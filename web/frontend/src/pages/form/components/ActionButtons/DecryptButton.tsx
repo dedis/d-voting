@@ -12,7 +12,7 @@ const DecryptButton = ({ status, handleDecrypt, ongoingAction }) => {
   const { t } = useTranslation();
 
   return (
-    authCtx.isAllowed(authCtx, SUBJECT_ELECTION, ACTION_CREATE) &&
+    authCtx.isAllowed(SUBJECT_ELECTION, ACTION_CREATE) &&
     status === Status.ShuffledBallots && (
       <ActionButton
         handleClick={handleDecrypt}
