@@ -83,7 +83,7 @@ const Rank: FC<RankProps> = ({ rank, answers }) => {
         <div>
           <h3 className="text-lg break-words text-gray-600 w-96">{rank.Title}</h3>
         </div>
-        <div>
+        <div className="text-right">
           <HintButton text={rank.Hint} />
         </div>
       </div>

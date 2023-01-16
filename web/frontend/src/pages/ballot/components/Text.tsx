@@ -103,7 +103,7 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
         <div>
           <h3 className="text-lg break-words text-gray-600 w-96">{text.Title}</h3>
         </div>
-        <div>
+        <div className="text-right">
           <HintButton text={text.Hint} />
         </div>
       </div>
