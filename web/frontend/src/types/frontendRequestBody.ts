@@ -9,6 +9,9 @@ interface NewFormBody {
 interface NewFormVoteBody {
   Ballot: [];
 }
+interface AddAuthBody {
+  FormID: ID;
+}
 
 interface EditFormBody {
   Action: Action.Open | Action.Close | Action.CombineShares | Action.Cancel;
@@ -52,4 +55,5 @@ export type {
   UpdateProxyAddress,
   NewUserRole,
   RemoveUserRole,
+  AddAuthBody,
 };
