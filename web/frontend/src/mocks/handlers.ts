@@ -14,6 +14,7 @@ import {
   EditFormBody,
   NewDKGBody,
   NewFormBody,
+  AddAuthBody,
   NewFormVoteBody,
   NewProxyAddress,
   NewUserRole,
@@ -53,10 +54,10 @@ const isAuthorized = (roles: UserRole[]): boolean => {
   }
   return false;
 };
+const auth = new Map<String, Array<String>>();
 
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, async (req, res, ctx) => {
-    const auth = new Map<String, Array<String>>();
     auth.set('roles', ['list', 'remove', 'add']);
     auth.set('proxy', ['list', 'remove', 'add']);
     auth.set('election', ['create']);
@@ -108,6 +109,10 @@ export const handlers = [
         ),
       })
     );
+  }),
+  rest.put(endpoints.addFormAuthorization, async (req, res, ctx) => {
+    const { FormID } = req.body as AddAuthBody;
+    auth.set(FormID, ['own']);
   }),
 
   rest.get(endpoints.form(defaultProxy, ':FormID'), async (req, res, ctx) => {
