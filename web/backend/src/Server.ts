@@ -598,11 +598,9 @@ app.use('/api/evoting/services/shuffle/:formID', (req, res, next) => {
 app.delete('/api/evoting/forms/:formID', (req, res) => {
   const { formID } = req.params;
   if (!isAuthorized(req.session.userid, formID, ACTION_OWN)) {
-    console.log('not authorized');
     res.status(400).send('Unauthorized');
     return;
   }
-  console.log('authorized');
   const edCurve = kyber.curve.newCurve('edwards25519');
 
   const priv = Buffer.from(process.env.PRIVATE_KEY as string, 'hex');
