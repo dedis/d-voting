@@ -79,7 +79,8 @@ const Ballot: FC = () => {
           throw new Error(txt);
         }
         const res = await response.json();
-        setModalText(`${t('voteSuccess')}${res.BallotID}`);
+        const id = res.BallotID || 'Not Implemented Yet, see issue 240';
+        setModalText(`${t('voteSuccess')} ${id}`);
         setModalTitle(t('voteSuccessful'));
       } catch (error) {
         if (error.message.includes('ECONNREFUSED')) {
