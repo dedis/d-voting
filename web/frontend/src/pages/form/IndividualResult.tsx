@@ -68,19 +68,19 @@ const IndividualResult: FC<IndividualResultProps> = ({
   };
   const isJson = (str: string) => {
     try {
-        JSON.parse(str);
+      JSON.parse(str);
     } catch (e) {
-        return false;
+      return false;
     }
     return true;
-  }
+  };
   const SubjectElementResultDisplay = (element: SubjectElement) => {
     let titles;
-    if(isJson(element.Title)){
+    if (isJson(element.Title)) {
       titles = JSON.parse(element.Title);
     }
-    if(titles === undefined){
-      titles= {en: element.Title, fr: element.TitleFr, de: element.TitleDe};
+    if (titles === undefined) {
+      titles = { en: element.Title, fr: element.TitleFr, de: element.TitleDe };
     }
     return (
       <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
@@ -118,11 +118,11 @@ const IndividualResult: FC<IndividualResultProps> = ({
 
   const displayResults = (subject: Subject) => {
     let sbj;
-    if(isJson(subject.Title)){
+    if (isJson(subject.Title)) {
       sbj = JSON.parse(subject.Title);
     }
-    if(sbj === undefined){
-      sbj= {en: subject.Title, fr: subject.TitleFr, de: subject.TitleDe};
+    if (sbj === undefined) {
+      sbj = { en: subject.Title, fr: subject.TitleFr, de: subject.TitleDe };
     }
     return (
       <div key={subject.ID}>

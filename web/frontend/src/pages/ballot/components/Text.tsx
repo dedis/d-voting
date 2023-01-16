@@ -13,9 +13,7 @@ type TextProps = {
 
 const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
   const { t } = useTranslation();
-  const [charCounts, setCharCounts] = useState(
-    new Array<number>(text.ChoicesMap.get('en').length).fill(0)
-  );
+  const [charCounts, setCharCounts] = useState(new Array<number>(text.Choices.length).fill(0));
   const requirementsDisplay = () => {
     let requirements = '';
     const min = text.MinN;

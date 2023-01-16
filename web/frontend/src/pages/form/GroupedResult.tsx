@@ -51,20 +51,20 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
   };
   const isJson = (str: string) => {
     try {
-        JSON.parse(str);
+      JSON.parse(str);
     } catch (e) {
-        return false;
+      return false;
     }
     return true;
-  }
+  };
 
   const SubjectElementResultDisplay = (element: SubjectElement) => {
     let titles;
-    if(isJson(element.Title)){
+    if (isJson(element.Title)) {
       titles = JSON.parse(element.Title);
     }
-    if(titles===undefined){
-      titles = {en:element.Title, fr:element.TitleFr, de:element.TitleDe};
+    if (titles === undefined) {
+      titles = { en: element.Title, fr: element.TitleFr, de: element.TitleDe };
     }
     return (
       <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
@@ -73,11 +73,9 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
             {questionIcons[element.Type]}
           </div>
           <h2 className="text-lg pb-2">
-            
-              { i18n.language === 'en' &&  titles.en}
-              { i18n.language === 'fr' &&  titles.fr}
-              {i18n.language === 'de'&&  titles.de}
-      
+            {i18n.language === 'en' && titles.en}
+            {i18n.language === 'fr' && titles.fr}
+            {i18n.language === 'de' && titles.de}
           </h2>
         </div>
         {element.Type === RANK && rankResult.has(element.ID) && (
@@ -98,20 +96,18 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
 
   const displayResults = (subject: Subject) => {
     let sbj;
-    if(isJson(subject.Title)){
+    if (isJson(subject.Title)) {
       sbj = JSON.parse(subject.Title);
-      console.log(sbj);
     }
-    if(sbj === undefined){
-      sbj = {en: subject.Title, fr: subject.TitleFr, de: subject.TitleDe};
+    if (sbj === undefined) {
+      sbj = { en: subject.Title, fr: subject.TitleFr, de: subject.TitleDe };
     }
-    console.log(sbj);
     return (
       <div key={subject.ID}>
         <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-          {i18n.language === 'en'&&  sbj.en}
-          { i18n.language === 'fr' &&  sbj.fr}
-          { i18n.language === 'de' && sbj.de}
+          {i18n.language === 'en' && sbj.en}
+          {i18n.language === 'fr' && sbj.fr}
+          {i18n.language === 'de' && sbj.de}
         </h2>
         {subject.Order.map((id: ID) => (
           <div key={id}>

@@ -79,9 +79,7 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
     const obj = Object.fromEntries(ChoicesMap);
     const newChoicesMap = new Map(Object.entries(obj));
     switch (lg) {
-      case 'en':
-      case 'fr':
-      case 'de':
+      case lg:
         setState({
           ...state,
           ChoicesMap: newChoicesMap.set(lg, [...newChoicesMap.get(lg), '']),
@@ -124,9 +122,7 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
     e.persist();
     const obj = Object.fromEntries(ChoicesMap);
     switch (lg) {
-      case 'en':
-      case 'fr':
-      case 'de':
+      case lg:
         const newChoicesMap = new Map(
           Object.entries({
             ...obj,

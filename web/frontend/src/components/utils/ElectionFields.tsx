@@ -7,7 +7,7 @@ import { useFillLightFormInfo } from './FillFormInfo';
  * @returns the fields of a form and a function to change the status field
  */
 const FormFields = (formData: LightFormInfo) => {
-  const { title, titleFr, titleDe,id, status, pubKey, setStatus } = useFillLightFormInfo(formData);
+  const { title, titleFr, titleDe, id, status, pubKey, setStatus } = useFillLightFormInfo(formData);
   return { title, id, status, pubKey, setStatus };
 };
 

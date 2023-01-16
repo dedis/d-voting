@@ -17,7 +17,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
     let selectAnswers = newAnswers.SelectAnswers.get(select.ID);
 
     if (select.MaxN === 1) {
-      selectAnswers = new Array<boolean>(select.ChoicesMap.get('en').length).fill(false);
+      selectAnswers = new Array<boolean>(select.Choices.length).fill(false);
     }
 
     selectAnswers[choiceIndex] = e.target.checked;
@@ -56,22 +56,22 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
   };
   const isJson = (str: string) => {
     try {
-        JSON.parse(str);
+      JSON.parse(str);
     } catch (e) {
-        return false;
+      return false;
     }
     return true;
-  }
+  };
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
-    if(isJson(select.Title)){
+    if (isJson(select.Title)) {
       const ts = JSON.parse(select.Title);
       setTitles(ts);
     } else {
-      setTitles({en: select.Title, fr: select.TitleFr, de: select.TitleDe});
+      setTitles({ en: select.Title, fr: select.TitleFr, de: select.TitleDe });
     }
   }, [select]);
-  
+
   const choiceDisplay = (isChecked: boolean, choice: string, choiceIndex: number) => {
     return (
       <div key={choice}>

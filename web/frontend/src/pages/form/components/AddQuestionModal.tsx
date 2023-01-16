@@ -124,54 +124,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
         return;
     }
   };
-  /*type renderQuestionModalProps = {
-    lg : string;
-    nameC: string[];
-  };
-  const RenderQuestionModal : FC<renderQuestionModalProps> = ({lg ,nameC}) => {
-    return(<div className="pb-2">
-                        {Choices.get('en').map((choice: string, idx: number) => (
-                          <div className="flex w-60" key={`${ID}wrapper${idx}`}>
-                            <input
-                              key={`${ID}choice${idx}`}
-                              value={choice}
-                              onChange={updateChoice(idx, language)}
-                              name="Choice"
-                              type="text"
-                              placeholder={
-                                Type !== TEXT ? `${'Choice'}` + ` ${idx + 1}` : `Answer ${idx + 1}`
-                              }
-                              className="my-1 px-1 w-60 ml-2 border rounded-md"
-                            />
-                            <div className="flex ml-1 mt-1.2">
-                              {Choices.get('en').length > 1 && (
-                                <button
-                                  key={`${ID}deleteChoice${idx}`}
-                                  type="button"
-                                  className="inline-flex items-center border border-transparent rounded-full font-medium text-gray-300 hover:text-gray-400"
-                                  onClick={handleDeleteChoice(idx)}>
-                                  <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
-                                </button>
-                              )}
-                              {idx === Choices.get('en').length - 1 && (
-                                <button
-                                  key={`${ID}addChoice${idx}`}
-                                  type="button"
-                                  className="inline-flex items-center border border-transparent rounded-full font-medium text-green-600 hover:text-green-800"
-                                  onClick={handleAddChoice}>
-                                  <PlusCircleIcon className="h-5 w-5" aria-hidden="true" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-  
-  }*/
-  //{language === 'en' && ( <RenderQuestionModal lg="Choice" nameC= {Choices}/>)}
-  //{language === 'fr' && ( <RenderQuestionModal lg="Choix" nameC={ChoicesFr}/>)}
-  //{language === 'de' && (<RenderQuestionModal lg="Choix" nameC= {ChoicesDe}/>)}
+
   return (
     <Transition.Root show={open} as={Fragment}>
       <Dialog
