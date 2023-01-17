@@ -56,6 +56,10 @@ const isAuthorized = (roles: UserRole[]): boolean => {
 
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, async (req, res, ctx) => {
+    const auth = new Map<String, Array<String>>();
+    auth.set('roles', ['list', 'remove', 'add']);
+    auth.set('proxy', ['list', 'remove', 'add']);
+    auth.set('election', ['create']);
     const isLogged = sessionStorage.getItem('is-authenticated') === 'true';
     const userId = isLogged ? mockUserID : 0;
     const userInfos = isLogged
@@ -64,6 +68,7 @@ export const handlers = [
           firstname: 'Alice',
           role: UserRole.Admin,
           sciper: userId,
+          authorization: Object.fromEntries(auth),
         }
       : {};
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
