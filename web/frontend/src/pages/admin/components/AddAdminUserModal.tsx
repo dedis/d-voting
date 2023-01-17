@@ -21,7 +21,7 @@ type AddAdminUserModalProps = {
   handleAddRoleUser(user: object): void;
 };
 
-const roles = [UserRole.Admin, UserRole.Operator];
+const roles: string[] = [UserRole.Admin, UserRole.Operator];
 
 const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen, handleAddRoleUser }) => {
   const { t } = useTranslation();

@@ -24,7 +24,6 @@ import ResultButton from '../ActionButtons/ResultButton';
 import ShuffleButton from '../ActionButtons/ShuffleButton';
 import VoteButton from '../ActionButtons/VoteButton';
 import handleLogin from 'pages/session/HandleLogin';
-import { UserRole } from 'types/userRole';
 
 const useChangeAction = (
   status: Status,
@@ -62,7 +61,11 @@ const useChangeAction = (
   const fctx = useContext(FlashContext);
   const navigate = useNavigate();
   const pctx = useContext(ProxyContext);
-  const { role, isLogged } = useContext(AuthContext);
+  const { authorization, isLogged } = useContext(AuthContext);
+
+  function hasAuthorization(subject: string, action: string): boolean {
+    return authorization.has(subject) && authorization.get(subject).indexOf(action) !== -1;
+  }
 
   const POLLING_INTERVAL = 1000;
   const MAX_ATTEMPTS = 20;
@@ -405,11 +408,18 @@ const useChangeAction = (
     }
 
     // Voters cannot perform any actions except voting and seeing the result
-    if (role === UserRole.Voter && (status < Status.Open || status > Status.Canceled)) {
+    if (
+      !hasAuthorization('election', 'create') &&
+      (status < Status.Open || status > Status.Canceled)
+    ) {
       return <div>{t('actionTextVoter1')}</div>;
     }
 
-    if (role === UserRole.Voter && status >= Status.Closed && status < Status.ResultAvailable) {
+    if (
+      !hasAuthorization('election', 'create') &&
+      status >= Status.Closed &&
+      status < Status.ResultAvailable
+    ) {
       return <div>{t('actionTextVoter2')}</div>;
     }
 

@@ -4,15 +4,14 @@ import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OngoingAction, Status } from 'types/form';
 import ActionButton from './ActionButton';
-
+const SUBJECT_ELECTION = 'election';
+const ACTION_CREATE = 'create';
 const CancelButton = ({ status, handleCancel, ongoingAction }) => {
   const authCtx = useContext(AuthContext);
   const { t } = useTranslation();
 
-  const isAuthorized = authCtx.role === 'admin' || authCtx.role === 'operator';
-
   return (
-    isAuthorized &&
+    authCtx.isAllowed(SUBJECT_ELECTION, ACTION_CREATE) &&
     status === Status.Open && (
       <ActionButton
         handleClick={handleCancel}
