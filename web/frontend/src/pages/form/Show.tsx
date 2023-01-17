@@ -14,6 +14,7 @@ import useGetResults from './components/utils/useGetResults';
 import UserIDTable from './components/UserIDTable';
 import DKGStatusTable from './components/DKGStatusTable';
 import LoadingButton from './components/LoadingButton';
+import { default as i18n } from 'i18next';
 
 const FormShow: FC = () => {
   const { t } = useTranslation();
@@ -196,7 +197,29 @@ const FormShow: FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error]);
-
+  const isJson = (str: string) => {
+    try {
+      JSON.parse(str);
+    } catch (e) {
+      return false;
+    }
+    return true;
+  };
+  const [titles, setTitles] = useState<any>({});
+  useEffect(() => {
+    try {
+      if (configObj.MainTitle === '') return;
+      if (isJson(configObj.MainTitle)) {
+        const ts = JSON.parse(configObj.MainTitle);
+        setTitles(ts);
+      } else {
+        const t = { en: configObj.MainTitle, fr: configObj.TitleFr, de: configObj.TitleDe };
+        setTitles(t);
+      }
+    } catch (e) {
+      setError(e.error);
+    }
+  }, [configObj]);
   return (
     <div className="w-[60rem] font-sans px-4 py-4">
       <Modal
@@ -208,7 +231,9 @@ const FormShow: FC = () => {
       {!loading ? (
         <>
           <div className="pt-8 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-            {configObj.MainTitle}
+            {i18n.language === 'en' && titles.en}
+            {i18n.language === 'fr' && titles.fr}
+            {i18n.language === 'de' && titles.de}
           </div>
 
           <div className="pt-2 break-all">Form ID : {formId}</div>

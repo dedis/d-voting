@@ -20,7 +20,6 @@ import { PencilIcon } from '@heroicons/react/solid';
 import AddQuestionModal from './AddQuestionModal';
 import { useTranslation } from 'react-i18next';
 import RemoveElementModal from './RemoveElementModal';
-
 const MAX_NESTED_SUBJECT = 1;
 
 type SubjectComponentProps = {
@@ -28,13 +27,14 @@ type SubjectComponentProps = {
   removeSubject: () => void;
   subjectObject: types.Subject;
   nestedLevel: number;
+  language: string;
 };
-
 const SubjectComponent: FC<SubjectComponentProps> = ({
   notifyParent,
   removeSubject,
   subjectObject,
   nestedLevel,
+  language,
 }) => {
   const { t } = useTranslation();
   const emptyElementToRemove = { ID: '', Type: '' };
@@ -54,8 +54,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
   const [elementToRemove, setElementToRemove] = useState(emptyElementToRemove);
   const [components, setComponents] = useState<ReactElement[]>([]);
 
-  const { Title, Order, Elements } = subject;
-
+  const { Title, Order, Elements, TitleFr, TitleDe } = subject;
   // When a property changes, we notify the parent with the new subject object
   useEffect(() => {
     // We only notify the parent when the subject is mounted
@@ -151,6 +150,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                 setTextRemoveElementModal(t(`confirmRemove${found.Type}`));
                 setShowRemoveElementModal(true);
               }}
+              language={language}
             />
           );
         case SUBJECT:
@@ -166,6 +166,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
               subjectObject={sub}
               nestedLevel={nestedLevel + 1}
               key={sub.ID}
+              language={language}
             />
           );
         case RANK:
@@ -180,6 +181,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                 setTextRemoveElementModal(t(`confirmRemove${found.Type}`));
                 setShowRemoveElementModal(true);
               }}
+              language={language}
             />
           );
         case SELECT:
@@ -194,6 +196,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                 setTextRemoveElementModal(t(`confirmRemove${found.Type}`));
                 setShowRemoveElementModal(true);
               }}
+              language={language}
             />
           );
       }
@@ -295,24 +298,50 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
       />
 
       <QuestionModal />
-      <div className="flex flex-row justify-between w-full h-24 ">
+      <div className="flex flex-row justify-between w-full h-30 ">
         <div className="flex flex-col max-w-full pl-2">
           <div className="mt-3 flex">
             <div className="h-9 w-9 rounded-full bg-gray-100 mr-2 ml-1">
               <FolderIcon className="m-2 h-5 w-5 text-gray-400" aria-hidden="true" />
             </div>
             {titleChanging ? (
-              <div className="flex mb-2">
-                <input
-                  value={Title}
-                  onChange={(e) => setSubject({ ...subject, Title: e.target.value })}
-                  name="Title"
-                  type="text"
-                  placeholder={t('enterSubjectTitle')}
-                  className={`w-60 px-1 border rounded-md ${
-                    nestedLevel === 0 ? 'text-lg' : 'text-md'
-                  } `}
-                />
+              <div className="flex flex-col mt-3  mb-2">
+                {language === 'en' && (
+                  <input
+                    value={Title}
+                    onChange={(e) => setSubject({ ...subject, Title: e.target.value })}
+                    name="Title"
+                    type="text"
+                    placeholder={t('enterSubjectTitleLg')}
+                    className={`m-3 px-1 w-120 border rounded-md ${
+                      nestedLevel === 0 ? 'text-lg' : 'text-md'
+                    } `}
+                  />
+                )}
+                {language === 'fr' && (
+                  <input
+                    value={TitleFr}
+                    onChange={(e) => setSubject({ ...subject, TitleFr: e.target.value })}
+                    name="Title"
+                    type="text"
+                    placeholder={t('enterSubjectTitleLg1')}
+                    className={`m-3 px-1 w-120 border rounded-md ${
+                      nestedLevel === 0 ? 'text-lg' : 'text-md'
+                    } `}
+                  />
+                )}
+                {language === 'de' && (
+                  <input
+                    value={TitleDe}
+                    onChange={(e) => setSubject({ ...subject, TitleDe: e.target.value })}
+                    name="Title"
+                    type="text"
+                    placeholder={t('enterSubjectTitleLg2')}
+                    className={`m-3 px-1 w-120 border rounded-md ${
+                      nestedLevel === 0 ? 'text-lg' : 'text-md'
+                    } `}
+                  />
+                )}
                 <div className="ml-1">
                   <button
                     className={`border p-1 rounded-md ${Title.length === 0 && 'bg-gray-100'}`}
@@ -325,7 +354,9 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
             ) : (
               <div className="flex mb-2 max-w-md truncate">
                 <div className="pt-1.5 truncate" onClick={() => setTitleChanging(true)}>
-                  {Title}
+                  {language === 'en' && Title}
+                  {language === 'fr' && TitleFr}
+                  {language === 'de' && TitleDe}
                 </div>
                 <div className="ml-1 pr-10">
                   <button
