@@ -458,8 +458,14 @@ export const handlers = [
   rest.put(endpoints.editProxyAddress('*'), async (req, res, ctx) => {
     const NodeAddr = req.params[0];
     const body = req.body as UpdateProxyAddress;
+    const node = decodeURIComponent(NodeAddr as string);
 
-    mockNodeProxyAddresses.set(decodeURIComponent(NodeAddr as string), body.Proxy);
+    if (body.NewNode != node) {
+      mockNodeProxyAddresses.delete(node);
+      mockNodeProxyAddresses.set(body.NewNode, body.Proxy);
+    } else {
+      mockNodeProxyAddresses.set(node, body.Proxy);
+    }
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
