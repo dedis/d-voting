@@ -57,6 +57,7 @@ const Admin: FC = () => {
   useEffect(() => {
     fetch(ENDPOINT_USER_RIGHTS)
       .then((resp) => {
+        console.log('resp', resp);
         setLoading(false);
         if (resp.status === 200) {
           const jsonData = resp.json();

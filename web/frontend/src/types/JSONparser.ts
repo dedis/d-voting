@@ -16,7 +16,7 @@ const isJson = (str: string) => {
 const unmarshalText = (text: any): types.TextQuestion => {
   const t = text as types.TextQuestion;
   const titles = JSON.parse(t.Title);
-  if (t.Hint === undefined) {
+  if (t.Hint.length === 0) {
     t.Hint = JSON.stringify({
       en: '',
       fr: '',
@@ -40,7 +40,7 @@ const unmarshalText = (text: any): types.TextQuestion => {
 const unmarshalRank = (rank: any): types.RankQuestion => {
   const r = rank as types.RankQuestion;
   const titles = JSON.parse(r.Title);
-  if (r.Hint === undefined) {
+  if (r.Hint.length === 0) {
     r.Hint = JSON.stringify({
       en: '',
       fr: '',
@@ -63,7 +63,7 @@ const unmarshalRank = (rank: any): types.RankQuestion => {
 const unmarshalSelect = (select: any): types.SelectQuestion => {
   const s = select as types.SelectQuestion;
   const titles = JSON.parse(s.Title);
-  if (s.Hint === undefined) {
+  if (s.Hint.length === 0) {
     s.Hint = JSON.stringify({
       en: '',
       fr: '',
