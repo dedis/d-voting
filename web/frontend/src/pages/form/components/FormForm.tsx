@@ -1,4 +1,4 @@
-import { FC, Fragment, useEffect, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { checkTransaction, newForm } from 'components/utils/Endpoints';
 
@@ -22,6 +22,7 @@ import { useConfiguration } from 'components/utils/useConfiguration';
 import BallotDisplay from 'pages/ballot/components/BallotDisplay';
 
 import { availableLanguages } from 'language/Configuration';
+import LanguageButtons from 'language/LanguageButtons';
 import { default as i18n } from 'i18next';
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
@@ -155,25 +156,11 @@ const FormForm: FC<FormFormProps> = () => {
           <div className="flex flex-col justify-items-center mt-3 mb-2">
             {titleChanging ? (
               <>
-                <div className="py-6 px-5 space-y-6">
-                  <form className="flex gap-y-4 gap-x-8">
-                    {availableLanguages.map((lang, index) => (
-                      <label id={'lang' + lang}>
-                        <input
-                          className="hidden peer"
-                          type="radio"
-                          key={index}
-                          id={'lang' + lang}
-                          name="lang"></input>
-                        <div
-                          className="peer-checked:bg-gray-300 text-base font-small text-gray-900 hover:text-gray-700"
-                          onClick={() => setLanguage(lang)}>
-                          {t(lang)}
-                        </div>
-                      </label>
-                    ))}
-                  </form>
-                </div>
+                <LanguageButtons
+                  availableLanguages={availableLanguages}
+                  setLanguage={setLanguage}
+                />
+
                 {language === 'en' && (
                   <input
                     value={MainTitle}

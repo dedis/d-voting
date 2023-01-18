@@ -16,6 +16,7 @@ import useQuestionForm from './utils/useQuestionForm';
 import DisplayTypeIcon from './DisplayTypeIcon';
 
 import { availableLanguages } from 'language/Configuration';
+import LanguageButtons from 'language/LanguageButtons';
 
 type AddQuestionModalProps = {
   question: RankQuestion | SelectQuestion | TextQuestion;
@@ -177,25 +178,10 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
               <div className="pb-6 pr-6 pl-6">
                 <div className="flex flex-col sm:flex-row sm:min-h-[18rem] ">
                   <div className="flex flex-col w-[55%]">
-                    <div className="py-6 px-5 space-y-6">
-                      <form className="flex gap-y-4 gap-x-8">
-                        {availableLanguages.map((lang, index) => (
-                          <label id={'lang' + lang}>
-                            <input
-                              className="hidden peer"
-                              type="radio"
-                              key={index}
-                              id={'lang' + lang}
-                              name="lang"></input>
-                            <div
-                              className="peer-checked:bg-gray-300 text-base font-small text-gray-900 hover:text-gray-700"
-                              onClick={() => setLanguage(lang)}>
-                              {t(lang)}
-                            </div>
-                          </label>
-                        ))}
-                      </form>
-                    </div>
+                    <LanguageButtons
+                      availableLanguages={availableLanguages}
+                      setLanguage={setLanguage}
+                    />
                     <div className="pb-4">{t('mainProperties')} </div>
                     <div>
                       <label className="block text-md mt font-medium text-gray-500">
