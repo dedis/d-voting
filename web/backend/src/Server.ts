@@ -275,9 +275,8 @@ app.post('/api/add_role', (req, res, next) => {
 
 // This call (only for admins) allow an admin to remove a role to a user.
 
-app.post('/api/remove_role', (req, res) => {
+app.post('/api/remove_role', (req, res, next) => {
   if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_REMOVE)) {
-
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
