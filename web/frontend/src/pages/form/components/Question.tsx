@@ -7,7 +7,6 @@ import { RankQuestion, SelectQuestion, TextQuestion } from 'types/configuration'
 import SubjectDropdown from './SubjectDropdown';
 import AddQuestionModal from './AddQuestionModal';
 import DisplayTypeIcon from './DisplayTypeIcon';
-import { default as i18n } from 'i18next';
 type QuestionProps = {
   question: RankQuestion | SelectQuestion | TextQuestion;
   notifyParent(question: RankQuestion | SelectQuestion | TextQuestion): void;

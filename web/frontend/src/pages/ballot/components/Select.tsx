@@ -103,7 +103,6 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
           {language === 'en' && <HintButton text={select.Hint} />}
           {language === 'fr' && <HintButton text={select.HintFr} />}
           {language === 'de' && <HintButton text={select.HintDe} />}
-
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>
