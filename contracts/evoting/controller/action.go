@@ -20,6 +20,7 @@ import (
 	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/dedis/d-voting/internal/testing/fake"
 	eproxy "github.com/dedis/d-voting/proxy"
+	"github.com/dedis/d-voting/proxy/txnmanager"
 	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/dedis/d-voting/services/dkg"
 	"github.com/dedis/d-voting/services/shuffle"
@@ -46,8 +47,11 @@ import (
 const (
 	contentType            = "application/json"
 	formPath               = "/evoting/forms"
-	formPathSlash          = formPath + "/"
-	formIDPath             = formPathSlash + "{formID}"
+	// FormPathSlash is the path to the form with a trailing slash
+	FormPathSlash          = formPath + "/"
+	formIDPath             = FormPathSlash + "{formID}"
+	transactionSlash       = "/evoting/transactions/"
+	transactionPath        = transactionSlash + "{token}"
 	unexpectedStatus       = "unexpected status: %s, body: %s"
 	failRetrieveDecryption = "failed to retrieve decryption key: %v"
 	selectString           = "select:"
@@ -91,7 +95,9 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to resolve ordering.Service: %v", err)
 	}
 
-	var blocks *blockstore.InDisk
+	// The BlockStore will be used to parse the blockchain
+	// to check if a transaction was included
+	var blocks blockstore.BlockStore
 	err = ctx.Injector.Resolve(&blocks)
 	if err != nil {
 		return xerrors.Errorf("failed to resolve blockstore.InDisk: %v", err)
@@ -163,7 +169,9 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to unmarshal proxy key: %v", err)
 	}
 
-	ep := eproxy.NewForm(ordering, mngr, p, sjson.NewContext(), formFac, proxykey)
+	transactionManager := txnmanager.NewTransactionManager(mngr, p, sjson.NewContext(), proxykey, blocks, signer)
+
+	ep := eproxy.NewForm(ordering, p, sjson.NewContext(), formFac, proxykey, transactionManager)
 
 	router := mux.NewRouter()
 
@@ -175,12 +183,14 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 	router.HandleFunc(formIDPath, eproxy.AllowCORS).Methods("OPTIONS")
 	router.HandleFunc(formIDPath, ep.DeleteForm).Methods("DELETE")
 	router.HandleFunc(formIDPath+"/vote", ep.NewFormVote).Methods("POST")
+	router.HandleFunc(transactionPath, transactionManager.StatusHandlerGet).Methods("GET")
 
 	router.NotFoundHandler = http.HandlerFunc(eproxy.NotFoundHandler)
 	router.MethodNotAllowedHandler = http.HandlerFunc(eproxy.NotAllowedHandler)
 
 	proxy.RegisterHandler(formPath, router.ServeHTTP)
-	proxy.RegisterHandler(formPathSlash, router.ServeHTTP)
+	proxy.RegisterHandler(FormPathSlash, router.ServeHTTP)
+	proxy.RegisterHandler(transactionSlash, router.ServeHTTP)
 
 	dela.Logger.Info().Msg("d-voting proxy handlers registered")
 
@@ -692,7 +702,7 @@ func marshallBallot(voteStr string, actor dkg.Actor, chunks int) (ptypes.Cipherv
 
 // formID is hex-encoded
 func castVote(formID string, signed []byte, proxyAddr string) (string, error) {
-	resp, err := http.Post(proxyAddr+formPathSlash+formID+"/vote", contentType, bytes.NewBuffer(signed))
+	resp, err := http.Post(proxyAddr+FormPathSlash+formID+"/vote", contentType, bytes.NewBuffer(signed))
 
 	if err != nil {
 		return "", xerrors.Errorf(failRetrieveDecryption, err)
@@ -723,7 +733,7 @@ func updateForm(secret kyber.Scalar, proxyAddr, formIDHex, action string) (int, 
 		return 0, createSignedErr(err)
 	}
 
-	req, err := http.NewRequest(http.MethodPut, proxyAddr+formPathSlash+formIDHex, bytes.NewBuffer(signed))
+	req, err := http.NewRequest(http.MethodPut, proxyAddr+FormPathSlash+formIDHex, bytes.NewBuffer(signed))
 
 	if err != nil {
 		return 0, xerrors.Errorf("failed to create request: %v", err)

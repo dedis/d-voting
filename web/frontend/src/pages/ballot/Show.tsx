@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import kyber from '@dedis/kyber';
@@ -10,7 +10,6 @@ import { MailIcon } from '@heroicons/react/outline';
 import { useNavigate } from 'react-router';
 
 import useForm from 'components/utils/useForm';
-import usePostCall from 'components/utils/usePostCall';
 import * as endpoints from 'components/utils/Endpoints';
 import { encryptVote } from './components/VoteEncrypt';
 import { voteEncode } from './components/VoteEncode';
@@ -33,28 +32,12 @@ const Ballot: FC = () => {
 
   const [userErrors, setUserErrors] = useState('');
   const edCurve = kyber.curve.newCurve('edwards25519');
-  const [postError, setPostError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [modalText, setModalText] = useState(t('voteSuccess') as string);
   const [modalTitle, setModalTitle] = useState('');
   const [castVoteLoading, setCastVoteLoading] = useState(false);
-  const sendFetchRequest = usePostCall(setPostError);
 
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (postError !== null) {
-      if (postError.includes('ECONNREFUSED')) {
-        setModalText(t('errorServerDown'));
-      } else {
-        setModalText(t('voteFailure'));
-      }
-      setModalTitle(t('errorTitle'));
-    } else {
-      setModalText(t('voteSuccess'));
-      setModalTitle(t('voteSuccessful'));
-    }
-  }, [postError, t]);
 
   const hexToBytes = (hex: string) => {
     const bytes: number[] = [];
@@ -89,7 +72,26 @@ const Ballot: FC = () => {
           'Content-Type': 'Application/json',
         },
       };
-      await sendFetchRequest(endpoints.newFormVote(formID.toString()), newRequest, setShowModal);
+      try {
+        const response = await fetch(endpoints.newFormVote(formID.toString()), newRequest);
+        if (!response.ok) {
+          const txt = await response.text();
+          throw new Error(txt);
+        }
+        const res = await response.json();
+        const id = res.BallotID || 'Not Implemented Yet, see issue 240';
+        setModalText(`${t('voteSuccess')} ${id}`);
+        setModalTitle(t('voteSuccessful'));
+      } catch (error) {
+        if (error.message.includes('ECONNREFUSED')) {
+          setModalText(t('errorServerDown'));
+        } else {
+          setModalText(t('voteFailure'));
+        }
+        setModalTitle(t('errorTitle'));
+      }
+
+      setShowModal((prev) => !prev);
     } catch (e) {
       console.log(e);
       setModalText(t('ballotFailure'));

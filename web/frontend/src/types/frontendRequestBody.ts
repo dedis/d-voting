@@ -43,6 +43,7 @@ interface NewProxyAddress {
 
 interface UpdateProxyAddress {
   Proxy: string;
+  NewNode: string;
 }
 
 export type {

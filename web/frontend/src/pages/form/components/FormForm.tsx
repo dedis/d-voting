@@ -1,11 +1,12 @@
 import { FC, useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { newForm } from 'components/utils/Endpoints';
+import { checkTransaction, newForm } from 'components/utils/Endpoints';
 
 import { CloudUploadIcon, PencilIcon, TrashIcon } from '@heroicons/react/solid';
 
 import SubjectComponent from './SubjectComponent';
 import UploadFile from './UploadFile';
+import pollTransaction from './utils/TransactionPoll';
 
 import configurationSchema from '../../../schema/configurationValidation';
 import { Configuration, ID, Subject } from '../../../types/configuration';
@@ -104,13 +105,23 @@ const FormForm: FC<FormFormProps> = () => {
         setShowModal(true);
       } else {
         const response = await res.json();
-        AuthorizationUpdate(response.FormID);
-        setNavigateDestination('/forms/' + response.FormID);
-        setTextModal(`${t('successCreateForm')} ${response.FormID}`);
-        setShowModal(true);
-        setConf(emptyConf);
+
+        pollTransaction(checkTransaction, response.Token, 1000, 30).then(
+          () => {
+            AuthorizationUpdate(response.FormID);
+            setNavigateDestination('/forms/' + response.FormID);
+            setTextModal(`${t('successCreateForm')} ${response.FormID}`);
+            setShowModal(true);
+            setConf(emptyConf);
+            setLoading(false);
+          },
+          (err) => {
+            setTextModal(err);
+            setShowModal(true);
+            setLoading(false);
+          }
+        );
       }
-      setLoading(false);
     } catch (error) {
       setTextModal(error.message);
       setShowModal(true);
