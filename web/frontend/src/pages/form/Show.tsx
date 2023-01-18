@@ -213,8 +213,8 @@ const FormShow: FC = () => {
         const ts = JSON.parse(configObj.MainTitle);
         setTitles(ts);
       } else {
-        const t = { en: configObj.MainTitle, fr: configObj.TitleFr, de: configObj.TitleDe };
-        setTitles(t);
+        const titles = { en: configObj.MainTitle, fr: configObj.TitleFr, de: configObj.TitleDe };
+        setTitles(titles);
       }
     } catch (e) {
       setError(e.error);

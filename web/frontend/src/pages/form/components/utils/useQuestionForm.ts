@@ -142,7 +142,7 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
         const newChoicesMapDefault = new Map(
           Object.entries({
             ...obj,
-            ['en']: obj['en'].map((item: string, idx: number) =>
+            ['en']: obj.en.map((item: string, idx: number) =>
               idx === index ? e.target.value : item
             ),
           })

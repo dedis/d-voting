@@ -44,7 +44,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
     updateChoice,
   } = useQuestionForm(question);
   const [language, setLanguage] = useState('en');
-  const { Title, TitleDe, TitleFr, MaxN, MinN, Choices, ChoicesMap, Hint, HintFr, HintDe } = values;
+  const { Title, TitleDe, TitleFr, MaxN, MinN, ChoicesMap, Hint, HintFr, HintDe } = values;
   const [errors, setErrors] = useState([]);
   const handleSave = async () => {
     try {
