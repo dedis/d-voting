@@ -25,7 +25,6 @@ import { ID } from 'types/configuration';
 import { Action, Status } from 'types/form';
 import { setupMockForm, toLightFormInfo } from './setupMockForms';
 import setupMockUserDB from './setupMockUserDB';
-import { UserRole } from 'types/userRole';
 import { mockRoster } from './mockData';
 import { NodeStatus } from 'types/node';
 
@@ -45,19 +44,17 @@ const DECRYPT_TIMER = 1000;
 
 const defaultProxy = 'http://localhost/';
 
-const isAuthorized = (roles: UserRole[]): boolean => {
-  const id = sessionStorage.getItem('id');
-  const userRole = mockUserDB.find(({ sciper }) => sciper === id).role;
-
-  if (roles.includes(userRole)) {
-    return true;
-  }
-  return false;
+const isAuthorized = (
+  auth: Map<String, Array<String>>,
+  subject: string,
+  action: string
+): boolean => {
+  return auth.has(subject) && auth.get(subject).indexOf(action) !== -1;
 };
+const auth = new Map<String, Array<String>>();
 
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, async (req, res, ctx) => {
-    const auth = new Map<String, Array<String>>();
     auth.set('roles', ['list', 'remove', 'add']);
     auth.set('proxy', ['list', 'remove', 'add']);
     auth.set('election', ['create']);
@@ -67,7 +64,6 @@ export const handlers = [
       ? {
           lastname: 'Bobster',
           firstname: 'Alice',
-          role: UserRole.Admin,
           sciper: userId,
           authorization: Object.fromEntries(auth),
         }
@@ -126,7 +122,7 @@ export const handlers = [
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
+    if (!isAuthorized(auth, 'election', 'create')) {
       return res(ctx.status(403), ctx.json({ message: 'You are not authorized to create a form' }));
     }
 
@@ -189,7 +185,7 @@ export const handlers = [
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
+    if (!isAuthorized(auth, 'election', 'create')) {
       return res(ctx.status(403), ctx.json({ message: 'You are not authorized to update a form' }));
     }
 
@@ -370,7 +366,7 @@ export const handlers = [
   rest.put(endpoints.editShuffle(':FormID'), async (req, res, ctx) => {
     const { FormID } = req.params;
 
-    if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
+    if (!isAuthorized(auth, 'election', 'create')) {
       return res(ctx.status(403), ctx.json({ message: 'You are not authorized to update a form' }));
     }
 
@@ -391,14 +387,14 @@ export const handlers = [
   rest.get(endpoints.ENDPOINT_USER_RIGHTS, async (req, res, ctx) => {
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([UserRole.Admin])) {
+    if (!isAuthorized(auth, 'roles', 'list')) {
       return res(
         ctx.status(403),
         ctx.json({ message: 'You are not authorized to get users rights' })
       );
     }
 
-    return res(ctx.status(200), ctx.json(mockUserDB.filter((user) => user.role !== 'voter')));
+    return res(ctx.status(200));
   }),
 
   rest.post(endpoints.ENDPOINT_ADD_ROLE, async (req, res, ctx) => {
@@ -406,7 +402,7 @@ export const handlers = [
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([UserRole.Admin])) {
+    if (!isAuthorized(auth, 'roles', 'add')) {
       return res(ctx.status(403), ctx.json({ message: 'You are not authorized to add a role' }));
     }
 
@@ -419,7 +415,7 @@ export const handlers = [
     const body = req.body as RemoveUserRole;
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([UserRole.Admin])) {
+    if (!isAuthorized(auth, 'roles', 'remove')) {
       return res(ctx.status(403), ctx.json({ message: 'You are not authorized to remove a role' }));
     }
     mockUserDB = mockUserDB.filter((user) => user.sciper !== body.sciper);

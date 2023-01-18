@@ -2,15 +2,14 @@ import { AuthContext } from 'index';
 import { FC, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OngoingAction, Status } from 'types/form';
-import { UserRole } from 'types/userRole';
 
 type StatusTimelineProps = {
   status: Status;
   ongoingAction: OngoingAction;
 };
-
 const CanceledStep = { name: 'canceled', ongoing: 'canceling', status: Status.Canceled };
-
+const SUBJECT_ELECTION = 'election';
+const ACTION_CREATE = 'create';
 const StatusTimeline: FC<StatusTimelineProps> = ({ status, ongoingAction }) => {
   const authCtx = useContext(AuthContext);
   const { t } = useTranslation();
@@ -35,10 +34,7 @@ const StatusTimeline: FC<StatusTimelineProps> = ({ status, ongoingAction }) => {
     { name: 'statusResultAvailable', ongoing: 'combining', status: Status.ResultAvailable },
   ];
 
-  const steps =
-    authCtx.role === UserRole.Admin || authCtx.role === UserRole.Operator
-      ? completeSteps
-      : simpleSteps;
+  const steps = authCtx.isAllowed(SUBJECT_ELECTION, ACTION_CREATE) ? completeSteps : simpleSteps;
 
   // If the status is Canceled we need to add the Canceled step to the steps
   // array at the correct position in the workflow (before the Closed step)
