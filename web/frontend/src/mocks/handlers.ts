@@ -10,11 +10,11 @@ import {
 import * as endpoints from '../components/utils/Endpoints';
 
 import {
+  AddAuthBody,
   EditDKGActorBody,
   EditFormBody,
   NewDKGBody,
   NewFormBody,
-  AddAuthBody,
   NewFormVoteBody,
   NewProxyAddress,
   NewUserRole,
