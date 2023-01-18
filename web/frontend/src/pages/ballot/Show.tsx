@@ -79,8 +79,8 @@ const Ballot: FC = () => {
           const txt = await response.text();
           throw new Error(txt);
         }
-        const res = await response.json();
-        const id = res.BallotID || 'Not Implemented Yet, see issue 240';
+        //const res = await response.json();
+        const id =  'Not Implemented Yet, see issue 240';
         setModalText(`${t('voteSuccess')} ${id}`);
         setModalTitle(t('voteSuccessful'));
       } catch (error) {
