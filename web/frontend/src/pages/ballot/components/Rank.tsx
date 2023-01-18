@@ -3,6 +3,7 @@ import { Draggable, DropResult, Droppable } from 'react-beautiful-dnd';
 import { Answers, ID, RankQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
 import HintButton from 'components/buttons/HintButton';
+import { isJson } from 'types/JSONparser';
 
 export const handleOnDragEnd = (
   result: DropResult,
@@ -57,14 +58,6 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
     );
   };
   const [titles, setTitles] = useState<any>({});
-  const isJson = (str: string) => {
-    try {
-      JSON.parse(str);
-    } catch (e) {
-      return false;
-    }
-    return true;
-  };
   useEffect(() => {
     if (isJson(rank.Title)) {
       const ts = JSON.parse(rank.Title);

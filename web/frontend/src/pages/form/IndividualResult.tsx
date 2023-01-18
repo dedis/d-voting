@@ -31,6 +31,7 @@ import Loading from 'pages/Loading';
 import saveAs from 'file-saver';
 import { useNavigate } from 'react-router';
 import { default as i18n } from 'i18next';
+import { isJson } from 'types/JSONparser';
 
 type IndividualResultProps = {
   rankResult: RankResults;
@@ -65,14 +66,6 @@ const IndividualResult: FC<IndividualResultProps> = ({
     [RANK]: <SwitchVerticalIcon />,
     [SELECT]: <CursorClickIcon />,
     [TEXT]: <MenuAlt1Icon />,
-  };
-  const isJson = (str: string) => {
-    try {
-      JSON.parse(str);
-    } catch (e) {
-      return false;
-    }
-    return true;
   };
   const SubjectElementResultDisplay = (element: SubjectElement) => {
     let titles;

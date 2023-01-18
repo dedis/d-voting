@@ -4,20 +4,13 @@ import { Link } from 'react-router-dom';
 import FormStatus from './FormStatus';
 import QuickAction from './QuickAction';
 import { default as i18n } from 'i18next';
+import { isJson } from 'types/JSONparser';
 
 type FormRowProps = {
   form: LightFormInfo;
 };
 
 const FormRow: FC<FormRowProps> = ({ form }) => {
-  const isJson = (str: string) => {
-    try {
-      JSON.parse(str);
-    } catch (e) {
-      return false;
-    }
-    return true;
-  };
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
     if (form.Title === '') return;

@@ -264,4 +264,5 @@ export {
   unmarshalConfig,
   unmarshalConfigAndCreateAnswers,
   unmarshalSubjectAndCreateAnswers,
+  isJson
 };

@@ -5,6 +5,7 @@ import Rank, { handleOnDragEnd } from './Rank';
 import Select from './Select';
 import Text from './Text';
 import { DragDropContext } from 'react-beautiful-dnd';
+import { isJson } from 'types/JSONparser';
 
 type BallotDisplayProps = {
   configuration: Configuration;
@@ -21,14 +22,6 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
   userErrors,
   language,
 }) => {
-  const isJson = (str: string) => {
-    try {
-      JSON.parse(str);
-    } catch (e) {
-      return false;
-    }
-    return true;
-  };
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
     if (configuration.MainTitle === '') return;

@@ -15,6 +15,7 @@ import UserIDTable from './components/UserIDTable';
 import DKGStatusTable from './components/DKGStatusTable';
 import LoadingButton from './components/LoadingButton';
 import { default as i18n } from 'i18next';
+import { isJson } from 'types/JSONparser';
 
 const FormShow: FC = () => {
   const { t } = useTranslation();
@@ -197,14 +198,6 @@ const FormShow: FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error]);
-  const isJson = (str: string) => {
-    try {
-      JSON.parse(str);
-    } catch (e) {
-      return false;
-    }
-    return true;
-  };
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
     try {

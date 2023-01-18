@@ -29,6 +29,7 @@ import {
 import { default as i18n } from 'i18next';
 import SelectResult from './components/SelectResult';
 import TextResult from './components/TextResult';
+import { isJson } from 'types/JSONparser';
 
 type GroupedResultProps = {
   rankResult: RankResults;
@@ -48,14 +49,6 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
     [RANK]: <SwitchVerticalIcon />,
     [SELECT]: <CursorClickIcon />,
     [TEXT]: <MenuAlt1Icon />,
-  };
-  const isJson = (str: string) => {
-    try {
-      JSON.parse(str);
-    } catch (e) {
-      return false;
-    }
-    return true;
   };
 
   const SubjectElementResultDisplay = (element: SubjectElement) => {

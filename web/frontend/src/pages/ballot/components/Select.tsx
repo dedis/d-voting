@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Answers, SelectQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
 import HintButton from 'components/buttons/HintButton';
+import { isJson } from 'types/JSONparser';
 type SelectProps = {
   select: SelectQuestion;
   answers: Answers;
@@ -53,14 +54,6 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
     }
 
     return <div className="text-sm pl-2 pb-2 sm:pl-4 text-gray-400">{requirements}</div>;
-  };
-  const isJson = (str: string) => {
-    try {
-      JSON.parse(str);
-    } catch (e) {
-      return false;
-    }
-    return true;
   };
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
