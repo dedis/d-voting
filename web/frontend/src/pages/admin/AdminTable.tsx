@@ -29,6 +29,8 @@ const AdminTable: FC<AdminTableProps> = ({ users, setUsers }) => {
   useEffect(() => {
     if (users.length) {
       setScipersToDisplay(partitionArray(users, SCIPERS_PER_PAGE)[pageIndex]);
+    } else {
+      setScipersToDisplay([]);
     }
   }, [users, pageIndex]);
 
@@ -58,7 +60,6 @@ const AdminTable: FC<AdminTableProps> = ({ users, setUsers }) => {
   const handleRemoveRoleUser = (): void => {
     const newUsers = users.filter((user) => user.sciper !== sciperToDelete.toString());
     setUsers(newUsers);
-
     if (newUsers.length % SCIPERS_PER_PAGE === 0) {
       setPageIndex(pageIndex - 1);
     }

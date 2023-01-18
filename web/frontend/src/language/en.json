@@ -164,7 +164,7 @@
     "alreadyVoted2": "on this form.",
     "changeVote": "You can change your vote by simply casting a new vote.",
     "pickCandidate": "Pick a candidate:",
-    "voteSuccess": "Your vote was successfully submitted!",
+    "voteSuccess": "Your vote was successfully submitted! VoteID:",
     "voteSuccessful": "Vote successful",
     "errorTitle": "Error",
     "actionChange": "Action Change",

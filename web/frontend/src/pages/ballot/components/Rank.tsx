@@ -105,7 +105,7 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
             {language === 'de' && titles.de}
           </h3>
         </div>
-        <div>
+        <div className="text-right">
           {language === 'en' && <HintButton text={rank.Hint} />}
           {language === 'fr' && <HintButton text={rank.HintFr} />}
           {language === 'de' && <HintButton text={rank.HintDe} />}

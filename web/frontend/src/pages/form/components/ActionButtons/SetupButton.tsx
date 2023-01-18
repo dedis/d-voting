@@ -3,17 +3,16 @@ import { AuthContext } from 'index';
 import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OngoingAction, Status } from 'types/form';
-import { UserRole } from 'types/userRole';
 import ActionButton from './ActionButton';
 
+const SUBJECT_ELECTION = 'election';
+const ACTION_CREATE = 'create';
 const SetupButton = ({ status, handleSetup, ongoingAction }) => {
   const authCtx = useContext(AuthContext);
   const { t } = useTranslation();
 
-  const isAuthorized = authCtx.role === UserRole.Admin || authCtx.role === UserRole.Operator;
-
   return (
-    isAuthorized &&
+    authCtx.isAllowed(SUBJECT_ELECTION, ACTION_CREATE) &&
     status === Status.Initialized && (
       <ActionButton
         handleClick={handleSetup}

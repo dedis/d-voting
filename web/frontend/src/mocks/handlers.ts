@@ -25,12 +25,12 @@ import { ID } from 'types/configuration';
 import { Action, Status } from 'types/form';
 import { setupMockForm, toLightFormInfo } from './setupMockForms';
 import setupMockUserDB from './setupMockUserDB';
-import { UserRole } from 'types/userRole';
 import { mockRoster } from './mockData';
 import { NodeStatus } from 'types/node';
 
 const uid = new ShortUniqueId({ length: 8 });
 const mockUserID = 561934;
+const fakeToken = 'fake token';
 
 const { mockForms, mockResults, mockDKG, mockNodeProxyAddresses } = setupMockForm();
 
@@ -44,19 +44,17 @@ const DECRYPT_TIMER = 1000;
 
 const defaultProxy = 'http://localhost/';
 
-const isAuthorized = (roles: UserRole[]): boolean => {
-  const id = sessionStorage.getItem('id');
-  const userRole = mockUserDB.find(({ sciper }) => sciper === id).role;
-
-  if (roles.includes(userRole)) {
-    return true;
-  }
-  return false;
+const isAuthorized = (
+  auth: Map<String, Array<String>>,
+  subject: string,
+  action: string
+): boolean => {
+  return auth.has(subject) && auth.get(subject).indexOf(action) !== -1;
 };
+const auth = new Map<String, Array<String>>();
 
 export const handlers = [
   rest.get(ENDPOINT_PERSONAL_INFO, async (req, res, ctx) => {
-    const auth = new Map<String, Array<String>>();
     auth.set('roles', ['list', 'remove', 'add']);
     auth.set('proxy', ['list', 'remove', 'add']);
     auth.set('election', ['create']);
@@ -66,7 +64,6 @@ export const handlers = [
       ? {
           lastname: 'Bobster',
           firstname: 'Alice',
-          role: UserRole.Admin,
           sciper: userId,
           authorization: Object.fromEntries(auth),
         }
@@ -114,7 +111,10 @@ export const handlers = [
     const { FormID } = req.params;
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    return res(ctx.status(200), ctx.json(mockForms.get(FormID as ID)));
+    return res(
+      ctx.status(200),
+      ctx.json({ FormID: mockForms.get(FormID as ID), Token: fakeToken })
+    );
   }),
 
   rest.post(endpoints.newForm, async (req, res, ctx) => {
@@ -122,7 +122,7 @@ export const handlers = [
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
+    if (!isAuthorized(auth, 'election', 'create')) {
       return res(ctx.status(403), ctx.json({ message: 'You are not authorized to create a form' }));
     }
 
@@ -149,12 +149,7 @@ export const handlers = [
       return newFormID;
     };
 
-    return res(
-      ctx.status(200),
-      ctx.json({
-        FormID: createForm(body.Configuration),
-      })
-    );
+    return res(ctx.status(200), ctx.json({ Status: 0, Token: fakeToken }));
   }),
 
   rest.post(endpoints.newFormVote(':FormID'), async (req, res, ctx) => {
@@ -171,9 +166,12 @@ export const handlers = [
       Voters,
     });
 
+    const BallotID = uid();
+
     return res(
       ctx.status(200),
       ctx.json({
+        BallotID: BallotID,
         Ballot: Ballot,
       })
     );
@@ -187,7 +185,7 @@ export const handlers = [
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
+    if (!isAuthorized(auth, 'election', 'create')) {
       return res(ctx.status(403), ctx.json({ message: 'You are not authorized to update a form' }));
     }
 
@@ -219,7 +217,7 @@ export const handlers = [
       CHANGE_STATUS_TIMER
     );
 
-    return res(ctx.status(200), ctx.text('Action successfully done'));
+    return res(ctx.status(200), ctx.json({ Status: 0, Token: fakeToken }));
   }),
 
   rest.delete(endpoints.editForm(':FormID'), async (req, res, ctx) => {
@@ -227,7 +225,7 @@ export const handlers = [
     mockForms.delete(FormID as string);
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    return res(ctx.status(200), ctx.text('Form deleted'));
+    return res(ctx.status(200), ctx.json({ Status: 0, Token: fakeToken }));
   }),
 
   rest.post(endpoints.dkgActors, async (req, res, ctx) => {
@@ -368,7 +366,7 @@ export const handlers = [
   rest.put(endpoints.editShuffle(':FormID'), async (req, res, ctx) => {
     const { FormID } = req.params;
 
-    if (!isAuthorized([UserRole.Admin, UserRole.Operator])) {
+    if (!isAuthorized(auth, 'election', 'create')) {
       return res(ctx.status(403), ctx.json({ message: 'You are not authorized to update a form' }));
     }
 
@@ -389,14 +387,14 @@ export const handlers = [
   rest.get(endpoints.ENDPOINT_USER_RIGHTS, async (req, res, ctx) => {
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([UserRole.Admin])) {
+    if (!isAuthorized(auth, 'roles', 'list')) {
       return res(
         ctx.status(403),
         ctx.json({ message: 'You are not authorized to get users rights' })
       );
     }
 
-    return res(ctx.status(200), ctx.json(mockUserDB.filter((user) => user.role !== 'voter')));
+    return res(ctx.status(200));
   }),
 
   rest.post(endpoints.ENDPOINT_ADD_ROLE, async (req, res, ctx) => {
@@ -404,7 +402,7 @@ export const handlers = [
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([UserRole.Admin])) {
+    if (!isAuthorized(auth, 'roles', 'add')) {
       return res(ctx.status(403), ctx.json({ message: 'You are not authorized to add a role' }));
     }
 
@@ -417,7 +415,7 @@ export const handlers = [
     const body = req.body as RemoveUserRole;
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
-    if (!isAuthorized([UserRole.Admin])) {
+    if (!isAuthorized(auth, 'roles', 'remove')) {
       return res(ctx.status(403), ctx.json({ message: 'You are not authorized to remove a role' }));
     }
     mockUserDB = mockUserDB.filter((user) => user.sciper !== body.sciper);
@@ -455,8 +453,14 @@ export const handlers = [
   rest.put(endpoints.editProxyAddress('*'), async (req, res, ctx) => {
     const NodeAddr = req.params[0];
     const body = req.body as UpdateProxyAddress;
+    const node = decodeURIComponent(NodeAddr as string);
 
-    mockNodeProxyAddresses.set(decodeURIComponent(NodeAddr as string), body.Proxy);
+    if (body.NewNode != node) {
+      mockNodeProxyAddresses.delete(node);
+      mockNodeProxyAddresses.set(body.NewNode, body.Proxy);
+    } else {
+      mockNodeProxyAddresses.set(node, body.Proxy);
+    }
 
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
@@ -479,5 +483,11 @@ export const handlers = [
     const response = defaultProxy;
 
     return res(ctx.status(200), ctx.text(response));
+  }),
+
+  rest.get(endpoints.checkTransaction('*'), async (req, res, ctx) => {
+    await new Promise((r) => setTimeout(r, RESPONSE_TIME));
+
+    return res(ctx.status(200), ctx.json({ Status: 1, Token: fakeToken }));
   }),
 ];
