@@ -227,12 +227,18 @@ app.get('/api/personal_info', (req, res) => {
 // ---
 // This call allow a user that is admin to get the list of the people that have
 // a special role (not a voter).
-app.get('/api/user_rights', (req, res, next) => {
+app.get('/api/user_rights', (req, res) => {
+  console.log('user_rights');
   if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_LIST)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
-  next();
+  const users: {
+    id: string;
+    sciper: number;
+    role: 'admin' | 'operator';
+  }[] = [];
+  res.json(users);
 });
 
 // This call (only for admins) allow an admin to add a role to a voter.
