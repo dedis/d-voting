@@ -63,6 +63,14 @@ const DKGTable: FC<DKGTableProps> = ({ nodeProxyAddresses, setNodeProxyAddresses
       setPageIndex(pageIndex - 1);
     }
   };
+  const handleEditProxy = (node: string, proxy: string) => {
+    const newNodeProxy = new Map(nodeProxyAddresses);
+    newNodeProxy.delete(nodeToEdit);
+    newNodeProxy.set(node, proxy);
+    setNodeProxyAddresses(newNodeProxy);
+
+    setPageIndex(partitionMap(newNodeProxy, NODE_PROXY_PER_PAGE).length - 1);
+  };
 
   return (
     <div>
@@ -78,6 +86,7 @@ const DKGTable: FC<DKGTableProps> = ({ nodeProxyAddresses, setNodeProxyAddresses
         nodeProxy={nodeProxyAddresses}
         setNodeProxy={setNodeProxyAddresses}
         node={nodeToEdit}
+        handleEditProxy={handleEditProxy}
       />
 
       <RemoveProxyModal
