@@ -7,8 +7,8 @@ services:
     ports:
       - 5432:5432
     environment:
-      POSTGRES_USER: 'dvoting'
-      POSTGRES_PASSWORD: 'dvoting'
+      POSTGRES_USER: process.env.DATABASE_USERNAME
+      POSTGRES_PASSWORD: process.env.DATABASE_PASSWORD
     volumes:
       - ./data:/var/lib/postgresql/data
       - ./migration.sql:/docker-entrypoint-initdb.d/init.sql
