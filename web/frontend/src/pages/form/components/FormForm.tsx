@@ -1,4 +1,5 @@
 import { FC, useContext, useEffect, useState } from 'react';
+
 import { useTranslation } from 'react-i18next';
 import { checkTransaction, newForm } from 'components/utils/Endpoints';
 
@@ -20,9 +21,14 @@ import Tabs from './Tabs';
 import RemoveElementModal from './RemoveElementModal';
 import { useConfiguration } from 'components/utils/useConfiguration';
 import BallotDisplay from 'pages/ballot/components/BallotDisplay';
+
 import usePostCall from 'components/utils/usePostCall';
 import * as endpoints from 'components/utils/Endpoints';
 import { FlashContext, FlashLevel } from 'index';
+import { availableLanguages } from 'language/Configuration';
+import LanguageButtons from 'language/LanguageButtons';
+import { default as i18n } from 'i18next';
+
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
 
@@ -44,11 +50,13 @@ const FormForm: FC<FormFormProps> = () => {
   const [currentTab, setCurrentTab] = useState<string>('formForm');
   const [subjectIdToRemove, setSubjectIdToRemove] = useState<ID>('');
   const [titleChanging, setTitleChanging] = useState<boolean>(true);
-  const [navigateDestination, setNavigateDestination] = useState(null);
+  const [navigateDestination, setNavigateDestination] = useState('');
   const [marshalledConf, setMarshalledConf] = useState<any>(marshalConfig(conf));
   const { configuration: previewConf, answers, setAnswers } = useConfiguration(marshalledConf);
 
-  const { MainTitle, Scaffold } = conf;
+  const { MainTitle, Scaffold, TitleFr, TitleDe } = conf;
+
+  const [language, setLanguage] = useState(i18n.language);
   const regexPattern = /[^a-zA-Z0-9]/g;
   const fctx = useContext(FlashContext);
   const [postError, setPostError] = useState(null);
@@ -74,6 +82,7 @@ const FormForm: FC<FormFormProps> = () => {
     return sendFetchRequest(endpoints.addFormAuthorization, req, setIsPosting);
   };
 
+
   useEffect(() => {
     setMarshalledConf(marshalConfig(conf));
   }, [conf]);
@@ -90,7 +99,7 @@ const FormForm: FC<FormFormProps> = () => {
 
     try {
       await configurationSchema.validate(data.Configuration);
-    } catch (err) {
+    } catch (err: any) {
       setTextModal(t('errorIncorrectConfSchema') + err.errors.join(','));
       setShowModal(true);
       return;
@@ -122,7 +131,7 @@ const FormForm: FC<FormFormProps> = () => {
           }
         );
       }
-    } catch (error) {
+    } catch (error: any) {
       setTextModal(error.message);
       setShowModal(true);
       setLoading(false);
@@ -136,7 +145,7 @@ const FormForm: FC<FormFormProps> = () => {
     const data = marshalConfig(conf);
     try {
       await configurationSchema.validate(data);
-    } catch (err) {
+    } catch (err: any) {
       setTextModal(t('errorIncorrectConfSchema') + err.errors.join(','));
       setShowModal(true);
       return;
@@ -157,9 +166,9 @@ const FormForm: FC<FormFormProps> = () => {
   };
 
   const addSubject = () => {
-    const newSubjects = [...Scaffold];
-    newSubjects.push(newSubject());
-    setConf({ ...conf, Scaffold: newSubjects });
+    const newSubjectsEn = [...Scaffold];
+    newSubjectsEn.push(newSubject());
+    setConf({ ...conf, Scaffold: newSubjectsEn });
   };
 
   const handleConfirmRemoveSubject = () => {
@@ -174,17 +183,44 @@ const FormForm: FC<FormFormProps> = () => {
     return (
       <div className="w-screen px-4 md:px-0 md:w-auto">
         <div className="flex flex-col border rounded-md">
-          <div className="flex mt-3 mb-2">
+          <div className="flex flex-col justify-items-center mt-3 mb-2">
             {titleChanging ? (
               <>
-                <input
-                  value={MainTitle}
-                  onChange={(e) => setConf({ ...conf, MainTitle: e.target.value })}
-                  name="MainTitle"
-                  type="text"
-                  placeholder={t('enterMainTitle')}
-                  className="ml-3 px-1 w-60 text-lg border rounded-md"
+                <LanguageButtons
+                  availableLanguages={availableLanguages}
+                  setLanguage={setLanguage}
                 />
+
+                {language === 'en' && (
+                  <input
+                    value={MainTitle}
+                    onChange={(e) => setConf({ ...conf, MainTitle: e.target.value })}
+                    name="MainTitle"
+                    type="text"
+                    placeholder={t('enterMainTitleLg')}
+                    className="m-3 px-1 w-100 text-lg border rounded-md"
+                  />
+                )}
+                {language === 'fr' && (
+                  <input
+                    value={TitleFr}
+                    onChange={(e) => setConf({ ...conf, TitleFr: e.target.value })}
+                    name="MainTitle1"
+                    type="text"
+                    placeholder={t('enterMainTitleLg1')}
+                    className="m-3 px-1 w-100 text-lg border rounded-md"
+                  />
+                )}
+                {language === 'de' && (
+                  <input
+                    value={TitleDe}
+                    onChange={(e) => setConf({ ...conf, TitleDe: e.target.value })}
+                    name="MainTitle2"
+                    type="text"
+                    placeholder={t('enterMainTitleLg2')}
+                    className="m-3 px-1 w-100 text-lg border rounded-md"
+                  />
+                )}
                 <div className="ml-1">
                   <button
                     className={`border p-1 rounded-md ${
@@ -201,7 +237,9 @@ const FormForm: FC<FormFormProps> = () => {
                 <div
                   className="mt-1 ml-3 w-[90%] break-words"
                   onClick={() => setTitleChanging(true)}>
-                  {MainTitle}
+                  {language === 'en' && MainTitle}
+                  {language === 'fr' && TitleFr}
+                  {language === 'de' && TitleDe}
                 </div>
                 <div className="ml-1">
                   <button
@@ -224,6 +262,7 @@ const FormForm: FC<FormFormProps> = () => {
               }}
               nestedLevel={0}
               key={subject.ID}
+              language={language}
             />
           ))}
           <button
@@ -271,6 +310,7 @@ const FormForm: FC<FormFormProps> = () => {
               answers={answers}
               setAnswers={setAnswers}
               userErrors=""
+              language={language}
             />
           </div>
         </div>

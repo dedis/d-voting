@@ -1,9 +1,7 @@
 import { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DownloadedResults, RankResults, SelectResults, TextResults } from 'types/form';
-import SelectResult from './components/SelectResult';
 import RankResult from './components/RankResult';
-import TextResult from './components/TextResult';
 import {
   ID,
   RANK,
@@ -28,6 +26,10 @@ import {
   countSelectResult,
   countTextResult,
 } from './components/utils/countResult';
+import { default as i18n } from 'i18next';
+import SelectResult from './components/SelectResult';
+import TextResult from './components/TextResult';
+import { isJson } from 'types/JSONparser';
 
 type GroupedResultProps = {
   rankResult: RankResults;
@@ -50,13 +52,24 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
   };
 
   const SubjectElementResultDisplay = (element: SubjectElement) => {
+    let titles;
+    if (isJson(element.Title)) {
+      titles = JSON.parse(element.Title);
+    }
+    if (titles === undefined) {
+      titles = { en: element.Title, fr: element.TitleFr, de: element.TitleDe };
+    }
     return (
       <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
         <div className="flex flex-row">
           <div className="align-text-middle flex mt-1 mr-2 h-5 w-5" aria-hidden="true">
             {questionIcons[element.Type]}
           </div>
-          <h2 className="text-lg pb-2">{element.Title}</h2>
+          <h2 className="text-lg pb-2">
+            {i18n.language === 'en' && titles.en}
+            {i18n.language === 'fr' && titles.fr}
+            {i18n.language === 'de' && titles.de}
+          </h2>
         </div>
         {element.Type === RANK && rankResult.has(element.ID) && (
           <RankResult rank={element as RankQuestion} rankResult={rankResult.get(element.ID)} />
@@ -75,10 +88,19 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
   };
 
   const displayResults = (subject: Subject) => {
+    let sbj;
+    if (isJson(subject.Title)) {
+      sbj = JSON.parse(subject.Title);
+    }
+    if (sbj === undefined) {
+      sbj = { en: subject.Title, fr: subject.TitleFr, de: subject.TitleDe };
+    }
     return (
       <div key={subject.ID}>
         <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-          {subject.Title}
+          {i18n.language === 'en' && sbj.en}
+          {i18n.language === 'fr' && sbj.fr}
+          {i18n.language === 'de' && sbj.de}
         </h2>
         {subject.Order.map((id: ID) => (
           <div key={id}>
@@ -156,7 +178,9 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
     });
 
     const data = {
-      Title: configuration.MainTitle,
+      MainTitle: configuration.MainTitle,
+      TitleFr: configuration.TitleFr,
+      TitleDe: configuration.TitleDe,
       NumberOfVotes: result.length,
       Results: dataToDownload,
     };

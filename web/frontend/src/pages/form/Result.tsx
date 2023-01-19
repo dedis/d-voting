@@ -9,8 +9,9 @@ import { useConfigurationOnly } from 'components/utils/useConfiguration';
 import Loading from 'pages/Loading';
 import ResultExplanation from './components/ResultExplanation';
 import { Tab } from '@headlessui/react';
-import GroupedResult from './GroupedResult';
 import IndividualResult from './IndividualResult';
+import { default as i18n } from 'i18next';
+import GroupedResult from './GroupedResult';
 
 // Functional component that displays the result of the votes
 const FormResult: FC = () => {
@@ -69,7 +70,6 @@ const FormResult: FC = () => {
 
     return { rankRes, selectRes, textRes };
   };
-
   useEffect(() => {
     if (result !== null) {
       const { rankRes, selectRes, textRes } = groupResultsByID();
@@ -80,7 +80,6 @@ const FormResult: FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result]);
-
   return (
     <div className="w-[60rem] font-sans px-4 pt-8 pb-4">
       {!loading ? (
@@ -97,8 +96,10 @@ const FormResult: FC = () => {
             <h2 className="text-lg mt-2 sm:mt-4 sm:mb-6 mb-4">
               {t('totalNumberOfVotes', { votes: result.length })}
             </h2>
-            <h3 className="py-6 border-y text-2xl text-center text-gray-700">
-              {configuration.MainTitle}
+            <h3 className="py-6 border-t text-2xl text-center text-gray-700">
+              {i18n.language === 'en' && configuration.MainTitle}
+              {i18n.language === 'fr' && configuration.TitleFr}
+              {i18n.language === 'de' && configuration.TitleDe}
             </h3>
 
             <div>

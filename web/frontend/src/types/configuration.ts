@@ -9,6 +9,8 @@ interface SubjectElement {
   ID: ID;
   Type: string;
   Title: string;
+  TitleFr: string;
+  TitleDe: string;
 }
 
 // Rank describes a "rank" question, which requires the user to rank choices.
@@ -16,9 +18,11 @@ interface RankQuestion extends SubjectElement {
   MaxN: number;
   MinN: number;
   Choices: string[];
+  ChoicesMap: Map<string, string[]>;
   Hint: string;
+  HintFr: string;
+  HintDe: string;
 }
-
 // Text describes a "text" question, which allows the user to enter free text.
 interface TextQuestion extends SubjectElement {
   MaxN: number;
@@ -26,7 +30,10 @@ interface TextQuestion extends SubjectElement {
   MaxLength: number;
   Regex: string;
   Choices: string[];
+  ChoicesMap: Map<string, string[]>;
   Hint: string;
+  HintFr: string;
+  HintDe: string;
 }
 
 // Select describes a "select" question, which requires the user to select one
@@ -35,7 +42,10 @@ interface SelectQuestion extends SubjectElement {
   MaxN: number;
   MinN: number;
   Choices: string[];
+  ChoicesMap: Map<string, string[]>;
   Hint: string;
+  HintFr: string;
+  HintDe: string;
 }
 
 interface Subject extends SubjectElement {
@@ -47,6 +57,8 @@ interface Subject extends SubjectElement {
 interface Configuration {
   MainTitle: string;
   Scaffold: Subject[];
+  TitleFr: string;
+  TitleDe: string;
 }
 
 // Answers describes the current answers for each type of question

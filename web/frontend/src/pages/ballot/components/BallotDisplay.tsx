@@ -1,16 +1,18 @@
-import React, { FC } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { Answers, Configuration, ID, RANK, SELECT, SUBJECT, TEXT } from 'types/configuration';
 import * as types from 'types/configuration';
 import Rank, { handleOnDragEnd } from './Rank';
 import Select from './Select';
 import Text from './Text';
 import { DragDropContext } from 'react-beautiful-dnd';
+import { isJson } from 'types/JSONparser';
 
 type BallotDisplayProps = {
   configuration: Configuration;
   answers: Answers;
   setAnswers: (answers: Answers) => void;
   userErrors: string;
+  language: string;
 };
 
 const BallotDisplay: FC<BallotDisplayProps> = ({
@@ -18,30 +20,62 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
   answers,
   setAnswers,
   userErrors,
+  language,
 }) => {
+  const [titles, setTitles] = useState<any>({});
+  useEffect(() => {
+    if (configuration.MainTitle === '') return;
+    if (isJson(configuration.MainTitle)) {
+      const ts = JSON.parse(configuration.MainTitle);
+      setTitles(ts);
+    } else {
+      const t = {
+        en: configuration.MainTitle,
+        fr: configuration.TitleFr,
+        de: configuration.TitleDe,
+      };
+      setTitles(t);
+    }
+  }, [configuration]);
+
   const SubjectElementDisplay = (element: types.SubjectElement) => {
     return (
       <div className="pl-4 sm:pl-6">
-        {element.Type === RANK && <Rank rank={element as types.RankQuestion} answers={answers} />}
+        {element.Type === RANK && (
+          <Rank rank={element as types.RankQuestion} answers={answers} language={language} />
+        )}
         {element.Type === SELECT && (
           <Select
             select={element as types.SelectQuestion}
             answers={answers}
             setAnswers={setAnswers}
+            language={language}
           />
         )}
         {element.Type === TEXT && (
-          <Text text={element as types.TextQuestion} answers={answers} setAnswers={setAnswers} />
+          <Text
+            text={element as types.TextQuestion}
+            answers={answers}
+            setAnswers={setAnswers}
+            language={language}
+          />
         )}
       </div>
     );
   };
 
   const SubjectTree = (subject: types.Subject) => {
+    let sbj;
+    if (isJson(subject.Title)) {
+      sbj = JSON.parse(subject.Title);
+    }
+    if (sbj === undefined) sbj = { en: subject.Title, fr: subject.TitleFr, de: subject.TitleDe };
     return (
       <div key={subject.ID}>
         <h3 className="text-xl break-all pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-          {subject.Title}
+          {language === 'en' && sbj.en}
+          {language === 'fr' && sbj.fr}
+          {language === 'de' && sbj.de}
         </h3>
         {subject.Order.map((id: ID) => (
           <div key={id}>
@@ -62,7 +96,9 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
     <DragDropContext onDragEnd={(dropRes) => handleOnDragEnd(dropRes, answers, setAnswers)}>
       <div className="w-full mb-0 sm:mb-4 mt-4 sm:mt-6">
         <h3 className="pb-6 break-all text-2xl text-center text-gray-700">
-          {configuration.MainTitle}
+          {language === 'en' && titles.en}
+          {language === 'fr' && titles.fr}
+          {language === 'de' && titles.de}
         </h3>
         <div className="flex flex-col">
           {configuration.Scaffold.map((subject: types.Subject) => SubjectTree(subject))}

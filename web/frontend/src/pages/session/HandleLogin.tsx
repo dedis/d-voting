@@ -7,6 +7,12 @@ const handleLogin = async (fctx: FlashState) => {
   try {
     const res = await fetch(ENDPOINT_GET_TEQ_KEY);
 
+    const d = new Date();
+    d.setTime(d.getTime() + 120000);
+    let expires = d.toUTCString();
+    document.cookie =
+      'redirect' + '=' + window.location.pathname + '; expires=' + expires + ';path=/';
+
     if (res.status !== 200) {
       const txt = await res.text();
       throw new Error(`unexpected status: ${res.status} - ${txt}`);
@@ -14,7 +20,7 @@ const handleLogin = async (fctx: FlashState) => {
 
     const json = await res.json();
     window.location = json.url;
-  } catch (error) {
+  } catch (error: any) {
     fctx.addMessage(error.toString(), FlashLevel.Error);
   }
 };
