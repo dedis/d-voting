@@ -15,20 +15,21 @@ const useFillFormInfo = (formData: FormInfo) => {
   const [isResultSet, setIsResultSet] = useState<boolean>(false);
 
   useEffect(() => {
-    if (formData !== null) {
-      setId(formData.FormID);
-      setStatus(formData.Status);
-      setPubKey(formData.Pubkey);
-      setRoster(formData.Roster);
-      setResult(formData.Result);
-      setChunksPerBallot(formData.ChunksPerBallot);
-      setBallotSize(formData.BallotSize);
-      setConfigObj(formData.Configuration);
-      setVoters(formData.Voters);
+    if (formData === null) {
+      return;
+    }
+    setId(formData.FormID);
+    setStatus(formData.Status);
+    setPubKey(formData.Pubkey);
+    setRoster(formData.Roster);
+    setResult(formData.Result);
+    setChunksPerBallot(formData.ChunksPerBallot);
+    setBallotSize(formData.BallotSize);
+    setConfigObj(formData.Configuration);
+    setVoters(formData.Voters);
 
-      if (formData.Result.length > 0) {
-        setIsResultSet(true);
-      }
+    if (formData.Result.length > 0) {
+      setIsResultSet(true);
     }
   }, [formData]);
 
@@ -52,6 +53,8 @@ const useFillFormInfo = (formData: FormInfo) => {
 const useFillLightFormInfo = (formData: LightFormInfo) => {
   const [id, setId] = useState<ID>('');
   const [title, setTitle] = useState<string>('');
+  const [titleFr, setTitleFr] = useState<string>('');
+  const [titleDe, setTitleDe] = useState<string>('');
   const [status, setStatus] = useState<Status>(null);
   const [pubKey, setPubKey] = useState<string>('');
 
@@ -61,12 +64,16 @@ const useFillLightFormInfo = (formData: LightFormInfo) => {
       setTitle(formData.Title);
       setStatus(formData.Status);
       setPubKey(formData.Pubkey);
+      setTitleFr(formData.TitleFr);
+      setTitleDe(formData.TitleDe);
     }
   }, [formData]);
 
   return {
     id,
     title,
+    titleFr,
+    titleDe,
     status,
     setStatus,
     pubKey,

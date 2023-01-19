@@ -16,11 +16,11 @@ const WarningModal: FC<WarningModalProps> = ({ message, isShown, setIsShown, act
       <Dialog open={isShown} onClose={() => {}}>
         <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
         <div className="fixed inset-0 flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-lg p-4">
+          <div className="bg-white content-center rounded-lg shadow-lg p-3 w-80">
             <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
               Warning
             </Dialog.Title>
-            <Dialog.Description className="mt-2 text-sm text-gray-500">
+            <Dialog.Description className="mt-2 mx-auto text-sm text-center text-gray-500">
               {message}
             </Dialog.Description>
             <div className="mt-4 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">

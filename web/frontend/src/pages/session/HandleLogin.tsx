@@ -20,7 +20,7 @@ const handleLogin = async (fctx: FlashState) => {
 
     const json = await res.json();
     window.location = json.url;
-  } catch (error) {
+  } catch (error: any) {
     fctx.addMessage(error.toString(), FlashLevel.Error);
   }
 };

@@ -1,8 +1,9 @@
-import { FC } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { Draggable, DropResult, Droppable } from 'react-beautiful-dnd';
 import { Answers, ID, RankQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
 import HintButton from 'components/buttons/HintButton';
+import { isJson } from 'types/JSONparser';
 
 export const handleOnDragEnd = (
   result: DropResult,
@@ -16,20 +17,23 @@ export const handleOnDragEnd = (
   const rankID = result.destination.droppableId as ID;
   const newAnswers = answersFrom(answers);
   const rankAnswer = newAnswers.RankAnswers.get(rankID);
-
-  const [reorderedItem] = rankAnswer.splice(result.source.index, 1);
-  rankAnswer.splice(result.destination.index, 0, reorderedItem);
-  newAnswers.RankAnswers.set(rankID, rankAnswer);
-
-  setAnswers(newAnswers);
+  if (rankAnswer === undefined) {
+    throw new Error(`RankAnswer with ID ${rankID} not found`);
+  } else {
+    const [reorderedItem] = rankAnswer.splice(result.source.index, 1);
+    rankAnswer.splice(result.destination.index, 0, reorderedItem);
+    newAnswers.RankAnswers.set(rankID, rankAnswer);
+    setAnswers(newAnswers);
+  }
 };
 
 type RankProps = {
   rank: RankQuestion;
   answers: Answers;
+  language: string;
 };
 
-const Rank: FC<RankProps> = ({ rank, answers }) => {
+const Rank: FC<RankProps> = ({ rank, answers, language }) => {
   const RankListIcon = () => {
     return (
       <svg
@@ -53,7 +57,15 @@ const Rank: FC<RankProps> = ({ rank, answers }) => {
       </svg>
     );
   };
-
+  const [titles, setTitles] = useState<any>({});
+  useEffect(() => {
+    if (isJson(rank.Title)) {
+      const ts = JSON.parse(rank.Title);
+      setTitles(ts);
+    } else {
+      setTitles({ en: rank.Title, fr: rank.TitleFr, de: rank.TitleDe });
+    }
+  }, [rank]);
   const choiceDisplay = (choice: string, rankIndex: number) => {
     return (
       <Draggable key={choice} draggableId={choice} index={rankIndex}>
@@ -76,15 +88,20 @@ const Rank: FC<RankProps> = ({ rank, answers }) => {
       </Draggable>
     );
   };
-
   return (
     <div className="mb-6">
       <div className="grid grid-rows-1 grid-flow-col">
         <div>
-          <h3 className="text-lg break-words text-gray-600 w-96">{rank.Title}</h3>
+          <h3 className="text-lg break-words text-gray-600">
+            {language === 'en' && titles.en}
+            {language === 'fr' && titles.fr}
+            {language === 'de' && titles.de}
+          </h3>
         </div>
         <div className="text-right">
-          <HintButton text={rank.Hint} />
+          {language === 'en' && <HintButton text={rank.Hint} />}
+          {language === 'fr' && <HintButton text={rank.HintFr} />}
+          {language === 'de' && <HintButton text={rank.HintDe} />}
         </div>
       </div>
       <div className="mt-5 px-4 max-w-[300px] sm:pl-8 sm:max-w-md">
@@ -93,7 +110,15 @@ const Rank: FC<RankProps> = ({ rank, answers }) => {
             {(provided) => (
               <ul className={rank.ID} {...provided.droppableProps} ref={provided.innerRef}>
                 {Array.from(answers.RankAnswers.get(rank.ID).entries()).map(
-                  ([rankIndex, choiceIndex]) => choiceDisplay(rank.Choices[choiceIndex], rankIndex)
+                  ([rankIndex, choiceIndex]) => {
+                    if (rank.ChoicesMap.get('en') === undefined) return;
+                    if (language === 'en' && rank.ChoicesMap.has('en'))
+                      return choiceDisplay(rank.ChoicesMap.get('en')[choiceIndex], rankIndex);
+                    else if (language === 'fr' && rank.ChoicesMap.has('fr'))
+                      return choiceDisplay(rank.ChoicesMap.get('fr')[choiceIndex], rankIndex);
+                    else if (language === 'de' && rank.ChoicesMap.has('de'))
+                      return choiceDisplay(rank.ChoicesMap.get('de')[choiceIndex], rankIndex);
+                  }
                 )}
                 {provided.placeholder}
               </ul>
