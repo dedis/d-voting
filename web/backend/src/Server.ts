@@ -50,8 +50,8 @@ async function initEnf() {
     dialect: 'postgres',
     host: 'localhost',
     port: 5432,
-    username: 'dvoting',
-    password: 'dvoting',
+    username: process.env.DATABASE_USERNAME,
+    password: process.env.DATABASE_PASSWORD,
     database: 'casbin',
   });
 

@@ -82,7 +82,6 @@ const FormForm: FC<FormFormProps> = () => {
     return sendFetchRequest(endpoints.addFormAuthorization, req, setIsPosting);
   };
 
-
   useEffect(() => {
     setMarshalledConf(marshalConfig(conf));
   }, [conf]);
