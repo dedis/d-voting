@@ -1,4 +1,5 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useContext, useEffect, useState } from 'react';
+
 import { useTranslation } from 'react-i18next';
 import { checkTransaction, newForm } from 'components/utils/Endpoints';
 
@@ -21,9 +22,13 @@ import RemoveElementModal from './RemoveElementModal';
 import { useConfiguration } from 'components/utils/useConfiguration';
 import BallotDisplay from 'pages/ballot/components/BallotDisplay';
 
+import usePostCall from 'components/utils/usePostCall';
+import * as endpoints from 'components/utils/Endpoints';
+import { FlashContext, FlashLevel } from 'index';
 import { availableLanguages } from 'language/Configuration';
 import LanguageButtons from 'language/LanguageButtons';
 import { default as i18n } from 'i18next';
+
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
 
@@ -53,6 +58,29 @@ const FormForm: FC<FormFormProps> = () => {
 
   const [language, setLanguage] = useState(i18n.language);
   const regexPattern = /[^a-zA-Z0-9]/g;
+  const fctx = useContext(FlashContext);
+  const [postError, setPostError] = useState(null);
+  const [, setIsPosting] = useState(false);
+  useEffect(() => {
+    if (postError !== null) {
+      fctx.addMessage(t('errorAddAuth') + postError, FlashLevel.Error);
+      setPostError(null);
+    }
+  }, [postError]);
+  const sendFetchRequest = usePostCall(setPostError);
+  const AuthorizationUpdate = (FormID: string): Promise<boolean> => {
+    const req = {
+      method: 'PUT',
+      body: JSON.stringify({
+        FormID,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+
+    return sendFetchRequest(endpoints.addFormAuthorization, req, setIsPosting);
+  };
 
   useEffect(() => {
     setMarshalledConf(marshalConfig(conf));
@@ -88,6 +116,7 @@ const FormForm: FC<FormFormProps> = () => {
 
         pollTransaction(checkTransaction, response.Token, 1000, 30).then(
           () => {
+            AuthorizationUpdate(response.FormID);
             setNavigateDestination('/forms/' + response.FormID);
             setTextModal(`${t('successCreateForm')} ${response.FormID}`);
             setShowModal(true);

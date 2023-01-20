@@ -95,6 +95,7 @@
     "enterSubjectTitleLg1": "Entrer le Titre du sujet en Français",
     "enterSubjectTitleLg": "Entrer le Titre du sujet en Anglais",
     "enterSubjectTitleLg2": "Entrer le Titre du sujet en Allemand",
+    "errorAddAuth": "Une erreur semble s'être produite lors de l'ajout de l'authorisation donnant les accès de contrôle de votre sondage. Contactez l'administrateur de ce site.",
     "enterTitleLg1": "Entrer le Titre en Français",
     "enterTitleLg": "Entrer le Titre en Anglais",
     "enterTitleLg2": "Entrer le Titre en Allemand",

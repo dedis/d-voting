@@ -10,6 +10,7 @@ import {
 import * as endpoints from '../components/utils/Endpoints';
 
 import {
+  AddAuthBody,
   EditDKGActorBody,
   EditFormBody,
   NewDKGBody,
@@ -105,6 +106,10 @@ export const handlers = [
         ),
       })
     );
+  }),
+  rest.put(endpoints.addFormAuthorization, async (req, res, ctx) => {
+    const { FormID } = req.body as AddAuthBody;
+    auth.set(FormID, ['own']);
   }),
 
   rest.get(endpoints.form(defaultProxy, ':FormID'), async (req, res, ctx) => {

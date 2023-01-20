@@ -11,6 +11,7 @@ export const newForm = '/api/evoting/forms';
 export const editForm = (FormID: string) => `/api/evoting/forms/${FormID}`;
 export const newFormVote = (FormID: string) => `/api/evoting/forms/${FormID}/vote`;
 export const editShuffle = (FormID: string) => `/api/evoting/services/shuffle/${FormID}`;
+export const addFormAuthorization = `/api/evoting/authorizations`;
 // setup and decrypt
 export const editDKGActors = (FormID: string) => `/api/evoting/services/dkg/actors/${FormID}`;
 // initialize the nodes

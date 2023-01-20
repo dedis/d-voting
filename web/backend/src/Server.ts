@@ -9,6 +9,7 @@ import lmdb from 'lmdb';
 import xss from 'xss';
 import createMemoryStore from 'memorystore';
 import { Enforcer, newEnforcer } from 'casbin';
+import { SequelizeAdapter } from 'casbin-sequelize-adapter';
 
 const MemoryStore = createMemoryStore(session);
 const SUBJECT_ROLES = 'roles';
@@ -16,11 +17,12 @@ const SUBJECT_PROXIES = 'proxies';
 const SUBJECT_ELECTION = 'election';
 
 const ACTION_LIST = 'list';
-const ACTION_ACTION_REMOVE = 'remove';
+const ACTION_REMOVE = 'remove';
 const ACTION_ADD = 'add';
 const ACTION_PUT = 'put';
 const ACTION_POST = 'post';
 const ACTION_DELETE = 'delete';
+const ACTION_OWN = 'own';
 const ACTION_CREATE = 'create';
 // store is used to store the session
 const store = new MemoryStore({
@@ -38,10 +40,27 @@ app.use(morgan('tiny'));
 
 let enf: Enforcer;
 
-const enforcerLoading = newEnforcer('model.conf', 'policy.csv');
+// we use the postgres adapter to store the casbin policies
+// we initalize the adapter with the connection string and the migrate option
+// the connection string has the following format:
+// postgres://username:password@host:port/database
+// the migrate option is used to create the tables if they don't exist, we set it to false because we create the tables manually
+async function initEnf() {
+  const a = await SequelizeAdapter.newAdapter({
+    dialect: 'postgres',
+    host: 'localhost',
+    port: 5432,
+    username: process.env.DATABASE_USERNAME,
+    password: process.env.DATABASE_PASSWORD,
+    database: 'casbin',
+  });
+
+  const enforcerLoading = newEnforcer('model.conf', a);
+  return enforcerLoading;
+}
 const port = process.env.PORT || 5000;
 
-Promise.all([enforcerLoading])
+Promise.all([initEnf()])
   .then((res) => {
     [enf] = res;
     console.log(`🛡 Casbin loaded`);
@@ -227,12 +246,17 @@ app.get('/api/personal_info', (req, res) => {
 // ---
 // This call allow a user that is admin to get the list of the people that have
 // a special role (not a voter).
-app.get('/api/user_rights', (req, res, next) => {
+app.get('/api/user_rights', (req, res) => {
   if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_LIST)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
-  next();
+  const users: {
+    id: string;
+    sciper: number;
+    role: 'admin' | 'operator';
+  }[] = [];
+  res.json(users);
 });
 
 // This call (only for admins) allow an admin to add a role to a voter.
@@ -255,8 +279,9 @@ app.post('/api/add_role', (req, res, next) => {
 });
 
 // This call (only for admins) allow an admin to remove a role to a user.
+
 app.post('/api/remove_role', (req, res, next) => {
-  if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_ACTION_REMOVE)) {
+  if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_REMOVE)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
@@ -476,12 +501,13 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
 }
 
 // Secure /api/evoting to admins and operators
-app.use('/api/evoting/*', (req, res, next) => {
+app.put('/api/evoting/authorizations', (req, res) => {
   if (!isAuthorized(req.session.userid, SUBJECT_ELECTION, ACTION_CREATE)) {
-    res.status(400).send('Unauthorized - only admins and operators allowed');
+    res.status(400).send('Unauthorized');
     return;
   }
-  next();
+  const { FormID } = req.body;
+  enf.addPolicy(String(req.session.userid), FormID, ACTION_OWN);
 });
 
 // https://stackoverflow.com/a/1349426
@@ -494,10 +520,48 @@ function makeid(length: number) {
   }
   return result;
 }
+app.put('/api/evoting/forms/:formID', (req, res, next) => {
+  const { formID } = req.params;
+  if (!isAuthorized(req.session.userid, formID, ACTION_OWN)) {
+    res.status(400).send('Unauthorized');
+    return;
+  }
+  next();
+});
 
+app.post('/api/evoting/services/dkg/actors', (req, res, next) => {
+  const { FormID } = req.body;
+  if (!isAuthorized(req.session.userid, FormID, ACTION_OWN)) {
+    res.status(400).send('Unauthorized');
+    return;
+  }
+  if (FormID === undefined) {
+    return;
+  }
+  next();
+});
+app.use('/api/evoting/services/dkg/actors/:formID', (req, res, next) => {
+  const { formID } = req.params;
+  if (!isAuthorized(req.session.userid, formID, ACTION_OWN)) {
+    res.status(400).send('Unauthorized');
+    return;
+  }
+  next();
+});
+app.use('/api/evoting/services/shuffle/:formID', (req, res, next) => {
+  const { formID } = req.params;
+  if (!isAuthorized(req.session.userid, formID, ACTION_OWN)) {
+    res.status(400).send('Unauthorized');
+    return;
+  }
+  next();
+});
 app.delete('/api/evoting/forms/:formID', (req, res) => {
   const { formID } = req.params;
-
+  if (!isAuthorized(req.session.userid, formID, ACTION_OWN)) {
+    res.status(400).send('Unauthorized');
+    return;
+  }
   const edCurve = kyber.curve.newCurve('edwards25519');
 
   const priv = Buffer.from(process.env.PRIVATE_KEY as string, 'hex');
@@ -534,6 +598,7 @@ app.delete('/api/evoting/forms/:formID', (req, res) => {
         .status(500)
         .send(`failed to proxy request: ${req.method} ${uri} - ${error.message} - ${resp}`);
     });
+  enf.removePolicy(String(req.session.userid), formID, ACTION_OWN);
 });
 
 // This API call is used redirect all the calls for DELA to the DELAs nodes.
