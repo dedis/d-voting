@@ -24,7 +24,7 @@ const mockRoster: string[] = [
 
 const mockForm1: any = {
   MainTitle:
-    '{ "en" : "Life on the campus", "fr" : "Vie sur le campus", "de" : "Vie sur le campus"}',
+    '{ "en" : "Life on the campus", "fr" : "Vie sur le campus", "de" : "Life on the campus"}',
   Scaffold: [
     {
       ID: (0xa2ab).toString(),
@@ -50,7 +50,7 @@ const mockForm1: any = {
                 '{"en": "salad", "fr": "salade", "de": "salad"}',
                 '{"en": "onion", "fr": "oignon", "de": "onion"}',
               ],
-              Hint: '',
+              Hint: '{"en": "", "fr": "", "de": ""}',
             },
           ],
           Ranks: [
@@ -65,7 +65,7 @@ const mockForm1: any = {
                 '{"en": "SV", "fr": "SV", "de": "SV"}',
                 '{"en": "Parmentier", "fr": "Parmentier", "de": "Parmentier"}',
               ],
-              Hint: '',
+              Hint: '{"en": "", "fr": "", "de": ""}',
             },
           ],
         },
@@ -85,7 +85,7 @@ const mockForm1: any = {
             '{"en":"4", "fr": "4", "de": "4"}',
             '{ "en": "5", "fr": "5", "de": "5" }',
           ],
-          Hint: '',
+          Hint: '{"en": "", "fr": "", "de": ""}',
         },
         {
           Title:
@@ -98,7 +98,7 @@ const mockForm1: any = {
             '{"en" : "normal", "fr": "normal", "de": "normal"}',
             '{"en" : "good", "fr": "super", "de": "good"}',
           ],
-          Hint: 'Be honest. This is anonymous anyway',
+          Hint: '{"en": "Be honest. This is anonymous anyway", "fr": "Sois honnête. C est anonyme de toute façon", "de": "Be honest. This is anonymous anyway"}',
         },
       ],
       Texts: [
@@ -114,7 +114,7 @@ const mockForm1: any = {
             '{"en":"TA1", "fr": "TA1", "de": "TA1"}',
             '{"en":"TA2", "fr":"TA2","de": "TA2"}',
           ],
-          Hint: '',
+          Hint: '{"en": "", "fr": "", "de": ""}',
         },
       ],
     },
@@ -170,7 +170,7 @@ const mockForm2: any = {
             '{"en":"4", "fr": "4", "de": "4"}',
             '{ "en": "5", "fr": "5", "de": "5" }',
           ],
-          Hint: '',
+          Hint: '{"en": "", "fr": "", "de": ""}',
         },
       ],
       Texts: [
@@ -186,7 +186,7 @@ const mockForm2: any = {
             '{"en":"TA2", "fr":"TA2","de": "TA2"}',
           ],
           Regex: '^[A-Z][a-z]+$',
-          Hint: '',
+          Hint: '{"en": "", "fr": "", "de": ""}',
         },
       ],
 
@@ -210,7 +210,7 @@ const mockForm2: any = {
             '{"en": "onion", "fr": "oignon", "de": "onion"}',
             '{"en": "falafel", "fr": "falafel", "de": "falafel"}',
           ],
-          Hint: '',
+          Hint: '{"en": "", "fr": "", "de": ""}',
         },
       ],
 
@@ -227,7 +227,7 @@ const mockForm2: any = {
             '{"en": "Arcadie", "fr": "Arcadie", "de": "Arcadie"}',
             '{"en": "Montreux Jazz Cafe", "fr": "Montreux Jazz Cafe", "de": "Montreux Jazz Cafe"}',
           ],
-          Hint: '',
+          Hint: '{"en": "", "fr": "", "de": ""}',
         },
         {
           Title: '{"en": "IN or SC ?", "fr": "IN ou SC ?", "de": "IN or SC ?"}',
@@ -235,7 +235,7 @@ const mockForm2: any = {
           MaxN: 2,
           MinN: 1,
           Choices: ['{"en": "IN", "fr": "IN", "de": "IN"}', '{"en": "SC", "fr": "SC", "de": "SC"}'],
-          Hint: 'The right answer is IN ;-)',
+          Hint: '{"en": "The right answer is IN ;-)", "fr": "La bonne réponse est IN ;-)", "de": "The right answer is IN ;-)"}',
         },
       ],
       Texts: [],
@@ -268,7 +268,7 @@ const mockForm3: any = {
             '{"en": "Drink 🧃", "fr": "Boisson 🧃", "de": "Drink 🧃"}',
             '{"en":"Dessert 🍰", "fr": "Dessert 🍰", "de": "Dessert 🍰"}',
           ],
-          Hint: 'If you change opinion call me before 11:30 a.m.',
+          Hint: '{"en": "If you change opinion call me before 11:30 a.m.", "fr": "Si tu changes d\'avis appelle moi avant 11h30", "de": "If you change opinion call me before 11:30 a.m."}',
         },
       ],
       Subjects: [],
