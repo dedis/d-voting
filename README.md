@@ -361,7 +361,7 @@ results.
         <td>Students: Amine Benaziz, Albert Troussard<br>Supervisors: Noémien Kocher, Pierluca Borso<br>Assistant: Emilien Duc</td></td>
         <td>Improves production-readiness: implement a new transaction system, improves the setup script, analyze performance and robustness with improved testing.</td>
         <td>
-            <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2023/01/report-2022-3-Amine-Benaziz-Albert-Troussard-D_Voting_Production_Readiness.pdf">Report</a>
+            <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2023/01/report-2022-3-Amine-Benaziz-Albert-Troussard-D_Voting_Production_Readiness.pdf">Report</a>, <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2023/01/presentation-2022-3-chen-ahmed-ghita-khadija-amine-albert_d_voting.pdf">Presentation (common)
         </td>
     </tr>
     <tr>
@@ -369,7 +369,7 @@ results.
         <td>Students: Ahmed Elalamy, Ghita Tagemouati, Khadija Tagemouati<br>Supervisor: Noémien Kocher</td></td>
         <td>Implements a policy-based authentication system, i18n of forms, individual results, and other minor improvement on the usability.</td>
         <td>
-            <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2023/01/report_2022-3-ghita_khadija-ahmed-d_voting_frontend.pdf">Report</a>
+            <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2023/01/report_2022-3-ghita_khadija-ahmed-d_voting_frontend.pdf">Report</a>, <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2023/01/presentation-2022-3-chen-ahmed-ghita-khadija-amine-albert_d_voting.pdf">Presentation (common)
         </td>
     </tr>
     <tr>
@@ -378,7 +378,7 @@ results.
         <td>Threat modelling of the system, security audit: identification of threats and technical debts, design of a vote verifiability feature.</td>
         <td>
             <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2023/01/report-2022-3-chenChangLew-Dvotingsecurityreport2.pdf">Report</a>,
-            <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2023/01/report-2022-3-chenChangLew-DvotingSecurityReport1.pdf">Security audit</a>
+            <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2023/01/report-2022-3-chenChangLew-DvotingSecurityReport1.pdf">Security audit</a>, <a href="https://www.epfl.ch/labs/dedis/wp-content/uploads/2023/01/presentation-2022-3-chen-ahmed-ghita-khadija-amine-albert_d_voting.pdf">Presentation (common)
         </td>
     </tr>
 </table>
