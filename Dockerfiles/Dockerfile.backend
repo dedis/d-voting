@@ -1,0 +1,7 @@
+FROM node:20-bookworm
+
+COPY ../web/backend .
+WORKDIR /web/backend
+RUN npm install
+ENTRYPOINT ["npm", "start"]
+
