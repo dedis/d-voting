@@ -1,4 +1,11 @@
-source .env;
+#!/bin/bash
+
+# check if DELA_REPLICAS environment variable is set
+if [ -z ${DELA_REPLICAS} ]; then
+  echo "DELA_REPLICAS environment variable needs to be set to use this script";
+  exit 1;
+fi
+
 LEADER_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' d-voting-dela-1);
 MEMBERS="";
 
