@@ -48,8 +48,8 @@ let enf: Enforcer;
 async function initEnf() {
   const a = await SequelizeAdapter.newAdapter({
     dialect: 'postgres',
-    host: 'localhost',
-    port: 5432,
+    host: process.env.DATABASE_HOST,
+    port: parseInt(process.env.DATABASE_PORT || '5432', 10),
     username: process.env.DATABASE_USERNAME,
     password: process.env.DATABASE_PASSWORD,
     database: 'casbin',
