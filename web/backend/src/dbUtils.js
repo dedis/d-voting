@@ -1,45 +1,51 @@
-// This file provides utility functions to handle an lmdb database. You can use
-// the node CLI to call those functions:
+// This file provides utility functions to for managing admin users
 //
-//   node -e 'require("./dbUtils").addAdmin("./dvoting-users", 1234)'
-//   node -e 'require("./dbUtils").listEls("./dvoting-users")'
-//   node -e 'require("./dbUtils").removeEl("./dvoting-users", 1234)'
+//   node -e 'require("./dbUtils").addAdmin("1234")'
+//   node -e 'require("./dbUtils").listUserPermissions("1234")'
+//   node -e 'require("./dbUtils").removeAdmin("1234")'
 //
 // If your are running this script outside of this module, specify NODE_PATH=
 
-const lmdb = require('lmdb');
+import { SequelizeAdapter } from 'casbin-sequelize-adapter';
+import { newEnforcer } from 'casbin';
 
-const addAdmin = (dbPath, sciper) => {
-    const usersDB = lmdb.open({ path: dbPath });
+async function initEnforcer() {
+  const dbAdapter = await SequelizeAdapter.newAdapter({
+    dialect: 'postgres',
+    host: process.env.DATABASE_HOST,
+    port: parseInt(process.env.DATABASE_PORT || '5432', 10),
+    username: process.env.DATABASE_USERNAME,
+    password: process.env.DATABASE_PASSWORD,
+    database: 'casbin',
+  });
 
-    usersDB
-        .put(String(sciper), 'admin')
-        .then(() => {
-            console.log('ok');
-        })
-        .catch((error) => {
-            console.log(error);
-        });
-};
+  return newEnforcer('../model.conf', dbAdapter);
+}
 
-const listEls = (dbPath) => {
-    const db = lmdb.open({ path: dbPath });
+async function addAdmin(sciper) {
+  const enforcer = await initEnforcer();
+  const permissions = [
+    [sciper, 'roles', 'add'],
+    [sciper, 'roles', 'list'],
+    [sciper, 'roles', 'remove'],
+    [sciper, 'proxies', 'post'],
+    [sciper, 'proxies', 'put'],
+    [sciper, 'proxies', 'delete'],
+    [sciper, 'election', 'create'],
+  ];
+  await enforcer.addPolicies(permissions);
+  console.log('Successfully imported permissions for user!');
+}
 
-    db.getRange({}).forEach(({ key, value }) => {
-        console.log(`'${key}' => '${value}' \t | \t  (${typeof key}) => (${typeof key})`);
-    });
-};
+async function listUserPermissions(userID) {
+  const enforcer = await initEnforcer();
+  const userPermissions = await enforcer.getPermissionsForUser(userID);
+  console.log(userPermissions);
+}
 
-const removeEl = (dbPath, key) => {
-    const db = lmdb.open({ path: dbPath });
+async function removeAdmin(sciper) {
+  const enforcer = await initEnforcer();
+  await enforcer.deletePermissionsForUser(sciper);
+}
 
-    db.remove(String(key))
-        .then(() => {
-            console.log(`key '${key}' removed`);
-        })
-        .catch((error) => {
-            console.log(`error: ${error}`);
-        });
-};
-
-module.exports = { addAdmin, listEls, removeEl };
+module.exports = { addAdmin, listUserPermissions, removeAdmin };
