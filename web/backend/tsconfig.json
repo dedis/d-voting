@@ -35,7 +35,7 @@
     "jest.config.js",
     ".eslintrc",
     "dist",
-    "dbUtils.js"
+    "src/dbUtils.js"
   ],
   "typedocOptions": {
     "entryPoints": [

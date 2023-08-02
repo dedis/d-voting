@@ -9,5 +9,5 @@ WORKDIR /go/d-voting/cli/memcoin
 RUN go build
 ENV PATH=/go/dela/cli/crypto:/go/d-voting/cli/memcoin:${PATH}
 WORKDIR /go
-ENTRYPOINT ["/bin/bash", "-c", "memcoin --config /tmp/node start --postinstall --proxyaddr :$PROXYPORT --proxykey $PROXYKEY --listen tcp://$HOSTNAME:2000"]
+ENTRYPOINT ["/bin/bash", "-c", "memcoin --config /tmp/node start --postinstall --proxyaddr :$PROXYPORT --promaddr :7080 --proxykey $PROXYKEY --listen tcp://$HOSTNAME:2000 --routing tree"]
 CMD []

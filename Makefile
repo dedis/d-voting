@@ -31,3 +31,8 @@ build:
 
 deb: build
 	cd deb-package; ./build-deb.sh; cd ..
+
+up:
+	docker compose up
+build:
+	docker compose build

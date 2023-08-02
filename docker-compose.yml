@@ -27,8 +27,9 @@ services:
       init-private-key:
         condition: service_completed_successfully
     ports:
-      - 127.0.0.1:${DELA_PORT_RANGE}:2000
-      - 127.0.0.1:${DELA_PROXY_PORT_RANGE}:8080
+      - 2000-2010:2000
+      - 8080-8090:8080
+      - 7080-7090:7080
     environment:
       PROXYKEY: ${PUBLIC_KEY}
       PROXYPORT: ${PROXYPORT}
@@ -40,6 +41,7 @@ services:
       dockerfile: ./Dockerfiles/Dockerfile.frontend
     volumes:
       - data:/data
+#      - ../web/frontend:/web/frontend
     ports:
       - 127.0.0.1:3000:3000
     environment:
@@ -52,6 +54,7 @@ services:
       dockerfile: ./Dockerfiles/Dockerfile.backend
     volumes:
       - data:/data
+      - ./web/backend/src:/web/backend/src
     environment:
       DATABASE_USERNAME: ${DATABASE_USERNAME}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
@@ -72,6 +75,8 @@ services:
     environment:
       POSTGRES_USER: ${DATABASE_USERNAME}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - 5432:5432
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./web/backend/src/migration.sql:/docker-entrypoint-initdb.d/init.sql

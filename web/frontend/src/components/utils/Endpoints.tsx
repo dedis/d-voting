@@ -28,9 +28,9 @@ export const getProxiesAddresses = '/api/proxies';
 
 // public information can be directly fetched from dela nodes
 export const form = (proxy: string, FormID: string) =>
-  new URL(`/evoting/forms/${FormID}`, proxy).href;
+  new URL(`evoting/forms/${FormID}`, proxy).href;
 export const forms = (proxy: string) => {
-  return new URL('/evoting/forms', proxy).href;
+  return new URL('evoting/forms', proxy).href;
 };
 
 // get the default proxy address
