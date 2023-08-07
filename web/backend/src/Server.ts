@@ -38,15 +38,15 @@ const app = express();
 
 app.use(morgan('tiny'));
 
-let enf: Enforcer;
+let authEnforcer: Enforcer;
 
-// we use the postgres adapter to store the casbin policies
-// we initalize the adapter with the connection string and the migrate option
+// we use the postgres adapter to store the Casbin policies
+// we initialize the adapter with the connection string and the migrate option
 // the connection string has the following format:
 // postgres://username:password@host:port/database
 // the migrate option is used to create the tables if they don't exist, we set it to false because we create the tables manually
-async function initEnf() {
-  const a = await SequelizeAdapter.newAdapter({
+async function initEnforcer() {
+  const dbAdapter = await SequelizeAdapter.newAdapter({
     dialect: 'postgres',
     host: process.env.DATABASE_HOST,
     port: parseInt(process.env.DATABASE_PORT || '5432', 10),
@@ -55,15 +55,14 @@ async function initEnf() {
     database: 'casbin',
   });
 
-  const enforcerLoading = newEnforcer('model.conf', a);
-  return enforcerLoading;
+  return newEnforcer('model.conf', dbAdapter);
 }
-const port = process.env.PORT || 5000;
 
-Promise.all([initEnf()])
-  .then((res) => {
-    [enf] = res;
-    console.log(`🛡 Casbin loaded`);
+const port = process.env.PORT || 5000;
+Promise.all([initEnforcer()])
+  .then((createdEnforcer) => {
+    [authEnforcer] = createdEnforcer;
+    console.log(`🛡 Casbin authorization service loaded`);
     app.listen(port);
     console.log(`🚀 App is listening on port ${port}`);
   })
@@ -72,7 +71,7 @@ Promise.all([initEnf()])
   });
 
 function isAuthorized(sciper: number | undefined, subject: string, action: string): boolean {
-  return enf.enforceSync(sciper, subject, action);
+  return authEnforcer.enforceSync(sciper, subject, action);
 }
 
 declare module 'express-session' {
@@ -151,22 +150,22 @@ app.get('/api/control_key', (req, res) => {
 
   axios
     .post('https://tequila.epfl.ch/cgi-bin/tequila/fetchattributes', body)
-    .then((resa) => {
-      if (!resa.data.includes('status=ok')) {
+    .then((response) => {
+      if (!response.data.includes('status=ok')) {
         throw new Error('Login did not work');
       }
 
-      const sciper = resa.data.split('uniqueid=')[1].split('\n')[0];
-      const lastname = resa.data.split('\nname=')[1].split('\n')[0];
-      const firstname = resa.data.split('\nfirstname=')[1].split('\n')[0];
+      const sciper = response.data.split('uniqueid=')[1].split('\n')[0];
+      const lastname = response.data.split('\nname=')[1].split('\n')[0];
+      const firstname = response.data.split('\nfirstname=')[1].split('\n')[0];
 
       req.session.userid = parseInt(sciper, 10);
       req.session.lastname = lastname;
       req.session.firstname = firstname;
 
-      const a = sciper2sess.get(req.session.userid) || new Set<string>();
-      a.add(req.sessionID);
-      sciper2sess.set(sciper, a);
+      const sciperSessions = sciper2sess.get(req.session.userid) || new Set<string>();
+      sciperSessions.add(req.sessionID);
+      sciper2sess.set(sciper, sciperSessions);
 
       res.redirect('/logged');
     })
@@ -176,7 +175,7 @@ app.get('/api/control_key', (req, res) => {
     });
 });
 
-// This endpoint serves to logout from the app by clearing the session.
+// This endpoint serves to log out from the app by clearing the session.
 app.post('/api/logout', (req, res) => {
   if (req.session.userid === undefined) {
     res.status(400).send('not logged in');
@@ -200,25 +199,25 @@ app.post('/api/logout', (req, res) => {
 // list[0] contains the policies so list[i][0] is the sciper
 // list[i][1] is the subject and list[i][2] is the action
 function setMapAuthorization(list: string[][]): Map<String, Array<String>> {
-  const m = new Map<String, Array<String>>();
+  const userRights = new Map<String, Array<String>>();
   for (let i = 0; i < list.length; i += 1) {
     const subject = list[i][1];
     const action = list[i][2];
-    if (m.has(subject)) {
-      m.get(subject)?.push(action);
+    if (userRights.has(subject)) {
+      userRights.get(subject)?.push(action);
     } else {
-      m.set(subject, [action]);
+      userRights.set(subject, [action]);
     }
   }
-  console.log(m);
-  return m;
+  console.log(userRights);
+  return userRights;
 }
 
-// As the user is logged on the app via this express but must also be logged in
-// the react. This endpoint serves to send to the client (actually to react)
+// As the user is logged on the app via this express but must also
+// be logged into react. This endpoint serves to send to the client (actually to react)
 // the information of the current user.
 app.get('/api/personal_info', (req, res) => {
-  enf.getFilteredPolicy(0, String(req.session.userid)).then((list) => {
+  authEnforcer.getFilteredPolicy(0, String(req.session.userid)).then((AuthRights) => {
     res.set('Access-Control-Allow-Origin', '*');
     if (req.session.userid) {
       res.json({
@@ -226,14 +225,13 @@ app.get('/api/personal_info', (req, res) => {
         lastname: req.session.lastname,
         firstname: req.session.firstname,
         islogged: true,
-        authorization: Object.fromEntries(setMapAuthorization(list)),
+        authorization: Object.fromEntries(setMapAuthorization(AuthRights)),
       });
     } else {
       res.json({
         sciper: 0,
         lastname: '',
         firstname: '',
-
         islogged: false,
         authorization: {},
       });
@@ -244,7 +242,7 @@ app.get('/api/personal_info', (req, res) => {
 // ---
 // Users role
 // ---
-// This call allow a user that is admin to get the list of the people that have
+// This call allows a user that is admin to get the list of the people that have
 // a special role (not a voter).
 app.get('/api/user_rights', (req, res) => {
   if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_LIST)) {
@@ -425,12 +423,10 @@ function getPayload(dataStr: string) {
 
   const sign = kyber.sign.schnorr.sign(edCurve, scalar, hash);
 
-  const payload = {
+  return {
     Payload: dataStrB64,
     Signature: sign.toString('hex'),
   };
-
-  return payload;
 }
 
 // sendToDela signs the message and sends it to the dela proxy. It makes no
@@ -493,6 +489,7 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
       if (error.response) {
         resp = JSON.stringify(error.response.data);
       }
+      console.log(error);
 
       res
         .status(500)
@@ -507,7 +504,7 @@ app.put('/api/evoting/authorizations', (req, res) => {
     return;
   }
   const { FormID } = req.body;
-  enf.addPolicy(String(req.session.userid), FormID, ACTION_OWN);
+  authEnforcer.addPolicy(String(req.session.userid), FormID, ACTION_OWN);
 });
 
 // https://stackoverflow.com/a/1349426
@@ -598,13 +595,13 @@ app.delete('/api/evoting/forms/:formID', (req, res) => {
         .status(500)
         .send(`failed to proxy request: ${req.method} ${uri} - ${error.message} - ${resp}`);
     });
-  enf.removePolicy(String(req.session.userid), formID, ACTION_OWN);
+  authEnforcer.removePolicy(String(req.session.userid), formID, ACTION_OWN);
 });
 
 // This API call is used redirect all the calls for DELA to the DELAs nodes.
 // During this process the data are processed : the user is authenticated and
-// controlled. Once this is done the data are signed before the are sent to the
-// DELA node To make this work, react has to redirect to this backend all the
+// controlled. Once this is done the data are signed before it's sent to the
+// DELA node To make this work, React has to redirect to this backend all the
 // request that needs to go the DELA nodes
 app.use('/api/evoting/*', (req, res) => {
   if (!req.session.userid) {
