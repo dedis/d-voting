@@ -115,7 +115,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		// ##### SUBMIT PUBLIC SHARES #####
 		t.Logf("submitting public shares")
 
-		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
+		_, err = getForm(formFac, formID, nodes[0].GetOrdering())
 		require.NoError(t, err)
 		err = actor.ComputePubshares()
 		require.NoError(t, err)
@@ -276,7 +276,7 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		// ##### SUBMIT PUBLIC SHARES #####
 		t.Logf("submitting public shares")
 
-		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
+		_, err = getForm(formFac, formID, nodes[0].GetOrdering())
 		require.NoError(t, err)
 		err = actor.ComputePubshares()
 		require.NoError(t, err)
@@ -397,7 +397,7 @@ func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 
 		// ##### SUBMIT PUBLIC SHARES #####
 
-		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
+		_, err = getForm(formFac, formID, nodes[0].GetOrdering())
 		require.NoError(b, err)
 		err = actor.ComputePubshares()
 		require.NoError(b, err)
