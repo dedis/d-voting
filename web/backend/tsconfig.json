@@ -1,46 +1,27 @@
 {
+  "extends": "@tsconfig/node20/tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
     "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
+      "es2023"
     ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
+    "module": "Node16",
+    "target": "es2022",
+
     "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node16",
     "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "module": "CommonJS",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": false,
-  },
-  "ts-node": {
-    "compilerOptions": {
-      "module": "CommonJS"
-    }
   },
   "include": [
+    "src/*.ts",
     "model.conf",
     "policy.csv",
-    "src/Server.ts",
     "config.json"
   ],
   "exclude": [
+    "src/*.js",
     "node_modules",
-    "jest.config.js",
     ".eslintrc",
-    "dist",
-    "dbUtils.js"
-  ],
-  "typedocOptions": {
-    "entryPoints": [
-      "src/Server.ts"
-    ],
-    "out": "tsdocs"
-  }
+  ]
 }
