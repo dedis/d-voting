@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # This script kills the tmux session started in start_test.sh and
 # removes all the data pertaining to the test.

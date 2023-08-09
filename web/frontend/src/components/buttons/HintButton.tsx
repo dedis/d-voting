@@ -33,6 +33,7 @@ const HintButton: FC<HintButtonProps> = ({ text }) => {
   };
 
   return (
+    text !== undefined &&
     text.length !== 0 && (
       <Popover className="relative ">
         {({ open }) => {

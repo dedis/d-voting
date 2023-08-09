@@ -8,12 +8,12 @@ type TextProps = {
   text: TextQuestion;
   answers: Answers;
   setAnswers: (answers: Answers) => void;
+  language: string;
 };
 
-const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
+const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
   const { t } = useTranslation();
   const [charCounts, setCharCounts] = useState(new Array<number>(text.Choices.length).fill(0));
-
   const requirementsDisplay = () => {
     let requirements = '';
     const min = text.MinN;
@@ -96,21 +96,38 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers }) => {
       </div>
     );
   };
-
   return (
     <div>
       <div className="grid grid-rows-1 grid-flow-col">
         <div>
-          <h3 className="text-lg break-words text-gray-600 w-96">{text.Title}</h3>
+          <h3 className="text-lg break-words text-gray-600 w-96">
+            {language === 'en' && text.Title}
+            {language === 'fr' && text.TitleFr}
+            {language === 'de' && text.TitleDe}
+          </h3>
         </div>
-        <div>
-          <HintButton text={text.Hint} />
+        <div className="text-right">
+          {language === 'en' && <HintButton text={text.Hint} />}
+          {language === 'fr' && <HintButton text={text.HintFr} />}
+          {language === 'de' && <HintButton text={text.HintDe} />}
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>
-      <div className="sm:pl-8 mt-2 pl-6">
-        {text.Choices.map((choice, index) => choiceDisplay(choice, index))}
-      </div>
+      {language == 'en' && text.ChoicesMap.has('en') && (
+        <div className="sm:pl-8 mt-2 pl-6">
+          {text.ChoicesMap.get('en').map((choice, index) => choiceDisplay(choice, index))}
+        </div>
+      )}
+      {language == 'fr' && text.ChoicesMap.has('fr') && (
+        <div className="sm:pl-8 mt-2 pl-6">
+          {text.ChoicesMap.get('fr').map((choice, index) => choiceDisplay(choice, index))}
+        </div>
+      )}
+      {language == 'de' && text.ChoicesMap.has('de') && (
+        <div className="sm:pl-8 mt-2 pl-6">
+          {text.ChoicesMap.get('de').map((choice, index) => choiceDisplay(choice, index))}
+        </div>
+      )}
       <div className="text-red-600 text-sm py-2 sm:pl-2 pl-1">{answers.Errors.get(text.ID)}</div>
     </div>
   );

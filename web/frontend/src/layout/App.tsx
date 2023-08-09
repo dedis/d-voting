@@ -28,28 +28,25 @@ import { AuthContext } from '..';
 import Logged from 'pages/session/Logged';
 import Flash from './Flash';
 import ClientError from './ClientError';
-import { UserRole } from 'types/userRole';
 
 const App = () => {
   const RequireAuth = ({
     children,
-    roles,
+    auth,
   }: {
     children: JSX.Element;
-    roles?: string[];
+    auth?: string[];
   }): JSX.Element => {
     let location = useLocation();
 
     const authCtx = useContext(AuthContext);
-
     if (!authCtx.isLogged) {
       return <Navigate to={ROUTE_LOGIN} state={{ from: location }} replace />;
     } else {
-      if (roles && !roles.includes(authCtx.role)) {
+      if (auth && !authCtx.isAllowed(auth[0], auth[1])) {
         return <Navigate to={ROUTE_UNAUTHORIZED} state={{ from: location }} replace />;
       }
     }
-
     return children;
   };
 
@@ -67,7 +64,7 @@ const App = () => {
               <Route
                 path={ROUTE_FORM_CREATE}
                 element={
-                  <RequireAuth roles={[UserRole.Admin, UserRole.Operator]}>
+                  <RequireAuth auth={['election', 'create']}>
                     <FormCreate />
                   </RequireAuth>
                 }
@@ -77,7 +74,7 @@ const App = () => {
               <Route
                 path={ROUTE_BALLOT_SHOW + '/:formId'}
                 element={
-                  <RequireAuth roles={null}>
+                  <RequireAuth auth={null}>
                     <BallotShow />
                   </RequireAuth>
                 }
@@ -85,7 +82,7 @@ const App = () => {
               <Route
                 path={ROUTE_ADMIN}
                 element={
-                  <RequireAuth roles={[UserRole.Admin]}>
+                  <RequireAuth auth={['roles', 'list']}>
                     <Admin />
                   </RequireAuth>
                 }

@@ -9,7 +9,7 @@ import { UserCircleIcon } from '@heroicons/react/outline';
 type ProfileProps = {
   authCtx: AuthState;
   handleLogout: (e: any) => Promise<void>;
-  handleLogin: (FlashState) => Promise<void>;
+  handleLogin: (arg0: FlashState) => Promise<void>;
   fctx: FlashState;
 };
 

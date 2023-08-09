@@ -5,10 +5,11 @@ import session from 'express-session';
 import morgan from 'morgan';
 import kyber from '@dedis/kyber';
 import crypto from 'crypto';
-import lmdb, { RangeOptions } from 'lmdb';
+import lmdb from 'lmdb';
 import xss from 'xss';
 import createMemoryStore from 'memorystore';
 import { Enforcer, newEnforcer } from 'casbin';
+import { SequelizeAdapter } from 'casbin-sequelize-adapter';
 
 const MemoryStore = createMemoryStore(session);
 const SUBJECT_ROLES = 'roles';
@@ -16,11 +17,12 @@ const SUBJECT_PROXIES = 'proxies';
 const SUBJECT_ELECTION = 'election';
 
 const ACTION_LIST = 'list';
-const ACTION_ACTION_REMOVE = 'remove';
+const ACTION_REMOVE = 'remove';
 const ACTION_ADD = 'add';
 const ACTION_PUT = 'put';
 const ACTION_POST = 'post';
 const ACTION_DELETE = 'delete';
+const ACTION_OWN = 'own';
 const ACTION_CREATE = 'create';
 // store is used to store the session
 const store = new MemoryStore({
@@ -36,15 +38,31 @@ const app = express();
 
 app.use(morgan('tiny'));
 
-let enf: Enforcer;
+let authEnforcer: Enforcer;
 
-const enforcerLoading = newEnforcer('model.conf', 'policy.csv');
+// we use the postgres adapter to store the Casbin policies
+// we initialize the adapter with the connection string and the migrate option
+// the connection string has the following format:
+// postgres://username:password@host:port/database
+// the migrate option is used to create the tables if they don't exist, we set it to false because we create the tables manually
+async function initEnforcer() {
+  const dbAdapter = await SequelizeAdapter.newAdapter({
+    dialect: 'postgres',
+    host: process.env.DATABASE_HOST,
+    port: parseInt(process.env.DATABASE_PORT || '5432', 10),
+    username: process.env.DATABASE_USERNAME,
+    password: process.env.DATABASE_PASSWORD,
+    database: 'casbin',
+  });
+
+  return newEnforcer('model.conf', dbAdapter);
+}
+
 const port = process.env.PORT || 5000;
-
-Promise.all([enforcerLoading])
-  .then((res) => {
-    [enf] = res;
-    console.log(`🛡 Casbin loaded`);
+Promise.all([initEnforcer()])
+  .then((createdEnforcer) => {
+    [authEnforcer] = createdEnforcer;
+    console.log(`🛡 Casbin authorization service loaded`);
     app.listen(port);
     console.log(`🚀 App is listening on port ${port}`);
   })
@@ -53,7 +71,7 @@ Promise.all([enforcerLoading])
   });
 
 function isAuthorized(sciper: number | undefined, subject: string, action: string): boolean {
-  return enf.enforceSync(sciper, subject, action);
+  return authEnforcer.enforceSync(sciper, subject, action);
 }
 
 declare module 'express-session' {
@@ -61,7 +79,6 @@ declare module 'express-session' {
     userid: number;
     firstname: string;
     lastname: string;
-    role: string;
   }
 }
 
@@ -107,10 +124,6 @@ app.get('/api/config/proxy', (req, res) => {
   res.status(200).send(process.env.DELA_NODE_URL);
 });
 
-const usersDB = lmdb.open<'admin' | 'operator', number>({
-  path: `${process.env.DB_PATH}dvoting-users`,
-});
-
 // This is via this endpoint that the client request the tequila key, this key
 // will then be used for redirection on the tequila server
 app.get('/api/get_teq_key', (req, res) => {
@@ -137,25 +150,22 @@ app.get('/api/control_key', (req, res) => {
 
   axios
     .post('https://tequila.epfl.ch/cgi-bin/tequila/fetchattributes', body)
-    .then((resa) => {
-      if (!resa.data.includes('status=ok')) {
+    .then((response) => {
+      if (!response.data.includes('status=ok')) {
         throw new Error('Login did not work');
       }
 
-      const sciper = resa.data.split('uniqueid=')[1].split('\n')[0];
-      const lastname = resa.data.split('\nname=')[1].split('\n')[0];
-      const firstname = resa.data.split('\nfirstname=')[1].split('\n')[0];
-
-      const role = usersDB.get(sciper) || '';
+      const sciper = response.data.split('uniqueid=')[1].split('\n')[0];
+      const lastname = response.data.split('\nname=')[1].split('\n')[0];
+      const firstname = response.data.split('\nfirstname=')[1].split('\n')[0];
 
       req.session.userid = parseInt(sciper, 10);
       req.session.lastname = lastname;
       req.session.firstname = firstname;
-      req.session.role = role;
 
-      const a = sciper2sess.get(req.session.userid) || new Set<string>();
-      a.add(req.sessionID);
-      sciper2sess.set(sciper, a);
+      const sciperSessions = sciper2sess.get(req.session.userid) || new Set<string>();
+      sciperSessions.add(req.sessionID);
+      sciper2sess.set(sciper, sciperSessions);
 
       res.redirect('/logged');
     })
@@ -165,7 +175,7 @@ app.get('/api/control_key', (req, res) => {
     });
 });
 
-// This endpoint serves to logout from the app by clearing the session.
+// This endpoint serves to log out from the app by clearing the session.
 app.post('/api/logout', (req, res) => {
   if (req.session.userid === undefined) {
     res.status(400).send('not logged in');
@@ -189,41 +199,39 @@ app.post('/api/logout', (req, res) => {
 // list[0] contains the policies so list[i][0] is the sciper
 // list[i][1] is the subject and list[i][2] is the action
 function setMapAuthorization(list: string[][]): Map<String, Array<String>> {
-  const m = new Map<String, Array<String>>();
+  const userRights = new Map<String, Array<String>>();
   for (let i = 0; i < list.length; i += 1) {
     const subject = list[i][1];
     const action = list[i][2];
-    if (m.has(subject)) {
-      m.get(subject)?.push(action);
+    if (userRights.has(subject)) {
+      userRights.get(subject)?.push(action);
     } else {
-      m.set(subject, [action]);
+      userRights.set(subject, [action]);
     }
   }
-  console.log(m);
-  return m;
+  console.log(userRights);
+  return userRights;
 }
 
-// As the user is logged on the app via this express but must also be logged in
-// the react. This endpoint serves to send to the client (actually to react)
+// As the user is logged on the app via this express but must also
+// be logged into react. This endpoint serves to send to the client (actually to react)
 // the information of the current user.
 app.get('/api/personal_info', (req, res) => {
-  enf.getFilteredPolicy(0, String(req.session.userid)).then((list) => {
+  authEnforcer.getFilteredPolicy(0, String(req.session.userid)).then((AuthRights) => {
     res.set('Access-Control-Allow-Origin', '*');
     if (req.session.userid) {
       res.json({
         sciper: req.session.userid,
         lastname: req.session.lastname,
         firstname: req.session.firstname,
-        role: req.session.role,
         islogged: true,
-        authorization: Object.fromEntries(setMapAuthorization(list)),
+        authorization: Object.fromEntries(setMapAuthorization(AuthRights)),
       });
     } else {
       res.json({
         sciper: 0,
         lastname: '',
         firstname: '',
-        role: '',
         islogged: false,
         authorization: {},
       });
@@ -234,60 +242,48 @@ app.get('/api/personal_info', (req, res) => {
 // ---
 // Users role
 // ---
-// This call allow a user that is admin to get the list of the people that have
+// This call allows a user that is admin to get the list of the people that have
 // a special role (not a voter).
 app.get('/api/user_rights', (req, res) => {
   if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_LIST)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
-  const opts: RangeOptions = {};
-  const users = Array.from(
-    usersDB.getRange(opts).map(({ key, value }) => ({ id: '0', sciper: key, role: value }))
-  );
+  const users: {
+    id: string;
+    sciper: number;
+    role: 'admin' | 'operator';
+  }[] = [];
   res.json(users);
 });
 
 // This call (only for admins) allow an admin to add a role to a voter.
-app.post('/api/add_role', (req, res) => {
+app.post('/api/add_role', (req, res, next) => {
   if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_ADD)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
 
   const { sciper } = req.body;
-  const { role } = req.body;
 
-  usersDB.put(sciper, role).catch((error) => {
-    res.status(500).send('Failed to add role');
-    console.log(error);
-  });
+  // The sciper has to contain 6 numbers
+  if (sciper > 999999 || sciper < 100000) {
+    res.status(400).send('Sciper length is incorrect');
+    return;
+  }
+  next();
+  // Call https://search-api.epfl.ch/api/ldap?q=228271, if the answer is
+  // empty then sciper unknown, otherwise add it in userDB
 });
 
 // This call (only for admins) allow an admin to remove a role to a user.
-app.post('/api/remove_role', (req, res) => {
-  if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_ACTION_REMOVE)) {
+
+app.post('/api/remove_role', (req, res, next) => {
+  if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_REMOVE)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
-
-  const { sciper } = req.body;
-  usersDB
-    .remove(sciper)
-    .then(() => {
-      const sessionIDs = sciper2sess.get(sciper);
-      if (sessionIDs !== undefined) {
-        sessionIDs.forEach((_, sessionID) => {
-          store.destroy(sessionID);
-        });
-      }
-
-      res.status(200).send('Removed');
-    })
-    .catch((error) => {
-      res.status(500).send('Remove role failed');
-      console.log(error);
-    });
+  next();
 });
 
 // ---
@@ -336,7 +332,13 @@ app.put('/api/proxies/:nodeAddr', (req, res) => {
       return;
     }
 
-    proxiesDB.put(nodeAddr, bodydata.Proxy);
+    const { NewNode } = bodydata.NewNode;
+    if (NewNode !== nodeAddr) {
+      proxiesDB.remove(nodeAddr);
+      proxiesDB.put(NewNode, bodydata.Proxy);
+    } else {
+      proxiesDB.put(nodeAddr, bodydata.Proxy);
+    }
     console.log('put', nodeAddr, '=>', bodydata.Proxy);
     res.status(200).send('ok');
   } catch (error: any) {
@@ -421,12 +423,10 @@ function getPayload(dataStr: string) {
 
   const sign = kyber.sign.schnorr.sign(edCurve, scalar, hash);
 
-  const payload = {
+  return {
     Payload: dataStrB64,
     Signature: sign.toString('hex'),
   };
-
-  return payload;
 }
 
 // sendToDela signs the message and sends it to the dela proxy. It makes no
@@ -489,6 +489,7 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
       if (error.response) {
         resp = JSON.stringify(error.response.data);
       }
+      console.log(error);
 
       res
         .status(500)
@@ -497,12 +498,13 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
 }
 
 // Secure /api/evoting to admins and operators
-app.use('/api/evoting/*', (req, res, next) => {
+app.put('/api/evoting/authorizations', (req, res) => {
   if (!isAuthorized(req.session.userid, SUBJECT_ELECTION, ACTION_CREATE)) {
-    res.status(400).send('Unauthorized - only admins and operators allowed');
+    res.status(400).send('Unauthorized');
     return;
   }
-  next();
+  const { FormID } = req.body;
+  authEnforcer.addPolicy(String(req.session.userid), FormID, ACTION_OWN);
 });
 
 // https://stackoverflow.com/a/1349426
@@ -515,10 +517,48 @@ function makeid(length: number) {
   }
   return result;
 }
+app.put('/api/evoting/forms/:formID', (req, res, next) => {
+  const { formID } = req.params;
+  if (!isAuthorized(req.session.userid, formID, ACTION_OWN)) {
+    res.status(400).send('Unauthorized');
+    return;
+  }
+  next();
+});
 
+app.post('/api/evoting/services/dkg/actors', (req, res, next) => {
+  const { FormID } = req.body;
+  if (!isAuthorized(req.session.userid, FormID, ACTION_OWN)) {
+    res.status(400).send('Unauthorized');
+    return;
+  }
+  if (FormID === undefined) {
+    return;
+  }
+  next();
+});
+app.use('/api/evoting/services/dkg/actors/:formID', (req, res, next) => {
+  const { formID } = req.params;
+  if (!isAuthorized(req.session.userid, formID, ACTION_OWN)) {
+    res.status(400).send('Unauthorized');
+    return;
+  }
+  next();
+});
+app.use('/api/evoting/services/shuffle/:formID', (req, res, next) => {
+  const { formID } = req.params;
+  if (!isAuthorized(req.session.userid, formID, ACTION_OWN)) {
+    res.status(400).send('Unauthorized');
+    return;
+  }
+  next();
+});
 app.delete('/api/evoting/forms/:formID', (req, res) => {
   const { formID } = req.params;
-
+  if (!isAuthorized(req.session.userid, formID, ACTION_OWN)) {
+    res.status(400).send('Unauthorized');
+    return;
+  }
   const edCurve = kyber.curve.newCurve('edwards25519');
 
   const priv = Buffer.from(process.env.PRIVATE_KEY as string, 'hex');
@@ -555,12 +595,13 @@ app.delete('/api/evoting/forms/:formID', (req, res) => {
         .status(500)
         .send(`failed to proxy request: ${req.method} ${uri} - ${error.message} - ${resp}`);
     });
+  authEnforcer.removePolicy(String(req.session.userid), formID, ACTION_OWN);
 });
 
 // This API call is used redirect all the calls for DELA to the DELAs nodes.
 // During this process the data are processed : the user is authenticated and
-// controlled. Once this is done the data are signed before the are sent to the
-// DELA node To make this work, react has to redirect to this backend all the
+// controlled. Once this is done the data are signed before it's sent to the
+// DELA node To make this work, React has to redirect to this backend all the
 // request that needs to go the DELA nodes
 app.use('/api/evoting/*', (req, res) => {
   if (!req.session.userid) {

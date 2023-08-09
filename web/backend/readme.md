@@ -6,9 +6,11 @@ Once the project cloned type `npm install` to install the packages.
 
 Copy `config.env.template` to `config.env` and replace the variables as needed.
 
+Copy the database credentials from `config.env.template` to `/d-voting/bachend/src/.env` .
+
 ## Generate a keypair
 
-Here is  a small piece of code to help generating the keys:
+Here is a small piece of code to help generating the keys:
 
 ```go
 func GenerateKey() {

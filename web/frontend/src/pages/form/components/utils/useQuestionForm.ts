@@ -1,16 +1,24 @@
 import { useState } from 'react';
 import { RankQuestion, SelectQuestion, TextQuestion } from 'types/configuration';
+import { choicesMapToChoices } from 'types/getObjectType';
+import { availableLanguages } from 'language/Configuration';
 
 // form hook that handles the form state for all types of questions
 const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion) => {
   const [state, setState] = useState<RankQuestion | SelectQuestion | TextQuestion>(initState);
-  const { MinN, Choices } = state;
+  const { MinN, ChoicesMap } = state;
+  const lang = availableLanguages;
 
   // depending on the type of the Exception in the question, the form state is
   // updated accordingly
   const handleChange =
     (Exception?: string, optionnalValues?: number) => (e?: React.ChangeEvent<HTMLInputElement>) => {
       const { value, type, name } = e.target;
+      const obj = Object.fromEntries(ChoicesMap);
+      const newChoicesMap = new Map(Object.entries(obj));
+      newChoicesMap.set('en', [...newChoicesMap.get('en'), '']);
+      newChoicesMap.set('fr', [...newChoicesMap.get('fr'), '']);
+      newChoicesMap.set('de', [...newChoicesMap.get('de'), '']);
       switch (Exception) {
         case 'RankMinMax':
           setState({ ...state, MinN: Number(value), MaxN: Number(value) });
@@ -18,21 +26,31 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
         case 'addChoiceRank':
           setState({
             ...state,
-            Choices: [...Choices, ''],
-            MaxN: Choices.length + 1,
-            MinN: Choices.length + 1,
+            ChoicesMap: newChoicesMap,
+            MaxN: Math.max(
+              ChoicesMap.get('en').length + 1,
+              ChoicesMap.get('fr').length + 1,
+              ChoicesMap.get('de').length + 1
+            ),
+            MinN: Math.min(
+              ChoicesMap.get('en').length + 1,
+              ChoicesMap.get('fr').length + 1,
+              ChoicesMap.get('de').length + 1
+            ),
           });
           break;
         case 'deleteChoiceRank':
-          const filteredChoices = Choices.filter(
-            (item: string, idx: number) => idx !== optionnalValues
-          );
-
+          lang.forEach((lg) => {
+            const filteredChoicesMap = ChoicesMap.get(lg).filter(
+              (item: string, idx: number) => idx !== optionnalValues
+            );
+            ChoicesMap.set(lg, filteredChoicesMap);
+          });
           setState({
             ...state,
-            Choices: filteredChoices,
-            MaxN: filteredChoices.length,
-            MinN: filteredChoices.length,
+            ChoicesMap: ChoicesMap,
+            MaxN: ChoicesMap.get('en').length,
+            MinN: ChoicesMap.get('en').length,
           });
           break;
         case 'TextMaxLength':
@@ -56,38 +74,86 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
       }
     };
 
-  // updates the choices array when the user adds a new choice
-  const addChoice = () => {
-    setState({ ...state, Choices: [...Choices, ''], MaxN: Choices.length + 1 });
-  };
-
-  // remove a choice from the choices array
-  const deleteChoice = (index: number) => {
-    if (Choices.length > MinN) {
-      const filteredChoices = Choices.filter((item: string, idx: number) => idx !== index);
-
-      setState({
-        ...state,
-        Choices: filteredChoices,
-        MaxN: filteredChoices.length,
-      });
+  // updates the ChoicesMap map when the user adds a new choice
+  const addChoice = (lg) => {
+    const obj = Object.fromEntries(ChoicesMap);
+    const newChoicesMap = new Map(Object.entries(obj));
+    switch (lg) {
+      case lg:
+        setState({
+          ...state,
+          ChoicesMap: newChoicesMap.set(lg, [...newChoicesMap.get(lg), '']),
+          MaxN: ChoicesMap.get(lg).length + 1,
+        });
+        break;
+      default:
+        setState({
+          ...state,
+          ChoicesMap: newChoicesMap.set('en', [...newChoicesMap.get('en'), '']),
+          MaxN: ChoicesMap.get('en').length + 1,
+        });
     }
   };
 
-  // update the choice at the given index
-  const updateChoice = (index: number) => (e) => {
-    e.persist();
+  // remove a choice from the ChoicesMap map
+  const deleteChoice = (index: number) => {
+    lang.forEach((lg) => {
+      if (ChoicesMap.get(lg).length > MinN) {
+        const filteredChoicesMap = ChoicesMap.get(lg).filter(
+          (item: string, idx: number) => idx !== index
+        );
+        ChoicesMap.set(lg, filteredChoicesMap);
+      }
+    });
+    const maxN = Math.max(
+      ChoicesMap.get('en').length + 1,
+      ChoicesMap.get('fr').length + 1,
+      ChoicesMap.get('de').length + 1
+    );
     setState({
       ...state,
-      Choices: Choices.map((item: string, idx: number) => {
-        if (idx === index) {
-          return e.target.value;
-        }
-        return item;
-      }),
+      ChoicesMap: ChoicesMap,
+      MaxN: maxN,
     });
   };
 
+  // update the choice at the given index
+  const updateChoice = (index: number, lg: string) => (e) => {
+    e.persist();
+    const obj = Object.fromEntries(ChoicesMap);
+    switch (lg) {
+      case lg:
+        const newChoicesMap = new Map(
+          Object.entries({
+            ...obj,
+            [lg]: obj[lg].map((item: string, idx: number) =>
+              idx === index ? e.target.value : item
+            ),
+          })
+        );
+        setState({
+          ...state,
+          ChoicesMap: newChoicesMap,
+          Choices: choicesMapToChoices(newChoicesMap),
+        });
+        break;
+
+      default:
+        const newChoicesMapDefault = new Map(
+          Object.entries({
+            ...obj,
+            ['en']: obj.en.map((item: string, idx: number) =>
+              idx === index ? e.target.value : item
+            ),
+          })
+        );
+        setState({
+          ...state,
+          ChoicesMap: newChoicesMapDefault,
+          Choices: choicesMapToChoices(newChoicesMapDefault),
+        });
+    }
+  };
   return { state, handleChange, addChoice, deleteChoice, updateChoice };
 };
 

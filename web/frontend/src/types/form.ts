@@ -59,6 +59,8 @@ interface FormInfo {
 interface LightFormInfo {
   FormID: ID;
   Title: string;
+  TitleFr: string;
+  TitleDe: string;
   Status: Status;
   Pubkey: string;
 }
@@ -82,6 +84,10 @@ interface DownloadedResults {
   Title: string;
   Results?: { Candidate: string; Percentage: string }[];
 }
+interface BallotResults {
+  BallotNumber: number;
+  Results: DownloadedResults[];
+}
 
 export type {
   LightFormInfo,
@@ -91,4 +97,5 @@ export type {
   TextResults,
   SelectResults,
   DownloadedResults,
+  BallotResults,
 };

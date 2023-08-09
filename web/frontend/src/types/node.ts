@@ -39,14 +39,19 @@ class InternalDKGInfo {
     return new InternalDKGInfo(info.Status, info.Error);
   }
 
-  private constructor(private status: NodeStatus, private error: DKGInfo['Error']) {}
+  private constructor(
+    private status: NodeStatus,
+    private error: DKGInfo['Error']
+  ) {}
 
   getError(): string {
     if (this.error === undefined || this.error.Title === '') {
       return '';
     }
 
-    return this.error.Title + ' - ' + this.error.Code + ' - ' + this.error.Message;
+    return (
+      this.error.Title + ' - ' + this.error.Code + ' - ' + this.error.Message
+    );
   }
 
   getStatus(): NodeStatus {

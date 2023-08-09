@@ -233,8 +233,8 @@ func castVotesNChunks(m txManager, actor dkg.Actor, form types.Form,
 
 		castVote := types.CastVote{
 			FormID: form.FormID,
-			UserID:     userID,
-			Ballot:     ballot,
+			UserID: userID,
+			Ballot: ballot,
 		}
 
 		data, err := castVote.Serialize(serdecontext)
