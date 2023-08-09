@@ -18,6 +18,7 @@ DELA_PROXY_PORT_RANGE=8080-8082                 # Dela proxy ports (at least DEL
 DATABASE_USERNAME=dvoting                       # choose any PostgreSQL username
 DATABASE_PASSWORD=                              # choose any PostgreSQL password
 DATABASE_HOST=db                                # PostgreSQL host
+DATABASE_PORT=5432                              # PostgreSQL port
 FRONT_END_URL=http://localhost:3000             # frontend URL
 BACKEND_HOST=backend                            # backend host
 BACKEND_PORT=5000                               # backend port
