@@ -833,14 +833,14 @@ func (e evotingCommand) getForm(formIDHex string,
 
 	var form types.Form
 
-	formIDHexBuf, err := hex.DecodeString(formIDHex)
+	formIDBuf, err := hex.DecodeString(formIDHex)
 	if err != nil {
 		return form, nil, xerrors.Errorf("failed to decode formIDHex: %v", err)
 	}
 
-	formBuff, err := snap.Get(formIDHexBuf)
+	formBuff, err := snap.Get(formIDBuf)
 	if err != nil {
-		return form, nil, xerrors.Errorf("failed to get key %q: %v", formIDHexBuf, err)
+		return form, nil, xerrors.Errorf("failed to get key %q: %v", formIDBuf, err)
 	}
 
 	message, err := e.formFac.Deserialize(e.context, formBuff)
@@ -858,7 +858,7 @@ func (e evotingCommand) getForm(formIDHex string,
 			formIDHex, form.FormID)
 	}
 
-	return form, formIDHexBuf, nil
+	return form, formIDBuf, nil
 }
 
 // getTransaction extracts the argument from the transaction.
