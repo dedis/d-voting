@@ -59,7 +59,7 @@ func (c Ciphervote) FingerPrint(writer io.Writer) error {
 
 		_, err = egpair.C.MarshalTo(writer)
 		if err != nil {
-			return xerrors.Errorf("failed to marshal K: %v", err)
+			return xerrors.Errorf("failed to marshal C: %v", err)
 		}
 	}
 
