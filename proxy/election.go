@@ -117,7 +117,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 		FormID: hex.EncodeToString(formID),
 		Token:  transactionClientInfo.Token,
 	}
-  
+
 	// send the response json
 	txnmanager.SendResponse(w, response)
 }
