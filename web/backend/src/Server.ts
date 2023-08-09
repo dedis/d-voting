@@ -5,11 +5,11 @@ import session from 'express-session';
 import morgan from 'morgan';
 import kyber from '@dedis/kyber';
 import crypto from 'crypto';
-import lmdb from 'lmdb';
 import xss from 'xss';
 import createMemoryStore from 'memorystore';
 import { Enforcer, newEnforcer } from 'casbin';
 import { SequelizeAdapter } from 'casbin-sequelize-adapter';
+import { open } from 'lmdb';
 
 const MemoryStore = createMemoryStore(session);
 const SUBJECT_ROLES = 'roles';
@@ -62,7 +62,7 @@ const port = process.env.PORT || 5000;
 Promise.all([initEnforcer()])
   .then((createdEnforcer) => {
     [authEnforcer] = createdEnforcer;
-    console.log(`🛡 Casbin authorization service loaded`);
+    console.log('🛡 Casbin authorization service loaded');
     app.listen(port);
     console.log(`🚀 App is listening on port ${port}`);
   })
@@ -198,8 +198,8 @@ app.post('/api/logout', (req, res) => {
 // an object to the action authorized
 // list[0] contains the policies so list[i][0] is the sciper
 // list[i][1] is the subject and list[i][2] is the action
-function setMapAuthorization(list: string[][]): Map<String, Array<String>> {
-  const userRights = new Map<String, Array<String>>();
+function setMapAuthorization(list: string[][]): Map<string, Array<string>> {
+  const userRights = new Map<string, Array<string>>();
   for (let i = 0; i < list.length; i += 1) {
     const subject = list[i][1];
     const action = list[i][2];
@@ -293,7 +293,7 @@ app.post('/api/remove_role', (req, res, next) => {
 // ---
 // Proxies
 // ---
-const proxiesDB = lmdb.open<string, string>({ path: `${process.env.DB_PATH}proxies` });
+const proxiesDB = open<string, string>({ path: `${process.env.DB_PATH}proxies` });
 app.post('/api/proxies', (req, res) => {
   if (!isAuthorized(req.session.userid, SUBJECT_PROXIES, ACTION_POST)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
