@@ -1,19 +1,5 @@
 services:
 
-  init-private-key:   # create private key
-    image: crypto
-    build:
-      dockerfile: ./Dockerfiles/Dockerfile.crypto
-    volumes:
-      - data:/data
-    entrypoint:
-      - crypto
-      - bls
-      - signer
-      - new
-      - --save
-      - /data/private.key
-
   dela:             # DELA nodes
     image: dela
     build:
@@ -21,11 +7,6 @@ services:
       context: ./Dockerfiles
     deploy:
       replicas: ${DELA_REPLICAS}
-    volumes:
-      - data:/data
-    depends_on:
-      init-private-key:
-        condition: service_completed_successfully
     ports:
       - 127.0.0.1:${DELA_PORT_RANGE}:2000
       - 127.0.0.1:${DELA_PROXY_PORT_RANGE}:8080
@@ -38,8 +19,6 @@ services:
     image: frontend
     build:
       dockerfile: ./Dockerfiles/Dockerfile.frontend
-    volumes:
-      - data:/data
     ports:
       - 127.0.0.1:3000:3000
     environment:
@@ -50,8 +29,6 @@ services:
     image: backend
     build:
       dockerfile: ./Dockerfiles/Dockerfile.backend
-    volumes:
-      - data:/data
     environment:
       DATABASE_USERNAME: ${DATABASE_USERNAME}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
@@ -77,5 +54,4 @@ services:
       - ./web/backend/src/migration.sql:/docker-entrypoint-initdb.d/init.sql
 
 volumes:
-  data:             # shared by web service and DELA nodes
   postgres-data:    # PostgreSQL database
