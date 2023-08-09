@@ -299,14 +299,11 @@ app.post('/api/proxies', (req, res) => {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
   }
-  try {
-    const bodydata = req.body;
-    proxiesDB.put(bodydata.NodeAddr, bodydata.Proxy);
-    console.log('put', bodydata.NodeAddr, '=>', bodydata.Proxy);
-    res.status(200).send('ok');
-  } catch (error: any) {
-    res.status(500).send(error.toString());
-  }
+  // ToDo: monitor removes try/catch
+  const requestBody = req.body;
+  proxiesDB.put(requestBody.NodeAddr, requestBody.Proxy);
+  console.log('put', requestBody.NodeAddr, '=>', requestBody.Proxy);
+  res.status(200).send('ok');
 });
 
 app.put('/api/proxies/:nodeAddr', (req, res) => {
@@ -325,25 +322,22 @@ app.put('/api/proxies/:nodeAddr', (req, res) => {
     res.status(404).send('not found');
     return;
   }
-  try {
-    const bodydata = req.body;
-    if (bodydata.Proxy === undefined) {
-      res.status(400).send('bad request, proxy is undefined');
-      return;
-    }
-
-    const { NewNode } = bodydata.NewNode;
-    if (NewNode !== nodeAddr) {
-      proxiesDB.remove(nodeAddr);
-      proxiesDB.put(NewNode, bodydata.Proxy);
-    } else {
-      proxiesDB.put(nodeAddr, bodydata.Proxy);
-    }
-    console.log('put', nodeAddr, '=>', bodydata.Proxy);
-    res.status(200).send('ok');
-  } catch (error: any) {
-    res.status(500).send(error.toString());
+  // ToDo: monitor removed try/catch
+  const bodydata = req.body;
+  if (bodydata.Proxy === undefined) {
+    res.status(400).send('bad request, proxy is undefined');
+    return;
   }
+
+  const { NewNode } = bodydata.NewNode;
+  if (NewNode !== nodeAddr) {
+    proxiesDB.remove(nodeAddr);
+    proxiesDB.put(NewNode, bodydata.Proxy);
+  } else {
+    proxiesDB.put(nodeAddr, bodydata.Proxy);
+  }
+  console.log('put', nodeAddr, '=>', bodydata.Proxy);
+  res.status(200).send('ok');
 });
 
 app.delete('/api/proxies/:nodeAddr', (req, res) => {
@@ -363,13 +357,10 @@ app.delete('/api/proxies/:nodeAddr', (req, res) => {
     return;
   }
 
-  try {
-    proxiesDB.remove(nodeAddr);
-    console.log('remove', nodeAddr, '=>', proxy);
-    res.status(200).send('ok');
-  } catch (error: any) {
-    res.status(500).send(error.toString());
-  }
+  // ToDo: monitor removed try/catch
+  proxiesDB.remove(nodeAddr);
+  console.log('remove', nodeAddr, '=>', proxy);
+  res.status(200).send('ok');
 });
 
 app.get('/api/proxies', (req, res) => {
