@@ -113,7 +113,7 @@ func getIntegrationTestBadVote(numNodes, numVotes, numBadVotes int) func(*testin
 		// ##### SUBMIT PUBLIC SHARES #####
 		t.Logf("submitting public shares")
 
-		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
+		_, err = getForm(formFac, formID, nodes[0].GetOrdering())
 		require.NoError(t, err)
 		err = actor.ComputePubshares()
 		require.NoError(t, err)
@@ -253,7 +253,7 @@ func getIntegrationTestRevote(numNodes, numVotes, numRevotes int) func(*testing.
 		// ##### SUBMIT PUBLIC SHARES #####
 		t.Logf("submitting public shares")
 
-		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
+		_, err = getForm(formFac, formID, nodes[0].GetOrdering())
 		require.NoError(t, err)
 		err = actor.ComputePubshares()
 		require.NoError(t, err)
