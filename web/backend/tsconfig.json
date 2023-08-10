@@ -17,11 +17,11 @@
     "src/*.ts",
     "model.conf",
     "policy.csv",
+    ".eslintrc.cjs",
     "config.json"
   ],
   "exclude": [
     "src/*.js",
     "node_modules",
-    ".eslintrc",
   ]
 }
