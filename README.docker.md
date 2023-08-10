@@ -11,10 +11,7 @@ The relevant files are:
 You need to create a local .env file with the following content:
 
 ```
-DELA_REPLICAS=3                                 # number of Dela nodes to deploy
-DELA_NODE_URL=http://d-voting-dela-1:8080       # Dela node URL *within the Docker network* (port must be in DELA_PROXY_PORT_RANGE)
-DELA_PORT_RANGE=2000-2002                       # Dela ports (at least DELA_REPLICAS ports)
-DELA_PROXY_PORT_RANGE=8080-8082                 # Dela proxy ports (at least DELA_REPLICAS ports)
+DELA_NODE_URL=http://dela-leader:8080           # Dela node URL *within the Docker network* (port must be in DELA_PROXY_PORT_RANGE)
 DATABASE_USERNAME=dvoting                       # choose any PostgreSQL username
 DATABASE_PASSWORD=                              # choose any PostgreSQL password
 DATABASE_HOST=db                                # PostgreSQL host *within the Docker network*
@@ -52,6 +49,7 @@ to delete the volumes (this will reset your instance).
 
 ## Post-install commands
 
-1. run the script `DELA_REPLICAS=... init_dela.sh` to initialize the DELA network with `DELA_REPLICAS set to the same value as in .env`
-2. run `docker exec -it d-voting-backend-1 /bin/bash` to connect to the backend
+1. `./init_dela.sh`
+2. `docker compose exec backend /bin/bash`
 3. execute `npx cli addAdmin --sciper 123455` with your SCIPER to add yourself as admin
+5. exit the container and run `docker compose down && docker compose up -d`
