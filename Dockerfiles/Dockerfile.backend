@@ -1,7 +1,12 @@
 FROM node:20-bookworm
 
+# install Nginx
+RUN apt-get update && apt-get install nginx -y
+COPY ../Dockerfiles/nginx/default /etc/nginx/sites-available/default
+
+# install backend
 WORKDIR /web/backend
 COPY ../web/backend .
 RUN npm install
-ENTRYPOINT ["npm", "start"]
+ENTRYPOINT ["/bin/bash", "-c", "/usr/sbin/nginx && npm start"]
 
