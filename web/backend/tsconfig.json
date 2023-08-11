@@ -25,9 +25,9 @@
     }
   },
   "include": [
-    "model.conf",
+    "src/model.conf",
     "policy.csv",
-    "src/Server.ts",
+    "src/*.ts",
     "config.json"
   ],
   "exclude": [

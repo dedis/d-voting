@@ -55,7 +55,7 @@ async function initEnforcer() {
     database: 'casbin',
   });
 
-  return newEnforcer('model.conf', dbAdapter);
+  return newEnforcer('src/model.conf', dbAdapter);
 }
 
 const port = process.env.PORT || 5000;
