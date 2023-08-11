@@ -11,7 +11,7 @@ The relevant files are:
 You need to create a local .env file with the following content:
 
 ```
-DELA_NODE_URL=http://dela-leader:8080           # Dela node URL *within the Docker network* (port must be in DELA_PROXY_PORT_RANGE)
+DELA_NODE_URL=http://127.0.0.1:80               # reverse proxy within backend container
 DATABASE_USERNAME=dvoting                       # choose any PostgreSQL username
 DATABASE_PASSWORD=                              # choose any PostgreSQL password
 DATABASE_HOST=db                                # PostgreSQL host *within the Docker network*
