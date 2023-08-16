@@ -83,7 +83,6 @@ jobs:
           cd ${{ steps.get_version.outputs.version_file }}
           cp -r ../build/* .
           cp -r ../node_modules .
-          cp -r ../dbUtils.js .
           cp -r ../config.env.template .
 
       - name: Create tar.gz

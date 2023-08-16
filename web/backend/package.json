@@ -13,6 +13,9 @@
     "prettier-check": "./node_modules/.bin/prettier --check .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "bin": {
+    "cli": "./src/cli.ts"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -21,6 +24,7 @@
     "axios": "^0.24.0",
     "casbin": "^5.19.1",
     "casbin-sequelize-adapter": "^2.4.0",
+    "commander": "^11.0.0",
     "cookie-parser": "^1.4.6",
     "crypto": "^1.0.1",
     "express": "^4.17.2",
@@ -29,8 +33,8 @@
     "lodash": "^4.17.21",
     "memorystore": "^1.6.7",
     "morgan": "^1.10.0",
-    "xss": "^1.0.11",
-    "pg": "^8.11.1"
+    "pg": "^8.11.1",
+    "xss": "^1.0.11"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.2",

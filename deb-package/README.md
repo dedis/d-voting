@@ -25,12 +25,10 @@ and be sure to *export* variables in `config.env` (i.e do `export xx=yy`).
 However it is recommended to use a service manager such as systemd to run the
 app.
 
-4) Use dbUtils.js
-
-You can manually update the rights with `dbUtils.js`:
+4) Use the CLI to set yourself up as an admin 
 
 ```sh
-NODE_PATH=./node_modules node -e 'require("./dbUtils").listEls("../data/dvoting-users")'
+npx cli addAdmin --sciper 1234
 ```
 
 # Run the web frontend

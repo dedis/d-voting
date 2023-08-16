@@ -54,4 +54,4 @@ to delete the volumes (this will reset your instance).
 
 1. run the script `DELA_REPLICAS=... init_dela.sh` to initialize the DELA network with `DELA_REPLICAS set to the same value as in .env`
 2. run `docker exec -it d-voting-backend-1 /bin/bash` to connect to the backend
-3. execute `node -e 'require("./dbUtils").addAdmin("./dvoting-users", <sciper>)'` with your Sciper to add yourself as admin
+3. execute `npx cli addAdmin --sciper 123455` with your SCIPER to add yourself as admin
