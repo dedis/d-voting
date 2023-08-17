@@ -81,10 +81,11 @@ function isAuthorized(sciper: number | undefined, subject: string, action: strin
 }
 
 declare module 'express-session' {
+  // This overrides express-session
   export interface SessionData {
-    userid: number;
-    firstname: string;
-    lastname: string;
+    userId: number;
+    firstName: string;
+    lastName: string;
   }
 }
 
@@ -112,7 +113,7 @@ app.use(express.urlencoded({ extended: true }));
 // app.use((req, res, next) => {
 //   const begin = req.url.split('?')[0];
 //   let role = 'everyone';
-//   if (req.session.userid && req.session.role) {
+//   if (req.session.userId && req.session.role) {
 //     role = req.session.role;
 //   }
 
@@ -165,11 +166,11 @@ app.get('/api/control_key', (req, res) => {
       const lastname = response.data.split('\nname=')[1].split('\n')[0];
       const firstname = response.data.split('\nfirstname=')[1].split('\n')[0];
 
-      req.session.userid = parseInt(sciper, 10);
-      req.session.lastname = lastname;
-      req.session.firstname = firstname;
+      req.session.userId = parseInt(sciper, 10);
+      req.session.lastName = lastname;
+      req.session.firstName = firstname;
 
-      const sciperSessions = sciper2sess.get(req.session.userid) || new Set<string>();
+      const sciperSessions = sciper2sess.get(req.session.userId) || new Set<string>();
       sciperSessions.add(req.sessionID);
       sciper2sess.set(sciper, sciperSessions);
 
@@ -183,17 +184,17 @@ app.get('/api/control_key', (req, res) => {
 
 // This endpoint serves to log out from the app by clearing the session.
 app.post('/api/logout', (req, res) => {
-  if (req.session.userid === undefined) {
+  if (req.session.userId === undefined) {
     res.status(400).send('not logged in');
   }
 
-  const { userid } = req.session;
+  const { userId } = req.session;
 
   req.session.destroy(() => {
-    const a = sciper2sess.get(userid as number);
+    const a = sciper2sess.get(userId as number);
     if (a !== undefined) {
       a.delete(req.sessionID);
-      sciper2sess.set(userid as number, a);
+      sciper2sess.set(userId as number, a);
     }
     res.redirect('/');
   });
@@ -223,14 +224,14 @@ function setMapAuthorization(list: string[][]): Map<String, Array<String>> {
 // be logged into react. This endpoint serves to send to the client (actually to react)
 // the information of the current user.
 app.get('/api/personal_info', (req, res) => {
-  authEnforcer.getFilteredPolicy(0, String(req.session.userid)).then((AuthRights) => {
+  authEnforcer.getFilteredPolicy(0, String(req.session.userId)).then((AuthRights) => {
     res.set('Access-Control-Allow-Origin', '*');
-    if (req.session.userid) {
+    if (req.session.userId) {
       res.json({
-        sciper: req.session.userid,
-        lastname: req.session.lastname,
-        firstname: req.session.firstname,
-        islogged: true,
+        sciper: req.session.userId,
+        lastName: req.session.lastName,
+        firstName: req.session.firstName,
+        isLoggedIn: true,
         authorization: Object.fromEntries(setMapAuthorization(AuthRights)),
       });
     } else {
@@ -245,7 +246,7 @@ app.get('/api/personal_info', (req, res) => {
 // This call allows a user that is admin to get the list of the people that have
 // a special role (not a voter).
 app.get('/api/user_rights', (req, res) => {
-  if (!isAuthorized(req.session.userid, PERMISSIONS.SUBJECTS.ROLES, PERMISSIONS.ACTIONS.LIST)) {
+  if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.ROLES, PERMISSIONS.ACTIONS.LIST)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
@@ -259,7 +260,7 @@ app.get('/api/user_rights', (req, res) => {
 
 // This call (only for admins) allow an admin to add a role to a voter.
 app.post('/api/add_role', (req, res, next) => {
-  if (!isAuthorized(req.session.userid, PERMISSIONS.SUBJECTS.ROLES, PERMISSIONS.ACTIONS.ADD)) {
+  if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.ROLES, PERMISSIONS.ACTIONS.ADD)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
@@ -279,7 +280,7 @@ app.post('/api/add_role', (req, res, next) => {
 // This call (only for admins) allow an admin to remove a role to a user.
 
 app.post('/api/remove_role', (req, res, next) => {
-  if (!isAuthorized(req.session.userid, PERMISSIONS.SUBJECTS.ROLES, PERMISSIONS.ACTIONS.REMOVE)) {
+  if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.ROLES, PERMISSIONS.ACTIONS.REMOVE)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
@@ -295,7 +296,7 @@ app.post('/api/remove_role', (req, res, next) => {
 // ---
 const proxiesDB = lmdb.open<string, string>({ path: `${process.env.DB_PATH}proxies` });
 app.post('/api/proxies', (req, res) => {
-  if (!isAuthorized(req.session.userid, PERMISSIONS.SUBJECTS.PROXIES, PERMISSIONS.ACTIONS.POST)) {
+  if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.PROXIES, PERMISSIONS.ACTIONS.POST)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
   }
@@ -310,7 +311,7 @@ app.post('/api/proxies', (req, res) => {
 });
 
 app.put('/api/proxies/:nodeAddr', (req, res) => {
-  if (!isAuthorized(req.session.userid, PERMISSIONS.SUBJECTS.PROXIES, PERMISSIONS.ACTIONS.PUT)) {
+  if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.PROXIES, PERMISSIONS.ACTIONS.PUT)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
   }
@@ -347,7 +348,7 @@ app.put('/api/proxies/:nodeAddr', (req, res) => {
 });
 
 app.delete('/api/proxies/:nodeAddr', (req, res) => {
-  if (!isAuthorized(req.session.userid, PERMISSIONS.SUBJECTS.PROXIES, PERMISSIONS.ACTIONS.DELETE)) {
+  if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.PROXIES, PERMISSIONS.ACTIONS.DELETE)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
   }
@@ -500,13 +501,13 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
 // Secure /api/evoting to admins and operators
 app.put('/api/evoting/authorizations', (req, res) => {
   if (
-    !isAuthorized(req.session.userid, PERMISSIONS.SUBJECTS.ELECTION, PERMISSIONS.ACTIONS.CREATE)
+    !isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.ELECTION, PERMISSIONS.ACTIONS.CREATE)
   ) {
     res.status(400).send('Unauthorized');
     return;
   }
   const { FormID } = req.body;
-  authEnforcer.addPolicy(String(req.session.userid), FormID, PERMISSIONS.ACTIONS.OWN);
+  authEnforcer.addPolicy(String(req.session.userId), FormID, PERMISSIONS.ACTIONS.OWN);
 });
 
 // https://stackoverflow.com/a/1349426
@@ -521,7 +522,7 @@ function makeid(length: number) {
 }
 app.put('/api/evoting/forms/:formID', (req, res, next) => {
   const { formID } = req.params;
-  if (!isAuthorized(req.session.userid, formID, PERMISSIONS.ACTIONS.OWN)) {
+  if (!isAuthorized(req.session.userId, formID, PERMISSIONS.ACTIONS.OWN)) {
     res.status(400).send('Unauthorized');
     return;
   }
@@ -530,7 +531,7 @@ app.put('/api/evoting/forms/:formID', (req, res, next) => {
 
 app.post('/api/evoting/services/dkg/actors', (req, res, next) => {
   const { FormID } = req.body;
-  if (!isAuthorized(req.session.userid, FormID, PERMISSIONS.ACTIONS.OWN)) {
+  if (!isAuthorized(req.session.userId, FormID, PERMISSIONS.ACTIONS.OWN)) {
     res.status(400).send('Unauthorized');
     return;
   }
@@ -541,7 +542,7 @@ app.post('/api/evoting/services/dkg/actors', (req, res, next) => {
 });
 app.use('/api/evoting/services/dkg/actors/:formID', (req, res, next) => {
   const { formID } = req.params;
-  if (!isAuthorized(req.session.userid, formID, PERMISSIONS.ACTIONS.OWN)) {
+  if (!isAuthorized(req.session.userId, formID, PERMISSIONS.ACTIONS.OWN)) {
     res.status(400).send('Unauthorized');
     return;
   }
@@ -549,7 +550,7 @@ app.use('/api/evoting/services/dkg/actors/:formID', (req, res, next) => {
 });
 app.use('/api/evoting/services/shuffle/:formID', (req, res, next) => {
   const { formID } = req.params;
-  if (!isAuthorized(req.session.userid, formID, PERMISSIONS.ACTIONS.OWN)) {
+  if (!isAuthorized(req.session.userId, formID, PERMISSIONS.ACTIONS.OWN)) {
     res.status(400).send('Unauthorized');
     return;
   }
@@ -557,7 +558,7 @@ app.use('/api/evoting/services/shuffle/:formID', (req, res, next) => {
 });
 app.delete('/api/evoting/forms/:formID', (req, res) => {
   const { formID } = req.params;
-  if (!isAuthorized(req.session.userid, formID, PERMISSIONS.ACTIONS.OWN)) {
+  if (!isAuthorized(req.session.userId, formID, PERMISSIONS.ACTIONS.OWN)) {
     res.status(400).send('Unauthorized');
     return;
   }
@@ -597,7 +598,7 @@ app.delete('/api/evoting/forms/:formID', (req, res) => {
         .status(500)
         .send(`failed to proxy request: ${req.method} ${uri} - ${error.message} - ${resp}`);
     });
-  authEnforcer.removePolicy(String(req.session.userid), formID, PERMISSIONS.ACTIONS.OWN);
+  authEnforcer.removePolicy(String(req.session.userId), formID, PERMISSIONS.ACTIONS.OWN);
 });
 
 // This API call is used redirect all the calls for DELA to the DELAs nodes.
@@ -606,7 +607,7 @@ app.delete('/api/evoting/forms/:formID', (req, res) => {
 // DELA node To make this work, React has to redirect to this backend all the
 // request that needs to go the DELA nodes
 app.use('/api/evoting/*', (req, res) => {
-  if (!req.session.userid) {
+  if (!req.session.userId) {
     res.status(400).send('Unauthorized');
     return;
   }
@@ -620,7 +621,7 @@ app.use('/api/evoting/*', (req, res) => {
     // only needed to allow users to cast multiple ballots, where only the last
     // ballot is taken into account. To preserve anonymity the web-backend could
     // translate UserIDs to another random ID.
-    // bodyData.UserID = req.session.userid.toString();
+    // bodyData.UserID = req.session.userId.toString();
     bodyData.UserID = makeid(10);
   }
 
