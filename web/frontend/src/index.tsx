@@ -13,7 +13,7 @@ import * as endpoints from 'components/utils/Endpoints';
 
 const flashTimeout = 4000;
 
-// By default we load the mock messages when not in production. This is handy
+// By default, we load the mock messages when not in production. This is handy
 // because it removes the need to have a backend server.
 if (process.env.NODE_ENV !== 'production' && process.env.REACT_APP_NOMOCK !== 'on') {
   const { dvotingserver } = require('./mocks/dvotingserver');
@@ -22,8 +22,8 @@ if (process.env.NODE_ENV !== 'production' && process.env.REACT_APP_NOMOCK !== 'o
 const arr = new Map<String, Array<String>>();
 const defaultAuth = {
   isLogged: false,
-  firstname: '',
-  lastname: '',
+  firstName: '',
+  lastName: '',
   authorization: arr,
   isAllowed: (subject: string, action: string) => false,
 };
@@ -36,8 +36,8 @@ export const AuthContext = createContext<AuthState>(defaultAuth);
 
 export interface AuthState {
   isLogged: boolean;
-  firstname: string;
-  lastname: string;
+  firstName: string;
+  lastName: string;
   authorization: Map<String, Array<String>>;
   isAllowed: (subject: string, action: string) => boolean;
 }
@@ -224,20 +224,27 @@ const AppContainer = () => {
     };
 
     async function fetchData() {
+      const response = await fetch(ENDPOINT_PERSONAL_INFO, req);
+      let result;
       try {
-        const res = await fetch(ENDPOINT_PERSONAL_INFO, req);
-
-        if (res.status !== 200) {
-          const txt = await res.text();
-          throw new Error(`unexpected status: ${res.status} - ${txt}`);
+        if (response.status === 200) {
+          result = await response.json();
+        } else if (response.status === 401) {
+          result = {
+            isLoggedIn: false,
+            firstName: '',
+            lastName: '',
+            authorization: {},
+          };
+        } else {
+          const txt = await response.text();
+          throw new Error(`unexpected magic status: ${response.status} - ${txt}`);
         }
-
-        const result = await res.json();
         setAuth({
-          isLogged: result.islogged,
-          firstname: result.firstname,
-          lastname: result.lastname,
-          authorization: result.islogged ? new Map(Object.entries(result.authorization)) : arr,
+          isLogged: result.isLoggedIn,
+          firstName: result.firstName,
+          lastName: result.lastName,
+          authorization: result.isLoggedIn ? new Map(Object.entries(result.authorization)) : arr,
           isAllowed: function (subject: string, action: string) {
             return (
               this.authorization.has(subject) &&
@@ -245,17 +252,14 @@ const AppContainer = () => {
             );
           },
         });
-
         // wait for the default proxy to be set
         await setDefaultProxy();
-
         setContent(<App />);
       } catch (e: any) {
         setContent(<Failed>{e.toString()}</Failed>);
         console.log('error:', e);
       }
     }
-
     fetchData();
   }, []);
 

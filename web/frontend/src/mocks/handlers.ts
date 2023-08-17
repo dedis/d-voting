@@ -63,8 +63,8 @@ export const handlers = [
     const userId = isLogged ? mockUserID : 0;
     const userInfos = isLogged
       ? {
-          lastname: 'Bobster',
-          firstname: 'Alice',
+          lastName: 'Bobster',
+          firstName: 'Alice',
           sciper: userId,
           authorization: Object.fromEntries(auth),
         }
@@ -74,7 +74,7 @@ export const handlers = [
     return res(
       ctx.status(200),
       ctx.json({
-        islogged: isLogged,
+        isLoggedIn: isLogged,
         ...userInfos,
       })
     );
