@@ -64,13 +64,13 @@ async function initEnforcer() {
   return newEnforcer('src/model.conf', dbAdapter);
 }
 
-const port = process.env.PORT || 5000;
+const serveOnPort = process.env.PORT || 5000;
 Promise.all([initEnforcer()])
   .then((createdEnforcer) => {
     [authEnforcer] = createdEnforcer;
     console.log(`🛡 Casbin authorization service loaded`);
-    app.listen(port);
-    console.log(`🚀 App is listening on port ${port}`);
+    app.listen(serveOnPort);
+    console.log(`🚀 App is listening on port ${serveOnPort}`);
   })
   .catch((err) => {
     console.error('❌ failed to start:', err);
