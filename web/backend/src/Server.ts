@@ -267,7 +267,7 @@ app.get('/api/user_rights', (req, res) => {
 // This call (only for admins) allow an admin to add a role to a voter.
 app.post('/api/add_role', (req, res, next) => {
   if (!isAuthorized(req.session.userid, PERMISSIONS.SUBJECTS.ROLES, PERMISSIONS.ACTIONS.ADD)) {
-    res.status(400).send({ error: 'user not logged-in or does not have enough permissions' });
+    res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
 
