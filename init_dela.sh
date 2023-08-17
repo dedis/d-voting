@@ -4,7 +4,7 @@ MEMBERS="";
 
 # create signing keys
 for container in dela-leader dela-worker-1 dela-worker-2; do
-  docker compose exec "$container" crypto bls signer new --save /data/private.key;
+  docker compose exec "$container" crypto bls signer new --save /data/node/private.key;
 done
 
 # share the certificate
@@ -22,7 +22,7 @@ docker compose exec dela-leader memcoin --config /data/node ordering setup $MEMB
 
 # authorize the signer to handle the access contract on each node
 for signer in dela-leader dela-worker-1 dela-worker-2; do
-  IDENTITY=$(docker compose exec "$signer" crypto bls signer read --path /data/private.key --format BASE64_PUBKEY);
+  IDENTITY=$(docker compose exec "$signer" crypto bls signer read --path /data/node/private.key --format BASE64_PUBKEY);
   for node in dela-leader dela-worker-1 dela-worker-2; do
     docker compose exec "$node" memcoin --config /data/node access add --identity "$IDENTITY";
   done
@@ -30,9 +30,9 @@ done
 
 # update the access contract
 for container in dela-leader dela-worker-1 dela-worker-2; do
-  IDENTITY=$(docker compose exec "$container" crypto bls signer read --path /data/private.key --format BASE64_PUBKEY);
+  IDENTITY=$(docker compose exec "$container" crypto bls signer read --path /data/node/private.key --format BASE64_PUBKEY);
   docker compose exec dela-leader memcoin --config /data/node pool add\
-      --key /data/private.key\
+      --key /data/node/private.key\
       --args go.dedis.ch/dela.ContractArg\
       --args go.dedis.ch/dela.Access\
       --args access:grant_id\
