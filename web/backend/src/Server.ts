@@ -31,8 +31,7 @@ const PERMISSIONS = {
   },
 };
 
-// store is used to store the session
-const store = new MemoryStore({
+const sessionStore = new MemoryStore({
   checkPeriod: 86400000, // prune expired entries every 24h
 });
 
@@ -100,7 +99,7 @@ app.use(
     saveUninitialized: true,
     cookie: { maxAge: oneDay },
     resave: false,
-    store: store,
+    store: sessionStore,
   })
 );
 
