@@ -16,6 +16,10 @@ services:
       - SYS_PTRACE
     volumes:
       - dela-leader-data:/data
+    entrypoint:
+      - bash
+      - -c
+      - dlv --listen=:40000 --headless=true --api-version=2 --accept-multiclient exec /go/d-voting/cli/memcoin/memcoin -- --config /data/node start --postinstall --proxyaddr :8080 --proxykey adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3 --listen tcp://0.0.0.0:2000 --public http://dela-leader:2000 --routing tree
     hostname: dela-leader
   dela-worker-1:             # DELA worker node
     image: dela
