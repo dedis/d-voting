@@ -234,13 +234,7 @@ app.get('/api/personal_info', (req, res) => {
         authorization: Object.fromEntries(setMapAuthorization(AuthRights)),
       });
     } else {
-      res.json({
-        sciper: 0,
-        lastname: '',
-        firstname: '',
-        islogged: false,
-        authorization: {},
-      });
+      res.status(401).send();
     }
   });
 });
