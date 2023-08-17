@@ -12,18 +12,25 @@ import { Enforcer, newEnforcer } from 'casbin';
 import { SequelizeAdapter } from 'casbin-sequelize-adapter';
 
 const MemoryStore = createMemoryStore(session);
-const SUBJECT_ROLES = 'roles';
-const SUBJECT_PROXIES = 'proxies';
-const SUBJECT_ELECTION = 'election';
 
-const ACTION_LIST = 'list';
-const ACTION_REMOVE = 'remove';
-const ACTION_ADD = 'add';
-const ACTION_PUT = 'put';
-const ACTION_POST = 'post';
-const ACTION_DELETE = 'delete';
-const ACTION_OWN = 'own';
-const ACTION_CREATE = 'create';
+const PERMISSIONS = {
+  SUBJECTS: {
+    ROLES: 'roles',
+    PROXIES: 'proxies',
+    ELECTION: 'election',
+  },
+  ACTIONS: {
+    LIST: 'list',
+    REMOVE: 'remove',
+    ADD: 'add',
+    PUT: 'put',
+    POST: 'post',
+    DELETE: 'delete',
+    OWN: 'own',
+    CREATE: 'create',
+  },
+};
+
 // store is used to store the session
 const store = new MemoryStore({
   checkPeriod: 86400000, // prune expired entries every 24h
@@ -245,7 +252,7 @@ app.get('/api/personal_info', (req, res) => {
 // This call allows a user that is admin to get the list of the people that have
 // a special role (not a voter).
 app.get('/api/user_rights', (req, res) => {
-  if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_LIST)) {
+  if (!isAuthorized(req.session.userid, PERMISSIONS.SUBJECTS.ROLES, PERMISSIONS.ACTIONS.LIST)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
@@ -259,8 +266,8 @@ app.get('/api/user_rights', (req, res) => {
 
 // This call (only for admins) allow an admin to add a role to a voter.
 app.post('/api/add_role', (req, res, next) => {
-  if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_ADD)) {
-    res.status(400).send('Unauthorized - only admins allowed');
+  if (!isAuthorized(req.session.userid, PERMISSIONS.SUBJECTS.ROLES, PERMISSIONS.ACTIONS.ADD)) {
+    res.status(400).send({ error: 'user not logged-in or does not have enough permissions' });
     return;
   }
 
@@ -279,7 +286,7 @@ app.post('/api/add_role', (req, res, next) => {
 // This call (only for admins) allow an admin to remove a role to a user.
 
 app.post('/api/remove_role', (req, res, next) => {
-  if (!isAuthorized(req.session.userid, SUBJECT_ROLES, ACTION_REMOVE)) {
+  if (!isAuthorized(req.session.userid, PERMISSIONS.SUBJECTS.ROLES, PERMISSIONS.ACTIONS.REMOVE)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
   }
@@ -295,7 +302,7 @@ app.post('/api/remove_role', (req, res, next) => {
 // ---
 const proxiesDB = lmdb.open<string, string>({ path: `${process.env.DB_PATH}proxies` });
 app.post('/api/proxies', (req, res) => {
-  if (!isAuthorized(req.session.userid, SUBJECT_PROXIES, ACTION_POST)) {
+  if (!isAuthorized(req.session.userid, PERMISSIONS.SUBJECTS.PROXIES, PERMISSIONS.ACTIONS.POST)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
   }
@@ -310,7 +317,7 @@ app.post('/api/proxies', (req, res) => {
 });
 
 app.put('/api/proxies/:nodeAddr', (req, res) => {
-  if (!isAuthorized(req.session.userid, SUBJECT_PROXIES, ACTION_PUT)) {
+  if (!isAuthorized(req.session.userid, PERMISSIONS.SUBJECTS.PROXIES, PERMISSIONS.ACTIONS.PUT)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
   }
@@ -347,7 +354,7 @@ app.put('/api/proxies/:nodeAddr', (req, res) => {
 });
 
 app.delete('/api/proxies/:nodeAddr', (req, res) => {
-  if (!isAuthorized(req.session.userid, SUBJECT_PROXIES, ACTION_DELETE)) {
+  if (!isAuthorized(req.session.userid, PERMISSIONS.SUBJECTS.PROXIES, PERMISSIONS.ACTIONS.DELETE)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
   }
@@ -499,12 +506,14 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
 
 // Secure /api/evoting to admins and operators
 app.put('/api/evoting/authorizations', (req, res) => {
-  if (!isAuthorized(req.session.userid, SUBJECT_ELECTION, ACTION_CREATE)) {
+  if (
+    !isAuthorized(req.session.userid, PERMISSIONS.SUBJECTS.ELECTION, PERMISSIONS.ACTIONS.CREATE)
+  ) {
     res.status(400).send('Unauthorized');
     return;
   }
   const { FormID } = req.body;
-  authEnforcer.addPolicy(String(req.session.userid), FormID, ACTION_OWN);
+  authEnforcer.addPolicy(String(req.session.userid), FormID, PERMISSIONS.ACTIONS.OWN);
 });
 
 // https://stackoverflow.com/a/1349426
@@ -519,7 +528,7 @@ function makeid(length: number) {
 }
 app.put('/api/evoting/forms/:formID', (req, res, next) => {
   const { formID } = req.params;
-  if (!isAuthorized(req.session.userid, formID, ACTION_OWN)) {
+  if (!isAuthorized(req.session.userid, formID, PERMISSIONS.ACTIONS.OWN)) {
     res.status(400).send('Unauthorized');
     return;
   }
@@ -528,7 +537,7 @@ app.put('/api/evoting/forms/:formID', (req, res, next) => {
 
 app.post('/api/evoting/services/dkg/actors', (req, res, next) => {
   const { FormID } = req.body;
-  if (!isAuthorized(req.session.userid, FormID, ACTION_OWN)) {
+  if (!isAuthorized(req.session.userid, FormID, PERMISSIONS.ACTIONS.OWN)) {
     res.status(400).send('Unauthorized');
     return;
   }
@@ -539,7 +548,7 @@ app.post('/api/evoting/services/dkg/actors', (req, res, next) => {
 });
 app.use('/api/evoting/services/dkg/actors/:formID', (req, res, next) => {
   const { formID } = req.params;
-  if (!isAuthorized(req.session.userid, formID, ACTION_OWN)) {
+  if (!isAuthorized(req.session.userid, formID, PERMISSIONS.ACTIONS.OWN)) {
     res.status(400).send('Unauthorized');
     return;
   }
@@ -547,7 +556,7 @@ app.use('/api/evoting/services/dkg/actors/:formID', (req, res, next) => {
 });
 app.use('/api/evoting/services/shuffle/:formID', (req, res, next) => {
   const { formID } = req.params;
-  if (!isAuthorized(req.session.userid, formID, ACTION_OWN)) {
+  if (!isAuthorized(req.session.userid, formID, PERMISSIONS.ACTIONS.OWN)) {
     res.status(400).send('Unauthorized');
     return;
   }
@@ -555,7 +564,7 @@ app.use('/api/evoting/services/shuffle/:formID', (req, res, next) => {
 });
 app.delete('/api/evoting/forms/:formID', (req, res) => {
   const { formID } = req.params;
-  if (!isAuthorized(req.session.userid, formID, ACTION_OWN)) {
+  if (!isAuthorized(req.session.userid, formID, PERMISSIONS.ACTIONS.OWN)) {
     res.status(400).send('Unauthorized');
     return;
   }
@@ -595,7 +604,7 @@ app.delete('/api/evoting/forms/:formID', (req, res) => {
         .status(500)
         .send(`failed to proxy request: ${req.method} ${uri} - ${error.message} - ${resp}`);
     });
-  authEnforcer.removePolicy(String(req.session.userid), formID, ACTION_OWN);
+  authEnforcer.removePolicy(String(req.session.userid), formID, PERMISSIONS.ACTIONS.OWN);
 });
 
 // This API call is used redirect all the calls for DELA to the DELAs nodes.
