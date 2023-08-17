@@ -3,9 +3,9 @@
 MEMBERS="";
 
 # create signing keys
-for container in dela-leader dela-worker-1 dela-worker-2; do
-  docker compose exec "$container" crypto bls signer new --save /data/node/private.key;
-done
+#for container in dela-leader dela-worker-1 dela-worker-2; do
+#  docker compose exec "$container" crypto bls signer new --save /data/node/private.key;
+#done
 
 # share the certificate
 for container in dela-worker-1 dela-worker-2; do
