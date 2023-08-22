@@ -1,6 +1,6 @@
 services:
 
-  dela-leader:             # inital DELA leader node
+  dela-worker-0:             # inital DELA leader node
     image: dela
     build:
       dockerfile: ./Dockerfiles/Dockerfile.dela.debug
@@ -9,8 +9,8 @@ services:
       PROXYPORT: ${PROXYPORT}
       LLVL: debug
     volumes:
-      - dela-leader-data:/data
-    hostname: dela-leader
+      - dela-worker-0-data:/data
+    hostname: dela-worker-0
     ports:
       - 127.0.0.1:40000:40000
     security_opt:
@@ -94,7 +94,7 @@ services:
 
 volumes:
   postgres-data:    # PostgreSQL database
-  dela-leader-data:
+  dela-worker-0-data:
   dela-worker-1-data:
   dela-worker-2-data:
 

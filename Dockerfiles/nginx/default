@@ -1,6 +1,6 @@
 server {
     listen 80;
     location / {
-        proxy_pass http://dela-leader:8080;
+        proxy_pass http://dela-worker-0:8080;
     }
 }
