@@ -261,12 +261,10 @@ const AppContainer = () => {
       await setDefaultProxy();
       setContent(<App />);
     }
-    try {
-      fetchData();
-    } catch (e: any) {
+    fetchData().catch((e) => {
       setContent(<Failed>{e.toString()}</Failed>);
       console.log('error:', e);
-    }
+    });
   }, []);
 
   return (
