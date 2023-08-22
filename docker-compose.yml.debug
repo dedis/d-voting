@@ -3,36 +3,54 @@ services:
   dela-leader:             # inital DELA leader node
     image: dela
     build:
-      dockerfile: ./Dockerfiles/Dockerfile.dela
+      dockerfile: ./Dockerfiles/Dockerfile.dela.debug
     environment:
       PROXYKEY: ${PUBLIC_KEY}
       PROXYPORT: ${PROXYPORT}
-      LLVL: info
+      LLVL: debug
     volumes:
       - dela-leader-data:/data
     hostname: dela-leader
+    ports:
+      - 127.0.0.1:40000:40000
+    security_opt:
+      - apparmor:unconfined
+    cap_add:
+      - SYS_PTRACE
   dela-worker-1:             # DELA worker node
     image: dela
     build:
-      dockerfile: ./Dockerfiles/Dockerfile.dela
+      dockerfile: ./Dockerfiles/Dockerfile.dela.debug
     environment:
       PROXYKEY: ${PUBLIC_KEY}
       PROXYPORT: ${PROXYPORT}
-      LLVL: info
+      LLVL: debug
     volumes:
       - dela-worker-1-data:/data
     hostname: dela-worker-1
+    ports:
+      - 127.0.0.1:40001:40000
+    security_opt:
+      - apparmor:unconfined
+    cap_add:
+      - SYS_PTRACE
   dela-worker-2:             # DELA worker node
     image: dela
     build:
-      dockerfile: ./Dockerfiles/Dockerfile.dela
+      dockerfile: ./Dockerfiles/Dockerfile.dela.debug
     environment:
       PROXYKEY: ${PUBLIC_KEY}
       PROXYPORT: ${PROXYPORT}
-      LLVL: info
+      LLVL: debug
     volumes:
       - dela-worker-2-data:/data
     hostname: dela-worker-2
+    ports:
+      - 127.0.0.1:40002:40000
+    security_opt:
+      - apparmor:unconfined
+    cap_add:
+      - SYS_PTRACE
 
   frontend:         # web service frontend
     image: frontend
@@ -79,3 +97,4 @@ volumes:
   dela-leader-data:
   dela-worker-1-data:
   dela-worker-2-data:
+

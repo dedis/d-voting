@@ -53,3 +53,13 @@ to delete the volumes (this will reset your instance).
 2. `docker compose exec backend /bin/bash`
 3. execute `npx cli addAdmin --sciper 123455` with your SCIPER to add yourself as admin
 5. exit the container and run `docker compose down && docker compose up -d`
+
+## Go debugging environment
+
+To use the Go debugging environment, pass the
+
+```
+--file docker-compose.yml.debug
+```
+
+flag to all `docker compose` invocations.
