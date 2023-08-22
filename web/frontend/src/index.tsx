@@ -243,7 +243,6 @@ const AppContainer = () => {
         default: {
           const txt = await response.text();
           throw new Error(`Unexpected status: ${response.status} - ${txt}`);
-          break;
         }
       }
       setAuth({
