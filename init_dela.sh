@@ -7,6 +7,7 @@ for container in dela-leader dela-worker-1 dela-worker-2; do
   docker compose exec "$container" crypto bls signer new --save /data/node/private.key;
 done
 
+
 # share the certificate
 for container in dela-worker-1 dela-worker-2; do
   TOKEN_ARGS=$(docker compose exec dela-leader /bin/bash -c 'LLVL=error memcoin --config /data/node minogrpc token');
