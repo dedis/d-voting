@@ -226,41 +226,41 @@ const AppContainer = () => {
     async function fetchData() {
       const response = await fetch(ENDPOINT_PERSONAL_INFO, req);
       let result;
-      try {
-        if (response.status === 200) {
-          result = await response.json();
-        } else if (response.status === 401) {
-          result = {
-            isLoggedIn: false,
-            firstName: '',
-            lastName: '',
-            authorization: {},
-          };
-        } else {
-          const txt = await response.text();
-          throw new Error(`unexpected magic status: ${response.status} - ${txt}`);
-        }
-        setAuth({
-          isLogged: result.isLoggedIn,
-          firstName: result.firstName,
-          lastName: result.lastName,
-          authorization: result.isLoggedIn ? new Map(Object.entries(result.authorization)) : arr,
-          isAllowed: function (subject: string, action: string) {
-            return (
-              this.authorization.has(subject) &&
-              this.authorization.get(subject).indexOf(action) !== -1
-            );
-          },
-        });
-        // wait for the default proxy to be set
-        await setDefaultProxy();
-        setContent(<App />);
-      } catch (e: any) {
-        setContent(<Failed>{e.toString()}</Failed>);
-        console.log('error:', e);
+      if (response.status === 200) {
+        result = await response.json();
+      } else if (response.status === 401) {
+        result = {
+          isLoggedIn: false,
+          firstName: '',
+          lastName: '',
+          authorization: {},
+        };
+      } else {
+        const txt = await response.text();
+        throw new Error(`unexpected magic status: ${response.status} - ${txt}`);
       }
+      setAuth({
+        isLogged: result.isLoggedIn,
+        firstName: result.firstName,
+        lastName: result.lastName,
+        authorization: result.isLoggedIn ? new Map(Object.entries(result.authorization)) : arr,
+        isAllowed: function (subject: string, action: string) {
+          return (
+            this.authorization.has(subject) &&
+            this.authorization.get(subject).indexOf(action) !== -1
+          );
+        },
+      });
+      // wait for the default proxy to be set
+      await setDefaultProxy();
+      setContent(<App />);
     }
-    fetchData();
+    try {
+      fetchData();
+    } catch (e: any) {
+      setContent(<Failed>{e.toString()}</Failed>);
+      console.log('error:', e);
+    }
   }, []);
 
   return (
