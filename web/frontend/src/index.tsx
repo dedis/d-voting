@@ -226,18 +226,25 @@ const AppContainer = () => {
     async function fetchData() {
       const response = await fetch(ENDPOINT_PERSONAL_INFO, req);
       let result;
-      if (response.status === 200) {
-        result = await response.json();
-      } else if (response.status === 401) {
-        result = {
-          isLoggedIn: false,
-          firstName: '',
-          lastName: '',
-          authorization: {},
-        };
-      } else {
-        const txt = await response.text();
-        throw new Error(`unexpected magic status: ${response.status} - ${txt}`);
+      switch (response.status) {
+        case 200: {
+          result = await response.json();
+          break;
+        }
+        case 401: {
+          result = {
+            isLoggedIn: false,
+            firstName: '',
+            lastName: '',
+            authorization: {},
+          };
+          break;
+        }
+        default: {
+          const txt = await response.text();
+          throw new Error(`Unexpected status: ${response.status} - ${txt}`);
+          break;
+        }
       }
       setAuth({
         isLogged: result.isLoggedIn,
