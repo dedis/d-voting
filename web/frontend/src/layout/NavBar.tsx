@@ -126,7 +126,7 @@ const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
           <div className="py-6 px-5 space-y-6">
             {authCtx.isLogged && (
               <div>
-                Logged as {authCtx.firstname} {authCtx.lastname}
+                Logged as {authCtx.firstName} {authCtx.lastName}
               </div>
             )}
             <div>
@@ -219,8 +219,8 @@ const NavBar: FC = () => {
     // TODO: should be a setAuth function passed to AuthContext rather than
     // changing the state directly
     authCtx.isLogged = false;
-    authCtx.firstname = undefined;
-    authCtx.lastname = undefined;
+    authCtx.firstName = undefined;
+    authCtx.lastName = undefined;
     navigate('/');
   };
   const handleLogout = async (e) => {

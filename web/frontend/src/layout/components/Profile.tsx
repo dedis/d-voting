@@ -35,7 +35,7 @@ const Profile: FC<ProfileProps> = ({ authCtx, handleLogout, handleLogin, fctx })
         <Menu.Items className="z-40 origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
           <Menu.Item>
             <p className="block px-4 py-2 text-sm text-gray-400">
-              Logged as {authCtx.firstname} {authCtx.lastname}
+              Logged as {authCtx.firstName} {authCtx.lastName}
             </p>
           </Menu.Item>
           <Menu.Item>
