@@ -58,6 +58,8 @@ services:
       dockerfile: ./Dockerfiles/Dockerfile.frontend
     ports:
       - 127.0.0.1:3000:3000
+    volumes:
+      - ./web/frontend/src:/web/frontend/src
     environment:
       BACKEND_HOST: ${BACKEND_HOST}
       BACKEND_PORT: ${BACKEND_PORT}
@@ -85,6 +87,7 @@ services:
         condition: service_started
     volumes:
       - backend-data:/data
+      - ./web/backend/src:/web/backend/src
 
   db:               # PostgreSQL database
     image: postgres:15
@@ -100,4 +103,4 @@ volumes:
   dela-worker-0-data:
   dela-worker-1-data:
   dela-worker-2-data:
-
+  backend-data:
