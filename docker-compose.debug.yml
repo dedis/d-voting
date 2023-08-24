@@ -71,6 +71,7 @@ services:
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       DATABASE_HOST: ${DATABASE_HOST}
       DATABASE_PORT: ${DATABASE_PORT}
+      DB_PATH: /data/${DB_PATH}
       FRONT_END_URL: ${FRONT_END_URL}
       DELA_NODE_URL: ${DELA_NODE_URL}
       SESSION_SECRET: ${SESSION_SECRET}
@@ -82,6 +83,8 @@ services:
     depends_on:
       db:
         condition: service_started
+    volumes:
+      - backend-data:/data
 
   db:               # PostgreSQL database
     image: postgres:15
