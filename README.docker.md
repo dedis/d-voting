@@ -59,7 +59,7 @@ to delete the volumes (this will reset your instance).
 To use the Go debugging environment, pass the
 
 ```
---file docker-compose.yml.debug
+--file docker-compose.debug.yml
 ```
 
 flag to all `docker compose` invocations.
