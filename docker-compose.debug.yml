@@ -17,6 +17,9 @@ services:
       - apparmor:unconfined
     cap_add:
       - SYS_PTRACE
+    networks:
+      d-voting:
+        ipv4_address: 172.19.0.255
   dela-worker-1:             # DELA worker node
     image: dela
     build:
@@ -34,6 +37,9 @@ services:
       - apparmor:unconfined
     cap_add:
       - SYS_PTRACE
+    networks:
+      d-voting:
+        ipv4_address: 172.19.0.254
   dela-worker-2:             # DELA worker node
     image: dela
     build:
@@ -51,6 +57,9 @@ services:
       - apparmor:unconfined
     cap_add:
       - SYS_PTRACE
+    networks:
+      d-voting:
+        ipv4_address: 172.19.0.253
 
   frontend:         # web service frontend
     image: frontend
@@ -63,6 +72,9 @@ services:
     environment:
       BACKEND_HOST: ${BACKEND_HOST}
       BACKEND_PORT: ${BACKEND_PORT}
+    networks:
+      d-voting:
+        ipv4_address: 172.19.0.2
 
   backend:          # web service backend
     image: backend
@@ -88,6 +100,9 @@ services:
     volumes:
       - backend-data:/data
       - ./web/backend/src:/web/backend/src
+    networks:
+      d-voting:
+        ipv4_address: 172.19.0.3
 
   db:               # PostgreSQL database
     image: postgres:15
@@ -97,6 +112,9 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./web/backend/src/migration.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      d-voting:
+        ipv4_address: 172.19.0.4
 
 volumes:
   postgres-data:    # PostgreSQL database
@@ -104,3 +122,10 @@ volumes:
   dela-worker-1-data:
   dela-worker-2-data:
   backend-data:
+
+networks:
+  d-voting:
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16
+          gateway: 172.19.0.1
