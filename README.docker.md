@@ -16,6 +16,7 @@ DATABASE_USERNAME=dvoting                       # choose any PostgreSQL username
 DATABASE_PASSWORD=                              # choose any PostgreSQL password
 DATABASE_HOST=db                                # PostgreSQL host *within the Docker network*
 DATABASE_PORT=5432                              # PostgreSQL port
+DB_PATH=dvoting                                 # LMDB database path
 FRONT_END_URL=http://localhost:3000             # frontend URL
 BACKEND_HOST=backend                            # backend host
 BACKEND_PORT=5000                               # backend port
