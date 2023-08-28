@@ -1,0 +1,18 @@
+FROM golang:1.20.6-bookworm
+
+# https://blog.jetbrains.com/go/2020/05/06/debugging-a-go-application-inside-a-docker-container/
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+
+RUN apt-get update && apt-get install git
+RUN git clone https://github.com/dedis/dela.git
+RUN git clone https://github.com/dedis/d-voting.git
+WORKDIR /go/dela/cli/crypto
+RUN go install
+WORKDIR /go/d-voting/cli/memcoin
+
+RUN go build -gcflags="all=-N -l"
+
+ENV PATH=/go/dela/cli/crypto:/go/d-voting/cli/memcoin:${PATH}
+WORKDIR /go
+ENTRYPOINT ["/bin/bash", "-c", "dlv --listen=:40000 --headless=true --api-version=2 --accept-multiclient exec /go/d-voting/cli/memcoin/memcoin -- --config /data/node start --postinstall --proxyaddr :$PROXYPORT --proxykey $PROXYKEY --listen tcp://0.0.0.0:2000 --public http://$HOSTNAME:2000 --routing tree"]
+CMD []

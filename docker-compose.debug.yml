@@ -3,42 +3,60 @@ services:
   dela-worker-0:             # inital DELA leader node
     image: dela
     build:
-      dockerfile: ./Dockerfiles/Dockerfile.dela
+      dockerfile: ./Dockerfiles/Dockerfile.dela.debug
     environment:
       PROXYKEY: ${PUBLIC_KEY}
       PROXYPORT: ${PROXYPORT}
-      LLVL: info
+      LLVL: debug
     volumes:
       - dela-worker-0-data:/data
     hostname: dela-worker-0
+    ports:
+      - 127.0.0.1:40000:40000
+    security_opt:
+      - apparmor:unconfined
+    cap_add:
+      - SYS_PTRACE
     networks:
       d-voting:
         ipv4_address: 172.19.0.255
   dela-worker-1:             # DELA worker node
     image: dela
     build:
-      dockerfile: ./Dockerfiles/Dockerfile.dela
+      dockerfile: ./Dockerfiles/Dockerfile.dela.debug
     environment:
       PROXYKEY: ${PUBLIC_KEY}
       PROXYPORT: ${PROXYPORT}
-      LLVL: info
+      LLVL: debug
     volumes:
       - dela-worker-1-data:/data
     hostname: dela-worker-1
+    ports:
+      - 127.0.0.1:40001:40000
+    security_opt:
+      - apparmor:unconfined
+    cap_add:
+      - SYS_PTRACE
     networks:
       d-voting:
         ipv4_address: 172.19.0.254
   dela-worker-2:             # DELA worker node
     image: dela
     build:
-      dockerfile: ./Dockerfiles/Dockerfile.dela
+      dockerfile: ./Dockerfiles/Dockerfile.dela.debug
     environment:
       PROXYKEY: ${PUBLIC_KEY}
       PROXYPORT: ${PROXYPORT}
-      LLVL: info
+      LLVL: debug
     volumes:
       - dela-worker-2-data:/data
     hostname: dela-worker-2
+    ports:
+      - 127.0.0.1:40002:40000
+    security_opt:
+      - apparmor:unconfined
+    cap_add:
+      - SYS_PTRACE
     networks:
       d-voting:
         ipv4_address: 172.19.0.253
@@ -49,6 +67,8 @@ services:
       dockerfile: ./Dockerfiles/Dockerfile.frontend
     ports:
       - 127.0.0.1:3000:3000
+    volumes:
+      - ./web/frontend/src:/web/frontend/src
     environment:
       BACKEND_HOST: ${BACKEND_HOST}
       BACKEND_PORT: ${BACKEND_PORT}
@@ -73,11 +93,13 @@ services:
       PRIVATE_KEY: ${PRIVATE_KEY}
     ports:
       - 127.0.0.1:5000:5000
+      - 127.0.0.1:80:80
     depends_on:
       db:
         condition: service_started
     volumes:
       - backend-data:/data
+      - ./web/backend/src:/web/backend/src
     networks:
       d-voting:
         ipv4_address: 172.19.0.3
