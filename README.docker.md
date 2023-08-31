@@ -11,7 +11,7 @@ The relevant files are:
 You need to create a local .env file with the following content:
 
 ```
-DELA_NODE_URL=http://127.0.0.1:80               # reverse proxy within backend container
+DELA_NODE_URL=http://172.19.44.254:80           # DELA node
 DATABASE_USERNAME=dvoting                       # choose any PostgreSQL username
 DATABASE_PASSWORD=                              # choose any PostgreSQL password
 DATABASE_HOST=db                                # PostgreSQL host *within the Docker network*
@@ -23,7 +23,7 @@ BACKEND_PORT=5000                               # backend port
 SESSION_SECRET=                                 # choose any secret
 PUBLIC_KEY=                                     # pre-generated key pair
 PRIVATE_KEY=                                    # pre-generated key pair
-PROXYPORT=8080                                  # port of Dela proxy (must be one in DELA_PROXY_PORT_RANGE)
+PROXYPORT=8080                                  # port of DELA proxy
 ```
 
 You can then run
@@ -51,16 +51,15 @@ to delete the volumes (this will reset your instance).
 ## Post-install commands
 
 1. `./init_dela.sh`
-2. `docker compose exec backend /bin/bash`
-3. execute `npx cli addAdmin --sciper 123455` with your SCIPER to add yourself as admin
-5. exit the container and run `docker compose down && docker compose up -d`
+2. run `docker compose exec backend npx cli addAdmin --sciper 123455` with your SCIPER to add yourself as admin
+3. run `docker compose down && docker compose up -d` to restart the containers and load the new permissions
 
 ## Go debugging environment
 
-To use the Go debugging environment, pass the
+To use the Go debugging environment, set the environment variable
 
 ```
---file docker-compose.debug.yml
+COMPOSE_FILE=docker-compose.debug.yml
 ```
 
-flag to all `docker compose` invocations.
+to use this environment in all `docker compose` invocations.
