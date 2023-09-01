@@ -42,6 +42,34 @@ services:
     networks:
       d-voting:
         ipv4_address: 172.19.44.252
+  dela-worker-3:             # DELA worker node
+    image: dela:latest
+    build:
+      dockerfile: ./Dockerfiles/Dockerfile.dela
+    environment:
+      PROXYKEY: ${PUBLIC_KEY}
+      PROXYPORT: ${PROXYPORT}
+      LLVL: info
+    volumes:
+      - dela-worker-3-data:/data
+    hostname: dela-worker-3
+    networks:
+      d-voting:
+        ipv4_address: 172.19.44.251
+  dela-worker-4:             # DELA worker node
+    image: dela:latest
+    build:
+      dockerfile: ./Dockerfiles/Dockerfile.dela
+    environment:
+      PROXYKEY: ${PUBLIC_KEY}
+      PROXYPORT: ${PROXYPORT}
+      LLVL: info
+    volumes:
+      - dela-worker-4-data:/data
+    hostname: dela-worker-4
+    networks:
+      d-voting:
+        ipv4_address: 172.19.44.250
 
   frontend:         # web service frontend
     image: frontend:latest
@@ -99,6 +127,8 @@ volumes:
   dela-worker-0-data:
   dela-worker-1-data:
   dela-worker-2-data:
+  dela-worker-3-data:
+  dela-worker-4-data:
   backend-data:
 
 networks:
