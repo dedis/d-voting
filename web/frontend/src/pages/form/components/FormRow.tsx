@@ -15,21 +15,27 @@ const FormRow: FC<FormRowProps> = ({ form }) => {
   useEffect(() => {
     if (form.Title === '') return;
     if (isJson(form.Title)) {
-      const ts = JSON.parse(form.Title);
-      setTitles(ts);
+      setTitles(JSON.parse(form.Title));
     } else {
-      const t = { en: form.Title, fr: form.TitleFr, de: form.TitleDe };
-      setTitles(t);
+      setTitles({ en: form.Title, fr: form.TitleFr, de: form.TitleDe });
     }
   }, [form]);
+  // let i18next handle choosing the appropriate language
+  const formRowI18n = i18n.createInstance();
+  formRowI18n.init();
+  // get current language
+  formRowI18n.changeLanguage(i18n.language);
+  Object.entries(titles).forEach(([lang, title]: [string, string | undefined]) => {
+    if (title) {
+      formRowI18n.addResource(lang, 'form', 'title', title);
+    }
+  });
   return (
     <tr className="bg-white border-b hover:bg-gray-50 ">
       <td className="px-1.5 sm:px-6 py-4 font-medium text-gray-900 whitespace-nowrap truncate">
         <Link className="text-gray-700 hover:text-indigo-500" to={`/forms/${form.FormID}`}>
           <div className="max-w-[20vw] truncate">
-            {i18n.language === 'en' && titles.en}
-            {i18n.language === 'fr' && titles.fr}
-            {i18n.language === 'de' && titles.de}
+            {formRowI18n.t('title', { ns: 'form', fallbackLng: 'en' })}
           </div>
         </Link>
       </td>

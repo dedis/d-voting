@@ -2,6 +2,11 @@ import * as yup from 'yup';
 
 const idSchema = yup.string().min(1).required();
 const titleSchema = yup.string().required();
+const formTitleSchema = yup.object({
+  en: yup.string().required(),
+  fr: yup.string(),
+  de: yup.string(),
+});
 
 const selectsSchema = yup.object({
   ID: yup.lazy(() => idSchema),
@@ -403,7 +408,7 @@ const subjectSchema = yup.object({
 });
 
 const configurationSchema = yup.object({
-  MainTitle: yup.lazy(() => titleSchema),
+  MainTitle: yup.lazy(() => formTitleSchema),
   Scaffold: yup.array().of(subjectSchema).required(),
 });
 
