@@ -201,7 +201,7 @@
     "displayResults": "Die Ergebnisse der unten aufgeführten Formulare sind verfügbar. Klicken Sie auf einen Formulartitel, um sie aufzurufen.",
     "noResultsAvailable": "Derzeit sind keine Ergebnisse verfügbar.",
     "resultExplanation1": "Die Ergebnisse für die Wahl- und Textfragen werden als Prozentsatz der Anzahl der Stimmen für einen Kandidaten geteilt durch die Anzahl der abgegebenen Stimmzettel angegeben.",
-    "resultExplanation2": "Das Ergebnis der Rangfrage entspricht dem Prozentsatz der Punkte, die ein Kandidat erhält. Jeder Wähler gibt den Kandidaten Punkte, indem er sie von 1 bis N einstuft (niedriger ist besser).",
+    "resultExplanation2": "Das Ergebnis der Rangfrage entspricht dem Prozentsatz der Punkte, die ein Kandidat erhält. Jeder Wähler gibt den Kandidaten Punkte, indem er sie von 1 (0 Punkte) bis N (N-1 Punkte) einstuft (niedriger ist besser).",
     "resultExplanation3": "Die Punktzahl entspricht der Summe der Punkte, die ein Kandidat erhalten hat, und wird durch die Gesamtzahl der auf allen Stimmzetteln vergebenen Punkte geteilt und zu eins subtrahiert.",
     "shuffle": "Mischen",
     "decrypt": "Entschlüsseln",
