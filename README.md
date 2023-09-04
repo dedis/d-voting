@@ -657,3 +657,10 @@ go build -ldflags="-X $versionFlag -X $timeFlag" ./cli/memcoin
 ```
 
 Note that `make build` will do that for you.
+
+---
+
+<img width="200px" src="docs/unicore_logo.png"/>
+
+This project has received funding from the European Union's Horizon 2020 
+research and innovation programme under grant agreement No 825377.
