@@ -5,7 +5,6 @@ import session from 'express-session';
 import morgan from 'morgan';
 import kyber from '@dedis/kyber';
 import crypto from 'crypto';
-import lmdb from 'lmdb';
 import xss from 'xss';
 import {
   assignUserPermissionToOwnElection,
@@ -57,117 +56,6 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/api/config/proxy', (req, res) => {
   res.status(200).send(process.env.DELA_NODE_URL);
 });
-
-// ---
-// Proxies
-// ---
-const proxiesDB = lmdb.open<string, string>({ path: `${process.env.DB_PATH}proxies` });
-app.post('/api/proxies', (req, res) => {
-  if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.PROXIES, PERMISSIONS.ACTIONS.POST)) {
-    res.status(400).send('Unauthorized - only admins and operators allowed');
-    return;
-  }
-  try {
-    const bodydata = req.body;
-    proxiesDB.put(bodydata.NodeAddr, bodydata.Proxy);
-    console.log('put', bodydata.NodeAddr, '=>', bodydata.Proxy);
-    res.status(200).send('ok');
-  } catch (error: any) {
-    res.status(500).send(error.toString());
-  }
-});
-
-app.put('/api/proxies/:nodeAddr', (req, res) => {
-  if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.PROXIES, PERMISSIONS.ACTIONS.PUT)) {
-    res.status(400).send('Unauthorized - only admins and operators allowed');
-    return;
-  }
-
-  let { nodeAddr } = req.params;
-
-  nodeAddr = decodeURIComponent(nodeAddr);
-
-  const proxy = proxiesDB.get(nodeAddr);
-
-  if (proxy === undefined) {
-    res.status(404).send('not found');
-    return;
-  }
-  try {
-    const bodydata = req.body;
-    if (bodydata.Proxy === undefined) {
-      res.status(400).send('bad request, proxy is undefined');
-      return;
-    }
-
-    const { NewNode } = bodydata.NewNode;
-    if (NewNode !== nodeAddr) {
-      proxiesDB.remove(nodeAddr);
-      proxiesDB.put(NewNode, bodydata.Proxy);
-    } else {
-      proxiesDB.put(nodeAddr, bodydata.Proxy);
-    }
-    console.log('put', nodeAddr, '=>', bodydata.Proxy);
-    res.status(200).send('ok');
-  } catch (error: any) {
-    res.status(500).send(error.toString());
-  }
-});
-
-app.delete('/api/proxies/:nodeAddr', (req, res) => {
-  if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.PROXIES, PERMISSIONS.ACTIONS.DELETE)) {
-    res.status(400).send('Unauthorized - only admins and operators allowed');
-    return;
-  }
-
-  let { nodeAddr } = req.params;
-
-  nodeAddr = decodeURIComponent(nodeAddr);
-
-  const proxy = proxiesDB.get(nodeAddr);
-
-  if (proxy === undefined) {
-    res.status(404).send('not found');
-    return;
-  }
-
-  try {
-    proxiesDB.remove(nodeAddr);
-    console.log('remove', nodeAddr, '=>', proxy);
-    res.status(200).send('ok');
-  } catch (error: any) {
-    res.status(500).send(error.toString());
-  }
-});
-
-app.get('/api/proxies', (req, res) => {
-  const output = new Map<string, string>();
-  proxiesDB.getRange({}).forEach((entry) => {
-    output.set(entry.key, entry.value);
-  });
-
-  res.status(200).json({ Proxies: Object.fromEntries(output) });
-});
-
-app.get('/api/proxies/:nodeAddr', (req, res) => {
-  const { nodeAddr } = req.params;
-
-  const proxy = proxiesDB.get(decodeURIComponent(nodeAddr));
-
-  if (proxy === undefined) {
-    res.status(404).send('not found');
-    return;
-  }
-
-  res.status(200).json({
-    NodeAddr: nodeAddr,
-    Proxy: proxy,
-  });
-});
-
-// ---
-// end of proxies
-// ---
 
 // get payload creates a payload with a signature on it
 function getPayload(dataStr: string) {
