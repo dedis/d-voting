@@ -8,28 +8,16 @@ import crypto from 'crypto';
 import lmdb from 'lmdb';
 import xss from 'xss';
 import createMemoryStore from 'memorystore';
-import { Enforcer, newEnforcer } from 'casbin';
-import { SequelizeAdapter } from 'casbin-sequelize-adapter';
+import {
+  assignUserPermissionToOwnElection,
+  getUserPermissions,
+  isAuthorized,
+  PERMISSIONS,
+  setMapAuthorization,
+  RevokeUserPermissionToOwnElection,
+} from './authManager';
 
 const MemoryStore = createMemoryStore(session);
-
-const PERMISSIONS = {
-  SUBJECTS: {
-    ROLES: 'roles',
-    PROXIES: 'proxies',
-    ELECTION: 'election',
-  },
-  ACTIONS: {
-    LIST: 'list',
-    REMOVE: 'remove',
-    ADD: 'add',
-    PUT: 'put',
-    POST: 'post',
-    DELETE: 'delete',
-    OWN: 'own',
-    CREATE: 'create',
-  },
-};
 
 const sessionStore = new MemoryStore({
   checkPeriod: 86400000, // prune expired entries every 24h
@@ -44,41 +32,9 @@ const app = express();
 
 app.use(morgan('tiny'));
 
-let authEnforcer: Enforcer;
-
-// we use the postgres adapter to store the Casbin policies
-// we initialize the adapter with the connection string and the migrate option
-// the connection string has the following format:
-// postgres://username:password@host:port/database
-// the migrate option is used to create the tables if they don't exist, we set it to false because we create the tables manually
-async function initEnforcer() {
-  const dbAdapter = await SequelizeAdapter.newAdapter({
-    dialect: 'postgres',
-    host: process.env.DATABASE_HOST,
-    port: parseInt(process.env.DATABASE_PORT || '5432', 10),
-    username: process.env.DATABASE_USERNAME,
-    password: process.env.DATABASE_PASSWORD,
-    database: 'casbin',
-  });
-
-  return newEnforcer('src/model.conf', dbAdapter);
-}
-
 const serveOnPort = process.env.PORT || 5000;
-Promise.all([initEnforcer()])
-  .then((createdEnforcer) => {
-    [authEnforcer] = createdEnforcer;
-    console.log(`🛡 Casbin authorization service loaded`);
-    app.listen(serveOnPort);
-    console.log(`🚀 App is listening on port ${serveOnPort}`);
-  })
-  .catch((err) => {
-    console.error('❌ failed to start:', err);
-  });
-
-function isAuthorized(sciper: number | undefined, subject: string, action: string): boolean {
-  return authEnforcer.enforceSync(sciper, subject, action);
-}
+app.listen(serveOnPort);
+console.log(`🚀 App is listening on port ${serveOnPort}`);
 
 declare module 'express-session' {
   // This overrides express-session
@@ -200,43 +156,22 @@ app.post('/api/logout', (req, res) => {
   });
 });
 
-// This function helps us convert the double list of the authorization
-// returned by the casbin function getFilteredPolicy to a map that link
-// an object to the action authorized
-// list[0] contains the policies so list[i][0] is the sciper
-// list[i][1] is the subject and list[i][2] is the action
-function setMapAuthorization(list: string[][]): Map<String, Array<String>> {
-  const userRights = new Map<String, Array<String>>();
-  for (let i = 0; i < list.length; i += 1) {
-    const subject = list[i][1];
-    const action = list[i][2];
-    if (userRights.has(subject)) {
-      userRights.get(subject)?.push(action);
-    } else {
-      userRights.set(subject, [action]);
-    }
-  }
-  console.log(userRights);
-  return userRights;
-}
-
 // As the user is logged on the app via this express but must also
 // be logged into react. This endpoint serves to send to the client (actually to react)
 // the information of the current user.
-app.get('/api/personal_info', (req, res) => {
-  authEnforcer.getFilteredPolicy(0, String(req.session.userId)).then((AuthRights) => {
-    res.set('Access-Control-Allow-Origin', '*');
-    if (req.session.userId) {
-      res.json({
-        sciper: req.session.userId,
-        lastName: req.session.lastName,
-        firstName: req.session.firstName,
-        isLoggedIn: true,
-        authorization: Object.fromEntries(setMapAuthorization(AuthRights)),
-      });
-    } else {
-      res.status(401).send();
-    }
+app.get('/api/personal_info', async (req, res) => {
+  if (!req.session.userId) {
+    res.status(401).send('UnAuthenticated');
+    return;
+  }
+  const userPermissions = await getUserPermissions(req.session.userId);
+  res.set('Access-Control-Allow-Origin', '*');
+  res.json({
+    sciper: req.session.userId,
+    lastName: req.session.lastName,
+    firstName: req.session.firstName,
+    isLoggedIn: true,
+    authorization: Object.fromEntries(setMapAuthorization(userPermissions)),
   });
 });
 
@@ -507,7 +442,7 @@ app.put('/api/evoting/authorizations', (req, res) => {
     return;
   }
   const { FormID } = req.body;
-  authEnforcer.addPolicy(String(req.session.userId), FormID, PERMISSIONS.ACTIONS.OWN);
+  assignUserPermissionToOwnElection(String(req.session.userId), FormID);
 });
 
 // https://stackoverflow.com/a/1349426
@@ -598,7 +533,7 @@ app.delete('/api/evoting/forms/:formID', (req, res) => {
         .status(500)
         .send(`failed to proxy request: ${req.method} ${uri} - ${error.message} - ${resp}`);
     });
-  authEnforcer.removePolicy(String(req.session.userId), formID, PERMISSIONS.ACTIONS.OWN);
+  RevokeUserPermissionToOwnElection(String(req.session.userId), formID);
 });
 
 // This API call is used redirect all the calls for DELA to the DELAs nodes.
