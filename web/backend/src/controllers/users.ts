@@ -6,7 +6,7 @@ export const usersRouter = express.Router();
 
 // This call allows a user that is admin to get the list of the people that have
 // a special role (not a voter).
-usersRouter.get('/api/user_rights', (req, res) => {
+usersRouter.get('/user_rights', (req, res) => {
   if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.ROLES, PERMISSIONS.ACTIONS.LIST)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
@@ -20,7 +20,7 @@ usersRouter.get('/api/user_rights', (req, res) => {
 });
 
 // This call (only for admins) allow an admin to add a role to a voter.
-usersRouter.post('/api/add_role', (req, res, next) => {
+usersRouter.post('/add_role', (req, res, next) => {
   if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.ROLES, PERMISSIONS.ACTIONS.ADD)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
@@ -40,7 +40,7 @@ usersRouter.post('/api/add_role', (req, res, next) => {
 
 // This call (only for admins) allow an admin to remove a role to a user.
 
-usersRouter.post('/api/remove_role', (req, res, next) => {
+usersRouter.post('/remove_role', (req, res, next) => {
   if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.ROLES, PERMISSIONS.ACTIONS.REMOVE)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;

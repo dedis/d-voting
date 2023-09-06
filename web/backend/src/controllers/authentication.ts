@@ -7,7 +7,7 @@ export const authenticationRouter = express.Router();
 
 // This is via this endpoint that the client request the tequila key, this key
 // will then be used for redirection on the tequila server
-authenticationRouter.get('/api/get_teq_key', (req, res) => {
+authenticationRouter.get('/get_teq_key', (req, res) => {
   const body = `urlaccess=${process.env.FRONT_END_URL}/api/control_key\nservice=Evoting\nrequest=name,firstname,email,uniqueid,allunits`;
   axios
     .post('https://tequila.epfl.ch/cgi-bin/tequila/createrequest', body)
@@ -25,7 +25,7 @@ authenticationRouter.get('/api/get_teq_key', (req, res) => {
 // Here the client will send the key he/she received from the tequila, it is
 // then verified on the tequila. If the key is valid, the user is then logged
 // in the website through this backend
-authenticationRouter.get('/api/control_key', (req, res) => {
+authenticationRouter.get('/control_key', (req, res) => {
   const userKey = req.query.key;
   const body = `key=${userKey}`;
 
@@ -57,7 +57,7 @@ authenticationRouter.get('/api/control_key', (req, res) => {
 });
 
 // This endpoint serves to log out from the app by clearing the session.
-authenticationRouter.post('/api/logout', (req, res) => {
+authenticationRouter.post('/logout', (req, res) => {
   if (req.session.userId === undefined) {
     res.status(400).send('not logged in');
   }
@@ -77,7 +77,7 @@ authenticationRouter.post('/api/logout', (req, res) => {
 // As the user is logged on the app via this express but must also
 // be logged into react. This endpoint serves to send to the client (actually to react)
 // the information of the current user.
-authenticationRouter.get('/api/personal_info', async (req, res) => {
+authenticationRouter.get('/personal_info', async (req, res) => {
   if (!req.session.userId) {
     res.status(401).send('UnAuthenticated');
     return;

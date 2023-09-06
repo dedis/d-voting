@@ -109,7 +109,7 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
 }
 
 // Secure /api/evoting to admins and operators
-delaRouter.put('/api/evoting/authorizations', (req, res) => {
+delaRouter.put('/authorizations', (req, res) => {
   if (!req.session.userId) {
     res.status(400).send('Unauthorized');
     return;
@@ -134,7 +134,7 @@ function makeid(length: number) {
   }
   return result;
 }
-delaRouter.put('/api/evoting/forms/:formID', (req, res, next) => {
+delaRouter.put('/forms/:formID', (req, res, next) => {
   const { formID } = req.params;
   if (!isAuthorized(req.session.userId, formID, PERMISSIONS.ACTIONS.OWN)) {
     res.status(400).send('Unauthorized');
@@ -143,7 +143,7 @@ delaRouter.put('/api/evoting/forms/:formID', (req, res, next) => {
   next();
 });
 
-delaRouter.post('/api/evoting/services/dkg/actors', (req, res, next) => {
+delaRouter.post('/services/dkg/actors', (req, res, next) => {
   const { FormID } = req.body;
   if (!isAuthorized(req.session.userId, FormID, PERMISSIONS.ACTIONS.OWN)) {
     res.status(400).send('Unauthorized');
@@ -154,7 +154,7 @@ delaRouter.post('/api/evoting/services/dkg/actors', (req, res, next) => {
   }
   next();
 });
-delaRouter.use('/api/evoting/services/dkg/actors/:formID', (req, res, next) => {
+delaRouter.use('/services/dkg/actors/:formID', (req, res, next) => {
   const { formID } = req.params;
   if (!isAuthorized(req.session.userId, formID, PERMISSIONS.ACTIONS.OWN)) {
     res.status(400).send('Unauthorized');
@@ -162,7 +162,7 @@ delaRouter.use('/api/evoting/services/dkg/actors/:formID', (req, res, next) => {
   }
   next();
 });
-delaRouter.use('/api/evoting/services/shuffle/:formID', (req, res, next) => {
+delaRouter.use('/services/shuffle/:formID', (req, res, next) => {
   if (!req.session.userId) {
     res.status(401).send('Unauthenticated');
     return;
@@ -174,7 +174,7 @@ delaRouter.use('/api/evoting/services/shuffle/:formID', (req, res, next) => {
   }
   next();
 });
-delaRouter.delete('/api/evoting/forms/:formID', (req, res) => {
+delaRouter.delete('/forms/:formID', (req, res) => {
   if (!req.session.userId) {
     res.status(401).send('Unauthenticated');
     return;
@@ -228,7 +228,7 @@ delaRouter.delete('/api/evoting/forms/:formID', (req, res) => {
 // controlled. Once this is done the data are signed before it's sent to the
 // DELA node To make this work, React has to redirect to this backend all the
 // request that needs to go the DELA nodes
-delaRouter.use('/api/evoting/*', (req, res) => {
+delaRouter.use('/*', (req, res) => {
   if (!req.session.userId) {
     res.status(400).send('Unauthorized');
     return;

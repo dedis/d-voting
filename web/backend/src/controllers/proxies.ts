@@ -5,7 +5,7 @@ import { isAuthorized, PERMISSIONS } from '../authManager';
 export const proxiesRouter = express.Router();
 
 const proxiesDB = lmdb.open<string, string>({ path: `${process.env.DB_PATH}proxies` });
-proxiesRouter.post('/api/proxies', (req, res) => {
+proxiesRouter.post('', (req, res) => {
   if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.PROXIES, PERMISSIONS.ACTIONS.POST)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
@@ -20,7 +20,7 @@ proxiesRouter.post('/api/proxies', (req, res) => {
   }
 });
 
-proxiesRouter.put('/api/proxies/:nodeAddr', (req, res) => {
+proxiesRouter.put('/:nodeAddr', (req, res) => {
   if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.PROXIES, PERMISSIONS.ACTIONS.PUT)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
@@ -57,7 +57,7 @@ proxiesRouter.put('/api/proxies/:nodeAddr', (req, res) => {
   }
 });
 
-proxiesRouter.delete('/api/proxies/:nodeAddr', (req, res) => {
+proxiesRouter.delete('/:nodeAddr', (req, res) => {
   if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.PROXIES, PERMISSIONS.ACTIONS.DELETE)) {
     res.status(400).send('Unauthorized - only admins and operators allowed');
     return;
@@ -83,7 +83,7 @@ proxiesRouter.delete('/api/proxies/:nodeAddr', (req, res) => {
   }
 });
 
-proxiesRouter.get('/api/proxies', (req, res) => {
+proxiesRouter.get('', (req, res) => {
   const output = new Map<string, string>();
   proxiesDB.getRange({}).forEach((entry) => {
     output.set(entry.key, entry.value);
@@ -92,7 +92,7 @@ proxiesRouter.get('/api/proxies', (req, res) => {
   res.status(200).json({ Proxies: Object.fromEntries(output) });
 });
 
-proxiesRouter.get('/api/proxies/:nodeAddr', (req, res) => {
+proxiesRouter.get('/:nodeAddr', (req, res) => {
   const { nodeAddr } = req.params;
 
   const proxy = proxiesDB.get(decodeURIComponent(nodeAddr));

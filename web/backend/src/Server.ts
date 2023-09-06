@@ -50,10 +50,10 @@ app.get('/api/config/proxy', (req, res) => {
   res.status(200).send(process.env.DELA_NODE_URL);
 });
 
-app.use('', authenticationRouter);
-app.use('', usersRouter);
-app.use('', proxiesRouter);
-app.use('', delaRouter);
+app.use('/api', authenticationRouter);
+app.use('/api', usersRouter);
+app.use('/api/proxies', proxiesRouter);
+app.use('/api/evoting', delaRouter);
 
 // Handles any requests that don't match the ones above
 app.get('*', (req, res) => {
