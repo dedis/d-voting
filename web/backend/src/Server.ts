@@ -13,10 +13,6 @@ const app = express();
 
 app.use(morgan('tiny'));
 
-const serveOnPort = process.env.PORT || 5000;
-app.listen(serveOnPort);
-console.log(`🚀 App is listening on port ${serveOnPort}`);
-
 declare module 'express-session' {
   // This overrides express-session
   export interface SessionData {
@@ -61,3 +57,7 @@ app.get('*', (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   res.status(404).send(`not found ${xss(url.toString())}`);
 });
+
+const serveOnPort = process.env.PORT || 5000;
+app.listen(serveOnPort);
+console.log(`🚀 App is listening on port ${serveOnPort}`);
