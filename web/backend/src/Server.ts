@@ -63,26 +63,8 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/*
- * Access control
- * */
-// app.use((req, res, next) => {
-//   const begin = req.url.split('?')[0];
-//   let role = 'everyone';
-//   if (req.session.userId && req.session.role) {
-//     role = req.session.role;
-//   }
-
-//   if (accessConfig[role].includes(begin)) {
-//     next();
-//   } else {
-//     res.status(400).send('Unauthorized');
-//   }
-// });
-
 // This endpoint allows anyone to get a "default" proxy. Clients can still use
 // the proxy of their choice thought.
-
 app.get('/api/config/proxy', (req, res) => {
   res.status(200).send(process.env.DELA_NODE_URL);
 });
