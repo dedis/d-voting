@@ -79,7 +79,7 @@ authenticationRouter.post('/logout', (req, res) => {
 // the information of the current user.
 authenticationRouter.get('/personal_info', async (req, res) => {
   if (!req.session.userId) {
-    res.status(401).send('UnAuthenticated');
+    res.status(401).send('Unauthenticated');
     return;
   }
   const userPermissions = await getUserPermissions(req.session.userId);
