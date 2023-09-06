@@ -435,6 +435,10 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
 
 // Secure /api/evoting to admins and operators
 app.put('/api/evoting/authorizations', (req, res) => {
+  if (!req.session.userId) {
+    res.status(400).send('Unauthorized');
+    return;
+  }
   if (
     !isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.ELECTION, PERMISSIONS.ACTIONS.CREATE)
   ) {
@@ -484,6 +488,10 @@ app.use('/api/evoting/services/dkg/actors/:formID', (req, res, next) => {
   next();
 });
 app.use('/api/evoting/services/shuffle/:formID', (req, res, next) => {
+  if (!req.session.userId) {
+    res.status(401).send('Unauthenticated');
+    return;
+  }
   const { formID } = req.params;
   if (!isAuthorized(req.session.userId, formID, PERMISSIONS.ACTIONS.OWN)) {
     res.status(400).send('Unauthorized');
@@ -492,6 +500,10 @@ app.use('/api/evoting/services/shuffle/:formID', (req, res, next) => {
   next();
 });
 app.delete('/api/evoting/forms/:formID', (req, res) => {
+  if (!req.session.userId) {
+    res.status(401).send('Unauthenticated');
+    return;
+  }
   const { formID } = req.params;
   if (!isAuthorized(req.session.userId, formID, PERMISSIONS.ACTIONS.OWN)) {
     res.status(400).send('Unauthorized');
