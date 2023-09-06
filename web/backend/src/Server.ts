@@ -15,6 +15,7 @@ import {
 } from './authManager';
 import { sessionStore } from './session';
 import { authenticationRouter } from './controllers/authentication';
+import { usersRouter } from './controllers/users';
 
 const app = express();
 
@@ -409,6 +410,7 @@ app.use('/api/evoting/*', (req, res) => {
 });
 
 app.use('', authenticationRouter);
+app.use('', usersRouter);
 
 // Handles any requests that don't match the ones above
 app.get('*', (req, res) => {
