@@ -7,6 +7,7 @@ import { sessionStore } from './session';
 import { authenticationRouter } from './controllers/authentication';
 import { usersRouter } from './controllers/users';
 import { proxiesRouter } from './controllers/proxies';
+import { delaRouter } from './controllers/dela';
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.get('/api/config/proxy', (req, res) => {
 app.use('', authenticationRouter);
 app.use('', usersRouter);
 app.use('', proxiesRouter);
+app.use('', delaRouter);
 
 // Handles any requests that don't match the ones above
 app.get('*', (req, res) => {
