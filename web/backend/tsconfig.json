@@ -28,6 +28,7 @@
     "src/model.conf",
     "policy.csv",
     "src/*.ts",
+    "src/controllers/*.ts",
     "config.json"
   ],
   "exclude": [
