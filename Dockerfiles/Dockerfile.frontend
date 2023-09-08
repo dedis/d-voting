@@ -1,8 +1,15 @@
-FROM node:20-bookworm
+FROM node:20-bookworm as build
 
 ENV REACT_APP_PROXY=http://localhost:9081
 ENV REACT_APP_NOMOCK=on
 WORKDIR /web/frontend
 COPY ../web/frontend .
-RUN npm install
-ENTRYPOINT ["npm", "start"]
+RUN npm ci
+RUN npm run build
+
+FROM node:20-bookworm as app
+
+WORKDIR /web/frontend
+COPY --from=build /web/frontend/build/ .
+
+ENTRYPOINT ["python3", "-m", "http.server", "3000", "--directory", "/web/frontend/", "--bind", "127.0.0.1"]
