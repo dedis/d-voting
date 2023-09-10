@@ -49,8 +49,8 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
   let uri = process.env.DELA_NODE_URL + req.baseUrl.slice(4);
   // boolean to check
   let redirectToDefaultProxy = true;
-  // in case this is a DKG init request, we must also update the payload.
 
+  // in case this is a DKG init request, we must also update the payload.
   const dkgInitRegex = /\/evoting\/services\/dkg\/actors$/;
   if (uri.match(dkgInitRegex)) {
     const dataStr2 = JSON.stringify({ FormID: req.body.FormID });
@@ -154,6 +154,7 @@ delaRouter.post('/services/dkg/actors', (req, res, next) => {
   }
   next();
 });
+
 delaRouter.use('/services/dkg/actors/:formID', (req, res, next) => {
   const { formID } = req.params;
   if (!isAuthorized(req.session.userId, formID, PERMISSIONS.ACTIONS.OWN)) {
@@ -162,6 +163,7 @@ delaRouter.use('/services/dkg/actors/:formID', (req, res, next) => {
   }
   next();
 });
+
 delaRouter.use('/services/shuffle/:formID', (req, res, next) => {
   if (!req.session.userId) {
     res.status(401).send('Unauthenticated');
