@@ -192,7 +192,10 @@ delaRouter.post('/forms/:formID/vote', (req, res) => {
   // ballot is taken into account. To preserve anonymity, the web-backend could
   // translate UserIDs to another random ID.
   // bodyData.UserID = req.session.userId.toString();
+
+  // DEBUG: this is only for debugging and needs to be replaced before production
   const bodyData = req.body;
+  console.warn('randomizing the SCIPER ID to allow for emulate votes - Use only for Development');
   bodyData.UserID = makeid(10);
 
   const dataStr = JSON.stringify(bodyData);
