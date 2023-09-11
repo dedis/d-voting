@@ -2,37 +2,54 @@
 
 ## Overview
 
-The relevant files are:
+The files related to the Docker environment can be found in
 
-* `docker-compose.yml`
-* `.env`
-* the Dockerfiles in ./Dockerfiles
+* `docker-compose/` (Docker Compose files)
+* `Dockerfiles/` (Dockerfiles)
+* `scripts/` (helper scripts)
 
-You need to create a local .env file with the following content:
+You also need to either create a `.env` file in the project's root
+or point to another environment file using the `--env-file` flag
+when running `docker compose`.
+
+The environment file needs to contain
 
 ```
-DELA_NODE_URL=http://172.19.44.254:80           # DELA node
-DATABASE_USERNAME=dvoting                       # choose any PostgreSQL username
-DATABASE_PASSWORD=                              # choose any PostgreSQL password
-DATABASE_HOST=db                                # PostgreSQL host *within the Docker network*
-DATABASE_PORT=5432                              # PostgreSQL port
-DB_PATH=dvoting                                 # LMDB database path
-FRONT_END_URL=http://localhost:3000             # frontend URL
-BACKEND_HOST=backend                            # backend host
-BACKEND_PORT=5000                               # backend port
-SESSION_SECRET=                                 # choose any secret
-PUBLIC_KEY=                                     # pre-generated key pair
-PRIVATE_KEY=                                    # pre-generated key pair
-PROXYPORT=8080                                  # port of DELA proxy
+DELA_NODE_URL=http://172.19.44.254:8080
+DATABASE_USERNAME=dvoting
+DATABASE_PASSWORD=XXX                       # choose any PostgreSQL password
+DATABASE_HOST=db
+DATABASE_PORT=5432
+DB_PATH=dvoting                             # LMDB database path
+FRONT_END_URL=http://127.0.0.1:3000
+BACKEND_HOST=backend
+BACKEND_PORT=5000
+SESSION_SECRET=XXX                          # choose any secret
+PUBLIC_KEY=XXX                              # public key of pre-generated key pair
+PRIVATE_KEY=XXX                             # private key of pre-generated key pair
+PROXYPORT=8080
 ```
 
-You can then run
+To run the currently released version, go to `docker-compose/` and
+run
 
 ```
 docker compose up
 ```
 
-to build the images and build and run the containers.
+this will pull the images from the GitHub container registry.
+
+If you instead run
+
+```
+export COMPOSE_FILE=docker-compose.debug.yml
+docker compose up
+```
+
+the images will be build locally and you can debug your developments.
+
+/!\ Any subsequent `docker compose` commands must be run with `COMPOSE_FILE` being
+set to the Docker Compose file that defines the current environment.
 
 Use
 
@@ -46,20 +63,24 @@ to shut off, and
 docker compose down -v
 ```
 
-to delete the volumes (this will reset your instance).
+to delete the volumes and reset your instance.
 
 ## Post-install commands
 
-1. `./init_dela.sh`
-2. run `docker compose exec backend npx cli addAdmin --sciper 123455` with your SCIPER to add yourself as admin
-3. run `docker compose down && docker compose up -d` to restart the containers and load the new permissions
-
-## Go debugging environment
-
-To use the Go debugging environment, set the environment variable
+To set up the DELA network, go to `scripts/` and run
 
 ```
-COMPOSE_FILE=docker-compose.debug.yml
+./init_dela.sh
 ```
 
-to use this environment in all `docker compose` invocations.
+/!\ This script uses `docker compose` as well, so make sure that `COMPOSE_FILE` is
+set to the right value.
+
+To set up the permissions, run
+
+```
+docker compose exec backend npx cli addAdmin --sciper XXX
+docker compose down && docker compose up -d
+```
+
+to add yourself as admin and clear the cached permissions.
