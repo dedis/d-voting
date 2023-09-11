@@ -1,5 +1,6 @@
 .git
 .github
 Dockerfiles
-docker-compose*.yml
+docker-compose
+scripts
 web/*/node_modules
