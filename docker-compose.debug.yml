@@ -72,7 +72,7 @@ services:
       - dela-worker-3-data:/data
     hostname: dela-worker-3
     ports:
-      - 127.0.0.1:40002:40000
+      - 127.0.0.1:40003:40000
     security_opt:
       - apparmor:unconfined
     cap_add:
@@ -92,7 +92,7 @@ services:
       - dela-worker-4-data:/data
     hostname: dela-worker-4
     ports:
-      - 127.0.0.1:40002:40000
+      - 127.0.0.1:40004:40000
     security_opt:
       - apparmor:unconfined
     cap_add:
