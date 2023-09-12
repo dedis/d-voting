@@ -1,0 +1,32 @@
+services:
+
+  dela-worker-0:              # DELA worker node
+    image: ghcr.io/c4dt/d-voting-dela:latest
+    environment:
+      PROXYKEY: ${PUBLIC_KEY}
+      PROXYPORT: ${PROXYPORT}
+      PUBLICPORT: 2000
+      LLVL: info
+    volumes:
+      - dela-worker-0-data:/data
+    ports:
+      - 8080:8080             # proxy port
+      - 2000:2000             # DELA node port
+    hostname: ${HOSTNAME}
+  dela-worker-1:              # DELA worker node
+    image: ghcr.io/c4dt/d-voting-dela:latest
+    environment:
+      PROXYKEY: ${PUBLIC_KEY}
+      PROXYPORT: ${PROXYPORT}
+      PUBLICPORT: 2001
+      LLVL: info
+    volumes:
+      - dela-worker-1-data:/data
+    ports:
+      - 8081:8080
+      - 2001:2000
+    hostname: ${HOSTNAME}
+
+volumes:
+  dela-worker-0-data:
+  dela-worker-1-data:

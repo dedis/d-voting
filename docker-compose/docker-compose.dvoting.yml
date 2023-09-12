@@ -1,0 +1,59 @@
+services:
+
+  frontend:         # web service frontend
+    image: ghcr.io/c4dt/d-voting-frontend:latest
+    ports:
+      - 3000:3000
+    environment:
+      BACKEND_HOST: ${BACKEND_HOST}
+      BACKEND_PORT: ${BACKEND_PORT}
+    networks:
+      d-voting:
+        ipv4_address: 172.19.44.2
+
+  backend:          # web service backend
+    image: ghcr.io/c4dt/d-voting-backend:latest
+    environment:
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_PORT: ${DATABASE_PORT}
+      DB_PATH: /data/${DB_PATH}
+      FRONT_END_URL: ${FRONT_END_URL}
+      DELA_NODE_URL: ${DELA_NODE_URL}
+      SESSION_SECRET: ${SESSION_SECRET}
+      PUBLIC_KEY: ${PUBLIC_KEY}
+      PRIVATE_KEY: ${PRIVATE_KEY}
+    ports:
+      - 127.0.0.1:5000:5000
+    depends_on:
+      db:
+        condition: service_started
+    volumes:
+      - backend-data:/data
+    networks:
+      d-voting:
+        ipv4_address: 172.19.44.3
+
+  db:               # PostgreSQL database
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../web/backend/src/migration.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      d-voting:
+        ipv4_address: 172.19.44.4
+
+volumes:
+  postgres-data:    # PostgreSQL database
+  backend-data:
+
+networks:
+  d-voting:
+    ipam:
+      config:
+        - subnet: 172.19.44.0/24
+          gateway: 172.19.44.1
