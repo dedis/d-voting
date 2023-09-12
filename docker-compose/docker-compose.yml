@@ -1,114 +1,70 @@
 services:
 
   dela-worker-0:             # inital DELA leader node
-    image: dela:latest
-    build:
-      dockerfile: ./Dockerfiles/Dockerfile.dela.debug
+    image: ghcr.io/c4dt/d-voting-dela:latest
     environment:
       PROXYKEY: ${PUBLIC_KEY}
       PROXYPORT: ${PROXYPORT}
-      LLVL: debug
+      LLVL: info
     volumes:
       - dela-worker-0-data:/data
     hostname: dela-worker-0
-    ports:
-      - 127.0.0.1:40000:40000
-    security_opt:
-      - apparmor:unconfined
-    cap_add:
-      - SYS_PTRACE
     networks:
       d-voting:
         ipv4_address: 172.19.44.254
   dela-worker-1:             # DELA worker node
-    image: dela:latest
-    build:
-      dockerfile: ./Dockerfiles/Dockerfile.dela.debug
+    image: ghcr.io/c4dt/d-voting-dela:latest
     environment:
       PROXYKEY: ${PUBLIC_KEY}
       PROXYPORT: ${PROXYPORT}
-      LLVL: debug
+      LLVL: info
     volumes:
       - dela-worker-1-data:/data
     hostname: dela-worker-1
-    ports:
-      - 127.0.0.1:40001:40000
-    security_opt:
-      - apparmor:unconfined
-    cap_add:
-      - SYS_PTRACE
     networks:
       d-voting:
         ipv4_address: 172.19.44.253
   dela-worker-2:             # DELA worker node
-    image: dela:latest
-    build:
-      dockerfile: ./Dockerfiles/Dockerfile.dela.debug
+    image: ghcr.io/c4dt/d-voting-dela:latest
     environment:
       PROXYKEY: ${PUBLIC_KEY}
       PROXYPORT: ${PROXYPORT}
-      LLVL: debug
+      LLVL: info
     volumes:
       - dela-worker-2-data:/data
     hostname: dela-worker-2
-    ports:
-      - 127.0.0.1:40002:40000
-    security_opt:
-      - apparmor:unconfined
-    cap_add:
-      - SYS_PTRACE
     networks:
       d-voting:
         ipv4_address: 172.19.44.252
   dela-worker-3:             # DELA worker node
-    image: dela:latest
-    build:
-      dockerfile: ./Dockerfiles/Dockerfile.dela.debug
+    image: ghcr.io/c4dt/d-voting-dela:latest
     environment:
       PROXYKEY: ${PUBLIC_KEY}
       PROXYPORT: ${PROXYPORT}
-      LLVL: debug
+      LLVL: info
     volumes:
       - dela-worker-3-data:/data
     hostname: dela-worker-3
-    ports:
-      - 127.0.0.1:40003:40000
-    security_opt:
-      - apparmor:unconfined
-    cap_add:
-      - SYS_PTRACE
     networks:
       d-voting:
         ipv4_address: 172.19.44.251
   dela-worker-4:             # DELA worker node
-    image: dela:latest
-    build:
-      dockerfile: ./Dockerfiles/Dockerfile.dela.debug
+    image: ghcr.io/c4dt/d-voting-dela:latest
     environment:
       PROXYKEY: ${PUBLIC_KEY}
       PROXYPORT: ${PROXYPORT}
-      LLVL: debug
+      LLVL: info
     volumes:
       - dela-worker-4-data:/data
     hostname: dela-worker-4
-    ports:
-      - 127.0.0.1:40004:40000
-    security_opt:
-      - apparmor:unconfined
-    cap_add:
-      - SYS_PTRACE
     networks:
       d-voting:
         ipv4_address: 172.19.44.250
 
   frontend:         # web service frontend
-    image: frontend:latest
-    build:
-      dockerfile: ./Dockerfiles/Dockerfile.frontend
+    image: ghcr.io/c4dt/d-voting-frontend:latest
     ports:
       - 127.0.0.1:3000:3000
-    volumes:
-      - ./web/frontend/src:/web/frontend/src
     environment:
       BACKEND_HOST: ${BACKEND_HOST}
       BACKEND_PORT: ${BACKEND_PORT}
@@ -117,9 +73,7 @@ services:
         ipv4_address: 172.19.44.2
 
   backend:          # web service backend
-    image: backend:latest
-    build:
-      dockerfile: ./Dockerfiles/Dockerfile.backend
+    image: ghcr.io/c4dt/d-voting-backend:latest
     environment:
       DATABASE_USERNAME: ${DATABASE_USERNAME}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
@@ -133,13 +87,11 @@ services:
       PRIVATE_KEY: ${PRIVATE_KEY}
     ports:
       - 127.0.0.1:5000:5000
-      - 127.0.0.1:80:80
     depends_on:
       db:
         condition: service_started
     volumes:
       - backend-data:/data
-      - ./web/backend/src:/web/backend/src
     networks:
       d-voting:
         ipv4_address: 172.19.44.3
