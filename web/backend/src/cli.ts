@@ -96,6 +96,17 @@ program
       const scipers: Array<string> = data.split('\n');
       const policies = [];
       for (let i = 0; i < scipers.length; i += 1) {
+        const sciper: number = Number(scipers[i]);
+        if (Number.isNaN(sciper)) {
+          console.error(`SCIPER on line ${i + 1} is not a number - exiting!`);
+          return;
+        }
+        if (sciper > 999999 || sciper < 100000) {
+          console.error(
+            `SCIPER on line ${i + 1} is outside acceptable range (100000 -> 999999) - exiting!`
+          );
+          return;
+        }
         policies[i] = [scipers[i], electionId, PERMISSIONS.ACTIONS.VOTE];
       }
       const enforcer = await initEnforcer();
