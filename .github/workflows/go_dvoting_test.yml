@@ -1,4 +1,4 @@
-name: Memcoin (CLI+HTTP) Test
+name: Dvoting (CLI+HTTP) Test
 
 on:
   push:
@@ -29,17 +29,17 @@ jobs:
       - name: Create a private key
         run: crypto bls signer new --save private.key
 
-      - name: Install memcoin
+      - name: Install dvoting
         run: make build
 
       - name: Start 3 nodes
         run: |
-          ./memcoin --config /tmp/node1 start --port 2001 &
-          ./memcoin --config /tmp/node2 start --port 2002 &
-          ./memcoin --config /tmp/node3 start --port 2003 &
+          ./dvoting --config /tmp/node1 start --port 2001 &
+          ./dvoting --config /tmp/node2 start --port 2002 &
+          ./dvoting --config /tmp/node3 start --port 2003 &
 
       - name: Run the setup
         run: ./setup.sh
 
       - name: Run the scenario test
-        run: ./memcoin --config /tmp/node1 e-voting scenarioTest
+        run: ./dvoting --config /tmp/node1 e-voting scenarioTest

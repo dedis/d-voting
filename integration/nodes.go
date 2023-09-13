@@ -103,7 +103,7 @@ func restartNode(nodeNub int, t *testing.T) {
 	err = cmd.Run()
 	require.NoError(t, err)
 
-	cmd = exec.Command("bash", "-c", fmt.Sprintf("docker exec -d node%v memcoin --config /tmp/node%v start --postinstall --promaddr :9100 --proxyaddr :9080 --proxykey adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3 --listen tcp://0.0.0.0:2001 --public //172.18.0.%v:2001", nodeNub, nodeNub, nodeNub+1))
+	cmd = exec.Command("bash", "-c", fmt.Sprintf("docker exec -d node%v dvoting --config /tmp/node%v start --postinstall --promaddr :9100 --proxyaddr :9080 --proxykey adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3 --listen tcp://0.0.0.0:2001 --public //172.18.0.%v:2001", nodeNub, nodeNub, nodeNub+1))
 	err = cmd.Run()
 	require.NoError(t, err)
 }

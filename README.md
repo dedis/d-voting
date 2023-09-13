@@ -29,8 +29,8 @@
         <a href="https://github.com/dedis/d-voting/actions/workflows/go_test.yml">
             <img src="https://github.com/dedis/d-voting/actions/workflows/go_test.yml/badge.svg">
         </a>
-        <a href="https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml">
-            <img src="https://github.com/dedis/d-voting/actions/workflows/go_memcoin_test.yml/badge.svg">
+        <a href="https://github.com/dedis/d-voting/actions/workflows/go_dvoting_test.yml">
+            <img src="https://github.com/dedis/d-voting/actions/workflows/go_dvoting_test.yml/badge.svg">
         </a>
         <a href="https://github.com/dedis/d-voting/actions/workflows/go_scenario_test.yml">
             <img src="https://github.com/dedis/d-voting/actions/workflows/go_scenario_test.yml/badge.svg">
@@ -277,7 +277,7 @@ results.
 .
 ├── cli    
 │   ├── cosipbftcontroller  Custom initialization of the blockchain node
-│   ├── <b>memcoin</b>             Build the node CLI
+│   ├── <b>dvoting</b>             Build the node CLI
 │   └── postinstall         Custom node CLI setup
 ├── <b>contracts</b>           
 │   └── <b>evoting</b>             D-Voting smart contract
@@ -505,13 +505,13 @@ In three different terminal sessions, from the root folder:
 ```sh
 pk=adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3
 
-LLVL=info memcoin --config /tmp/node1 start --postinstall \
+LLVL=info dvoting --config /tmp/node1 start --postinstall \
   --promaddr :9100 --proxyaddr :9080 --proxykey $pk --listen tcp://0.0.0.0:2001 --public //localhost:2001
 
-LLVL=info memcoin --config /tmp/node2 start --postinstall \
+LLVL=info dvoting --config /tmp/node2 start --postinstall \
   --promaddr :9101 --proxyaddr :9081 --proxykey $pk --listen tcp://0.0.0.0:2002 --public //localhost:2002
 
-LLVL=info memcoin --config /tmp/node3 start --postinstall \
+LLVL=info dvoting --config /tmp/node3 start --postinstall \
   --promaddr :9102 --proxyaddr :9082 --proxykey $pk --listen tcp://0.0.0.0:2003 --public //localhost:2003
 ```
 
@@ -569,7 +569,7 @@ you can run a test scenario:
 
 ```sh
 sk=28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409
-LLVL=info memcoin --config /tmp/node1 e-voting scenarioTest --secretkey $sk
+LLVL=info dvoting --config /tmp/node1 e-voting scenarioTest --secretkey $sk
 ```
 
 You can also run scenario_test.go, by running in the integration folder this
@@ -643,7 +643,7 @@ A d-Voting node exposes Prometheus metrics. You can start an HTTP server that
 serves those metrics with:
 
 ```sh
-./memcoin --config /tmp/node1 metrics start --addr 127.0.0.1:9100 --path /metrics
+./dvoting --config /tmp/node1 metrics start --addr 127.0.0.1:9100 --path /metrics
 ```
 
 Build info can be added to the binary with the `ldflags`, at build time. Infos
@@ -653,7 +653,7 @@ are stored on variables in the root `mod.go`. For example:
 versionFlag="github.com/dedis/d-voting.Version=`git describe --tags`"
 timeFlag="github.com/dedis/d-voting.BuildTime=`date +'%d/%m/%y_%H:%M'`"
 
-go build -ldflags="-X $versionFlag -X $timeFlag" ./cli/memcoin
+go build -ldflags="-X $versionFlag -X $timeFlag" ./cli/dvoting
 ```
 
 Note that `make build` will do that for you.

@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMemcoin_Main(t *testing.T) {
+func TestDvoting_Main(t *testing.T) {
 	main()
 }
 
@@ -24,8 +24,8 @@ func TestMemcoin_Main(t *testing.T) {
 // in two blocks. Node 4 does not share its certificate which means others won't
 // be able to communicate, but the chain should proceed because of the
 // threshold.
-func TestMemcoin_Scenario_SetupAndTransactions(t *testing.T) {
-	dir, err := os.MkdirTemp(os.TempDir(), "memcoin1")
+func TestDvoting_Scenario_SetupAndTransactions(t *testing.T) {
+	dir, err := os.MkdirTemp(os.TempDir(), "dvoting1")
 	require.NoError(t, err)
 
 	defer os.RemoveAll(dir)
@@ -116,8 +116,8 @@ func TestMemcoin_Scenario_SetupAndTransactions(t *testing.T) {
 // finally restarts both of them to make sure the chain can proceed after the
 // restart. It basically tests if the components are correctly loaded from the
 // persisten storage.
-func TestMemcoin_Scenario_RestartNode(t *testing.T) {
-	dir, err := os.MkdirTemp(os.TempDir(), "memcoin2")
+func TestDvoting_Scenario_RestartNode(t *testing.T) {
+	dir, err := os.MkdirTemp(os.TempDir(), "dvoting2")
 	require.NoError(t, err)
 
 	defer os.RemoveAll(dir)

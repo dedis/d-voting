@@ -5,7 +5,7 @@ private.key
 web/app/node_modules
 .idea
 
-memcoin*
+dvoting*
 
 *.log
 

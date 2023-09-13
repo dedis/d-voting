@@ -25,7 +25,7 @@ func (m controller) SetCommands(builder node.Builder) {
 	cmd := builder.SetCommand("e-voting")
 	cmd.SetDescription("interact with the evoting service")
 
-	// memcoin --config /tmp/node1 e-voting \
+	// dvoting --config /tmp/node1 e-voting \
 	//   registerHandlers --signer private.key
 	sub := cmd.SetSubCommand("registerHandlers")
 	sub.SetDescription("register the e-voting handlers on the default proxy")
@@ -38,7 +38,7 @@ func (m controller) SetCommands(builder node.Builder) {
 	)
 	sub.SetAction(builder.MakeAction(&RegisterAction{}))
 
-	// memcoin --config /tmp/node1 e-voting scenarioTest
+	// dvoting --config /tmp/node1 e-voting scenarioTest
 	sub = cmd.SetSubCommand("scenarioTest")
 	sub.SetDescription("evoting scenario test")
 	sub.SetFlags(

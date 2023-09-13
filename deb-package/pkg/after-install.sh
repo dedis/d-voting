@@ -28,4 +28,4 @@ DVOTING_SERVICE=dvoting.service
 enable_service ${DVOTING_SERVICE}
 systemctl start ${DVOTING_SERVICE}
 
-ln -s /opt/dedis/dvoting/bin/memcoin /usr/bin/memcoin
+ln -s /opt/dedis/dvoting/bin/dvoting /usr/bin/dvoting

@@ -69,7 +69,7 @@ Check how a node is started in `pkg/opt/dedis/dvoting/bin/start-voting`. For
 example:
 
 ```sh
-LLVL=info ./memcoin-darwin-amd64-v0_4_5-alpha \
+LLVL=info ./dvoting-darwin-amd64-v0_4_5-alpha \
     --config /tmp/node8 \
     start \
     --postinstall \
@@ -115,7 +115,7 @@ credentials.
 Get the token and certificate (24h * 30 = 720):
 
 ```sh
-sudo memcoin --config /var/opt/dedis/dvoting/data/dela minogrpc token \
+sudo dvoting --config /var/opt/dedis/dvoting/data/dela minogrpc token \
     --expiration 720h
 ```
 
@@ -133,7 +133,7 @@ that the certificates are stored in the DB, which means that this operation must
 be re-done in case the DB is reset.
 
 ```sh
-sudo memcoin --config /var/opt/dedis/dvoting/data/dela minogrpc join \
+sudo dvoting --config /var/opt/dedis/dvoting/data/dela minogrpc join \
     --address <MASTER NODE ADDRESS> --token <TOKEN> --cert-hash <CERT HASH>
 ```
 
@@ -144,7 +144,7 @@ Example of `<MASTER NODE ADDRESS>`: `'//172.16.253.150:9000'`
 First get the address of all nodes by running:
 
 ```sh
-sudo memcoin --config /var/opt/dedis/dvoting/data/dela ordering export
+sudo dvoting --config /var/opt/dedis/dvoting/data/dela ordering export
 ```
 
 This will yield a base64 encoded string `<ADDRESS>:<PUB KEY>`.
@@ -156,7 +156,7 @@ From the first node.
 Include ALL nodes, the first and all other nodes.
 
 ```sh
-sudo memcoin --config /var/opt/dedis/dvoting/data/dela ordering setup \
+sudo dvoting --config /var/opt/dedis/dvoting/data/dela ordering setup \
     --member <RESULT FROM ordering export>\
     --member <...>
     ...
@@ -168,7 +168,7 @@ To be done on each node.
 
 ```sh
 PK=<> # taken from the "ordering export", the part after ":"
-sudo memcoin --config /var/opt/dedis/dvoting/data/dela pool add \
+sudo dvoting --config /var/opt/dedis/dvoting/data/dela pool add \
     --key $keypath \
     --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access \
     --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 \

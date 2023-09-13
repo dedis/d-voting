@@ -24,10 +24,10 @@ test_integration:
 	go test ./integration
 
 build:
-	go build -ldflags="-X $(versionFlag) -X $(timeFlag)" -o memcoin ./cli/memcoin
-	GOOS=linux GOARCH=amd64 go build -ldflags="-X $(versionFlag) -X $(timeFlag)" -o memcoin-linux-amd64-$(versionFile) ./cli/memcoin
-	GOOS=darwin GOARCH=amd64 go build -ldflags="-X $(versionFlag) -X $(timeFlag)" -o memcoin-darwin-amd64-$(versionFile) ./cli/memcoin
-	GOOS=windows GOARCH=amd64 go build -ldflags="-X $(versionFlag) -X $(timeFlag)" -o memcoin-windows-amd64-$(versionFile) ./cli/memcoin
+	go build -ldflags="-X $(versionFlag) -X $(timeFlag)" -o dvoting ./cli/dvoting
+	GOOS=linux GOARCH=amd64 go build -ldflags="-X $(versionFlag) -X $(timeFlag)" -o dvoting-linux-amd64-$(versionFile) ./cli/dvoting
+	GOOS=darwin GOARCH=amd64 go build -ldflags="-X $(versionFlag) -X $(timeFlag)" -o dvoting-darwin-amd64-$(versionFile) ./cli/dvoting
+	GOOS=windows GOARCH=amd64 go build -ldflags="-X $(versionFlag) -X $(timeFlag)" -o dvoting-windows-amd64-$(versionFile) ./cli/dvoting
 
 deb: build
 	cd deb-package; ./build-deb.sh; cd ..

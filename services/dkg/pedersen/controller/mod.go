@@ -56,13 +56,13 @@ func (m controller) SetCommands(builder node.Builder) {
 	cmd := builder.SetCommand("dkg")
 	cmd.SetDescription("interact with the DKG service")
 
-	// memcoin --config /tmp/node1 dkg init --formID formID
+	// dvoting --config /tmp/node1 dkg init --formID formID
 	sub := cmd.SetSubCommand("init")
 	sub.SetDescription("initialize the DKG protocol for a given form")
 	sub.SetFlags(formIDFlag)
 	sub.SetAction(builder.MakeAction(&initAction{}))
 
-	// memcoin --config /tmp/node1 dkg setup --formID formID
+	// dvoting --config /tmp/node1 dkg setup --formID formID
 	sub = cmd.SetSubCommand("setup")
 	sub.SetDescription("create the public distributed key and the private share on each node")
 	sub.SetFlags(formIDFlag)

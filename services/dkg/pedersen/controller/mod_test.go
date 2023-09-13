@@ -83,7 +83,7 @@ func TestMinimal_OnStart(t *testing.T) {
 	err = c.OnStart(nil, ctx.Injector)
 	require.EqualError(t, err, "no flags")
 
-	dir, err := os.MkdirTemp(os.TempDir(), "memcoin1")
+	dir, err := os.MkdirTemp(os.TempDir(), "dvoting1")
 	require.NoError(t, err)
 	flags.strings["config"] = dir
 

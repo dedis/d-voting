@@ -5,8 +5,8 @@ on:
     types: [published]
 
 jobs:
-  memcoin:
-    name: release memcoin and .deb
+  dvoting:
+    name: release dvoting and .deb
     runs-on: ubuntu-latest
 
     steps:
@@ -40,7 +40,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            memcoin-*
+            dvoting-*
             deb-package/dist/*
 
   backend:

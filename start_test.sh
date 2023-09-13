@@ -28,8 +28,8 @@ node3="tmux send-keys -t $s:0.%3"
 
 pk=adbacd10fdb9822c71025d6d00092b8a4abb5ebcb673d28d863f7c7c5adaddf3
 
-$node1 "LLVL=info ./memcoin --config /tmp/node1 start --postinstall --promaddr :9100 --proxyaddr :9080 --proxykey $pk --listen tcp://0.0.0.0:2001 --public //localhost:2001" C-m
-$node2 "LLVL=info ./memcoin --config /tmp/node2 start --postinstall --promaddr :9101 --proxyaddr :9081 --proxykey $pk --listen tcp://0.0.0.0:2002 --public //localhost:2002" C-m
-$node3 "LLVL=info ./memcoin --config /tmp/node3 start --postinstall --promaddr :9102 --proxyaddr :9082 --proxykey $pk --listen tcp://0.0.0.0:2003 --public //localhost:2003" C-m
+$node1 "LLVL=info ./dvoting --config /tmp/node1 start --postinstall --promaddr :9100 --proxyaddr :9080 --proxykey $pk --listen tcp://0.0.0.0:2001 --public //localhost:2001" C-m
+$node2 "LLVL=info ./dvoting --config /tmp/node2 start --postinstall --promaddr :9101 --proxyaddr :9081 --proxykey $pk --listen tcp://0.0.0.0:2002 --public //localhost:2002" C-m
+$node3 "LLVL=info ./dvoting --config /tmp/node3 start --postinstall --promaddr :9102 --proxyaddr :9082 --proxykey $pk --listen tcp://0.0.0.0:2003 --public //localhost:2003" C-m
 
 tmux a

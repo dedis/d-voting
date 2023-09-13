@@ -3,4 +3,4 @@
 # stop service
 systemctl stop dvoting.service
 
-rm -f /usr/bin/memcoin
+rm -f /usr/bin/dvoting
