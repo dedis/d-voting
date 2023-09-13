@@ -15,7 +15,7 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
   const { t } = useTranslation();
   const [charCounts, setCharCounts] = useState(new Array<number>(text.Choices.length).fill(0));
   const requirementsDisplay = () => {
-    let requirements = '';
+    let requirements;
     const min = text.MinN;
     const max = text.MaxN;
 
@@ -113,17 +113,17 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>
-      {language == 'en' && text.ChoicesMap.has('en') && (
+      {language === 'en' && text.ChoicesMap.has('en') && (
         <div className="sm:pl-8 mt-2 pl-6">
           {text.ChoicesMap.get('en').map((choice, index) => choiceDisplay(choice, index))}
         </div>
       )}
-      {language == 'fr' && text.ChoicesMap.has('fr') && (
+      {language === 'fr' && text.ChoicesMap.has('fr') && (
         <div className="sm:pl-8 mt-2 pl-6">
           {text.ChoicesMap.get('fr').map((choice, index) => choiceDisplay(choice, index))}
         </div>
       )}
-      {language == 'de' && text.ChoicesMap.has('de') && (
+      {language === 'de' && text.ChoicesMap.has('de') && (
         <div className="sm:pl-8 mt-2 pl-6">
           {text.ChoicesMap.get('de').map((choice, index) => choiceDisplay(choice, index))}
         </div>

@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useCallback, useEffect, useState } from 'react';
 import {
   BallotResults,
   DownloadedResults,
@@ -62,82 +62,89 @@ const IndividualResult: FC<IndividualResultProps> = ({
     OUT_OF_BOUNDS = 2,
   }
 
-  const questionIcons = {
-    [RANK]: <SwitchVerticalIcon />,
-    [SELECT]: <CursorClickIcon />,
-    [TEXT]: <MenuAlt1Icon />,
-  };
-  const SubjectElementResultDisplay = (element: SubjectElement) => {
-    let titles;
-    if (isJson(element.Title)) {
-      titles = JSON.parse(element.Title);
-    }
-    if (titles === undefined) {
-      titles = { en: element.Title, fr: element.TitleFr, de: element.TitleDe };
-    }
-    return (
-      <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
-        <div className="flex flex-row">
-          <div className="align-text-middle flex mt-1 mr-2 h-5 w-5" aria-hidden="true">
-            {questionIcons[element.Type]}
-          </div>
-          <h2 className="flex align-text-middle text-lg pb-2">
-            {i18n.language === 'en' && titles.en}
-            {i18n.language === 'fr' && titles.fr}
-            {i18n.language === 'de' && titles.de}
-          </h2>
-        </div>
-        {element.Type === RANK && rankResult.has(element.ID) && (
-          <IndividualRankResult
-            rank={element as RankQuestion}
-            rankResult={[rankResult.get(element.ID)[internalID]]}
-          />
-        )}
-        {element.Type === SELECT && selectResult.has(element.ID) && (
-          <IndividualSelectResult
-            select={element as SelectQuestion}
-            selectResult={[selectResult.get(element.ID)[internalID]]}
-          />
-        )}
-        {element.Type === TEXT && textResult.has(element.ID) && (
-          <IndividualTextResult
-            text={element as TextQuestion}
-            textResult={[textResult.get(element.ID)[internalID]]}
-          />
-        )}
-      </div>
-    );
-  };
+  const SubjectElementResultDisplay = useCallback(
+    (element: SubjectElement) => {
+      const questionIcons = {
+        [RANK]: <SwitchVerticalIcon />,
+        [SELECT]: <CursorClickIcon />,
+        [TEXT]: <MenuAlt1Icon />,
+      };
 
-  const displayResults = (subject: Subject) => {
-    let sbj;
-    if (isJson(subject.Title)) {
-      sbj = JSON.parse(subject.Title);
-    }
-    if (sbj === undefined) {
-      sbj = { en: subject.Title, fr: subject.TitleFr, de: subject.TitleDe };
-    }
-    return (
-      <div key={subject.ID}>
-        <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-          {i18n.language === 'en' && sbj.en}
-          {i18n.language === 'fr' && sbj.fr}
-          {i18n.language === 'de' && sbj.de}
-        </h2>
-        {subject.Order.map((id: ID) => (
-          <div key={id}>
-            {subject.Elements.get(id).Type === SUBJECT ? (
-              <div className="pl-4 sm:pl-6">
-                {displayResults(subject.Elements.get(id) as Subject)}
-              </div>
-            ) : (
-              SubjectElementResultDisplay(subject.Elements.get(id))
-            )}
+      let titles;
+      if (isJson(element.Title)) {
+        titles = JSON.parse(element.Title);
+      }
+      if (titles === undefined) {
+        titles = { en: element.Title, fr: element.TitleFr, de: element.TitleDe };
+      }
+      return (
+        <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
+          <div className="flex flex-row">
+            <div className="align-text-middle flex mt-1 mr-2 h-5 w-5" aria-hidden="true">
+              {questionIcons[element.Type]}
+            </div>
+            <h2 className="flex align-text-middle text-lg pb-2">
+              {i18n.language === 'en' && titles.en}
+              {i18n.language === 'fr' && titles.fr}
+              {i18n.language === 'de' && titles.de}
+            </h2>
           </div>
-        ))}
-      </div>
-    );
-  };
+          {element.Type === RANK && rankResult.has(element.ID) && (
+            <IndividualRankResult
+              rank={element as RankQuestion}
+              rankResult={[rankResult.get(element.ID)[internalID]]}
+            />
+          )}
+          {element.Type === SELECT && selectResult.has(element.ID) && (
+            <IndividualSelectResult
+              select={element as SelectQuestion}
+              selectResult={[selectResult.get(element.ID)[internalID]]}
+            />
+          )}
+          {element.Type === TEXT && textResult.has(element.ID) && (
+            <IndividualTextResult
+              text={element as TextQuestion}
+              textResult={[textResult.get(element.ID)[internalID]]}
+            />
+          )}
+        </div>
+      );
+    },
+    [internalID, rankResult, selectResult, textResult]
+  );
+
+  const displayResults = useCallback(
+    (subject: Subject) => {
+      let sbj;
+      if (isJson(subject.Title)) {
+        sbj = JSON.parse(subject.Title);
+      }
+      if (sbj === undefined) {
+        sbj = { en: subject.Title, fr: subject.TitleFr, de: subject.TitleDe };
+      }
+      return (
+        <div key={subject.ID}>
+          <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
+            {i18n.language === 'en' && sbj.en}
+            {i18n.language === 'fr' && sbj.fr}
+            {i18n.language === 'de' && sbj.de}
+          </h2>
+          {subject.Order.map((id: ID) => (
+            <div key={id}>
+              {subject.Elements.get(id).Type === SUBJECT ? (
+                <div className="pl-4 sm:pl-6">
+                  {displayResults(subject.Elements.get(id) as Subject)}
+                </div>
+              ) : (
+                SubjectElementResultDisplay(subject.Elements.get(id))
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    },
+    [SubjectElementResultDisplay]
+  );
 
   const getResultData = (
     subject: Subject,
@@ -237,11 +244,11 @@ const IndividualResult: FC<IndividualResultProps> = ({
       setIsValid(ValidityType.VALID);
       setInternalID(value - 1);
     }
-  }, [currentID]);
+  }, [ValidityType, ballotNumber, currentID]);
 
   useEffect(() => {
     configuration.Scaffold.map((subject: Subject) => displayResults(subject));
-  }, [internalID]);
+  }, [configuration, displayResults]);
 
   const handleNext = (): void => {
     setCurrentID((((internalID + 1) % ballotNumber) + 1).toString());

@@ -14,7 +14,6 @@ import {
   EditDKGActorBody,
   EditFormBody,
   NewDKGBody,
-  NewFormBody,
   NewFormVoteBody,
   NewProxyAddress,
   NewUserRole,
@@ -26,7 +25,6 @@ import { ID } from 'types/configuration';
 import { Action, Status } from 'types/form';
 import { setupMockForm, toLightFormInfo } from './setupMockForms';
 import setupMockUserDB from './setupMockUserDB';
-import { mockRoster } from './mockData';
 import { NodeStatus } from 'types/node';
 
 const uid = new ShortUniqueId({ length: 8 });
@@ -107,7 +105,7 @@ export const handlers = [
       })
     );
   }),
-  rest.put(endpoints.addFormAuthorization, async (req, res, ctx) => {
+  rest.put(endpoints.addFormAuthorization, async (req) => {
     const { FormID } = req.body as AddAuthBody;
     auth.set(FormID, ['own']);
   }),
@@ -123,36 +121,11 @@ export const handlers = [
   }),
 
   rest.post(endpoints.newForm, async (req, res, ctx) => {
-    const body = req.body as NewFormBody;
-
     await new Promise((r) => setTimeout(r, RESPONSE_TIME));
 
     if (!isAuthorized(auth, 'election', 'create')) {
       return res(ctx.status(403), ctx.json({ message: 'You are not authorized to create a form' }));
     }
-
-    const createForm = (configuration: any) => {
-      const newFormID = uid();
-      const newDKGStatus = new Map();
-      mockRoster.forEach((node) => {
-        newDKGStatus.set(node, NodeStatus.NotInitialized);
-      });
-      mockDKG.set(newFormID, newDKGStatus);
-
-      mockForms.set(newFormID, {
-        FormID: newFormID,
-        Status: Status.Initial,
-        Pubkey: 'DEAEV6EMII',
-        Result: [],
-        Roster: mockRoster,
-        Configuration: configuration,
-        BallotSize: 291,
-        ChunksPerBallot: 11,
-        Voters: [],
-      });
-
-      return newFormID;
-    };
 
     return res(ctx.status(200), ctx.json({ Status: 0, Token: fakeToken }));
   }),
@@ -460,7 +433,7 @@ export const handlers = [
     const body = req.body as UpdateProxyAddress;
     const node = decodeURIComponent(NodeAddr as string);
 
-    if (body.NewNode != node) {
+    if (body.NewNode !== node) {
       mockNodeProxyAddresses.delete(node);
       mockNodeProxyAddresses.set(body.NewNode, body.Proxy);
     } else {

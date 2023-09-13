@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Answers, SelectQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
@@ -35,7 +35,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
   };
 
   const requirementsDisplay = () => {
-    let requirements = '';
+    let requirements;
     const max = select.MaxN;
     const min = select.MinN;
 
@@ -87,9 +87,9 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
       <div className="grid grid-rows-1 grid-flow-col">
         <div>
           <h3 className="text-lg break-words text-gray-600">
-            {language == 'en' && titles.en}
-            {language == 'fr' && titles.fr}
-            {language == 'de' && titles.de}
+            {language === 'en' && titles.en}
+            {language === 'fr' && titles.fr}
+            {language === 'de' && titles.de}
           </h3>
         </div>
         <div className="text-right">
@@ -102,14 +102,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
       <div className="sm:pl-8 mt-2 pl-6">
         {Array.from(answers.SelectAnswers.get(select.ID).entries()).map(
           ([choiceIndex, isChecked]) => {
-            if (select.ChoicesMap.get('en') == undefined) return;
-            if (language === 'en' && select.ChoicesMap.has('en'))
-              return choiceDisplay(
-                isChecked,
-                select.ChoicesMap.get('en')[choiceIndex],
-                choiceIndex
-              );
-            else if (language === 'fr' && select.ChoicesMap.has('fr'))
+            if (language === 'fr' && select.ChoicesMap.has('fr'))
               return choiceDisplay(
                 isChecked,
                 select.ChoicesMap.get('fr')[choiceIndex],
@@ -121,6 +114,13 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
                 select.ChoicesMap.get('de')[choiceIndex],
                 choiceIndex
               );
+            else if (select.ChoicesMap.has('en'))
+              return choiceDisplay(
+                isChecked,
+                select.ChoicesMap.get('en')[choiceIndex],
+                choiceIndex
+              );
+            return '';
           }
         )}
       </div>

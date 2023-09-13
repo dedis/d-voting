@@ -38,7 +38,7 @@ const RemoveAdminUserModal: FC<RemoveAdminUserModalProps> = ({
       fctx.addMessage(t('errorRemoveUser') + postError, FlashLevel.Error);
       setPostError(null);
     }
-  }, [postError]);
+  }, [fctx, t, postError]);
   const usersToBeRemoved = [sciper];
   const saveMapping = async () => {
     const request = {

@@ -35,7 +35,7 @@ const RemoveProxyModal: FC<RemoveProxyModalProps> = ({
       fctx.addMessage(t('removeProxyError') + postError, FlashLevel.Error);
       setPostError(null);
     }
-  }, [postError]);
+  }, [fctx, t, postError]);
 
   const handleDelete = async () => {
     setLoading(true);

@@ -31,7 +31,7 @@ const AddProxyModal: FC<AddProxyModalProps> = ({ open, setOpen, handleAddProxy }
       fctx.addMessage(t('addNodeProxyError') + postError, FlashLevel.Error);
       setPostError(null);
     }
-  }, [postError]);
+  }, [fctx, t, postError]);
 
   const handleNodeInput = (e: any) => {
     setNode(e.target.value);

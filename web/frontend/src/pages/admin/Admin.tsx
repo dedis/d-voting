@@ -1,4 +1,4 @@
-import React, { FC, useContext, useEffect, useState } from 'react';
+import React, { FC, useContext, useEffect, useMemo, useState } from 'react';
 import { ENDPOINT_USER_RIGHTS } from 'components/utils/Endpoints';
 import { FlashContext, FlashLevel } from 'index';
 import Loading from 'pages/Loading';
@@ -14,7 +14,7 @@ const Admin: FC = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const abortController = new AbortController();
+  const abortController = useMemo(() => new AbortController(), []);
   const signal = abortController.signal;
 
   const request = {
@@ -52,7 +52,7 @@ const Admin: FC = () => {
     return () => {
       abortController.abort();
     };
-  }, [nodeProxyObject, nodeProxyError]);
+  }, [abortController, fctx, t, nodeProxyObject, nodeProxyError]);
 
   useEffect(() => {
     fetch(ENDPOINT_USER_RIGHTS)
