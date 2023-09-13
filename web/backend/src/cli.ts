@@ -7,7 +7,7 @@ Backend CLI, currently providing 3 commands for user management:
   npx cli removeAdmin --sciper 1234
 */
 
-import { Command } from 'commander';
+import { Command, InvalidArgumentError } from 'commander';
 import { SequelizeAdapter } from 'casbin-sequelize-adapter';
 import { newEnforcer } from 'casbin';
 import { curve } from '@dedis/kyber';
@@ -90,22 +90,19 @@ program
   .action(async ({ electionId, scipersFile }) => {
     fs.readFile(scipersFile, 'utf8', async (err: any, data: string) => {
       if (err) {
-        console.error(err);
-        return;
+        throw new InvalidArgumentError(`Faced a problem trying to process your file: \n ${err}`);
       }
       const scipers: Array<string> = data.split('\n');
       const policies = [];
       for (let i = 0; i < scipers.length; i += 1) {
         const sciper: number = Number(scipers[i]);
         if (Number.isNaN(sciper)) {
-          console.error(`SCIPER on line ${i + 1} is not a number - exiting!`);
-          return;
+          throw new InvalidArgumentError(`SCIPER on line ${i + 1} is not a number - exiting!`);
         }
         if (sciper > 999999 || sciper < 100000) {
-          console.error(
-            `SCIPER on line ${i + 1} is outside acceptable range (100000 -> 999999) - exiting!`
+          throw new InvalidArgumentError(
+            `SCIPER on line ${i + 1} is outside acceptable range (100000..999999) - exiting!`
           );
-          return;
         }
         policies[i] = [scipers[i], electionId, PERMISSIONS.ACTIONS.VOTE];
       }
