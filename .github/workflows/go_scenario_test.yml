@@ -28,7 +28,7 @@ jobs:
       - name: Create a private key
         run: crypto bls signer new --save private.key
 
-      - name: Install memcoin
+      - name: Install dvoting
         run: make build
 
       - name: Start and setup 5 nodes

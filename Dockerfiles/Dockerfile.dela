@@ -5,9 +5,9 @@ RUN git clone https://github.com/dedis/dela.git
 RUN git clone https://github.com/dedis/d-voting.git
 WORKDIR /go/dela/cli/crypto
 RUN go install
-WORKDIR /go/d-voting/cli/memcoin
+WORKDIR /go/d-voting/cli/dvoting
 RUN go build
-ENV PATH=/go/dela/cli/crypto:/go/d-voting/cli/memcoin:${PATH}
+ENV PATH=/go/dela/cli/crypto:/go/d-voting/cli/dvoting:${PATH}
 WORKDIR /go
-ENTRYPOINT ["/bin/bash", "-c", "memcoin --config /data/node start --postinstall --proxyaddr :$PROXYPORT --proxykey $PROXYKEY --listen tcp://0.0.0.0:2000 --public http://$HOSTNAME:2000 --routing tree"]
+ENTRYPOINT ["/bin/bash", "-c", "dvoting --config /data/node start --postinstall --proxyaddr :$PROXYPORT --proxykey $PROXYKEY --listen tcp://0.0.0.0:2000 --public http://$HOSTNAME:2000 --routing tree"]
 CMD []

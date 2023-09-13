@@ -126,7 +126,7 @@ if [ "$RUN" == true ]; then
   crypto bls signer new --save private.key --force
 
   if [ "$DOCKER" == false ]; then
-    go build -o memcoin ./cli/memcoin
+    go build -o dvoting ./cli/dvoting
   else
     # Clean created containers and tmp dir
     if [[ $(docker ps -a -q --filter ancestor=node) ]]; then
@@ -151,7 +151,7 @@ if [ "$RUN" == true ]; then
     node_name="node$from"
 
     if [ "$DOCKER" == false ]; then
-      tmux send-keys -t $s:$window "PROXY_LOG=info LLVL=info ./memcoin \
+      tmux send-keys -t $s:$window "PROXY_LOG=info LLVL=info ./dvoting \
         --config /tmp/$node_name \
         start \
         --postinstall \
@@ -163,7 +163,7 @@ if [ "$RUN" == true ]; then
         --public //localhost:$((2000 + $from))| tee ./log/$node_name.log" C-m
     else
       docker run -d -it --env LLVL=info --name $node_name --network evoting-net -v "$(pwd)"/nodedata:/tmp --publish $((9079 + $from)):9080 node
-      tmux send-keys -t $s:$window "docker exec $node_name memcoin --config /tmp/$node_name start --postinstall \
+      tmux send-keys -t $s:$window "docker exec $node_name dvoting --config /tmp/$node_name start --postinstall \
     --promaddr :9100 --proxyaddr :9080 --proxykey $pk --listen tcp://0.0.0.0:2001 --public //$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $node_name):2001 | tee ./log/$node_name.log" C-m
     fi
 
@@ -227,8 +227,8 @@ if [ "$SETUP" == true ]; then
       to=$N_NODE
       while [ $from -le $to ]; do
         node_name="node$from"
-        ./memcoin --config /tmp/$node_name minogrpc join \
-          --address //localhost:2001 $(./memcoin --config /tmp/node1 minogrpc token)
+        ./dvoting --config /tmp/$node_name minogrpc join \
+          --address //localhost:2001 $(./dvoting --config /tmp/node1 minogrpc token)
 
         ((from++))
       done
@@ -241,12 +241,12 @@ if [ "$SETUP" == true ]; then
       while [ $from -le $to ]; do
         node_name="node$from"
         ARRAY+="--member "
-        ARRAY+="$(./memcoin --config /tmp/$node_name ordering export) "
+        ARRAY+="$(./dvoting --config /tmp/$node_name ordering export) "
 
         ((from++))
       done
 
-      ./memcoin --config /tmp/node1 ordering setup $ARRAY
+      ./dvoting --config /tmp/node1 ordering setup $ARRAY
 
       echo "${GREEN}[3/4]${NC} setup access rights on each node"
 
@@ -254,7 +254,7 @@ if [ "$SETUP" == true ]; then
 
       while [ $from -le $to ]; do
         node_name="node$from"
-        ./memcoin --config /tmp/$node_name access add \
+        ./dvoting --config /tmp/$node_name access add \
           --identity $(crypto bls signer read --path private.key --format BASE64_PUBKEY)
 
         ((from++))
@@ -262,7 +262,7 @@ if [ "$SETUP" == true ]; then
 
       echo "${GREEN}[4/4]${NC} grant access on the chain"
 
-      ./memcoin --config /tmp/node1 pool add --key private.key --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $(crypto bls signer read --path private.key --format BASE64_PUBKEY) \
+      ./dvoting --config /tmp/node1 pool add --key private.key --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $(crypto bls signer read --path private.key --format BASE64_PUBKEY) \
         --args access:command --args GRANT
 
       from=1
@@ -270,18 +270,18 @@ if [ "$SETUP" == true ]; then
       while [ $from -le $to ]; do
 
         node_name="node$from"
-        ./memcoin --config /tmp/node1 pool add --key private.key --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $(crypto bls signer read --path /tmp/$node_name/private.key --format BASE64_PUBKEY) \
+        ./dvoting --config /tmp/node1 pool add --key private.key --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $(crypto bls signer read --path /tmp/$node_name/private.key --format BASE64_PUBKEY) \
           --args access:command --args GRANT
 
         ((from++))
       done
     else
       echo "${GREEN}[1/4]${NC} connect nodes"
-      conn_token=$(docker exec node1 memcoin --config /tmp/node1 minogrpc token)
+      conn_token=$(docker exec node1 dvoting --config /tmp/node1 minogrpc token)
       vals=($(seq 2 1 $N_NODE))
 
       for i in "${vals[@]}"; do
-        docker exec node$i memcoin --config /tmp/node$i minogrpc join \
+        docker exec node$i dvoting --config /tmp/node$i minogrpc join \
           --address //$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' node1):2001 $conn_token
 
       done
@@ -291,31 +291,31 @@ if [ "$SETUP" == true ]; then
       ARRAY=""
       for i in "${vals[@]}"; do
         ARRAY+="--member "
-        ARRAY+="$(docker exec node$i memcoin --config /tmp/node$i ordering export) "
+        ARRAY+="$(docker exec node$i dvoting --config /tmp/node$i ordering export) "
         echo "Node$i addr is:"
         echo $(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' node$i)
       done
 
-      docker exec node1 memcoin --config /tmp/node1 ordering setup $ARRAY
+      docker exec node1 dvoting --config /tmp/node1 ordering setup $ARRAY
 
       echo "${GREEN}[3/4]${NC} setup access rights on each node"
       access_token=$(docker exec node1 crypto bls signer read --path private.key --format BASE64_PUBKEY)
 
       for i in "${vals[@]}"; do
-        docker exec node$i memcoin --config /tmp/node$i access add \
+        docker exec node$i dvoting --config /tmp/node$i access add \
           --identity $access_token
         sleep 1
       done
 
       echo "${GREEN}[4/4]${NC} grant access on the chain"
 
-      docker exec node1 memcoin --config /tmp/node1 pool add --key private.key --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $access_token --args access:command --args GRANT
+      docker exec node1 dvoting --config /tmp/node1 pool add --key private.key --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $access_token --args access:command --args GRANT
 
       sleep 1
 
       for i in "${vals[@]}"; do
         access_token_tmp=$(docker exec node$i crypto bls signer read --path /tmp/node$i/private.key --format BASE64_PUBKEY)
-        docker exec node1 memcoin --config /tmp/node1 pool add --key private.key --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $access_token_tmp --args access:command --args GRANT
+        docker exec node1 dvoting --config /tmp/node1 pool add --key private.key --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $access_token_tmp --args access:command --args GRANT
         sleep 1
       done
     fi

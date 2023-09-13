@@ -1,28 +1,28 @@
-// Package main implements a ledger based on in-memory components.
+// Package main implements the dvoting backend
 //
 // Unix example:
 //
-//  # Expect GOPATH to be correctly set to have memcoin available.
+//  # Expect GOPATH to be correctly set to have dvoting available.
 //  go install
 //
-//  memcoin --config /tmp/node1 start --port 2001 &
-//  memcoin --config /tmp/node2 start --port 2002 &
-//  memcoin --config /tmp/node3 start --port 2003 &
+//  dvoting --config /tmp/node1 start --port 2001 &
+//  dvoting --config /tmp/node2 start --port 2002 &
+//  dvoting --config /tmp/node3 start --port 2003 &
 //
 //  # Share the different certificates among the participants.
-//  memcoin --config /tmp/node2 minogrpc join --address 127.0.0.1:2001\
-//    $(memcoin --config /tmp/node1 minogrpc token)
-//  memcoin --config /tmp/node3 minogrpc join --address 127.0.0.1:2001\
-//    $(memcoin --config /tmp/node1 minogrpc token)
+//  dvoting --config /tmp/node2 minogrpc join --address 127.0.0.1:2001\
+//    $(dvoting --config /tmp/node1 minogrpc token)
+//  dvoting --config /tmp/node3 minogrpc join --address 127.0.0.1:2001\
+//    $(dvoting --config /tmp/node1 minogrpc token)
 //
 //  # Create a chain with two members.
-//  memcoin --config /tmp/node1 ordering setup\
-//    --member $(memcoin --config /tmp/node1 ordering export)\
-//    --member $(memcoin --config /tmp/node2 ordering export)
+//  dvoting --config /tmp/node1 ordering setup\
+//    --member $(dvoting --config /tmp/node1 ordering export)\
+//    --member $(dvoting --config /tmp/node2 ordering export)
 //
 //  # Add the third after the chain is set up.
-//  memcoin --config /tmp/node1 ordering roster add\
-//    --member $(memcoin --config /tmp/node3 ordering export)
+//  dvoting --config /tmp/node1 ordering roster add\
+//    --member $(dvoting --config /tmp/node3 ordering export)
 //
 package main
 

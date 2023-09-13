@@ -12,7 +12,7 @@ mkdir -p $INSTALL_DIR
 GITVERSION=$(git describe --abbrev=0 --tags || echo '0.0.0')
 VERSION=${GITVERSION:1}
 
-cp ../memcoin $INSTALL_DIR/
+cp ../dvoting $INSTALL_DIR/
 
 # add config files
 cp -a pkg/etc deb
