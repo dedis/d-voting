@@ -100,8 +100,8 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>
       <div className="sm:pl-8 mt-2 pl-6">
-        {Array.from(answers.SelectAnswers.get(select.ID).entries()).map(
-          ([choiceIndex, isChecked]) => {
+        {Array.from(answers.SelectAnswers.get(select.ID).entries())
+          .map(([choiceIndex, isChecked]) => {
             if (language === 'fr' && select.ChoicesMap.has('fr'))
               return choiceDisplay(
                 isChecked,
@@ -120,9 +120,9 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
                 select.ChoicesMap.get('en')[choiceIndex],
                 choiceIndex
               );
-            return '';
-          }
-        )}
+            return undefined;
+          })
+          .filter((e) => e !== undefined)}
       </div>
       <div className="text-red-600 text-sm py-2 sm:pl-4 pl-2">{answers.Errors.get(select.ID)}</div>
     </div>
