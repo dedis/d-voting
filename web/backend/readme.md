@@ -10,7 +10,7 @@ Copy the database credentials from `config.env.template` to `/d-voting/bachend/s
 
 ## Generate a keypair
 
-Here is a small piece of code in go to generate the keypair for the backend:
+Here is a small piece of code in Go to generate the keypair for the backend:
 
 ```go
 package main
@@ -24,7 +24,7 @@ import (
 func main() {
 	pair := key.NewKeyPair(&edwards25519.SuiteEd25519{})
 
-    fmt.Println("PUBLIC_KEY:", pubK)
+	fmt.Println("PUBLIC_KEY:", pubK)
 	fmt.Println("PRIVATE_KEY:", privK)
 }
 ```

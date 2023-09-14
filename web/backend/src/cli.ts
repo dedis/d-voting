@@ -73,6 +73,7 @@ program
     const ed25519 = curve.newCurve('edwards25519');
     const priv = ed25519.scalar().pick();
     const pub = ed25519.point().mul(priv);
+    console.log('Please store the following keypair in your configuration file:');
     console.log(`PRIVATE_KEY=${priv}`);
     console.log(`PUBLIC_KEY=${pub}`);
   });
