@@ -97,11 +97,11 @@ program
       for (let i = 0; i < scipers.length; i += 1) {
         const sciper: number = Number(scipers[i]);
         if (Number.isNaN(sciper)) {
-          throw new InvalidArgumentError(`SCIPER on line ${i + 1} is not a number - exiting!`);
+          throw new InvalidArgumentError(`SCIPER '${sciper}' on line ${i + 1} is not a number - exiting!`);
         }
         if (sciper > 999999 || sciper < 100000) {
           throw new InvalidArgumentError(
-            `SCIPER on line ${i + 1} is outside acceptable range (100000..999999) - exiting!`
+            `SCIPER '${sciper}' on line ${i + 1} is outside acceptable range (100000..999999) - exiting!`
           );
         }
         policies[i] = [scipers[i], electionId, PERMISSIONS.ACTIONS.VOTE];
