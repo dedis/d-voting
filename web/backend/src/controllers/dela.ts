@@ -7,7 +7,7 @@ import {
   assignUserPermissionToOwnElection,
   isAuthorized,
   PERMISSIONS,
-  RevokeUserPermissionToOwnElection,
+  revokeUserPermissionToOwnElection,
 } from '../authManager';
 
 export const delaRouter = express.Router();
@@ -220,7 +220,7 @@ delaRouter.delete('/forms/:formID', (req, res) => {
         .status(500)
         .send(`failed to proxy request: ${req.method} ${uri} - ${error.message} - ${resp}`);
     });
-  RevokeUserPermissionToOwnElection(String(req.session.userId), formID);
+  revokeUserPermissionToOwnElection(String(req.session.userId), formID);
 });
 
 // This API call is used redirect all the calls for DELA to the DELAs nodes.

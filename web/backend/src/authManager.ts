@@ -61,7 +61,7 @@ export function assignUserPermissionToOwnElection(userID: string, ElectionID: st
   authEnforcer.addPolicy(userID, ElectionID, PERMISSIONS.ACTIONS.OWN);
 }
 
-export function RevokeUserPermissionToOwnElection(userID: string, ElectionID: string) {
+export function revokeUserPermissionToOwnElection(userID: string, ElectionID: string) {
   authEnforcer.removePolicy(userID, ElectionID, PERMISSIONS.ACTIONS.OWN);
 }
 
