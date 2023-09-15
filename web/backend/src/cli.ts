@@ -10,6 +10,7 @@ Backend CLI, currently providing 3 commands for user management:
 import { Command } from 'commander';
 import { SequelizeAdapter } from 'casbin-sequelize-adapter';
 import { newEnforcer } from 'casbin';
+import { curve } from '@dedis/kyber';
 
 const program = new Command();
 
@@ -63,6 +64,18 @@ program
     const enforcer = await initEnforcer();
     await enforcer.deletePermissionsForUser(sciper);
     console.log('Permissions removed successfully!');
+  });
+
+program
+  .command('keygen')
+  .description('Create a new keypair for the .env')
+  .action(() => {
+    const ed25519 = curve.newCurve('edwards25519');
+    const priv = ed25519.scalar().pick();
+    const pub = ed25519.point().mul(priv);
+    console.log('Please store the following keypair in your configuration file:');
+    console.log(`PRIVATE_KEY=${priv}`);
+    console.log(`PUBLIC_KEY=${pub}`);
   });
 
 program.parse();
