@@ -41,7 +41,7 @@ const EditProxyModal: FC<EditProxyModalProps> = ({
       fctx.addMessage(t('editProxyError') + postError, FlashLevel.Error);
       setPostError(null);
     }
-  }, [postError]);
+  }, [fctx, t, postError]);
 
   useEffect(() => {
     if (nodeProxy !== null) {

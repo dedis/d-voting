@@ -33,7 +33,7 @@ const FormIndex: FC = () => {
       fctx.addMessage(t('errorRetrievingForms') + error.message, FlashLevel.Error);
       setLoading(false);
     }
-  }, [error]);
+  }, [fctx, t, error]);
 
   // Apply the filter statusToKeep
   useEffect(() => {

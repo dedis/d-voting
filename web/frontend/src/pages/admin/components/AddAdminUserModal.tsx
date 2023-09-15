@@ -42,7 +42,7 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen, handleAd
       fctx.addMessage(t('errorAddUser') + postError, FlashLevel.Error);
       setPostError(null);
     }
-  }, [postError]);
+  }, [fctx, t, postError]);
   const handleUserInput = (e: any) => {
     setSciperValue(e.target.value);
   };

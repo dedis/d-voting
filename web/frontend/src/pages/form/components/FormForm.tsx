@@ -66,7 +66,7 @@ const FormForm: FC<FormFormProps> = () => {
       fctx.addMessage(t('errorAddAuth') + postError, FlashLevel.Error);
       setPostError(null);
     }
-  }, [postError]);
+  }, [fctx, t, postError]);
   const sendFetchRequest = usePostCall(setPostError);
   const AuthorizationUpdate = (FormID: string): Promise<boolean> => {
     const req = {

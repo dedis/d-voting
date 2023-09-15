@@ -25,7 +25,7 @@ const defaultAuth = {
   firstName: '',
   lastName: '',
   authorization: arr,
-  isAllowed: (subject: string, action: string) => false,
+  isAllowed: () => false,
 };
 
 // AuthContext is a global state containing the authentication state. React
@@ -83,8 +83,8 @@ const defaultFlashState = {
   getMessages: function (): FlashMessage[] {
     return [flashM];
   },
-  addMessage: function (msg: string, level: FlashLevel): void {},
-  hideMessage: function (index: string): void {},
+  addMessage: function (): void {},
+  hideMessage: function (): void {},
 };
 // the flash context handles flash messages across the app
 export const FlashContext = createContext<FlashState>(defaultFlashState);

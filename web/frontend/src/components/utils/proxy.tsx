@@ -35,11 +35,11 @@ const ProxyInput: FC = () => {
     sessionStorage.setItem(proxyKey, proxy);
     pctx.setProxy(proxy);
     setInputVal(proxy);
-  }, [proxy]);
+  }, [pctx, proxy]);
 
   // function called by the "refresh" button
-  const getDefault = () => {
-    fetchFromBackend();
+  const getDefault = async () => {
+    await fetchFromBackend();
     fctx.addMessage('Proxy updated to default', FlashLevel.Info);
   };
 
