@@ -1,13 +1,11 @@
 import express from 'express';
-import cookieParser from 'cookie-parser';
-import session from 'express-session';
 import morgan from 'morgan';
 import xss from 'xss';
-import { sessionStore } from './session';
 import { authenticationRouter } from './controllers/authentication';
 import { usersRouter } from './controllers/users';
 import { proxiesRouter } from './controllers/proxies';
 import { delaRouter } from './controllers/dela';
+import { setupSession } from './session';
 
 const app = express();
 
@@ -22,20 +20,8 @@ declare module 'express-session' {
   }
 }
 
-// Express-session
 app.set('trust-proxy', 1);
-
-app.use(cookieParser());
-const oneDay = 1000 * 60 * 60 * 24;
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET as string,
-    saveUninitialized: true,
-    cookie: { maxAge: oneDay },
-    resave: false,
-    store: sessionStore,
-  })
-);
+setupSession(app);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
