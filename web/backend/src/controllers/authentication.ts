@@ -8,7 +8,9 @@ export const authenticationRouter = express.Router();
 // This is via this endpoint that the client request the tequila key, this key
 // will then be used for redirection on the tequila server
 authenticationRouter.get('/get_teq_key', (req, res) => {
-  const body = `urlaccess=${process.env.FRONT_END_URL}/api/control_key\nservice=Evoting\nrequest=name,firstname,email,uniqueid,allunits`;
+  const body = `urlaccess=${process.env.FRONT_END_URL}/api/control_key
+                \nservice=Evoting
+                \nrequest=name,firstname,email,uniqueid,allunits`;
   axios
     .post('https://tequila.epfl.ch/cgi-bin/tequila/createrequest', body)
     .then((response) => {
