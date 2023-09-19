@@ -1,6 +1,5 @@
 import createMemoryStore from 'memorystore';
 import session from 'express-session';
-import cookieParser from 'cookie-parser';
 import { Express } from 'express';
 
 const MemoryStore = createMemoryStore(session);
@@ -15,7 +14,6 @@ export const sessionStore = new MemoryStore({
 export const sciper2sess = new Map<number, Set<string>>();
 
 export const setupSession = (app: Express) => {
-  app.use(cookieParser());
   const oneDay = 1000 * 60 * 60 * 24;
   app.use(
     session({
