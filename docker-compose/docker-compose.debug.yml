@@ -10,6 +10,7 @@ services:
       PROXYPORT: ${PROXYPORT}
       PROXY_LOG: info
       LLVL: debug
+      NODEPORT: ${NODEPORT}
     volumes:
       - dela-worker-0-data:/data
     hostname: dela-worker-0
@@ -32,6 +33,7 @@ services:
       PROXYPORT: ${PROXYPORT}
       PROXY_LOG: info
       LLVL: debug
+      NODEPORT: ${NODEPORT}
     volumes:
       - dela-worker-1-data:/data
     hostname: dela-worker-1
@@ -54,6 +56,7 @@ services:
       PROXYPORT: ${PROXYPORT}
       PROXY_LOG: info
       LLVL: debug
+      NODEPORT: ${NODEPORT}
     volumes:
       - dela-worker-2-data:/data
     hostname: dela-worker-2
@@ -76,6 +79,7 @@ services:
       PROXYPORT: ${PROXYPORT}
       PROXY_LOG: info
       LLVL: debug
+      NODEPORT: ${NODEPORT}
     volumes:
       - dela-worker-3-data:/data
     hostname: dela-worker-3

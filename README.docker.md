@@ -28,6 +28,7 @@ SESSION_SECRET=XXX                          # choose any secret
 PUBLIC_KEY=XXX                              # public key of pre-generated key pair
 PRIVATE_KEY=XXX                             # private key of pre-generated key pair
 PROXYPORT=8080
+NODEPORT=2000                               # DELA node port
 ```
 
 To run the currently released version, run
