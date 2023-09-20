@@ -8,7 +8,9 @@ services:
     environment:
       PROXYKEY: ${PUBLIC_KEY}
       PROXYPORT: ${PROXYPORT}
+      PROXY_LOG: info
       LLVL: debug
+      NODEPORT: ${NODEPORT}
     volumes:
       - dela-worker-0-data:/data
     hostname: dela-worker-0
@@ -29,7 +31,9 @@ services:
     environment:
       PROXYKEY: ${PUBLIC_KEY}
       PROXYPORT: ${PROXYPORT}
+      PROXY_LOG: info
       LLVL: debug
+      NODEPORT: ${NODEPORT}
     volumes:
       - dela-worker-1-data:/data
     hostname: dela-worker-1
@@ -50,7 +54,9 @@ services:
     environment:
       PROXYKEY: ${PUBLIC_KEY}
       PROXYPORT: ${PROXYPORT}
+      PROXY_LOG: info
       LLVL: debug
+      NODEPORT: ${NODEPORT}
     volumes:
       - dela-worker-2-data:/data
     hostname: dela-worker-2
@@ -71,7 +77,9 @@ services:
     environment:
       PROXYKEY: ${PUBLIC_KEY}
       PROXYPORT: ${PROXYPORT}
+      PROXY_LOG: info
       LLVL: debug
+      NODEPORT: ${NODEPORT}
     volumes:
       - dela-worker-3-data:/data
     hostname: dela-worker-3
@@ -84,27 +92,6 @@ services:
     networks:
       d-voting:
         ipv4_address: 172.19.44.251
-  dela-worker-4:             # DELA worker node
-    image: dela:latest
-    build:
-      dockerfile: Dockerfiles/Dockerfile.dela.debug
-      context: ../
-    environment:
-      PROXYKEY: ${PUBLIC_KEY}
-      PROXYPORT: ${PROXYPORT}
-      LLVL: debug
-    volumes:
-      - dela-worker-4-data:/data
-    hostname: dela-worker-4
-    ports:
-      - 127.0.0.1:40004:40000
-    security_opt:
-      - apparmor:unconfined
-    cap_add:
-      - SYS_PTRACE
-    networks:
-      d-voting:
-        ipv4_address: 172.19.44.250
 
   frontend:         # web service frontend
     image: frontend:latest

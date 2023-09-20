@@ -28,25 +28,34 @@ SESSION_SECRET=XXX                          # choose any secret
 PUBLIC_KEY=XXX                              # public key of pre-generated key pair
 PRIVATE_KEY=XXX                             # private key of pre-generated key pair
 PROXYPORT=8080
+NODEPORT=2000                               # DELA node port
 ```
 
-To run the currently released version, go to `docker-compose/` and
-run
+There are two Docker Compose file you may use:
+
+* `docker-compose/docker-compose.yml` for the currently released version, or
+* `docker-compose/docker-compose.debug.yml` for the development/debugging version
+
+You can either run
+
+```
+export COMPOSE_FILE=<path to Docker Compose file>
+```
+
+or pass the `-f/--file <path to Docker Compose file>` argument to choose between
+the files.
+
+Using the currently released version will pull the images from the GitHub container registry.
+
+If you instead use the development/debugging version the images will be build locally and you can debug your developments.
+
+Run
 
 ```
 docker compose up
 ```
 
-this will pull the images from the GitHub container registry.
-
-If you instead run
-
-```
-export COMPOSE_FILE=docker-compose.debug.yml
-docker compose up
-```
-
-the images will be build locally and you can debug your developments.
+(possibly with the `-f/--file` argument) to set up the environment.
 
 /!\ Any subsequent `docker compose` commands must be run with `COMPOSE_FILE` being
 set to the Docker Compose file that defines the current environment.
@@ -73,7 +82,7 @@ To set up the DELA network, go to `scripts/` and run
 ./init_dela.sh
 ```
 
-/!\ This script uses `docker compose` as well, so make sure that `COMPOSE_FILE` is
+/!\ This script uses `docker compose` as well, so make sure that the `COMPOSE_FILE` variable is
 set to the right value.
 
 To set up the permissions, run

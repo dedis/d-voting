@@ -1,8 +1,6 @@
 FROM node:20-bookworm
 
-# install backend
 WORKDIR /web/backend
 COPY ../web/backend .
 RUN npm install
 ENTRYPOINT ["/bin/bash", "-c", "npm start"]
-
