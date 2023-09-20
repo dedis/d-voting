@@ -30,10 +30,10 @@ PRIVATE_KEY=XXX                             # private key of pre-generated key p
 PROXYPORT=8080
 ```
 
-To run the currently released version, go to `docker-compose/` and
-run
+To run the currently released version, run
 
 ```
+export COMPOSE_FILE=docker-compose/docker-compose.yml
 docker compose up
 ```
 
@@ -42,7 +42,7 @@ this will pull the images from the GitHub container registry.
 If you instead run
 
 ```
-export COMPOSE_FILE=docker-compose.debug.yml
+export COMPOSE_FILE=docker-compose/docker-compose.debug.yml
 docker compose up
 ```
 
