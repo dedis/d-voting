@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install git
 RUN git clone https://github.com/dedis/dela.git
 WORKDIR /go/dela
 # make sure we're using the same head as d-voting
-RUN git checkout fix-bbolt
+RUN git clone -b fix-bbolt
 WORKDIR /go/dela/cli/crypto
 RUN go install
 WORKDIR /go/d-voting
