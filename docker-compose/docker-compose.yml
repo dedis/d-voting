@@ -48,18 +48,6 @@ services:
     networks:
       d-voting:
         ipv4_address: 172.19.44.251
-  dela-worker-4:             # DELA worker node
-    image: ghcr.io/c4dt/d-voting-dela:latest
-    environment:
-      PROXYKEY: ${PUBLIC_KEY}
-      PROXYPORT: ${PROXYPORT}
-      LLVL: info
-    volumes:
-      - dela-worker-4-data:/data
-    hostname: dela-worker-4
-    networks:
-      d-voting:
-        ipv4_address: 172.19.44.250
 
   frontend:         # web service frontend
     image: ghcr.io/c4dt/d-voting-frontend:latest
