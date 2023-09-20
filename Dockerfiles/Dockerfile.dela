@@ -8,7 +8,7 @@ RUN git checkout fix-bbolt
 WORKDIR /go/dela/cli/crypto
 RUN go install
 WORKDIR /go/d-voting
-COPY .. .
+COPY . .
 WORKDIR /go/d-voting/cli/dvoting
 RUN go build
 ENV PATH=/go/dela/cli/crypto:/go/d-voting/cli/dvoting:${PATH}
