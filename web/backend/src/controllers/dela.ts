@@ -195,7 +195,7 @@ delaRouter.post('/forms/:formID/vote', (req, res) => {
 
   // DEBUG: this is only for debugging and needs to be replaced before production
   const bodyData = req.body;
-  console.warn('randomizing the SCIPER ID to allow for emulate votes - Use only for Development');
+  console.warn('DEV CODE - randomizing the SCIPER ID to allow for unlimited votes');
   bodyData.UserID = makeid(10);
 
   const dataStr = JSON.stringify(bodyData);
