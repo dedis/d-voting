@@ -29,5 +29,3 @@ build:
 	GOOS=darwin GOARCH=amd64 go build -ldflags="-X $(versionFlag) -X $(timeFlag)" -o dvoting-darwin-amd64-$(versionFile) ./cli/dvoting
 	GOOS=windows GOARCH=amd64 go build -ldflags="-X $(versionFlag) -X $(timeFlag)" -o dvoting-windows-amd64-$(versionFile) ./cli/dvoting
 
-deb: build
-	cd deb-package; ./build-deb.sh; cd ..
