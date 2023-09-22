@@ -33,29 +33,27 @@ NODEPORT=2000                               # DELA node port
 
 There are two Docker Compose file you may use:
 
-* `docker-compose/docker-compose.yml` for the currently released version, or
+* `docker-compose/docker-compose.yml` for the preprod version, or
 * `docker-compose/docker-compose.debug.yml` for the development/debugging version
 
-You can either run
+You run
 
 ```
 export COMPOSE_FILE=<path to Docker Compose file>
 ```
 
-or pass the `-f/--file <path to Docker Compose file>` argument to choose between
-the files.
-
-Using the currently released version will pull the images from the GitHub container registry.
-
-If you instead use the development/debugging version the images will be build locally and you can debug your developments.
+The preprod version will create an environment without any debugging tools that's as close as possible to a real environment.
+It is meant to be used to test the `main` branch before deploying it to production. Use the development/debugging version
+for setting up your local development environment.
 
 Run
 
 ```
+docker compose build
 docker compose up
 ```
 
-(possibly with the `-f/--file` argument) to set up the environment.
+to set up the environment.
 
 /!\ Any subsequent `docker compose` commands must be run with `COMPOSE_FILE` being
 set to the Docker Compose file that defines the current environment.
