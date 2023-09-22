@@ -13,3 +13,4 @@ nodedata/
 
 deb-package/dist/**
 
+.env

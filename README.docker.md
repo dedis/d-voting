@@ -31,6 +31,16 @@ PROXYPORT=8080
 NODEPORT=2000                               # DELA node port
 ```
 
+For the `PUBLIC_KEY` and `PRIVATE_KEY`, you need to run the following commands:
+
+```bash
+cd web/backend
+npm ci
+npm run keygen
+```
+
+And then copy the two lines to the `.env` file.
+
 There are two Docker Compose file you may use:
 
 * `docker-compose/docker-compose.yml` for the currently released version, or
