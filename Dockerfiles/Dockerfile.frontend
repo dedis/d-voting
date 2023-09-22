@@ -5,4 +5,4 @@ ENV REACT_APP_NOMOCK=on
 WORKDIR /web/frontend
 COPY ../web/frontend .
 RUN npm install
-ENTRYPOINT ["npm", "start"]
+ENTRYPOINT ["npm", "run", "start-dev"]
