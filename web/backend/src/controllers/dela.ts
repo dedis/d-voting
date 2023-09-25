@@ -49,8 +49,8 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
   let uri = process.env.DELA_NODE_URL + req.baseUrl.slice(4);
   // boolean to check
   let redirectToDefaultProxy = true;
-  // in case this is a DKG init request, we must also update the payload.
 
+  // in case this is a DKG init request, we must also update the payload.
   const dkgInitRegex = /\/evoting\/services\/dkg\/actors$/;
   if (uri.match(dkgInitRegex)) {
     const dataStr2 = JSON.stringify({ FormID: req.body.FormID });
@@ -154,6 +154,7 @@ delaRouter.post('/services/dkg/actors', (req, res, next) => {
   }
   next();
 });
+
 delaRouter.use('/services/dkg/actors/:formID', (req, res, next) => {
   const { formID } = req.params;
   if (!isAuthorized(req.session.userId, formID, PERMISSIONS.ACTIONS.OWN)) {
@@ -162,6 +163,7 @@ delaRouter.use('/services/dkg/actors/:formID', (req, res, next) => {
   }
   next();
 });
+
 delaRouter.use('/services/shuffle/:formID', (req, res, next) => {
   if (!req.session.userId) {
     res.status(401).send('Unauthenticated');
@@ -174,6 +176,32 @@ delaRouter.use('/services/shuffle/:formID', (req, res, next) => {
   }
   next();
 });
+
+delaRouter.post('/forms/:formID/vote', (req, res) => {
+  if (!req.session.userId) {
+    res.status(401).send('Authentication required!');
+    return;
+  }
+  if (!isAuthorized(req.session.userId, req.params.formID, PERMISSIONS.ACTIONS.VOTE)) {
+    res.status(400).send('Unauthorized');
+    return;
+  }
+
+  // We must set the UserID to know who this ballot is associated to. This is
+  // only needed to allow users to cast multiple ballots, where only the last
+  // ballot is taken into account. To preserve anonymity, the web-backend could
+  // translate UserIDs to another random ID.
+  // bodyData.UserID = req.session.userId.toString();
+
+  // DEBUG: this is only for debugging and needs to be replaced before production
+  const bodyData = req.body;
+  console.warn('DEV CODE - randomizing the SCIPER ID to allow for unlimited votes');
+  bodyData.UserID = makeid(10);
+
+  const dataStr = JSON.stringify(bodyData);
+  sendToDela(dataStr, req, res);
+});
+
 delaRouter.delete('/forms/:formID', (req, res) => {
   if (!req.session.userId) {
     res.status(401).send('Unauthenticated');
@@ -235,18 +263,6 @@ delaRouter.use('/*', (req, res) => {
   }
 
   const bodyData = req.body;
-
-  // special case for voting
-  const regex = /\/api\/evoting\/forms\/.*\/vote/;
-  if (req.baseUrl.match(regex)) {
-    // We must set the UserID to know who this ballot is associated to. This is
-    // only needed to allow users to cast multiple ballots, where only the last
-    // ballot is taken into account. To preserve anonymity the web-backend could
-    // translate UserIDs to another random ID.
-    // bodyData.UserID = req.session.userId.toString();
-    bodyData.UserID = makeid(10);
-  }
-
   const dataStr = JSON.stringify(bodyData);
 
   sendToDela(dataStr, req, res);

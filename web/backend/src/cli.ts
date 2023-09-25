@@ -7,10 +7,12 @@ Backend CLI, currently providing 3 commands for user management:
   npx cli removeAdmin --sciper 1234
 */
 
-import { Command } from 'commander';
+import { Command, InvalidArgumentError } from 'commander';
 import { SequelizeAdapter } from 'casbin-sequelize-adapter';
 import { newEnforcer } from 'casbin';
 import { curve } from '@dedis/kyber';
+import * as fs from 'fs';
+import { PERMISSIONS } from './authManager';
 
 const program = new Command();
 
@@ -76,6 +78,38 @@ program
     console.log('Please store the following keypair in your configuration file:');
     console.log(`PRIVATE_KEY=${priv}`);
     console.log(`PUBLIC_KEY=${pub}`);
+  });
+
+// Imports a list of SCIPERS from a file to allow to vote on a specific election
+// the .voters.example file is available as an example
+program
+  .command('addVoters')
+  .description('Assigns a list of SCIPERs to an Election as Voters')
+  .requiredOption('-e, --election-id <char>', 'ID of the election')
+  .requiredOption('-sf, --scipers-file <char>', 'File with line-separated list of SCIPERs')
+  .action(async ({ electionId, scipersFile }) => {
+    fs.readFile(scipersFile, 'utf8', async (err: any, data: string) => {
+      if (err) {
+        throw new InvalidArgumentError(`Faced a problem trying to process your file: \n ${err}`);
+      }
+      const scipers: Array<string> = data.split('\n');
+      const policies = [];
+      for (let i = 0; i < scipers.length; i += 1) {
+        const sciper: number = Number(scipers[i]);
+        if (Number.isNaN(sciper)) {
+          throw new InvalidArgumentError(`SCIPER '${sciper}' on line ${i + 1} is not a number`);
+        }
+        if (sciper > 999999 || sciper < 100000) {
+          throw new InvalidArgumentError(
+            `SCIPER '${sciper}' on line ${i + 1} is outside acceptable range (100000..999999)`
+          );
+        }
+        policies[i] = [scipers[i], electionId, PERMISSIONS.ACTIONS.VOTE];
+      }
+      const enforcer = await initEnforcer();
+      await enforcer.addPolicies(policies);
+      console.log('Added Voting policies successfully!');
+    });
   });
 
 program.parse();

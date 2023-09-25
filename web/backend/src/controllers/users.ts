@@ -39,7 +39,6 @@ usersRouter.post('/add_role', (req, res, next) => {
 });
 
 // This call (only for admins) allow an admin to remove a role to a user.
-
 usersRouter.post('/remove_role', (req, res, next) => {
   if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.ROLES, PERMISSIONS.ACTIONS.REMOVE)) {
     res.status(400).send('Unauthorized - only admins allowed');

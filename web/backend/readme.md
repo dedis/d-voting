@@ -59,5 +59,6 @@ Commands:
   addAdmin [options]             Given a SCIPER number, the owner would gain full admin permissions
   listUserPermissions [options]  Lists the permissions -if any- of the owner of a given SCIPER
   removeAdmin [options]          Given a SCIPER number, the owner would lose all admin privileges -if any-
+  addVoters [options]            Assigns a list of SCIPERs to an Election as Voters
   help [command]                 display help for command
 ```
