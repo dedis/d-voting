@@ -7,9 +7,8 @@ COPY ../web/frontend .
 RUN npm ci
 RUN npm run build
 
-FROM node:20-bookworm as app
+FROM lipanski/docker-static-website:latest
 
-WORKDIR /web/frontend
 COPY --from=build /web/frontend/build/ .
 
-ENTRYPOINT ["python3", "-m", "http.server", "3000", "--directory", "/web/frontend/", "--bind", "127.0.0.1"]
+CMD ["/busybox", "httpd", "-f", "-v", "-p", "3000", "-c", "httpd.conf"]
