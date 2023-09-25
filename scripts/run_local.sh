@@ -123,7 +123,7 @@ function start_backend() {
   keypair
 
   echo "Running backend"
-  (cd web/backend && npm run start | ts "Backend: " &)
+  (cd web/backend && npm run start-dev | ts "Backend: " &)
 }
 
 function start_frontend() {
@@ -131,13 +131,13 @@ function start_frontend() {
   keypair
 
   echo "Running frontend"
-  (cd web/frontend && npm run start | ts "Frontend: " &)
+  (cd web/frontend && npm run start-dev | ts "Frontend: " &)
 }
 
-SCIPER_ADMIN=111443
+export SCIPER_ADMIN=100100
 export DATABASE_USERNAME=dvoting
 export DATABASE_PASSWORD=postgres
-export FRONT_END_URL="https://localhost:3000"
+export FRONT_END_URL="http://localhost:3000"
 export DELA_NODE_URL="http://localhost:2003"
 export BACKEND_HOST="localhost"
 export BACKEND_PORT="6000"
