@@ -209,6 +209,8 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		formID, err := createForm(m, "Three votes form", adminID)
 		require.NoError(t, err)
 
+		time.Sleep(time.Second * 1)
+
 		// ##### SETUP DKG #####
 		actor, err := initDkg(nodes, formID, m.m)
 		require.NoError(t, err)
