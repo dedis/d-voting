@@ -1,22 +1,25 @@
-#!/bin/bash
+#!/bin/bash -e
 
 MEMBERS="";
+export COMPOSE_FILE=${1:-../docker-compose/docker-compose.dev.yml}
+if ! [[ -f ../docker-compose/.env ]]; then
+  ln -s ../.env ../docker-compose/.env
+fi
 
-
-# share the certificate
+echo "Share the certificate"
 for container in dela-worker-1 dela-worker-2 dela-worker-3; do
   TOKEN_ARGS=$(docker compose exec dela-worker-0 /bin/bash -c 'LLVL=error dvoting --config /data/node minogrpc token');
-  docker compose exec "$container" dvoting --config /data/node minogrpc join --address //dela-worker-0:2000 $TOKEN_ARGS;
+  docker compose exec "$container" dvoting --config /data/node minogrpc join --address //localhost:2000 $TOKEN_ARGS;
 done
 
-# create a new chain with the nodes
+echo "Create a new chain with the nodes"
 for container in dela-worker-0 dela-worker-1 dela-worker-2 dela-worker-3; do
   # add node to the chain
   MEMBERS="$MEMBERS --member $(docker compose exec $container /bin/bash -c 'LLVL=error dvoting --config /data/node ordering export')";
 done
 docker compose exec dela-worker-0 dvoting --config /data/node ordering setup $MEMBERS;
 
-# authorize the signer to handle the access contract on each node
+echo "Authorize the signer to handle the access contract on each node"
 for signer in dela-worker-0 dela-worker-1 dela-worker-2 dela-worker-3; do
   IDENTITY=$(docker compose exec "$signer" crypto bls signer read --path /data/node/private.key --format BASE64_PUBKEY);
   for node in dela-worker-0 dela-worker-1 dela-worker-2 dela-worker-3; do
@@ -24,7 +27,7 @@ for signer in dela-worker-0 dela-worker-1 dela-worker-2 dela-worker-3; do
   done
 done
 
-# update the access contract
+echo "Update the access contract"
 for container in dela-worker-0 dela-worker-1 dela-worker-2 dela-worker-3; do
   IDENTITY=$(docker compose exec "$container" crypto bls signer read --path /data/node/private.key --format BASE64_PUBKEY);
   docker compose exec dela-worker-0 dvoting --config /data/node pool add\
@@ -42,3 +45,5 @@ for container in dela-worker-0 dela-worker-1 dela-worker-2 dela-worker-3; do
       --args access:command\
       --args GRANT
 done
+
+echo "Successfully done"

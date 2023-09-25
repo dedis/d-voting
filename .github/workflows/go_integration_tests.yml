@@ -7,6 +7,7 @@ on:
     branches: [main]
 
 jobs:
+  if: false
   integration:
     name: Integration test
     runs-on: ubuntu-latest

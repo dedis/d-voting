@@ -3,73 +3,66 @@ services:
   dela-worker-0:             # initial DELA leader node
     image: ghcr.io/c4dt/d-voting-dela:latest
     build:
-      dockerfile: Dockerfiles/Dockerfile.dela
+      dockerfile: Dockerfiles/Dockerfile.dela.localhost
       context: ../
+    ports:
+      - "2000-2007:2000-2007"
+      - "3000:3000"
+      - "6000:6000"
     environment:
       PROXYKEY: ${PUBLIC_KEY}
-      PROXYPORT: ${PROXYPORT}
       LLVL: info
-      NODEPORT: ${NODEPORT}
+      NODEPORT: 2000
+      PROXYPORT: 2001
+      HOSTNAME: localhost
     volumes:
       - dela-worker-0-data:/data
-    hostname: dela-worker-0
-    networks:
-      d-voting:
-        ipv4_address: 172.19.44.254
 
   dela-worker-1:             # DELA worker node
     image: ghcr.io/c4dt/d-voting-dela:latest
     environment:
       PROXYKEY: ${PUBLIC_KEY}
-      PROXYPORT: ${PROXYPORT}
       LLVL: info
-      NODEPORT: ${NODEPORT}
+      NODEPORT: 2002
+      PROXYPORT: 2003
+      HOSTNAME: localhost
+    network_mode: "service:dela-worker-0"
     volumes:
       - dela-worker-1-data:/data
-    hostname: dela-worker-1
-    networks:
-      d-voting:
-        ipv4_address: 172.19.44.253
+
   dela-worker-2:             # DELA worker node
     image: ghcr.io/c4dt/d-voting-dela:latest
     environment:
       PROXYKEY: ${PUBLIC_KEY}
-      PROXYPORT: ${PROXYPORT}
       LLVL: info
-      NODEPORT: ${NODEPORT}
+      NODEPORT: 2004
+      PROXYPORT: 2005
+      HOSTNAME: localhost
+    network_mode: "service:dela-worker-0"
     volumes:
       - dela-worker-2-data:/data
-    hostname: dela-worker-2
-    networks:
-      d-voting:
-        ipv4_address: 172.19.44.252
+
   dela-worker-3:             # DELA worker node
     image: ghcr.io/c4dt/d-voting-dela:latest
     environment:
       PROXYKEY: ${PUBLIC_KEY}
-      PROXYPORT: ${PROXYPORT}
       LLVL: info
-      NODEPORT: ${NODEPORT}
+      NODEPORT: 2006
+      PROXYPORT: 2007
+      HOSTNAME: localhost
+    network_mode: "service:dela-worker-0"
     volumes:
       - dela-worker-3-data:/data
-    hostname: dela-worker-3
-    networks:
-      d-voting:
-        ipv4_address: 172.19.44.251
 
   frontend:         # web service frontend
     image: ghcr.io/c4dt/d-voting-frontend:latest
     build:
       dockerfile: Dockerfiles/Dockerfile.frontend
       context: ../
-    ports:
-      - 127.0.0.1:3000:3000
     environment:
       BACKEND_HOST: ${BACKEND_HOST}
       BACKEND_PORT: ${BACKEND_PORT}
-    networks:
-      d-voting:
-        ipv4_address: 172.19.44.2
+    network_mode: "service:dela-worker-0"
 
   backend:          # web service backend
     image: ghcr.io/c4dt/d-voting-backend:latest
@@ -87,16 +80,13 @@ services:
       SESSION_SECRET: ${SESSION_SECRET}
       PUBLIC_KEY: ${PUBLIC_KEY}
       PRIVATE_KEY: ${PRIVATE_KEY}
-    ports:
-      - 127.0.0.1:5000:5000
+      PORT: ${BACKEND_PORT}
+    network_mode: "service:dela-worker-0"
     depends_on:
       db:
         condition: service_started
     volumes:
       - backend-data:/data
-    networks:
-      d-voting:
-        ipv4_address: 172.19.44.3
 
   db:               # PostgreSQL database
     image: postgres:15
@@ -106,9 +96,6 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ../web/backend/src/migration.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      d-voting:
-        ipv4_address: 172.19.44.4
 
 volumes:
   postgres-data:    # PostgreSQL database
@@ -118,10 +105,3 @@ volumes:
   dela-worker-3-data:
   dela-worker-4-data:
   backend-data:
-
-networks:
-  d-voting:
-    ipam:
-      config:
-        - subnet: 172.19.44.0/24
-          gateway: 172.19.44.1

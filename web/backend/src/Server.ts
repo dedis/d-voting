@@ -44,6 +44,6 @@ app.get('*', (req, res) => {
   res.status(404).send(`not found ${xss(url.toString())}`);
 });
 
-const serveOnPort = process.env.PORT || 5000;
+const serveOnPort = process.env.BACKEND_PORT || 5000;
 app.listen(serveOnPort);
 console.log(`🚀 App is listening on port ${serveOnPort}`);
