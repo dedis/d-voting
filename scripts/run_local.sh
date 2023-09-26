@@ -11,6 +11,9 @@ if [[ $(git rev-parse --show-toplevel) != $(pwd) ]]; then
   exit 1
 fi
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+. "$SCRIPT_DIR/local_vars.sh"
+
 asdf_shell() {
   if ! asdf list "$1" | grep -wq "$2"; then
     asdf install "$1" "$2"
@@ -66,13 +69,13 @@ function init_nodes() {
 
   echo "Starting nodes"
   for n in $(seq 4); do
-    NODEPORT=$((2000 + n * 2))
-    PROXYPORT=$((2001 + n * 2))
+    NODEPORT=$((2000 + n * 2 - 2))
+    PROXYPORT=$((2001 + n * 2 - 2))
     NODEDIR=./nodes/node-$n
     mkdir -p $NODEDIR
     rm -f $NODEDIR/node.log
     dvoting --config $NODEDIR start --postinstall --proxyaddr :$PROXYPORT --proxykey $PUBLIC_KEY \
-      --listen tcp://0.0.0.0:$NODEPORT --public http://localhost:$NODEPORT --routing tree --noTLS |
+      --listen tcp://0.0.0.0:$NODEPORT --public http://localhost:$NODEPORT --routing tree |
       ts "Node-$n: " | tee $NODEDIR/node.log &
   done
 
@@ -91,7 +94,7 @@ function init_dela() {
   for n in $(seq 2 4); do
     TOKEN_ARGS=$(dvoting --config ./nodes/node-1 minogrpc token)
     NODEDIR=./nodes/node-$n
-    dvoting --config $NODEDIR minogrpc join --address //localhost:2002 $TOKEN_ARGS
+    dvoting --config $NODEDIR minogrpc join --address //localhost:2000 $TOKEN_ARGS
   done
 
   echo "  Create a new chain with the nodes"
@@ -122,6 +125,8 @@ function init_dela() {
       --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $IDENTITY \
       --args access:command --args GRANT
   done
+
+  rm -f cookies.txt
 }
 
 function kill_db() {
@@ -136,12 +141,13 @@ function init_db() {
     -e POSTGRES_PASSWORD=$DATABASE_PASSWORD -e POSTGRES_USER=$DATABASE_USERNAME \
     --name postgres_dvoting -p 5432:5432 postgres:15 >/dev/null
 
-  echo "Adding SCIPER to admin"
+  echo "Adding $SCIPER_ADMIN to admin"
   (cd web/backend && npx ts-node src/cli.ts addAdmin --sciper $SCIPER_ADMIN | grep -v Executing)
 }
 
 function kill_backend() {
   pkill -f "web/backend" || true
+  rm -f cookies.txt
 }
 
 function start_backend() {
@@ -150,6 +156,8 @@ function start_backend() {
 
   echo "Running backend"
   (cd web/backend && npm run start-dev | ts "Backend: " &)
+
+  while ! lsof -ln | grep -q :6000; do sleep .1; done
 }
 
 function kill_frontend() {
@@ -164,27 +172,45 @@ function start_frontend() {
   (cd web/frontend && npm run start-dev | ts "Frontend: " &)
 }
 
-export SCIPER_ADMIN=100100
-export DATABASE_USERNAME=dvoting
-export DATABASE_PASSWORD=postgres
-export FRONT_END_URL="http://localhost:3000"
-export DELA_NODE_URL="http://localhost:2003"
-export BACKEND_HOST="localhost"
-export BACKEND_PORT="6000"
-export SESSION_SECRET="session secret"
-export REACT_APP_NOMOCK=on
-
-if [[ "$1" == "clean" ]]; then
+case "$1" in
+clean)
   kill_frontend
   kill_nodes
   kill_backend
   kill_db
   exit
-fi
+  ;;
 
-build_dela
-init_nodes
-init_dela
-init_db
-start_backend
-start_frontend
+build)
+  build_dela
+  ;;
+
+init_nodes)
+  init_nodes
+  ;;
+
+init_dela)
+  init_dela
+  ;;
+
+init_db)
+  init_db
+  ;;
+
+backend)
+  start_backend
+  ;;
+
+frontend)
+  start_frontend
+  ;;
+
+*)
+  build_dela
+  init_nodes
+  init_dela
+  init_db
+  start_backend
+  start_frontend
+  ;;
+esac
