@@ -66,8 +66,8 @@ function init_nodes() {
 
   echo "Starting nodes"
   for n in $(seq 4); do
-    NODEPORT=$((2000 + n * 2))
-    PROXYPORT=$((2001 + n * 2))
+    NODEPORT=$((2000 + n * 2 - 2))
+    PROXYPORT=$((2001 + n * 2 - 2))
     NODEDIR=./nodes/node-$n
     mkdir -p $NODEDIR
     rm -f $NODEDIR/node.log
@@ -91,7 +91,7 @@ function init_dela() {
   for n in $(seq 2 4); do
     TOKEN_ARGS=$(dvoting --config ./nodes/node-1 minogrpc token)
     NODEDIR=./nodes/node-$n
-    dvoting --config $NODEDIR minogrpc join --address //localhost:2002 $TOKEN_ARGS
+    dvoting --config $NODEDIR minogrpc join --address //localhost:2000 $TOKEN_ARGS
   done
 
   echo "  Create a new chain with the nodes"
@@ -150,6 +150,8 @@ function start_backend() {
 
   echo "Running backend"
   (cd web/backend && npm run start-dev | ts "Backend: " &)
+
+  while ! lsof -ln | grep -q :6000; do sleep .1; done
 }
 
 function kill_frontend() {
@@ -168,7 +170,7 @@ export SCIPER_ADMIN=100100
 export DATABASE_USERNAME=dvoting
 export DATABASE_PASSWORD=postgres
 export FRONT_END_URL="http://localhost:3000"
-export DELA_NODE_URL="http://localhost:2003"
+export DELA_NODE_URL="http://localhost:2001"
 export BACKEND_HOST="localhost"
 export BACKEND_PORT="6000"
 export SESSION_SECRET="session secret"
