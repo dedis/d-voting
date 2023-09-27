@@ -1,7 +1,7 @@
 import express from 'express';
 import axios, { AxiosError } from 'axios';
 import { sciper2sess } from '../session';
-import { getUserPermissions, setMapAuthorization } from '../authManager';
+import { getUserPermissions, readSCIPER, setMapAuthorization } from '../authManager';
 
 export const authenticationRouter = express.Router();
 
@@ -18,20 +18,20 @@ authenticationRouter.get('/get_dev_login', (req, res) => {
     res.status(500).send(err);
     return;
   }
-  const sciper = parseInt(process.env.SCIPER_ADMIN, 10);
-  if (sciper < 100000 || sciper > 999999) {
-    const err = 'SCIPER_ADMIN must be between 100000 and 999999 included';
+  try {
+    req.session.userId = readSCIPER(process.env.SCIPER_ADMIN);
+    req.session.lastName = 'develo';
+    req.session.firstName = 'pment';
+  } catch (e) {
+    const err = `Invalid SCIPER_ADMIN: ${e}`;
     console.error(err);
     res.status(500).send(err);
     return;
   }
-  req.session.userId = sciper;
-  req.session.lastName = 'develo';
-  req.session.firstName = 'pment';
 
   const sciperSessions = sciper2sess.get(req.session.userId) || new Set<string>();
   sciperSessions.add(req.sessionID);
-  sciper2sess.set(sciper, sciperSessions);
+  sciper2sess.set(req.session.userId, sciperSessions);
 
   res.redirect('/logged');
 });

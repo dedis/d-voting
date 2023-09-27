@@ -21,6 +21,7 @@ export const PERMISSIONS = {
 };
 
 let authEnforcer: Enforcer;
+
 /*
 We use the postgres adapter to store the Casbin policies
 we initialize the adapter with the connection string and the migrate option
@@ -82,4 +83,14 @@ export function setMapAuthorization(list: string[][]): Map<String, Array<String>
     }
   }
   return userRights;
+}
+
+// Reads a SCIPER from a string and returns the number. If the SCIPER is not in
+// the range between 100000 and 999999, an error is thrown.
+export function readSCIPER(s: string): number {
+  const n = parseInt(s, 10);
+  if (n < 100000 || n > 999999) {
+    throw new Error(`SCIPER is out of range. ${n} is not between 100000 and 999999`);
+  }
+  return n;
 }
