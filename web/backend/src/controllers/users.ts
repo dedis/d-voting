@@ -1,6 +1,6 @@
 import express from 'express';
 
-import { isAuthorized, PERMISSIONS } from '../authManager';
+import { isAuthorized, PERMISSIONS, readSCIPER } from '../authManager';
 
 export const usersRouter = express.Router();
 
@@ -26,13 +26,13 @@ usersRouter.post('/add_role', (req, res, next) => {
     return;
   }
 
-  const { sciper } = req.body;
-
-  // The sciper has to contain 6 numbers
-  if (sciper > 999999 || sciper < 100000) {
+  try {
+    readSCIPER(req.body.sciper);
+  } catch (e) {
     res.status(400).send('Sciper length is incorrect');
     return;
   }
+
   next();
   // Call https://search-api.epfl.ch/api/ldap?q=228271, if the answer is
   // empty then sciper unknown, otherwise add it in userDB
