@@ -2,7 +2,7 @@ FROM golang:1.20.6-bookworm
 
 RUN apt-get update && apt-get install git
 # make sure we're using the same head as d-voting
-RUN git clone -b fix-bbolt https://github.com/dedis/dela.git
+RUN git clone https://github.com/dedis/dela.git
 WORKDIR /go/dela/cli/crypto
 RUN go install
 WORKDIR /go/d-voting
