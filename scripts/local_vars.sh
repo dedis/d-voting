@@ -7,3 +7,5 @@ export BACKEND_HOST="localhost"
 export BACKEND_PORT="6000"
 export SESSION_SECRET="session secret"
 export REACT_APP_NOMOCK=on
+# shellcheck disable=SC2155
+export DB_PATH="$(pwd)/nodes/llmdb"
