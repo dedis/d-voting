@@ -177,31 +177,6 @@ delaRouter.use('/services/shuffle/:formID', (req, res, next) => {
   next();
 });
 
-delaRouter.post('/forms/:formID/vote', (req, res) => {
-  if (!req.session.userId) {
-    res.status(401).send('Authentication required!');
-    return;
-  }
-  if (!isAuthorized(req.session.userId, req.params.formID, PERMISSIONS.ACTIONS.VOTE)) {
-    res.status(400).send('Unauthorized');
-    return;
-  }
-
-  // We must set the UserID to know who this ballot is associated to. This is
-  // only needed to allow users to cast multiple ballots, where only the last
-  // ballot is taken into account. To preserve anonymity, the web-backend could
-  // translate UserIDs to another random ID.
-  // bodyData.UserID = req.session.userId.toString();
-
-  // DEBUG: this is only for debugging and needs to be replaced before production
-  const bodyData = req.body;
-  console.warn('DEV CODE - randomizing the SCIPER ID to allow for unlimited votes');
-  bodyData.UserID = makeid(10);
-
-  const dataStr = JSON.stringify(bodyData);
-  sendToDela(dataStr, req, res);
-});
-
 delaRouter.delete('/forms/:formID', (req, res) => {
   if (!req.session.userId) {
     res.status(401).send('Unauthenticated');
@@ -263,6 +238,30 @@ delaRouter.use('/*', (req, res) => {
   }
 
   const bodyData = req.body;
+
+  // special case for voting
+  const match = req.baseUrl.match('/api/evoting/forms/(.*)/vote');
+  if (match) {
+    if (!req.session.userId) {
+      res.status(401).send('Authentication required!');
+      return;
+    }
+    if (!isAuthorized(req.session.userId, match[1], PERMISSIONS.ACTIONS.VOTE)) {
+      res.status(400).send('Unauthorized');
+      return;
+    }
+
+    // We must set the UserID to know who this ballot is associated to. This is
+    // only needed to allow users to cast multiple ballots, where only the last
+    // ballot is taken into account. To preserve anonymity, the web-backend could
+    // translate UserIDs to another random ID.
+    // bodyData.UserID = req.session.userId.toString();
+
+    // DEBUG: this is only for debugging and needs to be replaced before production
+    console.warn('DEV CODE - randomizing the SCIPER ID to allow for unlimited votes');
+    bodyData.UserID = makeid(10);
+  }
+
   const dataStr = JSON.stringify(bodyData);
 
   sendToDela(dataStr, req, res);
