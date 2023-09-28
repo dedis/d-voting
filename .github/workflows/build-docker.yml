@@ -1,0 +1,48 @@
+name: Build docker
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-docker:
+    name: Build D-Voting Docker images
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to GHCR
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Frontend
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: Dockerfiles/Dockerfile.frontend
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/c4dt/d-voting-frontend:latest
+      - name: Build Backend
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: Dockerfiles/Dockerfile.backend
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/c4dt/d-voting-backend:latest
+      - name: Build D-Voting
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          target: production
+          file: Dockerfiles/Dockerfile.dela
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/c4dt/d-voting-dela:latest
