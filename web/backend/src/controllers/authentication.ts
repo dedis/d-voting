@@ -1,9 +1,40 @@
 import express from 'express';
 import axios, { AxiosError } from 'axios';
 import { sciper2sess } from '../session';
-import { getUserPermissions, setMapAuthorization } from '../authManager';
+import { getUserPermissions, readSCIPER, setMapAuthorization } from '../authManager';
 
 export const authenticationRouter = express.Router();
+
+authenticationRouter.get('/get_dev_login', (req, res) => {
+  if (process.env.NODE_ENV !== 'development') {
+    const err = `/get_dev_login can only be called in development: ${process.env.NODE_ENV}`;
+    console.error(err);
+    res.status(500).send(err);
+    return;
+  }
+  if (process.env.SCIPER_ADMIN === undefined) {
+    const err = 'Please set SCIPER_ADMIN for /get/dev/login endpoint';
+    console.error(err);
+    res.status(500).send(err);
+    return;
+  }
+  try {
+    req.session.userId = readSCIPER(process.env.SCIPER_ADMIN);
+    req.session.lastName = 'develo';
+    req.session.firstName = 'pment';
+  } catch (e) {
+    const err = `Invalid SCIPER_ADMIN: ${e}`;
+    console.error(err);
+    res.status(500).send(err);
+    return;
+  }
+
+  const sciperSessions = sciper2sess.get(req.session.userId) || new Set<string>();
+  sciperSessions.add(req.sessionID);
+  sciper2sess.set(req.session.userId, sciperSessions);
+
+  res.redirect('/logged');
+});
 
 // This is via this endpoint that the client request the tequila key, this key
 // will then be used for redirection on the tequila server

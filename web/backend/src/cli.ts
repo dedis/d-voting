@@ -12,7 +12,7 @@ import { SequelizeAdapter } from 'casbin-sequelize-adapter';
 import { newEnforcer } from 'casbin';
 import { curve } from '@dedis/kyber';
 import * as fs from 'fs';
-import { PERMISSIONS } from './authManager';
+import { PERMISSIONS, readSCIPER } from './authManager';
 
 const program = new Command();
 
@@ -95,16 +95,13 @@ program
       const scipers: Array<string> = data.split('\n');
       const policies = [];
       for (let i = 0; i < scipers.length; i += 1) {
-        const sciper: number = Number(scipers[i]);
-        if (Number.isNaN(sciper)) {
-          throw new InvalidArgumentError(`SCIPER '${sciper}' on line ${i + 1} is not a number`);
-        }
-        if (sciper > 999999 || sciper < 100000) {
+        try {
+          policies[i] = [readSCIPER(scipers[i]), electionId, PERMISSIONS.ACTIONS.VOTE];
+        } catch (e) {
           throw new InvalidArgumentError(
-            `SCIPER '${sciper}' on line ${i + 1} is outside acceptable range (100000..999999)`
+            `SCIPER '${scipers[i]}' on line ${i + 1} is not a valid sciper: ${e}`
           );
         }
-        policies[i] = [scipers[i], electionId, PERMISSIONS.ACTIONS.VOTE];
       }
       const enforcer = await initEnforcer();
       await enforcer.addPolicies(policies);

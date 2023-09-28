@@ -13,3 +13,8 @@ nodedata/
 
 deb-package/dist/**
 
+.env
+
+dela/
+bin/
+nodes/
