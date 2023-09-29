@@ -97,6 +97,7 @@ authenticationRouter.get('/control_key', (req, res) => {
 authenticationRouter.post('/logout', (req, res) => {
   if (req.session.userId === undefined) {
     res.status(400).send('not logged in');
+    return;
   }
 
   const { userId } = req.session;
