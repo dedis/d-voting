@@ -11,7 +11,7 @@ if [[ $(git rev-parse --show-toplevel) != $(pwd) ]]; then
   exit 1
 fi
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 . "$SCRIPT_DIR/local_vars.sh"
 
 asdf_shell() {
@@ -26,13 +26,10 @@ mkdir -p nodes
 
 function build_dela() {
   echo "Building dela-node"
-  if ! [[ -d dela/ ]]; then
-    git clone https://github.com/c4dt/dela.git
-  fi
   export GOBIN=$(pwd)/bin
   PATH="$PATH":"$GOBIN"
   if ! [[ -f $GOBIN/crypto ]]; then
-    (cd dela/cli/crypto && go install)
+    go install github.com/c4dt/dela/cli/crypto
   fi
   if ! [[ -f $GOBIN/dvoting ]]; then
     go install ./cli/dvoting
@@ -60,6 +57,7 @@ function keypair() {
 
 function kill_nodes() {
   pkill dvoting || true
+  sleep 1
   rm -rf nodes/node*
 }
 

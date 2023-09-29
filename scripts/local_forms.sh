@@ -25,8 +25,8 @@ echo "Form with ID $FORMID has been set up"
 
 echo "Adding $SCIPER_ADMIN to voters"
 tmpfile=$(mktemp)
-echo -n "$SCIPER_ADMIN" > "$tmpfile"
-(cd web/backend && npx ts-node src/cli.ts addVoters --election-id $FORMID --scipers-file "$tmpfile" )
+echo -n "$SCIPER_ADMIN" >"$tmpfile"
+(cd web/backend && npx ts-node src/cli.ts addVoters --election-id $FORMID --scipers-file "$tmpfile")
 echo "Restarting backend to take into account voters"
 "$SCRIPT_DIR/run_local.sh" backend
 . "$SCRIPT_DIR/local_login.sh"

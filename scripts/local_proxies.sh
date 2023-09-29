@@ -1,9 +1,9 @@
 #!/bin/bash
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 . "$SCRIPT_DIR/local_login.sh"
 
-echo "adding proxies";
+echo "adding proxies"
 
 for node in $( seq 0 3 ); do
   NodeAddr="localhost:$(( 2000 + node * 2))"
