@@ -131,6 +131,7 @@ function init_dela() {
 
 function kill_db() {
   docker rm -f postgres_dvoting || true
+  rm -rf nodes/llmdb*
 }
 
 function init_db() {
