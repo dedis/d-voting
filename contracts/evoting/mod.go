@@ -1,24 +1,24 @@
 package evoting
 
 import (
-	dvoting "github.com/dedis/d-voting"
-	"github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/services/dkg"
+	dvoting "github.com/c4dt/d-voting"
+	"github.com/c4dt/d-voting/contracts/evoting/types"
+	"github.com/c4dt/d-voting/services/dkg"
+	"github.com/c4dt/dela/core/access"
+	"github.com/c4dt/dela/core/execution"
+	"github.com/c4dt/dela/core/execution/native"
+	"github.com/c4dt/dela/core/ordering/cosipbft/authority"
+	"github.com/c4dt/dela/core/store"
+	"github.com/c4dt/dela/serde"
+	"github.com/c4dt/dela/serde/json"
 	"github.com/prometheus/client_golang/prometheus"
-	"go.dedis.ch/dela/core/access"
-	"go.dedis.ch/dela/core/execution"
-	"go.dedis.ch/dela/core/execution/native"
-	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
-	"go.dedis.ch/dela/core/store"
-	"go.dedis.ch/dela/serde"
-	"go.dedis.ch/dela/serde/json"
 
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 
 	// Register the JSON format for the form
-	_ "github.com/dedis/d-voting/contracts/evoting/json"
+	_ "github.com/c4dt/d-voting/contracts/evoting/json"
 )
 
 var (
@@ -68,7 +68,7 @@ var suite = suites.MustFind("Ed25519")
 
 const (
 	// ContractName is the name of the contract.
-	ContractName = "go.dedis.ch/dela.Evoting"
+	ContractName = "github.com/c4dt/dela.Evoting"
 
 	// CmdArg is the argument's name to indicate the kind of command we want to
 	// run on the contract. Should be one of the Command type.

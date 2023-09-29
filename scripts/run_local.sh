@@ -27,7 +27,7 @@ mkdir -p nodes
 function build_dela() {
   echo "Building dela-node"
   if ! [[ -d dela/ ]]; then
-    git clone -b fix-bbolt https://github.com/dedis/dela.git
+    git clone https://github.com/c4dt/dela.git
   fi
   export GOBIN=$(pwd)/bin
   PATH="$PATH":"$GOBIN"
@@ -119,10 +119,10 @@ function init_dela() {
   for n in $(seq 4); do
     NODEDIR=./nodes/node-$n
     IDENTITY=$(crypto bls signer read --path $NODEDIR/private.key --format BASE64_PUBKEY)
-    dvoting --config ./nodes/node-1 pool add --key ./nodes/node-1/private.key --args go.dedis.ch/dela.ContractArg \
-      --args go.dedis.ch/dela.Access --args access:grant_id \
+    dvoting --config ./nodes/node-1 pool add --key ./nodes/node-1/private.key --args github.com/c4dt/dela.ContractArg \
+      --args github.com/c4dt/dela.Access --args access:grant_id \
       --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract \
-      --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $IDENTITY \
+      --args github.com/c4dt/dela.Evoting --args access:grant_command --args all --args access:identity --args $IDENTITY \
       --args access:command --args GRANT
   done
 

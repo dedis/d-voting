@@ -19,7 +19,7 @@ jobs:
 
       - name: Install crypto util from Dela
         run: |
-          git clone https://github.com/dedis/dela.git
+          git clone https://github.com/c4dt/dela.git
           cd dela
           go install ./cli/crypto
 

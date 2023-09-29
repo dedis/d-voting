@@ -1,8 +1,8 @@
 package fake
 
 import (
-	"go.dedis.ch/dela/core/store"
-	"go.dedis.ch/dela/core/store/kv"
+	"github.com/c4dt/dela/core/store"
+	"github.com/c4dt/dela/core/store/kv"
 )
 
 // InMemorySnapshot is a fake implementation of a store snapshot.

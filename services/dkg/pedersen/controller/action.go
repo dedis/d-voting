@@ -7,23 +7,23 @@ import (
 	"fmt"
 	"net/http"
 
-	"go.dedis.ch/dela/core/access"
-	"go.dedis.ch/dela/core/ordering"
-	"go.dedis.ch/dela/core/txn/signed"
-	"go.dedis.ch/dela/core/validation"
+	"github.com/c4dt/dela/core/access"
+	"github.com/c4dt/dela/core/ordering"
+	"github.com/c4dt/dela/core/txn/signed"
+	"github.com/c4dt/dela/core/validation"
 
-	"github.com/dedis/d-voting/services/dkg"
-	"github.com/dedis/d-voting/services/dkg/pedersen"
+	"github.com/c4dt/d-voting/services/dkg"
+	"github.com/c4dt/d-voting/services/dkg/pedersen"
+	"github.com/c4dt/dela"
+	"github.com/c4dt/dela/cli/node"
+	"github.com/c4dt/dela/core/store/kv"
+	"github.com/c4dt/dela/mino"
+	"github.com/c4dt/dela/mino/proxy"
 	"github.com/gorilla/mux"
-	"go.dedis.ch/dela"
-	"go.dedis.ch/dela/cli/node"
-	"go.dedis.ch/dela/core/store/kv"
-	"go.dedis.ch/dela/mino"
-	"go.dedis.ch/dela/mino/proxy"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 
-	eproxy "github.com/dedis/d-voting/proxy"
+	eproxy "github.com/c4dt/d-voting/proxy"
 )
 
 var suite = suites.MustFind("Ed25519")

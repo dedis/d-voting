@@ -3,7 +3,7 @@ package fake
 import (
 	"strconv"
 
-	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/c4dt/d-voting/contracts/evoting/types"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/random"

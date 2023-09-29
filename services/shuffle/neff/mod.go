@@ -5,21 +5,21 @@ import (
 	"sync"
 	"time"
 
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/services/shuffle"
-	"github.com/dedis/d-voting/services/shuffle/neff/types"
-	"go.dedis.ch/dela"
-	"go.dedis.ch/dela/core/ordering"
-	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
-	"go.dedis.ch/dela/core/txn"
-	"go.dedis.ch/dela/core/txn/pool"
-	"go.dedis.ch/dela/crypto"
-	"go.dedis.ch/dela/mino"
-	"go.dedis.ch/dela/serde"
+	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
+	"github.com/c4dt/d-voting/services/shuffle"
+	"github.com/c4dt/d-voting/services/shuffle/neff/types"
+	"github.com/c4dt/dela"
+	"github.com/c4dt/dela/core/ordering"
+	"github.com/c4dt/dela/core/ordering/cosipbft/blockstore"
+	"github.com/c4dt/dela/core/txn"
+	"github.com/c4dt/dela/core/txn/pool"
+	"github.com/c4dt/dela/crypto"
+	"github.com/c4dt/dela/mino"
+	"github.com/c4dt/dela/serde"
 	"golang.org/x/net/context"
 	"golang.org/x/xerrors"
 
-	"go.dedis.ch/dela/serde/json"
+	"github.com/c4dt/dela/serde/json"
 )
 
 const (
@@ -31,14 +31,14 @@ const (
 //
 // - implements shuffle.SHUFFLE
 type NeffShuffle struct {
-	mino        mino.Mino
-	factory     serde.Factory
-	service     ordering.Service
-	p           pool.Pool
-	blocks      *blockstore.InDisk
-	context     serde.Context
-	nodeSigner  crypto.Signer
-	formFac serde.Factory
+	mino       mino.Mino
+	factory    serde.Factory
+	service    ordering.Service
+	p          pool.Pool
+	blocks     *blockstore.InDisk
+	context    serde.Context
+	nodeSigner crypto.Signer
+	formFac    serde.Factory
 }
 
 // NewNeffShuffle returns a new NeffShuffle factory.
@@ -50,14 +50,14 @@ func NewNeffShuffle(m mino.Mino, s ordering.Service, p pool.Pool,
 	ctx := json.NewContext()
 
 	return &NeffShuffle{
-		mino:        m,
-		factory:     factory,
-		service:     s,
-		p:           p,
-		blocks:      blocks,
-		context:     ctx,
-		nodeSigner:  signer,
-		formFac: formFac,
+		mino:       m,
+		factory:    factory,
+		service:    s,
+		p:          p,
+		blocks:     blocks,
+		context:    ctx,
+		nodeSigner: signer,
+		formFac:    formFac,
 	}
 }
 
@@ -68,11 +68,11 @@ func (n NeffShuffle) Listen(txmngr txn.Manager) (shuffle.Actor, error) {
 		n.context, n.formFac)
 
 	a := &Actor{
-		rpc:         mino.MustCreateRPC(n.mino, "shuffle", h, n.factory),
-		factory:     n.factory,
-		mino:        n.mino,
-		service:     n.service,
-		context:     n.context,
+		rpc:     mino.MustCreateRPC(n.mino, "shuffle", h, n.factory),
+		factory: n.factory,
+		mino:    n.mino,
+		service: n.service,
+		context: n.context,
 		formFac: n.formFac,
 	}
 
@@ -91,7 +91,7 @@ type Actor struct {
 	// startRes *state
 	service ordering.Service
 
-	context     serde.Context
+	context serde.Context
 	formFac serde.Factory
 }
 

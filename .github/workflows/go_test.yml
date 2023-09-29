@@ -27,35 +27,4 @@ jobs:
 
       - name: Test all, except integration, with coverage
         run: |
-          go test -json -covermode=count -coverprofile=profile.cov $(go list ./... | grep -v /integration) 2>&1 | tee report.json
-
-      - name: Sonarcloud scan
-        uses: sonarsource/sonarcloud-github-action@master
-        with:
-          args: >
-            -Dsonar.organization=dedis
-            -Dsonar.projectKey=dedis_d-voting
-            -Dsonar.go.tests.reportPaths=report.json
-            -Dsonar.go.coverage.reportPaths=profile.cov
-            -Dsonar.coverage.exclusions=**/*_test.go,/internal/**/*
-            -Dsonar.issue.ignore.multicriteria=e1
-            -Dsonar.issue.ignore.multicriteria.e1.ruleKey=*Naming*
-            -Dsonar.issue.ignore.multicriteria.e1.resourceKey=**/*_test.go
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-      - name: Send coverage
-        uses: shogo82148/actions-goveralls@v1
-        with:
-          path-to-profile: profile.cov
-          parallel: true
-
-  # notifies that all test jobs are finished.
-  finish:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: shogo82148/actions-goveralls@v1
-        with:
-          parallel-finished: true
+          go test $(go list ./... | grep -v /integration)

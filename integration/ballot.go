@@ -15,16 +15,16 @@ import (
 
 	"sync/atomic"
 
-	"github.com/dedis/d-voting/contracts/evoting"
-	"github.com/dedis/d-voting/contracts/evoting/controller"
-	"github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/internal/testing/fake"
-	"github.com/dedis/d-voting/proxy/txnmanager"
-	ptypes "github.com/dedis/d-voting/proxy/types"
-	"github.com/dedis/d-voting/services/dkg"
+	"github.com/c4dt/d-voting/contracts/evoting"
+	"github.com/c4dt/d-voting/contracts/evoting/controller"
+	"github.com/c4dt/d-voting/contracts/evoting/types"
+	"github.com/c4dt/d-voting/internal/testing/fake"
+	"github.com/c4dt/d-voting/proxy/txnmanager"
+	ptypes "github.com/c4dt/d-voting/proxy/types"
+	"github.com/c4dt/d-voting/services/dkg"
+	"github.com/c4dt/dela/core/execution/native"
+	"github.com/c4dt/dela/core/txn"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/dela/core/execution/native"
-	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/random"
@@ -300,7 +300,7 @@ func checkBallots(decryptedBallots, castedVotes []types.Ballot, t *testing.T) {
 
 }
 
-// castVotesLoad casts vote for the load test 
+// castVotesLoad casts vote for the load test
 func castVotesLoad(numVotesPerSec, numSec, BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
 
 	t.Log("cast ballots")
@@ -417,7 +417,7 @@ func cast(idx int, castVoteRequest ptypes.CastVoteRequest, contentType, randompr
 	return ok
 }
 
-// castVotesScenario casts votes for the scenario test 
+// castVotesScenario casts votes for the scenario test
 func castVotesScenario(numVotes, BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
 	// make List of ballots
 	b1 := string("select:" + encodeBallotID("bb") + ":0,0,1,0\n" + "text:" + encodeBallotID("ee") + ":eWVz\n\n") //encoding of "yes"

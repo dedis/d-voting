@@ -1,7 +1,7 @@
 package dkg
 
 import (
-	"go.dedis.ch/dela/core/txn"
+	"github.com/c4dt/dela/core/txn"
 	"go.dedis.ch/kyber/v3"
 )
 

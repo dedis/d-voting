@@ -7,11 +7,11 @@ import (
 
 	"net/http"
 
-	"github.com/dedis/d-voting/proxy/types"
-	dkgSrv "github.com/dedis/d-voting/services/dkg"
+	"github.com/c4dt/d-voting/proxy/types"
+	dkgSrv "github.com/c4dt/d-voting/services/dkg"
+	"github.com/c4dt/dela"
+	"github.com/c4dt/dela/core/txn"
 	"github.com/gorilla/mux"
-	"go.dedis.ch/dela"
-	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
 )

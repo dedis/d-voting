@@ -10,28 +10,28 @@ import (
 	"testing"
 	"time"
 
-	"go.dedis.ch/dela"
-	"go.dedis.ch/dela/core/access"
-	"go.dedis.ch/dela/core/ordering"
-	"go.dedis.ch/dela/core/txn/signed"
-	"go.dedis.ch/dela/core/validation"
+	"github.com/c4dt/dela"
+	"github.com/c4dt/dela/core/access"
+	"github.com/c4dt/dela/core/ordering"
+	"github.com/c4dt/dela/core/txn/signed"
+	"github.com/c4dt/dela/core/validation"
 	"golang.org/x/xerrors"
 
-	"github.com/dedis/d-voting/contracts/evoting"
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/internal/testing/fake"
-	"github.com/dedis/d-voting/services/dkg"
-	"github.com/dedis/d-voting/services/dkg/pedersen/types"
+	"github.com/c4dt/d-voting/contracts/evoting"
+	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
+	"github.com/c4dt/d-voting/internal/testing/fake"
+	"github.com/c4dt/d-voting/services/dkg"
+	"github.com/c4dt/d-voting/services/dkg/pedersen/types"
+	"github.com/c4dt/dela/core/ordering/cosipbft/authority"
+	"github.com/c4dt/dela/core/store/kv"
+	"github.com/c4dt/dela/mino"
+	"github.com/c4dt/dela/mino/minogrpc"
+	"github.com/c4dt/dela/mino/router/tree"
+	"github.com/c4dt/dela/serde"
+	sjson "github.com/c4dt/dela/serde/json"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
-	"go.dedis.ch/dela/core/store/kv"
-	"go.dedis.ch/dela/mino"
-	"go.dedis.ch/dela/mino/minogrpc"
-	"go.dedis.ch/dela/mino/router/tree"
-	"go.dedis.ch/dela/serde"
-	sjson "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/util/random"
@@ -338,8 +338,7 @@ func TestPedersen_Setup(t *testing.T) {
 		},
 		context: serdecontext,
 		formFac: formFac,
-		status: &dkg.Status{},
-
+		status:  &dkg.Status{},
 	}
 
 	// Wrong formID
@@ -615,7 +614,7 @@ func TestPedersen_ComputePubshares_StreamFailed(t *testing.T) {
 	}
 
 	err := a.ComputePubshares()
-	require.EqualError(t, err, fake.Err("failed to create stream"))
+	require.EqualError(t, err, fake.Err("the list of Participants is empty"))
 }
 
 func TestPedersen_ComputePubshares_SenderFailed(t *testing.T) {

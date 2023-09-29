@@ -11,12 +11,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dedis/d-voting/proxy/types"
-	dkgSrv "github.com/dedis/d-voting/services/dkg"
+	"github.com/c4dt/d-voting/proxy/types"
+	dkgSrv "github.com/c4dt/d-voting/services/dkg"
 
+	"github.com/c4dt/dela/cli/node"
+	"github.com/c4dt/dela/core/txn"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/dela/cli/node"
-	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/schnorr"
 	"golang.org/x/xerrors"
@@ -94,7 +94,7 @@ func TestNewDKGActor(t *testing.T) {
 
 }
 
-// test that NewDKGActor is setting 
+// test that NewDKGActor is setting
 // the right status code when the request is not valid
 func TestNewDKGActorInvalidRequest(t *testing.T) {
 	var w http.ResponseWriter = httptest.NewRecorder()
@@ -134,7 +134,7 @@ func TestNewDKGActorInvalidRequest(t *testing.T) {
 
 }
 
-// test that NewDKGActor is setting the right 
+// test that NewDKGActor is setting the right
 // status code when the request cannot be verified
 func TestNewDKGActorInvalidSignature(t *testing.T) {
 	var w http.ResponseWriter = httptest.NewRecorder()
@@ -181,7 +181,7 @@ func TestNewDKGActorInvalidSignature(t *testing.T) {
 
 }
 
-// test that NewDKGActor is setting 
+// test that NewDKGActor is setting
 // the right status code when the formID cannot be decoded
 func TestNewDKGActorInvalidFormID(t *testing.T) {
 	var w http.ResponseWriter = httptest.NewRecorder()
@@ -230,7 +230,7 @@ func TestNewDKGActorInvalidFormID(t *testing.T) {
 
 }
 
-// test that NewDKGActor is setting the 
+// test that NewDKGActor is setting the
 // right status code when the form does not exist
 func TestNewDKGActorFormDoesNotExist(t *testing.T) {
 	var w http.ResponseWriter = httptest.NewRecorder()
@@ -266,9 +266,8 @@ func TestNewDKGActorFormDoesNotExist(t *testing.T) {
 	dkgInterface := NewDKG(mngr, mockDKGServiceError{}, public)
 
 	requestt, err := createSignedRequest(secret, request)
-	
-	require.NoError(t, err)
 
+	require.NoError(t, err)
 
 	r, err := http.NewRequest("POST", "/dkg", strings.NewReader(string(requestt)))
 
@@ -313,7 +312,7 @@ func TestActor(t *testing.T) {
 
 	dkgInterface := NewDKG(mngr, mockDKGService{}, public)
 
-	requestt, err:= createSignedRequest(secret, request)
+	requestt, err := createSignedRequest(secret, request)
 	require.NoError(t, err)
 
 	r, err := http.NewRequest("GET", "/services/dkg/actors/1234", strings.NewReader(string(requestt)))

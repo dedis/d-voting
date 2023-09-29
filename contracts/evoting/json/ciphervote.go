@@ -1,8 +1,8 @@
 package json
 
 import (
-	"github.com/dedis/d-voting/contracts/evoting/types"
-	"go.dedis.ch/dela/serde"
+	"github.com/c4dt/d-voting/contracts/evoting/types"
+	"github.com/c4dt/dela/serde"
 	"golang.org/x/xerrors"
 )
 

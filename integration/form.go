@@ -11,17 +11,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting"
-	"github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/internal/testing/fake"
-	ptypes "github.com/dedis/d-voting/proxy/types"
-	"github.com/dedis/d-voting/proxy/txnmanager"
+	"github.com/c4dt/d-voting/contracts/evoting"
+	"github.com/c4dt/d-voting/contracts/evoting/types"
+	"github.com/c4dt/d-voting/internal/testing/fake"
+	"github.com/c4dt/d-voting/proxy/txnmanager"
+	ptypes "github.com/c4dt/d-voting/proxy/types"
+	"github.com/c4dt/dela/core/execution/native"
+	"github.com/c4dt/dela/core/ordering"
+	"github.com/c4dt/dela/core/txn"
+	"github.com/c4dt/dela/serde"
+	jsonDela "github.com/c4dt/dela/serde/json"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/dela/core/execution/native"
-	"go.dedis.ch/dela/core/ordering"
-	"go.dedis.ch/dela/core/txn"
-	"go.dedis.ch/dela/serde"
-	jsonDela "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/schnorr"
 	"golang.org/x/xerrors"
@@ -239,7 +239,7 @@ func updateForm(secret kyber.Scalar, proxyAddr, formIDHex, action string, t *tes
 	}
 
 	// wait until the update is completed
-	return pollTxnInclusion(60,time.Second, proxyAddr, result.Token, t)
+	return pollTxnInclusion(60, time.Second, proxyAddr, result.Token, t)
 
 }
 

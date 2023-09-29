@@ -14,7 +14,7 @@ const Home: FC = () => {
           <div>
             <div className="mt-20">
               <div>
-                <a href="https://github.com/dedis/d-voting" className="inline-flex space-x-4">
+                <a href="https://github.com/c4dt/d-voting" className="inline-flex space-x-4">
                   <span className="rounded bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-600 tracking-wide uppercase">
                     {t('homeWhatsNew')}
                   </span>

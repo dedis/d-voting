@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting/types"
-	_ "github.com/dedis/d-voting/services/dkg/pedersen/json"
-	_ "github.com/dedis/d-voting/services/shuffle/neff/json"
+	"github.com/c4dt/d-voting/contracts/evoting/types"
+	_ "github.com/c4dt/d-voting/services/dkg/pedersen/json"
+	_ "github.com/c4dt/d-voting/services/shuffle/neff/json"
+	delaPkg "github.com/c4dt/dela"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
-	delaPkg "go.dedis.ch/dela"
 )
 
 func TestBadVote(t *testing.T) {

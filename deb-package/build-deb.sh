@@ -45,7 +45,7 @@ fpm \
     --after-install pkg/after-install.sh \
     --before-remove pkg/before-remove.sh \
     --after-remove pkg/after-remove.sh \
-    --url https://dedis.github.com/dedis/dvoting \
+    --url https://dedis.github.com/c4dt/dvoting \
     --description 'D-Voting package' \
     --package dist .
 

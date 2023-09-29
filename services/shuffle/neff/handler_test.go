@@ -5,17 +5,17 @@ import (
 	"strconv"
 	"testing"
 
-	"go.dedis.ch/dela/serde/json"
+	"github.com/c4dt/dela/serde/json"
 
-	"github.com/dedis/d-voting/services/shuffle/neff/types"
+	"github.com/c4dt/d-voting/services/shuffle/neff/types"
 	"go.dedis.ch/kyber/v3"
 
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/internal/testing/fake"
+	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
+	"github.com/c4dt/d-voting/internal/testing/fake"
+	"github.com/c4dt/dela/core/access"
+	"github.com/c4dt/dela/core/txn/signed"
+	"github.com/c4dt/dela/mino"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/dela/core/access"
-	"go.dedis.ch/dela/core/txn/signed"
-	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/kyber/v3/util/random"
 	"golang.org/x/xerrors"
 )
@@ -69,7 +69,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 
 	// Service not working:
 	badService := fake.Service{
-		Err:       fakeErr,
+		Err:   fakeErr,
 		Forms: nil,
 	}
 	handler.service = &badService
@@ -82,9 +82,9 @@ func TestHandler_StartShuffle(t *testing.T) {
 
 	// Form does not exist
 	service := fake.Service{
-		Err:       nil,
-		Forms: Forms,
-		Context:   json.NewContext(),
+		Err:     nil,
+		Forms:   Forms,
+		Context: json.NewContext(),
 	}
 	handler.service = &service
 
@@ -93,7 +93,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 
 	// Form still opened:
 	form := etypes.Form{
-		FormID:       dummyID,
+		FormID:           dummyID,
 		Status:           0,
 		Pubkey:           nil,
 		Suffragia:        etypes.Suffragia{},
@@ -227,12 +227,12 @@ func updateService(form etypes.Form, dummyID string) fake.Service {
 	Forms[dummyID] = form
 
 	return fake.Service{
-		Err:       nil,
-		Forms: Forms,
-		Pool:      nil,
-		Status:    false,
-		Channel:   nil,
-		Context:   json.NewContext(),
+		Err:     nil,
+		Forms:   Forms,
+		Pool:    nil,
+		Status:  false,
+		Channel: nil,
+		Context: json.NewContext(),
 	}
 }
 
@@ -245,10 +245,10 @@ func initValidHandler(dummyID string) Handler {
 	Forms[dummyID] = form
 
 	service := fake.Service{
-		Err:       nil,
-		Forms: Forms,
-		Status:    true,
-		Context:   json.NewContext(),
+		Err:     nil,
+		Forms:   Forms,
+		Status:  true,
+		Context: json.NewContext(),
 	}
 	fakePool := fake.Pool{Service: &service}
 
@@ -267,7 +267,7 @@ func initFakeForm(formID string) etypes.Form {
 	k := 3
 	KsMarshalled, CsMarshalled, pubKey := fakeKCPoints(k)
 	form := etypes.Form{
-		FormID:       formID,
+		FormID:           formID,
 		Status:           etypes.Closed,
 		Pubkey:           pubKey,
 		Suffragia:        etypes.Suffragia{},

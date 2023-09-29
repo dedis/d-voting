@@ -3,8 +3,8 @@ package json
 import (
 	"encoding/json"
 
-	"github.com/dedis/d-voting/contracts/evoting/types"
-	"go.dedis.ch/dela/serde"
+	"github.com/c4dt/d-voting/contracts/evoting/types"
+	"github.com/c4dt/dela/serde"
 	"golang.org/x/xerrors"
 )
 
@@ -38,7 +38,7 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 		}
 
 		cv := CastVoteJSON{
-			FormID: t.FormID,
+			FormID:     t.FormID,
 			UserID:     t.UserID,
 			Ciphervote: ballot,
 		}
@@ -47,7 +47,7 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 	case types.CloseForm:
 		ce := CloseFormJSON{
 			FormID: t.FormID,
-			UserID:     t.UserID,
+			UserID: t.UserID,
 		}
 
 		m = TransactionJSON{CloseForm: &ce}
@@ -64,7 +64,7 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 		}
 
 		sb := ShuffleBallotsJSON{
-			FormID:   t.FormID,
+			FormID:       t.FormID,
 			Round:        t.Round,
 			Ciphervotes:  ciphervotes,
 			RandomVector: t.RandomVector,
@@ -90,25 +90,25 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 		}
 
 		rp := RegisterPubSharesJSON{
-			FormID: t.FormID,
-			Index:      t.Index,
-			PubShares:  pubShares,
-			Signature:  t.Signature,
-			PublicKey:  t.PublicKey,
+			FormID:    t.FormID,
+			Index:     t.Index,
+			PubShares: pubShares,
+			Signature: t.Signature,
+			PublicKey: t.PublicKey,
 		}
 
 		m = TransactionJSON{RegisterPubShares: &rp}
 	case types.CombineShares:
 		db := CombineSharesJSON{
 			FormID: t.FormID,
-			UserID:     t.UserID,
+			UserID: t.UserID,
 		}
 
 		m = TransactionJSON{CombineShares: &db}
 	case types.CancelForm:
 		ce := CancelFormJSON{
 			FormID: t.FormID,
-			UserID:     t.UserID,
+			UserID: t.UserID,
 		}
 
 		m = TransactionJSON{CancelForm: &ce}
@@ -159,7 +159,7 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 	case m.CloseForm != nil:
 		return types.CloseForm{
 			FormID: m.CloseForm.FormID,
-			UserID:     m.CloseForm.UserID,
+			UserID: m.CloseForm.UserID,
 		}, nil
 	case m.ShuffleBallots != nil:
 		msg, err := decodeShuffleBallots(ctx, *m.ShuffleBallots)
@@ -178,12 +178,12 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 	case m.CombineShares != nil:
 		return types.CombineShares{
 			FormID: m.CombineShares.FormID,
-			UserID:     m.CombineShares.UserID,
+			UserID: m.CombineShares.UserID,
 		}, nil
 	case m.CancelForm != nil:
 		return types.CancelForm{
 			FormID: m.CancelForm.FormID,
-			UserID:     m.CancelForm.UserID,
+			UserID: m.CancelForm.UserID,
 		}, nil
 	case m.DeleteForm != nil:
 		return types.DeleteForm{
@@ -197,15 +197,15 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 // TransactionJSON is the JSON message that wraps the different kinds of
 // transactions.
 type TransactionJSON struct {
-	CreateForm    *CreateFormJSON    `json:",omitempty"`
-	OpenForm      *OpenFormJSON      `json:",omitempty"`
+	CreateForm        *CreateFormJSON        `json:",omitempty"`
+	OpenForm          *OpenFormJSON          `json:",omitempty"`
 	CastVote          *CastVoteJSON          `json:",omitempty"`
-	CloseForm     *CloseFormJSON     `json:",omitempty"`
+	CloseForm         *CloseFormJSON         `json:",omitempty"`
 	ShuffleBallots    *ShuffleBallotsJSON    `json:",omitempty"`
 	RegisterPubShares *RegisterPubSharesJSON `json:",omitempty"`
 	CombineShares     *CombineSharesJSON     `json:",omitempty"`
-	CancelForm    *CancelFormJSON    `json:",omitempty"`
-	DeleteForm    *DeleteFormJSON    `json:",omitempty"`
+	CancelForm        *CancelFormJSON        `json:",omitempty"`
+	DeleteForm        *DeleteFormJSON        `json:",omitempty"`
 }
 
 // CreateFormJSON is the JSON representation of a CreateForm transaction
@@ -221,7 +221,7 @@ type OpenFormJSON struct {
 
 // CastVoteJSON is the JSON representation of a CastVote transaction
 type CastVoteJSON struct {
-	FormID string
+	FormID     string
 	UserID     string
 	Ciphervote json.RawMessage
 }
@@ -229,12 +229,12 @@ type CastVoteJSON struct {
 // CloseFormJSON is the JSON representation of a CloseForm transaction
 type CloseFormJSON struct {
 	FormID string
-	UserID     string
+	UserID string
 }
 
 // ShuffleBallotsJSON is the JSON representation of a ShuffleBallots transaction
 type ShuffleBallotsJSON struct {
-	FormID   string
+	FormID       string
 	Round        int
 	Ciphervotes  []json.RawMessage
 	RandomVector types.RandomVector
@@ -244,23 +244,23 @@ type ShuffleBallotsJSON struct {
 }
 
 type RegisterPubSharesJSON struct {
-	FormID string
-	Index      int
-	PubShares  PubsharesUnitJSON
-	Signature  []byte
-	PublicKey  []byte
+	FormID    string
+	Index     int
+	PubShares PubsharesUnitJSON
+	Signature []byte
+	PublicKey []byte
 }
 
 // CombineSharesJSON is the JSON representation of a CombineShares transaction
 type CombineSharesJSON struct {
 	FormID string
-	UserID     string
+	UserID string
 }
 
 // CancelFormJSON is the JSON representation of a CancelForm transaction
 type CancelFormJSON struct {
 	FormID string
-	UserID     string
+	UserID string
 }
 
 // DeleteFormJSON is the JSON representation of a DeleteForm transaction
@@ -286,8 +286,8 @@ func decodeCastVote(ctx serde.Context, m CastVoteJSON) (serde.Message, error) {
 
 	return types.CastVote{
 		FormID: m.FormID,
-		UserID:     m.UserID,
-		Ballot:     ciphervote,
+		UserID: m.UserID,
+		Ballot: ciphervote,
 	}, nil
 }
 
@@ -314,7 +314,7 @@ func decodeShuffleBallots(ctx serde.Context, m ShuffleBallotsJSON) (serde.Messag
 	}
 
 	return types.ShuffleBallots{
-		FormID:      m.FormID,
+		FormID:          m.FormID,
 		Round:           m.Round,
 		ShuffledBallots: ciphervotes,
 		RandomVector:    m.RandomVector,
@@ -342,10 +342,10 @@ func decodeRegisterPubShares(m RegisterPubSharesJSON) (serde.Message, error) {
 	}
 
 	return types.RegisterPubShares{
-		FormID: m.FormID,
-		Index:      m.Index,
-		Pubshares:  pubShares,
-		Signature:  m.Signature,
-		PublicKey:  m.PublicKey,
+		FormID:    m.FormID,
+		Index:     m.Index,
+		Pubshares: pubShares,
+		Signature: m.Signature,
+		PublicKey: m.PublicKey,
 	}, nil
 }
