@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/dedis/d-voting/contracts/evoting"
+	"github.com/c4dt/d-voting/contracts/evoting"
 )
 
 // Manager defines the public HTTP API of the transaction manager
@@ -13,11 +13,11 @@ type Manager interface {
 	StatusHandlerGet(http.ResponseWriter, *http.Request)
 
 	// submit the transaction to the blockchain
-	// return the transactionID and 
+	// return the transactionID and
 	// the index of the last block when it was submitted
 	SubmitTxn(ctx context.Context, cmd evoting.Command, cmdArg string, payload []byte) ([]byte, uint64, error)
 
-	// CreateTransactionResult create the json to send to the client 
+	// CreateTransactionResult create the json to send to the client
 	CreateTransactionResult(txnID []byte, lastBlockIdx uint64, status TransactionStatus) (TransactionClientInfo, error)
 	SendTransactionInfo(w http.ResponseWriter, txnID []byte, lastBlockIdx uint64, status TransactionStatus) error
 }
@@ -43,8 +43,6 @@ type transactionInternalInfo struct {
 	Hash          []byte // Hash of the previous fields
 	Signature     []byte // signature of the Hash
 }
-
-
 
 // TransactionClientInfo defines the HTTP response when sending
 // transaction infos to the client so that he can use the status

@@ -3,10 +3,10 @@ package json
 import (
 	"encoding/json"
 
-	"github.com/dedis/d-voting/contracts/evoting/types"
-	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
-	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
-	"go.dedis.ch/dela/serde"
+	"github.com/c4dt/d-voting/contracts/evoting/types"
+	"github.com/c4dt/dela/core/ordering/cosipbft/authority"
+	ctypes "github.com/c4dt/dela/core/ordering/cosipbft/types"
+	"github.com/c4dt/dela/serde"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
@@ -58,7 +58,7 @@ func (formFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, erro
 
 		formJSON := FormJSON{
 			Configuration:    m.Configuration,
-			FormID:       m.FormID,
+			FormID:           m.FormID,
 			Status:           uint16(m.Status),
 			Pubkey:           pubkey,
 			BallotSize:       m.BallotSize,
@@ -128,7 +128,7 @@ func (formFormat) Decode(ctx serde.Context, data []byte) (serde.Message, error) 
 
 	return types.Form{
 		Configuration:    formJSON.Configuration,
-		FormID:       formJSON.FormID,
+		FormID:           formJSON.FormID,
 		Status:           types.Status(formJSON.Status),
 		Pubkey:           pubKey,
 		BallotSize:       formJSON.BallotSize,

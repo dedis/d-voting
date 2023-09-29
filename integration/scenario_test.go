@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting/types"
-	ptypes "github.com/dedis/d-voting/proxy/types"
+	"github.com/c4dt/d-voting/contracts/evoting/types"
+	ptypes "github.com/c4dt/d-voting/proxy/types"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3/util/encoding"
 )
@@ -58,7 +58,7 @@ func getScenarioTest(numNodes int, numVotes int, numForm int) func(*testing.T) {
 			t.Log("Starting worker", i)
 			wg.Add(1)
 
-			go startFormProcess(&wg, numNodes, numVotes, 0 , proxyList, t, numForm, SCENARIO)
+			go startFormProcess(&wg, numNodes, numVotes, 0, proxyList, t, numForm, SCENARIO)
 			time.Sleep(2 * time.Second)
 
 		}
@@ -159,15 +159,13 @@ func startFormProcess(wg *sync.WaitGroup, numNodes, numVotes, numSec int, proxyA
 	var votesfrontend []types.Ballot
 
 	switch testType {
-		case SCENARIO:
-			votesfrontend = castVotesScenario(numVotes, BallotSize, chunksPerBallot, formID, contentType, proxyArray, pubKey, secret, t)
-			t.Log("Cast votes scenario")
-		case LOAD:
-			votesfrontend = castVotesLoad(numVotes/numSec, numSec, BallotSize, chunksPerBallot, formID, contentType, proxyArray, pubKey, secret, t)
-			t.Log("Cast votes load")
-		}
-
-
+	case SCENARIO:
+		votesfrontend = castVotesScenario(numVotes, BallotSize, chunksPerBallot, formID, contentType, proxyArray, pubKey, secret, t)
+		t.Log("Cast votes scenario")
+	case LOAD:
+		votesfrontend = castVotesLoad(numVotes/numSec, numSec, BallotSize, chunksPerBallot, formID, contentType, proxyArray, pubKey, secret, t)
+		t.Log("Cast votes load")
+	}
 
 	timeTable[step] = time.Since(oldTime).Seconds()
 	t.Logf("Casting %v ballots takes: %v sec", numVotes, timeTable[step])

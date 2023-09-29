@@ -1,9 +1,9 @@
 package types
 
 import (
-	"go.dedis.ch/dela/mino"
-	"go.dedis.ch/dela/serde"
-	"go.dedis.ch/dela/serde/registry"
+	"github.com/c4dt/dela/mino"
+	"github.com/c4dt/dela/serde"
+	"github.com/c4dt/dela/serde/registry"
 	"golang.org/x/xerrors"
 )
 
@@ -19,15 +19,15 @@ func RegisterMessageFormat(c serde.Format, f serde.FormatEngine) {
 //
 // - implements serde.Message
 type StartShuffle struct {
-	formId string
-	addresses  []mino.Address
+	formId    string
+	addresses []mino.Address
 }
 
 // NewStartShuffle creates a new StartShuffle message.
 func NewStartShuffle(formId string, addresses []mino.Address) StartShuffle {
 	return StartShuffle{
-		formId: formId,
-		addresses:  addresses,
+		formId:    formId,
+		addresses: addresses,
 	}
 }
 

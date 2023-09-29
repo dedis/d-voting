@@ -6,16 +6,16 @@ import (
 	"strings"
 	"testing"
 
-	"go.dedis.ch/dela"
-	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
-	"go.dedis.ch/dela/crypto"
-	"go.dedis.ch/dela/mino"
-	"go.dedis.ch/dela/serde"
-	"go.dedis.ch/dela/serde/json"
+	"github.com/c4dt/dela"
+	"github.com/c4dt/dela/core/ordering/cosipbft/authority"
+	"github.com/c4dt/dela/crypto"
+	"github.com/c4dt/dela/mino"
+	"github.com/c4dt/dela/serde"
+	"github.com/c4dt/dela/serde/json"
 
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/internal/testing/fake"
-	"github.com/dedis/d-voting/services/shuffle/neff/types"
+	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
+	"github.com/c4dt/d-voting/internal/testing/fake"
+	"github.com/c4dt/d-voting/services/shuffle/neff/types"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 )
@@ -63,10 +63,10 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	service := fake.NewService(formID, form, serdecontext)
 
 	actor := Actor{
-		rpc:         fake.NewBadRPC(),
-		mino:        fake.Mino{},
-		service:     &service,
-		context:     serdecontext,
+		rpc:     fake.NewBadRPC(),
+		mino:    fake.Mino{},
+		service: &service,
+		context: serdecontext,
 		formFac: etypes.NewFormFactory(etypes.CiphervoteFactory{}, fake.NewRosterFac(roster)),
 	}
 

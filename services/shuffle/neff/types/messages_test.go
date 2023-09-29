@@ -3,10 +3,10 @@ package types
 import (
 	"testing"
 
-	"github.com/dedis/d-voting/internal/testing/fake"
+	"github.com/c4dt/d-voting/internal/testing/fake"
+	"github.com/c4dt/dela/mino"
+	"github.com/c4dt/dela/serde"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/dela/mino"
-	"go.dedis.ch/dela/serde"
 )
 
 var testCalls = &fake.Call{}

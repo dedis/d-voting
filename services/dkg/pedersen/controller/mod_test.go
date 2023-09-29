@@ -6,17 +6,17 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.dedis.ch/dela/core/txn/signed"
-	"go.dedis.ch/dela/core/validation/simple"
-	"go.dedis.ch/dela/crypto/bls"
+	"github.com/c4dt/dela/core/txn/signed"
+	"github.com/c4dt/dela/core/validation/simple"
+	"github.com/c4dt/dela/crypto/bls"
 
-	"github.com/dedis/d-voting/internal/testing/fake"
+	"github.com/c4dt/d-voting/internal/testing/fake"
+	"github.com/c4dt/dela/cli/node"
+	"github.com/c4dt/dela/core/access/darc"
+	"github.com/c4dt/dela/core/execution/native"
+	"github.com/c4dt/dela/core/ordering/cosipbft"
+	"github.com/c4dt/dela/cosi/threshold"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/dela/cli/node"
-	"go.dedis.ch/dela/core/access/darc"
-	"go.dedis.ch/dela/core/execution/native"
-	"go.dedis.ch/dela/core/ordering/cosipbft"
-	"go.dedis.ch/dela/cosi/threshold"
 )
 
 func TestMinimal_OnStart(t *testing.T) {

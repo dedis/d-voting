@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"time"
 
-	dvoting "github.com/dedis/d-voting"
+	dvoting "github.com/c4dt/d-voting"
+	"github.com/c4dt/dela"
+	"github.com/c4dt/dela/cli/node"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.dedis.ch/dela"
-	"go.dedis.ch/dela/cli/node"
 	"golang.org/x/xerrors"
 )
 

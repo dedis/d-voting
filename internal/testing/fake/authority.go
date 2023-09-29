@@ -3,9 +3,9 @@ package fake
 import (
 	"io"
 
-	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
-	"go.dedis.ch/dela/mino"
-	"go.dedis.ch/dela/serde"
+	"github.com/c4dt/dela/core/ordering/cosipbft/authority"
+	"github.com/c4dt/dela/mino"
+	"github.com/c4dt/dela/serde"
 )
 
 // ChangeSet is a fake implementation of ordering.cosipbft.authority.ChangeSet.

@@ -6,8 +6,8 @@ import (
 	"io"
 	"strconv"
 
-	"go.dedis.ch/dela/serde"
-	"go.dedis.ch/dela/serde/registry"
+	"github.com/c4dt/dela/serde"
+	"github.com/c4dt/dela/serde/registry"
 	"golang.org/x/xerrors"
 )
 
@@ -133,8 +133,8 @@ func (oe OpenForm) Serialize(ctx serde.Context) ([]byte, error) {
 type CastVote struct {
 	// FormID is hex-encoded
 	FormID string
-	UserID     string
-	Ballot     Ciphervote
+	UserID string
+	Ballot Ciphervote
 }
 
 // Serialize implements serde.Message
@@ -155,7 +155,7 @@ func (cv CastVote) Serialize(ctx serde.Context) ([]byte, error) {
 type CloseForm struct {
 	// FormID is hex-encoded
 	FormID string
-	UserID     string
+	UserID string
 }
 
 // Serialize implements serde.Message
@@ -175,7 +175,7 @@ func (ce CloseForm) Serialize(ctx serde.Context) ([]byte, error) {
 // - implements serde.Message
 // - implements serde.Fingerprinter
 type ShuffleBallots struct {
-	FormID      string
+	FormID          string
 	Round           int
 	ShuffledBallots []Ciphervote
 	// RandomVector is the vector to be used to generate the proof of the next
@@ -239,7 +239,7 @@ func (rp RegisterPubShares) Serialize(ctx serde.Context) ([]byte, error) {
 type CombineShares struct {
 	// FormID is hex-encoded
 	FormID string
-	UserID     string
+	UserID string
 }
 
 // Serialize implements serde.Message
@@ -260,7 +260,7 @@ func (db CombineShares) Serialize(ctx serde.Context) ([]byte, error) {
 type CancelForm struct {
 	// FormID is hex-encoded
 	FormID string
-	UserID     string
+	UserID string
 }
 
 // Serialize implements serde.Message

@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/hex"
 
-	formTypes "github.com/dedis/d-voting/contracts/evoting/types"
-	"go.dedis.ch/dela/core/ordering"
-	"go.dedis.ch/dela/core/store"
-	"go.dedis.ch/dela/core/validation"
-	"go.dedis.ch/dela/serde"
+	formTypes "github.com/c4dt/d-voting/contracts/evoting/types"
+	"github.com/c4dt/dela/core/ordering"
+	"github.com/c4dt/dela/core/store"
+	"github.com/c4dt/dela/core/validation"
+	"github.com/c4dt/dela/serde"
 	"golang.org/x/xerrors"
 )
 
@@ -35,12 +35,12 @@ func (f Proof) GetValue() []byte {
 //
 // - implements ordering.Service
 type Service struct {
-	Err       error
-	Forms map[string]formTypes.Form
-	Pool      *Pool
-	Status    bool
-	Channel   chan ordering.Event
-	Context   serde.Context
+	Err     error
+	Forms   map[string]formTypes.Form
+	Pool    *Pool
+	Status  bool
+	Channel chan ordering.Event
+	Context serde.Context
 }
 
 // GetProof implements ordering.Service. It returns the proof associated to the
@@ -125,8 +125,8 @@ func NewService(formID string, form formTypes.Form, ctx serde.Context) Service {
 	forms[formID] = form
 
 	return Service{
-		Err:       nil,
-		Forms: forms,
-		Context:   ctx,
+		Err:     nil,
+		Forms:   forms,
+		Context: ctx,
 	}
 }
