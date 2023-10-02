@@ -7,7 +7,7 @@
   "scripts": {
     "start": "ts-node -r dotenv/config src/Server.ts dotenv_config_path=config.env",
     "start-dev": "NODE_ENV=development ts-node -r dotenv/config src/Server.ts dotenv_config_path=config.env",
-    "dev": "./node_modules/.bin/nodemon",
+    "dev": "NODE_ENV=development nodemon src/Server.ts dotenv_config_path=config.env",
     "eslint": "./node_modules/.bin/eslint .",
     "eslint-fix": "./node_modules/.bin/eslint . --fix",
     "keygen": "ts-node src/cli.ts keygen",
