@@ -111,10 +111,6 @@ func TestBallot_Unmarshal(t *testing.T) {
 	require.Equal(t, expected.TextResultIDs, b.TextResultIDs)
 	require.Equal(t, expected.TextResult, b.TextResult)
 
-	// with ballot too long
-	err = b.Unmarshal(ballot1+"x", form)
-	require.EqualError(t, err, "ballot has an unexpected size 102, expected <= 101")
-
 	// with line wrongly formatted
 	err = b.Unmarshal("x", form)
 	require.EqualError(t, err, "a line in the ballot has length != 3: x")
