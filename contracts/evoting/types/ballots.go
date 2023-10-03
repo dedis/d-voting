@@ -43,12 +43,6 @@ type Ballot struct {
 // Unmarshal decodes the given string according to the format described in
 // "state of smart contract.md"
 func (b *Ballot) Unmarshal(marshalledBallot string, form Form) error {
-	if len(marshalledBallot) > form.BallotSize {
-		b.invalidate()
-		return fmt.Errorf("ballot has an unexpected size %d, expected <= %d",
-			len(marshalledBallot), form.BallotSize)
-	}
-
 	lines := strings.Split(marshalledBallot, "\n")
 
 	b.SelectResultIDs = make([]ID, 0)
