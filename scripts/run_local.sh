@@ -11,7 +11,7 @@ if [[ $(git rev-parse --show-toplevel) != $(pwd) ]]; then
   exit 1
 fi
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 . "$SCRIPT_DIR/local_vars.sh"
 
 asdf_shell() {
@@ -26,13 +26,10 @@ mkdir -p nodes
 
 function build_dela() {
   echo "Building dela-node"
-  if ! [[ -d dela/ ]]; then
-    git clone https://github.com/c4dt/dela.git
-  fi
   export GOBIN=$(pwd)/bin
   PATH="$PATH":"$GOBIN"
   if ! [[ -f $GOBIN/crypto ]]; then
-    (cd dela/cli/crypto && go install)
+    go install github.com/c4dt/dela/cli/crypto
   fi
   if ! [[ -f $GOBIN/dvoting ]]; then
     go install ./cli/dvoting
@@ -60,6 +57,13 @@ function keypair() {
 
 function kill_nodes() {
   pkill dvoting || true
+
+  echo "Waiting for nodes to stop"
+  for n in $(seq 4); do
+    NODEPORT=$((2000 + n * 2 - 2))
+    while lsof -ln | grep -q :$NODEPORT; do sleep .1; done
+  done
+
   rm -rf nodes/node*
 }
 
@@ -75,7 +79,7 @@ function init_nodes() {
     mkdir -p $NODEDIR
     rm -f $NODEDIR/node.log
     dvoting --config $NODEDIR start --postinstall --proxyaddr :$PROXYPORT --proxykey $PUBLIC_KEY \
-      --listen tcp://0.0.0.0:$NODEPORT --public http://localhost:$NODEPORT --routing tree |
+      --listen tcp://0.0.0.0:$NODEPORT --public grpc://localhost:$NODEPORT --routing tree --noTLS |
       ts "Node-$n: " | tee $NODEDIR/node.log &
   done
 
@@ -94,7 +98,7 @@ function init_dela() {
   for n in $(seq 2 4); do
     TOKEN_ARGS=$(dvoting --config ./nodes/node-1 minogrpc token)
     NODEDIR=./nodes/node-$n
-    dvoting --config $NODEDIR minogrpc join --address //localhost:2000 $TOKEN_ARGS
+    dvoting --config $NODEDIR minogrpc join --address grpc://localhost:2000 $TOKEN_ARGS
   done
 
   echo "  Create a new chain with the nodes"
@@ -179,6 +183,7 @@ clean)
   kill_nodes
   kill_backend
   kill_db
+  rm -f bin/*
   exit
   ;;
 

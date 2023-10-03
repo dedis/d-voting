@@ -3,7 +3,7 @@ module github.com/c4dt/d-voting
 go 1.19
 
 require (
-	github.com/c4dt/dela v0.0.0-20230928144925-791c0000a6ef
+	github.com/c4dt/dela v0.0.0-20231003140702-cc92be785f8e
 	github.com/c4dt/dela-apps v0.0.0-20230929051236-6d89286321f7
 	github.com/gorilla/mux v1.8.0
 	github.com/opentracing/opentracing-go v1.2.0
@@ -48,5 +48,3 @@ require (
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
-
-//replace github.com/c4dt/dela-apps => ../dela-apps
