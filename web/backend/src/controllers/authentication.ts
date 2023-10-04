@@ -6,8 +6,8 @@ import { getUserPermissions, readSCIPER, setMapAuthorization } from '../authMana
 export const authenticationRouter = express.Router();
 
 authenticationRouter.get('/get_dev_login', (req, res) => {
-  if (process.env.NODE_ENV !== 'development') {
-    const err = `/get_dev_login can only be called in development: ${process.env.NODE_ENV}`;
+  if (process.env.REACT_APP_DEV_LOGIN !== 'true') {
+    const err = `/get_dev_login can only be called with DEV_LOGIN===true: ${process.env.DEV_LOGIN}`;
     console.error(err);
     res.status(500).send(err);
     return;
