@@ -8,18 +8,20 @@ x-dela: &dela
   profiles:
     - dela
     - all
-  environment:
-    PROXYKEY: ${PUBLIC_KEY}
-    PROXY_LOG: info
-    LLVL: debug
+x-dela-env: &dela-env
+  PROXYKEY: ${PUBLIC_KEY}
+  PROXY_LOG: info
+  LLVL: debug
 
 services:
 
   dela-worker-0:             # inital DELA leader node
     <<: *dela
+    environment:
+      <<: *dela-env
+      PUBLIC_URL: grpc://dela-worker-0:2000
     volumes:
       - dela-worker-0-data:/data
-    hostname: dela-worker-0
     ports:
       - 127.0.0.1:40000:40000
     networks:
@@ -29,7 +31,9 @@ services:
     <<: *dela
     volumes:
       - dela-worker-1-data:/data
-    hostname: dela-worker-1
+    environment:
+      <<: *dela-env
+      PUBLIC_URL: grpc://dela-worker-1:2000
     ports:
       - 127.0.0.1:40001:40000
     networks:
@@ -39,7 +43,9 @@ services:
     <<: *dela
     volumes:
       - dela-worker-2-data:/data
-    hostname: dela-worker-2
+    environment:
+      <<: *dela-env
+      PUBLIC_URL: grpc://dela-worker-2:2000
     ports:
       - 127.0.0.1:40002:40000
     networks:
@@ -49,7 +55,9 @@ services:
     <<: *dela
     volumes:
       - dela-worker-3-data:/data
-    hostname: dela-worker-3
+    environment:
+      <<: *dela-env
+      PUBLIC_URL: grpc://dela-worker-3:2000
     ports:
       - 127.0.0.1:40003:40000
     networks:

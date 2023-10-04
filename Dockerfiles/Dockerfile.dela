@@ -13,5 +13,5 @@ COPY --from=base /go/d-voting .
 WORKDIR /go/d-voting/cli/dvoting
 RUN go build
 ENV PATH=/go/dela/cli/crypto:/go/d-voting/cli/dvoting:${PATH}
-ENTRYPOINT ["/bin/bash", "-c", "dvoting --config /data/node start --postinstall --proxyaddr :$PROXYPORT --proxykey $PROXYKEY --listen tcp://0.0.0.0:2000 --public http://$HOSTNAME:$NODEPORT --routing tree"]
+ENTRYPOINT ["/bin/bash", "-c", "dvoting --config /data/node start --postinstall --proxyaddr :$PROXYPORT --proxykey $PROXYKEY --listen tcp://0.0.0.0:2000 --public $PUBLIC_URL --routing tree --noTLS"]
 CMD []

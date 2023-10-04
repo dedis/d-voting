@@ -5,10 +5,10 @@ x-dela: &dela
   profiles:
     - dela
     - all
-  environment:
-    PROXYKEY: ${PUBLIC_KEY}
-    PROXY_LOG: info
-    LLVL: info
+x-dela-env: &dela-env
+  PROXYKEY: ${PUBLIC_KEY}
+  PROXY_LOG: info
+  LLVL: info
 
 services:
 
@@ -18,9 +18,11 @@ services:
       dockerfile: Dockerfiles/Dockerfile.dela
       context: ../
       target: build
+    environment:
+      <<: *dela-env
+      PUBLIC_URL: grpc://dela-worker-0:2000
     volumes:
       - dela-worker-0-data:/data
-    hostname: dela-worker-0
     networks:
       d-voting:
         ipv4_address: 172.19.44.254
@@ -28,7 +30,9 @@ services:
     <<: *dela
     volumes:
       - dela-worker-1-data:/data
-    hostname: dela-worker-1
+    environment:
+      <<: *dela-env
+      PUBLIC_URL: grpc://dela-worker-1:2000
     networks:
       d-voting:
         ipv4_address: 172.19.44.253
@@ -36,7 +40,9 @@ services:
     <<: *dela
     volumes:
       - dela-worker-2-data:/data
-    hostname: dela-worker-2
+    environment:
+      <<: *dela-env
+      PUBLIC_URL: grpc://dela-worker-2:2000
     networks:
       d-voting:
         ipv4_address: 172.19.44.252
@@ -44,7 +50,9 @@ services:
     <<: *dela
     volumes:
       - dela-worker-3-data:/data
-    hostname: dela-worker-3
+    environment:
+      <<: *dela-env
+      PUBLIC_URL: grpc://dela-worker-3:2000
     networks:
       d-voting:
         ipv4_address: 172.19.44.251
