@@ -14,3 +14,5 @@ export DB_PATH="$(pwd)/nodes/llmdb"
 #export LLVL=info
 # If this is set, you can login without Gaspar
 export REACT_APP_DEV_LOGIN="true"
+# uncomment this to enable TLS to test gaspar
+#export HTTPS=true

@@ -1,25 +1,22 @@
 version: "3.8"
 x-dela: &dela
-  image: ghcr.io/c4dt/d-voting-dela:latest
+  build:
+    dockerfile: Dockerfiles/Dockerfile.dela
+    context: ../
+    target: production
+  env_file: ../.env
+  profiles:
+    - dela
+    - all
   environment:
     PROXYKEY: ${PUBLIC_KEY}
-    PROXYPORT: ${PROXYPORT}
     PROXY_LOG: info
-    LLVL: debug
-    NODEPORT: ${NODEPORT}
-  security_opt:
-    - apparmor:unconfined
-  cap_add:
-    - SYS_PTRACE
+    LLVL: info
 
 services:
 
   dela-worker-0:             # inital DELA leader node
     <<: *dela
-    build:
-      dockerfile: Dockerfiles/Dockerfile.dela
-      context: ../
-      target: debug
     volumes:
       - dela-worker-0-data:/data
     hostname: dela-worker-0
@@ -66,11 +63,13 @@ services:
       context: ../
     ports:
       - 127.0.0.1:3000:3000
+    command: run start
     volumes:
       - ../web/frontend/src:/web/frontend/src     # mount codebase for development
-    environment:
-      BACKEND_HOST: ${BACKEND_HOST}
-      BACKEND_PORT: ${BACKEND_PORT}
+    env_file: ../.env
+    profiles:
+      - client
+      - all
     networks:
       d-voting:
         ipv4_address: 172.19.44.2
@@ -80,17 +79,8 @@ services:
     build:
       dockerfile: Dockerfiles/Dockerfile.backend
       context: ../
-    environment:
-      DATABASE_USERNAME: ${DATABASE_USERNAME}
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
-      DATABASE_HOST: ${DATABASE_HOST}
-      DATABASE_PORT: ${DATABASE_PORT}
-      DB_PATH: /data/${DB_PATH}
-      FRONT_END_URL: ${FRONT_END_URL}
-      DELA_NODE_URL: ${DELA_NODE_URL}
-      SESSION_SECRET: ${SESSION_SECRET}
-      PUBLIC_KEY: ${PUBLIC_KEY}
-      PRIVATE_KEY: ${PRIVATE_KEY}
+    command: run start-dev
+    env_file: ../.env
     ports:
       - 127.0.0.1:5000:5000
     depends_on:
@@ -99,6 +89,9 @@ services:
     volumes:
       - backend-data:/data
       - ../web/backend/src:/web/backend/src       # mount codebase for development
+    profiles:
+      - client
+      - all
     networks:
       d-voting:
         ipv4_address: 172.19.44.3
@@ -111,21 +104,30 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ../web/backend/src/migration.sql:/docker-entrypoint-initdb.d/init.sql
+    profiles:
+      - client
+      - all
     networks:
       d-voting:
         ipv4_address: 172.19.44.4
 
   shell:            # helper container to execute scripts from within Docker network (macOS/Windows setup)
-    image: ubuntu:mantic
-    command: ["tail", "-f", "/dev/null"]
+    image: buildpack-deps:bookworm-curl
+    env_file: ../.env
+    profiles:
+      - debug
+      - all
     networks:
       d-voting:
         ipv4_address: 172.19.44.5
     volumes:
-      - ../scripts:/scripts
+      - ../:/src
 
   firefox:          # helper container to execute Firefox within Docker network (macOS/Windows setup)
     image: jlesage/firefox
+    profiles:
+      - debug
+      - all
     ports:
       - 127.0.0.1:5800:5800
     networks:
