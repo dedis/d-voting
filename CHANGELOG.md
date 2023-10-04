@@ -16,5 +16,6 @@ Latest changes in each category go to the top
 ### Removed
 ### Fixed
 - File formatting and errors in comments
+- Popup when voting and some voting translation fixes
 
 ### Security
