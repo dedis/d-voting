@@ -233,7 +233,7 @@ delaRouter.delete('/forms/:formID', (req, res) => {
 // request that needs to go the DELA nodes
 delaRouter.use('/*', (req, res) => {
   if (!req.session.userId) {
-    res.status(400).send('Unauthorized');
+    res.status(401).send('Authentication required!');
     return;
   }
 
@@ -242,24 +242,23 @@ delaRouter.use('/*', (req, res) => {
   // special case for voting
   const match = req.baseUrl.match('/api/evoting/forms/(.*)/vote');
   if (match) {
-    if (!req.session.userId) {
-      res.status(401).send('Authentication required!');
-      return;
-    }
     if (!isAuthorized(req.session.userId, match[1], PERMISSIONS.ACTIONS.VOTE)) {
       res.status(400).send('Unauthorized');
       return;
     }
 
-    // We must set the UserID to know who this ballot is associated to. This is
-    // only needed to allow users to cast multiple ballots, where only the last
-    // ballot is taken into account. To preserve anonymity, the web-backend could
-    // translate UserIDs to another random ID.
-    // bodyData.UserID = req.session.userId.toString();
+    if (process.env.REACT_APP_RANDOMIZE_VOTE_ID === 'true') {
+      // DEBUG: this is only for debugging and needs to be replaced before production
+      console.warn('DEV CODE - randomizing the SCIPER ID to allow for unlimited votes');
+      bodyData.UserID = makeid(10);
+    } else {
+      // We must set the UserID to know who this ballot is associated to. This is
+      // only needed to allow users to cast multiple ballots, where only the last
+      // ballot is taken into account. To preserve anonymity, the web-backend could
+      // translate UserIDs to another random ID.
 
-    // DEBUG: this is only for debugging and needs to be replaced before production
-    console.warn('DEV CODE - randomizing the SCIPER ID to allow for unlimited votes');
-    bodyData.UserID = makeid(10);
+      bodyData.UserID = req.session.userId.toString();
+    }
   }
 
   const dataStr = JSON.stringify(bodyData);

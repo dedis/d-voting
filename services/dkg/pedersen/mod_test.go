@@ -614,7 +614,7 @@ func TestPedersen_ComputePubshares_StreamFailed(t *testing.T) {
 	}
 
 	err := a.ComputePubshares()
-	require.EqualError(t, err, fake.Err("the list of Participants is empty"))
+	require.EqualError(t, err, "the list of Participants is empty")
 }
 
 func TestPedersen_ComputePubshares_SenderFailed(t *testing.T) {
