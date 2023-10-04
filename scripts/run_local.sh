@@ -174,7 +174,7 @@ function start_frontend() {
   keypair
 
   echo "Running frontend"
-  (cd web/frontend && npm run start-dev | ts "Frontend: " &)
+  (cd web/frontend && npm run start | ts "Frontend: " &)
 }
 
 case "$1" in
