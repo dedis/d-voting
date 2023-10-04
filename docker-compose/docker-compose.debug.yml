@@ -63,7 +63,7 @@ services:
       context: ../
     ports:
       - 127.0.0.1:3000:3000
-    command: run start-dev
+    command: run start
     volumes:
       - ../web/frontend/src:/web/frontend/src     # mount codebase for development
     env_file: ../.env
@@ -79,7 +79,7 @@ services:
     build:
       dockerfile: Dockerfiles/Dockerfile.backend
       context: ../
-    command: run dev
+    command: run start-dev
     env_file: ../.env
     ports:
       - 127.0.0.1:5000:5000
