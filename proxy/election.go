@@ -377,7 +377,7 @@ func (h *form) cancelForm(formIDHex string, w http.ResponseWriter, r *http.Reque
 	}
 
 	// create the transaction and add it to the pool
-	txnID, lastBlock, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
+	txnID, lastBlock, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdCancelForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -545,7 +545,7 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create the transaction and add it to the pool
-	txnID, lastBlock, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
+	txnID, lastBlock, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdDeleteForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
