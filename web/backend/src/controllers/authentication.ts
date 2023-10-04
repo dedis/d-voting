@@ -7,7 +7,7 @@ export const authenticationRouter = express.Router();
 
 authenticationRouter.get('/get_dev_login', (req, res) => {
   if (process.env.REACT_APP_DEV_LOGIN !== 'true') {
-    const err = `/get_dev_login can only be called with DEV_LOGIN===true: ${process.env.DEV_LOGIN}`;
+    const err = `/get_dev_login can only be called with REACT_APP_DEV_LOGIN===true: ${process.env.REACT_APP_DEV_LOGIN}`;
     console.error(err);
     res.status(500).send(err);
     return;

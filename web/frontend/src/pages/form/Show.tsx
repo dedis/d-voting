@@ -77,7 +77,7 @@ const FormShow: FC = () => {
   // Fetch result when available after a status change
   useEffect(() => {
     if (status === Status.ResultAvailable && isResultAvailable) {
-      getResults(formID, setError, setResult, setIsResultSet);
+      getResults(formID, setError, setResult, setIsResultSet).then();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isResultAvailable, status]);

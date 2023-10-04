@@ -15,4 +15,6 @@ Latest changes in each category go to the top
 ### Deprecated
 ### Removed
 ### Fixed
+- File formatting and errors in comments
+
 ### Security
