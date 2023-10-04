@@ -99,7 +99,7 @@ func TestDvoting_Scenario_SetupAndTransactions(t *testing.T) {
 	// Run a few transactions.
 	for i := 0; i < 5; i++ {
 		err = runWithCfg(args, config{})
-		require.EqualError(t, err, "command error: transaction refused: duplicate in roster: 127.0.0.1:2115")
+		require.EqualError(t, err, "command error: transaction refused: duplicate in roster: grpcs://127.0.0.1:2115")
 	}
 
 	// Test a timeout waiting for a transaction.
@@ -155,7 +155,7 @@ func TestDvoting_Scenario_RestartNode(t *testing.T) {
 	)
 
 	err = run(args)
-	require.EqualError(t, err, "command error: transaction refused: duplicate in roster: 127.0.0.1:2210")
+	require.EqualError(t, err, "command error: transaction refused: duplicate in roster: grpcs://127.0.0.1:2210")
 }
 
 // -----------------------------------------------------------------------------

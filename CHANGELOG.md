@@ -12,6 +12,11 @@ Latest changes in each category go to the top
 - Changelog - please use it
 
 ### Changed
+- the actions in package.json for the frontend changed. Both are somewhat development mode,
+ as the webserver is not supposed to be used in production. 
+  - `start`: starts in plain mode 
+  - `start-https`: starts in HTTPS mode
+
 ### Deprecated
 ### Removed
 ### Fixed
