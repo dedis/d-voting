@@ -51,6 +51,10 @@ github.com/c4dt/dela v0.0.0-20230929152556-a801764677f2 h1:hXpyJw1UVpUOv43dJzDBX
 github.com/c4dt/dela v0.0.0-20230929152556-a801764677f2/go.mod h1:rtOjXdQKOeIyByN4c+j698FqdKBhAk6C2u8cc/Wf3JY=
 github.com/c4dt/dela v0.0.0-20231003140702-cc92be785f8e h1:rx/djITT7JaJ0DaNb7uSroQeUKLvaUmYzanq4oh3PNw=
 github.com/c4dt/dela v0.0.0-20231003140702-cc92be785f8e/go.mod h1:rtOjXdQKOeIyByN4c+j698FqdKBhAk6C2u8cc/Wf3JY=
+github.com/c4dt/dela v0.0.0-20231004123917-a0389aaa9866 h1:sF5gADqghWOQOnBiWrFyWDMIla6qw480wt5N6TlquHA=
+github.com/c4dt/dela v0.0.0-20231004123917-a0389aaa9866/go.mod h1:rtOjXdQKOeIyByN4c+j698FqdKBhAk6C2u8cc/Wf3JY=
+github.com/c4dt/dela v0.0.0-20231004135936-647c76e51d8a h1:3+E/TwYI6lUtzzCScka7gQ8eav3wIwEr0xNNsVPAGnA=
+github.com/c4dt/dela v0.0.0-20231004135936-647c76e51d8a/go.mod h1:rtOjXdQKOeIyByN4c+j698FqdKBhAk6C2u8cc/Wf3JY=
 github.com/c4dt/dela-apps v0.0.0-20230929051236-6d89286321f7 h1:cnB6P4hA69xh/guriaKK6gufWvimA4CBkNSAbecDPyU=
 github.com/c4dt/dela-apps v0.0.0-20230929051236-6d89286321f7/go.mod h1:hlRTMsRvi8hYWrxZehAmDcyulnH2IssPFY1a/u5xVzE=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
