@@ -9,3 +9,5 @@ export SESSION_SECRET="session secret"
 export REACT_APP_NOMOCK=on
 # shellcheck disable=SC2155
 export DB_PATH="$(pwd)/nodes/llmdb"
+#export PROXY_LOG=info
+#export LLVL=info

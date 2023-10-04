@@ -33,13 +33,13 @@ proxiesRouter.put('/:nodeAddr', (req, res) => {
   const proxy = proxiesDB.get(nodeAddr);
 
   if (proxy === undefined) {
-    res.status(404).send('not found');
+    res.status(404).send(`proxy ${nodeAddr} not found`);
     return;
   }
   try {
     const bodydata = req.body;
     if (bodydata.Proxy === undefined) {
-      res.status(400).send('bad request, proxy is undefined');
+      res.status(400).send(`bad request, proxy ${nodeAddr} is undefined`);
       return;
     }
 
@@ -70,7 +70,7 @@ proxiesRouter.delete('/:nodeAddr', (req, res) => {
   const proxy = proxiesDB.get(nodeAddr);
 
   if (proxy === undefined) {
-    res.status(404).send('not found');
+    res.status(404).send(`proxy ${nodeAddr} not found`);
     return;
   }
 
@@ -98,7 +98,7 @@ proxiesRouter.get('/:nodeAddr', (req, res) => {
   const proxy = proxiesDB.get(decodeURIComponent(nodeAddr));
 
   if (proxy === undefined) {
-    res.status(404).send('not found');
+    res.status(404).send(`proxy ${nodeAddr} not found`);
     return;
   }
 
