@@ -2,9 +2,6 @@ version: "3.8"
 x-dela: &dela
   image: ghcr.io/c4dt/d-voting-dela:latest
   env_file: ../.env
-  profiles:
-    - dela
-    - all
 x-dela-env: &dela-env
   PROXYKEY: ${PUBLIC_KEY}
   PROXY_LOG: info
@@ -65,9 +62,6 @@ services:
     ports:
       - 127.0.0.1:3000:3000
     env_file: ../.env
-    profiles:
-      - client
-      - all
     networks:
       d-voting:
         ipv4_address: 172.19.44.2
@@ -85,9 +79,6 @@ services:
         condition: service_started
     volumes:
       - backend-data:/data
-    profiles:
-      - client
-      - all
     networks:
       d-voting:
         ipv4_address: 172.19.44.3
@@ -100,9 +91,6 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ../web/backend/src/migration.sql:/docker-entrypoint-initdb.d/init.sql
-    profiles:
-      - client
-      - all
     networks:
       d-voting:
         ipv4_address: 172.19.44.4
