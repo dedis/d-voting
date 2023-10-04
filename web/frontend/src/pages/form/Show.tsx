@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import useForm from 'components/utils/useForm';
 import { OngoingAction, Status } from 'types/form';
 import Modal from 'components/modal/Modal';
+import { ROUTE_FORM_INDEX } from '../../Routes';
 import StatusTimeline from './components/StatusTimeline';
 import Loading from 'pages/Loading';
 import Action from './components/Action';
@@ -213,6 +214,7 @@ const FormShow: FC = () => {
       setError(e.error);
     }
   }, [configObj]);
+
   return (
     <div className="w-[60rem] font-sans px-4 py-4">
       <Modal
@@ -220,6 +222,9 @@ const FormShow: FC = () => {
         setShowModal={setShowModalError}
         textModal={textModalError === null ? '' : textModalError}
         buttonRightText={t('close')}
+        onClose={() => {
+          window.location.href = ROUTE_FORM_INDEX;
+        }}
       />
       {!loading ? (
         <>

@@ -11,8 +11,7 @@ const useFetchCall = (endpoint: RequestInfo, request: RequestInit) => {
       try {
         const response = await fetch(endpoint, request);
         if (!response.ok) {
-          const js = await response.json();
-          throw new Error(JSON.stringify(js));
+          setError(new Error(await response.text()));
         } else {
           let dataReceived = await response.json();
           setData(dataReceived);
@@ -23,7 +22,7 @@ const useFetchCall = (endpoint: RequestInfo, request: RequestInit) => {
       }
     };
 
-    fetchData();
+    fetchData().catch(console.error);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [endpoint]);
 

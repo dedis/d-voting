@@ -20,6 +20,7 @@ Latest changes in each category go to the top
 ### Deprecated
 ### Removed
 ### Fixed
+- Redirection when form doesn't exist and nicer error message
 - File formatting and errors in comments
 - Popup when voting and some voting translation fixes
 - Fixed return error when voting
