@@ -3,7 +3,7 @@ x-dela: &dela
   build:
     dockerfile: Dockerfiles/Dockerfile.dela
     context: ../
-    target: production
+    target: build
   env_file: ../.env
   profiles:
     - dela

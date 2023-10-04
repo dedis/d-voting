@@ -7,21 +7,11 @@ RUN go install
 WORKDIR /go/d-voting
 COPY . .
 
-FROM base AS production
+FROM base AS build
 COPY --from=base /go/dela .
 COPY --from=base /go/d-voting .
 WORKDIR /go/d-voting/cli/dvoting
 RUN go build
 ENV PATH=/go/dela/cli/crypto:/go/d-voting/cli/dvoting:${PATH}
 ENTRYPOINT ["/bin/bash", "-c", "dvoting --config /data/node start --postinstall --proxyaddr :$PROXYPORT --proxykey $PROXYKEY --listen tcp://0.0.0.0:2000 --public http://$HOSTNAME:$NODEPORT --routing tree"]
-CMD []
-
-FROM base AS debug
-COPY --from=base /go/dela .
-COPY --from=base /go/d-voting .
-RUN go install github.com/go-delve/delve/cmd/dlv@latest
-WORKDIR /go/d-voting/cli/dvoting
-RUN go build -gcflags="all=-N -l"
-ENV PATH=/go/dela/cli/crypto:/go/d-voting/cli/dvoting:${PATH}
-ENTRYPOINT ["/bin/bash", "-c", "dlv --listen=:40000 --headless=true --api-version=2 --accept-multiclient exec /go/d-voting/cli/dvoting/dvoting -- --config /data/node start --postinstall --proxyaddr :$PROXYPORT --proxykey $PROXYKEY --listen tcp://0.0.0.0:2000 --public http://$HOSTNAME:2000 --routing tree"]
 CMD []
