@@ -15,7 +15,7 @@ services:
     build:
       dockerfile: Dockerfiles/Dockerfile.dela
       context: ../
-      target: production
+      target: build
     volumes:
       - dela-worker-0-data:/data
     hostname: dela-worker-0

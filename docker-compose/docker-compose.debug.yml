@@ -11,7 +11,7 @@ x-dela: &dela
   environment:
     PROXYKEY: ${PUBLIC_KEY}
     PROXY_LOG: info
-    LLVL: info
+    LLVL: debug
 
 services:
 
