@@ -3,7 +3,7 @@ import { ENDPOINT_USER_RIGHTS } from 'components/utils/Endpoints';
 import { FlashContext, FlashLevel } from 'index';
 import Loading from 'pages/Loading';
 import { useTranslation } from 'react-i18next';
-import { fetchCall } from '../../components/utils/fetchCall';
+import { fetchCall } from 'components/utils/fetchCall';
 import AdminTable from './AdminTable';
 import DKGTable from './DKGTable';
 import * as endpoints from 'components/utils/Endpoints';
@@ -41,7 +41,9 @@ const Admin: FC = () => {
       setNodeProxyError(null);
       setNodeProxyLoading(false);
     }
+  }, [fctx, nodeProxyError, t]);
 
+  useEffect(() => {
     if (nodeProxyObject !== null) {
       const newNodeProxyAddresses = new Map();
 
@@ -58,7 +60,7 @@ const Admin: FC = () => {
     return () => {
       abortController.abort();
     };
-  }, [abortController, fctx, t, nodeProxyObject, nodeProxyError]);
+  }, [abortController, t, nodeProxyObject, nodeProxyError]);
 
   useEffect(() => {
     fetch(ENDPOINT_USER_RIGHTS)

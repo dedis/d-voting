@@ -29,9 +29,7 @@ const DKGTable: FC<DKGTableProps> = ({ nodeProxyAddresses, setNodeProxyAddresses
   };
 
   useEffect(() => {
-    if (nodeProxyAddresses.size) {
-      setNodeProxyToDisplay(partitionMap(nodeProxyAddresses, NODE_PROXY_PER_PAGE)[pageIndex]);
-    }
+    setNodeProxyToDisplay(partitionMap(nodeProxyAddresses, NODE_PROXY_PER_PAGE)[pageIndex]);
   }, [nodeProxyAddresses, pageIndex]);
 
   const handlePrevious = (): void => {

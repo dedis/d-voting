@@ -22,6 +22,7 @@ Latest changes in each category go to the top
 ### Deprecated
 ### Removed
 ### Fixed
+- Proxy editing fixed: adding, modifying, deleting now works 
 - When fetching form and user updates, only do it when showing the activity
 - Redirection when form doesn't exist and nicer error message
 - File formatting and errors in comments
