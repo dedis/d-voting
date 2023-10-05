@@ -12,6 +12,8 @@ Latest changes in each category go to the top
 - Changelog - please use it
 
 ### Changed
+- for the Dockerfiles and docker-compose.yml, `DELA_NODE_URL` has been replaced with `DELA_PROXY_URL`,
+ which is the more accurate name.
 - the actions in package.json for the frontend changed. Both are somewhat development mode,
  as the webserver is not supposed to be used in production. 
   - `start`: starts in plain mode 

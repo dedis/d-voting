@@ -15,7 +15,7 @@ when running `docker compose`.
 The environment file needs to contain
 
 ```
-DELA_NODE_URL=http://172.19.44.254:8080
+DELA_PROXY_URL=http://172.19.44.254:8080
 DATABASE_USERNAME=dvoting
 DATABASE_PASSWORD=XXX                       # choose any PostgreSQL password
 DATABASE_HOST=db
