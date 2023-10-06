@@ -9,6 +9,8 @@ Latest changes in each category go to the top
 ## [Unreleased]
 
 ### Added
+- dev_login can change userId when clicking on the user in the upper right
+- admin can now add users as voters
 - New debugging variables in [local_vars.sh](./scripts/local_vars.sh)
 - Changelog - please use it
 

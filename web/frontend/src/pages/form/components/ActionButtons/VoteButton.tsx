@@ -7,10 +7,12 @@ import { ROUTE_BALLOT_SHOW } from 'Routes';
 import { Status } from 'types/form';
 
 const VoteButton = ({ status, formID }) => {
+  const authCtx = useContext(AuthContext);
   const { isLogged } = useContext(AuthContext);
   const { t } = useTranslation();
 
   return (
+    authCtx.isAllowed(formID, 'vote') &&
     status === Status.Open &&
     isLogged && (
       <Link to={ROUTE_BALLOT_SHOW + '/' + formID}>

@@ -50,11 +50,7 @@ export function isAuthorized(sciper: number | undefined, subject: string, action
 }
 
 export async function getUserPermissions(userID: number) {
-  let permissions: string[][] = [];
-  await authEnforcer.getFilteredPolicy(0, String(userID)).then((authRights) => {
-    permissions = authRights;
-  });
-  return permissions;
+  return authEnforcer.getFilteredPolicy(0, String(userID));
 }
 
 export async function addPolicy(userID: string, subject: string, permission: string) {
