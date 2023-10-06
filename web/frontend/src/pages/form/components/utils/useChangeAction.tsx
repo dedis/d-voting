@@ -1,3 +1,4 @@
+import { ENDPOINT_ADD_ROLE } from 'components/utils/Endpoints';
 import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -9,11 +10,13 @@ import { AuthContext, FlashContext, FlashLevel, ProxyContext } from 'index';
 import { useNavigate } from 'react-router';
 import { ROUTE_FORM_INDEX } from 'Routes';
 
+import { AddVotersModal, AddVotersModalSuccess } from 'pages/form/components/AddVotersModal';
 import ChooseProxyModal from 'pages/form/components/ChooseProxyModal';
 import ConfirmModal from 'components/modal/ConfirmModal';
 import usePostCall from 'components/utils/usePostCall';
 import InitializeButton from '../ActionButtons/InitializeButton';
 import DeleteButton from '../ActionButtons/DeleteButton';
+import AddVotersButton from '../ActionButtons/AddVotersButton';
 import SetupButton from '../ActionButtons/SetupButton';
 import CancelButton from '../ActionButtons/CancelButton';
 import CloseButton from '../ActionButtons/CloseButton';
@@ -46,11 +49,15 @@ const useChangeAction = (
   const [showModalClose, setShowModalClose] = useState(false);
   const [showModalCancel, setShowModalCancel] = useState(false);
   const [showModalDelete, setShowModalDelete] = useState(false);
+  const [showModalAddVoters, setShowModalAddVoters] = useState(false);
+  const [showModalAddVotersSucccess, setShowModalAddVotersSuccess] = useState(false);
+  const [newVoters, setNewVoters] = useState('');
 
   const [userConfirmedProxySetup, setUserConfirmedProxySetup] = useState(false);
   const [userConfirmedClosing, setUserConfirmedClosing] = useState(false);
   const [userConfirmedCanceling, setUserConfirmedCanceling] = useState(false);
   const [userConfirmedDeleting, setUserConfirmedDeleting] = useState(false);
+  const [userConfirmedAddVoters, setUserConfirmedAddVoters] = useState('');
 
   const [getError, setGetError] = useState(null);
   const [postError, setPostError] = useState(null);
@@ -92,6 +99,20 @@ const useChangeAction = (
       setShowModal={setShowModalDelete}
       textModal={t('confirmDeleteForm')}
       setUserConfirmedAction={setUserConfirmedDeleting}
+    />
+  );
+  const modalAddVoters = (
+    <AddVotersModal
+      showModal={showModalAddVoters}
+      setShowModal={setShowModalAddVoters}
+      setUserConfirmedAction={setUserConfirmedAddVoters}
+    />
+  );
+  const modalAddVotersSuccess = (
+    <AddVotersModalSuccess
+      showModal={showModalAddVotersSucccess}
+      setShowModal={setShowModalAddVotersSuccess}
+      newVoters={newVoters}
     />
   );
 
@@ -292,6 +313,38 @@ const useChangeAction = (
   }, [userConfirmedDeleting]);
 
   useEffect(() => {
+    if (userConfirmedAddVoters.length > 0) {
+      const newUsersArray = [];
+      for (const sciperStr of userConfirmedAddVoters.split('\n')) {
+        try {
+          const sciper = parseInt(sciperStr, 10);
+          if (sciper < 100000 || sciper > 999999) {
+            console.error(`SCIPER is out of range. ${sciper} is not between 100000 and 999999`);
+          } else {
+            const request = {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: sciper, subject: formID, permission: 'vote' }),
+            };
+            sendFetchRequest(ENDPOINT_ADD_ROLE, request, setIsPosting)
+              .catch(console.error)
+              .then(() => {
+                newUsersArray.push(sciper);
+                setNewVoters(newUsersArray.join('\n'));
+                setShowModalAddVotersSuccess(true);
+              });
+          }
+        } catch (e) {
+          console.error(`While adding voter: ${e}`);
+        }
+      }
+      setUserConfirmedAddVoters('');
+      setShowModalAddVoters(false);
+    }
+    // setUserConfirmedAddVoters(false);
+  }, [formID, sendFetchRequest, userConfirmedAddVoters]);
+
+  useEffect(() => {
     if (userConfirmedProxySetup) {
       const setup = async () => {
         setOngoingAction(OngoingAction.SettingUp);
@@ -320,7 +373,7 @@ const useChangeAction = (
         setUserConfirmedProxySetup(false);
       };
 
-      setup();
+      setup().catch(console.error);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userConfirmedProxySetup]);
@@ -392,6 +445,10 @@ const useChangeAction = (
     setShowModalDelete(true);
   };
 
+  const handleAddVoters = () => {
+    setShowModalAddVoters(true);
+  };
+
   const getAction = () => {
     // Except for seeing the results, all actions at least require the users
     // to be logged in
@@ -447,6 +504,7 @@ const useChangeAction = (
           <>
             <OpenButton status={status} handleOpen={handleOpen} ongoingAction={ongoingAction} />
             <DeleteButton handleDelete={handleDelete} />
+            <AddVotersButton handleAddVoters={handleAddVoters} />
           </>
         );
       case Status.Open:
@@ -460,6 +518,7 @@ const useChangeAction = (
             />
             <VoteButton status={status} formID={formID} />
             <DeleteButton handleDelete={handleDelete} />
+            <AddVotersButton handleAddVoters={handleAddVoters} />
           </>
         );
       case Status.Closed:
@@ -510,7 +569,15 @@ const useChangeAction = (
         );
     }
   };
-  return { getAction, modalClose, modalCancel, modalDelete, modalSetup };
+  return {
+    getAction,
+    modalClose,
+    modalCancel,
+    modalDelete,
+    modalSetup,
+    modalAddVoters,
+    modalAddVotersSuccess,
+  };
 };
 
 export default useChangeAction;

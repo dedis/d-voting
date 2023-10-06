@@ -54,16 +54,19 @@ export async function getUserPermissions(userID: number) {
   await authEnforcer.getFilteredPolicy(0, String(userID)).then((authRights) => {
     permissions = authRights;
   });
-  console.log(`[getUserPermissions] user has permissions: ${permissions}`);
   return permissions;
 }
 
-export function assignUserPermissionToOwnElection(userID: string, ElectionID: string) {
-  authEnforcer.addPolicy(userID, ElectionID, PERMISSIONS.ACTIONS.OWN);
+export async function addPolicy(userID: string, subject: string, permission: string) {
+  await authEnforcer.addPolicy(userID, subject, permission);
+  await authEnforcer.loadPolicy();
+}
+export async function assignUserPermissionToOwnElection(userID: string, ElectionID: string) {
+  return authEnforcer.addPolicy(userID, ElectionID, PERMISSIONS.ACTIONS.OWN);
 }
 
-export function revokeUserPermissionToOwnElection(userID: string, ElectionID: string) {
-  authEnforcer.removePolicy(userID, ElectionID, PERMISSIONS.ACTIONS.OWN);
+export async function revokeUserPermissionToOwnElection(userID: string, ElectionID: string) {
+  return authEnforcer.removePolicy(userID, ElectionID, PERMISSIONS.ACTIONS.OWN);
 }
 
 // This function helps us convert the double list of the authorization
