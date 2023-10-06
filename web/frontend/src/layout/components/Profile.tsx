@@ -10,10 +10,17 @@ type ProfileProps = {
   authCtx: AuthState;
   handleLogout: (e: any) => Promise<void>;
   handleLogin: (arg0: FlashState) => Promise<void>;
+  handleChangeId: (e: any) => Promise<void>;
   fctx: FlashState;
 };
 
-const Profile: FC<ProfileProps> = ({ authCtx, handleLogout, handleLogin, fctx }) => {
+const Profile: FC<ProfileProps> = ({
+  authCtx,
+  handleLogout,
+  handleLogin,
+  handleChangeId,
+  fctx,
+}) => {
   const { t } = useTranslation();
 
   return authCtx.isLogged ? (
@@ -38,6 +45,15 @@ const Profile: FC<ProfileProps> = ({ authCtx, handleLogout, handleLogin, fctx })
               Logged as {authCtx.firstName} {authCtx.lastName}
             </p>
           </Menu.Item>
+          {process.env.REACT_APP_DEV_LOGIN === 'true' && (
+            <Menu.Item>
+              <div
+                onClick={handleChangeId}
+                className={'cursor-pointer block px-4 py-2 text-sm text-gray-700'}>
+                {t('changeId')}
+              </div>
+            </Menu.Item>
+          )}
           <Menu.Item>
             <div
               onClick={handleLogout}

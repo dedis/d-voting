@@ -11,6 +11,7 @@ import {
   ROUTE_FORM_INDEX,
   ROUTE_HOME,
 } from '../Routes';
+import ChangeIdModal from './components/ChangeIdModal';
 
 import WarningModal from './components/WarningModal';
 import { AuthContext, FlashContext, FlashLevel } from '..';
@@ -153,7 +154,7 @@ const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
   </Popover>
 );
 
-const RightSideNavBar = ({ authCtx, handleLogout, fctx, t }) => (
+const RightSideNavBar = ({ authCtx, handleLogout, handleChangeId, fctx, t }) => (
   <div className="absolute hidden inset-y-0 right-0 flex items-center pr-2 md:static md:inset-auto md:flex md:ml-6 md:pr-0">
     {authCtx.isLogged && authCtx.isAllowed(SUBJECT_ELECTION, ACTION_CREATE) && (
       <NavLink title={t('navBarCreateForm')} to={ROUTE_FORM_CREATE}>
@@ -164,7 +165,13 @@ const RightSideNavBar = ({ authCtx, handleLogout, fctx, t }) => (
       </NavLink>
     )}
     <LanguageSelector />
-    <Profile authCtx={authCtx} handleLogout={handleLogout} handleLogin={handleLogin} fctx={fctx} />
+    <Profile
+      authCtx={authCtx}
+      handleLogout={handleLogout}
+      handleLogin={handleLogin}
+      handleChangeId={handleChangeId}
+      fctx={fctx}
+    />
   </div>
 );
 
@@ -206,6 +213,7 @@ const NavBar: FC = () => {
 
   const fctx = useContext(FlashContext);
   const [isShown, setIsShown] = useState(false);
+  const [changeIdShown, setChangeIdShown] = useState(false);
 
   const logout = async () => {
     const opts = { method: 'POST' };
@@ -228,19 +236,30 @@ const NavBar: FC = () => {
     setIsShown(true);
   };
 
+  const handleChangeId = () => {
+    setChangeIdShown(true);
+  };
+
   return (
     <nav className="w-full border-b">
       <div className="max-w-7xl mx-auto px-2 md:px-6 lg:px-8">
         <div className="relative flex items-center justify-between h-16">
           <MobileMenu authCtx={authCtx} handleLogout={handleLogout} fctx={fctx} t={t} />
           <LeftSideNavBar authCtx={authCtx} t={t} />
-          <RightSideNavBar authCtx={authCtx} handleLogout={handleLogout} fctx={fctx} t={t} />
+          <RightSideNavBar
+            authCtx={authCtx}
+            handleLogout={handleLogout}
+            handleChangeId={handleChangeId}
+            fctx={fctx}
+            t={t}
+          />
           <WarningModal
             isShown={isShown}
             setIsShown={setIsShown}
             action={async () => logout()}
             message={t('logoutWarning')}
           />
+          <ChangeIdModal isShown={changeIdShown} setIsShown={setChangeIdShown} />
         </div>
       </div>
     </nav>

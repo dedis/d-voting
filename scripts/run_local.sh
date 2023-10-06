@@ -146,8 +146,8 @@ function init_db() {
     -e POSTGRES_PASSWORD=$DATABASE_PASSWORD -e POSTGRES_USER=$DATABASE_USERNAME \
     --name postgres_dvoting -p 5432:5432 postgres:15 >/dev/null
 
-  echo "Adding $SCIPER_ADMIN to admin"
-  (cd web/backend && npx ts-node src/cli.ts addAdmin --sciper $SCIPER_ADMIN | grep -v Executing)
+  echo "Adding $REACT_APP_SCIPER_ADMIN to admin"
+  (cd web/backend && npx ts-node src/cli.ts addAdmin --sciper $REACT_APP_SCIPER_ADMIN | grep -v Executing)
 }
 
 function kill_backend() {
