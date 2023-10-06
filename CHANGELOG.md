@@ -9,9 +9,12 @@ Latest changes in each category go to the top
 ## [Unreleased]
 
 ### Added
+- New debugging variables in [local_vars.sh](./scripts/local_vars.sh)
 - Changelog - please use it
 
 ### Changed
+- for the Dockerfiles and docker-compose.yml, `DELA_NODE_URL` has been replaced with `DELA_PROXY_URL`,
+ which is the more accurate name.
 - the actions in package.json for the frontend changed. Both are somewhat development mode,
  as the webserver is not supposed to be used in production. 
   - `start`: starts in plain mode 
@@ -20,6 +23,9 @@ Latest changes in each category go to the top
 ### Deprecated
 ### Removed
 ### Fixed
+- Proxy editing fixed: adding, modifying, deleting now works 
+- When fetching form and user updates, only do it when showing the activity
+- Redirection when form doesn't exist and nicer error message
 - File formatting and errors in comments
 - Popup when voting and some voting translation fixes
 - Fixed return error when voting

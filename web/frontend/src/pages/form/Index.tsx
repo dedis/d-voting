@@ -1,8 +1,8 @@
 import React, { FC, useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { fetchCall } from 'components/utils/fetchCall';
 
 import FormTable from './components/FormTable';
-import useFetchCall from 'components/utils/useFetchCall';
 import * as endpoints from 'components/utils/Endpoints';
 import Loading from 'pages/Loading';
 import { LightFormInfo, Status } from 'types/form';
@@ -17,23 +17,33 @@ const FormIndex: FC = () => {
   const [statusToKeep, setStatusToKeep] = useState<Status>(null);
   const [forms, setForms] = useState<LightFormInfo[]>(null);
   const [loading, setLoading] = useState(true);
+  const [data, setData] = useState({ Forms: null });
   const [pageIndex, setPageIndex] = useState(0);
+  const [error, setError] = useState(null);
 
-  const request = {
-    method: 'GET',
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-    },
-  };
-
-  const [data, dataLoading, error] = useFetchCall(endpoints.forms(pctx.getProxy()), request);
+  useEffect(() => {
+    fetchCall(
+      endpoints.forms(pctx.getProxy()),
+      {
+        method: 'GET',
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+        },
+      },
+      setData,
+      setLoading
+    ).catch((err) => {
+      setError(err);
+      setLoading(false);
+    });
+  }, [pctx]);
 
   useEffect(() => {
     if (error !== null) {
       fctx.addMessage(t('errorRetrievingForms') + error.message, FlashLevel.Error);
-      setLoading(false);
+      setError(null);
     }
-  }, [fctx, t, error]);
+  }, [error, fctx, t]);
 
   // Apply the filter statusToKeep
   useEffect(() => {
@@ -51,12 +61,6 @@ const FormIndex: FC = () => {
     setPageIndex(0);
     setForms(filteredForms);
   }, [data, statusToKeep]);
-
-  useEffect(() => {
-    if (dataLoading !== null) {
-      setLoading(dataLoading);
-    }
-  }, [dataLoading]);
 
   return (
     <div className="w-[60rem] font-sans px-4 py-4">

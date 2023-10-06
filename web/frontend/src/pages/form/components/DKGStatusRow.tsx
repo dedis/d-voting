@@ -167,7 +167,6 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
           }
         )
         .finally(() => {
-          console.log('setDKGLoading to false');
           setDKGLoading(false);
         });
     }
@@ -175,7 +174,6 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
 
   // Notify the parent when we are loading or not
   useEffect(() => {
-    console.log('notifyLoading', DKGLoading);
     notifyLoading(node, DKGLoading);
 
     if (DKGLoading) {
