@@ -4,11 +4,12 @@ import { FlashLevel, FlashState } from 'index';
 // The backend will provide the client the URL to make a Tequila authentication.
 // We therefore redirect to this address.
 // If REACT_APP_DEV_LOGIN === "true", we allow an automatic login with SCIPER 100100.
-const handleLogin = async (fctx: FlashState) => {
+const handleLogin = async (fctx: FlashState, dev_id = process.env.REACT_APP_SCIPER_ADMIN) => {
+  console.log(`dev_id is: ${dev_id}`);
   try {
     let res;
     if (process.env.REACT_APP_DEV_LOGIN === 'true') {
-      await fetch(ENDPOINT_DEV_LOGIN);
+      await fetch(ENDPOINT_DEV_LOGIN + `/${dev_id}`);
       window.location.reload();
       return;
     } else {

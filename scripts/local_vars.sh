@@ -1,4 +1,3 @@
-export SCIPER_ADMIN=100100
 export DATABASE_USERNAME=dvoting
 export DATABASE_PASSWORD=postgres
 export FRONTEND_URL="http://localhost:3000"
@@ -17,8 +16,9 @@ export DB_PATH="$(pwd)/nodes/llmdb"
 #export PROXY_LOG=info
 # For the Dela node itself (info, debug):
 #export LLVL=debug
-# Logging in without Gaspar and SCIPER 100100
+# Logging in without Gaspar and REACT_APP_SCIPER_ADMIN
 export REACT_APP_DEV_LOGIN="true"
+export REACT_APP_SCIPER_ADMIN=100100
 # uncomment this to enable TLS to test gaspar
 #export HTTPS=true
 # Create random voter-IDs to allow easier testing
