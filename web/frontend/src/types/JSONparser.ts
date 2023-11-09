@@ -15,7 +15,6 @@ const isJson = (str: string) => {
 };
 const unmarshalText = (text: any): types.TextQuestion => {
   const t = text as types.TextQuestion;
-  const titles = JSON.parse(t.Title);
   if (t.Hint === undefined) {
     t.Hint = JSON.stringify({
       en: '',
@@ -26,9 +25,7 @@ const unmarshalText = (text: any): types.TextQuestion => {
   const hint = JSON.parse(t.Hint);
   return {
     ...text,
-    Title: titles.en,
-    TitleFr: titles.fr,
-    TitleDe: titles.de,
+    Title: t.Title,
     Hint: hint.en,
     HintFr: hint.fr,
     HintDe: hint.de,
@@ -39,7 +36,6 @@ const unmarshalText = (text: any): types.TextQuestion => {
 
 const unmarshalRank = (rank: any): types.RankQuestion => {
   const r = rank as types.RankQuestion;
-  const titles = JSON.parse(r.Title);
   if (r.Hint === undefined) {
     r.Hint = JSON.stringify({
       en: '',
@@ -50,8 +46,7 @@ const unmarshalRank = (rank: any): types.RankQuestion => {
   const hint = JSON.parse(r.Hint);
   return {
     ...rank,
-    TitleFr: titles.fr,
-    TitleDe: titles.de,
+    Title: r.Title,
     Hint: hint.en,
     HintFr: hint.fr,
     HintDe: hint.de,
@@ -62,7 +57,6 @@ const unmarshalRank = (rank: any): types.RankQuestion => {
 
 const unmarshalSelect = (select: any): types.SelectQuestion => {
   const s = select as types.SelectQuestion;
-  const titles = JSON.parse(s.Title);
   if (s.Hint === undefined) {
     s.Hint = JSON.stringify({
       en: '',
@@ -73,8 +67,7 @@ const unmarshalSelect = (select: any): types.SelectQuestion => {
   const hint = JSON.parse(s.Hint);
   return {
     ...select,
-    TitleFr: titles.fr,
-    TitleDe: titles.de,
+    Title: s.Title,
     Hint: hint.en,
     HintFr: hint.fr,
     HintDe: hint.de,
@@ -168,20 +161,8 @@ const unmarshalSubjectAndCreateAnswers = (
 };
 
 const unmarshalConfig = (json: any): types.Configuration => {
-  let titles;
-  if (isJson(json.MainTitle)) titles = JSON.parse(json.MainTitle);
-  else {
-    titles = {
-      en: json.MainTitle,
-      fr: json.TitleFr,
-      de: json.TitleDe,
-    };
-  }
-
   const conf = {
-    MainTitle: titles.en,
-    TitleFr: titles.fr,
-    TitleDe: titles.de,
+    Title: json.Title,
     Scaffold: [],
   };
   for (const subject of json.Scaffold) {
@@ -247,12 +228,7 @@ const marshalSubject = (subject: types.Subject): any => {
 };
 
 const marshalConfig = (configuration: types.Configuration): any => {
-  const title = {
-    en: configuration.MainTitle,
-    fr: configuration.TitleFr,
-    de: configuration.TitleDe,
-  };
-  const conf = { MainTitle: JSON.stringify(title), Scaffold: [] };
+  const conf = { Title: configuration.Title, Scaffold: [] };
   for (const subject of configuration.Scaffold) {
     conf.Scaffold.push(marshalSubject(subject));
   }

@@ -31,7 +31,6 @@ import Loading from 'pages/Loading';
 import saveAs from 'file-saver';
 import { useNavigate } from 'react-router';
 import { default as i18n } from 'i18next';
-import { isJson } from 'types/JSONparser';
 
 type IndividualResultProps = {
   rankResult: RankResults;
@@ -70,13 +69,6 @@ const IndividualResult: FC<IndividualResultProps> = ({
         [TEXT]: <MenuAlt1Icon />,
       };
 
-      let titles;
-      if (isJson(element.Title)) {
-        titles = JSON.parse(element.Title);
-      }
-      if (titles === undefined) {
-        titles = { en: element.Title, fr: element.TitleFr, de: element.TitleDe };
-      }
       return (
         <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
           <div className="flex flex-row">
@@ -84,9 +76,9 @@ const IndividualResult: FC<IndividualResultProps> = ({
               {questionIcons[element.Type]}
             </div>
             <h2 className="flex align-text-middle text-lg pb-2">
-              {i18n.language === 'en' && titles.en}
-              {i18n.language === 'fr' && titles.fr}
-              {i18n.language === 'de' && titles.de}
+              {i18n.language === 'en' && element.Title.En}
+              {i18n.language === 'fr' && element.Title.Fr}
+              {i18n.language === 'de' && element.Title.De}
             </h2>
           </div>
           {element.Type === RANK && rankResult.has(element.ID) && (
@@ -115,19 +107,12 @@ const IndividualResult: FC<IndividualResultProps> = ({
 
   const displayResults = useCallback(
     (subject: Subject) => {
-      let sbj;
-      if (isJson(subject.Title)) {
-        sbj = JSON.parse(subject.Title);
-      }
-      if (sbj === undefined) {
-        sbj = { en: subject.Title, fr: subject.TitleFr, de: subject.TitleDe };
-      }
       return (
         <div key={subject.ID}>
           <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-            {i18n.language === 'en' && sbj.en}
-            {i18n.language === 'fr' && sbj.fr}
-            {i18n.language === 'de' && sbj.de}
+            {i18n.language === 'en' && subject.Title.En}
+            {i18n.language === 'fr' && subject.Title.Fr}
+            {i18n.language === 'de' && subject.Title.De}
           </h2>
           {subject.Order.map((id: ID) => (
             <div key={id}>
@@ -151,7 +136,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
     dataToDownload: DownloadedResults[],
     BallotID: number
   ) => {
-    dataToDownload.push({ Title: subject.Title });
+    dataToDownload.push({ Title: subject.Title.En });
 
     subject.Order.forEach((id: ID) => {
       const element = subject.Elements.get(id);
@@ -168,7 +153,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
                 Choice: rankQues.Choices[rankResult.get(id)[BallotID].indexOf(index)],
               };
             });
-            dataToDownload.push({ Title: element.Title, Results: res });
+            dataToDownload.push({ Title: element.Title.En, Results: res });
           }
           break;
 
@@ -180,7 +165,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
               const checked = select ? 'True' : 'False';
               return { Candidate: selectQues.Choices[index], Checked: checked };
             });
-            dataToDownload.push({ Title: element.Title, Results: res });
+            dataToDownload.push({ Title: element.Title.En, Results: res });
           }
           break;
 
@@ -195,7 +180,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
             res = textResult.get(id)[BallotID].map((text, index) => {
               return { Field: textQues.Choices[index], Answer: text };
             });
-            dataToDownload.push({ Title: element.Title, Results: res });
+            dataToDownload.push({ Title: element.Title.En, Results: res });
           }
           break;
       }
@@ -203,7 +188,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
   };
 
   const exportJSONData = () => {
-    const fileName = `result_${configuration.MainTitle.replace(/[^a-zA-Z0-9]/g, '_').slice(
+    const fileName = `result_${configuration.Title.En.replace(/[^a-zA-Z0-9]/g, '_').slice(
       0,
       99
     )}__individual`;
@@ -219,9 +204,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
     });
 
     const data = {
-      MainTitle: configuration.MainTitle,
-      TitleFr: configuration.TitleFr,
-      TitleDe: configuration.TitleDe,
+      Title: configuration.Title,
       NumberOfVotes: ballotNumber,
       Ballots: ballotsToDownload,
     };

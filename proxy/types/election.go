@@ -54,7 +54,7 @@ type GetFormResponse struct {
 // LightForm represents a light version of the form
 type LightForm struct {
 	FormID string
-	Title  string
+	Title  etypes.Title
 	Status uint16
 	Pubkey string
 }

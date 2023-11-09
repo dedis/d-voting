@@ -6,19 +6,23 @@ const uid: Function = new ShortUniqueId({ length: 8 });
 
 const emptyConfiguration = (): types.Configuration => {
   return {
-    MainTitle: '',
+    Title: {
+      En: '',
+      Fr: '',
+      De: '',
+    },
     Scaffold: [],
-    TitleFr: '',
-    TitleDe: '',
   };
 };
 
 const newSubject = (): types.Subject => {
   return {
     ID: uid(),
-    Title: '',
-    TitleFr: '',
-    TitleDe: '',
+    Title: {
+      En: '',
+      Fr: '',
+      De: '',
+    },
     Order: [],
     Type: SUBJECT,
     Elements: new Map(),
@@ -28,9 +32,11 @@ const obj = { en: [''], fr: [''], de: [''] };
 const newRank = (): types.RankQuestion => {
   return {
     ID: uid(),
-    Title: '',
-    TitleFr: '',
-    TitleDe: '',
+    Title: {
+      En: '',
+      Fr: '',
+      De: '',
+    },
     MaxN: 2,
     MinN: 2,
     Choices: [],
@@ -45,9 +51,11 @@ const newRank = (): types.RankQuestion => {
 const newSelect = (): types.SelectQuestion => {
   return {
     ID: uid(),
-    Title: '',
-    TitleDe: '',
-    TitleFr: '',
+    Title: {
+      En: '',
+      Fr: '',
+      De: '',
+    },
     MaxN: 1,
     MinN: 1,
     Choices: [],
@@ -62,9 +70,11 @@ const newSelect = (): types.SelectQuestion => {
 const newText = (): types.TextQuestion => {
   return {
     ID: uid(),
-    Title: '',
-    TitleFr: '',
-    TitleDe: '',
+    Title: {
+      En: '',
+      Fr: '',
+      De: '',
+    },
     MaxN: 1,
     MinN: 0,
     MaxLength: 50,
@@ -142,16 +152,10 @@ const toArraysOfSubjectElement = (
   const selectQuestion: types.SelectQuestion[] = [];
   const textQuestion: types.TextQuestion[] = [];
   const subjects: types.Subject[] = [];
-  let title = '';
   let hint = '';
   elements.forEach((element) => {
     switch (element.Type) {
       case RANK:
-        title = JSON.stringify({
-          en: element.Title,
-          fr: element.TitleFr,
-          de: element.TitleDe,
-        });
         hint = JSON.stringify({
           en: (element as types.RankQuestion).Hint,
           fr: (element as types.RankQuestion).HintFr,
@@ -159,7 +163,7 @@ const toArraysOfSubjectElement = (
         });
         rankQuestion.push({
           ...(element as types.RankQuestion),
-          Title: title,
+          Title: element.Title,
           Choices: choicesMapToChoices(
             (element as types.RankQuestion).ChoicesMap
           ),
@@ -167,11 +171,6 @@ const toArraysOfSubjectElement = (
         });
         break;
       case SELECT:
-        title = JSON.stringify({
-          en: element.Title,
-          fr: element.TitleFr,
-          de: element.TitleDe,
-        });
         hint = JSON.stringify({
           en: (element as types.SelectQuestion).Hint,
           fr: (element as types.SelectQuestion).HintFr,
@@ -179,7 +178,7 @@ const toArraysOfSubjectElement = (
         });
         selectQuestion.push({
           ...(element as types.SelectQuestion),
-          Title: title,
+          Title: element.Title,
           Choices: choicesMapToChoices(
             (element as types.SelectQuestion).ChoicesMap
           ),
@@ -187,11 +186,6 @@ const toArraysOfSubjectElement = (
         });
         break;
       case TEXT:
-        title = JSON.stringify({
-          en: element.Title,
-          fr: element.TitleFr,
-          de: element.TitleDe,
-        });
         hint = JSON.stringify({
           en: (element as types.TextQuestion).Hint,
           fr: (element as types.TextQuestion).HintFr,
@@ -199,7 +193,7 @@ const toArraysOfSubjectElement = (
         });
         textQuestion.push({
           ...(element as types.TextQuestion),
-          Title: title,
+          Title: element.Title,
           Choices: choicesMapToChoices(
             (element as types.TextQuestion).ChoicesMap
           ),
@@ -207,14 +201,9 @@ const toArraysOfSubjectElement = (
         });
         break;
       case SUBJECT:
-        title = JSON.stringify({
-          en: element.Title,
-          fr: element.TitleFr,
-          de: element.TitleDe,
-        });
         subjects.push({
           ...(element as types.Subject),
-          Title: title,
+          Title: element.Title,
         });
         break;
     }

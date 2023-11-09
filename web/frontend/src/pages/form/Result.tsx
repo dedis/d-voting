@@ -97,9 +97,9 @@ const FormResult: FC = () => {
               {t('totalNumberOfVotes', { votes: result.length })}
             </h2>
             <h3 className="py-6 border-t text-2xl text-center text-gray-700">
-              {i18n.language === 'en' && configuration.MainTitle}
-              {i18n.language === 'fr' && configuration.TitleFr}
-              {i18n.language === 'de' && configuration.TitleDe}
+              {i18n.language === 'en' && configuration.Title.En}
+              {i18n.language === 'fr' && configuration.Title.Fr}
+              {i18n.language === 'de' && configuration.Title.De}
             </h3>
 
             <div>

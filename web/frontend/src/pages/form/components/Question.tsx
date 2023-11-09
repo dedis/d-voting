@@ -15,7 +15,7 @@ type QuestionProps = {
 };
 
 const Question: FC<QuestionProps> = ({ question, notifyParent, removeQuestion, language }) => {
-  const { Title, Type, TitleFr, TitleDe } = question;
+  const { Title, Type } = question;
   const [openModal, setOpenModal] = useState<boolean>(false);
 
   const dropdownContent: {
@@ -53,9 +53,9 @@ const Question: FC<QuestionProps> = ({ question, notifyParent, removeQuestion, l
               <DisplayTypeIcon Type={Type} />
             </div>
             <div className="pt-1.5 max-w-md pr-8 truncate">
-              {language === 'en' && (Title.length ? Title : `Enter ${Type} title`)}
-              {language === 'fr' && (TitleFr.length ? TitleFr : Title)}
-              {language === 'de' && (TitleDe.length ? TitleDe : Title)}
+              {language === 'en' && (Title.En.length ? Title.En : `Enter ${Type} title`)}
+              {language === 'fr' && (Title.Fr.length ? Title.Fr : Title.En)}
+              {language === 'de' && (Title.De.length ? Title.De : Title.En)}
             </div>
           </div>
 

@@ -23,17 +23,17 @@ const mockRoster: string[] = [
 ];
 
 const mockForm1: any = {
-  MainTitle:
-    '{ "en" : "Life on the campus", "fr" : "Vie sur le campus", "de" : "Life on the campus"}',
+  Title:
+    { "En" : "Life on the campus", "Fr" : "Vie sur le campus", "De" : "Life on the campus"},
   Scaffold: [
     {
       ID: (0xa2ab).toString(),
-      Title: '{ "en" : "Rate the course", "fr" : "Note la course", "de" : "Rate the course"}',
+      Title: { "En" : "Rate the course", "Fr" : "Note la course", "De" : "Rate the course"},
       Order: [(0x3fb2).toString(), (0x41e2).toString(), (0xcd13).toString(), (0xff31).toString()],
       Subjects: [
         {
           Title:
-            '{ "en" : "Let s talk about the food", "fr" : "Parlons de la nourriture", "de" : "Let s talk about food"}',
+            { "En" : "Let s talk about the food", "Fr" : "Parlons de la nourriture", "De" : "Let s talk about food"},
           ID: (0xff31).toString(),
           Order: [(0xa319).toString(), (0x19c7).toString()],
           Subjects: [],
@@ -41,7 +41,7 @@ const mockForm1: any = {
           Selects: [
             {
               Title:
-                '{ "en" : "Select your ingredients", "fr" : "Choisi tes ingrédients", "de" : "Select your ingredients"}',
+                { "En" : "Select your ingredients", "Fr" : "Choisi tes ingrédients", "De" : "Select your ingredients"},
               ID: (0xa319).toString(),
               MaxN: 2,
               MinN: 1,
@@ -56,7 +56,7 @@ const mockForm1: any = {
           Ranks: [
             {
               Title:
-                '{ "en" : "Rank the cafeteria", "fr" : "Ordonne les cafet", "de" : "Rank the cafeteria"}',
+                { "En" : "Rank the cafeteria", "Fr" : "Ordonne les cafet", "De" : "Rank the cafeteria"},
               ID: (0x19c7).toString(),
               MaxN: 3,
               MinN: 3,
@@ -74,7 +74,7 @@ const mockForm1: any = {
       Selects: [
         {
           Title:
-            '{"en" : "How did you find the provided material, from 1 (bad) to 5 (excellent) ?", "fr" : "Comment trouves-tu le matériel fourni, de 1 (mauvais) à 5 (excellent) ?", "de" : "How did you find the provided material, from 1 (bad) to 5 (excellent) ?"}',
+            {"En" : "How did you find the provided material, from 1 (bad) to 5 (excellent) ?", "Fr" : "Comment trouves-tu le matériel fourni, de 1 (mauvais) à 5 (excellent) ?", "De" : "How did you find the provided material, from 1 (bad) to 5 (excellent) ?"},
           ID: (0x3fb2).toString(),
           MaxN: 1,
           MinN: 1,
@@ -89,7 +89,7 @@ const mockForm1: any = {
         },
         {
           Title:
-            '{"en": "How did you find the teaching ?","fr": "Comment trouves-tu l enseignement ?","de": "How did you find the teaching ?"}',
+            {"En": "How did you find the teaching ?","Fr": "Comment trouves-tu l enseignement ?","De": "How did you find the teaching ?"},
           ID: (0x41e2).toString(),
           MaxN: 1,
           MinN: 1,
@@ -104,7 +104,7 @@ const mockForm1: any = {
       Texts: [
         {
           Title:
-            '{ "en" : "Who were the two best TAs ?", "fr" : "Quels sont les deux meilleurs TA ?", "de" : "Who were the two best TAs ?"} ',
+            { "En" : "Who were the two best TAs ?", "Fr" : "Quels sont les deux meilleurs TA ?", "De" : "Who were the two best TAs ?"} ,
           ID: (0xcd13).toString(),
           MaxLength: 20,
           MaxN: 2,
@@ -148,18 +148,18 @@ const mockFormResult12: Results = {
 };
 
 const mockForm2: any = {
-  MainTitle:
-    '{"en": "Please give your opinion", "fr": "Donne ton avis", "de": "Please give your opinion"}',
+  Title:
+    {"En": "Please give your opinion", "Fr": "Donne ton avis", "De": "Please give your opinion"},
   Scaffold: [
     {
       ID: (0xa2ab).toString(),
-      Title: '{"en": "Rate the course", "fr": "Note le cours", "de": "Rate the course"}',
+      Title: {"En": "Rate the course", "Fr": "Note le cours", "De": "Rate the course"},
       Order: [(0x3fb2).toString(), (0xcd13).toString()],
 
       Selects: [
         {
           Title:
-            '{"en": "How did you find the provided material, from 1 (bad) to 5 (excellent) ?", "fr" : "Comment trouves-tu le matériel fourni, de 1 (mauvais) à 5 (excellent) ?", "de" : "How did you find the provided material, from 1 (bad) to 5 (excellent) ?"}',
+            {"En": "How did you find the provided material, from 1 (bad) to 5 (excellent) ?", "Fr" : "Comment trouves-tu le matériel fourni, de 1 (mauvais) à 5 (excellent) ?", "De" : "How did you find the provided material, from 1 (bad) to 5 (excellent) ?"},
           ID: (0x3fb2).toString(),
           MaxN: 1,
           MinN: 1,
@@ -176,7 +176,7 @@ const mockForm2: any = {
       Texts: [
         {
           Title:
-            '{"en" : "Who were the two best TAs ?", "fr" : "Quels sont les deux meilleurs TA ?", "de" : "Who were the two best TAs ?"}',
+            {"En" : "Who were the two best TAs ?", "Fr" : "Quels sont les deux meilleurs TA ?", "De" : "Who were the two best TAs ?"},
           ID: (0xcd13).toString(),
           MaxLength: 40,
           MaxN: 2,
@@ -195,12 +195,12 @@ const mockForm2: any = {
     },
     {
       ID: (0x1234).toString(),
-      Title: '{"en": "Tough choices", "fr": "Choix difficiles", "de": "Tough choices"}',
+      Title: {"En": "Tough choices", "Fr": "Choix difficiles", "De": "Tough choices"},
       Order: [(0xa319).toString(), (0xcafe).toString(), (0xbeef).toString()],
       Selects: [
         {
           Title:
-            '{"en": "Select your ingredients", "fr": "Choisis tes ingrédients", "de": "Select your ingredients"}',
+            {"En": "Select your ingredients", "Fr": "Choisis tes ingrédients", "De": "Select your ingredients"},
           ID: (0xa319).toString(),
           MaxN: 3,
           MinN: 0,
@@ -217,7 +217,7 @@ const mockForm2: any = {
       Ranks: [
         {
           Title:
-            '{"en": "Which cafeteria serves the best coffee ?", "fr": "Quelle cafétéria sert le meilleur café ?", "de": "Which cafeteria serves the best coffee ?"}',
+            {"En": "Which cafeteria serves the best coffee ?", "Fr": "Quelle cafétéria sert le meilleur café ?", "De": "Which cafeteria serves the best coffee ?"},
           ID: (0xcafe).toString(),
           MaxN: 4,
           MinN: 1,
@@ -230,7 +230,7 @@ const mockForm2: any = {
           Hint: '{"en": "", "fr": "", "de": ""}',
         },
         {
-          Title: '{"en": "IN or SC ?", "fr": "IN ou SC ?", "de": "IN or SC ?"}',
+          Title: {"En": "IN or SC ?", "Fr": "IN ou SC ?", "De": "IN or SC ?"},
           ID: (0xbeef).toString(),
           MaxN: 2,
           MinN: 1,
@@ -245,11 +245,11 @@ const mockForm2: any = {
 };
 
 const mockForm3: any = {
-  MainTitle: '{"en": "Lunch", "fr": "Déjeuner", "de": "Lunch"}',
+  Title: {"En": "Lunch", "Fr": "Déjeuner", "De": "Lunch"},
   Scaffold: [
     {
       ID: '3cVHIxpx',
-      Title: '{"en": "Choose your lunch", "fr": "Choisis ton déjeuner", "de": "Choose your lunch"}',
+      Title: {"En": "Choose your lunch", "Fr": "Choisis ton déjeuner", "De": "Choose your lunch"},
       Order: ['PGP'],
       Ranks: [],
       Selects: [],
@@ -257,7 +257,7 @@ const mockForm3: any = {
         {
           ID: 'PGP',
           Title:
-            '{"en": "Select what you want", "fr": "Choisis ce que tu veux", "de": "Select what you want"}',
+            {"En": "Select what you want", "Fr": "Choisis ce que tu veux", "De": "Select what you want"},
           MaxN: 4,
           MinN: 0,
           MaxLength: 50,

@@ -38,7 +38,7 @@ import { default as i18n } from 'i18next';
 type FormFormProps = {};
 
 const FormForm: FC<FormFormProps> = () => {
-  // conf is the configuration object containing MainTitle and Scaffold which
+  // conf is the configuration object containing Title and Scaffold which
   // contains an array of subject.
   const { t } = useTranslation();
   const emptyConf: Configuration = emptyConfiguration();
@@ -54,7 +54,7 @@ const FormForm: FC<FormFormProps> = () => {
   const [marshalledConf, setMarshalledConf] = useState<any>(marshalConfig(conf));
   const { configuration: previewConf, answers, setAnswers } = useConfiguration(marshalledConf);
 
-  const { MainTitle, Scaffold, TitleFr, TitleDe } = conf;
+  const { Title, Scaffold } = conf;
 
   const [language, setLanguage] = useState(i18n.language);
   const regexPattern = /[^a-zA-Z0-9]/g;
@@ -99,6 +99,7 @@ const FormForm: FC<FormFormProps> = () => {
     try {
       await configurationSchema.validate(data.Configuration);
     } catch (err: any) {
+      console.log(data.Configuration);
       setTextModal(t('errorIncorrectConfSchema') + err.errors.join(','));
       setShowModal(true);
       return;
@@ -145,6 +146,7 @@ const FormForm: FC<FormFormProps> = () => {
     try {
       await configurationSchema.validate(data);
     } catch (err: any) {
+      console.log(data);
       setTextModal(t('errorIncorrectConfSchema') + err.errors.join(','));
       setShowModal(true);
       return;
@@ -152,7 +154,7 @@ const FormForm: FC<FormFormProps> = () => {
     const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(JSON.stringify(data))}`;
     const link = document.createElement('a');
     link.href = jsonString;
-    const title = MainTitle.replace(regexPattern, '_').slice(0, 99); // replace spaces with underscores
+    const title = Title.En.replace(regexPattern, '_').slice(0, 99); // replace spaces with underscores
     link.download = title + '.json';
     link.click();
   };
@@ -192,9 +194,9 @@ const FormForm: FC<FormFormProps> = () => {
 
                 {language === 'en' && (
                   <input
-                    value={MainTitle}
-                    onChange={(e) => setConf({ ...conf, MainTitle: e.target.value })}
-                    name="MainTitle"
+                    value={Title.En}
+                    onChange={(e) => setConf({ ...conf, Title: { ...Title, En: e.target.value } })}
+                    name="Title"
                     type="text"
                     placeholder={t('enterMainTitleLg')}
                     className="m-3 px-1 w-100 text-lg border rounded-md"
@@ -202,8 +204,8 @@ const FormForm: FC<FormFormProps> = () => {
                 )}
                 {language === 'fr' && (
                   <input
-                    value={TitleFr}
-                    onChange={(e) => setConf({ ...conf, TitleFr: e.target.value })}
+                    value={Title.Fr}
+                    onChange={(e) => setConf({ ...conf, Title: { ...Title, Fr: e.target.value } })}
                     name="MainTitle1"
                     type="text"
                     placeholder={t('enterMainTitleLg1')}
@@ -212,8 +214,8 @@ const FormForm: FC<FormFormProps> = () => {
                 )}
                 {language === 'de' && (
                   <input
-                    value={TitleDe}
-                    onChange={(e) => setConf({ ...conf, TitleDe: e.target.value })}
+                    value={Title.De}
+                    onChange={(e) => setConf({ ...conf, Title: { ...Title, De: e.target.value } })}
                     name="MainTitle2"
                     type="text"
                     placeholder={t('enterMainTitleLg2')}
@@ -223,9 +225,9 @@ const FormForm: FC<FormFormProps> = () => {
                 <div className="ml-1">
                   <button
                     className={`border p-1 rounded-md ${
-                      MainTitle.length === 0 ? 'bg-gray-100' : ' '
+                      Title.En.length === 0 ? 'bg-gray-100' : ' '
                     }`}
-                    disabled={MainTitle.length === 0}
+                    disabled={Title.En.length === 0}
                     onClick={() => setTitleChanging(false)}>
                     <CheckIcon className="h-5 w-5" aria-hidden="true" />
                   </button>
@@ -236,9 +238,9 @@ const FormForm: FC<FormFormProps> = () => {
                 <div
                   className="mt-1 ml-3 w-[90%] break-words"
                   onClick={() => setTitleChanging(true)}>
-                  {language === 'en' && MainTitle}
-                  {language === 'fr' && TitleFr}
-                  {language === 'de' && TitleDe}
+                  {language === 'en' && Title.En}
+                  {language === 'fr' && Title.Fr}
+                  {language === 'de' && Title.De}
                 </div>
                 <div className="ml-1">
                   <button

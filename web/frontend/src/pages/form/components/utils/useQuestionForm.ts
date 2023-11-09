@@ -20,6 +20,9 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
       newChoicesMap.set('fr', [...newChoicesMap.get('fr'), '']);
       newChoicesMap.set('de', [...newChoicesMap.get('de'), '']);
       switch (Exception) {
+        case 'Title':
+          setState({ ...state, Title: { ...state.Title, [name]: value } });
+          break;
         case 'RankMinMax':
           setState({ ...state, MinN: Number(value), MaxN: Number(value) });
           break;

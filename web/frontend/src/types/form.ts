@@ -1,4 +1,4 @@
-import { ID } from './configuration';
+import { ID, Title } from './configuration';
 
 export const enum Status {
   // Initial is when the form has just been created
@@ -58,9 +58,7 @@ interface FormInfo {
 
 interface LightFormInfo {
   FormID: ID;
-  Title: string;
-  TitleFr: string;
-  TitleDe: string;
+  Title: Title;
   Status: Status;
   Pubkey: string;
 }

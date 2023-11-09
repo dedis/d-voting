@@ -5,12 +5,17 @@ export const SELECT: string = 'select';
 export const SUBJECT: string = 'subject';
 export const TEXT: string = 'text';
 
+// Title
+interface Title {
+  En: string;
+  Fr: string;
+  De: string;
+}
+
 interface SubjectElement {
   ID: ID;
   Type: string;
-  Title: string;
-  TitleFr: string;
-  TitleDe: string;
+  Title: Title;
 }
 
 // Rank describes a "rank" question, which requires the user to rank choices.
@@ -55,10 +60,8 @@ interface Subject extends SubjectElement {
 
 // Configuration contains the configuration of a new poll.
 interface Configuration {
-  MainTitle: string;
+  Title: Title;
   Scaffold: Subject[];
-  TitleFr: string;
-  TitleDe: string;
 }
 
 // Answers describes the current answers for each type of question
@@ -72,6 +75,7 @@ interface Answers {
 
 export type {
   ID,
+  Title,
   TextQuestion,
   SelectQuestion,
   RankQuestion,

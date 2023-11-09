@@ -16,7 +16,6 @@ import UserIDTable from './components/UserIDTable';
 import DKGStatusTable from './components/DKGStatusTable';
 import LoadingButton from './components/LoadingButton';
 import { default as i18n } from 'i18next';
-import { isJson } from 'types/JSONparser';
 
 const FormShow: FC = () => {
   const { t } = useTranslation();
@@ -202,14 +201,8 @@ const FormShow: FC = () => {
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
     try {
-      if (configObj.MainTitle === '') return;
-      if (isJson(configObj.MainTitle)) {
-        const ts = JSON.parse(configObj.MainTitle);
-        setTitles(ts);
-      } else {
-        const tis = { en: configObj.MainTitle, fr: configObj.TitleFr, de: configObj.TitleDe };
-        setTitles(tis);
-      }
+      if (configObj.Title === undefined) return;
+      setTitles(configObj.Title);
     } catch (e) {
       setError(e.error);
     }

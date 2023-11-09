@@ -5,7 +5,6 @@ import Rank, { handleOnDragEnd } from './Rank';
 import Select from './Select';
 import Text from './Text';
 import { DragDropContext } from 'react-beautiful-dnd';
-import { isJson } from 'types/JSONparser';
 
 type BallotDisplayProps = {
   configuration: Configuration;
@@ -24,18 +23,8 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
 }) => {
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
-    if (configuration.MainTitle === '') return;
-    if (isJson(configuration.MainTitle)) {
-      const ts = JSON.parse(configuration.MainTitle);
-      setTitles(ts);
-    } else {
-      const t = {
-        en: configuration.MainTitle,
-        fr: configuration.TitleFr,
-        de: configuration.TitleDe,
-      };
-      setTitles(t);
-    }
+    if (configuration.Title === undefined) return;
+    setTitles(configuration.Title);
   }, [configuration]);
 
   const SubjectElementDisplay = (element: types.SubjectElement) => {
@@ -65,17 +54,13 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
   };
 
   const SubjectTree = (subject: types.Subject) => {
-    let sbj;
-    if (isJson(subject.Title)) {
-      sbj = JSON.parse(subject.Title);
-    }
-    if (sbj === undefined) sbj = { en: subject.Title, fr: subject.TitleFr, de: subject.TitleDe };
+    if (subject.Title === undefined) return;
     return (
       <div key={subject.ID}>
         <h3 className="text-xl break-all pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-          {language === 'en' && sbj.en}
-          {language === 'fr' && sbj.fr}
-          {language === 'de' && sbj.de}
+          {language === 'en' && subject.Title.En}
+          {language === 'fr' && subject.Title.Fr}
+          {language === 'de' && subject.Title.De}
         </h3>
         {subject.Order.map((id: ID) => (
           <div key={id}>

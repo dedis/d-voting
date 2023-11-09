@@ -2,14 +2,28 @@
   "$id": "configurationSchema",
   "type": "object",
   "properties": {
-    "MainTitle": { "type": "string" },
+    "Title": {
+      "type": "object",
+      "properties": {
+         "En": { "type": "string" },
+         "Fr": { "type": "string" },
+         "De": { "type": "string" }
+      }
+    },
     "Scaffold": {
       "type": "array",
       "items": {
         "type": "object",
         "properties": {
           "ID": { "type": "string" },
-          "Title": { "type": "string" },
+          "Title": {
+            "type": "object",
+            "properties": {
+               "En": { "type": "string" },
+               "Fr": { "type": "string" },
+               "De": { "type": "string" }
+            }
+          },
           "Order": {
             "type": "array",
             "items": { "type": "string" }
@@ -24,7 +38,14 @@
               "type": "object",
               "properties": {
                 "ID": { "type": "string" },
-                "Title": { "type": "string" },
+                "Title": {
+                  "type": "object",
+                  "properties": {
+                     "En": { "type": "string" },
+                     "Fr": { "type": "string" },
+                     "De": { "type": "string" }
+                  }
+                },
                 "MaxN": { "type": "number" },
                 "MinN": { "type": "number" },
                 "Choices": {
@@ -43,7 +64,14 @@
               "type": "object",
               "properties": {
                 "ID": { "type": "string" },
-                "Title": { "type": "string" },
+                "Title": {
+                  "type": "object",
+                  "properties": {
+                     "En": { "type": "string" },
+                     "Fr": { "type": "string" },
+                     "De": { "type": "string" }
+                  }
+                },
                 "MaxN": { "type": "number" },
                 "MinN": { "type": "number" },
                 "Choices": {
@@ -62,7 +90,14 @@
               "type": "object",
               "properties": {
                 "ID": { "type": "string" },
-                "Title": { "type": "string" },
+                "Title": {
+                  "type": "object",
+                  "properties": {
+                     "En": { "type": "string" },
+                     "Fr": { "type": "string" },
+                     "De": { "type": "string" }
+                  }
+                },
                 "MaxN": { "type": "number" },
                 "MinN": { "type": "number" },
                 "Regex": { "type": "string" },
@@ -83,6 +118,6 @@
       }
     }
   },
-  "required": ["MainTitle", "Scaffold"],
+  "required": ["Title", "Scaffold"],
   "additionalProperties": false
 }

@@ -141,7 +141,7 @@ func getIntegrationTestBadVote(numNodes, numVotes, numBadVotes int) func(*testin
 		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
 		require.NoError(t, err)
 
-		fmt.Println("Title of the form : " + form.Configuration.MainTitle)
+		fmt.Println("Title of the form : " + form.Configuration.Title.En)
 		fmt.Println("ID of the form : " + string(form.FormID))
 		fmt.Println("Status of the form : " + strconv.Itoa(int(form.Status)))
 		fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(form.DecryptedBallots)))
@@ -281,7 +281,7 @@ func getIntegrationTestRevote(numNodes, numVotes, numRevotes int) func(*testing.
 		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
 		require.NoError(t, err)
 
-		fmt.Println("Title of the form : " + form.Configuration.MainTitle)
+		fmt.Println("Title of the form : " + form.Configuration.Title.En)
 		fmt.Println("ID of the form : " + string(form.FormID))
 		fmt.Println("Status of the form : " + strconv.Itoa(int(form.Status)))
 		fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(form.DecryptedBallots)))

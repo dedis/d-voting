@@ -445,7 +445,7 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf(getFormErr, err)
 	}
 
-	dela.Logger.Info().Msg("Title of the form: " + form.Configuration.MainTitle)
+	dela.Logger.Info().Msg("Title of the form: " + form.Configuration.Title.En)
 	dela.Logger.Info().Msg("Status of the form: " + strconv.Itoa(int(form.Status)))
 
 	// ###################################### SHUFFLE BALLOTS ##################
@@ -642,7 +642,7 @@ func setupSimpleForm(ctx node.Context, secret kyber.Scalar, proxyAddr1 string,
 		return "", types.Form{}, nil, xerrors.Errorf("formID mismatch: %s != %s", form.FormID, formID)
 	}
 
-	fmt.Fprintf(ctx.Out, "Title of the form: "+form.Configuration.MainTitle)
+	fmt.Fprintf(ctx.Out, "Title of the form: "+form.Configuration.Title.En)
 	fmt.Fprintf(ctx.Out, "ID of the form: "+form.FormID)
 	fmt.Fprintf(ctx.Out, "Status of the form: "+strconv.Itoa(int(form.Status)))
 
@@ -650,7 +650,7 @@ func setupSimpleForm(ctx node.Context, secret kyber.Scalar, proxyAddr1 string,
 }
 
 func logFormStatus(form types.Form) {
-	dela.Logger.Info().Msg("Title of the form : " + form.Configuration.MainTitle)
+	dela.Logger.Info().Msg("Title of the form : " + form.Configuration.Title.En)
 	dela.Logger.Info().Msg("ID of the form : " + form.FormID)
 	dela.Logger.Info().Msg("Status of the form : " + strconv.Itoa(int(form.Status)))
 }

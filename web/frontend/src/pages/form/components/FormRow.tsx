@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import FormStatus from './FormStatus';
 import QuickAction from './QuickAction';
 import { default as i18n } from 'i18next';
-import { isJson } from 'types/JSONparser';
 
 type FormRowProps = {
   form: LightFormInfo;
@@ -13,12 +12,8 @@ type FormRowProps = {
 const FormRow: FC<FormRowProps> = ({ form }) => {
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
-    if (form.Title === '') return;
-    if (isJson(form.Title)) {
-      setTitles(JSON.parse(form.Title));
-    } else {
-      setTitles({ en: form.Title, fr: form.TitleFr, de: form.TitleDe });
-    }
+    if (form.Title === undefined) return;
+    setTitles({ En: form.Title.En, Fr: form.Title.Fr, De: form.Title.De });
   }, [form]);
   // let i18next handle choosing the appropriate language
   const formRowI18n = i18n.createInstance();
@@ -27,7 +22,7 @@ const FormRow: FC<FormRowProps> = ({ form }) => {
   formRowI18n.changeLanguage(i18n.language);
   Object.entries(titles).forEach(([lang, title]: [string, string | undefined]) => {
     if (title) {
-      formRowI18n.addResource(lang, 'form', 'title', title);
+      formRowI18n.addResource(lang.toLowerCase(), 'form', 'title', title);
     }
   });
   return (

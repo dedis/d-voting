@@ -29,7 +29,6 @@ import {
 import { default as i18n } from 'i18next';
 import SelectResult from './components/SelectResult';
 import TextResult from './components/TextResult';
-import { isJson } from 'types/JSONparser';
 
 type GroupedResultProps = {
   rankResult: RankResults;
@@ -53,12 +52,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
 
   const SubjectElementResultDisplay = (element: SubjectElement) => {
     let titles;
-    if (isJson(element.Title)) {
-      titles = JSON.parse(element.Title);
-    }
-    if (titles === undefined) {
-      titles = { en: element.Title, fr: element.TitleFr, de: element.TitleDe };
-    }
+    titles = element.Title;
     return (
       <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
         <div className="flex flex-row">
@@ -66,9 +60,9 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
             {questionIcons[element.Type]}
           </div>
           <h2 className="text-lg pb-2">
-            {i18n.language === 'en' && titles.en}
-            {i18n.language === 'fr' && titles.fr}
-            {i18n.language === 'de' && titles.de}
+            {i18n.language === 'en' && titles.En}
+            {i18n.language === 'fr' && titles.Fr}
+            {i18n.language === 'de' && titles.De}
           </h2>
         </div>
         {element.Type === RANK && rankResult.has(element.ID) && (
@@ -88,19 +82,12 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
   };
 
   const displayResults = (subject: Subject) => {
-    let sbj;
-    if (isJson(subject.Title)) {
-      sbj = JSON.parse(subject.Title);
-    }
-    if (sbj === undefined) {
-      sbj = { en: subject.Title, fr: subject.TitleFr, de: subject.TitleDe };
-    }
     return (
       <div key={subject.ID}>
         <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-          {i18n.language === 'en' && sbj.en}
-          {i18n.language === 'fr' && sbj.fr}
-          {i18n.language === 'de' && sbj.de}
+          {i18n.language === 'en' && subject.Title.En}
+          {i18n.language === 'fr' && subject.Title.Fr}
+          {i18n.language === 'de' && subject.Title.De}
         </h2>
         {subject.Order.map((id: ID) => (
           <div key={id}>
@@ -118,7 +105,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
   };
 
   const getResultData = (subject: Subject, dataToDownload: DownloadedResults[]) => {
-    dataToDownload.push({ Title: subject.Title });
+    dataToDownload.push({ Title: subject.Title.En });
 
     subject.Order.forEach((id: ID) => {
       const element = subject.Elements.get(id);
@@ -134,7 +121,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
                 return { Candidate: rank.Choices[index], Percentage: `${percent}%` };
               }
             );
-            dataToDownload.push({ Title: element.Title, Results: res });
+            dataToDownload.push({ Title: element.Title.En, Results: res });
           }
           break;
 
@@ -145,7 +132,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
             res = countSelectResult(selectResult.get(id)).resultsInPercent.map((percent, index) => {
               return { Candidate: select.Choices[index], Percentage: `${percent}%` };
             });
-            dataToDownload.push({ Title: element.Title, Results: res });
+            dataToDownload.push({ Title: element.Title.En, Results: res });
           }
           break;
 
@@ -158,7 +145,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
             res = Array.from(countTextResult(textResult.get(id)).resultsInPercent).map((r) => {
               return { Candidate: r[0], Percentage: `${r[1]}%` };
             });
-            dataToDownload.push({ Title: element.Title, Results: res });
+            dataToDownload.push({ Title: element.Title.En, Results: res });
           }
           break;
       }
@@ -166,7 +153,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
   };
 
   const exportJSONData = () => {
-    const fileName = `result_${configuration.MainTitle.replace(/[^a-zA-Z0-9]/g, '_').slice(
+    const fileName = `result_${configuration.Title.En.replace(/[^a-zA-Z0-9]/g, '_').slice(
       0,
       99
     )}__grouped`; // replace spaces with underscores;
@@ -178,9 +165,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
     });
 
     const data = {
-      MainTitle: configuration.MainTitle,
-      TitleFr: configuration.TitleFr,
-      TitleDe: configuration.TitleDe,
+      Title: configuration.Title,
       NumberOfVotes: result.length,
       Results: dataToDownload,
     };

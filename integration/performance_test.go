@@ -124,7 +124,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	form, err = getForm(formFac, formID, nodes[0].GetOrdering())
 	require.NoError(b, err)
 
-	fmt.Println("Title of the form : " + form.Configuration.MainTitle)
+	fmt.Println("Title of the form : " + form.Configuration.Title.En)
 	fmt.Println("ID of the form : " + string(form.FormID))
 	fmt.Println("Status of the form : " + strconv.Itoa(int(form.Status)))
 	fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(form.DecryptedBallots)))
@@ -146,25 +146,25 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	closeNodesBench(b, nodes)
 }
 
-func createFormNChunks(m txManager, title string, admin string, numChunks int) ([]byte, error) {
+func createFormNChunks(m txManager, title types.Title, admin string, numChunks int) ([]byte, error) {
 
 	defaultBallotContent := "text:" + encodeID("bb") + ":\n\n"
 	textSize := 29*numChunks - len(defaultBallotContent)
 
 	// Define the configuration :
 	configuration := types.Configuration{
-		MainTitle: title,
+		Title: title,
 		Scaffold: []types.Subject{
 			{
 				ID:       "aa",
-				Title:    "subject1",
+				Title:    {En: "subject1", Fr: "", De: ""},
 				Order:    nil,
 				Subjects: nil,
 				Selects:  nil,
 				Ranks:    []types.Rank{},
 				Texts: []types.Text{{
 					ID:        "bb",
-					Title:     "Enter favorite snack",
+					Title:     {En: "Enter favorite snack", Fr: "", De: ""},
 					MaxN:      1,
 					MinN:      0,
 					MaxLength: uint(base64.StdEncoding.DecodedLen(textSize)),

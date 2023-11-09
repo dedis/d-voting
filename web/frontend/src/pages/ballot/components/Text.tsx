@@ -101,9 +101,9 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
       <div className="grid grid-rows-1 grid-flow-col">
         <div>
           <h3 className="text-lg break-words text-gray-600 w-96">
-            {language === 'en' && text.Title}
-            {language === 'fr' && text.TitleFr}
-            {language === 'de' && text.TitleDe}
+            {language === 'en' && text.Title.En}
+            {language === 'fr' && text.Title.Fr}
+            {language === 'de' && text.Title.De}
           </h3>
         </div>
         <div className="text-right">
