@@ -181,18 +181,21 @@ const unmarshalConfigAndCreateAnswers = (
 const marshalText = (text: types.TextQuestion): any => {
   const newText: any = { ...text };
   delete newText.Type;
+  delete newText.ChoicesMap;
   return newText;
 };
 
 const marshalRank = (rank: types.RankQuestion): any => {
   const newRank: any = { ...rank };
   delete newRank.Type;
+  delete newRank.ChoicesMap;
   return newRank;
 };
 
 const marshalSelect = (select: types.SelectQuestion): any => {
   const newSelect: any = { ...select };
   delete newSelect.Type;
+  delete newSelect.ChoicesMap;
   return newSelect;
 };
 
