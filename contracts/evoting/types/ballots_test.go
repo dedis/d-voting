@@ -56,13 +56,13 @@ func TestBallot_Unmarshal(t *testing.T) {
 
 		Selects: []Select{{
 			ID:      decodedQuestionID(1),
-			Title:   {En: "", Fr: "", De: ""},
+			Title:   Title{En: "", Fr: "", De: ""},
 			MaxN:    2,
 			MinN:    2,
 			Choices: make([]string, 3),
 		}, {
 			ID:      decodedQuestionID(2),
-			Title:   {En: "", Fr: "", De: ""},
+			Title:   Title{En: "", Fr: "", De: ""},
 			MaxN:    3,
 			MinN:    3,
 			Choices: make([]string, 5),
@@ -70,7 +70,7 @@ func TestBallot_Unmarshal(t *testing.T) {
 
 		Ranks: []Rank{{
 			ID:      decodedQuestionID(3),
-			Title:   {En: "", Fr: "", De: ""},
+			Title:   Title{En: "", Fr: "", De: ""},
 			MaxN:    4,
 			MinN:    0,
 			Choices: make([]string, 4),
@@ -78,7 +78,7 @@ func TestBallot_Unmarshal(t *testing.T) {
 
 		Texts: []Text{{
 			ID:        decodedQuestionID(4),
-			Title:     {En: "", Fr: "", De: ""},
+			Title:     Title{En: "", Fr: "", De: ""},
 			MaxN:      2,
 			MinN:      2,
 			MaxLength: 10,
@@ -305,7 +305,7 @@ func TestSubject_MaxEncodedSize(t *testing.T) {
 	subject := Subject{
 		Subjects: []Subject{{
 			ID:       "",
-			Title:    {En: "", Fr: "", De: ""},
+			Title:    Title{En: "", Fr: "", De: ""},
 			Order:    nil,
 			Subjects: []Subject{},
 			Selects:  []Select{},
@@ -315,13 +315,13 @@ func TestSubject_MaxEncodedSize(t *testing.T) {
 
 		Selects: []Select{{
 			ID:      encodedQuestionID(1),
-			Title:   {En: "", Fr: "", De: ""},
+			Title:   Title{En: "", Fr: "", De: ""},
 			MaxN:    3,
 			MinN:    0,
 			Choices: make([]string, 3),
 		}, {
 			ID:      encodedQuestionID(2),
-			Title:   {En: "", Fr: "", De: ""},
+			Title:   Title{En: "", Fr: "", De: ""},
 			MaxN:    5,
 			MinN:    0,
 			Choices: make([]string, 5),
@@ -329,7 +329,7 @@ func TestSubject_MaxEncodedSize(t *testing.T) {
 
 		Ranks: []Rank{{
 			ID:      encodedQuestionID(3),
-			Title:   {En: "", Fr: "", De: ""},
+			Title:   Title{En: "", Fr: "", De: ""},
 			MaxN:    4,
 			MinN:    0,
 			Choices: make([]string, 4),
@@ -337,7 +337,7 @@ func TestSubject_MaxEncodedSize(t *testing.T) {
 
 		Texts: []Text{{
 			ID:        encodedQuestionID(4),
-			Title:     {En: "", Fr: "", De: ""},
+			Title:     Title{En: "", Fr: "", De: ""},
 			MaxN:      2,
 			MinN:      0,
 			MaxLength: 10,
@@ -345,7 +345,7 @@ func TestSubject_MaxEncodedSize(t *testing.T) {
 			Choices:   make([]string, 2),
 		}, {
 			ID:        encodedQuestionID(5),
-			Title:     {En: "", Fr: "", De: ""},
+			Title:     Title{En: "", Fr: "", De: ""},
 			MaxN:      1,
 			MinN:      0,
 			MaxLength: 10,
@@ -355,7 +355,7 @@ func TestSubject_MaxEncodedSize(t *testing.T) {
 	}
 
 	conf := Configuration{
-		Title:    {En: "", Fr: "", De: ""},
+		Title:    Title{En: "", Fr: "", De: ""},
 		Scaffold: []Subject{subject},
 	}
 
@@ -368,7 +368,7 @@ func TestSubject_MaxEncodedSize(t *testing.T) {
 func TestSubject_IsValid(t *testing.T) {
 	mainSubject := &Subject{
 		ID:       ID(base64.StdEncoding.EncodeToString([]byte("S1"))),
-		Title:    {En: "", Fr: "", De: ""},
+		Title:    Title{En: "", Fr: "", De: ""},
 		Order:    []ID{},
 		Subjects: []Subject{},
 		Selects:  []Select{},
@@ -378,7 +378,7 @@ func TestSubject_IsValid(t *testing.T) {
 
 	subSubject := &Subject{
 		ID:       ID(base64.StdEncoding.EncodeToString([]byte("S2"))),
-		Title:    {En: "", Fr: "", De: ""},
+		Title:    Title{En: "", Fr: "", De: ""},
 		Order:    []ID{},
 		Subjects: []Subject{},
 		Selects:  []Select{},
@@ -387,7 +387,7 @@ func TestSubject_IsValid(t *testing.T) {
 	}
 
 	configuration := Configuration{
-		Title:    {En: "", Fr: "", De: ""},
+		Title:    Title{En: "", Fr: "", De: ""},
 		Scaffold: []Subject{*mainSubject, *subSubject},
 	}
 
@@ -400,7 +400,7 @@ func TestSubject_IsValid(t *testing.T) {
 
 	mainSubject.Selects = []Select{{
 		ID:      encodedQuestionID(1),
-		Title:   {En: "", Fr: "", De: ""},
+		Title:   Title{En: "", Fr: "", De: ""},
 		MaxN:    0,
 		MinN:    0,
 		Choices: make([]string, 0),
@@ -408,7 +408,7 @@ func TestSubject_IsValid(t *testing.T) {
 
 	mainSubject.Ranks = []Rank{{
 		ID:      encodedQuestionID(1),
-		Title:   {En: "", Fr: "", De: ""},
+		Title:   Title{En: "", Fr: "", De: ""},
 		MaxN:    0,
 		MinN:    0,
 		Choices: make([]string, 0),
@@ -423,7 +423,7 @@ func TestSubject_IsValid(t *testing.T) {
 
 	mainSubject.Ranks[0] = Rank{
 		ID:      encodedQuestionID(2),
-		Title:   {En: "", Fr: "", De: ""},
+		Title:   Title{En: "", Fr: "", De: ""},
 		MaxN:    0,
 		MinN:    2,
 		Choices: make([]string, 0),
@@ -439,7 +439,7 @@ func TestSubject_IsValid(t *testing.T) {
 	mainSubject.Ranks = []Rank{}
 	mainSubject.Selects[0] = Select{
 		ID:      encodedQuestionID(1),
-		Title:   {En: "", Fr: "", De: ""},
+		Title:   Title{En: "", Fr: "", De: ""},
 		MaxN:    1,
 		MinN:    0,
 		Choices: make([]string, 0),
@@ -455,7 +455,7 @@ func TestSubject_IsValid(t *testing.T) {
 	mainSubject.Selects = []Select{}
 	mainSubject.Texts = []Text{{
 		ID:        encodedQuestionID(3),
-		Title:     {En: "", Fr: "", De: ""},
+		Title:     Title{En: "", Fr: "", De: ""},
 		MaxN:      2,
 		MinN:      4,
 		MaxLength: 0,
