@@ -42,9 +42,11 @@ const newRank = (): types.RankQuestion => {
     Choices: [],
     ChoicesMap: new Map(Object.entries(obj)),
     Type: RANK,
-    Hint: '',
-    HintFr: '',
-    HintDe: '',
+    Hint: {
+      En: '',
+      Fr: '',
+      De: '',
+    },
   };
 };
 
@@ -61,9 +63,11 @@ const newSelect = (): types.SelectQuestion => {
     Choices: [],
     ChoicesMap: new Map(Object.entries(obj)),
     Type: SELECT,
-    Hint: '',
-    HintFr: '',
-    HintDe: '',
+    Hint: {
+      En: '',
+      Fr: '',
+      De: '',
+    },
   };
 };
 
@@ -82,9 +86,11 @@ const newText = (): types.TextQuestion => {
     Choices: [],
     ChoicesMap: new Map(Object.entries(obj)),
     Type: TEXT,
-    Hint: '',
-    HintFr: '',
-    HintDe: '',
+    Hint: {
+      En: '',
+      Fr: '',
+      De: '',
+    },
   };
 };
 
@@ -156,48 +162,30 @@ const toArraysOfSubjectElement = (
   elements.forEach((element) => {
     switch (element.Type) {
       case RANK:
-        hint = JSON.stringify({
-          en: (element as types.RankQuestion).Hint,
-          fr: (element as types.RankQuestion).HintFr,
-          de: (element as types.RankQuestion).HintDe,
-        });
         rankQuestion.push({
           ...(element as types.RankQuestion),
           Title: element.Title,
           Choices: choicesMapToChoices(
             (element as types.RankQuestion).ChoicesMap
           ),
-          Hint: hint,
         });
         break;
       case SELECT:
-        hint = JSON.stringify({
-          en: (element as types.SelectQuestion).Hint,
-          fr: (element as types.SelectQuestion).HintFr,
-          de: (element as types.SelectQuestion).HintDe,
-        });
         selectQuestion.push({
           ...(element as types.SelectQuestion),
           Title: element.Title,
           Choices: choicesMapToChoices(
             (element as types.SelectQuestion).ChoicesMap
           ),
-          Hint: hint,
         });
         break;
       case TEXT:
-        hint = JSON.stringify({
-          en: (element as types.TextQuestion).Hint,
-          fr: (element as types.TextQuestion).HintFr,
-          de: (element as types.TextQuestion).HintDe,
-        });
         textQuestion.push({
           ...(element as types.TextQuestion),
           Title: element.Title,
           Choices: choicesMapToChoices(
             (element as types.TextQuestion).ChoicesMap
           ),
-          Hint: hint,
         });
         break;
       case SUBJECT:

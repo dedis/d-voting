@@ -93,9 +93,9 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
           </h3>
         </div>
         <div className="text-right">
-          {language === 'en' && <HintButton text={rank.Hint} />}
-          {language === 'fr' && <HintButton text={rank.HintFr} />}
-          {language === 'de' && <HintButton text={rank.HintDe} />}
+          {language === 'en' && <HintButton text={rank.Hint.En} />}
+          {language === 'fr' && <HintButton text={rank.Hint.Fr} />}
+          {language === 'de' && <HintButton text={rank.Hint.De} />}
         </div>
       </div>
       <div className="mt-5 px-4 max-w-[300px] sm:pl-8 sm:max-w-md">

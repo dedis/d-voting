@@ -50,7 +50,7 @@ const mockForm1: any = {
                 '{"en": "salad", "fr": "salade", "de": "salad"}',
                 '{"en": "onion", "fr": "oignon", "de": "onion"}',
               ],
-              Hint: '{"en": "", "fr": "", "de": ""}',
+              Hint: {"En": "", "Fr": "", "De": ""},
             },
           ],
           Ranks: [
@@ -65,7 +65,7 @@ const mockForm1: any = {
                 '{"en": "SV", "fr": "SV", "de": "SV"}',
                 '{"en": "Parmentier", "fr": "Parmentier", "de": "Parmentier"}',
               ],
-              Hint: '{"en": "", "fr": "", "de": ""}',
+              Hint: {"En": "", "Fr": "", "De": ""},
             },
           ],
         },
@@ -85,7 +85,7 @@ const mockForm1: any = {
             '{"en":"4", "fr": "4", "de": "4"}',
             '{ "en": "5", "fr": "5", "de": "5" }',
           ],
-          Hint: '{"en": "", "fr": "", "de": ""}',
+          Hint: {"En": "", "Fr": "", "De": ""},
         },
         {
           Title:
@@ -98,7 +98,7 @@ const mockForm1: any = {
             '{"en" : "normal", "fr": "normal", "de": "normal"}',
             '{"en" : "good", "fr": "super", "de": "good"}',
           ],
-          Hint: '{"en": "Be honest. This is anonymous anyway", "fr": "Sois honnête. C est anonyme de toute façon", "de": "Be honest. This is anonymous anyway"}',
+          Hint: {"En": "Be honest. This is anonymous anyway", "Fr": "Sois honnête. C est anonyme de toute façon", "De": "Be honest. This is anonymous anyway"},
         },
       ],
       Texts: [
@@ -114,7 +114,7 @@ const mockForm1: any = {
             '{"en":"TA1", "fr": "TA1", "de": "TA1"}',
             '{"en":"TA2", "fr":"TA2","de": "TA2"}',
           ],
-          Hint: '{"en": "", "fr": "", "de": ""}',
+          Hint: {"En": "", "Fr": "", "De": ""},
         },
       ],
     },
@@ -170,7 +170,7 @@ const mockForm2: any = {
             '{"en":"4", "fr": "4", "de": "4"}',
             '{ "en": "5", "fr": "5", "de": "5" }',
           ],
-          Hint: '{"en": "", "fr": "", "de": ""}',
+          Hint: {"En": "", "Fr": "", "De": ""},
         },
       ],
       Texts: [
@@ -186,7 +186,7 @@ const mockForm2: any = {
             '{"en":"TA2", "fr":"TA2","de": "TA2"}',
           ],
           Regex: '^[A-Z][a-z]+$',
-          Hint: '{"en": "", "fr": "", "de": ""}',
+          Hint: {"En": "", "Fr": "", "De": ""},
         },
       ],
 
@@ -210,7 +210,7 @@ const mockForm2: any = {
             '{"en": "onion", "fr": "oignon", "de": "onion"}',
             '{"en": "falafel", "fr": "falafel", "de": "falafel"}',
           ],
-          Hint: '{"en": "", "fr": "", "de": ""}',
+          Hint: {"En": "", "Fr": "", "De": ""},
         },
       ],
 
@@ -227,7 +227,7 @@ const mockForm2: any = {
             '{"en": "Arcadie", "fr": "Arcadie", "de": "Arcadie"}',
             '{"en": "Montreux Jazz Cafe", "fr": "Montreux Jazz Cafe", "de": "Montreux Jazz Cafe"}',
           ],
-          Hint: '{"en": "", "fr": "", "de": ""}',
+          Hint: {"En": "", "Fr": "", "De": ""},
         },
         {
           Title: {"En": "IN or SC ?", "Fr": "IN ou SC ?", "De": "IN or SC ?"},
@@ -235,7 +235,7 @@ const mockForm2: any = {
           MaxN: 2,
           MinN: 1,
           Choices: ['{"en": "IN", "fr": "IN", "de": "IN"}', '{"en": "SC", "fr": "SC", "de": "SC"}'],
-          Hint: '{"en": "The right answer is IN ;-)", "fr": "La bonne réponse est IN ;-)", "de": "The right answer is IN ;-)"}',
+          Hint: {"En": "The right answer is IN ;-)", "Fr": "La bonne réponse est IN ;-)", "De": "The right answer is IN ;-)"},
         },
       ],
       Texts: [],
@@ -268,7 +268,7 @@ const mockForm3: any = {
             '{"en": "Drink 🧃", "fr": "Boisson 🧃", "de": "Drink 🧃"}',
             '{"en":"Dessert 🍰", "fr": "Dessert 🍰", "de": "Dessert 🍰"}',
           ],
-          Hint: '{"en": "If you change opinion call me before 11:30 a.m.", "fr": "Si tu changes d\'avis appelle moi avant 11h30", "de": "If you change opinion call me before 11:30 a.m."}',
+          Hint: {"En": "If you change opinion call me before 11:30 a.m.", "Fr": "Si tu changes d\avis appelle moi avant 11h30", "De": "If you change opinion call me before 11:30 a.m."},
         },
       ],
       Subjects: [],

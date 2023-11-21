@@ -16,19 +16,16 @@ const isJson = (str: string) => {
 const unmarshalText = (text: any): types.TextQuestion => {
   const t = text as types.TextQuestion;
   if (t.Hint === undefined) {
-    t.Hint = JSON.stringify({
-      en: '',
-      fr: '',
-      de: '',
-    });
+    t.Hint = {
+      En: '',
+      Fr: '',
+      De: '',
+    };
   }
-  const hint = JSON.parse(t.Hint);
   return {
     ...text,
     Title: t.Title,
-    Hint: hint.en,
-    HintFr: hint.fr,
-    HintDe: hint.de,
+    Hint: t.Hint,
     ChoicesMap: choicesToChoicesMap(t.Choices),
     Type: TEXT,
   };
@@ -37,19 +34,16 @@ const unmarshalText = (text: any): types.TextQuestion => {
 const unmarshalRank = (rank: any): types.RankQuestion => {
   const r = rank as types.RankQuestion;
   if (r.Hint === undefined) {
-    r.Hint = JSON.stringify({
-      en: '',
-      fr: '',
-      de: '',
-    });
+    r.Hint = {
+      En: '',
+      Fr: '',
+      De: '',
+    };
   }
-  const hint = JSON.parse(r.Hint);
   return {
     ...rank,
     Title: r.Title,
-    Hint: hint.en,
-    HintFr: hint.fr,
-    HintDe: hint.de,
+    Hint: r.Hint,
     ChoicesMap: choicesToChoicesMap(r.Choices),
     Type: RANK,
   };
@@ -58,19 +52,16 @@ const unmarshalRank = (rank: any): types.RankQuestion => {
 const unmarshalSelect = (select: any): types.SelectQuestion => {
   const s = select as types.SelectQuestion;
   if (s.Hint === undefined) {
-    s.Hint = JSON.stringify({
-      en: '',
-      fr: '',
-      de: '',
-    });
+    s.Hint = {
+      En: '',
+      Fr: '',
+      De: '',
+    };
   }
-  const hint = JSON.parse(s.Hint);
   return {
     ...select,
     Title: s.Title,
-    Hint: hint.en,
-    HintFr: hint.fr,
-    HintDe: hint.de,
+    Hint: s.Hint,
     ChoicesMap: choicesToChoicesMap(s.Choices),
     Type: SELECT,
   };

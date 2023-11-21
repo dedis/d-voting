@@ -107,9 +107,9 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
           </h3>
         </div>
         <div className="text-right">
-          {language === 'en' && <HintButton text={text.Hint} />}
-          {language === 'fr' && <HintButton text={text.HintFr} />}
-          {language === 'de' && <HintButton text={text.HintDe} />}
+          {language === 'en' && <HintButton text={text.Hint.En} />}
+          {language === 'fr' && <HintButton text={text.Hint.Fr} />}
+          {language === 'de' && <HintButton text={text.Hint.De} />}
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>

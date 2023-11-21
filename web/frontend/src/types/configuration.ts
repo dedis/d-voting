@@ -12,6 +12,13 @@ interface Title {
   De: string;
 }
 
+// Hint
+interface Hint {
+  En: string;
+  Fr: string;
+  De: string;
+}
+
 interface SubjectElement {
   ID: ID;
   Type: string;
@@ -24,9 +31,7 @@ interface RankQuestion extends SubjectElement {
   MinN: number;
   Choices: string[];
   ChoicesMap: Map<string, string[]>;
-  Hint: string;
-  HintFr: string;
-  HintDe: string;
+  Hint: Hint;
 }
 // Text describes a "text" question, which allows the user to enter free text.
 interface TextQuestion extends SubjectElement {
@@ -36,9 +41,7 @@ interface TextQuestion extends SubjectElement {
   Regex: string;
   Choices: string[];
   ChoicesMap: Map<string, string[]>;
-  Hint: string;
-  HintFr: string;
-  HintDe: string;
+  Hint: Hint;
 }
 
 // Select describes a "select" question, which requires the user to select one
@@ -48,9 +51,7 @@ interface SelectQuestion extends SubjectElement {
   MinN: number;
   Choices: string[];
   ChoicesMap: Map<string, string[]>;
-  Hint: string;
-  HintFr: string;
-  HintDe: string;
+  Hint: Hint;
 }
 
 interface Subject extends SubjectElement {
@@ -76,6 +77,7 @@ interface Answers {
 export type {
   ID,
   Title,
+  Hint,
   TextQuestion,
   SelectQuestion,
   RankQuestion,

@@ -260,6 +260,13 @@ type Title struct {
 	De string
 }
 
+// Hint contains explanations in different languages.
+type Hint struct {
+	En string
+	Fr string
+	De string
+}
+
 // Subject is a wrapper around multiple questions that can be of type "select",
 // "rank", or "text".
 type Subject struct {
@@ -425,7 +432,7 @@ type Select struct {
 	MaxN    uint
 	MinN    uint
 	Choices []string
-	Hint    string
+	Hint    Hint
 }
 
 // GetID implements Question
@@ -491,7 +498,7 @@ type Rank struct {
 	MaxN    uint
 	MinN    uint
 	Choices []string
-	Hint    string
+	Hint    Hint
 }
 
 func (r Rank) GetID() string {
@@ -566,7 +573,7 @@ type Text struct {
 	MaxLength uint
 	Regex     string
 	Choices   []string
-	Hint      string
+	Hint      Hint
 }
 
 func (t Text) GetID() string {

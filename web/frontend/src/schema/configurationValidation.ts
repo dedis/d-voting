@@ -6,6 +6,11 @@ const titleSchema = yup.object({
   Fr: yup.string(),
   De: yup.string(),
 });
+const hintSchema = yup.object({
+  En: yup.string(),
+  Fr: yup.string(),
+  De: yup.string(),
+});
 
 const selectsSchema = yup.object({
   ID: yup.lazy(() => idSchema),
@@ -103,7 +108,7 @@ const selectsSchema = yup.object({
       },
     })
     .required(),
-  Hint: yup.lazy(() => yup.string()),
+  Hint: yup.lazy(() => hintSchema),
 });
 
 const ranksSchema = yup.object({
@@ -201,7 +206,7 @@ const ranksSchema = yup.object({
       },
     })
     .required(),
-  Hint: yup.lazy(() => yup.string()),
+  Hint: yup.lazy(() => hintSchema),
 });
 
 const textsSchema = yup.object({
@@ -321,7 +326,7 @@ const textsSchema = yup.object({
       },
     })
     .required(),
-  Hint: yup.lazy(() => yup.string()),
+  Hint: yup.lazy(() => hintSchema),
 });
 
 const subjectSchema = yup.object({

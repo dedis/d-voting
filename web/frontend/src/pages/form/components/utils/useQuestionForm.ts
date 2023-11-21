@@ -23,6 +23,9 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
         case 'Title':
           setState({ ...state, Title: { ...state.Title, [name]: value } });
           break;
+        case 'Hint':
+          setState({ ...state, Hint: { ...state.Hint, [name]: value } });
+          break;
         case 'RankMinMax':
           setState({ ...state, MinN: Number(value), MaxN: Number(value) });
           break;
