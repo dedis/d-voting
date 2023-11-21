@@ -1,11 +1,11 @@
 package controller
 
 import (
-	"github.com/c4dt/dela/cli"
-	"github.com/c4dt/dela/cli/node"
-	"github.com/c4dt/dela/core/access"
-	"github.com/c4dt/dela/core/ordering"
-	"github.com/c4dt/dela/core/validation"
+	"go.dedis.ch/dela/cli"
+	"go.dedis.ch/dela/cli/node"
+	"go.dedis.ch/dela/core/access"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/validation"
 )
 
 // NewController returns a new controller initializer

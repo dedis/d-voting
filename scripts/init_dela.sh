@@ -43,12 +43,12 @@ for container in dela-worker-0 dela-worker-1 dela-worker-2 dela-worker-3; do
   IDENTITY=$(docker compose exec "$container" crypto bls signer read --path /data/node/private.key --format BASE64_PUBKEY);
   docker compose exec dela-worker-0 dvoting --config /data/node pool add\
       --key /data/node/private.key\
-      --args github.com/c4dt/dela.ContractArg\
-      --args github.com/c4dt/dela.Access\
+      --args go.dedis.ch/dela.ContractArg\
+      --args go.dedis.ch/dela.Access\
       --args access:grant_id\
       --args 0300000000000000000000000000000000000000000000000000000000000000\
       --args access:grant_contract\
-      --args github.com/c4dt/dela.Evoting \
+      --args go.dedis.ch/dela.Evoting \
       --args access:grant_command\
       --args all\
       --args access:identity\

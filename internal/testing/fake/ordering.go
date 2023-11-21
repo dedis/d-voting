@@ -5,10 +5,10 @@ import (
 	"encoding/hex"
 
 	formTypes "github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/dela/core/ordering"
-	"github.com/c4dt/dela/core/store"
-	"github.com/c4dt/dela/core/validation"
-	"github.com/c4dt/dela/serde"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/store"
+	"go.dedis.ch/dela/core/validation"
+	"go.dedis.ch/dela/serde"
 	"golang.org/x/xerrors"
 )
 

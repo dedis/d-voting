@@ -4,11 +4,11 @@ import (
 	"context"
 	"io"
 
-	"github.com/c4dt/dela/core/access"
-	"github.com/c4dt/dela/core/txn"
-	"github.com/c4dt/dela/core/txn/pool"
-	"github.com/c4dt/dela/mino"
-	"github.com/c4dt/dela/serde"
+	"go.dedis.ch/dela/core/access"
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/serde"
 )
 
 // Transaction is a fake implementation of Transaction.

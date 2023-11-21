@@ -15,11 +15,11 @@ import (
 	"github.com/c4dt/d-voting/contracts/evoting"
 	"github.com/c4dt/d-voting/contracts/evoting/types"
 	"github.com/c4dt/d-voting/services/dkg"
-	delaPkg "github.com/c4dt/dela"
-	"github.com/c4dt/dela/core/execution/native"
-	"github.com/c4dt/dela/core/txn"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
+	delaPkg "go.dedis.ch/dela"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/txn"
 	"golang.org/x/xerrors"
 )
 

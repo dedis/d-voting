@@ -1,9 +1,9 @@
 package types
 
 import (
-	"github.com/c4dt/dela/mino"
-	"github.com/c4dt/dela/serde"
-	"github.com/c4dt/dela/serde/registry"
+	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/serde"
+	"go.dedis.ch/dela/serde/registry"
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
 )

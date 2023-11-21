@@ -417,7 +417,7 @@ type Select struct {
 	MaxN    uint
 	MinN    uint
 	Choices []string
-	Hint	string
+	Hint    string
 }
 
 // GetID implements Question
@@ -483,7 +483,7 @@ type Rank struct {
 	MaxN    uint
 	MinN    uint
 	Choices []string
-	Hint 	string
+	Hint    string
 }
 
 func (r Rank) GetID() string {
@@ -558,7 +558,7 @@ type Text struct {
 	MaxLength uint
 	Regex     string
 	Choices   []string
-	Hint	  string
+	Hint      string
 }
 
 func (t Text) GetID() string {

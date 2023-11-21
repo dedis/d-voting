@@ -262,7 +262,7 @@ if [ "$SETUP" == true ]; then
 
       echo "${GREEN}[4/4]${NC} grant access on the chain"
 
-      ./dvoting --config /tmp/node1 pool add --key private.key --args github.com/c4dt/dela.ContractArg --args github.com/c4dt/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args github.com/c4dt/dela.Evoting --args access:grant_command --args all --args access:identity --args $(crypto bls signer read --path private.key --format BASE64_PUBKEY) \
+      ./dvoting --config /tmp/node1 pool add --key private.key --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $(crypto bls signer read --path private.key --format BASE64_PUBKEY) \
         --args access:command --args GRANT
 
       from=1
@@ -270,7 +270,7 @@ if [ "$SETUP" == true ]; then
       while [ $from -le $to ]; do
 
         node_name="node$from"
-        ./dvoting --config /tmp/node1 pool add --key private.key --args github.com/c4dt/dela.ContractArg --args github.com/c4dt/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args github.com/c4dt/dela.Evoting --args access:grant_command --args all --args access:identity --args $(crypto bls signer read --path /tmp/$node_name/private.key --format BASE64_PUBKEY) \
+        ./dvoting --config /tmp/node1 pool add --key private.key --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $(crypto bls signer read --path /tmp/$node_name/private.key --format BASE64_PUBKEY) \
           --args access:command --args GRANT
 
         ((from++))
@@ -309,13 +309,13 @@ if [ "$SETUP" == true ]; then
 
       echo "${GREEN}[4/4]${NC} grant access on the chain"
 
-      docker exec node1 dvoting --config /tmp/node1 pool add --key private.key --args github.com/c4dt/dela.ContractArg --args github.com/c4dt/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args github.com/c4dt/dela.Evoting --args access:grant_command --args all --args access:identity --args $access_token --args access:command --args GRANT
+      docker exec node1 dvoting --config /tmp/node1 pool add --key private.key --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $access_token --args access:command --args GRANT
 
       sleep 1
 
       for i in "${vals[@]}"; do
         access_token_tmp=$(docker exec node$i crypto bls signer read --path /tmp/node$i/private.key --format BASE64_PUBKEY)
-        docker exec node1 dvoting --config /tmp/node1 pool add --key private.key --args github.com/c4dt/dela.ContractArg --args github.com/c4dt/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args github.com/c4dt/dela.Evoting --args access:grant_command --args all --args access:identity --args $access_token_tmp --args access:command --args GRANT
+        docker exec node1 dvoting --config /tmp/node1 pool add --key private.key --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $access_token_tmp --args access:command --args GRANT
         sleep 1
       done
     fi

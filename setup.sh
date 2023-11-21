@@ -34,36 +34,36 @@ echo "${GREEN}[3/7]${NC} setup access rights on each node"
 echo "${GREEN}[4/7]${NC} grant access on the chain"
 ./dvoting --config /tmp/node1 pool add\
     --key private.key\
-    --args github.com/c4dt/dela.ContractArg --args github.com/c4dt/dela.Access\
+    --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access\
     --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000\
-    --args access:grant_contract --args github.com/c4dt/dela.Evoting\
+    --args access:grant_contract --args go.dedis.ch/dela.Evoting\
     --args access:grant_command --args all\
     --args access:identity --args $(crypto bls signer read --path private.key --format BASE64_PUBKEY)\
     --args access:command --args GRANT
 
 ./dvoting --config /tmp/node1 pool add\
     --key private.key\
-    --args github.com/c4dt/dela.ContractArg --args github.com/c4dt/dela.Access\
+    --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access\
     --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000\
-    --args access:grant_contract --args github.com/c4dt/dela.Evoting\
+    --args access:grant_contract --args go.dedis.ch/dela.Evoting\
     --args access:grant_command --args all\
     --args access:identity --args $(crypto bls signer read --path /tmp/node1/private.key --format BASE64_PUBKEY)\
     --args access:command --args GRANT
 
 ./dvoting --config /tmp/node1 pool add\
     --key private.key\
-    --args github.com/c4dt/dela.ContractArg --args github.com/c4dt/dela.Access\
+    --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access\
     --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000\
-    --args access:grant_contract --args github.com/c4dt/dela.Evoting\
+    --args access:grant_contract --args go.dedis.ch/dela.Evoting\
     --args access:grant_command --args all\
     --args access:identity --args $(crypto bls signer read --path /tmp/node2/private.key --format BASE64_PUBKEY)\
     --args access:command --args GRANT    
 
 ./dvoting --config /tmp/node1 pool add\
     --key private.key\
-    --args github.com/c4dt/dela.ContractArg --args github.com/c4dt/dela.Access\
+    --args go.dedis.ch/dela.ContractArg --args go.dedis.ch/dela.Access\
     --args access:grant_id --args 0300000000000000000000000000000000000000000000000000000000000000\
-    --args access:grant_contract --args github.com/c4dt/dela.Evoting\
+    --args access:grant_contract --args go.dedis.ch/dela.Evoting\
     --args access:grant_command --args all\
     --args access:identity --args $(crypto bls signer read --path /tmp/node3/private.key --format BASE64_PUBKEY)\
     --args access:command --args GRANT

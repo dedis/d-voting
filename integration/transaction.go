@@ -12,12 +12,12 @@ import (
 	"time"
 
 	"github.com/c4dt/d-voting/proxy/txnmanager"
-	"github.com/c4dt/dela/core/execution/native"
-	"github.com/c4dt/dela/core/ordering"
-	"github.com/c4dt/dela/core/txn"
-	"github.com/c4dt/dela/core/txn/signed"
-	"github.com/c4dt/dela/crypto"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/core/txn/signed"
+	"go.dedis.ch/dela/crypto"
 	"golang.org/x/xerrors"
 )
 
@@ -157,9 +157,9 @@ func grantAccess(m txManager, signer crypto.Signer) error {
 	}
 
 	args := []txn.Arg{
-		{Key: native.ContractArg, Value: []byte("github.com/c4dt/dela.Access")},
+		{Key: native.ContractArg, Value: []byte("go.dedis.ch/dela.Access")},
 		{Key: "access:grant_id", Value: []byte(hex.EncodeToString(evotingAccessKey[:]))},
-		{Key: "access:grant_contract", Value: []byte("github.com/c4dt/dela.Evoting")},
+		{Key: "access:grant_contract", Value: []byte("go.dedis.ch/dela.Evoting")},
 		{Key: "access:grant_command", Value: []byte("all")},
 		{Key: "access:identity", Value: []byte(base64.StdEncoding.EncodeToString(pubKeyBuf))},
 		{Key: "access:command", Value: []byte("GRANT")},

@@ -5,17 +5,17 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/c4dt/dela/serde/json"
+	"go.dedis.ch/dela/serde/json"
 
 	"github.com/c4dt/d-voting/services/shuffle/neff/types"
 	"go.dedis.ch/kyber/v3"
 
 	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
 	"github.com/c4dt/d-voting/internal/testing/fake"
-	"github.com/c4dt/dela/core/access"
-	"github.com/c4dt/dela/core/txn/signed"
-	"github.com/c4dt/dela/mino"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/dela/core/access"
+	"go.dedis.ch/dela/core/txn/signed"
+	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/kyber/v3/util/random"
 	"golang.org/x/xerrors"
 )
