@@ -31,9 +31,6 @@ import (
 const BucketName = "dkgmap"
 const privateKeyFile = "private.key"
 
-// evotingAccessKey is the access key used for the evoting contract.
-var evotingAccessKey = [32]byte{3}
-
 // NewController returns a new controller initializer
 func NewController() node.Initializer {
 	return controller{}
@@ -44,7 +41,7 @@ func NewController() node.Initializer {
 // - implements node.Initializer
 type controller struct{}
 
-// Build implements node.Initializer.
+// SetCommands implements node.Initializer.
 func (m controller) SetCommands(builder node.Builder) {
 
 	formIDFlag := cli.StringFlag{
@@ -184,8 +181,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 
 	inj.Inject(dkg)
 
-	rosterKey := [32]byte{}
-	c := evoting.NewContract(evotingAccessKey[:], rosterKey[:], access, dkg, rosterFac)
+	c := evoting.NewContract(access, dkg, rosterFac)
 	evoting.RegisterContract(exec, c)
 
 	return nil

@@ -46,7 +46,7 @@ for container in dela-worker-0 dela-worker-1 dela-worker-2 dela-worker-3; do
       --args go.dedis.ch/dela.ContractArg\
       --args go.dedis.ch/dela.Access\
       --args access:grant_id\
-      --args 0300000000000000000000000000000000000000000000000000000000000000\
+      --args 45564f54\
       --args access:grant_contract\
       --args go.dedis.ch/dela.Evoting \
       --args access:grant_command\

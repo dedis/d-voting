@@ -195,7 +195,7 @@ func (h *manager) checkTxnIncluded(transactionID []byte, lastBlockIdx uint64) (T
 	}
 }
 
-// submitTxn submits a transaction
+// SubmitTxn submits a transaction
 // Returns the transaction ID.
 func (h *manager) SubmitTxn(ctx context.Context, cmd evoting.Command,
 	cmdArg string, payload []byte) ([]byte, uint64, error) {

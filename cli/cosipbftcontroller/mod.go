@@ -40,9 +40,6 @@ const (
 	errInjector    = "injector: %v"
 )
 
-// valueAccessKey is the access key used for the value contract.
-var valueAccessKey = [32]byte{2}
-
 func blsSigner() encoding.BinaryMarshaler {
 	return bls.NewSigner()
 }
@@ -130,7 +127,7 @@ func (m miniController) OnStart(flags cli.Flags, inj node.Injector) error {
 	rosterFac := authority.NewFactory(onet.GetAddressFactory(), cosi.GetPublicKeyFactory())
 	cosipbft.RegisterRosterContract(exec, rosterFac, access)
 
-	value.RegisterContract(exec, value.NewContract(valueAccessKey[:], access))
+	value.RegisterContract(exec, value.NewContract(access))
 
 	txFac := signed.NewTransactionFactory()
 	vs := simple.NewService(exec, txFac)

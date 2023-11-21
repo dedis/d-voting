@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
@@ -241,7 +240,6 @@ func marshallBallotManual(voteStr string, pubkey kyber.Point, chunks int) (ptype
 
 	ballot := make(ptypes.CiphervoteJSON, chunks)
 	vote := strings.NewReader(voteStr)
-	fmt.Printf("votestr is: %v", voteStr)
 
 	buf := make([]byte, 29)
 

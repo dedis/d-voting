@@ -57,12 +57,6 @@ import (
 const certKeyName = "cert.key"
 const privateKeyFile = "private.key"
 
-var aKey = [32]byte{1}
-var valueAccessKey = [32]byte{2}
-
-// evotingAccessKey is the access key used for the evoting contract.
-var evotingAccessKey = [32]byte{3}
-
 // dela defines the common interface for a Dela node.
 type dela interface {
 	Setup(...dela)
@@ -193,7 +187,7 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 	rosterFac := authority.NewFactory(onet.GetAddressFactory(), cosi.GetPublicKeyFactory())
 	cosipbft.RegisterRosterContract(exec, rosterFac, accessService)
 
-	value.RegisterContract(exec, value.NewContract(valueAccessKey[:], accessService))
+	value.RegisterContract(exec, value.NewContract(accessService))
 
 	txFac := signed.NewTransactionFactory()
 	vs := simple.NewService(exec, txFac)
@@ -242,16 +236,14 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 
 	// access
 	accessStore := newAccessStore()
-	contract := accessContract.NewContract(aKey[:], accessService, accessStore)
+	contract := accessContract.NewContract(accessService, accessStore)
 	accessContract.RegisterContract(exec, contract)
 
 	formFac := etypes.NewFormFactory(etypes.CiphervoteFactory{}, rosterFac)
 
 	dkg := pedersen.NewPedersen(onet, srvc, pool, formFac, signer)
 
-	rosterKey := [32]byte{}
-	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:],
-		accessService, dkg, rosterFac))
+	evoting.RegisterContract(exec, evoting.NewContract(accessService, dkg, rosterFac))
 
 	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, formFac, signer)
 
@@ -293,7 +285,7 @@ func createDVotingAccess(t require.TestingT, nodes []dVotingCosiDela, dir string
 	require.NoError(t, err)
 
 	pubKey := signer.GetPublicKey()
-	cred := accessContract.NewCreds(aKey[:])
+	cred := accessContract.NewCreds()
 
 	for _, node := range nodes {
 		n := node.(dVotingNode)

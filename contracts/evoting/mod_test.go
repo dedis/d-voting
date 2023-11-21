@@ -63,20 +63,17 @@ func TestExecute(t *testing.T) {
 		actor: fakeDkgActor{},
 		err:   nil,
 	}
-	var evotingAccessKey = [32]byte{3}
-	rosterKey := [32]byte{}
-
 	service := fakeAccess{err: fake.GetError()}
 	rosterFac := fakeAuthorityFactory{}
 
-	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
+	contract := NewContract(service, fakeDkg, rosterFac)
 
 	err := contract.Execute(fakeStore{}, makeStep(t))
 	require.EqualError(t, err, "identity not authorized: fake.PublicKey ("+fake.GetError().Error()+")")
 
 	service = fakeAccess{}
 
-	contract = NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
+	contract = NewContract(service, fakeDkg, rosterFac)
 	err = contract.Execute(fakeStore{}, makeStep(t))
 	require.EqualError(t, err, "\"evoting:command\" not found in tx arg")
 
@@ -129,13 +126,10 @@ func TestCommand_CreateForm(t *testing.T) {
 	data, err := createForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	var evotingAccessKey = [32]byte{3}
-	rosterKey := [32]byte{}
-
 	service := fakeAccess{err: fake.GetError()}
 	rosterFac := fakeAuthorityFactory{}
 
-	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
+	contract := NewContract(service, fakeDkg, rosterFac)
 
 	cmd := evotingCommand{
 		Contract: &contract,
@@ -1131,13 +1125,10 @@ func initFormAndContract() (types.Form, Contract) {
 		Roster:           fake.Authority{},
 	}
 
-	var evotingAccessKey = [32]byte{3}
-	rosterKey := [32]byte{}
-
 	service := fakeAccess{err: fake.GetError()}
 	rosterFac := fakeAuthorityFactory{}
 
-	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
+	contract := NewContract(service, fakeDkg, rosterFac)
 
 	return dummyForm, contract
 }

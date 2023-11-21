@@ -119,7 +119,10 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// send the response json
-	txnmanager.SendResponse(w, response)
+	err = txnmanager.SendResponse(w, response)
+	if err != nil {
+		fmt.Printf("Caught unhandled error: %+v", err)
+	}
 }
 
 // NewFormVote implements proxy.Proxy

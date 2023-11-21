@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"go.dedis.ch/dela"
-
+	"go.dedis.ch/dela/core/ordering/cosipbft/contracts/viewchange"
 	"go.dedis.ch/kyber/v3/share"
 
 	"github.com/c4dt/d-voting/contracts/evoting/types"
@@ -60,7 +60,7 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 		return xerrors.Errorf(errWrongTx, msg)
 	}
 
-	rosterBuf, err := snap.Get(e.rosterKey)
+	rosterBuf, err := snap.Get(viewchange.GetRosterKey())
 	if err != nil {
 		return xerrors.Errorf("failed to get roster")
 	}
@@ -131,7 +131,10 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 		}
 	}
 
-	formsMetadata.FormsIDs.Add(form.FormID)
+	err = formsMetadata.FormsIDs.Add(form.FormID)
+	if err != nil {
+		return xerrors.Errorf("couldn't add new form: %v", err)
+	}
 
 	formMetadataJSON, err := json.Marshal(formsMetadata)
 	if err != nil {
