@@ -5,9 +5,9 @@
     "Title": {
       "type": "object",
       "properties": {
-         "En": { "type": "string" },
-         "Fr": { "type": "string" },
-         "De": { "type": "string" }
+        "En": { "type": "string" },
+        "Fr": { "type": "string" },
+        "De": { "type": "string" }
       }
     },
     "Scaffold": {
@@ -19,9 +19,9 @@
           "Title": {
             "type": "object",
             "properties": {
-               "En": { "type": "string" },
-               "Fr": { "type": "string" },
-               "De": { "type": "string" }
+              "En": { "type": "string" },
+              "Fr": { "type": "string" },
+              "De": { "type": "string" }
             }
           },
           "Order": {
@@ -41,9 +41,9 @@
                 "Title": {
                   "type": "object",
                   "properties": {
-                     "En": { "type": "string" },
-                     "Fr": { "type": "string" },
-                     "De": { "type": "string" }
+                    "En": { "type": "string" },
+                    "Fr": { "type": "string" },
+                    "De": { "type": "string" }
                   }
                 },
                 "MaxN": { "type": "number" },
@@ -55,9 +55,9 @@
                 "Hint": {
                   "type": "object",
                   "properties": {
-                     "En": { "type": "string" },
-                     "Fr": { "type": "string" },
-                     "De": { "type": "string" }
+                    "En": { "type": "string" },
+                    "Fr": { "type": "string" },
+                    "De": { "type": "string" }
                   }
                 }
               },
@@ -74,9 +74,9 @@
                 "Title": {
                   "type": "object",
                   "properties": {
-                     "En": { "type": "string" },
-                     "Fr": { "type": "string" },
-                     "De": { "type": "string" }
+                    "En": { "type": "string" },
+                    "Fr": { "type": "string" },
+                    "De": { "type": "string" }
                   }
                 },
                 "MaxN": { "type": "number" },
@@ -88,9 +88,9 @@
                 "Hint": {
                   "type": "object",
                   "properties": {
-                     "En": { "type": "string" },
-                     "Fr": { "type": "string" },
-                     "De": { "type": "string" }
+                    "En": { "type": "string" },
+                    "Fr": { "type": "string" },
+                    "De": { "type": "string" }
                   }
                 }
               },
@@ -107,9 +107,9 @@
                 "Title": {
                   "type": "object",
                   "properties": {
-                     "En": { "type": "string" },
-                     "Fr": { "type": "string" },
-                     "De": { "type": "string" }
+                    "En": { "type": "string" },
+                    "Fr": { "type": "string" },
+                    "De": { "type": "string" }
                   }
                 },
                 "MaxN": { "type": "number" },
@@ -123,9 +123,9 @@
                 "Hint": {
                   "type": "object",
                   "properties": {
-                     "En": { "type": "string" },
-                     "Fr": { "type": "string" },
-                     "De": { "type": "string" }
+                    "En": { "type": "string" },
+                    "Fr": { "type": "string" },
+                    "De": { "type": "string" }
                   }
                 }
               },
