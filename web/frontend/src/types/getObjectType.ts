@@ -158,7 +158,6 @@ const toArraysOfSubjectElement = (
   const selectQuestion: types.SelectQuestion[] = [];
   const textQuestion: types.TextQuestion[] = [];
   const subjects: types.Subject[] = [];
-  let hint = '';
   elements.forEach((element) => {
     switch (element.Type) {
       case RANK:
