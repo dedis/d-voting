@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Answers, TextQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
 import HintButton from 'components/buttons/HintButton';
+import { internationalize } from './../../utils';
 
 type TextProps = {
   text: TextQuestion;
@@ -101,15 +102,11 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
       <div className="grid grid-rows-1 grid-flow-col">
         <div>
           <h3 className="text-lg break-words text-gray-600 w-96">
-            {language === 'en' && text.Title.En}
-            {language === 'fr' && text.Title.Fr}
-            {language === 'de' && text.Title.De}
+            {internationalize(language, text.Title)}
           </h3>
         </div>
         <div className="text-right">
-          {language === 'en' && <HintButton text={text.Hint.En} />}
-          {language === 'fr' && <HintButton text={text.Hint.Fr} />}
-          {language === 'de' && <HintButton text={text.Hint.De} />}
+          {<HintButton text={internationalize(language, text.Hint)} />}
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>

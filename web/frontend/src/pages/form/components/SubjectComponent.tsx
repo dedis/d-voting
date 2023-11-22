@@ -20,6 +20,7 @@ import { PencilIcon } from '@heroicons/react/solid';
 import AddQuestionModal from './AddQuestionModal';
 import { useTranslation } from 'react-i18next';
 import RemoveElementModal from './RemoveElementModal';
+import { internationalize } from './../../utils';
 const MAX_NESTED_SUBJECT = 1;
 
 type SubjectComponentProps = {
@@ -360,9 +361,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
             ) : (
               <div className="flex mb-2 max-w-md truncate">
                 <div className="pt-1.5 truncate" onClick={() => setTitleChanging(true)}>
-                  {language === 'en' && Title.En}
-                  {language === 'fr' && Title.Fr}
-                  {language === 'de' && Title.De}
+                  {internationalize(language, Title)}
                 </div>
                 <div className="ml-1 pr-10">
                   <button

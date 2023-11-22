@@ -15,6 +15,7 @@ import useGetResults from './components/utils/useGetResults';
 import UserIDTable from './components/UserIDTable';
 import DKGStatusTable from './components/DKGStatusTable';
 import LoadingButton from './components/LoadingButton';
+import { internationalize } from './../utils';
 import { default as i18n } from 'i18next';
 
 const FormShow: FC = () => {
@@ -222,9 +223,7 @@ const FormShow: FC = () => {
       {!loading ? (
         <>
           <div className="pt-8 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-            {i18n.language === 'en' && titles.en}
-            {i18n.language === 'fr' && titles.fr}
-            {i18n.language === 'de' && titles.de}
+            {internationalize(i18n.language, titles)}
           </div>
 
           <div className="pt-2 break-all">Form ID : {formId}</div>

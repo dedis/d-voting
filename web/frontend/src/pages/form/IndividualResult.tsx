@@ -9,6 +9,7 @@ import {
 import { IndividualSelectResult } from './components/SelectResult';
 import { IndividualTextResult } from './components/TextResult';
 import { IndividualRankResult } from './components/RankResult';
+import { internationalize } from './../utils';
 import { useTranslation } from 'react-i18next';
 import {
   ID,
@@ -76,9 +77,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
               {questionIcons[element.Type]}
             </div>
             <h2 className="flex align-text-middle text-lg pb-2">
-              {i18n.language === 'en' && element.Title.En}
-              {i18n.language === 'fr' && element.Title.Fr}
-              {i18n.language === 'de' && element.Title.De}
+              {internationalize(i18n.language, element.Title)}
             </h2>
           </div>
           {element.Type === RANK && rankResult.has(element.ID) && (
@@ -110,9 +109,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
       return (
         <div key={subject.ID}>
           <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-            {i18n.language === 'en' && subject.Title.En}
-            {i18n.language === 'fr' && subject.Title.Fr}
-            {i18n.language === 'de' && subject.Title.De}
+            {internationalize(i18n.language, subject.Title)}
           </h2>
           {subject.Order.map((id: ID) => (
             <div key={id}>

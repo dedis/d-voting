@@ -8,6 +8,7 @@ import { CloudUploadIcon, PencilIcon, TrashIcon } from '@heroicons/react/solid';
 import SubjectComponent from './SubjectComponent';
 import UploadFile from './UploadFile';
 import pollTransaction from './utils/TransactionPoll';
+import { internationalize } from './../../utils';
 
 import configurationSchema from '../../../schema/configurationValidation';
 import { Configuration, ID, Subject } from '../../../types/configuration';
@@ -238,9 +239,7 @@ const FormForm: FC<FormFormProps> = () => {
                 <div
                   className="mt-1 ml-3 w-[90%] break-words"
                   onClick={() => setTitleChanging(true)}>
-                  {language === 'en' && Title.En}
-                  {language === 'fr' && Title.Fr}
-                  {language === 'de' && Title.De}
+                  {internationalize(language, Title)}
                 </div>
                 <div className="ml-1">
                   <button

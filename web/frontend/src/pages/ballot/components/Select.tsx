@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Answers, SelectQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
 import HintButton from 'components/buttons/HintButton';
+import { internationalize } from './../../utils';
 type SelectProps = {
   select: SelectQuestion;
   answers: Answers;
@@ -81,15 +82,11 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
       <div className="grid grid-rows-1 grid-flow-col">
         <div>
           <h3 className="text-lg break-words text-gray-600">
-            {language === 'en' && titles.en}
-            {language === 'fr' && titles.fr}
-            {language === 'de' && titles.de}
+            {internationalize(language, titles)}
           </h3>
         </div>
         <div className="text-right">
-          {language === 'en' && <HintButton text={select.Hint.En} />}
-          {language === 'fr' && <HintButton text={select.Hint.Fr} />}
-          {language === 'de' && <HintButton text={select.Hint.De} />}
+          {<HintButton text={internationalize(language, select.Hint)} />}
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>

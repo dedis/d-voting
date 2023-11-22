@@ -29,6 +29,7 @@ import {
 import { default as i18n } from 'i18next';
 import SelectResult from './components/SelectResult';
 import TextResult from './components/TextResult';
+import { internationalize } from './../utils';
 
 type GroupedResultProps = {
   rankResult: RankResults;
@@ -59,11 +60,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
           <div className="align-text-middle flex mt-1 mr-2 h-5 w-5" aria-hidden="true">
             {questionIcons[element.Type]}
           </div>
-          <h2 className="text-lg pb-2">
-            {i18n.language === 'en' && titles.En}
-            {i18n.language === 'fr' && titles.Fr}
-            {i18n.language === 'de' && titles.De}
-          </h2>
+          <h2 className="text-lg pb-2">{internationalize(i18n.language, titles)}</h2>
         </div>
         {element.Type === RANK && rankResult.has(element.ID) && (
           <RankResult rank={element as RankQuestion} rankResult={rankResult.get(element.ID)} />
@@ -85,9 +82,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
     return (
       <div key={subject.ID}>
         <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-          {i18n.language === 'en' && subject.Title.En}
-          {i18n.language === 'fr' && subject.Title.Fr}
-          {i18n.language === 'de' && subject.Title.De}
+          {internationalize(i18n.language, subject.Title)}
         </h2>
         {subject.Order.map((id: ID) => (
           <div key={id}>
