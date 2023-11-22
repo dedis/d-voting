@@ -100,7 +100,6 @@ const FormForm: FC<FormFormProps> = () => {
     try {
       await configurationSchema.validate(data.Configuration);
     } catch (err: any) {
-      console.log(data.Configuration);
       setTextModal(t('errorIncorrectConfSchema') + err.errors.join(','));
       setShowModal(true);
       return;
@@ -147,7 +146,6 @@ const FormForm: FC<FormFormProps> = () => {
     try {
       await configurationSchema.validate(data);
     } catch (err: any) {
-      console.log(data);
       setTextModal(t('errorIncorrectConfSchema') + err.errors.join(','));
       setShowModal(true);
       return;
