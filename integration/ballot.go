@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
@@ -22,9 +21,9 @@ import (
 	"github.com/c4dt/d-voting/proxy/txnmanager"
 	ptypes "github.com/c4dt/d-voting/proxy/types"
 	"github.com/c4dt/d-voting/services/dkg"
-	"github.com/c4dt/dela/core/execution/native"
-	"github.com/c4dt/dela/core/txn"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/random"
@@ -241,7 +240,6 @@ func marshallBallotManual(voteStr string, pubkey kyber.Point, chunks int) (ptype
 
 	ballot := make(ptypes.CiphervoteJSON, chunks)
 	vote := strings.NewReader(voteStr)
-	fmt.Printf("votestr is: %v", voteStr)
 
 	buf := make([]byte, 29)
 

@@ -8,30 +8,30 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/c4dt/dela/contracts/value"
-	"github.com/c4dt/dela/crypto"
+	"go.dedis.ch/dela/contracts/value"
+	"go.dedis.ch/dela/crypto"
 
-	"github.com/c4dt/dela/cli"
-	"github.com/c4dt/dela/cli/node"
-	"github.com/c4dt/dela/core/access/darc"
-	"github.com/c4dt/dela/core/execution/native"
-	"github.com/c4dt/dela/core/ordering"
-	"github.com/c4dt/dela/core/ordering/cosipbft"
-	"github.com/c4dt/dela/core/ordering/cosipbft/authority"
-	"github.com/c4dt/dela/core/ordering/cosipbft/blockstore"
-	"github.com/c4dt/dela/core/ordering/cosipbft/types"
-	"github.com/c4dt/dela/core/store/hashtree/binprefix"
-	"github.com/c4dt/dela/core/store/kv"
-	"github.com/c4dt/dela/core/txn/pool"
-	poolimpl "github.com/c4dt/dela/core/txn/pool/gossip"
-	"github.com/c4dt/dela/core/txn/signed"
-	"github.com/c4dt/dela/core/validation/simple"
-	"github.com/c4dt/dela/cosi/threshold"
-	"github.com/c4dt/dela/crypto/bls"
-	"github.com/c4dt/dela/crypto/loader"
-	"github.com/c4dt/dela/mino"
-	"github.com/c4dt/dela/mino/gossip"
-	"github.com/c4dt/dela/serde/json"
+	"go.dedis.ch/dela/cli"
+	"go.dedis.ch/dela/cli/node"
+	"go.dedis.ch/dela/core/access/darc"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/ordering/cosipbft"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
+	"go.dedis.ch/dela/core/ordering/cosipbft/types"
+	"go.dedis.ch/dela/core/store/hashtree/binprefix"
+	"go.dedis.ch/dela/core/store/kv"
+	"go.dedis.ch/dela/core/txn/pool"
+	poolimpl "go.dedis.ch/dela/core/txn/pool/gossip"
+	"go.dedis.ch/dela/core/txn/signed"
+	"go.dedis.ch/dela/core/validation/simple"
+	"go.dedis.ch/dela/cosi/threshold"
+	"go.dedis.ch/dela/crypto/bls"
+	"go.dedis.ch/dela/crypto/loader"
+	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/mino/gossip"
+	"go.dedis.ch/dela/serde/json"
 	"golang.org/x/xerrors"
 )
 
@@ -39,9 +39,6 @@ const (
 	privateKeyFile = "private.key"
 	errInjector    = "injector: %v"
 )
-
-// valueAccessKey is the access key used for the value contract.
-var valueAccessKey = [32]byte{2}
 
 func blsSigner() encoding.BinaryMarshaler {
 	return bls.NewSigner()
@@ -130,7 +127,7 @@ func (m miniController) OnStart(flags cli.Flags, inj node.Injector) error {
 	rosterFac := authority.NewFactory(onet.GetAddressFactory(), cosi.GetPublicKeyFactory())
 	cosipbft.RegisterRosterContract(exec, rosterFac, access)
 
-	value.RegisterContract(exec, value.NewContract(valueAccessKey[:], access))
+	value.RegisterContract(exec, value.NewContract(access))
 
 	txFac := signed.NewTransactionFactory()
 	vs := simple.NewService(exec, txFac)

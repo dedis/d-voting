@@ -10,20 +10,20 @@ import (
 	"github.com/c4dt/d-voting/contracts/evoting/types"
 	"github.com/c4dt/d-voting/internal/testing/fake"
 	"github.com/c4dt/d-voting/services/dkg"
-	"github.com/c4dt/dela/core/access"
-	"github.com/c4dt/dela/core/execution"
-	"github.com/c4dt/dela/core/execution/native"
-	"github.com/c4dt/dela/core/ordering"
-	"github.com/c4dt/dela/core/ordering/cosipbft/authority"
-	"github.com/c4dt/dela/core/store"
-	"github.com/c4dt/dela/core/txn"
-	"github.com/c4dt/dela/core/txn/signed"
-	"github.com/c4dt/dela/crypto"
-	"github.com/c4dt/dela/crypto/bls"
-	"github.com/c4dt/dela/serde"
-	sjson "github.com/c4dt/dela/serde/json"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/dela/core/access"
+	"go.dedis.ch/dela/core/execution"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/core/store"
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/core/txn/signed"
+	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/crypto/bls"
+	"go.dedis.ch/dela/serde"
+	sjson "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/util/random"
@@ -63,20 +63,17 @@ func TestExecute(t *testing.T) {
 		actor: fakeDkgActor{},
 		err:   nil,
 	}
-	var evotingAccessKey = [32]byte{3}
-	rosterKey := [32]byte{}
-
 	service := fakeAccess{err: fake.GetError()}
 	rosterFac := fakeAuthorityFactory{}
 
-	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
+	contract := NewContract(service, fakeDkg, rosterFac)
 
 	err := contract.Execute(fakeStore{}, makeStep(t))
 	require.EqualError(t, err, "identity not authorized: fake.PublicKey ("+fake.GetError().Error()+")")
 
 	service = fakeAccess{}
 
-	contract = NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
+	contract = NewContract(service, fakeDkg, rosterFac)
 	err = contract.Execute(fakeStore{}, makeStep(t))
 	require.EqualError(t, err, "\"evoting:command\" not found in tx arg")
 
@@ -129,13 +126,10 @@ func TestCommand_CreateForm(t *testing.T) {
 	data, err := createForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	var evotingAccessKey = [32]byte{3}
-	rosterKey := [32]byte{}
-
 	service := fakeAccess{err: fake.GetError()}
 	rosterFac := fakeAuthorityFactory{}
 
-	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
+	contract := NewContract(service, fakeDkg, rosterFac)
 
 	cmd := evotingCommand{
 		Contract: &contract,
@@ -1131,13 +1125,10 @@ func initFormAndContract() (types.Form, Contract) {
 		Roster:           fake.Authority{},
 	}
 
-	var evotingAccessKey = [32]byte{3}
-	rosterKey := [32]byte{}
-
 	service := fakeAccess{err: fake.GetError()}
 	rosterFac := fakeAuthorityFactory{}
 
-	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
+	contract := NewContract(service, fakeDkg, rosterFac)
 
 	return dummyForm, contract
 }

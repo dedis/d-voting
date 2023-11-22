@@ -6,6 +6,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 echo "add form"
 RESP=$(curl -sk "$FRONTEND_URL/api/evoting/forms" -X POST -H 'Content-Type: application/json' -b cookies.txt --data-raw '{"Configuration":{"MainTitle":"{\"en\":\"Colours\",\"fr\":\"\",\"de\":\"\"}","Scaffold":[{"ID":"5DRhKsY2","Title":"Colours","TitleFr":"","TitleDe":"","Order":["d0mSUfpv"],"Ranks":[],"Selects":[{"ID":"d0mSUfpv","Title":"{\"en\":\"RGB\",\"fr\":\"\",\"de\":\"\"}","TitleDe":"","TitleFr":"","MaxN":1,"MinN":1,"Choices":["{\"en\":\"Red\"}","{\"en\":\"Green\"}","{\"en\":\"Blue\"}"],"ChoicesMap":{},"Hint":"{\"en\":\"\",\"fr\":\"\",\"de\":\"\"}","HintFr":"","HintDe":""}],"Texts":[],"Subjects":[]}]}}')
 FORMID=$(echo "$RESP" | jq -r .FormID)
+
 echo "add permissions - it's normal to have a timeout error after this command"
 curl -k "$FRONTEND_URL/api/evoting/authorizations" -X PUT -H 'Content-Type: application/json' -b cookies.txt --data "$(jq -cn --arg FormID $FORMID '$ARGS.named')" -m 1
 
@@ -14,14 +15,19 @@ curl -k "$FRONTEND_URL/api/evoting/services/dkg/actors" -X POST -H 'Content-Type
 curl -k "$FRONTEND_URL/api/evoting/services/dkg/actors" -X POST -H 'Content-Type: application/json' -b cookies.txt --data "$(jq -cn --arg FormID $FORMID --arg Proxy http://localhost:2003 '$ARGS.named')"
 curl -k "$FRONTEND_URL/api/evoting/services/dkg/actors" -X POST -H 'Content-Type: application/json' -b cookies.txt --data "$(jq -cn --arg FormID $FORMID --arg Proxy http://localhost:2005 '$ARGS.named')"
 curl -k "$FRONTEND_URL/api/evoting/services/dkg/actors" -X POST -H 'Content-Type: application/json' -b cookies.txt --data "$(jq -cn --arg FormID $FORMID --arg Proxy http://localhost:2007 '$ARGS.named')"
+sleep 2
 
 echo "set node up"
 curl -k "$FRONTEND_URL/api/evoting/services/dkg/actors/$FORMID" -X PUT -H 'Content-Type: application/json' -b cookies.txt --data-raw '{"Action":"setup","Proxy":"http://localhost:2001"}'
+sleep 8
 
 echo "open election"
-sleep 8
 curl -k "$FRONTEND_URL/api/evoting/forms/$FORMID" -X PUT -b cookies.txt -H 'Content-Type: application/json' --data-raw '{"Action":"open"}' >/dev/null
 echo "Form with ID $FORMID has been set up"
+
+echo "The following forms are available:"
+curl -sk "$FRONTEND_URL/api/evoting/forms" -X GET -H 'Content-Type: application/json' -b cookies.txt
+echo
 
 echo "Adding $REACT_APP_SCIPER_ADMIN to voters"
 tmpfile=$(mktemp)

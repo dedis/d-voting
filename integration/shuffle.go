@@ -2,7 +2,7 @@ package integration
 
 import (
 	"github.com/c4dt/d-voting/services/shuffle"
-	"github.com/c4dt/dela/core/txn/signed"
+	"go.dedis.ch/dela/core/txn/signed"
 	"golang.org/x/xerrors"
 )
 

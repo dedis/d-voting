@@ -6,9 +6,9 @@ import (
 
 	"github.com/c4dt/d-voting/internal/testing/fake"
 	"github.com/c4dt/d-voting/services/dkg/pedersen/types"
-	"github.com/c4dt/dela/mino"
-	"github.com/c4dt/dela/serde"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 )

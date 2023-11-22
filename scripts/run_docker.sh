@@ -48,12 +48,12 @@ function init_dela() {
     IDENTITY=$(docker compose exec dela-worker-"$node" crypto bls signer read --path /data/node/private.key --format BASE64_PUBKEY);
     docker compose exec "$LEADER" dvoting --config /data/node pool add\
         --key /data/node/private.key\
-        --args github.com/c4dt/dela.ContractArg\
-        --args github.com/c4dt/dela.Access\
+        --args go.dedis.ch/dela.ContractArg\
+        --args go.dedis.ch/dela.Access\
         --args access:grant_id\
-        --args 0300000000000000000000000000000000000000000000000000000000000000\
+        --args 45564f54\
         --args access:grant_contract\
-        --args github.com/c4dt/dela.Evoting \
+        --args go.dedis.ch/dela.Evoting \
         --args access:grant_command\
         --args all\
         --args access:identity\

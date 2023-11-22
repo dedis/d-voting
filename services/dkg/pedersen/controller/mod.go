@@ -5,23 +5,23 @@ import (
 	"encoding/json"
 	"path/filepath"
 
-	"github.com/c4dt/dela/core/txn/pool"
-	"github.com/c4dt/dela/core/txn/signed"
-	"github.com/c4dt/dela/crypto"
-	"github.com/c4dt/dela/crypto/bls"
-	"github.com/c4dt/dela/crypto/loader"
+	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/core/txn/signed"
+	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/crypto/bls"
+	"go.dedis.ch/dela/crypto/loader"
 
 	"github.com/c4dt/d-voting/contracts/evoting"
 	"github.com/c4dt/d-voting/services/dkg/pedersen"
-	"github.com/c4dt/dela/cli"
-	"github.com/c4dt/dela/cli/node"
-	"github.com/c4dt/dela/core/access/darc"
-	"github.com/c4dt/dela/core/execution/native"
-	"github.com/c4dt/dela/core/ordering/cosipbft"
-	"github.com/c4dt/dela/core/ordering/cosipbft/authority"
-	"github.com/c4dt/dela/core/store/kv"
-	"github.com/c4dt/dela/cosi/threshold"
-	"github.com/c4dt/dela/mino"
+	"go.dedis.ch/dela/cli"
+	"go.dedis.ch/dela/cli/node"
+	"go.dedis.ch/dela/core/access/darc"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering/cosipbft"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/core/store/kv"
+	"go.dedis.ch/dela/cosi/threshold"
+	"go.dedis.ch/dela/mino"
 	"golang.org/x/xerrors"
 
 	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
@@ -30,9 +30,6 @@ import (
 // BucketName is the name of the bucket in the database.
 const BucketName = "dkgmap"
 const privateKeyFile = "private.key"
-
-// evotingAccessKey is the access key used for the evoting contract.
-var evotingAccessKey = [32]byte{3}
 
 // NewController returns a new controller initializer
 func NewController() node.Initializer {
@@ -44,7 +41,7 @@ func NewController() node.Initializer {
 // - implements node.Initializer
 type controller struct{}
 
-// Build implements node.Initializer.
+// SetCommands implements node.Initializer.
 func (m controller) SetCommands(builder node.Builder) {
 
 	formIDFlag := cli.StringFlag{
@@ -184,8 +181,7 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 
 	inj.Inject(dkg)
 
-	rosterKey := [32]byte{}
-	c := evoting.NewContract(evotingAccessKey[:], rosterKey[:], access, dkg, rosterFac)
+	c := evoting.NewContract(access, dkg, rosterFac)
 	evoting.RegisterContract(exec, c)
 
 	return nil

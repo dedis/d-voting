@@ -20,48 +20,42 @@ import (
 	"github.com/c4dt/d-voting/services/dkg/pedersen"
 	"github.com/c4dt/d-voting/services/shuffle"
 	"github.com/c4dt/d-voting/services/shuffle/neff"
-	accessContract "github.com/c4dt/dela/contracts/access"
-	"github.com/c4dt/dela/contracts/value"
-	"github.com/c4dt/dela/core/access"
-	"github.com/c4dt/dela/core/access/darc"
-	"github.com/c4dt/dela/core/execution/native"
-	"github.com/c4dt/dela/core/ordering"
-	"github.com/c4dt/dela/core/ordering/cosipbft"
-	"github.com/c4dt/dela/core/ordering/cosipbft/authority"
-	"github.com/c4dt/dela/core/ordering/cosipbft/blockstore"
-	"github.com/c4dt/dela/core/ordering/cosipbft/types"
-	"github.com/c4dt/dela/core/store/hashtree"
-	"github.com/c4dt/dela/core/store/hashtree/binprefix"
-	"github.com/c4dt/dela/core/store/kv"
-	"github.com/c4dt/dela/core/txn"
-	"github.com/c4dt/dela/core/txn/pool"
-	poolimpl "github.com/c4dt/dela/core/txn/pool/gossip"
-	"github.com/c4dt/dela/core/txn/signed"
-	"github.com/c4dt/dela/core/validation"
-	"github.com/c4dt/dela/core/validation/simple"
-	"github.com/c4dt/dela/cosi/threshold"
-	"github.com/c4dt/dela/crypto"
-	"github.com/c4dt/dela/crypto/bls"
-	"github.com/c4dt/dela/crypto/loader"
-	"github.com/c4dt/dela/mino"
-	"github.com/c4dt/dela/mino/gossip"
-	"github.com/c4dt/dela/mino/minogrpc"
-	"github.com/c4dt/dela/mino/minogrpc/certs"
-	"github.com/c4dt/dela/mino/minogrpc/session"
-	"github.com/c4dt/dela/mino/router/tree"
-	"github.com/c4dt/dela/serde/json"
 	"github.com/stretchr/testify/require"
+	accessContract "go.dedis.ch/dela/contracts/access"
+	"go.dedis.ch/dela/contracts/value"
+	"go.dedis.ch/dela/core/access"
+	"go.dedis.ch/dela/core/access/darc"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/ordering/cosipbft"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
+	"go.dedis.ch/dela/core/ordering/cosipbft/types"
+	"go.dedis.ch/dela/core/store/hashtree"
+	"go.dedis.ch/dela/core/store/hashtree/binprefix"
+	"go.dedis.ch/dela/core/store/kv"
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/core/txn/pool"
+	poolimpl "go.dedis.ch/dela/core/txn/pool/gossip"
+	"go.dedis.ch/dela/core/txn/signed"
+	"go.dedis.ch/dela/core/validation"
+	"go.dedis.ch/dela/core/validation/simple"
+	"go.dedis.ch/dela/cosi/threshold"
+	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/crypto/bls"
+	"go.dedis.ch/dela/crypto/loader"
+	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/mino/gossip"
+	"go.dedis.ch/dela/mino/minogrpc"
+	"go.dedis.ch/dela/mino/minogrpc/certs"
+	"go.dedis.ch/dela/mino/minogrpc/session"
+	"go.dedis.ch/dela/mino/router/tree"
+	"go.dedis.ch/dela/serde/json"
 	"golang.org/x/xerrors"
 )
 
 const certKeyName = "cert.key"
 const privateKeyFile = "private.key"
-
-var aKey = [32]byte{1}
-var valueAccessKey = [32]byte{2}
-
-// evotingAccessKey is the access key used for the evoting contract.
-var evotingAccessKey = [32]byte{3}
 
 // dela defines the common interface for a Dela node.
 type dela interface {
@@ -193,7 +187,7 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 	rosterFac := authority.NewFactory(onet.GetAddressFactory(), cosi.GetPublicKeyFactory())
 	cosipbft.RegisterRosterContract(exec, rosterFac, accessService)
 
-	value.RegisterContract(exec, value.NewContract(valueAccessKey[:], accessService))
+	value.RegisterContract(exec, value.NewContract(accessService))
 
 	txFac := signed.NewTransactionFactory()
 	vs := simple.NewService(exec, txFac)
@@ -242,16 +236,14 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 
 	// access
 	accessStore := newAccessStore()
-	contract := accessContract.NewContract(aKey[:], accessService, accessStore)
+	contract := accessContract.NewContract(accessService, accessStore)
 	accessContract.RegisterContract(exec, contract)
 
 	formFac := etypes.NewFormFactory(etypes.CiphervoteFactory{}, rosterFac)
 
 	dkg := pedersen.NewPedersen(onet, srvc, pool, formFac, signer)
 
-	rosterKey := [32]byte{}
-	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:],
-		accessService, dkg, rosterFac))
+	evoting.RegisterContract(exec, evoting.NewContract(accessService, dkg, rosterFac))
 
 	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, formFac, signer)
 
@@ -293,7 +285,7 @@ func createDVotingAccess(t require.TestingT, nodes []dVotingCosiDela, dir string
 	require.NoError(t, err)
 
 	pubKey := signer.GetPublicKey()
-	cred := accessContract.NewCreds(aKey[:])
+	cred := accessContract.NewCreds()
 
 	for _, node := range nodes {
 		n := node.(dVotingNode)

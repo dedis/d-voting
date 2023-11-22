@@ -12,12 +12,12 @@ import (
 	"github.com/c4dt/d-voting/contracts/evoting/types"
 	"github.com/c4dt/d-voting/proxy/txnmanager"
 	ptypes "github.com/c4dt/d-voting/proxy/types"
-	"github.com/c4dt/dela"
-	"github.com/c4dt/dela/core/ordering"
-	"github.com/c4dt/dela/core/txn/pool"
-	"github.com/c4dt/dela/serde"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
+	"go.dedis.ch/dela"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/schnorr"
 	"golang.org/x/xerrors"
@@ -119,7 +119,10 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// send the response json
-	txnmanager.SendResponse(w, response)
+	err = txnmanager.SendResponse(w, response)
+	if err != nil {
+		fmt.Printf("Caught unhandled error: %+v", err)
+	}
 }
 
 // NewFormVote implements proxy.Proxy

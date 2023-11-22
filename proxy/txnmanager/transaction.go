@@ -13,15 +13,15 @@ import (
 	"time"
 
 	"github.com/c4dt/d-voting/contracts/evoting"
-	"github.com/c4dt/dela"
-	"github.com/c4dt/dela/core/execution/native"
-	"github.com/c4dt/dela/core/ordering/cosipbft/blockstore"
-	"github.com/c4dt/dela/core/txn"
-	"github.com/c4dt/dela/core/txn/pool"
-	"github.com/c4dt/dela/crypto"
-	"github.com/c4dt/dela/serde"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
+	"go.dedis.ch/dela"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
 )
@@ -195,7 +195,7 @@ func (h *manager) checkTxnIncluded(transactionID []byte, lastBlockIdx uint64) (T
 	}
 }
 
-// submitTxn submits a transaction
+// SubmitTxn submits a transaction
 // Returns the transaction ID.
 func (h *manager) SubmitTxn(ctx context.Context, cmd evoting.Command,
 	cmdArg string, payload []byte) ([]byte, uint64, error) {

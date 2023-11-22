@@ -41,7 +41,8 @@ type Ballot struct {
 }
 
 // Unmarshal decodes the given string according to the format described in
-// "state of smart contract.md"
+// "/docs/state_of_smart_contract.md"
+// TODO: actually describe the format in there...
 func (b *Ballot) Unmarshal(marshalledBallot string, form Form) error {
 	lines := strings.Split(marshalledBallot, "\n")
 
@@ -417,7 +418,7 @@ type Select struct {
 	MaxN    uint
 	MinN    uint
 	Choices []string
-	Hint	string
+	Hint    string
 }
 
 // GetID implements Question
@@ -483,7 +484,7 @@ type Rank struct {
 	MaxN    uint
 	MinN    uint
 	Choices []string
-	Hint 	string
+	Hint    string
 }
 
 func (r Rank) GetID() string {
@@ -558,7 +559,7 @@ type Text struct {
 	MaxLength uint
 	Regex     string
 	Choices   []string
-	Hint	  string
+	Hint      string
 }
 
 func (t Text) GetID() string {

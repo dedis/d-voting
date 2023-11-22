@@ -4,11 +4,11 @@ import (
 	"context"
 	"io"
 
-	"github.com/c4dt/dela/core/access"
-	"github.com/c4dt/dela/core/txn"
-	"github.com/c4dt/dela/core/txn/pool"
-	"github.com/c4dt/dela/mino"
-	"github.com/c4dt/dela/serde"
+	"go.dedis.ch/dela/core/access"
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/serde"
 )
 
 // Transaction is a fake implementation of Transaction.
@@ -86,6 +86,12 @@ func (f Pool) Gather(ctx context.Context, config pool.Config) []txn.Transaction 
 func (f Pool) Close() error {
 	return nil
 }
+
+func (f Pool) Stats() pool.Stats {
+	return pool.Stats{}
+}
+
+func (f Pool) ResetStats() {}
 
 // Manager is a fake manager
 //
