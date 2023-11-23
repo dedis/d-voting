@@ -4,7 +4,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 . "$SCRIPT_DIR/local_login.sh"
 
 echo "add form"
-RESP=$(curl -sk "$FRONTEND_URL/api/evoting/forms" -X POST -H 'Content-Type: application/json' -b cookies.txt --data-raw '{"Configuration":{"MainTitle":"{\"en\":\"Colours\",\"fr\":\"\",\"de\":\"\"}","Scaffold":[{"ID":"5DRhKsY2","Title":"Colours","TitleFr":"","TitleDe":"","Order":["d0mSUfpv"],"Ranks":[],"Selects":[{"ID":"d0mSUfpv","Title":"{\"en\":\"RGB\",\"fr\":\"\",\"de\":\"\"}","TitleDe":"","TitleFr":"","MaxN":1,"MinN":1,"Choices":["{\"en\":\"Red\"}","{\"en\":\"Green\"}","{\"en\":\"Blue\"}"],"ChoicesMap":{},"Hint":"{\"en\":\"\",\"fr\":\"\",\"de\":\"\"}","HintFr":"","HintDe":""}],"Texts":[],"Subjects":[]}]}}')
+RESP=$(curl -sk "$FRONTEND_URL/api/evoting/forms" -X POST -H 'Content-Type: application/json' -b cookies.txt --data-raw $'{"Configuration":{"Title":{"En":"Colours","Fr":"","De":""},"Scaffold":[{"ID":"A7GsJxVJ","Title":{"En":"Colours","Fr":"","De":""},"Order":["GhidLIfw"],"Ranks":[],"Selects":[{"ID":"GhidLIfw","Title":{"En":"RGB","Fr":"","De":"RGB"},"MaxN":3,"MinN":1,"Choices":["{\\"en\\":\\"Red\\",\\"de\\":\\"Rot\\"}","{\\"en\\":\\"Green\\",\\"de\\":\\"Gr\xfcn\\"}","{\\"en\\":\\"Blue\\",\\"de\\":\\"Blau\\"}"],"Hint":{"En":"","Fr":"","De":"RGB"}}],"Texts":[],"Subjects":[]}]}}')
 FORMID=$(echo "$RESP" | jq -r .FormID)
 
 echo "add permissions - it's normal to have a timeout error after this command"
@@ -43,7 +43,7 @@ if [[ "$1" ]]; then
     echo "Casting vote #$i"
     curl -sk "$FRONTEND_URL/api/evoting/forms/$FORMID/vote" -X POST -H 'Content-Type: Application/json' \
       -H "Origin: $FRONTEND_URL" -b cookies.txt \
-      --data-raw '{"Ballot":[{"K":[54,152,33,11,201,233,212,157,204,176,136,138,54,213,239,198,79,55,71,26,91,244,98,215,208,239,48,253,195,53,192,94],"C":[105,121,87,164,68,242,166,194,222,179,253,231,213,63,34,66,212,41,214,175,178,83,229,156,255,38,55,234,168,222,81,185]}],"UserID":null}' \
+      --data-raw '{"Ballot":[{"K":[216,252,154,214,23,73,218,203,111,141,124,186,222,48,108,44,151,176,234,112,44,42,242,255,168,82,143,252,103,34,171,20],"C":[172,150,64,201,211,61,72,9,170,205,101,70,226,171,48,39,111,222,242,2,231,221,139,13,189,101,87,151,120,87,183,199]}],"UserID":null}' \
       >/dev/null
     sleep 1
   done
