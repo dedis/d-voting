@@ -23,18 +23,18 @@ const mockRoster: string[] = [
 ];
 
 const mockForm1: any = {
-  Title: { En: 'Life on the campus', Fr: 'Vie sur le campus', De: 'Life on the campus' },
+  Title: { En: 'Life on the campus', Fr: 'Vie sur le campus', De: 'Leben auf dem Campus' },
   Scaffold: [
     {
       ID: (0xa2ab).toString(),
-      Title: { En: 'Rate the course', Fr: 'Note la course', De: 'Rate the course' },
+      Title: { En: 'Rate the course', Fr: 'Note la course', De: 'Bewerten Sie den Kurs' },
       Order: [(0x3fb2).toString(), (0x41e2).toString(), (0xcd13).toString(), (0xff31).toString()],
       Subjects: [
         {
           Title: {
             En: 'Let s talk about the food',
             Fr: 'Parlons de la nourriture',
-            De: 'Let s talk about food',
+            De: 'Sprechen wir über das Essen',
           },
           ID: (0xff31).toString(),
           Order: [(0xa319).toString(), (0x19c7).toString()],
@@ -45,15 +45,15 @@ const mockForm1: any = {
               Title: {
                 En: 'Select your ingredients',
                 Fr: 'Choisi tes ingrédients',
-                De: 'Select your ingredients',
+                De: 'Wählen Sie Ihre Zutaten aus',
               },
               ID: (0xa319).toString(),
               MaxN: 2,
               MinN: 1,
               Choices: [
-                '{"en": "tomato", "fr": "tomate", "de": "tomato"}',
-                '{"en": "salad", "fr": "salade", "de": "salad"}',
-                '{"en": "onion", "fr": "oignon", "de": "onion"}',
+                '{"en": "tomato", "fr": "tomate", "de": "Tomate"}',
+                '{"en": "salad", "fr": "salade", "de": "Salat"}',
+                '{"en": "onion", "fr": "oignon", "de": "Zwiebel"}',
               ],
               Hint: { En: '', Fr: '', De: '' },
             },
@@ -63,7 +63,7 @@ const mockForm1: any = {
               Title: {
                 En: 'Rank the cafeteria',
                 Fr: 'Ordonne les cafet',
-                De: 'Rank the cafeteria',
+                De: 'Ordnen Sie die Mensen',
               },
               ID: (0x19c7).toString(),
               MaxN: 3,
@@ -84,7 +84,7 @@ const mockForm1: any = {
           Title: {
             En: 'How did you find the provided material, from 1 (bad) to 5 (excellent) ?',
             Fr: 'Comment trouves-tu le matériel fourni, de 1 (mauvais) à 5 (excellent) ?',
-            De: 'How did you find the provided material, from 1 (bad) to 5 (excellent) ?',
+            De: 'Wie bewerten Sie das vorhandene Material, von 1 (schlecht) bis 5 (exzellent)?',
           },
           ID: (0x3fb2).toString(),
           MaxN: 1,
@@ -102,20 +102,20 @@ const mockForm1: any = {
           Title: {
             En: 'How did you find the teaching ?',
             Fr: 'Comment trouves-tu l enseignement ?',
-            De: 'How did you find the teaching ?',
+            De: 'Wie fanden Sie den Unterricht?',
           },
           ID: (0x41e2).toString(),
           MaxN: 1,
           MinN: 1,
           Choices: [
-            '{"en" : "bad", "fr": "mauvais", "de": "bad"}',
-            '{"en" : "normal", "fr": "normal", "de": "normal"}',
-            '{"en" : "good", "fr": "super", "de": "good"}',
+            '{"en" : "bad", "fr": "mauvais", "de": "schlecht"}',
+            '{"en" : "normal", "fr": "normal", "de": "durchschnittlich"}',
+            '{"en" : "good", "fr": "super", "de": "gut"}',
           ],
           Hint: {
             En: 'Be honest. This is anonymous anyway',
             Fr: 'Sois honnête. C est anonyme de toute façon',
-            De: 'Be honest. This is anonymous anyway',
+            De: 'Seien Sie ehrlich. Es bleibt anonym',
           },
         },
       ],
@@ -124,7 +124,7 @@ const mockForm1: any = {
           Title: {
             En: 'Who were the two best TAs ?',
             Fr: 'Quels sont les deux meilleurs TA ?',
-            De: 'Who were the two best TAs ?',
+            De: 'Wer waren die beiden besten TutorInnen?',
           },
           ID: (0xcd13).toString(),
           MaxLength: 20,
@@ -169,11 +169,15 @@ const mockFormResult12: Results = {
 };
 
 const mockForm2: any = {
-  Title: { En: 'Please give your opinion', Fr: 'Donne ton avis', De: 'Please give your opinion' },
+  Title: {
+    En: 'Please give your opinion',
+    Fr: 'Donne ton avis',
+    De: 'Bitte sagen Sie Ihre Meinung',
+  },
   Scaffold: [
     {
       ID: (0xa2ab).toString(),
-      Title: { En: 'Rate the course', Fr: 'Note le cours', De: 'Rate the course' },
+      Title: { En: 'Rate the course', Fr: 'Note le cours', De: 'Bewerten Sie den Kurs' },
       Order: [(0x3fb2).toString(), (0xcd13).toString()],
 
       Selects: [
@@ -181,7 +185,7 @@ const mockForm2: any = {
           Title: {
             En: 'How did you find the provided material, from 1 (bad) to 5 (excellent) ?',
             Fr: 'Comment trouves-tu le matériel fourni, de 1 (mauvais) à 5 (excellent) ?',
-            De: 'How did you find the provided material, from 1 (bad) to 5 (excellent) ?',
+            De: 'Wie bewerten Sie das vorhandene Material, von 1 (schlecht) zu 5 (exzellent)?',
           },
           ID: (0x3fb2).toString(),
           MaxN: 1,
@@ -201,7 +205,7 @@ const mockForm2: any = {
           Title: {
             En: 'Who were the two best TAs ?',
             Fr: 'Quels sont les deux meilleurs TA ?',
-            De: 'Who were the two best TAs ?',
+            De: 'Wer waren die beiden besten TutorInnen?',
           },
           ID: (0xcd13).toString(),
           MaxLength: 40,
@@ -221,23 +225,23 @@ const mockForm2: any = {
     },
     {
       ID: (0x1234).toString(),
-      Title: { En: 'Tough choices', Fr: 'Choix difficiles', De: 'Tough choices' },
+      Title: { En: 'Tough choices', Fr: 'Choix difficiles', De: 'Schwierige Entscheidungen' },
       Order: [(0xa319).toString(), (0xcafe).toString(), (0xbeef).toString()],
       Selects: [
         {
           Title: {
             En: 'Select your ingredients',
             Fr: 'Choisis tes ingrédients',
-            De: 'Select your ingredients',
+            De: 'Wählen Sie Ihre Zutaten',
           },
           ID: (0xa319).toString(),
           MaxN: 3,
           MinN: 0,
           Choices: [
-            '{"en": "tomato", "fr": "tomate", "de": "tomato"}',
-            '{"en": "salad", "fr": "salade", "de": "salad"}',
-            '{"en": "onion", "fr": "oignon", "de": "onion"}',
-            '{"en": "falafel", "fr": "falafel", "de": "falafel"}',
+            '{"en": "tomato", "fr": "tomate", "de": "Tomate"}',
+            '{"en": "salad", "fr": "salade", "de": "Salat"}',
+            '{"en": "onion", "fr": "oignon", "de": "Zwiebel"}',
+            '{"en": "falafel", "fr": "falafel", "de": "Falafel"}',
           ],
           Hint: { En: '', Fr: '', De: '' },
         },
@@ -248,7 +252,7 @@ const mockForm2: any = {
           Title: {
             En: 'Which cafeteria serves the best coffee ?',
             Fr: 'Quelle cafétéria sert le meilleur café ?',
-            De: 'Which cafeteria serves the best coffee ?',
+            De: 'Welches Café bietet den besten Kaffee an?',
           },
           ID: (0xcafe).toString(),
           MaxN: 4,
@@ -262,7 +266,7 @@ const mockForm2: any = {
           Hint: { En: '', Fr: '', De: '' },
         },
         {
-          Title: { En: 'IN or SC ?', Fr: 'IN ou SC ?', De: 'IN or SC ?' },
+          Title: { En: 'IN or SC ?', Fr: 'IN ou SC ?', De: 'IN oder SC?' },
           ID: (0xbeef).toString(),
           MaxN: 2,
           MinN: 1,
@@ -270,7 +274,7 @@ const mockForm2: any = {
           Hint: {
             En: 'The right answer is IN ;-)',
             Fr: 'La bonne réponse est IN ;-)',
-            De: 'The right answer is IN ;-)',
+            De: 'Die korrekte Antwort ist IN ;-)',
           },
         },
       ],
@@ -281,11 +285,15 @@ const mockForm2: any = {
 };
 
 const mockForm3: any = {
-  Title: { En: 'Lunch', Fr: 'Déjeuner', De: 'Lunch' },
+  Title: { En: 'Lunch', Fr: 'Déjeuner', De: 'Mittagessen' },
   Scaffold: [
     {
       ID: '3cVHIxpx',
-      Title: { En: 'Choose your lunch', Fr: 'Choisis ton déjeuner', De: 'Choose your lunch' },
+      Title: {
+        En: 'Choose your lunch',
+        Fr: 'Choisis ton déjeuner',
+        De: 'Wählen Sie Ihr Mittagessen',
+      },
       Order: ['PGP'],
       Ranks: [],
       Selects: [],
@@ -295,7 +303,7 @@ const mockForm3: any = {
           Title: {
             En: 'Select what you want',
             Fr: 'Choisis ce que tu veux',
-            De: 'Select what you want',
+            De: 'Wählen Sie aus was Sie wünschen',
           },
           MaxN: 4,
           MinN: 0,
@@ -305,12 +313,12 @@ const mockForm3: any = {
             '{"en": "Firstname", "fr": "Prénom", "de": "Firstname"}',
             '{"en": "Main 🍕", "fr" : "Principal 🍕", "de": "Main 🍕"}',
             '{"en": "Drink 🧃", "fr": "Boisson 🧃", "de": "Drink 🧃"}',
-            '{"en":"Dessert 🍰", "fr": "Dessert 🍰", "de": "Dessert 🍰"}',
+            '{"en":"Dessert 🍰", "fr": "Dessert 🍰", "de": "Nachtisch 🍰"}',
           ],
           Hint: {
             En: 'If you change opinion call me before 11:30 a.m.',
             Fr: "Si tu changes d'avis appelle moi avant 11h30",
-            De: 'If you change opinion call me before 11:30 a.m.',
+            De: 'Wenn Sie Ihre Meinung ändern, rufen Sie mich vor 11:30 an',
           },
         },
       ],
