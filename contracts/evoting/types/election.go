@@ -197,8 +197,8 @@ type ShuffleInstance struct {
 
 // Configuration contains the configuration of a new poll.
 type Configuration struct {
-	MainTitle string
-	Scaffold  []Subject
+	Title    Title
+	Scaffold []Subject
 }
 
 // MaxBallotSize returns the maximum number of bytes required to store a ballot

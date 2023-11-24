@@ -20,6 +20,7 @@ import { PencilIcon } from '@heroicons/react/solid';
 import AddQuestionModal from './AddQuestionModal';
 import { useTranslation } from 'react-i18next';
 import RemoveElementModal from './RemoveElementModal';
+import { internationalize } from './../../utils';
 const MAX_NESTED_SUBJECT = 1;
 
 type SubjectComponentProps = {
@@ -46,7 +47,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
   const isSubjectMounted = useRef<boolean>(false);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [titleChanging, setTitleChanging] = useState<boolean>(
-    subjectObject.Title.length ? false : true
+    subjectObject.Title.En.length ? false : true
   );
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [showRemoveElementModal, setShowRemoveElementModal] = useState<boolean>(false);
@@ -54,7 +55,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
   const [elementToRemove, setElementToRemove] = useState(emptyElementToRemove);
   const [components, setComponents] = useState<ReactElement[]>([]);
 
-  const { Title, Order, Elements, TitleFr, TitleDe } = subject;
+  const { Title, Order, Elements } = subject;
   // When a property changes, we notify the parent with the new subject object
   useEffect(() => {
     // We only notify the parent when the subject is mounted
@@ -308,8 +309,10 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
               <div className="flex flex-col mt-3  mb-2">
                 {language === 'en' && (
                   <input
-                    value={Title}
-                    onChange={(e) => setSubject({ ...subject, Title: e.target.value })}
+                    value={Title.En}
+                    onChange={(e) =>
+                      setSubject({ ...subject, Title: { ...Title, En: e.target.value } })
+                    }
                     name="Title"
                     type="text"
                     placeholder={t('enterSubjectTitleLg')}
@@ -320,8 +323,10 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                 )}
                 {language === 'fr' && (
                   <input
-                    value={TitleFr}
-                    onChange={(e) => setSubject({ ...subject, TitleFr: e.target.value })}
+                    value={Title.Fr}
+                    onChange={(e) =>
+                      setSubject({ ...subject, Title: { ...Title, Fr: e.target.value } })
+                    }
                     name="Title"
                     type="text"
                     placeholder={t('enterSubjectTitleLg1')}
@@ -332,8 +337,10 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                 )}
                 {language === 'de' && (
                   <input
-                    value={TitleDe}
-                    onChange={(e) => setSubject({ ...subject, TitleDe: e.target.value })}
+                    value={Title.De}
+                    onChange={(e) =>
+                      setSubject({ ...subject, Title: { ...Title, De: e.target.value } })
+                    }
                     name="Title"
                     type="text"
                     placeholder={t('enterSubjectTitleLg2')}
@@ -344,8 +351,8 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                 )}
                 <div className="ml-1">
                   <button
-                    className={`border p-1 rounded-md ${Title.length === 0 && 'bg-gray-100'}`}
-                    disabled={Title.length === 0}
+                    className={`border p-1 rounded-md ${Title.En.length === 0 && 'bg-gray-100'}`}
+                    disabled={Title.En.length === 0}
                     onClick={() => setTitleChanging(false)}>
                     <CheckIcon className="h-5 w-5" aria-hidden="true" />
                   </button>
@@ -354,9 +361,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
             ) : (
               <div className="flex mb-2 max-w-md truncate">
                 <div className="pt-1.5 truncate" onClick={() => setTitleChanging(true)}>
-                  {language === 'en' && Title}
-                  {language === 'fr' && TitleFr}
-                  {language === 'de' && TitleDe}
+                  {internationalize(language, Title)}
                 </div>
                 <div className="ml-1 pr-10">
                   <button

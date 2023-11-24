@@ -17,7 +17,11 @@ func NewForm(formID string) types.Form {
 
 	form := types.Form{
 		Configuration: types.Configuration{
-			MainTitle: "dummyTitle",
+			Title: types.Title{
+				En: "dummyTitle",
+				Fr: "",
+				De: "",
+			},
 		},
 		FormID: formID,
 		Status: types.Closed,
@@ -68,17 +72,17 @@ func NewKCPointsMarshalled(k int) ([]kyber.Point, []kyber.Point, kyber.Point) {
 
 // BasicConfiguration returns a basic form configuration
 var BasicConfiguration = types.Configuration{
-	MainTitle: "formTitle",
+	Title: types.Title{En: "formTitle", Fr: "", De: ""},
 	Scaffold: []types.Subject{
 		{
 			ID:       "aa",
-			Title:    "subject1",
+			Title:    types.Title{En: "subject1", Fr: "", De: ""},
 			Order:    nil,
 			Subjects: nil,
 			Selects: []types.Select{
 				{
 					ID:      "bb",
-					Title:   "Select your favorite snacks",
+					Title:   types.Title{En: "Select your favorite snacks", Fr: "", De: ""},
 					MaxN:    3,
 					MinN:    0,
 					Choices: []string{"snickers", "mars", "vodka", "babibel"},
@@ -89,7 +93,7 @@ var BasicConfiguration = types.Configuration{
 		},
 		{
 			ID:       "dd",
-			Title:    "subject2",
+			Title:    types.Title{En: "subject2", Fr: "", De: ""},
 			Order:    nil,
 			Subjects: nil,
 			Selects:  nil,
@@ -97,7 +101,7 @@ var BasicConfiguration = types.Configuration{
 			Texts: []types.Text{
 				{
 					ID:        "ee",
-					Title:     "dissertation",
+					Title:     types.Title{En: "dissertation", Fr: "", De: ""},
 					MaxN:      1,
 					MinN:      1,
 					MaxLength: 3,

@@ -253,12 +253,26 @@ func (b *Ballot) Equal(other Ballot) bool {
 	return true
 }
 
+// Title contains the titles in different languages.
+type Title struct {
+	En string
+	Fr string
+	De string
+}
+
+// Hint contains explanations in different languages.
+type Hint struct {
+	En string
+	Fr string
+	De string
+}
+
 // Subject is a wrapper around multiple questions that can be of type "select",
 // "rank", or "text".
 type Subject struct {
 	ID ID
 
-	Title string
+	Title Title
 
 	// Order defines the order of the different question, which all have a unique
 	// identifier. This is purely for display purpose.
@@ -414,11 +428,11 @@ func isValid(q Question) bool {
 type Select struct {
 	ID ID
 
-	Title   string
+	Title   Title
 	MaxN    uint
 	MinN    uint
 	Choices []string
-	Hint    string
+	Hint    Hint
 }
 
 // GetID implements Question
@@ -480,11 +494,11 @@ func (s Select) unmarshalAnswers(sforms []string) ([]bool, error) {
 type Rank struct {
 	ID ID
 
-	Title   string
+	Title   Title
 	MaxN    uint
 	MinN    uint
 	Choices []string
-	Hint    string
+	Hint    Hint
 }
 
 func (r Rank) GetID() string {
@@ -553,13 +567,13 @@ func (r Rank) unmarshalAnswers(ranks []string) ([]int8, error) {
 type Text struct {
 	ID ID
 
-	Title     string
+	Title     Title
 	MaxN      uint
 	MinN      uint
 	MaxLength uint
 	Regex     string
 	Choices   []string
-	Hint      string
+	Hint      Hint
 }
 
 func (t Text) GetID() string {

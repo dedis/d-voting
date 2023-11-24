@@ -5,12 +5,24 @@ export const SELECT: string = 'select';
 export const SUBJECT: string = 'subject';
 export const TEXT: string = 'text';
 
+// Title
+interface Title {
+  En: string;
+  Fr: string;
+  De: string;
+}
+
+// Hint
+interface Hint {
+  En: string;
+  Fr: string;
+  De: string;
+}
+
 interface SubjectElement {
   ID: ID;
   Type: string;
-  Title: string;
-  TitleFr: string;
-  TitleDe: string;
+  Title: Title;
 }
 
 // Rank describes a "rank" question, which requires the user to rank choices.
@@ -19,9 +31,7 @@ interface RankQuestion extends SubjectElement {
   MinN: number;
   Choices: string[];
   ChoicesMap: Map<string, string[]>;
-  Hint: string;
-  HintFr: string;
-  HintDe: string;
+  Hint: Hint;
 }
 // Text describes a "text" question, which allows the user to enter free text.
 interface TextQuestion extends SubjectElement {
@@ -31,9 +41,7 @@ interface TextQuestion extends SubjectElement {
   Regex: string;
   Choices: string[];
   ChoicesMap: Map<string, string[]>;
-  Hint: string;
-  HintFr: string;
-  HintDe: string;
+  Hint: Hint;
 }
 
 // Select describes a "select" question, which requires the user to select one
@@ -43,9 +51,7 @@ interface SelectQuestion extends SubjectElement {
   MinN: number;
   Choices: string[];
   ChoicesMap: Map<string, string[]>;
-  Hint: string;
-  HintFr: string;
-  HintDe: string;
+  Hint: Hint;
 }
 
 interface Subject extends SubjectElement {
@@ -55,10 +61,8 @@ interface Subject extends SubjectElement {
 
 // Configuration contains the configuration of a new poll.
 interface Configuration {
-  MainTitle: string;
+  Title: Title;
   Scaffold: Subject[];
-  TitleFr: string;
-  TitleDe: string;
 }
 
 // Answers describes the current answers for each type of question
@@ -72,6 +76,8 @@ interface Answers {
 
 export type {
   ID,
+  Title,
+  Hint,
   TextQuestion,
   SelectQuestion,
   RankQuestion,

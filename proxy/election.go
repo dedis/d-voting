@@ -482,7 +482,7 @@ func (h *form) Forms(w http.ResponseWriter, r *http.Request) {
 
 		info := ptypes.LightForm{
 			FormID: string(form.FormID),
-			Title:  form.Configuration.MainTitle,
+			Title:  form.Configuration.Title,
 			Status: uint16(form.Status),
 			Pubkey: hex.EncodeToString(pubkeyBuf),
 		}

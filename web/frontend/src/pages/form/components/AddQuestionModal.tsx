@@ -45,7 +45,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
     updateChoice,
   } = useQuestionForm(question);
   const [language, setLanguage] = useState('en');
-  const { Title, TitleDe, TitleFr, MaxN, MinN, ChoicesMap, Hint, HintFr, HintDe } = values;
+  const { Title, MaxN, MinN, ChoicesMap, Hint } = values;
   const [errors, setErrors] = useState([]);
   const handleSave = async () => {
     try {
@@ -189,9 +189,9 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                       </label>
                       {language === 'en' && (
                         <input
-                          value={Title}
-                          onChange={handleChange()}
-                          name="Title"
+                          value={Title.En}
+                          onChange={(e) => handleChange('Title')(e)}
+                          name="En"
                           type="text"
                           placeholder={t('enterTitleLg')}
                           className="my-1 px-1 w-60 ml-1 border rounded-md"
@@ -199,9 +199,9 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                       )}
                       {language === 'fr' && (
                         <input
-                          value={TitleFr}
-                          onChange={handleChange()}
-                          name="TitleFr"
+                          value={Title.Fr}
+                          onChange={(e) => handleChange('Title')(e)}
+                          name="Fr"
                           type="text"
                           placeholder={t('enterTitleLg1')}
                           className="my-1 px-1 w-60 ml-1 border rounded-md"
@@ -209,9 +209,9 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                       )}
                       {language === 'de' && (
                         <input
-                          value={TitleDe}
-                          onChange={handleChange()}
-                          name="TitleDe"
+                          value={Title.De}
+                          onChange={(e) => handleChange('Title')(e)}
+                          name="De"
                           type="text"
                           placeholder={t('enterTitleLg2')}
                           className="my-1 px-1 w-60 ml-1 border rounded-md"
@@ -231,9 +231,9 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                       </label>
                       {language === 'en' && (
                         <input
-                          value={Hint}
-                          onChange={handleChange()}
-                          name="Hint"
+                          value={Hint.En}
+                          onChange={(e) => handleChange('Hint')(e)}
+                          name="En"
                           type="text"
                           placeholder={t('enterHintLg')}
                           className="my-1 px-1 w-60 ml-1 border rounded-md"
@@ -241,9 +241,9 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                       )}
                       {language === 'fr' && (
                         <input
-                          value={HintFr}
-                          onChange={handleChange()}
-                          name="HintFr"
+                          value={Hint.Fr}
+                          onChange={(e) => handleChange('Hint')(e)}
+                          name="Fr"
                           type="text"
                           placeholder={t('enterHintLg1')}
                           className="my-1 px-1 w-60 ml-1 border rounded-md"
@@ -251,9 +251,9 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                       )}
                       {language === 'de' && (
                         <input
-                          value={HintDe}
-                          onChange={handleChange()}
-                          name="HintDe"
+                          value={Hint.De}
+                          onChange={(e) => handleChange('Hint')(e)}
+                          name="De"
                           type="text"
                           placeholder={t('enterHintLg2')}
                           className="my-1 px-1 w-60 ml-1 border rounded-md"

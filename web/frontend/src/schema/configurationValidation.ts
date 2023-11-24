@@ -1,11 +1,15 @@
 import * as yup from 'yup';
 
 const idSchema = yup.string().min(1).required();
-const titleSchema = yup.string().required();
-const formTitleSchema = yup.object({
-  en: yup.string().required(),
-  fr: yup.string(),
-  de: yup.string(),
+const titleSchema = yup.object({
+  En: yup.string().required(),
+  Fr: yup.string(),
+  De: yup.string(),
+});
+const hintSchema = yup.object({
+  En: yup.string(),
+  Fr: yup.string(),
+  De: yup.string(),
 });
 
 const selectsSchema = yup.object({
@@ -104,7 +108,7 @@ const selectsSchema = yup.object({
       },
     })
     .required(),
-  Hint: yup.lazy(() => yup.string()),
+  Hint: yup.lazy(() => hintSchema),
 });
 
 const ranksSchema = yup.object({
@@ -202,7 +206,7 @@ const ranksSchema = yup.object({
       },
     })
     .required(),
-  Hint: yup.lazy(() => yup.string()),
+  Hint: yup.lazy(() => hintSchema),
 });
 
 const textsSchema = yup.object({
@@ -322,7 +326,7 @@ const textsSchema = yup.object({
       },
     })
     .required(),
-  Hint: yup.lazy(() => yup.string()),
+  Hint: yup.lazy(() => hintSchema),
 });
 
 const subjectSchema = yup.object({
@@ -408,7 +412,7 @@ const subjectSchema = yup.object({
 });
 
 const configurationSchema = yup.object({
-  MainTitle: yup.lazy(() => formTitleSchema),
+  Title: yup.lazy(() => titleSchema),
   Scaffold: yup.array().of(subjectSchema).required(),
 });
 

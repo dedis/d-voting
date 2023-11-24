@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Answers, SelectQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
 import HintButton from 'components/buttons/HintButton';
-import { isJson } from 'types/JSONparser';
+import { internationalize } from './../../utils';
 type SelectProps = {
   select: SelectQuestion;
   answers: Answers;
@@ -57,12 +57,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
   };
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
-    if (isJson(select.Title)) {
-      const ts = JSON.parse(select.Title);
-      setTitles(ts);
-    } else {
-      setTitles({ en: select.Title, fr: select.TitleFr, de: select.TitleDe });
-    }
+    setTitles(select.Title);
   }, [select]);
 
   const choiceDisplay = (isChecked: boolean, choice: string, choiceIndex: number) => {
@@ -87,15 +82,11 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
       <div className="grid grid-rows-1 grid-flow-col">
         <div>
           <h3 className="text-lg break-words text-gray-600">
-            {language === 'en' && titles.en}
-            {language === 'fr' && titles.fr}
-            {language === 'de' && titles.de}
+            {internationalize(language, titles)}
           </h3>
         </div>
         <div className="text-right">
-          {language === 'en' && <HintButton text={select.Hint} />}
-          {language === 'fr' && <HintButton text={select.HintFr} />}
-          {language === 'de' && <HintButton text={select.HintDe} />}
+          {<HintButton text={internationalize(language, select.Hint)} />}
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>
