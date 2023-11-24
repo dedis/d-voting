@@ -1,8 +1,10 @@
 import express from 'express';
 
-import { addPolicy, isAuthorized, PERMISSIONS } from '../authManager';
+import { addPolicy, initEnforcer, isAuthorized, PERMISSIONS } from '../authManager';
 
 export const usersRouter = express.Router();
+
+initEnforcer().catch((e) => console.error(`Couldn't initialize enforcerer: ${e}`));
 
 // This call allows a user that is admin to get the list of the people that have
 // a special role (not a voter).

@@ -8,26 +8,11 @@ Backend CLI, currently providing 3 commands for user management:
 */
 
 import { Command, InvalidArgumentError } from 'commander';
-import { SequelizeAdapter } from 'casbin-sequelize-adapter';
-import { newEnforcer } from 'casbin';
 import { curve } from '@dedis/kyber';
 import * as fs from 'fs';
-import { PERMISSIONS, readSCIPER } from './authManager';
+import { PERMISSIONS, readSCIPER, initEnforcer } from './authManager';
 
 const program = new Command();
-
-async function initEnforcer() {
-  const dbAdapter = await SequelizeAdapter.newAdapter({
-    dialect: 'postgres',
-    host: process.env.DATABASE_HOST,
-    port: parseInt(process.env.DATABASE_PORT || '5432', 10),
-    username: process.env.DATABASE_USERNAME,
-    password: process.env.DATABASE_PASSWORD,
-    database: 'casbin',
-  });
-
-  return newEnforcer('src/model.conf', dbAdapter);
-}
 
 program
   .command('addAdmin')

@@ -5,12 +5,15 @@ import axios, { AxiosError, Method } from 'axios';
 import xss from 'xss';
 import {
   assignUserPermissionToOwnElection,
+  initEnforcer,
   isAuthorized,
   PERMISSIONS,
   revokeUserPermissionToOwnElection,
 } from '../authManager';
 
 export const delaRouter = express.Router();
+
+initEnforcer().catch((e) => console.error(`Couldn't initialize enforcerer: ${e}`));
 
 // get payload creates a payload with a signature on it
 function getPayload(dataStr: string) {

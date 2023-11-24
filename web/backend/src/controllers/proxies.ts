@@ -1,8 +1,10 @@
 import express from 'express';
 import lmdb from 'lmdb';
-import { isAuthorized, PERMISSIONS } from '../authManager';
+import { initEnforcer, isAuthorized, PERMISSIONS } from '../authManager';
 
 export const proxiesRouter = express.Router();
+
+initEnforcer().catch((e) => console.error(`Couldn't initialize enforcerer: ${e}`));
 
 const proxiesDB = lmdb.open<string, string>({ path: `${process.env.DB_PATH}proxies` });
 proxiesRouter.post('', (req, res) => {

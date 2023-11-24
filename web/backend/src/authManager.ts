@@ -29,21 +29,20 @@ the connection string has the following format:
 postgres://username:password@host:port/database
 the migrate option is used to create the tables if they don't exist, we set it to false because we create the tables manually
 */
-async function initEnforcer() {
-  const dbAdapter = await SequelizeAdapter.newAdapter({
-    dialect: 'postgres',
-    host: process.env.DATABASE_HOST,
-    port: parseInt(process.env.DATABASE_PORT || '5432', 10),
-    username: process.env.DATABASE_USERNAME,
-    password: process.env.DATABASE_PASSWORD,
-    database: 'casbin',
-  });
-  return newEnforcer('src/model.conf', dbAdapter);
+export async function initEnforcer(): Promise<Enforcer> {
+  if (authEnforcer === undefined) {
+    const dbAdapter = await SequelizeAdapter.newAdapter({
+      dialect: 'postgres',
+      host: process.env.DATABASE_HOST,
+      port: parseInt(process.env.DATABASE_PORT || '5432', 10),
+      username: process.env.DATABASE_USERNAME,
+      password: process.env.DATABASE_PASSWORD,
+      database: 'casbin',
+    });
+    authEnforcer = await newEnforcer('src/model.conf', dbAdapter);
+  }
+  return authEnforcer;
 }
-
-Promise.all([initEnforcer()]).then((createdEnforcer) => {
-  [authEnforcer] = createdEnforcer;
-});
 
 export function isAuthorized(sciper: number | undefined, subject: string, action: string): boolean {
   return authEnforcer.enforceSync(sciper, subject, action);
