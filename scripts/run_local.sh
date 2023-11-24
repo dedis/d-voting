@@ -183,7 +183,7 @@ clean)
   kill_nodes
   kill_backend
   kill_db
-  rm -f bin/*
+  rm -rf bin nodes
   exit
   ;;
 

@@ -1,9 +1,11 @@
 import express from 'express';
 import axios, { AxiosError } from 'axios';
 import { sciper2sess } from '../session';
-import { getUserPermissions, readSCIPER, setMapAuthorization } from '../authManager';
+import { initEnforcer, getUserPermissions, readSCIPER, setMapAuthorization } from '../authManager';
 
 export const authenticationRouter = express.Router();
+
+initEnforcer().catch((e) => console.error(`Couldn't initialize enforcerer: ${e}`));
 
 authenticationRouter.get('/get_dev_login/:userId', (req, res) => {
   if (process.env.REACT_APP_DEV_LOGIN !== 'true') {
