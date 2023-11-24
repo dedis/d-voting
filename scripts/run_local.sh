@@ -29,7 +29,7 @@ function build_dela() {
   export GOBIN=$(pwd)/bin
   PATH="$PATH":"$GOBIN"
   if ! [[ -f $GOBIN/crypto ]]; then
-    go install github.com/c4dt/dela/cli/crypto
+    go install go.dedis.ch/dela/cli/crypto
   fi
   if ! [[ -f $GOBIN/dvoting ]]; then
     go install ./cli/dvoting
