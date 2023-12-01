@@ -1,3 +1,4 @@
+import { default as i18n } from 'i18next';
 import en from './../src/language/en.json';
 import fr from './../src/language/fr.json';
 import de from './../src/language/de.json';
