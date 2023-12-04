@@ -3,7 +3,7 @@ export const SCIPER_USER = '789012';
 
 export async function mockGetDevLogin (page: any) {
   await page.routeFromHAR(
-    `./tests/hars/get_dev_login.${SCIPER_ADMIN}.har`,
+    `./tests/hars/get_dev_login.admin.har`,
     {
       url: `${process.env.FRONT_END_URL}/api/get_dev_login/${SCIPER_ADMIN}`,
       update: false,
