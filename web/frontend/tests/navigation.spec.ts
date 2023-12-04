@@ -23,6 +23,13 @@ test('Assert D-Voting logo is present', async({ page }) => {
   await expect(page).toHaveURL(process.env.FRONT_END_URL);
 });
 
+test('Assert link to form table is present', async({ page }) => {
+  const forms = await page.getByRole('link', { name: i18n.t('navBarStatus') });
+  await expect(forms).toBeVisible();
+  await forms.click();
+  await expect(page).toHaveURL(`${process.env.FRONT_END_URL}/form/index`);
+});
+
 // authenticated non-admin
 
 test('Assert "Profile" button is visible upon logging in', async({ page }) => {
