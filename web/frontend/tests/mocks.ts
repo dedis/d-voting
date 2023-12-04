@@ -1,9 +1,9 @@
-export const SCIPER_ADMIN = process.env.REACT_APP_SCIPER_ADMIN;
+export const SCIPER_ADMIN = '123456';
 export const SCIPER_USER = '789012';
 
 export async function mockGetDevLogin (page: any) {
   await page.routeFromHAR(
-    `./tests/hars/get_dev_login.admin.har`,
+    `./tests/hars/get_dev_login.${SCIPER_ADMIN}.har`,
     {
       url: `${process.env.FRONT_END_URL}/api/get_dev_login/${SCIPER_ADMIN}`,
       update: false,
