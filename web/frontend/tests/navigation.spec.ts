@@ -10,10 +10,13 @@ import {
 
 initI18n();
 
+test.beforeEach(async ({ page }) => {
+  await page.goto(`${process.env.FRONT_END_URL}/about`);
+});
+
 // unauthenticated
 
 test('Assert D-Voting logo is present', async({ page }) => {
-  await page.goto(`${process.env.FRONT_END_URL}/about`);
   const logo = await page.getByAltText(i18n.t('Workflow'));
   await expect(logo).toBeVisible();
   await logo.click();
@@ -23,7 +26,6 @@ test('Assert D-Voting logo is present', async({ page }) => {
 // authenticated non-admin
 
 test('Assert "Profile" button is visible upon logging in', async({ page }) => {
-  await page.goto(process.env.FRONT_END_URL);
   await assertOnlyVisibleToAuthenticated(
     page, page.getByRole('button', { name: i18n.t('Profile') })
   );
@@ -32,14 +34,12 @@ test('Assert "Profile" button is visible upon logging in', async({ page }) => {
 // admin
 
 test('Assert "Create form" button is (only) visible to admin', async({ page }) => {
-  await page.goto(process.env.FRONT_END_URL);
   await assertOnlyVisibleToAdmin(
     page, page.getByRole('link', { name: i18n.t('navBarCreateForm')})
   );
 });
 
 test('Assert "Admin" button is (only) visible to admin', async({ page }) => {
-  await page.goto(process.env.FRONT_END_URL);
   await assertOnlyVisibleToAdmin(
     page, page.getByRole('link', { name: i18n.t('navBarAdmin') })
   );
