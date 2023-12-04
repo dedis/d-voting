@@ -1,0 +1,1 @@
+{"sciper":123456,"lastName":"123456","firstName":"sciper-#","isLoggedIn":true,"authorization":{"roles":["add","list","remove"],"proxies":["post","put","delete"],"election":["create"]}}
