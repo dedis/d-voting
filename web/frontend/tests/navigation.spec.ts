@@ -10,6 +10,16 @@ import {
 
 initI18n();
 
+// unauthenticated
+
+test('Assert D-Voting logo is present', async({ page }) => {
+  await page.goto(`${process.env.FRONT_END_URL}/about`);
+  const logo = await page.getByAltText(i18n.t('Workflow'));
+  await expect(logo).toBeVisible();
+  await logo.click();
+  await expect(page).toHaveURL(process.env.FRONT_END_URL);
+});
+
 // authenticated non-admin
 
 test('Assert "Profile" button is visible upon logging in', async({ page }) => {

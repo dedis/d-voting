@@ -179,7 +179,6 @@ const LeftSideNavBar = ({ authCtx, t }) => (
   <div className="flex-1 flex items-center justify-center md:justify-start">
     <div className="flex-shrink-0 flex items-center">
       <NavLink to={ROUTE_HOME}>
-        <img className="block lg:hidden h-10 w-auto" src={logo} alt="Workflow" />
         <img className="hidden lg:block h-10 w-auto" src={logo} alt="Workflow" />
       </NavLink>
     </div>
