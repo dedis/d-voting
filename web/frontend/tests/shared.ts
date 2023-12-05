@@ -13,11 +13,7 @@ export function initI18n () {
 }
 
 export async function logIn (page: any, admin = false) {
-  await mockGetDevLogin(page);
   await mockPersonalInfo(page, admin);
-  await page.context().request.get(
-    `${process.env.FRONT_END_URL}/api/get_dev_login/${admin ? SCIPER_ADMIN : SCIPER_USER}`
-  );
   await page.reload();
 }
 
