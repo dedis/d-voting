@@ -13,13 +13,12 @@ export function initI18n () {
 }
 
 export async function logIn (page: any, admin = false) {
-  await mockPersonalInfo(page, admin);
+  await mockPersonalInfo(page, true, admin);
   await page.reload();
 }
 
 export async function logOut (page: any) {
-  await mockLogout(page);
-  await page.context().request.post(`${process.env.FRONT_END_URL}/api/logout`);
+  await mockPersonalInfo(page)
   await page.reload();
 }
 

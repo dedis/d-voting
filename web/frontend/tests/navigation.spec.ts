@@ -7,10 +7,12 @@ import {
   assertOnlyVisibleToAuthenticated,
   assertOnlyVisibleToAdmin,
 } from './shared';
+import { mockPersonalInfo } from './mocks';
 
 initI18n();
 
 test.beforeEach(async ({ page }) => {
+  await mockPersonalInfo(page);
   await page.goto(`${process.env.FRONT_END_URL}/about`);
 });
 

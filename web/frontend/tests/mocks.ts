@@ -1,7 +1,16 @@
 export const SCIPER_ADMIN = '123456';
 export const SCIPER_USER = '789012';
 
-export async function mockPersonalInfo (page: any, admin = false) {
+export async function mockPersonalInfo (page: any, authenticated = false, admin = false) {
+  if (!authenticated) {
+    await page.routeFromHAR(
+      './tests/hars/personal_info.har',
+      {
+        url: `${process.env.FRONT_END_URL}/api/personal_info`,
+        update: false,
+      });
+      return;
+  }
   await page.routeFromHAR(
     `./tests/hars/personal_info.${admin ? SCIPER_ADMIN : SCIPER_USER}.har`,
     {
