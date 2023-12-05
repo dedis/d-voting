@@ -12,15 +12,6 @@ const Footer = () => (
           <ProxyInput />
         </div>
       </div>
-      <div className="flex sm:hidden flex-col items-center max-w-7xl mx-auto py-2 px-4 overflow-hidden sm:px-6 lg:px-8">
-        <span className="text-gray-400"> &copy; 2022 DEDIS LAB - </span>
-        <a className="text-gray-600" href="https://github.com/c4dt/d-voting">
-          https://github.com/c4dt/d-voting
-        </a>
-        <div className="pt-2">
-          <ProxyInput />
-        </div>
-      </div>
       <div className="text-center">
         version:
         {process.env.REACT_APP_VERSION || 'unknown'} - build{' '}
