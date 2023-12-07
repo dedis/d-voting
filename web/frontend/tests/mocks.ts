@@ -1,31 +1,43 @@
+export const SCIPER_ADMIN = '123456';
+export const SCIPER_USER = '789012';
+export const UPDATE = false;
+
 export async function mockPersonalInfo (page: any, sciper) {
+  // clear current mock
+  await page.unroute(`${process.env.FRONT_END_URL}/api/personal_info`);
   await page.routeFromHAR(
-    sciper ? `./tests/hars/personal_info.${sciper}.har` : './tests/hars/personal_info.har',
+    sciper ? `./tests/hars/${sciper}/personal_info.har` : './tests/hars/anonymous/personal_info.har',
     {
       url: `${process.env.FRONT_END_URL}/api/personal_info`,
-      update: false,
+      update: UPDATE,
     });
 }
 
-export async function mockGetDevLogin (page: any, sciper) {
+export async function mockGetDevLogin (page: any) {
   await page.routeFromHAR(
-    `./tests/hars/get_dev_login.${sciper}.har`,
+    `./tests/hars/${SCIPER_ADMIN}/get_dev_login.har`,
     {
-      url: `${process.env.FRONT_END_URL}/api/get_dev_login/${sciper}`,
-      update: false,
+      url: `${process.env.FRONT_END_URL}/api/get_dev_login/${SCIPER_ADMIN}`,
+      update: UPDATE,
     });
-  // dummy route for "Login" button depending on local configuration
+  await page.routeFromHAR(
+    `./tests/hars/${SCIPER_USER}/get_dev_login.har`,
+    {
+      url: `${process.env.FRONT_END_URL}/api/get_dev_login/${SCIPER_USER}`,
+      update: UPDATE,
+    });
+  if (process.env.REACT_APP_SCIPER_ADMIN !== undefined && process.env.REACT_APP_SCIPER_ADMIN !== SCIPER_ADMIN) {
+    // dummy route for "Login" button depending on local configuration
+    await page.route(
+      `${process.env.FRONT_END_URL}/api/get_dev_login/${process.env.REACT_APP_SCIPER_ADMIN}`,
+      async route => {await route.fulfill({});}
+    );
+  }
+}
+
+export async function mockLogout (page: any) {
   await page.route(
-    `${process.env.FRONT_END_URL}/api/get_dev_login/${process.env.REACT_APP_SCIPER_ADMIN}`,
+    `${process.env.FRONT_END_URL}/api/logout`,
     async route => {await route.fulfill({});}
   );
-}
-
-export async function mockLogout (page: any, sciper) {
-  await page.routeFromHAR(
-    `./tests/hars/logout.${sciper}.har`,
-    {
-      url: `${process.env.FRONT_END_URL}/api/logout`,
-      update: false,
-    });
 }
