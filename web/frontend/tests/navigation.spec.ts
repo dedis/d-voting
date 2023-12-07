@@ -8,7 +8,7 @@ import {
   assertOnlyVisibleToAuthenticated,
   assertOnlyVisibleToAdmin,
 } from './shared';
-import { SCIPER_ADMIN, SCIPER_USER, UPDATE, mockPersonalInfo } from './mocks';
+import { SCIPER_ADMIN, SCIPER_USER, UPDATE, mockPersonalInfo, mockLogout } from './mocks';
 
 initI18n();
 
@@ -46,6 +46,11 @@ test('Assert admin user HAR files are up-to-date', async({ page }) => {
 
 // unauthenticated
 
+test('Assert cookie is set', async({ page }) => {
+  const cookies = await page.context().cookies();
+  expect(cookies.find(cookie => cookie.name === 'connect.sid')).toBeTruthy();
+});
+
 test('Assert D-Voting logo is present', async({ page }) => {
   test.skip(UPDATE == true, 'Do not run regular tests when updating HAR files');
   const logo = await page.getByAltText(i18n.t('Workflow'));
@@ -62,6 +67,13 @@ test('Assert link to form table is present', async({ page }) => {
   await expect(page).toHaveURL(`${process.env.FRONT_END_URL}/form/index`);
 });
 
+test('Assert "Login" button calls login API', async({ page }) => {
+  const loginRequest = page.waitForRequest(
+    `${process.env.FRONT_END_URL}/api/get_dev_login/${process.env.REACT_APP_SCIPER_ADMIN}`
+  );
+  await page.getByRole('button', { name: i18n.t('login') }).click();
+});
+
 // authenticated non-admin
 
 test('Assert "Profile" button is visible upon logging in', async({ page }) => {
@@ -69,6 +81,17 @@ test('Assert "Profile" button is visible upon logging in', async({ page }) => {
   await assertOnlyVisibleToAuthenticated(
     page, page.getByRole('button', { name: i18n.t('Profile') })
   );
+});
+
+test('Assert "Logout" calls logout API', async({ page }) => {
+  await mockLogout(page);
+  await logIn(page, SCIPER_USER);
+  const logoutRequestPromise = page.waitForRequest(
+    request => request.url() === `${process.env.FRONT_END_URL}/api/logout` && request.method() === 'POST'
+  );
+  for (const [role, key] of [['button', 'Profile'], ['menuitem', 'logout'], ['button', 'continue']]) {
+    await page.getByRole(role, { name: i18n.t(key) }).click();
+  }
 });
 
 // admin
