@@ -44,3 +44,13 @@ FRONT_END_URL=http://127.0.0.1:3000 npx playwright test --ui
 ```
 
 this will open an user interface where you can interactively run and evaluate tests.
+
+## Update HAR files
+
+To update the HAR files, you need to make sure
+
+* that a complete D-Voting setup is running, as the API will be called for real, and
+* the `REACT_APP_SCIPER_ADMIN` of the D-Voting instance value is set to `123456` (i.e. the `SCIPER_ADMIN` value in the mocks).
+
+You then change the `UPDATE = false` value in `tests/mocks.ts` to `UPDATE = true` and execute
+the tests as usual. The tests that update the mocks will be run and the other tests will be skipped.
