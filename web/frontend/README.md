@@ -5,7 +5,8 @@
 To install Playwright run
 
 ```
-npx install playwright
+npm ci
+npm install playwright
 ```
 
 which will install the module and its dependencies. In
@@ -20,19 +21,14 @@ npx playwright install-deps --dry-run
 
 to be shown the dependencies that you need to install on your machine (requires `root` access).
 
-You need to have the D-Voting application and DELA network running. You also need to make sure
-that the environment variables from the D-Voting application are set:
-
-- `FRONT_END_URL` must be set to your locally running instance
-
-in the shell you'll be executing the tests in.
+Your local frontend must be accessible at `http://127.0.0.1:3000`.
 
 ## Run tests
 
 Run
 
 ```
-FRONT_END_URL=http://127.0.0.1:3000 npx playwright test
+npx playwright test
 ```
 
 to run the tests. This will open a window in your browser w/ the test results.
@@ -40,7 +36,7 @@ to run the tests. This will open a window in your browser w/ the test results.
 To run interactive tests, run
 
 ```
-FRONT_END_URL=http://127.0.0.1:3000 npx playwright test --ui
+npx playwright test --ui
 ```
 
 this will open an user interface where you can interactively run and evaluate tests.
