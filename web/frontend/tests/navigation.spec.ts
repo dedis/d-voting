@@ -16,6 +16,7 @@ test.beforeEach(async ({ page }) => {
   if (UPDATE === true) {
     return;
   }
+  await mockPersonalInfo(page);
   await setUp(page, '/about');
 });
 
