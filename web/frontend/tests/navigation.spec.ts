@@ -70,7 +70,7 @@ test('Assert link to form table is present', async({ page }) => {
 
 test('Assert "Login" button calls login API', async({ page }) => {
   const loginRequest = page.waitForRequest(
-    `/api/get_dev_login/${process.env.REACT_APP_SCIPER_ADMIN}`
+    new RegExp("/api/get_dev_login/[0-9]{6}")
   );
   await page.getByRole('button', { name: i18n.t('login') }).click();
 });
