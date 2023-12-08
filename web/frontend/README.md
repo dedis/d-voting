@@ -6,7 +6,7 @@ To install Playwright run
 
 ```
 npm ci
-npm playwright install
+npx playwright install
 ```
 
 which will install the module and its dependencies. In
