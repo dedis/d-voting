@@ -12,14 +12,14 @@ export function initI18n () {
   });
 }
 
-export async function setUp(page: any, url) {
+export async function setUp(page: any, url: string) {
   await mockGetDevLogin(page);
   await mockLogout(page);
   await page.goto(url);
   await expect(page).toHaveURL(url);   // make sure that page is loaded
 }
 
-export async function logIn (page: any, sciper) {
+export async function logIn (page: any, sciper: string) {
   await mockPersonalInfo(page, sciper);
   await page.reload();
   await expect(page).toHaveURL(page.url());   // make sure that page is loaded
