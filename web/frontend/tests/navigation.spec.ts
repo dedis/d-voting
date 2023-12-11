@@ -13,10 +13,6 @@ import { SCIPER_ADMIN, SCIPER_USER, UPDATE, mockPersonalInfo, mockLogout } from 
 initI18n();
 
 test.beforeEach(async ({ page }) => {
-  if (UPDATE === true) {
-    return;
-  }
-  await mockPersonalInfo(page);
   await setUp(page, '/about');
 });
 

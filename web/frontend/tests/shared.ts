@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 import en from './../src/language/en.json';
 import fr from './../src/language/fr.json';
 import de from './../src/language/de.json';
-import { SCIPER_ADMIN, SCIPER_USER, mockPersonalInfo, mockGetDevLogin, mockLogout } from './mocks';
+import { SCIPER_ADMIN, SCIPER_USER, UPDATE, mockPersonalInfo, mockGetDevLogin, mockLogout } from './mocks';
 
 export function initI18n () {
   i18n.init({
@@ -13,6 +13,10 @@ export function initI18n () {
 }
 
 export async function setUp(page: any, url: string) {
+  if (UPDATE === true) {
+    return;
+  }
+  await mockPersonalInfo(page);
   await mockGetDevLogin(page);
   await mockLogout(page);
   await page.goto(url);
