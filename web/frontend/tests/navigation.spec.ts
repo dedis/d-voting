@@ -48,6 +48,7 @@ test('Assert admin user HAR files are up-to-date', async({ page }) => {
 // unauthenticated
 
 test('Assert cookie is set', async({ page }) => {
+  test.skip(UPDATE === true, 'Do not run regular tests when updating HAR files');
   const cookies = await page.context().cookies();
   expect(cookies.find(cookie => cookie.name === 'connect.sid')).toBeTruthy();
 });
@@ -69,6 +70,7 @@ test('Assert link to form table is present', async({ page }) => {
 });
 
 test('Assert "Login" button calls login API', async({ page }) => {
+  test.skip(UPDATE === true, 'Do not run regular tests when updating HAR files');
   const loginRequest = page.waitForRequest(
     new RegExp("/api/get_dev_login/[0-9]{6}")
   );
@@ -85,6 +87,7 @@ test('Assert "Profile" button is visible upon logging in', async({ page }) => {
 });
 
 test('Assert "Logout" calls logout API', async({ page, baseURL }) => {
+  test.skip(UPDATE === true, 'Do not run regular tests when updating HAR files');
   await mockLogout(page);
   await logIn(page, SCIPER_USER);
   const logoutRequestPromise = page.waitForRequest(
