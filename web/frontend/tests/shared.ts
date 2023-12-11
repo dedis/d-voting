@@ -42,3 +42,7 @@ export async function assertOnlyVisibleToAdmin (page: any, locator: any) {
   await logIn(page, SCIPER_ADMIN);
   await expect(locator).toBeVisible();    // assert is visible to admin user
 }
+
+export async function getFooter (page: any) {
+  return await page.getByTestId('footer');
+}
