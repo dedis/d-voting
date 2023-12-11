@@ -15,3 +15,15 @@ test('Assert copyright notice is visible', async({ page }) => {
     `© ${new Date().getFullYear()} ${i18n.t('footerCopyright')} https://github.com/c4dt/d-voting`
   );
 });
+
+test('Assert version information is visible', async({ page }) => {
+  const footerVersion = await page.getByTestId('footerVersion');
+  await expect(footerVersion).toBeVisible();
+  await expect(footerVersion).toHaveText(
+    [
+      `${i18n.t('footerVersion')} ${process.env.REACT_APP_VERSION || i18n.t('footerUnknown')}`,
+      `${i18n.t('footerBuild')} ${process.env.REACT_APP_BUILD || i18n.t('footerUnknown')}`,
+      `${i18n.t('footerBuildTime')} ${process.env.REACT_APP_BUILD_TIME || i18n.t('footerUnknown')}`,
+    ].join(' - ')
+  );
+});

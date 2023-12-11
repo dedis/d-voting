@@ -286,6 +286,10 @@
     "continue": "Continue",
     "invalidInput": "Please enter a number between 1 and {{max}}.",
     "hint": "Hint",
-    "footerCopyright": "DEDIS LAB -"
+    "footerCopyright": "DEDIS LAB -",
+    "footerUnknown": "?",
+    "footerVersion": "version:",
+    "footerBuild": "build:",
+    "footerBuildTime": "in:"
   }
 }

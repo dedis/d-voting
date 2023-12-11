@@ -13,11 +13,12 @@ const Footer = () => {
             </a>
           </span>
         </div>
-        <div className="text-center">
-          version:
-          {process.env.REACT_APP_VERSION || 'unknown'} - build{' '}
-          {process.env.REACT_APP_BUILD || 'unknown'} - on{' '}
-          {process.env.REACT_APP_BUILD_TIME || 'unknown'}
+        <div data-testid="footerVersion" className="text-center">
+          {t('footerVersion')} {process.env.REACT_APP_VERSION || t('footerUnknown')}
+          &nbsp;- {t('footerBuild')}&nbsp;
+          {process.env.REACT_APP_BUILD || t('footerUnknown')}
+          &nbsp;- {t('footerBuildTime')}
+          &nbsp;{process.env.REACT_APP_BUILD_TIME || t('footerUnknown')}
         </div>
       </footer>
     </div>

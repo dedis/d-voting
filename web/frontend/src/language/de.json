@@ -285,6 +285,10 @@
     "enterHintLg2": "Geben Sie einen Hinweis auf Deutsch ein (optional)",
     "hint": "Hinweis",
     "invalidInput": "Bitte geben Sie eine Zahl zwischen 1 und {{max}} ein.",
-    "footerCopyright": "DEDIS LAB -"
+    "footerCopyright": "DEDIS LAB -",
+    "footerUnknown": "?",
+    "footerVersion": "version:",
+    "footerBuild": "build:",
+    "footerBuildTime": "in:"
   }
 }
