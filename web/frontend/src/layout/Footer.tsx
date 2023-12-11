@@ -1,4 +1,3 @@
-import ProxyInput from 'components/utils/proxy';
 import { useTranslation } from 'react-i18next';
 
 const Footer = () => {
@@ -13,9 +12,6 @@ const Footer = () => {
               https://github.com/c4dt/d-voting
             </a>
           </span>
-          <div className="px-10">
-            <ProxyInput />
-          </div>
         </div>
         <div className="text-center">
           version:
