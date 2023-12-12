@@ -50,3 +50,25 @@ export async function mockProxy(page: any) {
     });
   });
 }
+
+export async function mockEvoting(page: any, numberForms: number) {
+  await page.route(`${process.env.DELA_PROXY_URL}/evoting/forms`, async (route) => {
+    if route.request().method() === 'OPTIONS' {
+      await route.fulfill({
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Headers': '*',
+          'Access-Control-Allow-Origin': '*',
+        }
+      });
+    }
+    else {
+      await page.routeFromHAR(
+        `./tests/hars/forms/${numberForms}.har`,
+        {
+          url: `${process.env.DELA_PROXY_URL}/evoting/forms`,
+          update: UPDATE
+        });
+    }
+  });
+}
