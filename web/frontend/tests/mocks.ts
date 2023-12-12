@@ -41,3 +41,18 @@ export async function mockLogout (page: any) {
     async route => {await route.fulfill({});}
   );
 }
+
+export async function mockProxy (page: any) {
+  await page.route(
+    '/api/config/proxy',
+    async route => {
+      await route.fulfill(
+        {
+          status: 200,
+          contentType: 'text/html',
+          body: `${process.env.DELA_PROXY_URL}`,
+          headers: {'set-cookie': 'connect.sid=s%3A5srES5h7hQ2fN5T71W59qh3cUSQL3Mix.fPoO3rOxui8yfTG7tFd7RPyasaU5VTkhxgdzVRWJyNk'},
+        });
+    }
+  )
+}
