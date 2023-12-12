@@ -47,7 +47,7 @@ test('Assert admin user HAR files are up-to-date', async({ page }) => {
 test('Assert cookie is set', async({ page }) => {
   test.skip(UPDATE === true, 'Do not run regular tests when updating HAR files');
   const cookies = await page.context().cookies();
-  expect(cookies.find(cookie => cookie.name === 'connect.sid')).toBeTruthy();
+  await expect(cookies.find(cookie => cookie.name === 'connect.sid')).toBeTruthy();
 });
 
 test('Assert D-Voting logo is present', async({ page }) => {
