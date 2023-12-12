@@ -1,14 +1,20 @@
 import { expect, test } from '@playwright/test';
 import { default as i18n } from 'i18next';
 import { initI18n, setUp } from './shared';
+import { UPDATE, mockPersonalInfo } from './mocks';
 
 initI18n();
 
 test.beforeEach(async ({ page }) => {
+  if (UPDATE === true) {
+    return;
+  }
+  await mockPersonalInfo(page);
   await setUp(page, '/about');
 });
 
 test('Assert copyright notice is visible', async ({ page }) => {
+  test.skip(UPDATE === true, 'Do not run regular tests when updating HAR files');
   const footerCopyright = await page.getByTestId('footerCopyright');
   await expect(footerCopyright).toBeVisible();
   await expect(footerCopyright).toHaveText(
@@ -17,6 +23,7 @@ test('Assert copyright notice is visible', async ({ page }) => {
 });
 
 test('Assert version information is visible', async ({ page }) => {
+  test.skip(UPDATE === true, 'Do not run regular tests when updating HAR files');
   const footerVersion = await page.getByTestId('footerVersion');
   await expect(footerVersion).toBeVisible();
   await expect(footerVersion).toHaveText(
