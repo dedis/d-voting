@@ -23,14 +23,12 @@ test.beforeEach(async ({ page }) => {
 // helper tests to update related HAR files
 
 test('Assert anonymous user HAR files are up-to-date', async({ page }) => {
-  // comment the next line to update HAR files
   test.skip(UPDATE === false, 'Do not update HAR files');
   await mockPersonalInfo(page);
   await setUp(page, '/about');
 });
 
 test('Assert non-admin user HAR files are up-to-date', async({ page }) => {
-  // comment the next line to update HAR files
   test.skip(UPDATE === false, 'Do not update HAR files');
   await mockPersonalInfo(page, SCIPER_USER);
   await page.context().request.get(`/api/get_dev_login/${SCIPER_USER}`);
@@ -38,7 +36,6 @@ test('Assert non-admin user HAR files are up-to-date', async({ page }) => {
 });
 
 test('Assert admin user HAR files are up-to-date', async({ page }) => {
-  // comment the next line to update HAR files
   test.skip(UPDATE === false, 'Do not update HAR files');
   await mockPersonalInfo(page, SCIPER_ADMIN);
   await page.context().request.get(`/api/get_dev_login/${SCIPER_ADMIN}`);
