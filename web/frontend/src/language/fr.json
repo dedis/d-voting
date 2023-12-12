@@ -284,6 +284,11 @@
     "enterHintLg": "Entrer une indication en Anglais (optionnel)",
     "enterHintLg1": "Entrer une indication en Français (optionnel)",
     "enterHintLg2": "Entrer une indication en Allemand (optionnel)",
-    "invalidInput": "Entrer s'il vous plaît un nombre entre 1 et {{max}}"
+    "invalidInput": "Entrer s'il vous plaît un nombre entre 1 et {{max}}",
+    "footerCopyright": "DEDIS LAB -",
+    "footerUnknown": "?",
+    "footerVersion": "version:",
+    "footerBuild": "build:",
+    "footerBuildTime": "en:"
   }
 }
