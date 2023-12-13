@@ -47,6 +47,10 @@ export async function assertOnlyVisibleToAdmin(page: any, locator: any) {
   await expect(locator).toBeVisible(); // assert is visible to admin user
 }
 
-export async function getFooter(page: any) {
-  return page.getByTestId('footer');
+export async function assertHasNavBar(page: any) {
+  await expect(page.getByTestId('navBar')).toBeVisible();
+}
+
+export async function assertHasFooter(page: any) {
+  await expect(page.getByTestId('footer')).toBeVisible();
 }
