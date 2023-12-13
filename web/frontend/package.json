@@ -8,8 +8,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "eslint": "./node_modules/.bin/eslint src/",
-    "eslint-fix": "./node_modules/.bin/eslint src/ --fix",
+    "eslint": "./node_modules/.bin/eslint src/ tests/",
+    "eslint-fix": "./node_modules/.bin/eslint src/ tests/ --fix",
     "prettier": "./node_modules/.bin/prettier --write src/",
     "prettier-check": "./node_modules/.bin/prettier --check src/"
   },
