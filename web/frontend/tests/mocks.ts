@@ -1,24 +1,25 @@
 export const SCIPER_ADMIN = '123456';
 export const SCIPER_USER = '789012';
-export const UPDATE = false;
 
 export async function mockPersonalInfo(page: any, sciper?: string) {
   // clear current mock
   await page.unroute('/api/personal_info');
-  await page.routeFromHAR(`./tests/hars/${sciper ?? 'anonymous'}/personal_info.har`, {
-    url: '/api/personal_info',
-    update: UPDATE,
+  await page.route('/api/personal_info', async (route) => {
+    if (sciper) {
+      route.fulfill({ path: `./tests/json/personal_info/${sciper}.json` });
+    }
+    else {
+      route.fulfill({ status: 401, contentType: 'text/html', body: 'Unauthenticated'})
+    }
   });
 }
 
 export async function mockGetDevLogin(page: any) {
-  await page.routeFromHAR(`./tests/hars/${SCIPER_ADMIN}/get_dev_login.har`, {
-    url: `/api/get_dev_login/${SCIPER_ADMIN}`,
-    update: UPDATE,
+  await page.route(`/api/get_dev_login/${SCIPER_ADMIN}`, async (route) => {
+    await route.fulfill({});
   });
-  await page.routeFromHAR(`./tests/hars/${SCIPER_USER}/get_dev_login.har`, {
-    url: `/api/get_dev_login/${SCIPER_USER}`,
-    update: UPDATE,
+  await page.route(`/api/get_dev_login/${SCIPER_USER}`, async (route) => {
+    await route.fulfill({});
   });
   if (
     process.env.REACT_APP_SCIPER_ADMIN !== undefined &&
