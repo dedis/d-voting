@@ -7,7 +7,7 @@ import {
   logIn,
   setUp,
 } from './shared';
-import { SCIPER_ADMIN, SCIPER_USER, mockLogout, mockPersonalInfo } from './mocks';
+import { SCIPER_USER, mockLogout, mockPersonalInfo } from './mocks';
 
 initI18n();
 

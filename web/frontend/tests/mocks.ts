@@ -7,9 +7,8 @@ export async function mockPersonalInfo(page: any, sciper?: string) {
   await page.route('/api/personal_info', async (route) => {
     if (sciper) {
       route.fulfill({ path: `./tests/json/personal_info/${sciper}.json` });
-    }
-    else {
-      route.fulfill({ status: 401, contentType: 'text/html', body: 'Unauthenticated'})
+    } else {
+      route.fulfill({ status: 401, contentType: 'text/html', body: 'Unauthenticated' });
     }
   });
 }
