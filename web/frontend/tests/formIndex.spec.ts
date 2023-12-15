@@ -1,9 +1,18 @@
 import { expect, test } from '@playwright/test';
 import { default as i18n } from 'i18next';
-import { assertHasFooter, assertHasNavBar, initI18n, setUp } from './shared';
+import { assertHasFooter, assertHasNavBar, initI18n, setUp, translate } from './shared';
 import { mockEvoting, mockPersonalInfo } from './mocks';
+import Forms from './json/formList.json';
 
 initI18n();
+
+async function goForward(page: page) {
+  await page.getByRole('button', { name: i18n.t('next') }).click();
+}
+
+async function goBackward(page: page) {
+  await page.getByRole('button', { name: i18n.t('previous') }).click();
+}
 
 test.beforeEach(async ({ page }) => {
   // mock empty list per default
