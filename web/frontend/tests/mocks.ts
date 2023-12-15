@@ -1,7 +1,7 @@
 export const SCIPER_ADMIN = '123456';
 export const SCIPER_USER = '789012';
 
-export async function mockPersonalInfo(page: any, sciper?: string) {
+export async function mockPersonalInfo(page: page, sciper?: string) {
   // clear current mock
   await page.unroute('/api/personal_info');
   await page.route('/api/personal_info', async (route) => {
@@ -13,7 +13,7 @@ export async function mockPersonalInfo(page: any, sciper?: string) {
   });
 }
 
-export async function mockGetDevLogin(page: any) {
+export async function mockGetDevLogin(page: page) {
   await page.route(`/api/get_dev_login/${SCIPER_ADMIN}`, async (route) => {
     await route.fulfill({});
   });
@@ -31,13 +31,13 @@ export async function mockGetDevLogin(page: any) {
   }
 }
 
-export async function mockLogout(page: any) {
+export async function mockLogout(page: page) {
   await page.route('/api/logout', async (route) => {
     await route.fulfill({});
   });
 }
 
-export async function mockProxy(page: any) {
+export async function mockProxy(page: page) {
   await page.route('/api/config/proxy', async (route) => {
     await route.fulfill({
       status: 200,
@@ -51,7 +51,7 @@ export async function mockProxy(page: any) {
   });
 }
 
-export async function mockEvoting(page: any, empty: boolean = true) {
+export async function mockEvoting(page: page, empty: boolean = true) {
   // clear current mock
   await page.unroute(`${process.env.DELA_PROXY_URL}/evoting/forms`);
   await page.route(`${process.env.DELA_PROXY_URL}/evoting/forms`, async (route) => {
