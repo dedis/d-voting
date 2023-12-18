@@ -19,7 +19,7 @@ export function initI18n() {
   });
 }
 
-export async function setUp(page: any, url: string) {
+export async function setUp(page: page, url: string) {
   await mockProxy(page);
   await mockGetDevLogin(page);
   await mockLogout(page);
@@ -27,19 +27,19 @@ export async function setUp(page: any, url: string) {
   await expect(page).toHaveURL(url); // make sure that page is loaded
 }
 
-export async function logIn(page: any, sciper: string) {
+export async function logIn(page: page, sciper: string) {
   await mockPersonalInfo(page, sciper);
   await page.reload();
   await expect(page).toHaveURL(page.url()); // make sure that page is loaded
 }
 
-export async function assertOnlyVisibleToAuthenticated(page: any, locator: any) {
+export async function assertOnlyVisibleToAuthenticated(page: page, locator: locator) {
   await expect(locator).toBeHidden(); // assert is hidden to unauthenticated user
   await logIn(page, SCIPER_USER);
   await expect(locator).toBeVisible(); // assert is visible to authenticated user
 }
 
-export async function assertOnlyVisibleToAdmin(page: any, locator: any) {
+export async function assertOnlyVisibleToAdmin(page: page, locator: locator) {
   await expect(locator).toBeHidden(); // assert is hidden to unauthenticated user
   await logIn(page, SCIPER_USER);
   await expect(locator).toBeHidden(); // assert is hidden to authenticated non-admin user
@@ -47,6 +47,10 @@ export async function assertOnlyVisibleToAdmin(page: any, locator: any) {
   await expect(locator).toBeVisible(); // assert is visible to admin user
 }
 
-export async function getFooter(page: any) {
-  return page.getByTestId('footer');
+export async function assertHasNavBar(page: page) {
+  await expect(page.getByTestId('navBar')).toBeVisible();
+}
+
+export async function assertHasFooter(page: page) {
+  await expect(page.getByTestId('footer')).toBeVisible();
 }

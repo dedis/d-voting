@@ -240,7 +240,7 @@ const NavBar: FC = () => {
   };
 
   return (
-    <nav className="w-full border-b">
+    <nav data-testid="navBar" className="w-full border-b">
       <div className="max-w-7xl mx-auto px-2 md:px-6 lg:px-8">
         <div className="relative flex items-center justify-between h-16">
           <MobileMenu authCtx={authCtx} handleLogout={handleLogout} fctx={fctx} t={t} />
