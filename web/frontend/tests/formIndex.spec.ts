@@ -75,3 +75,38 @@ test('Assert pagination works correctly for non-empty list', async ({ page }) =>
   await expect(previous).toBeDisabled();
   await expect(next).toBeEnabled();
 });
+
+
+test('Assert no forms are displayed for empty list', async ({ page }) => {
+  // 1 header row
+  await expect.poll(async () => {
+    const rows = await page.getByRole('table').getByRole('row');
+    return rows.all();
+  }).toHaveLength(1);
+});
+
+test('Assert forms are displayed correctly for unauthenticated user', async ({ page, baseURL }) => {
+  await mockEvoting(page, false);
+  await page.reload();
+  const table = await page.getByRole('table');
+  for (let form of Forms.Forms.slice(0, -1)) {
+    let name = translate(form.Title);
+    let row = await table.getByRole('row', { name: name });
+    await expect(row).toBeVisible();
+    // row entry leads to form view
+    let link = await row.getByRole('link', { name: name });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute('href', `/forms/${form.FormID}`);
+    const quickAction = row.getByTestId('quickAction');
+    // any user can see the results of a past election
+    if (form.Status === 5) {
+      await expect(quickAction).toHaveText(i18n.t('seeResult'));
+      await expect(await quickAction.getByRole('link')).toHaveAttribute('href', `/forms/${form.FormID}/result`);
+    }
+    else {
+      await expect(quickAction).toBeHidden();
+    }
+  }
+  await goForward(page);
+  await expect(await table.getByRole('row', { name: translate(Forms.Forms.at(-1).Title) })).toBeVisible();
+});
