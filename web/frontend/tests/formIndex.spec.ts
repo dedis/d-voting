@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { default as i18n } from 'i18next';
-import { assertHasFooter, assertHasNavBar, initI18n, setUp, translate, logIn } from './shared';
-import { mockEvoting, mockPersonalInfo, SCIPER_USER, SCIPER_ADMIN } from './mocks';
+import { assertHasFooter, assertHasNavBar, initI18n, logIn, setUp, translate } from './shared';
+import { SCIPER_ADMIN, SCIPER_USER, mockEvoting, mockPersonalInfo } from './mocks';
 import Forms from './json/formList.json';
 import User from './json/personal_info/789012.json';
 import Admin from './json/personal_info/123456.json';
@@ -10,10 +10,6 @@ initI18n();
 
 async function goForward(page: page) {
   await page.getByRole('button', { name: i18n.t('next') }).click();
-}
-
-async function goBackward(page: page) {
-  await page.getByRole('button', { name: i18n.t('previous') }).click();
 }
 
 test.beforeEach(async ({ page }) => {
@@ -78,43 +74,51 @@ test('Assert pagination works correctly for non-empty list', async ({ page }) =>
   await expect(next).toBeEnabled();
 });
 
-
 test('Assert no forms are displayed for empty list', async ({ page }) => {
   // 1 header row
-  await expect.poll(async () => {
-    const rows = await page.getByRole('table').getByRole('row');
-    return rows.all();
-  }).toHaveLength(1);
+  await expect
+    .poll(async () => {
+      const rows = await page.getByRole('table').getByRole('row');
+      return rows.all();
+    })
+    .toHaveLength(1);
 });
 
 async function assertQuickAction(row: locator, form: object, sciper?: string) {
-  const user = sciper === SCIPER_USER ? User
-          : sciper === SCIPER_ADMIN ? Admin
-          : undefined;
+  const user = sciper === SCIPER_USER ? User : sciper === SCIPER_ADMIN ? Admin : undefined;
   const quickAction = row.getByTestId('quickAction');
-  switch(form.Status) {
+  switch (form.Status) {
     case 1:
       // only authenticated user w/ right to vote sees 'vote' button
-      if ((user) && (form.FormID in user.authorization) && (user.authorization[form.FormID].includes('vote'))) {
+      if (
+        user &&
+        form.FormID in user.authorization &&
+        user.authorization[form.FormID].includes('vote')
+      ) {
         await expect(quickAction).toHaveText(i18n.t('vote'));
-        await expect(await quickAction.getByRole('link')).toHaveAttribute('href', `/ballot/show/${form.FormID}`);
+        await expect(await quickAction.getByRole('link')).toHaveAttribute(
+          'href',
+          `/ballot/show/${form.FormID}`
+        );
         await expect(quickAction).toBeVisible();
-      }
-      else {
+      } else {
         await expect(quickAction).toBeHidden();
       }
       break;
     case 5:
       // any user can see the results of a past election
       await expect(quickAction).toHaveText(i18n.t('seeResult'));
-      await expect(await quickAction.getByRole('link')).toHaveAttribute('href', `/forms/${form.FormID}/result`);
+      await expect(await quickAction.getByRole('link')).toHaveAttribute(
+        'href',
+        `/forms/${form.FormID}/result`
+      );
       break;
-     default:
+    default:
       await expect(quickAction).toBeHidden();
   }
 }
 
-test('Assert forms are displayed correctly for unauthenticated user', async ({ page, baseURL }) => {
+test('Assert forms are displayed correctly for unauthenticated user', async ({ page }) => {
   await mockEvoting(page, false);
   await page.reload();
   const table = await page.getByRole('table');
@@ -134,7 +138,7 @@ test('Assert forms are displayed correctly for unauthenticated user', async ({ p
   await assertQuickAction(row, Forms.Forms.at(-1));
 });
 
-test('Assert quick actions are displayed correctly for authenticated users', async ({ page, baseURL }) => {
+test('Assert quick actions are displayed correctly for authenticated users', async ({ page }) => {
   for (let sciper of [SCIPER_USER, SCIPER_ADMIN]) {
     await logIn(page, sciper);
     await mockEvoting(page, false);
@@ -145,6 +149,9 @@ test('Assert quick actions are displayed correctly for authenticated users', asy
       await assertQuickAction(row, form, sciper);
     }
     await goForward(page);
-    await assertQuickAction(await table.getByRole('row', { name: translate(Forms.Forms.at(-1).Title) }), Forms.Forms.at(-1));
+    await assertQuickAction(
+      await table.getByRole('row', { name: translate(Forms.Forms.at(-1).Title) }),
+      Forms.Forms.at(-1)
+    );
   }
 });

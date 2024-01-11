@@ -56,7 +56,7 @@ export async function assertHasFooter(page: page) {
 }
 
 export function translate(internationalizable: object) {
-  switch(i18n.language) {
+  switch (i18n.language) {
     case 'en':
       return internationalizable.En;
     case 'fr':
