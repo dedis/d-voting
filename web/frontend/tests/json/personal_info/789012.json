@@ -3,7 +3,8 @@
   "lastName": "789012",
   "firstName": "sciper-#",
   "isLoggedIn": true,
-  "authorization": {},
-  "fdf8bfb702e8883e330a2b303b24212b6fc16df5a53a097998b77ba74632dc72": ["vote"],
-  "ed26713245824d44ee46ec90507ef521962f2313706934cdfe76ff1823738109": ["vote"]
+  "authorization": {
+    "fdf8bfb702e8883e330a2b303b24212b6fc16df5a53a097998b77ba74632dc72": ["vote"],
+    "ed26713245824d44ee46ec90507ef521962f2313706934cdfe76ff1823738109": ["vote"]
+  }
 }

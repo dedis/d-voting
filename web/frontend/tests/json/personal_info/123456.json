@@ -16,9 +16,9 @@
     ],
     "election": [
       "create"
-    ]
-  },
-  "fdf8bfb702e8883e330a2b303b24212b6fc16df5a53a097998b77ba74632dc72": ["vote", "own"],
-  "ed26713245824d44ee46ec90507ef521962f2313706934cdfe76ff1823738109": ["vote"],
-  "9f50ad723805a6419ba1a9f83dd0aa582f3e13b94f14727cd0c8c01744e0dba2": ["own"]
+    ],
+    "fdf8bfb702e8883e330a2b303b24212b6fc16df5a53a097998b77ba74632dc72": ["vote", "own"],
+    "ed26713245824d44ee46ec90507ef521962f2313706934cdfe76ff1823738109": ["vote"],
+    "9f50ad723805a6419ba1a9f83dd0aa582f3e13b94f14727cd0c8c01744e0dba2": ["own"]
+  }
 }
