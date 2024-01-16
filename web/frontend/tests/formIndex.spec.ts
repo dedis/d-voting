@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { default as i18n } from 'i18next';
 import { assertHasFooter, assertHasNavBar, initI18n, logIn, setUp, translate } from './shared';
-import { SCIPER_ADMIN, SCIPER_USER, mockEvoting, mockPersonalInfo } from './mocks';
+import { SCIPER_ADMIN, SCIPER_USER, mockPersonalInfo } from './mocks/api';
+import { mockEvoting } from './mocks';
 import Forms from './json/formList.json';
-import User from './json/personal_info/789012.json';
-import Admin from './json/personal_info/123456.json';
+import User from './json/api/personal_info/789012.json';
+import Admin from './json/api/personal_info/123456.json';
 
 initI18n();
 

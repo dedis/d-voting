@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { default as i18n } from 'i18next';
 import { initI18n, setUp } from './shared';
-import { mockPersonalInfo } from './mocks';
+import { mockPersonalInfo } from './mocks/api';
 
 initI18n();
 

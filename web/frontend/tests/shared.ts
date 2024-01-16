@@ -10,7 +10,7 @@ import {
   mockLogout,
   mockPersonalInfo,
   mockProxy,
-} from './mocks';
+} from './mocks/api';
 
 export function initI18n() {
   i18n.init({
