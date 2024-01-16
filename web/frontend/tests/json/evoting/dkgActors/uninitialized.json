@@ -1,0 +1,10 @@
+{
+  "Title": "not found",
+  "Code": 404,
+  "Message": "A problem occurred on the proxy",
+  "Args": {
+    "error": "actor not found",
+    "method": "GET",
+    "url": "/evoting/services/dkg/actors/d3319c58a3bea17dafe61168610757b9a7bb0d922c1f2aa30b8ad537646b1c07"
+  }
+}
