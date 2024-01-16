@@ -1,9 +1,7 @@
 import { expect, test } from '@playwright/test';
-import { default as i18n } from 'i18next';
-import { assertHasFooter, assertHasNavBar, initI18n, logIn, setUp, translate } from './shared';
-import { SCIPER_ADMIN, SCIPER_USER, mockPersonalInfo } from './mocks/api';
-import { FORMID, mockFormsFormID, mockDKGActors } from './mocks/evoting';
-import { mockProxies } from './mocks/api';
+import { assertHasFooter, assertHasNavBar, initI18n, setUp } from './shared';
+import { mockPersonalInfo, mockProxies } from './mocks/api';
+import { FORMID, mockDKGActors, mockFormsFormID } from './mocks/evoting';
 
 initI18n();
 

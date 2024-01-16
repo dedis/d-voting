@@ -1,9 +1,35 @@
-import Worker0 from './../json/api/proxies/dela-worker-0.json'
-import Worker1 from './../json/api/proxies/dela-worker-1.json'
-import Worker2 from './../json/api/proxies/dela-worker-2.json'
-import Worker3 from './../json/api/proxies/dela-worker-3.json'
+import Worker0 from './../json/api/proxies/dela-worker-0.json';
+import Worker1 from './../json/api/proxies/dela-worker-1.json';
+import Worker2 from './../json/api/proxies/dela-worker-2.json';
+import Worker3 from './../json/api/proxies/dela-worker-3.json';
 
 export const FORMID = 'b63bcb854121051f2d8cff04bf0ac9b524b534b704509a16a423448bde3321b4';
+
+export async function mockForms(page: page, empty: boolean = true) {
+  // clear current mock
+  await page.unroute(`${process.env.DELA_PROXY_URL}/evoting/forms`);
+  await page.route(`${process.env.DELA_PROXY_URL}/evoting/forms`, async (route) => {
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Headers': '*',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    } else if (empty) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: '{"Forms": []}',
+      });
+    } else {
+      await route.fulfill({
+        path: './tests/json/formList.json',
+      });
+    }
+  });
+}
 
 export async function mockFormsFormID(page: page, formStatus: number) {
   // clear current mock
@@ -38,7 +64,7 @@ export async function mockFormsFormID(page: page, formStatus: number) {
 
 export async function mockDKGActors(page: page, formStatus: number, initialized?: boolean) {
   // the nodes must have been initialized if the form changed state
-  initialized = (initialized || formStatus > 0);
+  initialized = initialized || formStatus > 0;
   for (const worker of [Worker0, Worker1, Worker2, Worker3]) {
     await page.route(`${worker.Proxy}/evoting/services/dkg/actors/${FORMID}`, async (route) => {
       let dkgActorsFile = '';
