@@ -85,7 +85,7 @@ test('Assert no forms are displayed for empty list', async ({ page }) => {
 });
 
 async function assertQuickAction(row: locator, form: object, sciper?: string) {
-  const user = sciper === SCIPER_USER ? User : sciper === SCIPER_ADMIN ? Admin : undefined;
+  const user = sciper === SCIPER_USER ? User : (sciper === SCIPER_ADMIN ? Admin : undefined); // eslint-disable-line
   const quickAction = row.getByTestId('quickAction');
   switch (form.Status) {
     case 1:
