@@ -91,7 +91,7 @@ async function assertQuickAction(row: locator, form: object, sciper?: string) {
     case 1:
       // only authenticated user w/ right to vote sees 'vote' button
       if (
-        user &&
+        user !== undefined &&
         form.FormID in user.authorization &&
         user.authorization[form.FormID].includes('vote')
       ) {
