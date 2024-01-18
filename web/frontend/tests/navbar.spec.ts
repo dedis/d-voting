@@ -24,10 +24,9 @@ test('Assert cookie is set', async ({ page }) => {
 });
 
 test('Assert D-Voting logo is present', async ({ page }) => {
-  const logo = await page.getByAltText(i18n.t('Workflow'));
+  const logo = await page.getByTestId('leftSideNavBarLogo');
   await expect(logo).toBeVisible();
-  await logo.click();
-  await expect(page).toHaveURL('/');
+  await expect(await logo.getByRole('link')).toHaveAttribute('href', '/');
 });
 
 test('Assert link to form table is present', async ({ page }) => {

@@ -54,3 +54,16 @@ export async function assertHasNavBar(page: page) {
 export async function assertHasFooter(page: page) {
   await expect(page.getByTestId('footer')).toBeVisible();
 }
+
+export function translate(internationalizable: object) {
+  switch (i18n.language) {
+    case 'en':
+      return internationalizable.En;
+    case 'fr':
+      return internationalizable.Fr || internationalizable.En;
+    case 'de':
+      return internationalizable.De || internationalizable.En;
+    default:
+      return internationalizable.En;
+  }
+}
