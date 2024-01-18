@@ -1,4 +1,5 @@
 export const SCIPER_ADMIN = '123456';
+export const SCIPER_OTHER_ADMIN = '987654';
 export const SCIPER_USER = '789012';
 
 export async function mockProxy(page: page) {
