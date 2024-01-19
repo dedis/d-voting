@@ -23,11 +23,10 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// Check the shuffled votes versus the casted votes and a few nodes
+// Check the shuffled votes versus the cast votes and a few nodes
 func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
-
 	numNodes := 3
-	numVotes := 3
+	numVotes := 200
 	numChunksPerBallot := 3
 
 	adminID := "I am an admin"
@@ -80,8 +79,11 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	form, err := getForm(formFac, formID, nodes[0].GetOrdering())
 	require.NoError(b, err)
 
+	b.ResetTimer()
 	castedVotes, err := castVotesNChunks(m, actor, form, numVotes)
 	require.NoError(b, err)
+	durationCasting := b.Elapsed()
+	b.Logf("Casting %d votes took %v", numVotes, durationCasting)
 
 	// ##### CLOSE FORM #####
 	err = closeForm(m, formID, adminID)
@@ -91,7 +93,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 
 	// ##### SHUFFLE BALLOTS ####
 
-	//b.ResetTimer()
+	b.ResetTimer()
 
 	b.Logf("initializing shuffle")
 	sActor, err := initShuffle(nodes)
@@ -101,20 +103,35 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	err = sActor.Shuffle(formID)
 	require.NoError(b, err)
 
-	//b.StopTimer()
+	durationShuffling := b.Elapsed()
+
+	b.Logf("submitting public shares")
+
+	b.ResetTimer()
+
+	_, err = getForm(formFac, formID, nodes[0].GetOrdering())
+	require.NoError(b, err)
+	err = actor.ComputePubshares()
+	require.NoError(b, err)
+
+	err = waitForStatus(types.PubSharesSubmitted, formFac, formID, nodes,
+		numNodes, 6*time.Second*time.Duration(numNodes))
+	require.NoError(b, err)
+
+	durationPubShares := b.Elapsed()
 
 	// ##### DECRYPT BALLOTS #####
 	time.Sleep(time.Second * 1)
 
 	b.Logf("decrypting")
 
-	//b.ResetTimer()
-
 	form, err = getForm(formFac, formID, nodes[0].GetOrdering())
 	require.NoError(b, err)
 
+	b.ResetTimer()
 	err = decryptBallots(m, actor, form)
 	require.NoError(b, err)
+	durationDecrypt := b.Elapsed()
 
 	//b.StopTimer()
 
@@ -129,6 +146,11 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	fmt.Println("Status of the form : " + strconv.Itoa(int(form.Status)))
 	fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(form.DecryptedBallots)))
 	fmt.Println("Chunks per ballot : " + strconv.Itoa(form.ChunksPerBallot()))
+
+	b.Logf("Casting %d votes took %v", numVotes, durationCasting)
+	b.Logf("Shuffling took: %v", durationShuffling)
+	b.Logf("Submitting shares took: %v", durationPubShares)
+	b.Logf("Decryption took: %v", durationDecrypt)
 
 	require.Len(b, form.DecryptedBallots, len(castedVotes))
 
@@ -213,10 +235,10 @@ func castVotesNChunks(m txManager, actor dkg.Actor, form types.Form,
 	ballotBuilder.Write([]byte(encodeID("bb")))
 	ballotBuilder.Write([]byte(":"))
 
-	textSize := 29*form.ChunksPerBallot() - ballotBuilder.Len() - 3
-
-	ballotBuilder.Write([]byte(strings.Repeat("=", textSize)))
 	ballotBuilder.Write([]byte("\n\n"))
+
+	textSize := 29*form.ChunksPerBallot() - ballotBuilder.Len() - 3
+	ballotBuilder.Write([]byte(strings.Repeat("=", textSize)))
 
 	vote := ballotBuilder.String()
 
@@ -227,6 +249,7 @@ func castVotesNChunks(m txManager, actor dkg.Actor, form types.Form,
 
 	votes := make([]types.Ballot, numberOfVotes)
 
+	start := time.Now()
 	for i := 0; i < numberOfVotes; i++ {
 
 		userID := "user " + strconv.Itoa(i)
@@ -251,6 +274,8 @@ func castVotesNChunks(m txManager, actor dkg.Actor, form types.Form,
 		if err != nil {
 			return nil, xerrors.Errorf("failed to addAndWait: %v", err)
 		}
+		fmt.Printf("Got vote %d at %v after %v\n", i, time.Now(), time.Since(start))
+		start = time.Now()
 
 		var ballot types.Ballot
 		err = ballot.Unmarshal(vote, form)

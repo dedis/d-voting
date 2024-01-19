@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -114,8 +115,11 @@ func (m txManager) addAndWait(args ...txn.Arg) ([]byte, error) {
 
 		err = m.n.GetPool().Add(sentTxn)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to Add: %v", err)
+			fmt.Printf("Failed to add transaction: %v", err)
+			continue
 		}
+
+		time.Sleep(time.Second)
 
 		sentTxnID := sentTxn.GetID()
 
