@@ -272,7 +272,8 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	}
 
 	if form.Status != types.Closed {
-		return xerrors.Errorf("the form is not closed")
+		return xerrors.Errorf("the form is not in state closed (current: %d != closed: %d)",
+			form.Status, types.Closed)
 	}
 
 	// Round starts at 0

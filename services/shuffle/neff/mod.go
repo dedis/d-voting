@@ -95,7 +95,7 @@ type Actor struct {
 	formFac serde.Factory
 }
 
-// Shuffle must be called by ONE of the actor to shuffle the list of ElGamal
+// Shuffle must be called by ONE of the actors to shuffle the list of ElGamal
 // pairs.
 // Each node represented by a player must first execute Listen().
 func (a *Actor) Shuffle(formID []byte) error {

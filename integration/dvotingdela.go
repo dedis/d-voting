@@ -57,9 +57,9 @@ import (
 const certKeyName = "cert.key"
 const privateKeyFile = "private.key"
 
-// dela defines the common interface for a Dela node.
-type dela interface {
-	Setup(...dela)
+// delaNode defines the common interface for a Dela node.
+type delaNode interface {
+	Setup(...delaNode)
 	GetMino() mino.Mino
 	GetOrdering() ordering.Service
 	GetTxManager() txn.Manager
@@ -68,7 +68,7 @@ type dela interface {
 
 // dVotingCosiDela defines the interface needed to use a Dela node using cosi.
 type dVotingCosiDela interface {
-	dela
+	delaNode
 
 	GetPublicKey() crypto.PublicKey
 	GetPool() pool.Pool
@@ -124,7 +124,7 @@ func setupDVotingNodes(t require.TestingT, numberOfNodes int, tempDir string) []
 	wait.Wait()
 	close(nodes)
 
-	delaNodes := make([]dela, 0, numberOfNodes)
+	delaNodes := make([]delaNode, 0, numberOfNodes)
 	dVotingNodes := make([]dVotingCosiDela, 0, numberOfNodes)
 
 	for node := range nodes {
@@ -295,9 +295,9 @@ func createDVotingAccess(t require.TestingT, nodes []dVotingCosiDela, dir string
 	return signer
 }
 
-// Setup implements dela. It creates the roster, shares the certificate, and
+// Setup implements delaNode. It creates the roster, shares the certificate, and
 // create an new chain.
-func (c dVotingNode) Setup(nodes ...dela) {
+func (c dVotingNode) Setup(nodes ...delaNode) {
 	// share the certificates
 	joinable, ok := c.onet.(minogrpc.Joinable)
 	require.True(c.t, ok)

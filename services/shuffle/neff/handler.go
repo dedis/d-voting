@@ -108,7 +108,7 @@ func (h *Handler) handleStartShuffle(formID string) error {
 			return xerrors.Errorf("the form must be closed: (%v)", form.Status)
 		}
 
-		tx, err := makeTx(h.context, &form, h.txmngr, h.shuffleSigner)
+		tx, err := h.makeTx(&form)
 		if err != nil {
 			return xerrors.Errorf("failed to make tx: %v", err)
 		}
@@ -149,10 +149,9 @@ func (h *Handler) handleStartShuffle(formID string) error {
 	}
 }
 
-func makeTx(ctx serde.Context, form *etypes.Form, manager txn.Manager,
-	shuffleSigner crypto.Signer) (txn.Transaction, error) {
+func (h *Handler) makeTx(form *etypes.Form) (txn.Transaction, error) {
 
-	shuffledBallots, getProver, err := getShuffledBallots(form)
+	shuffledBallots, getProver, err := h.getShuffledBallots(form)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get shuffled ballots: %v", err)
 	}
@@ -163,17 +162,17 @@ func makeTx(ctx serde.Context, form *etypes.Form, manager txn.Manager,
 		ShuffledBallots: shuffledBallots,
 	}
 
-	h := sha256.New()
+	hash := sha256.New()
 
-	err = shuffleBallots.Fingerprint(h)
+	err = shuffleBallots.Fingerprint(hash)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get fingerprint: %v", err)
 	}
 
-	hash := h.Sum(nil)
+	seed := hash.Sum(nil)
 
 	// Generate random vector and proof
-	semiRandomStream, err := evoting.NewSemiRandomStream(hash)
+	semiRandomStream, err := evoting.NewSemiRandomStream(seed)
 	if err != nil {
 		return nil, xerrors.Errorf("could not create semi-random stream: %v", err)
 	}
@@ -204,17 +203,17 @@ func makeTx(ctx serde.Context, form *etypes.Form, manager txn.Manager,
 	}
 
 	// Sign the shuffle:
-	signature, err := shuffleSigner.Sign(hash)
+	signature, err := h.shuffleSigner.Sign(seed)
 	if err != nil {
 		return nil, xerrors.Errorf("could not sign the shuffle : %v", err)
 	}
 
-	encodedSignature, err := signature.Serialize(ctx)
+	encodedSignature, err := signature.Serialize(h.context)
 	if err != nil {
 		return nil, xerrors.Errorf("could not encode signature as []byte : %v ", err)
 	}
 
-	publicKey, err := shuffleSigner.GetPublicKey().MarshalBinary()
+	publicKey, err := h.shuffleSigner.GetPublicKey().MarshalBinary()
 	if err != nil {
 		return nil, xerrors.Errorf("could not unmarshal public key from nodeSigner: %v", err)
 	}
@@ -223,7 +222,7 @@ func makeTx(ctx serde.Context, form *etypes.Form, manager txn.Manager,
 	shuffleBallots.PublicKey = publicKey
 	shuffleBallots.Signature = encodedSignature
 
-	data, err := shuffleBallots.Serialize(ctx)
+	data, err := shuffleBallots.Serialize(h.context)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to serialize shuffle ballots: %v", err)
 	}
@@ -242,7 +241,7 @@ func makeTx(ctx serde.Context, form *etypes.Form, manager txn.Manager,
 		Value: data,
 	}
 
-	tx, err := manager.Make(args...)
+	tx, err := h.txmngr.Make(args...)
 	if err != nil {
 		if err != nil {
 			return nil, xerrors.Errorf("failed to use manager: %v", err.Error())
@@ -253,7 +252,7 @@ func makeTx(ctx serde.Context, form *etypes.Form, manager txn.Manager,
 }
 
 // getShuffledBallots returns the shuffled ballots with the shuffling proof.
-func getShuffledBallots(form *etypes.Form) ([]etypes.Ciphervote,
+func (h *Handler) getShuffledBallots(form *etypes.Form) ([]etypes.Ciphervote,
 	func(e []kyber.Scalar) (proof.Prover, error), error) {
 
 	round := len(form.ShuffleInstances)

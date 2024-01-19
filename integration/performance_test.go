@@ -15,10 +15,9 @@ import (
 	"github.com/c4dt/d-voting/contracts/evoting"
 	"github.com/c4dt/d-voting/contracts/evoting/types"
 	"github.com/c4dt/d-voting/services/dkg"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
-	delaPkg "go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering/cosipbft"
 	"go.dedis.ch/dela/core/txn"
 	"golang.org/x/xerrors"
 )
@@ -35,8 +34,6 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	// make tests reproducible
 	rand.Seed(1)
 
-	delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
-
 	dirPath, err := os.MkdirTemp(os.TempDir(), "d-voting-three-votes")
 	require.NoError(b, err)
 
@@ -49,7 +46,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 
 	signer := createDVotingAccess(b, nodes, dirPath)
 
-	m := newTxManager(signer, nodes[0], time.Second*time.Duration(numNodes/2+1), numNodes*2)
+	m := newTxManager(signer, nodes[0], cosipbft.DefaultRoundTimeout*time.Duration(numNodes/2+1), numNodes*2)
 
 	err = grantAccess(m, signer)
 	require.NoError(b, err)
@@ -115,7 +112,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	require.NoError(b, err)
 
 	err = waitForStatus(types.PubSharesSubmitted, formFac, formID, nodes,
-		numNodes, 6*time.Second*time.Duration(numNodes))
+		numNodes, cosipbft.DefaultRoundTimeout*time.Duration(numNodes))
 	require.NoError(b, err)
 
 	durationPubShares := b.Elapsed()
