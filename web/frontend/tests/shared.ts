@@ -30,8 +30,7 @@ export async function setUp(page: page, url: string) {
 
 export async function logIn(page: page, sciper: string) {
   await mockPersonalInfo(page, sciper);
-  await page.reload();
-  await expect(page).toHaveURL(page.url()); // make sure that page is loaded
+  await page.reload({ waitUntil: 'networkidle' });
 }
 
 export async function assertOnlyVisibleToAuthenticated(page: page, locator: locator) {
