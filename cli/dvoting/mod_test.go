@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net"
@@ -14,6 +15,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/kyber/v3/pairing/bn256"
 )
 
 func TestDvoting_Main(t *testing.T) {
@@ -61,7 +63,7 @@ func TestDvoting_Scenario_SetupAndTransactions(t *testing.T) {
 	shareCert(t, node3, node1, "//127.0.0.1:2111")
 	shareCert(t, node5, node1, "//127.0.0.1:2111")
 
-	// Setup the chain with nodes 1 and 2.
+	// Set up the chain with nodes 1 and 2.
 	args := append(append(
 		append(
 			[]string{os.Args[0], "--config", node1, "ordering", "setup"},
@@ -85,7 +87,26 @@ func TestDvoting_Scenario_SetupAndTransactions(t *testing.T) {
 	err = run(args)
 	require.NoError(t, err)
 
+	// Add the certificate and push two new blocks to make sure node4 is
+	// fully participating
+	shareCert(t, node4, node1, "//127.0.0.1:2111")
+	publicKey, err := bn256.NewSuiteG2().Point().MarshalBinary()
+	require.NoError(t, err)
+	publicKeyHex := base64.StdEncoding.EncodeToString(publicKey)
+	argsAccess := []string{
+		os.Args[0],
+		"--config", node1, "access", "add",
+		"--identity", publicKeyHex,
+	}
+	for i := 0; i < 2; i++ {
+		err = runWithCfg(argsAccess, config{})
+		require.NoError(t, err)
+	}
+
 	// Add node 5 which should be participating.
+	// This makes sure that node 4 is actually participating and caught up.
+	// If node 4 is not participating, there would be too many faulty nodes
+	// after adding node 5.
 	args = append([]string{
 		os.Args[0],
 		"--config", node1, "ordering", "roster", "add",
@@ -96,10 +117,10 @@ func TestDvoting_Scenario_SetupAndTransactions(t *testing.T) {
 	err = run(args)
 	require.NoError(t, err)
 
-	// Run a few transactions.
-	for i := 0; i < 5; i++ {
-		err = runWithCfg(args, config{})
-		require.EqualError(t, err, "command error: transaction refused: duplicate in roster: grpcs://127.0.0.1:2115")
+	// Run 2 new transactions
+	for i := 0; i < 2; i++ {
+		err = runWithCfg(argsAccess, config{})
+		require.NoError(t, err)
 	}
 
 	// Test a timeout waiting for a transaction.
