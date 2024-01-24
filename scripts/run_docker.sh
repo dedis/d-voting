@@ -118,6 +118,7 @@ add_proxies)
   init_dela;
   local_admin;
   sleep 8;      # give backend time to restart
+  local_login;
   add_proxies;
   ;;
 esac
