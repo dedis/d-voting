@@ -404,7 +404,7 @@ func cast(idx int, castVoteRequest ptypes.CastVoteRequest, contentType, randompr
 	require.NoError(t, err)
 
 	ok, err := pollTxnInclusion(30, 2*time.Second, randomproxy, infos.Token, t)
-	// if the transaction was not included after 60s, we retry once
+	// if the transaction was not included after 2s, we retry once
 	if !ok && !isRetry {
 		t.Logf("retrying vote %d", idx)
 		return cast(idx, castVoteRequest, contentType, randomproxy, formID, secret, true, t)

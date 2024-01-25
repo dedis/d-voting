@@ -283,6 +283,7 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		err = actor.ComputePubshares()
 		require.NoError(t, err)
 
+		// Heisenbug: https://github.com/c4dt/d-voting/issues/90
 		err = waitForStatus(types.PubSharesSubmitted, formFac, formID, nodes,
 			numNodes, 6*time.Second*time.Duration(numNodes))
 		require.NoError(t, err)
@@ -293,6 +294,7 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
 		t.Logf("PubsharesUnit: %v", form.PubsharesUnits)
 		require.NoError(t, err)
+		// Heisenbug: https://github.com/c4dt/d-voting/issues/90
 		err = decryptBallots(m, actor, form)
 		require.NoError(t, err)
 
