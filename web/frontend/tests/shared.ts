@@ -10,7 +10,7 @@ import {
   mockLogout,
   mockPersonalInfo,
   mockProxy,
-} from './mocks';
+} from './mocks/api';
 
 export function initI18n() {
   i18n.init({
@@ -23,14 +23,14 @@ export async function setUp(page: page, url: string) {
   await mockProxy(page);
   await mockGetDevLogin(page);
   await mockLogout(page);
-  await page.goto(url);
-  await expect(page).toHaveURL(url); // make sure that page is loaded
+  // make sure that page is loaded
+  await page.goto(url, { waitUntil: 'networkidle' });
+  await expect(page).toHaveURL(url);
 }
 
 export async function logIn(page: page, sciper: string) {
   await mockPersonalInfo(page, sciper);
-  await page.reload();
-  await expect(page).toHaveURL(page.url()); // make sure that page is loaded
+  await page.reload({ waitUntil: 'networkidle' });
 }
 
 export async function assertOnlyVisibleToAuthenticated(page: page, locator: locator) {

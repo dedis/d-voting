@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { default as i18n } from 'i18next';
 import { assertHasFooter, assertHasNavBar, initI18n, logIn, setUp, translate } from './shared';
-import { SCIPER_ADMIN, SCIPER_USER, mockEvoting, mockPersonalInfo } from './mocks';
+import { SCIPER_ADMIN, SCIPER_USER, mockPersonalInfo } from './mocks/api';
+import { mockForms } from './mocks/evoting';
 import Forms from './json/formList.json';
-import User from './json/personal_info/789012.json';
-import Admin from './json/personal_info/123456.json';
+import User from './json/api/personal_info/789012.json';
+import Admin from './json/api/personal_info/123456.json';
 
 initI18n();
 
@@ -14,7 +15,7 @@ async function goForward(page: page) {
 
 test.beforeEach(async ({ page }) => {
   // mock empty list per default
-  await mockEvoting(page);
+  await mockForms(page);
   await mockPersonalInfo(page);
   await setUp(page, '/form/index');
 });
@@ -48,7 +49,7 @@ test('Assert pagination works correctly for empty list', async ({ page }) => {
 
 test('Assert pagination works correctly for non-empty list', async ({ page }) => {
   // mock non-empty list w/ 11 elements i.e. 2 pages
-  await mockEvoting(page, false);
+  await mockForms(page, false);
   await page.reload();
   const next = await page.getByRole('button', { name: i18n.t('next') });
   const previous = await page.getByRole('button', { name: i18n.t('previous') });
@@ -119,7 +120,7 @@ async function assertQuickAction(row: locator, form: object, sciper?: string) {
 }
 
 test('Assert forms are displayed correctly for unauthenticated user', async ({ page }) => {
-  await mockEvoting(page, false);
+  await mockForms(page, false);
   await page.reload();
   const table = await page.getByRole('table');
   for (let form of Forms.Forms.slice(0, -1)) {
@@ -141,7 +142,7 @@ test('Assert forms are displayed correctly for unauthenticated user', async ({ p
 test('Assert quick actions are displayed correctly for authenticated users', async ({ page }) => {
   for (let sciper of [SCIPER_USER, SCIPER_ADMIN]) {
     await logIn(page, sciper);
-    await mockEvoting(page, false);
+    await mockForms(page, false);
     await page.reload();
     const table = await page.getByRole('table');
     for (let form of Forms.Forms.slice(0, -1)) {
