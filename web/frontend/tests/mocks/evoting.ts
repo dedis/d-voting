@@ -35,27 +35,14 @@ export async function mockFormsFormID(page: page, formStatus: number) {
   // clear current mock
   await page.unroute(`${process.env.DELA_PROXY_URL}/evoting/forms/${FORMID}`);
   await page.route(`${process.env.DELA_PROXY_URL}/evoting/forms/${FORMID}`, async (route) => {
-    let formFile = '';
-    switch (formStatus) {
-      case 0:
-        formFile = 'created.json';
-        break;
-      case 1:
-        formFile = 'open.json';
-        break;
-      case 2:
-        formFile = 'closed.json';
-        break;
-      case 3:
-        formFile = 'shuffled.json';
-        break;
-      case 4:
-        formFile = 'decrypted.json';
-        break;
-      case 5:
-        formFile = 'combined.json';
-        break;
-    }
+    const formFile = [
+      'created.json',
+      'open.json',
+      'closed.json',
+      'shuffled.json',
+      'decrypted.json',
+      'combined.json',
+    ](formStatus);
     await route.fulfill({
       path: `./tests/json/evoting/forms/${formFile}`,
     });
@@ -79,9 +66,6 @@ export async function mockDKGActors(page: page, dkgActorsStatus: number, initial
           case 0:
             dkgActorsFile = initialized ? 'initialized.json' : 'uninitialized.json';
             break;
-          //          case 1:
-          //            dkgActorsFile = 'setup.json';
-          //            break;
           case 6:
             dkgActorsFile = worker === Worker0 ? 'setup.json' : 'certified.json'; // one node is set up, the remaining nodes are certified
             break;
