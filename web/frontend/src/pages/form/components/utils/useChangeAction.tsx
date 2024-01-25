@@ -510,7 +510,12 @@ const useChangeAction = (
       case Status.Open:
         return (
           <>
-            <CloseButton status={status} handleClose={handleClose} ongoingAction={ongoingAction} />
+            <CloseButton
+              status={status}
+              handleClose={handleClose}
+              ongoingAction={ongoingAction}
+              formID={formID}
+            />
             <CancelButton
               status={status}
               handleCancel={handleCancel}
