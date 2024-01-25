@@ -432,6 +432,13 @@ func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 		roster = append(roster, iter.GetNext().String())
 	}
 
+	suff, err := form.Suffragia(h.context, h.orderingSvc.GetStore())
+	if err != nil {
+		http.Error(w, "couldn't get ballots: "+err.Error(),
+			http.StatusInternalServerError)
+		return
+	}
+
 	response := ptypes.GetFormResponse{
 		FormID:          string(form.FormID),
 		Configuration:   form.Configuration,
@@ -441,7 +448,7 @@ func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 		Roster:          roster,
 		ChunksPerBallot: form.ChunksPerBallot(),
 		BallotSize:      form.BallotSize,
-		Voters:          form.Suffragia.UserIDs,
+		Voters:          suff.UserIDs,
 	}
 
 	txnmanager.SendResponse(w, response)

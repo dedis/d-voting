@@ -22,11 +22,32 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// Check the shuffled votes versus the cast votes and a few nodes
+// Check the shuffled votes versus the cast votes and a few nodes.
+// One transaction contains one vote.
 func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
+	customVotesScenario(b, false)
+}
+
+// Check the shuffled votes versus the cast votes and a few nodes.
+// One transasction contains many votes
+func BenchmarkIntegration_CustomVotesScenario_StuffBallots(b *testing.B) {
+	customVotesScenario(b, true)
+}
+
+func customVotesScenario(b *testing.B, stuffing bool) {
 	numNodes := 3
 	numVotes := 200
+	transactions := 200
 	numChunksPerBallot := 3
+	if stuffing {
+		// Fill every block of ballots with bogus votes to test performance.
+		types.TestCastBallots = true
+		defer func() {
+			types.TestCastBallots = false
+		}()
+		numVotes = 10000
+		transactions = numVotes / int(types.BallotsPerBlock)
+	}
 
 	adminID := "I am an admin"
 
@@ -56,6 +77,8 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 		require.NoError(b, err)
 	}
 
+	fmt.Println("Creating form")
+
 	// ##### CREATE FORM #####
 	formID, err := createFormNChunks(m, types.Title{En: "Three votes form", Fr: "", De: ""}, adminID, numChunksPerBallot)
 	require.NoError(b, err)
@@ -77,7 +100,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	require.NoError(b, err)
 
 	b.ResetTimer()
-	castedVotes, err := castVotesNChunks(m, actor, form, numVotes)
+	castedVotes, err := castVotesNChunks(m, actor, form, transactions)
 	require.NoError(b, err)
 	durationCasting := b.Elapsed()
 	b.Logf("Casting %d votes took %v", numVotes, durationCasting)
@@ -149,11 +172,13 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	b.Logf("Submitting shares took: %v", durationPubShares)
 	b.Logf("Decryption took: %v", durationDecrypt)
 
-	require.Len(b, form.DecryptedBallots, len(castedVotes))
+	require.Len(b, form.DecryptedBallots, len(castedVotes)*int(types.BallotsPerBlock))
 
-	for _, ballot := range form.DecryptedBallots {
+	// There will be a lot of supplementary ballots, but at least the ones that were
+	// cast by the test should be present.
+	for _, casted := range castedVotes {
 		ok := false
-		for _, casted := range castedVotes {
+		for _, ballot := range form.DecryptedBallots {
 			if ballot.Equal(casted) {
 				ok = true
 				break

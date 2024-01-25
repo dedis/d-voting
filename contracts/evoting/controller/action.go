@@ -425,7 +425,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf(getFormErr, err)
 	}
 
-	encryptedBallots := form.Suffragia.Ciphervotes
+	suff, err := form.Suffragia(serdecontext, service.GetStore())
+	encryptedBallots := suff.Ciphervotes
 	dela.Logger.Info().Msg("Length encrypted ballots: " + strconv.Itoa(len(encryptedBallots)))
 	dela.Logger.Info().Msgf("Ballot of user1: %s", encryptedBallots[0])
 	dela.Logger.Info().Msgf("Ballot of user2: %s", encryptedBallots[1])
@@ -485,7 +486,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 
 	logFormStatus(form)
 	dela.Logger.Info().Msg("Number of shuffled ballots : " + strconv.Itoa(len(form.ShuffleInstances)))
-	dela.Logger.Info().Msg("Number of encrypted ballots : " + strconv.Itoa(len(form.Suffragia.Ciphervotes)))
+	suff, err = form.Suffragia(serdecontext, service.GetStore())
+	dela.Logger.Info().Msg("Number of encrypted ballots : " + strconv.Itoa(len(suff.Ciphervotes)))
 
 	// ###################################### REQUEST PUBLIC SHARES ############
 

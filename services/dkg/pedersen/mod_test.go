@@ -498,7 +498,8 @@ func TestPedersen_Scenario(t *testing.T) {
 
 	roster := authority.FromAuthority(fake.NewAuthorityFromMino(fake.NewSigner, minos...))
 
-	form := fake.NewForm(formID)
+	st := fake.InMemorySnapshot{}
+	form, err := fake.NewForm(serdecontext, &st, formID)
 	form.Roster = roster
 
 	service := fake.NewService(formID, form, serdecontext)
@@ -537,10 +538,11 @@ func TestPedersen_Scenario(t *testing.T) {
 			K: Ks[i],
 			C: Cs[i],
 		}}
-		form.Suffragia.CastVote("dummyUser"+strconv.Itoa(i), ballot)
+		require.NoError(t, form.CastVote(serdecontext, &st, "dummyUser"+strconv.Itoa(i), ballot))
 	}
 
-	shuffledBallots := form.Suffragia.Ciphervotes
+	suff, err := form.Suffragia(serdecontext, &st)
+	shuffledBallots := suff.Ciphervotes
 	shuffleInstance := etypes.ShuffleInstance{ShuffledBallots: shuffledBallots}
 	form.ShuffleInstances = append(form.ShuffleInstances, shuffleInstance)
 
