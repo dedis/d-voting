@@ -8,6 +8,9 @@ if [[ $(git rev-parse --show-toplevel) != $(pwd) ]]; then
   exit 1;
 fi
 
+if [[ ! -f .env ]]; then
+  cp .env.example .env
+fi
 
 source ./.env;
 export COMPOSE_FILE=${COMPOSE_FILE:-./docker-compose/docker-compose.yml};
