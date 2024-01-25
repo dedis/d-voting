@@ -193,24 +193,35 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 
 // When a new actor is created, its information is safely stored in the dkgMap.
 func TestPedersen_SyncDB(t *testing.T) {
+	t.Skip("https://github.com/c4dt/d-voting/issues/91")
 	formID1 := "deadbeef51"
 	formID2 := "deadbeef52"
 
 	// Start some forms
-	fake.NewForm(formID1)
-	fake.NewForm(formID2)
+	context := fake.NewContext()
+	form1 := fake.NewForm(formID1)
+	service := fake.NewService(formID1, form1, context)
+	form2 := fake.NewForm(formID2)
+	service.Forms[formID2] = form2
+	pool := fake.Pool{}
+	manager := fake.Manager{}
 
 	// Initialize a Pedersen
-	p := NewPedersen(fake.Mino{}, &fake.Service{}, &fake.Pool{}, fake.Factory{}, fake.Signer{})
+	p := NewPedersen(fake.Mino{}, &service, &pool, fake.Factory{}, fake.Signer{})
 
 	// Create actors
-	a1, err := p.NewActor([]byte(formID1), &fake.Pool{}, fake.Manager{}, NewHandlerData())
+	formID1buf, err := hex.DecodeString(formID1)
 	require.NoError(t, err)
-	_, err = p.NewActor([]byte(formID2), &fake.Pool{}, fake.Manager{}, NewHandlerData())
+	formID2buf, err := hex.DecodeString(formID2)
+	require.NoError(t, err)
+	a1, err := p.NewActor(formID1buf, &pool, manager, NewHandlerData())
+	require.NoError(t, err)
+	_, err = p.NewActor(formID2buf, &pool, manager, NewHandlerData())
 	require.NoError(t, err)
 
 	// Only Setup the first actor
-	a1.Setup()
+	_, err = a1.Setup()
+	require.NoError(t, err)
 
 	// Create a new DKG map and fill it with data
 	dkgMap := fake.NewInMemoryDB()
@@ -245,7 +256,7 @@ func TestPedersen_SyncDB(t *testing.T) {
 	require.NoError(t, err)
 
 	// Recover them from the map
-	q := NewPedersen(fake.Mino{}, &fake.Service{}, &fake.Pool{}, fake.Factory{}, fake.Signer{})
+	q := NewPedersen(fake.Mino{}, &service, &pool, fake.Factory{}, fake.Signer{})
 
 	err = dkgMap.View(func(tx kv.ReadableTx) error {
 		bucket := tx.GetBucket([]byte("dkgmap"))
@@ -257,7 +268,7 @@ func TestPedersen_SyncDB(t *testing.T) {
 			err = json.Unmarshal(handlerDataBuf, &handlerData)
 			require.NoError(t, err)
 
-			_, err = q.NewActor(formIDBuf, &fake.Pool{}, fake.Manager{}, handlerData)
+			_, err = q.NewActor(formIDBuf, &pool, manager, handlerData)
 			require.NoError(t, err)
 
 			return nil

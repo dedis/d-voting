@@ -549,7 +549,7 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	require.NoError(t, err)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, FormArg, string(data)))
-	require.EqualError(t, err, "the form is not closed")
+	require.EqualError(t, err, "the form is not in state closed (current: 0 != closed: 2)")
 
 	// Wrong round :
 	form.Status = types.Closed
