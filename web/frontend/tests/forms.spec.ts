@@ -91,3 +91,11 @@ test('Assert "Close" button is only visible to owner', async ({ page }) => {
     [1]
   );
 });
+
+test('Assert "Combine" button is only visible to owner', async ({ page }) => {
+  await assertIsOnlyVisibleToOwnerStates(
+    page,
+    page.getByRole('button', { name: i18n.t('combine') }),
+    [4]
+  );
+});

@@ -556,6 +556,7 @@ const useChangeAction = (
               status={status}
               handleCombine={handleCombine}
               ongoingAction={ongoingAction}
+              formID={formID}
             />
             <DeleteButton handleDelete={handleDelete} />
           </>
