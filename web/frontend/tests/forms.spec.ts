@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { default as i18n } from 'i18next';
 import { assertHasFooter, assertHasNavBar, initI18n, logIn, setUp } from './shared';
 import {
   SCIPER_ADMIN,
@@ -73,4 +74,12 @@ async function assertIsOnlyVisibleToOwnerStates(page: page, locator: locator, st
 
 test('Assert "Add voters" button is only visible to owner', async ({ page }) => {
   await assertIsOnlyVisibleToOwnerStates(page, page.getByTestId('addVotersButton'), [0, 1]);
+});
+
+test('Assert "Cancel" button is only visible to owner', async ({ page }) => {
+  await assertIsOnlyVisibleToOwnerStates(
+    page,
+    page.getByRole('button', { name: i18n.t('cancel') }),
+    [1]
+  );
 });

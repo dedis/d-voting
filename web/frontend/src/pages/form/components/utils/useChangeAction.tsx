@@ -515,6 +515,7 @@ const useChangeAction = (
               status={status}
               handleCancel={handleCancel}
               ongoingAction={ongoingAction}
+              formID={formID}
             />
             <VoteButton status={status} formID={formID} />
             <DeleteButton handleDelete={handleDelete} />
