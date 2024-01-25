@@ -62,27 +62,35 @@ export async function mockFormsFormID(page: page, formStatus: number) {
   });
 }
 
-export async function mockDKGActors(page: page, formStatus: number, initialized?: boolean) {
-  // the nodes must have been initialized if the form changed state
-  initialized = initialized || formStatus > 0;
+export async function mockDKGActors(page: page, dkgActorsStatus: number, initialized: boolean) {
   for (const worker of [Worker0, Worker1, Worker2, Worker3]) {
     await page.route(`${worker.Proxy}/evoting/services/dkg/actors/${FORMID}`, async (route) => {
-      let dkgActorsFile = '';
-      switch (formStatus) {
-        case 0:
-          dkgActorsFile = initialized ? 'initialized.json' : 'uninitialized.json';
-          break;
-        case 1:
-          dkgActorsFile = 'setup.json';
-          break;
-        case 6:
-          dkgActorsFile = 'certified.json';
-          break;
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({
+          status: 200,
+          headers: {
+            'Access-Control-Allow-Headers': '*',
+            'Access-Control-Allow-Origin': '*',
+          },
+        });
+      } else {
+        let dkgActorsFile = '';
+        switch (dkgActorsStatus) {
+          case 0:
+            dkgActorsFile = initialized ? 'initialized.json' : 'uninitialized.json';
+            break;
+          //          case 1:
+          //            dkgActorsFile = 'setup.json';
+          //            break;
+          case 6:
+            dkgActorsFile = worker === Worker0 ? 'setup.json' : 'certified.json'; // one node is set up, the remaining nodes are certified
+            break;
+        }
+        await route.fulfill({
+          status: initialized ? 200 : 400,
+          path: `./tests/json/evoting/dkgActors/${dkgActorsFile}`,
+        });
       }
-      await route.fulfill({
-        status: initialized ? 200 : 400,
-        path: `./tests/json/evoting/dkgActors/${dkgActorsFile}`,
-      });
     });
   }
 }

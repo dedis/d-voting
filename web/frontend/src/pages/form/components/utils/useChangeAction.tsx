@@ -504,7 +504,7 @@ const useChangeAction = (
           <>
             <OpenButton status={status} handleOpen={handleOpen} ongoingAction={ongoingAction} />
             <DeleteButton handleDelete={handleDelete} />
-            <AddVotersButton handleAddVoters={handleAddVoters} />
+            <AddVotersButton handleAddVoters={handleAddVoters} formID={formID} />
           </>
         );
       case Status.Open:
@@ -518,7 +518,7 @@ const useChangeAction = (
             />
             <VoteButton status={status} formID={formID} />
             <DeleteButton handleDelete={handleDelete} />
-            <AddVotersButton handleAddVoters={handleAddVoters} />
+            <AddVotersButton handleAddVoters={handleAddVoters} formID={formID} />
           </>
         );
       case Status.Closed:
