@@ -534,6 +534,7 @@ const useChangeAction = (
               status={status}
               handleShuffle={handleShuffle}
               ongoingAction={ongoingAction}
+              formID={formID}
             />
             <DeleteButton handleDelete={handleDelete} formID={formID} />
           </>
