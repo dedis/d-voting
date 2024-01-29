@@ -489,21 +489,21 @@ const useChangeAction = (
               handleInitialize={handleInitialize}
               ongoingAction={ongoingAction}
             />
-            <DeleteButton handleDelete={handleDelete} />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
           </>
         );
       case Status.Initialized:
         return (
           <>
             <SetupButton status={status} handleSetup={handleSetup} ongoingAction={ongoingAction} />
-            <DeleteButton handleDelete={handleDelete} />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
           </>
         );
       case Status.Setup:
         return (
           <>
             <OpenButton status={status} handleOpen={handleOpen} ongoingAction={ongoingAction} />
-            <DeleteButton handleDelete={handleDelete} />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
             <AddVotersButton handleAddVoters={handleAddVoters} formID={formID} />
           </>
         );
@@ -523,7 +523,7 @@ const useChangeAction = (
               formID={formID}
             />
             <VoteButton status={status} formID={formID} />
-            <DeleteButton handleDelete={handleDelete} />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
             <AddVotersButton handleAddVoters={handleAddVoters} formID={formID} />
           </>
         );
@@ -535,7 +535,7 @@ const useChangeAction = (
               handleShuffle={handleShuffle}
               ongoingAction={ongoingAction}
             />
-            <DeleteButton handleDelete={handleDelete} />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
           </>
         );
       case Status.ShuffledBallots:
@@ -546,7 +546,7 @@ const useChangeAction = (
               handleDecrypt={handleDecrypt}
               ongoingAction={ongoingAction}
             />
-            <DeleteButton handleDelete={handleDelete} />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
           </>
         );
       case Status.PubSharesSubmitted:
@@ -558,20 +558,20 @@ const useChangeAction = (
               ongoingAction={ongoingAction}
               formID={formID}
             />
-            <DeleteButton handleDelete={handleDelete} />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
           </>
         );
       case Status.ResultAvailable:
         return (
           <>
             <ResultButton status={status} formID={formID} />
-            <DeleteButton handleDelete={handleDelete} />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
           </>
         );
       default:
         return (
           <>
-            <DeleteButton handleDelete={handleDelete} />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
           </>
         );
     }
