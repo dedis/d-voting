@@ -507,7 +507,7 @@ const useChangeAction = (
       case Status.Setup:
         return (
           <>
-            <OpenButton status={status} handleOpen={handleOpen} ongoingAction={ongoingAction} />
+            <OpenButton status={status} handleOpen={handleOpen} ongoingAction={ongoingAction} formID={formID} />
             <DeleteButton handleDelete={handleDelete} formID={formID} />
             <AddVotersButton handleAddVoters={handleAddVoters} formID={formID} />
           </>

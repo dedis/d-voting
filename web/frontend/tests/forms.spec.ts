@@ -86,6 +86,14 @@ test('Assert "Setup" button is only visible to owner', async ({ page }) => {
   );
 });
 
+test('Assert "Open" button is only visible to owner', async ({ page }) => {
+  await assertIsOnlyVisibleToOwnerStates(
+    page,
+    page.getByRole('button', { name: i18n.t('open') }),
+    [0]
+  );
+});
+
 test('Assert "Cancel" button is only visible to owner', async ({ page }) => {
   await assertIsOnlyVisibleToOwnerStates(
     page,
