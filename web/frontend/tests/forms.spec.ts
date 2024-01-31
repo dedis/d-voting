@@ -62,7 +62,13 @@ async function assertIsOnlyVisibleToOwner(page: page, locator: locator) {
   });
 }
 
-async function assertIsOnlyVisibleToOwnerStates(page: page, locator: locator, states: Array, dkgActorsStatus?: number, initialized?: boolean) {
+async function assertIsOnlyVisibleToOwnerStates(
+  page: page,
+  locator: locator,
+  states: Array,
+  dkgActorsStatus?: number,
+  initialized?: boolean
+) {
   for (const i of states) {
     await test.step(`Assert is only visible to owner in state ${i}`, async () => {
       await setUpMocks(page, i, dkgActorsStatus === undefined ? 6 : dkgActorsStatus, initialized);
@@ -97,11 +103,9 @@ test('Assert "Setup" button is only visible to owner', async ({ page }) => {
 });
 
 test('Assert "Open" button is only visible to owner', async ({ page }) => {
-  await assertIsOnlyVisibleToOwnerStates(
-    page,
-    page.getByRole('button', { name: i18n.t('open') }),
-    [0]
-  );
+  await assertIsOnlyVisibleToOwnerStates(page, page.getByRole('button', { name: i18n.t('open') }), [
+    0,
+  ]);
 });
 
 test('Assert "Cancel" button is only visible to owner', async ({ page }) => {
@@ -125,6 +129,14 @@ test('Assert "Shuffle" button is only visible to owner', async ({ page }) => {
     page,
     page.getByRole('button', { name: i18n.t('shuffle') }),
     [2]
+  );
+});
+
+test('Assert "Decrypt" button is only visible to owner', async ({ page }) => {
+  await assertIsOnlyVisibleToOwnerStates(
+    page,
+    page.getByRole('button', { name: i18n.t('decrypt') }),
+    [3]
   );
 });
 
