@@ -495,7 +495,12 @@ const useChangeAction = (
       case Status.Initialized:
         return (
           <>
-            <SetupButton status={status} handleSetup={handleSetup} ongoingAction={ongoingAction} />
+            <SetupButton
+              status={status}
+              handleSetup={handleSetup}
+              ongoingAction={ongoingAction}
+              formID={formID}
+            />
             <DeleteButton handleDelete={handleDelete} formID={formID} />
           </>
         );

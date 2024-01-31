@@ -62,10 +62,10 @@ async function assertIsOnlyVisibleToOwner(page: page, locator: locator) {
   });
 }
 
-async function assertIsOnlyVisibleToOwnerStates(page: page, locator: locator, states: Array) {
+async function assertIsOnlyVisibleToOwnerStates(page: page, locator: locator, states: Array, dkgActorsStatus?: number, initialized?: boolean) {
   for (const i of states) {
     await test.step(`Assert is only visible to owner in state ${i}`, async () => {
-      await setUpMocks(page, i, 6);
+      await setUpMocks(page, i, dkgActorsStatus === undefined ? 6 : dkgActorsStatus, initialized);
       await page.reload({ waitUntil: 'networkidle' });
       await assertIsOnlyVisibleToOwner(page, locator);
     });
@@ -74,6 +74,16 @@ async function assertIsOnlyVisibleToOwnerStates(page: page, locator: locator, st
 
 test('Assert "Add voters" button is only visible to owner', async ({ page }) => {
   await assertIsOnlyVisibleToOwnerStates(page, page.getByTestId('addVotersButton'), [0, 1]);
+});
+
+test('Assert "Setup" button is only visible to owner', async ({ page }) => {
+  await assertIsOnlyVisibleToOwnerStates(
+    page,
+    page.getByRole('button', { name: i18n.t('setup') }),
+    [0],
+    0,
+    true
+  );
 });
 
 test('Assert "Cancel" button is only visible to owner', async ({ page }) => {
