@@ -76,6 +76,16 @@ test('Assert "Add voters" button is only visible to owner', async ({ page }) => 
   await assertIsOnlyVisibleToOwnerStates(page, page.getByTestId('addVotersButton'), [0, 1]);
 });
 
+test('Assert "Initialize" button is only visible to owner', async ({ page }) => {
+  await assertIsOnlyVisibleToOwnerStates(
+    page,
+    page.getByRole('button', { name: i18n.t('initialize') }),
+    [0],
+    0,
+    false
+  );
+});
+
 test('Assert "Setup" button is only visible to owner', async ({ page }) => {
   await assertIsOnlyVisibleToOwnerStates(
     page,
