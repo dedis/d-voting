@@ -9,6 +9,7 @@ type RedirectToModalProps = {
   children: string;
   buttonRightText: string;
   navigateDestination?: To | number;
+  needsReload?: boolean;
 };
 
 const RedirectToModal: FC<RedirectToModalProps> = ({
@@ -18,12 +19,17 @@ const RedirectToModal: FC<RedirectToModalProps> = ({
   children,
   buttonRightText,
   navigateDestination,
+  needsReload = false,
 }) => {
   const navigate = useNavigate();
 
   const closeModal = () => {
     if (navigateDestination) {
       navigate(navigateDestination as To);
+      if (needsReload) {
+        // reload the page to update the locally cached permissions
+        window.location.reload();
+      }
     }
     setShowModal(false);
   };
