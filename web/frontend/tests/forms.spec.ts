@@ -6,10 +6,15 @@ import {
   SCIPER_OTHER_ADMIN,
   SCIPER_OTHER_USER,
   SCIPER_USER,
+  mockDKGActors as mockAPIDKGActors,
   mockPersonalInfo,
   mockProxies,
 } from './mocks/api';
 import { FORMID, mockDKGActors, mockFormsFormID } from './mocks/evoting';
+import Worker0 from './json/api/proxies/dela-worker-0.json';
+import Worker1 from './json/api/proxies/dela-worker-1.json';
+import Worker2 from './json/api/proxies/dela-worker-2.json';
+import Worker3 from './json/api/proxies/dela-worker-3.json';
 
 initI18n();
 
@@ -38,6 +43,7 @@ async function setUpMocks(
     await mockProxies(page, i);
   }
   await mockDKGActors(page, dkgActorsStatus, initialized);
+  await mockAPIDKGActors(page);
   await mockPersonalInfo(page);
 }
 
@@ -118,6 +124,24 @@ test('Assert "Initialize" button is only visible to owner', async ({ page }) => 
     0,
     false
   );
+});
+
+test('Assert "Initialize" button calls route to initialize nodes', async ({ page, baseURL }) => {
+  await setUpMocks(page, 0, 0, false);
+  await logIn(page, SCIPER_OTHER_ADMIN);
+  // we expect one call per worker node
+  for (const worker of [Worker0, Worker1, Worker2, Worker3]) {
+    page.waitForRequest(async (request) => {
+      const body = await request.postDataJSON();
+      return (
+        request.url() === `${baseURL}/api/evoting/services/dkg/actors` &&
+        request.method() === 'POST' &&
+        body.FormID === FORMID &&
+        body.Proxy === worker.Proxy
+      );
+    });
+  }
+  await page.getByRole('button', { name: i18n.t('initialize') }).click();
 });
 
 test('Assert "Setup" button is only visible to owner', async ({ page }) => {

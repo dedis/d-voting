@@ -3,6 +3,14 @@ export const SCIPER_OTHER_ADMIN = '987654';
 export const SCIPER_USER = '789012';
 export const SCIPER_OTHER_USER = '654321';
 
+export async function mockDKGActors(page: page) {
+  await page.route('/api/evoting/services/dkg/actors', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({ status: 200 });
+    }
+  });
+}
+
 export async function mockProxy(page: page) {
   await page.route('/api/config/proxy', async (route) => {
     await route.fulfill({
