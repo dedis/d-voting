@@ -62,96 +62,120 @@ async function assertIsOnlyVisibleToOwner(page: page, locator: locator) {
   });
 }
 
-async function assertIsOnlyVisibleToOwnerStates(
+async function assertIsOnlyVisibleInStates(
   page: page,
   locator: locator,
   states: Array,
+  assert: Function,
   dkgActorsStatus?: number,
   initialized?: boolean
 ) {
   for (const i of states) {
-    await test.step(`Assert is only visible to owner in state ${i}`, async () => {
+    await test.step(`Assert is visible in state ${i}`, async () => {
       await setUpMocks(page, i, dkgActorsStatus === undefined ? 6 : dkgActorsStatus, initialized);
       await page.reload({ waitUntil: 'networkidle' });
-      await assertIsOnlyVisibleToOwner(page, locator);
+      await assert(page, locator);
+    });
+  }
+  for (const i of [0, 1, 2, 3, 4, 5].filter((x) => !states.includes(x))) {
+    await test.step(`Assert is not visible in state ${i}`, async () => {
+      await setUpMocks(page, i, dkgActorsStatus === undefined ? 6 : dkgActorsStatus, initialized);
+      await page.reload({ waitUntil: 'networkidle' });
+      await expect(locator).toBeHidden();
     });
   }
 }
 
 test('Assert "Add voters" button is only visible to owner', async ({ page }) => {
-  await assertIsOnlyVisibleToOwnerStates(page, page.getByTestId('addVotersButton'), [0, 1]);
+  await assertIsOnlyVisibleInStates(
+    page,
+    page.getByTestId('addVotersButton'),
+    [0, 1],
+    assertIsOnlyVisibleToOwner
+  );
 });
 
 test('Assert "Initialize" button is only visible to owner', async ({ page }) => {
-  await assertIsOnlyVisibleToOwnerStates(
+  await assertIsOnlyVisibleInStates(
     page,
     page.getByRole('button', { name: i18n.t('initialize') }),
     [0],
+    assertIsOnlyVisibleToOwner,
     0,
     false
   );
 });
 
 test('Assert "Setup" button is only visible to owner', async ({ page }) => {
-  await assertIsOnlyVisibleToOwnerStates(
+  await assertIsOnlyVisibleInStates(
     page,
     page.getByRole('button', { name: i18n.t('setup') }),
     [0],
+    assertIsOnlyVisibleToOwner,
     0,
     true
   );
 });
 
 test('Assert "Open" button is only visible to owner', async ({ page }) => {
-  await assertIsOnlyVisibleToOwnerStates(page, page.getByRole('button', { name: i18n.t('open') }), [
-    0,
-  ]);
+  await assertIsOnlyVisibleInStates(
+    page,
+    page.getByRole('button', { name: i18n.t('open') }),
+    [0],
+    assertIsOnlyVisibleToOwner
+  );
 });
 
 test('Assert "Cancel" button is only visible to owner', async ({ page }) => {
-  await assertIsOnlyVisibleToOwnerStates(
+  await assertIsOnlyVisibleInStates(
     page,
     page.getByRole('button', { name: i18n.t('cancel') }),
-    [1]
+    [1],
+    assertIsOnlyVisibleToOwner
   );
 });
 
 test('Assert "Close" button is only visible to owner', async ({ page }) => {
-  await assertIsOnlyVisibleToOwnerStates(
+  await assertIsOnlyVisibleInStates(
     page,
     page.getByRole('button', { name: i18n.t('close') }),
-    [1]
+    [1],
+    assertIsOnlyVisibleToOwner
   );
 });
 
 test('Assert "Shuffle" button is only visible to owner', async ({ page }) => {
-  await assertIsOnlyVisibleToOwnerStates(
+  await assertIsOnlyVisibleInStates(
     page,
     page.getByRole('button', { name: i18n.t('shuffle') }),
-    [2]
+    [2],
+    assertIsOnlyVisibleToOwner
   );
 });
 
 test('Assert "Decrypt" button is only visible to owner', async ({ page }) => {
-  await assertIsOnlyVisibleToOwnerStates(
+  await assertIsOnlyVisibleInStates(
     page,
     page.getByRole('button', { name: i18n.t('decrypt') }),
-    [3]
+    [3],
+    assertIsOnlyVisibleToOwner
   );
 });
 
 test('Assert "Combine" button is only visible to owner', async ({ page }) => {
-  await assertIsOnlyVisibleToOwnerStates(
+  await assertIsOnlyVisibleInStates(
     page,
     page.getByRole('button', { name: i18n.t('combine') }),
-    [4]
+    [4],
+    assertIsOnlyVisibleToOwner
   );
 });
 
 test('Assert "Delete" button is only visible to owner', async ({ page }) => {
-  await assertIsOnlyVisibleToOwnerStates(
+  await assertIsOnlyVisibleInStates(
     page,
     page.getByRole('button', { name: i18n.t('delete') }),
-    [0, 1, 2, 3, 4]
+    [0, 1, 2, 3, 4],
+    assertIsOnlyVisibleToOwner
   );
 });
