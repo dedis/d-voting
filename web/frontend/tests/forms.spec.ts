@@ -4,6 +4,7 @@ import { assertHasFooter, assertHasNavBar, initI18n, logIn, setUp } from './shar
 import {
   SCIPER_ADMIN,
   SCIPER_OTHER_ADMIN,
+  SCIPER_OTHER_USER,
   SCIPER_USER,
   mockPersonalInfo,
   mockProxies,
@@ -185,11 +186,41 @@ test('Assert "Combine" button is only visible to owner', async ({ page }) => {
 });
 
 test('Assert "Delete" button is only visible to owner', async ({ page }) => {
-  test.setTimeout(60000);  // Firefox is exceeding the default timeout on this test
+  test.setTimeout(60000); // Firefox is exceeding the default timeout on this test
   await assertIsOnlyVisibleInStates(
     page,
     page.getByRole('button', { name: i18n.t('delete') }),
     [0, 1, 2, 3, 4, 6],
     assertIsOnlyVisibleToOwner
+  );
+});
+
+test('Assert "Vote" button is visible to admin/non-admin voter user', async ({ page }) => {
+  await assertIsOnlyVisibleInStates(
+    page,
+    page.getByRole('button', { name: i18n.t('vote'), exact: true }), // by default name is not matched exactly which returns both the "Vote" and the "Add voters" button
+    [1],
+    // eslint-disable-next-line @typescript-eslint/no-shadow
+    async function (page: page, locator: locator) {
+      await test.step('Assert is hidden to unauthenticated user', async () => {
+        await expect(locator).toBeHidden();
+      });
+      await test.step('Assert is hidden to authenticated non-voter user', async () => {
+        await logIn(page, SCIPER_OTHER_USER);
+        await expect(locator).toBeHidden();
+      });
+      await test.step('Assert is visible to authenticated voter user', async () => {
+        await logIn(page, SCIPER_USER);
+        await expect(locator).toBeVisible();
+      });
+      await test.step('Assert is hidden to non-voter admin', async () => {
+        await logIn(page, SCIPER_OTHER_ADMIN);
+        await expect(locator).toBeHidden();
+      });
+      await test.step('Assert is visible to voter admin', async () => {
+        await logIn(page, SCIPER_ADMIN);
+        await expect(locator).toBeVisible();
+      });
+    }
   );
 });

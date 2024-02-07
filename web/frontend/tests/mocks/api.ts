@@ -1,6 +1,7 @@
 export const SCIPER_ADMIN = '123456';
 export const SCIPER_OTHER_ADMIN = '987654';
 export const SCIPER_USER = '789012';
+export const SCIPER_OTHER_USER = '654321';
 
 export async function mockProxy(page: page) {
   await page.route('/api/config/proxy', async (route) => {
