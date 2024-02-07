@@ -19,6 +19,7 @@ const prettyFormStates = new Map([
   [3, 'ShuffledBallots'],
   [4, 'PubSharesSubmitted'],
   [5, 'ResultAvailable'],
+  [6, 'Canceled'],
 ]);
 
 // main elements
@@ -184,10 +185,11 @@ test('Assert "Combine" button is only visible to owner', async ({ page }) => {
 });
 
 test('Assert "Delete" button is only visible to owner', async ({ page }) => {
+  test.setTimeout(60000);  // Firefox is exceeding the default timeout on this test
   await assertIsOnlyVisibleInStates(
     page,
     page.getByRole('button', { name: i18n.t('delete') }),
-    [0, 1, 2, 3, 4],
+    [0, 1, 2, 3, 4, 6],
     assertIsOnlyVisibleToOwner
   );
 });
