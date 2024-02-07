@@ -338,7 +338,8 @@ const FormForm: FC<FormFormProps> = () => {
         setShowModal={setShowModal}
         title={t('notification')}
         buttonRightText={t('close')}
-        navigateDestination={navigateDestination}>
+        navigateDestination={navigateDestination}
+        needsReload={true}>
         {textModal}
       </RedirectToModal>
 

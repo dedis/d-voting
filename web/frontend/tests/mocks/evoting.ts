@@ -25,7 +25,7 @@ export async function mockForms(page: page, empty: boolean = true) {
       });
     } else {
       await route.fulfill({
-        path: './tests/json/formList.json',
+        path: './tests/json/formIndex.json',
       });
     }
   });

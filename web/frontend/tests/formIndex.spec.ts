@@ -3,7 +3,7 @@ import { default as i18n } from 'i18next';
 import { assertHasFooter, assertHasNavBar, initI18n, logIn, setUp, translate } from './shared';
 import { SCIPER_ADMIN, SCIPER_USER, mockPersonalInfo } from './mocks/api';
 import { mockForms } from './mocks/evoting';
-import Forms from './json/formList.json';
+import Forms from './json/formIndex.json';
 import User from './json/api/personal_info/789012.json';
 import Admin from './json/api/personal_info/123456.json';
 
