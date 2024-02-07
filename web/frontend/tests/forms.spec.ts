@@ -12,6 +12,15 @@ import { FORMID, mockDKGActors, mockFormsFormID } from './mocks/evoting';
 
 initI18n();
 
+const prettyFormStates = new Map([
+  [0, 'Initial'],
+  [1, 'Open'],
+  [2, 'Closed'],
+  [3, 'ShuffledBallots'],
+  [4, 'PubSharesSubmitted'],
+  [5, 'ResultAvailable'],
+]);
+
 // main elements
 
 async function setUpMocks(
@@ -71,18 +80,21 @@ async function assertIsOnlyVisibleInStates(
   initialized?: boolean
 ) {
   for (const i of states) {
-    await test.step(`Assert is visible in state ${i}`, async () => {
+    await test.step(`Assert is visible in form state '${prettyFormStates.get(i)}'`, async () => {
       await setUpMocks(page, i, dkgActorsStatus === undefined ? 6 : dkgActorsStatus, initialized);
       await page.reload({ waitUntil: 'networkidle' });
       await assert(page, locator);
     });
   }
   for (const i of [0, 1, 2, 3, 4, 5].filter((x) => !states.includes(x))) {
-    await test.step(`Assert is not visible in state ${i}`, async () => {
-      await setUpMocks(page, i, dkgActorsStatus === undefined ? 6 : dkgActorsStatus, initialized);
-      await page.reload({ waitUntil: 'networkidle' });
-      await expect(locator).toBeHidden();
-    });
+    await test.step(
+      `Assert is not visible in form state '${prettyFormStates.get(i)}'`,
+      async () => {
+        await setUpMocks(page, i, dkgActorsStatus === undefined ? 6 : dkgActorsStatus, initialized);
+        await page.reload({ waitUntil: 'networkidle' });
+        await expect(locator).toBeHidden();
+      }
+    );
   }
 }
 
