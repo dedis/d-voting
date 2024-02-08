@@ -209,6 +209,20 @@ test('Assert "Cancel" button is only visible to owner', async ({ page }) => {
   );
 });
 
+test('Assert "Cancel" button calls route to cancel form', async ({ page, baseURL }) => {
+  await setUpMocks(page, 1, 6);
+  await logIn(page, SCIPER_OTHER_ADMIN);
+  page.waitForRequest(async (request) => {
+    const body = await request.postDataJSON();
+    return (
+      request.url() === `${baseURL}/api/evoting/forms/${FORMID}` &&
+      request.method() === 'PUT' &&
+      body.Action === 'cancel'
+    );
+  });
+  await page.getByRole('button', { name: i18n.t('cancel') }).click();
+});
+
 test('Assert "Close" button is only visible to owner', async ({ page }) => {
   await assertIsOnlyVisibleInStates(
     page,
