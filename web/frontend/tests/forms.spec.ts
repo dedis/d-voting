@@ -155,6 +155,28 @@ test('Assert "Setup" button is only visible to owner', async ({ page }) => {
   );
 });
 
+test('Assert "Setup" button calls route to setup node', async ({ page, baseURL }) => {
+  await setUpMocks(page, 0, 0, true);
+  await logIn(page, SCIPER_OTHER_ADMIN);
+  // we expect one call with the chosen worker node
+  page.waitForRequest(async (request) => {
+    const body = await request.postDataJSON();
+    return (
+      request.url() === `${baseURL}/api/evoting/services/dkg/actors/${FORMID}` &&
+      request.method() === 'PUT' &&
+      body.Action === 'setup' &&
+      body.Proxy === Worker1.Proxy
+    );
+  });
+  // open node selection window
+  await page.getByRole('button', { name: i18n.t('setup') }).click();
+  await expect(page.getByTestId('nodeSetup')).toBeVisible();
+  // choose second worker node
+  await page.getByLabel(Worker1.NodeAddr).check();
+  // confirm
+  await page.getByRole('button', { name: i18n.t('setupNode') }).click();
+});
+
 test('Assert "Open" button is only visible to owner', async ({ page }) => {
   await assertIsOnlyVisibleInStates(
     page,
