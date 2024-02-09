@@ -358,9 +358,12 @@ test('Assert "Vote" button is visible to admin/non-admin voter user', async ({ p
 
 test('Assert "Vote" button gets voting form', async ({ page }) => {
     await setUpMocks(page, 1, 6)
-    for (const user of [SCIPER_USER, SCIPER_ADMIN]) {
-      await logIn(page, user);
+      await logIn(page, SCIPER_USER);
       page.waitForRequest(`${process.env.DELA_PROXY_URL}/evoting/forms/${FORMID}`)
       await page.getByRole('button', { name: i18n.t('vote') }).click();
-    }
+      // go back to form management page
+      await setUp(page, `/forms/${FORMID}`);
+      await logIn(page, SCIPER_ADMIN);
+      page.waitForRequest(`${process.env.DELA_PROXY_URL}/evoting/forms/${FORMID}`)
+      await page.getByRole('button', { name: i18n.t('vote') }).click();
 });
