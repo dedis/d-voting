@@ -81,3 +81,9 @@ export async function mockLogout(page: page) {
     await route.fulfill({});
   });
 }
+
+export async function mockAddRole(page: page) {
+  await page.route('/api/add_role', async (route) => {
+    await route.fulfill({ status: 200 });
+  });
+}

@@ -9,6 +9,7 @@ import {
   mockDKGActors as mockAPIDKGActors,
   mockPersonalInfo,
   mockProxies,
+  mockAddRole,
 } from './mocks/api';
 import { FORMID, mockDKGActors, mockFormsFormID } from './mocks/evoting';
 import Worker0 from './json/api/proxies/dela-worker-0.json';
@@ -130,6 +131,33 @@ test('Assert "Add voters" button is only visible to owner', async ({ page }) => 
     [0, 1],
     assertIsOnlyVisibleToOwner
   );
+});
+
+test('Assert "Add voters" button allows to add voters', async ({ page, baseURL }) => {
+  await setUpMocks(page, 0, 6);
+  await mockAddRole(page);
+  await logIn(page, SCIPER_OTHER_ADMIN);
+  // we expect one call per new voter
+  for (const sciper of [SCIPER_OTHER_ADMIN, SCIPER_ADMIN, SCIPER_USER]) {
+    page.waitForRequest(async (request) => {
+      const body = await request.postDataJSON();
+      return (
+        request.url() === `${baseURL}/api/add_role` &&
+        request.method() === 'POST' &&
+        body.permission === 'vote' &&
+        body.subject === FORMID &&
+        body.userId.toString() === sciper
+      );
+    });
+  }
+  await page.getByTestId('addVotersButton').click();
+  // menu should be visible
+  const textbox = await page.getByRole('textbox', { name: 'SCIPERs' });
+  await expect(textbox).toBeVisible();
+  // add 3 voters (owner admin, non-owner admin, user)
+  await textbox.fill(`${SCIPER_OTHER_ADMIN}\n${SCIPER_ADMIN}\n${SCIPER_USER}`);
+  // click on confirmation
+  await page.getByTestId('addVotersConfirm').click();
 });
 
 test('Assert "Initialize" button is only visible to owner', async ({ page }) => {
