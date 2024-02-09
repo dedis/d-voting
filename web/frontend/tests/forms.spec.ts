@@ -106,6 +106,23 @@ async function assertIsOnlyVisibleInStates(
   }
 }
 
+async function assertRouteIsCalled(page: page, url: string, key: string, action: string, formStatus: number, confirmation: boolean, dkgActorsStatus?: number, initialized?: boolean) {
+  await setUpMocks(page, formStatus, dkgActorsStatus === undefined ? 6 : dkgActorsStatus, initialized);
+  await logIn(page, SCIPER_OTHER_ADMIN);
+  page.waitForRequest(async (request) => {
+    const body = await request.postDataJSON();
+    return (
+      request.url() === url &&
+      request.method() === 'PUT' &&
+      body.Action === action
+    );
+  });
+  await page.getByRole('button', { name: i18n.t(key) }).click();
+  if (confirmation) {
+    await page.getByRole('button', { name: i18n.t('yes') }).click();
+  }
+}
+
 test('Assert "Add voters" button is only visible to owner', async ({ page }) => {
   await assertIsOnlyVisibleInStates(
     page,
@@ -187,17 +204,7 @@ test('Assert "Open" button is only visible to owner', async ({ page }) => {
 });
 
 test('Assert "Open" button calls route to open form', async ({ page, baseURL }) => {
-  await setUpMocks(page, 0, 6);
-  await logIn(page, SCIPER_OTHER_ADMIN);
-  page.waitForRequest(async (request) => {
-    const body = await request.postDataJSON();
-    return (
-      request.url() === `${baseURL}/api/evoting/forms/${FORMID}` &&
-      request.method() === 'PUT' &&
-      body.Action === 'open'
-    );
-  });
-  await page.getByRole('button', { name: i18n.t('open') }).click();
+  await assertRouteIsCalled(page, `${baseURL}/api/evoting/forms/${FORMID}`, 'open', 'open', 0, false, 6);
 });
 
 test('Assert "Cancel" button is only visible to owner', async ({ page }) => {
@@ -210,17 +217,7 @@ test('Assert "Cancel" button is only visible to owner', async ({ page }) => {
 });
 
 test('Assert "Cancel" button calls route to cancel form', async ({ page, baseURL }) => {
-  await setUpMocks(page, 1, 6);
-  await logIn(page, SCIPER_OTHER_ADMIN);
-  page.waitForRequest(async (request) => {
-    const body = await request.postDataJSON();
-    return (
-      request.url() === `${baseURL}/api/evoting/forms/${FORMID}` &&
-      request.method() === 'PUT' &&
-      body.Action === 'cancel'
-    );
-  });
-  await page.getByRole('button', { name: i18n.t('cancel') }).click();
+  await assertRouteIsCalled(page, `${baseURL}/api/evoting/forms/${FORMID}`, 'cancel', 'cancel', 1, true);
 });
 
 test('Assert "Close" button is only visible to owner', async ({ page }) => {
@@ -232,6 +229,10 @@ test('Assert "Close" button is only visible to owner', async ({ page }) => {
   );
 });
 
+test('Assert "Close" button calls route to close form', async ({ page, baseURL }) => {
+  await assertRouteIsCalled(page, `${baseURL}/api/evoting/forms/${FORMID}`, 'close', 'close', 1, true);
+});
+
 test('Assert "Shuffle" button is only visible to owner', async ({ page }) => {
   await assertIsOnlyVisibleInStates(
     page,
@@ -239,6 +240,10 @@ test('Assert "Shuffle" button is only visible to owner', async ({ page }) => {
     [2],
     assertIsOnlyVisibleToOwner
   );
+});
+
+test('Assert "Shuffle" button calls route to shuffle form', async ({ page, baseURL }) => {
+  await assertRouteIsCalled(page, `${baseURL}/api/evoting/services/shuffle/${FORMID}`, 'shuffle', 'shuffle', 2, false);
 });
 
 test('Assert "Decrypt" button is only visible to owner', async ({ page }) => {
@@ -250,6 +255,10 @@ test('Assert "Decrypt" button is only visible to owner', async ({ page }) => {
   );
 });
 
+test('Assert "Decrypt" button calls route to decrypt form', async ({ page, baseURL }) => {
+  await assertRouteIsCalled(page, `${baseURL}/api/evoting/services/dkg/actors/${FORMID}`, 'decrypt', 'computePubshares', 3, false);
+});
+
 test('Assert "Combine" button is only visible to owner', async ({ page }) => {
   await assertIsOnlyVisibleInStates(
     page,
@@ -257,6 +266,10 @@ test('Assert "Combine" button is only visible to owner', async ({ page }) => {
     [4],
     assertIsOnlyVisibleToOwner
   );
+});
+
+test('Assert "Combine" button calls route to combine form', async ({ page, baseURL }) => {
+  await assertRouteIsCalled(page, `${baseURL}/api/evoting/forms/${FORMID}`, 'combine', 'combineShares', 4, false);
 });
 
 test('Assert "Delete" button is only visible to owner', async ({ page }) => {
@@ -267,6 +280,22 @@ test('Assert "Delete" button is only visible to owner', async ({ page }) => {
     [0, 1, 2, 3, 4, 6],
     assertIsOnlyVisibleToOwner
   );
+});
+
+test('Assert "Delete" button calls route to delete form', async ({ page, baseURL }) => {
+  for (const i of [0, 1, 2, 3, 4, 6]) {
+    await setUpMocks(page, i, 6)
+    await logIn(page, SCIPER_OTHER_ADMIN);
+    page.waitForRequest(async (request) => {
+      const body = await request.postDataJSON();
+      return (
+        request.url() === `${baseURL}/api/evoting/forms/${FORMID}` &&
+        request.method() === 'DELETE'
+      );
+    });
+    await page.getByRole('button', { name: i18n.t('delete') }).click();
+    await page.getByRole('button', { name: i18n.t('yes') }).click();
+  }
 });
 
 test('Assert "Vote" button is visible to admin/non-admin voter user', async ({ page }) => {
@@ -297,4 +326,13 @@ test('Assert "Vote" button is visible to admin/non-admin voter user', async ({ p
       });
     }
   );
+});
+
+test('Assert "Vote" button gets voting form', async ({ page }) => {
+    await setUpMocks(page, 1, 6)
+    for (const user of [SCIPER_USER, SCIPER_ADMIN]) {
+      await logIn(page, user);
+      page.waitForRequest(`${process.env.DELA_PROXY_URL}/evoting/forms/${FORMID}`)
+      await page.getByRole('button', { name: i18n.t('vote') }).click();
+    }
 });
