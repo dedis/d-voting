@@ -7,11 +7,15 @@ import {
   SCIPER_OTHER_USER,
   SCIPER_USER,
   mockDKGActors as mockAPIDKGActors,
+  mockAddRole,
+  mockDKGActorsFormID,
+  mockForms,
   mockPersonalInfo,
   mockProxies,
-  mockAddRole,
+  mockServicesShuffle,
 } from './mocks/api';
-import { FORMID, mockDKGActors, mockFormsFormID } from './mocks/evoting';
+import { mockDKGActors, mockFormsFormID } from './mocks/evoting';
+import { FORMID } from './mocks/shared';
 import Worker0 from './json/api/proxies/dela-worker-0.json';
 import Worker1 from './json/api/proxies/dela-worker-1.json';
 import Worker2 from './json/api/proxies/dela-worker-2.json';
@@ -46,6 +50,9 @@ async function setUpMocks(
   await mockDKGActors(page, dkgActorsStatus, initialized);
   await mockAPIDKGActors(page);
   await mockPersonalInfo(page);
+  await mockDKGActorsFormID(page);
+  await mockServicesShuffle(page);
+  await mockForms(page);
 }
 
 test.beforeEach(async ({ page }) => {
@@ -107,16 +114,26 @@ async function assertIsOnlyVisibleInStates(
   }
 }
 
-async function assertRouteIsCalled(page: page, url: string, key: string, action: string, formStatus: number, confirmation: boolean, dkgActorsStatus?: number, initialized?: boolean) {
-  await setUpMocks(page, formStatus, dkgActorsStatus === undefined ? 6 : dkgActorsStatus, initialized);
+async function assertRouteIsCalled(
+  page: page,
+  url: string,
+  key: string,
+  action: string,
+  formStatus: number,
+  confirmation: boolean,
+  dkgActorsStatus?: number,
+  initialized?: boolean
+) {
+  await setUpMocks(
+    page,
+    formStatus,
+    dkgActorsStatus === undefined ? 6 : dkgActorsStatus,
+    initialized
+  );
   await logIn(page, SCIPER_OTHER_ADMIN);
   page.waitForRequest(async (request) => {
     const body = await request.postDataJSON();
-    return (
-      request.url() === url &&
-      request.method() === 'PUT' &&
-      body.Action === action
-    );
+    return request.url() === url && request.method() === 'PUT' && body.Action === action;
   });
   await page.getByRole('button', { name: i18n.t(key) }).click();
   if (confirmation) {
@@ -232,7 +249,15 @@ test('Assert "Open" button is only visible to owner', async ({ page }) => {
 });
 
 test('Assert "Open" button calls route to open form', async ({ page, baseURL }) => {
-  await assertRouteIsCalled(page, `${baseURL}/api/evoting/forms/${FORMID}`, 'open', 'open', 0, false, 6);
+  await assertRouteIsCalled(
+    page,
+    `${baseURL}/api/evoting/forms/${FORMID}`,
+    'open',
+    'open',
+    0,
+    false,
+    6
+  );
 });
 
 test('Assert "Cancel" button is only visible to owner', async ({ page }) => {
@@ -245,7 +270,14 @@ test('Assert "Cancel" button is only visible to owner', async ({ page }) => {
 });
 
 test('Assert "Cancel" button calls route to cancel form', async ({ page, baseURL }) => {
-  await assertRouteIsCalled(page, `${baseURL}/api/evoting/forms/${FORMID}`, 'cancel', 'cancel', 1, true);
+  await assertRouteIsCalled(
+    page,
+    `${baseURL}/api/evoting/forms/${FORMID}`,
+    'cancel',
+    'cancel',
+    1,
+    true
+  );
 });
 
 test('Assert "Close" button is only visible to owner', async ({ page }) => {
@@ -258,7 +290,14 @@ test('Assert "Close" button is only visible to owner', async ({ page }) => {
 });
 
 test('Assert "Close" button calls route to close form', async ({ page, baseURL }) => {
-  await assertRouteIsCalled(page, `${baseURL}/api/evoting/forms/${FORMID}`, 'close', 'close', 1, true);
+  await assertRouteIsCalled(
+    page,
+    `${baseURL}/api/evoting/forms/${FORMID}`,
+    'close',
+    'close',
+    1,
+    true
+  );
 });
 
 test('Assert "Shuffle" button is only visible to owner', async ({ page }) => {
@@ -271,7 +310,14 @@ test('Assert "Shuffle" button is only visible to owner', async ({ page }) => {
 });
 
 test('Assert "Shuffle" button calls route to shuffle form', async ({ page, baseURL }) => {
-  await assertRouteIsCalled(page, `${baseURL}/api/evoting/services/shuffle/${FORMID}`, 'shuffle', 'shuffle', 2, false);
+  await assertRouteIsCalled(
+    page,
+    `${baseURL}/api/evoting/services/shuffle/${FORMID}`,
+    'shuffle',
+    'shuffle',
+    2,
+    false
+  );
 });
 
 test('Assert "Decrypt" button is only visible to owner', async ({ page }) => {
@@ -284,7 +330,14 @@ test('Assert "Decrypt" button is only visible to owner', async ({ page }) => {
 });
 
 test('Assert "Decrypt" button calls route to decrypt form', async ({ page, baseURL }) => {
-  await assertRouteIsCalled(page, `${baseURL}/api/evoting/services/dkg/actors/${FORMID}`, 'decrypt', 'computePubshares', 3, false);
+  await assertRouteIsCalled(
+    page,
+    `${baseURL}/api/evoting/services/dkg/actors/${FORMID}`,
+    'decrypt',
+    'computePubshares',
+    3,
+    false
+  );
 });
 
 test('Assert "Combine" button is only visible to owner', async ({ page }) => {
@@ -297,7 +350,14 @@ test('Assert "Combine" button is only visible to owner', async ({ page }) => {
 });
 
 test('Assert "Combine" button calls route to combine form', async ({ page, baseURL }) => {
-  await assertRouteIsCalled(page, `${baseURL}/api/evoting/forms/${FORMID}`, 'combine', 'combineShares', 4, false);
+  await assertRouteIsCalled(
+    page,
+    `${baseURL}/api/evoting/forms/${FORMID}`,
+    'combine',
+    'combineShares',
+    4,
+    false
+  );
 });
 
 test('Assert "Delete" button is only visible to owner', async ({ page }) => {
@@ -312,13 +372,12 @@ test('Assert "Delete" button is only visible to owner', async ({ page }) => {
 
 test('Assert "Delete" button calls route to delete form', async ({ page, baseURL }) => {
   for (const i of [0, 1, 2, 3, 4, 6]) {
-    await setUpMocks(page, i, 6)
+    await setUpMocks(page, i, 6);
     await logIn(page, SCIPER_OTHER_ADMIN);
     page.waitForRequest(async (request) => {
       const body = await request.postDataJSON();
       return (
-        request.url() === `${baseURL}/api/evoting/forms/${FORMID}` &&
-        request.method() === 'DELETE'
+        request.url() === `${baseURL}/api/evoting/forms/${FORMID}` && request.method() === 'DELETE'
       );
     });
     await page.getByRole('button', { name: i18n.t('delete') }).click();
@@ -357,13 +416,13 @@ test('Assert "Vote" button is visible to admin/non-admin voter user', async ({ p
 });
 
 test('Assert "Vote" button gets voting form', async ({ page }) => {
-    await setUpMocks(page, 1, 6)
-      await logIn(page, SCIPER_USER);
-      page.waitForRequest(`${process.env.DELA_PROXY_URL}/evoting/forms/${FORMID}`)
-      await page.getByRole('button', { name: i18n.t('vote') }).click();
-      // go back to form management page
-      await setUp(page, `/forms/${FORMID}`);
-      await logIn(page, SCIPER_ADMIN);
-      page.waitForRequest(`${process.env.DELA_PROXY_URL}/evoting/forms/${FORMID}`)
-      await page.getByRole('button', { name: i18n.t('vote') }).click();
+  await setUpMocks(page, 1, 6);
+  await logIn(page, SCIPER_USER);
+  page.waitForRequest(`${process.env.DELA_PROXY_URL}/evoting/forms/${FORMID}`);
+  await page.getByRole('button', { name: i18n.t('vote') }).click();
+  // go back to form management page
+  await setUp(page, `/forms/${FORMID}`);
+  await logIn(page, SCIPER_ADMIN);
+  page.waitForRequest(`${process.env.DELA_PROXY_URL}/evoting/forms/${FORMID}`);
+  await page.getByRole('button', { name: i18n.t('vote') }).click();
 });

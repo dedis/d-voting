@@ -2,8 +2,7 @@ import Worker0 from './../json/api/proxies/dela-worker-0.json';
 import Worker1 from './../json/api/proxies/dela-worker-1.json';
 import Worker2 from './../json/api/proxies/dela-worker-2.json';
 import Worker3 from './../json/api/proxies/dela-worker-3.json';
-
-export const FORMID = 'b63bcb854121051f2d8cff04bf0ac9b524b534b704509a16a423448bde3321b4';
+import { FORMID } from './shared';
 
 export async function mockForms(page: page, empty: boolean = true) {
   // clear current mock
