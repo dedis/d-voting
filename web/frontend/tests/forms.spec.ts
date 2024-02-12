@@ -375,7 +375,6 @@ test('Assert "Delete" button calls route to delete form', async ({ page, baseURL
     await setUpMocks(page, i, 6);
     await logIn(page, SCIPER_OTHER_ADMIN);
     page.waitForRequest(async (request) => {
-      const body = await request.postDataJSON();
       return (
         request.url() === `${baseURL}/api/evoting/forms/${FORMID}` && request.method() === 'DELETE'
       );
