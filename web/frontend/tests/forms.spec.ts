@@ -103,14 +103,11 @@ async function assertIsOnlyVisibleInStates(
     });
   }
   for (const i of [0, 1, 2, 3, 4, 5].filter((x) => !states.includes(x))) {
-    await test.step(
-      `Assert is not visible in form state '${prettyFormStates.at(i)}'`,
-      async () => {
-        await setUpMocks(page, i, dkgActorsStatus === undefined ? 6 : dkgActorsStatus, initialized);
-        await page.reload({ waitUntil: 'networkidle' });
-        await expect(locator).toBeHidden();
-      }
-    );
+    await test.step(`Assert is not visible in form state '${prettyFormStates.at(i)}'`, async () => {
+      await setUpMocks(page, i, dkgActorsStatus === undefined ? 6 : dkgActorsStatus, initialized);
+      await page.reload({ waitUntil: 'networkidle' });
+      await expect(locator).toBeHidden();
+    });
   }
 }
 
