@@ -23,15 +23,15 @@ import Worker3 from './json/api/proxies/dela-worker-3.json';
 
 initI18n();
 
-const prettyFormStates = new Map([
-  [0, 'Initial'],
-  [1, 'Open'],
-  [2, 'Closed'],
-  [3, 'ShuffledBallots'],
-  [4, 'PubSharesSubmitted'],
-  [5, 'ResultAvailable'],
-  [6, 'Canceled'],
-]);
+const prettyFormStates = [
+  'Initial',
+  'Open',
+  'Closed',
+  'ShuffledBallots',
+  'PubSharesSubmitted',
+  'ResultAvailable',
+  'Canceled',
+];
 
 // main elements
 
@@ -96,7 +96,7 @@ async function assertIsOnlyVisibleInStates(
   initialized?: boolean
 ) {
   for (const i of states) {
-    await test.step(`Assert is visible in form state '${prettyFormStates.get(i)}'`, async () => {
+    await test.step(`Assert is visible in form state '${prettyFormStates.at(i)}'`, async () => {
       await setUpMocks(page, i, dkgActorsStatus === undefined ? 6 : dkgActorsStatus, initialized);
       await page.reload({ waitUntil: 'networkidle' });
       await assert(page, locator);
@@ -104,7 +104,7 @@ async function assertIsOnlyVisibleInStates(
   }
   for (const i of [0, 1, 2, 3, 4, 5].filter((x) => !states.includes(x))) {
     await test.step(
-      `Assert is not visible in form state '${prettyFormStates.get(i)}'`,
+      `Assert is not visible in form state '${prettyFormStates.at(i)}'`,
       async () => {
         await setUpMocks(page, i, dkgActorsStatus === undefined ? 6 : dkgActorsStatus, initialized);
         await page.reload({ waitUntil: 'networkidle' });
