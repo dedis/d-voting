@@ -1,4 +1,6 @@
-import { FC, useState } from 'react';
+import { FC, useContext, useState } from 'react';
+import { AuthContext } from 'index';
+import { isVoter } from './../../utils/auth';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import kyber from '@dedis/kyber';
@@ -17,7 +19,7 @@ import { useConfiguration } from 'components/utils/useConfiguration';
 import { Status } from 'types/form';
 import { ballotIsValid } from './components/ValidateAnswers';
 import BallotDisplay from './components/BallotDisplay';
-import FormClosed from './components/FormClosed';
+import FormNotAvailable from './components/FormNotAvailable';
 import Loading from 'pages/Loading';
 import RedirectToModal from 'components/modal/RedirectToModal';
 import { default as i18n } from 'i18next';
@@ -39,6 +41,7 @@ const Ballot: FC = () => {
   const [castVoteLoading, setCastVoteLoading] = useState(false);
 
   const navigate = useNavigate();
+  const { authorization, isLogged } = useContext(AuthContext);
 
   const hexToBytes = (hex: string) => {
     const bytes: number[] = [];
@@ -113,6 +116,8 @@ const Ballot: FC = () => {
     event.currentTarget.disabled = true;
   };
 
+  const userIsVoter = isVoter(formID, authorization, isLogged);
+
   return (
     <>
       <RedirectToModal
@@ -127,7 +132,7 @@ const Ballot: FC = () => {
         <Loading />
       ) : (
         <>
-          {status === Status.Open && (
+          {status === Status.Open && userIsVoter && (
             <div className="w-[60rem] font-sans px-4 pt-8 pb-4">
               <div className="pb-2">
                 <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
@@ -165,7 +170,8 @@ const Ballot: FC = () => {
               </div>
             </div>
           )}
-          {status !== Status.Open && <FormClosed />}
+          {!userIsVoter && <FormNotAvailable isVoter={false} />}
+          {status !== Status.Open && <FormNotAvailable isVoter={true} />}
         </>
       )}
     </>

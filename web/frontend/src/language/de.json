@@ -218,7 +218,7 @@
     "operationFailure": "Der Vorgang ist fehlgeschlagen. Versuchen Sie, die Seite zu aktualisieren.",
     "shuffleFail": "Die Zufallsmischung ist fehlgeschlagen.",
     "voteImpossible": "Unmöglich abstimmen",
-    "notFoundVoteImpossible": "Zurück zur Formulartabelle",
+    "returnToFormTable": "Zurück zur Formulartabelle",
     "voteImpossibleDescription": "Das Formular ist nicht mehr zur Abstimmung geöffnet.",
     "yes": "Ja",
     "no": "Nein",
@@ -289,6 +289,8 @@
     "footerUnknown": "?",
     "footerVersion": "version:",
     "footerBuild": "build:",
-    "footerBuildTime": "in:"
+    "footerBuildTime": "in:",
+    "voteNotVoter": "Wählen nicht erlaubt.",
+    "voteNotVoterDescription": "Sie sind nicht wahlberechtigt in dieser Wahl. Falls Sie denken, dass ein Fehler vorliegt, wenden Sie sich bitte an die verantwortliche Stelle."
   }
 }

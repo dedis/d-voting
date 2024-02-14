@@ -218,7 +218,7 @@
     "operationFailure": "L'opération a échoué. Essayez de rafraichir la page.",
     "shuffleFail": "L'opération de mélange a échoué",
     "voteImpossible": "Vote Impossible",
-    "notFoundVoteImpossible": "Retournez à l'onglet des sondages",
+    "returnToFormTable": "Retournez à l'onglet des sondages",
     "voteImpossibleDescription": "Le sondage n'est plus ouvert au vote.",
     "yes": "Oui",
     "no": "Non",
@@ -289,6 +289,8 @@
     "footerUnknown": "?",
     "footerVersion": "version:",
     "footerBuild": "build:",
-    "footerBuildTime": "en:"
+    "footerBuildTime": "en:",
+    "voteNotVoter": "Interdit de voter.",
+    "voteNotVoterDescription": "Vous n'avez pas le droit de voter dans cette élection. Si vous pensez qu'il s'agit d'une erreur, veuillez contacter le/la reponsable de service."
   }
 }
