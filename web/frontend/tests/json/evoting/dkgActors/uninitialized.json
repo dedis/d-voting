@@ -5,6 +5,6 @@
   "Args": {
     "error": "actor not found",
     "method": "GET",
-    "url": "/evoting/services/dkg/actors/d3319c58a3bea17dafe61168610757b9a7bb0d922c1f2aa30b8ad537646b1c07"
+    "url": "/evoting/services/dkg/actors/b63bcb854121051f2d8cff04bf0ac9b524b534b704509a16a423448bde3321b4"
   }
 }

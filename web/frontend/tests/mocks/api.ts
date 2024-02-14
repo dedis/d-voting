@@ -1,6 +1,44 @@
+import { FORMID } from './shared';
 export const SCIPER_ADMIN = '123456';
 export const SCIPER_OTHER_ADMIN = '987654';
 export const SCIPER_USER = '789012';
+export const SCIPER_OTHER_USER = '654321';
+
+// /api/evoting
+
+export async function mockDKGActors(page: page) {
+  await page.route('/api/evoting/services/dkg/actors', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({ status: 200 });
+    }
+  });
+}
+
+export async function mockDKGActorsFormID(page: page) {
+  await page.route(`/api/evoting/services/dkg/actors/${FORMID}`, async (route) => {
+    if (route.request().method() === 'PUT') {
+      await route.fulfill({ status: 200 });
+    }
+  });
+}
+
+export async function mockServicesShuffle(page: page) {
+  await page.route('/api/evoting/services/shuffle/', async (route) => {
+    if (route.request().method() === 'PUT') {
+      await route.fulfill({ status: 200 });
+    }
+  });
+}
+
+export async function mockForms(page: page) {
+  await page.route(`/api/evoting/forms/${FORMID}`, async (route) => {
+    if (route.request().method() === 'PUT') {
+      await route.fulfill({ status: 200 });
+    }
+  });
+}
+
+// /api/config
 
 export async function mockProxy(page: page) {
   await page.route('/api/config/proxy', async (route) => {
@@ -15,6 +53,8 @@ export async function mockProxy(page: page) {
     });
   });
 }
+
+// /api
 
 export async function mockProxies(page: page, workerNumber: number) {
   await page.route(
@@ -70,5 +110,11 @@ export async function mockGetDevLogin(page: page) {
 export async function mockLogout(page: page) {
   await page.route('/api/logout', async (route) => {
     await route.fulfill({});
+  });
+}
+
+export async function mockAddRole(page: page) {
+  await page.route('/api/add_role', async (route) => {
+    await route.fulfill({ status: 200 });
   });
 }

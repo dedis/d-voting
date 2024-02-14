@@ -12,6 +12,8 @@ import {
   mockProxy,
 } from './mocks/api';
 
+export const FORMID = 'b63bcb854121051f2d8cff04bf0ac9b524b534b704509a16a423448bde3321b4';
+
 export function initI18n() {
   i18n.init({
     resources: { en, fr, de },
