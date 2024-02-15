@@ -72,7 +72,6 @@ func getScenarioTest(numNodes int, numVotes int, numForm int) func(*testing.T) {
 
 func startFormProcess(wg *sync.WaitGroup, numNodes, numVotes, numSec int, proxyArray []string, t *testing.T, numForm int, testType testType) {
 	defer wg.Done()
-	rand.Seed(0)
 
 	const contentType = "application/json"
 	secretkeyBuf, err := hex.DecodeString("28912721dfd507e198b31602fb67824856eb5a674c021d49fdccbe52f0234409")

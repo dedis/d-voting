@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
 	"strconv"
 
@@ -34,8 +33,6 @@ func getIntegrationTestBadVote(numNodes, numVotes, numBadVotes int) func(*testin
 		adminID := "first admin"
 
 		// ##### SETUP ENV #####
-		// make tests reproducible
-		rand.Seed(1)
 
 		delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 
@@ -174,8 +171,6 @@ func getIntegrationTestRevote(numNodes, numVotes, numRevotes int) func(*testing.
 		adminID := "first admin"
 
 		// ##### SETUP ENV #####
-		// make tests reproducible
-		rand.Seed(1)
 
 		delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 

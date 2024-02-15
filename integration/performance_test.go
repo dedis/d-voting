@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -31,8 +30,6 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	adminID := "I am an admin"
 
 	// ##### SETUP ENV #####
-	// make tests reproducible
-	rand.Seed(1)
 
 	dirPath, err := os.MkdirTemp(os.TempDir(), "d-voting-three-votes")
 	require.NoError(b, err)
