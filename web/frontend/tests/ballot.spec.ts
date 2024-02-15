@@ -50,7 +50,7 @@ test('Assert ballot form is correctly handled for anonymous users, non-voter use
     await page.goto(`/ballot/show/${FORMID}`, { waitUntil: 'networkidle' });
     await expect(page).toHaveURL(`/ballot/show/${FORMID}`);
     await expect(castVoteButton).toBeVisible();
-    await expect(page.getByText(i18n.t('vote'))).toBeVisible();
+    await expect(page.getByText(i18n.t('vote'), { exact: true })).toBeVisible();
     await expect(page.getByText(i18n.t('voteExplanation'))).toBeVisible();
   });
 });
