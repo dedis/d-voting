@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { Locator, Page, expect, test } from '@playwright/test';
 import { default as i18n } from 'i18next';
 import { assertHasFooter, assertHasNavBar, initI18n, logIn, setUp } from './shared';
 import {
@@ -36,7 +36,7 @@ const prettyFormStates = [
 // main elements
 
 async function setUpMocks(
-  page: page,
+  page: Page,
   formStatus: number,
   dkgActorsStatus: number,
   initialized?: boolean
@@ -69,7 +69,7 @@ test('Assert footer is present', async ({ page }) => {
   await assertHasFooter(page);
 });
 
-async function assertIsOnlyVisibleToOwner(page: page, locator: locator) {
+async function assertIsOnlyVisibleToOwner(page: Page, locator: Locator) {
   await test.step('Assert is hidden to unauthenticated user', async () => {
     await expect(locator).toBeHidden();
   });
@@ -88,9 +88,9 @@ async function assertIsOnlyVisibleToOwner(page: page, locator: locator) {
 }
 
 async function assertIsOnlyVisibleInStates(
-  page: page,
-  locator: locator,
-  states: Array,
+  page: Page,
+  locator: Locator,
+  states: Array<number>,
   assert: Function,
   dkgActorsStatus?: number,
   initialized?: boolean
@@ -112,7 +112,7 @@ async function assertIsOnlyVisibleInStates(
 }
 
 async function assertRouteIsCalled(
-  page: page,
+  page: Page,
   url: string,
   key: string,
   action: string,
@@ -387,7 +387,7 @@ test('Assert "Vote" button is visible to admin/non-admin voter user', async ({ p
     page.getByRole('button', { name: i18n.t('vote'), exact: true }), // by default name is not matched exactly which returns both the "Vote" and the "Add voters" button
     [1],
     // eslint-disable-next-line @typescript-eslint/no-shadow
-    async function (page: page, locator: locator) {
+    async function (page: Page, locator: Locator) {
       await test.step('Assert is hidden to unauthenticated user', async () => {
         await expect(locator).toBeHidden();
       });

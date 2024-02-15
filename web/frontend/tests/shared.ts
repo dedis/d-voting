@@ -1,5 +1,5 @@
 import { default as i18n } from 'i18next';
-import { expect } from '@playwright/test';
+import { Locator, Page, expect } from '@playwright/test';
 import en from './../src/language/en.json';
 import fr from './../src/language/fr.json';
 import de from './../src/language/de.json';
@@ -21,7 +21,7 @@ export function initI18n() {
   });
 }
 
-export async function setUp(page: page, url: string) {
+export async function setUp(page: Page, url: string) {
   await mockProxy(page);
   await mockGetDevLogin(page);
   await mockLogout(page);
@@ -30,18 +30,18 @@ export async function setUp(page: page, url: string) {
   await expect(page).toHaveURL(url);
 }
 
-export async function logIn(page: page, sciper: string) {
+export async function logIn(page: Page, sciper: string) {
   await mockPersonalInfo(page, sciper);
   await page.reload({ waitUntil: 'networkidle' });
 }
 
-export async function assertOnlyVisibleToAuthenticated(page: page, locator: locator) {
+export async function assertOnlyVisibleToAuthenticated(page: Page, locator: Locator) {
   await expect(locator).toBeHidden(); // assert is hidden to unauthenticated user
   await logIn(page, SCIPER_USER);
   await expect(locator).toBeVisible(); // assert is visible to authenticated user
 }
 
-export async function assertOnlyVisibleToAdmin(page: page, locator: locator) {
+export async function assertOnlyVisibleToAdmin(page: Page, locator: Locator) {
   await expect(locator).toBeHidden(); // assert is hidden to unauthenticated user
   await logIn(page, SCIPER_USER);
   await expect(locator).toBeHidden(); // assert is hidden to authenticated non-admin user
@@ -49,15 +49,15 @@ export async function assertOnlyVisibleToAdmin(page: page, locator: locator) {
   await expect(locator).toBeVisible(); // assert is visible to admin user
 }
 
-export async function assertHasNavBar(page: page) {
+export async function assertHasNavBar(page: Page) {
   await expect(page.getByTestId('navBar')).toBeVisible();
 }
 
-export async function assertHasFooter(page: page) {
+export async function assertHasFooter(page: Page) {
   await expect(page.getByTestId('footer')).toBeVisible();
 }
 
-export function translate(internationalizable: object) {
+export function translate(internationalizable: any) {
   switch (i18n.language) {
     case 'en':
       return internationalizable.En;

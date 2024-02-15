@@ -61,6 +61,7 @@ test('Assert "Logout" calls logout API', async ({ page, baseURL }) => {
     ['menuitem', 'logout'],
     ['button', 'continue'],
   ]) {
+    // @ts-ignore
     await page.getByRole(role, { name: i18n.t(key) }).click();
   }
 });
