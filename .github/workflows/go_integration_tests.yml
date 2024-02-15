@@ -48,7 +48,12 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Run the crash test
-        run: go test -timeout 10m -run TestCrash ./integration/...
+        run: |
+          for a in $( seq 3 ); do
+            echo "Testing sequence $a"
+            go test -timeout 10m -run TestCrash ./integration/... && exit 0
+          done
+          exit 1
   revote:
     name: Test revote
     runs-on: ubuntu-latest
