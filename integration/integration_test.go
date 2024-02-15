@@ -37,8 +37,6 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		adminID := "first admin"
 
 		// ##### SETUP ENV #####
-		// make tests reproducible
-		rand.Seed(1)
 
 		delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 
@@ -178,8 +176,6 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		adminID := "first admin"
 
 		// ##### SETUP ENV #####
-		// make tests reproducible
-		rand.Seed(1)
 
 		delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 
@@ -328,8 +324,6 @@ func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 		adminID := "first admin"
 
 		// ##### SETUP ENV #####
-		// make tests reproducible
-		rand.Seed(1)
 
 		delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 
