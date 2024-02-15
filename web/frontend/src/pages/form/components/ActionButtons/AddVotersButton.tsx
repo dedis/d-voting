@@ -1,6 +1,6 @@
 import { DocumentAddIcon } from '@heroicons/react/outline';
 import { useTranslation } from 'react-i18next';
-import { isManager } from './utils';
+import { isManager } from './../../../../utils/auth';
 import { AuthContext } from 'index';
 import { useContext } from 'react';
 

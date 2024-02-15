@@ -4,7 +4,7 @@ import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OngoingAction, Status } from 'types/form';
 import ActionButton from './ActionButton';
-import { isManager } from './utils';
+import { isManager } from './../../../../utils/auth';
 
 const SetupButton = ({ status, handleSetup, ongoingAction, formID }) => {
   const { t } = useTranslation();

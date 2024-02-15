@@ -2,7 +2,7 @@ import { TrashIcon } from '@heroicons/react/outline';
 import { AuthContext } from 'index';
 import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
-import { isManager } from './utils';
+import { isManager } from './../../../../utils/auth';
 
 const DeleteButton = ({ handleDelete, formID }) => {
   const { t } = useTranslation();
