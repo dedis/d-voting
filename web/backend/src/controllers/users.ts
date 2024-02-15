@@ -28,6 +28,12 @@ usersRouter.post('/add_role', (req, res, next) => {
     return;
   }
 
+  if (req.body.permission === 'vote') {
+    if (!isAuthorized(req.session.userId, req.body.subject, PERMISSIONS.ACTIONS.OWN)) {
+      res.status(400).send('Unauthorized - not owner of form');
+    }
+  }
+
   addPolicy(req.body.userId, req.body.subject, req.body.permission)
     .then(() => {
       res.set(200).send();
