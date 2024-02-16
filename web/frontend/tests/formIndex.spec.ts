@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { Locator, Page, expect, test } from '@playwright/test';
 import { default as i18n } from 'i18next';
 import { assertHasFooter, assertHasNavBar, initI18n, logIn, setUp, translate } from './shared';
 import { SCIPER_ADMIN, SCIPER_USER, mockPersonalInfo } from './mocks/api';
@@ -9,7 +9,7 @@ import Admin from './json/api/personal_info/123456.json';
 
 initI18n();
 
-async function goForward(page: page) {
+async function goForward(page: Page) {
   await page.getByRole('button', { name: i18n.t('next') }).click();
 }
 
@@ -85,7 +85,7 @@ test('Assert no forms are displayed for empty list', async ({ page }) => {
     .toHaveLength(1);
 });
 
-async function assertQuickAction(row: locator, form: object, sciper?: string) {
+async function assertQuickAction(row: Locator, form: any, sciper?: string) {
   const user = sciper === SCIPER_USER ? User : (sciper === SCIPER_ADMIN ? Admin : undefined); // eslint-disable-line
   const quickAction = row.getByTestId('quickAction');
   switch (form.Status) {
@@ -94,6 +94,7 @@ async function assertQuickAction(row: locator, form: object, sciper?: string) {
       if (
         user !== undefined &&
         form.FormID in user.authorization &&
+        // @ts-ignore
         user.authorization[form.FormID].includes('vote')
       ) {
         await expect(quickAction).toHaveText(i18n.t('vote'));
@@ -134,9 +135,9 @@ test('Assert forms are displayed correctly for unauthenticated user', async ({ p
     await assertQuickAction(row, form);
   }
   await goForward(page);
-  let row = await table.getByRole('row', { name: translate(Forms.Forms.at(-1).Title) });
+  let row = await table.getByRole('row', { name: translate(Forms.Forms.at(-1)!.Title) });
   await expect(row).toBeVisible();
-  await assertQuickAction(row, Forms.Forms.at(-1));
+  await assertQuickAction(row, Forms.Forms.at(-1)!);
 });
 
 test('Assert quick actions are displayed correctly for authenticated users', async ({ page }) => {
@@ -151,8 +152,8 @@ test('Assert quick actions are displayed correctly for authenticated users', asy
     }
     await goForward(page);
     await assertQuickAction(
-      await table.getByRole('row', { name: translate(Forms.Forms.at(-1).Title) }),
-      Forms.Forms.at(-1)
+      await table.getByRole('row', { name: translate(Forms.Forms.at(-1)!.Title) }),
+      Forms.Forms.at(-1)!
     );
   }
 });
