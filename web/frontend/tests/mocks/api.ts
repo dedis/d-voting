@@ -38,6 +38,22 @@ export async function mockForms(page: page) {
   });
 }
 
+export async function mockFormsVote(page: page) {
+  await page.route(`/api/evoting/forms/${FORMID}/vote`, async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: {
+          Status: 0,
+          Token:
+            'eyJTdGF0dXMiOjAsIlRyYW5zYWN0aW9uSUQiOiJQQWluaEVjNVNzM2JiVWkxbldNWU55dWdPVkFpdVZ3YklZcGpKTFJ1SUdnPSIsIkxhc3RCbG9ja0lkeCI6NSwiVGltZSI6MTcwODAxNDgyMSwiSGFzaCI6ImtVT3g3Ykw0eC9IYXdwanppTityTVFIL3Fmb1pnRHBFUFc3S2tzRWl1TTA9IiwiU2lnbmF0dXJlIjoiZXlKT1lXMWxJam9pUWt4VExVTlZVbFpGTFVKT01qVTJJaXdpUkdGMFlTSTZJbU00UjFwUVYyWjZTRlpqT1dGV1dWaGhTbEUwWVhKT1UyRTRVbXB2VEVOSGIyZFBlbWRpVDFKSlYxVnVSbkE0ZFdaemQyMWlVVXA2ZWpScWJHNVFRa3QzUzJwWmVEaDJkVmgzZUhCWE5FeE1hVFZWUkRsUlBUMGlmUT09In0=',
+        },
+      });
+    }
+  });
+}
+
 // /api/config
 
 export async function mockProxy(page: page) {
