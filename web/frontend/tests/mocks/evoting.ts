@@ -40,8 +40,9 @@ export async function mockFormsFormID(page: page, formStatus: number) {
       'closed.json',
       'shuffled.json',
       'decrypted.json',
-      'combined.json',
+      '/result/clear.json', // default results
       'canceled.json',
+      '/result/tie.json', // alternative results
     ][formStatus];
     await route.fulfill({
       path: `./tests/json/evoting/forms/${formFile}`,

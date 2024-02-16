@@ -1,5 +1,5 @@
 {
-  "FormID": "b63bcb854121051f2d8cff04bf0ac9b524b534b704509a16a423448bde3321b4",
+  "FormID": "69c25fbf85546b30b5acb1101488253dda64d42500f3a39921f38bd08e585516",
   "Configuration": {
     "Title": {
       "En": "Colours",
@@ -11,8 +11,8 @@
         "ID": "yOakwFnR",
         "Title": {
           "En": "Colours",
-          "Fr": "Couleurs",
-          "De": "Farben"
+          "Fr": "",
+          "De": ""
         },
         "Order": [
           "CLgNiLbC"
@@ -88,7 +88,7 @@
         [
           false,
           true,
-          false
+          true
         ]
       ],
       "RankResultIDs": [],
@@ -111,3 +111,4 @@
     "K7ZNvumBVc"
   ]
 }
+

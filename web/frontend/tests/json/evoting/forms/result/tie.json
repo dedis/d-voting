@@ -1,0 +1,113 @@
+{
+  "FormID": "69c25fbf85546b30b5acb1101488253dda64d42500f3a39921f38bd08e585516",
+  "Configuration": {
+    "Title": {
+      "En": "Colours",
+      "Fr": "",
+      "De": ""
+    },
+    "Scaffold": [
+      {
+        "ID": "yOakwFnR",
+        "Title": {
+          "En": "Colours",
+          "Fr": "",
+          "De": ""
+        },
+        "Order": [
+          "CLgNiLbC"
+        ],
+        "Subjects": [],
+        "Selects": [
+          {
+            "ID": "CLgNiLbC",
+            "Title": {
+              "En": "RGB",
+              "Fr": "RGB",
+              "De": "RGB"
+            },
+            "MaxN": 2,
+            "MinN": 1,
+            "Choices": [
+              "{\"en\":\"Red\",\"fr\":\"Rouge\",\"de\":\"Rot\"}",
+              "{\"en\":\"Green\",\"fr\":\"Vert\",\"de\":\"Grün\"}",
+              "{\"en\":\"Blue\",\"fr\":\"Bleu\",\"de\":\"Blau\"}"
+            ],
+            "Hint": {
+              "En": "",
+              "Fr": "",
+              "De": ""
+            }
+          }
+        ],
+        "Ranks": [],
+        "Texts": []
+      }
+    ]
+  },
+  "Status": 5,
+  "Pubkey": "612fdc867be1a5faccf16e5aed946880005840ee04aaa382fe181a2b46dc9a24",
+  "Result": [
+    {
+      "SelectResultIDs": [
+        "CLgNiLbC"
+      ],
+      "SelectResult": [
+        [
+          true,
+          false,
+          false
+        ]
+      ],
+      "RankResultIDs": [],
+      "RankResult": [],
+      "TextResultIDs": [],
+      "TextResult": []
+    },
+    {
+      "SelectResultIDs": [
+        "CLgNiLbC"
+      ],
+      "SelectResult": [
+        [
+          false,
+          false,
+          true
+        ]
+      ],
+      "RankResultIDs": [],
+      "RankResult": [],
+      "TextResultIDs": [],
+      "TextResult": []
+    },
+    {
+      "SelectResultIDs": [
+        "CLgNiLbC"
+      ],
+      "SelectResult": [
+        [
+          false,
+          true,
+          false
+        ]
+      ],
+      "RankResultIDs": [],
+      "RankResult": [],
+      "TextResultIDs": [],
+      "TextResult": []
+    }
+  ],
+  "Roster": [
+    "grpc://dela-worker-0:2000",
+    "grpc://dela-worker-1:2000",
+    "grpc://dela-worker-2:2000",
+    "grpc://dela-worker-3:2000"
+  ],
+  "ChunksPerBallot": 1,
+  "BallotSize": 23,
+  "Voters": [
+    "oUItDdhhEE",
+    "WZyqP1gssL",
+    "K7ZNvumBVc"
+  ]
+}
