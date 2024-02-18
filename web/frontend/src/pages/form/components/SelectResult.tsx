@@ -21,9 +21,11 @@ const SelectResult: FC<SelectResultProps> = ({ select, selectResult }) => {
         <React.Fragment key={index}>
           <div className="px-2 sm:px-4 break-words max-w-xs w-max">
             <span>
-              {i18n.language === 'en' && select.ChoicesMap.get('en')[index]}
-              {i18n.language === 'fr' && select.ChoicesMap.get('fr')[index]}
-              {i18n.language === 'de' && select.ChoicesMap.get('de')[index]}
+              {
+                (select.ChoicesMap.has(i18n.language)
+                  ? select.ChoicesMap.get(i18n.language)
+                  : select.ChoicesMap.get('en'))[index]
+              }
             </span>
             :
           </div>
@@ -56,9 +58,11 @@ export const IndividualSelectResult: FC<SelectResultProps> = ({ select, selectRe
             <div className="flex flex-row px-2 sm:px-4 break-words max-w-xs w-max">
               <div className="h-4 w-4 mr-2 accent-indigo-500 ">{displayChoices(result, index)}</div>
               <div>
-                {i18n.language === 'en' && select.ChoicesMap.get('en')[index]}
-                {i18n.language === 'fr' && select.ChoicesMap.get('fr')[index]}
-                {i18n.language === 'de' && select.ChoicesMap.get('de')[index]}
+                {
+                  (select.ChoicesMap.has(i18n.language)
+                    ? select.ChoicesMap.get(i18n.language)
+                    : select.ChoicesMap.get('en'))[index]
+                }
               </div>
             </div>
           </React.Fragment>
