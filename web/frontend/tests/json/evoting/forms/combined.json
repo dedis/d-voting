@@ -82,9 +82,102 @@
       }
     ]
   },
-  "Status": 0,
-  "Pubkey": "",
-  "Result": [],
+  "Status": 5,
+  "Pubkey": "612fdc867be1a5faccf16e5aed946880005840ee04aaa382fe181a2b46dc9a24",
+  "Result": [
+    {
+      "SelectResultIDs": [
+        "CLgNiLbC",
+        "riJFjw0q"
+      ],
+      "SelectResult": [
+        [
+          true,
+          false,
+          false
+        ],
+        [
+          true,
+          true,
+          false,
+          false
+        ]
+      ],
+      "RankResultIDs": [],
+      "RankResult": [],
+      "TextResultIDs": [],
+      "TextResult": []
+    },
+    {
+      "SelectResultIDs": [
+        "CLgNiLbC",
+        "riJFjw0q"
+      ],
+      "SelectResult": [
+        [
+          false,
+          false,
+          true
+        ],
+        [
+          false,
+          false,
+          false,
+          true
+        ]
+      ],
+      "RankResultIDs": [],
+      "RankResult": [],
+      "TextResultIDs": [],
+      "TextResult": []
+    },
+    {
+      "SelectResultIDs": [
+        "CLgNiLbC",
+        "riJFjw0q"
+      ],
+      "SelectResult": [
+        [
+          false,
+          true,
+          true
+        ],
+        [
+          false,
+          true,
+          false,
+          false
+        ]
+      ],
+      "RankResultIDs": [],
+      "RankResult": [],
+      "TextResultIDs": [],
+      "TextResult": []
+    },
+    {
+      "SelectResultIDs": [
+        "CLgNiLbC",
+        "riJFjw0q"
+      ],
+      "SelectResult": [
+        [
+          false,
+          false,
+          true
+        ],
+        [
+          false,
+          false,
+          true,
+          false
+        ]
+      ],
+      "RankResultIDs": [],
+      "RankResult": [],
+      "TextResultIDs": [],
+      "TextResult": []
+    }
+  ],
   "Roster": [
     "grpc://dela-worker-0:2000",
     "grpc://dela-worker-1:2000",
@@ -93,6 +186,11 @@
   ],
   "ChunksPerBallot": 2,
   "BallotSize": 48,
-  "Voters": []
+  "Voters": [
+    "brcLwsgGcU",
+    "JThb56JvGF",
+    "zXcZU5QNwn",
+    "bWxTfeq4t5"
+  ]
 }
 

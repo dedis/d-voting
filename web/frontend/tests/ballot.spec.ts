@@ -60,45 +60,61 @@ test('Assert ballot is displayed properly', async ({ page }) => {
   // TODO integrate localisation
   i18n.changeLanguage('en'); // force 'en' for this test
   await expect(content.locator('xpath=./div/div[3]/h3')).toContainText(Form.Configuration.Title.En);
-  const scaffold = Form.Configuration.Scaffold.at(0);
-  await expect(content.locator('xpath=./div/div[3]/div/div/h3')).toContainText(scaffold.Title.En);
-  const select = scaffold.Selects.at(0);
-  await expect(
-    content.locator('xpath=./div/div[3]/div/div/div/div/div/div[1]/div/h3')
-  ).toContainText(select.Title.En);
-  await expect(
-    page.getByText(i18n.t('selectBetween', { minSelect: select.MinN, maxSelect: select.MaxN }))
-  ).toBeVisible();
-  for (const choice of select.Choices.map((x) => JSON.parse(x))) {
-    await expect(page.getByRole('checkbox', { name: choice.en })).toBeVisible();
+  for (const [index, scaffold] of Form.Configuration.Scaffold.entries()) {
+    await expect(content.locator(`xpath=./div/div[3]/div/div[${index + 1}]/h3`)).toContainText(
+      scaffold.Title.En
+    );
+    const select = scaffold.Selects.at(0);
+    await expect(
+      content.locator(`xpath=./div/div[3]/div/div[${index + 1}]/div/div/div/div[1]/div[1]/h3`)
+    ).toContainText(select.Title.En);
+    await expect(
+      page.getByText(i18n.t('selectBetween', { minSelect: select.MinN, maxSelect: select.MaxN }))
+    ).toBeVisible();
+    for (const choice of select.Choices.map((x) => JSON.parse(x))) {
+      await expect(page.getByRole('checkbox', { name: choice.en })).toBeVisible();
+    }
   }
   i18n.changeLanguage(); // unset language for the other tests
 });
 
 test('Assert minimum/maximum number of choices are handled correctly', async ({ page }) => {
+  const content = await page.getByTestId('content');
   const castVoteButton = await page.getByRole('button', { name: i18n.t('castVote') });
-  const select = Form.Configuration.Scaffold.at(0).Selects.at(0);
-  await test.step(
-    `Assert minimum number of choices (${select.MinN}) are handled correctly`,
-    async () => {
-      await castVoteButton.click();
-      await expect(
-        page.getByText(
-          i18n.t('minSelectError', { min: select.MinN, singularPlural: i18n.t('singularAnswer') })
-        )
-      ).toBeVisible();
-    }
-  );
-  await test.step(
-    `Assert maximum number of choices (${select.MaxN}) are handled correctly`,
-    async () => {
-      for (const choice of select.Choices.map((x) => JSON.parse(x))) {
-        await page.getByRole('checkbox', { name: choice.en }).setChecked(true);
+  for (const [index, scaffold] of Form.Configuration.Scaffold.entries()) {
+    const select = scaffold.Selects.at(0);
+    await test.step(
+      `Assert minimum number of choices (${select.MinN}) are handled correctly`,
+      async () => {
+        await castVoteButton.click();
+        await expect(
+          content.locator(`xpath=./div/div[3]/div/div[${index + 1}]`).getByText(
+            i18n.t('minSelectError', {
+              min: select.MinN,
+              singularPlural: i18n.t('singularAnswer'),
+            })
+          )
+        ).toBeVisible();
       }
-      await castVoteButton.click();
-      await expect(page.getByText(i18n.t('maxSelectError', { max: select.MaxN }))).toBeVisible();
-    }
-  );
+    );
+    await test.step(
+      `Assert maximum number of choices (${select.MaxN}) are handled correctly`,
+      async () => {
+        for (const choice of select.Choices.map((x) => JSON.parse(x))) {
+          await page.getByRole('checkbox', { name: choice.en }).setChecked(true);
+        }
+        await castVoteButton.click();
+        await expect(
+          content.locator(`xpath=./div/div[3]/div/div[${index + 1}]`).getByText(
+            i18n.t('maxSelectError', {
+              max: select.MaxN,
+              singularPlural: i18n.t('singularAnswer'),
+            })
+          )
+        ).toBeVisible();
+      }
+    );
+  }
 });
 
 test('Assert that correct number of choices are accepted', async ({ page, baseURL }) => {
@@ -109,14 +125,21 @@ test('Assert that correct number of choices are accepted', async ({ page, baseUR
       request.url() === `${baseURL}/api/evoting/forms/${FORMID}/vote` &&
       request.method() === 'POST' &&
       body.UserID === null &&
-      body.Ballot.length === 1 &&
+      body.Ballot.length === 2 &&
       body.Ballot.at(0).K.length === 32 &&
-      body.Ballot.at(0).C.length === 32
+      body.Ballot.at(0).C.length === 32 &&
+      body.Ballot.at(1).K.length === 32 &&
+      body.Ballot.at(1).C.length === 32
     );
   });
   await page
     .getByRole('checkbox', {
       name: JSON.parse(Form.Configuration.Scaffold.at(0).Selects.at(0).Choices.at(0)).en,
+    })
+    .setChecked(true);
+  await page
+    .getByRole('checkbox', {
+      name: JSON.parse(Form.Configuration.Scaffold.at(1).Selects.at(0).Choices.at(0)).en,
     })
     .setChecked(true);
   await page.getByRole('button', { name: i18n.t('castVote') }).click();
