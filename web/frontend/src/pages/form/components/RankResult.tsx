@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import { RankQuestion } from 'types/configuration';
-import ProgressBar from './ProgressBar';
+import { ProgressBar } from './ProgressBar';
 import { countRankResult } from './utils/countResult';
 import { default as i18n } from 'i18next';
 

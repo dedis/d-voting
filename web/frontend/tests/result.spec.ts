@@ -51,22 +51,29 @@ test('Assert form titles are displayed correctly', async ({ page }) => {
 
 test('Assert grouped results are displayed correctly', async ({ page }) => {
   // grouped results are displayed by default
-  for (const [index, scaffold] of Form.Configuration.Scaffold.entries()) {
+  let i = 1;
+  for (const expected of [
+    [
+      ['Blue', '3/4'],
+      ['Green', '2/4'],
+      ['Red', '1/4'],
+    ],
+    [
+      ['Cyan', '2/4'],
+      ['Magenta', '2/4'],
+      ['Yellow', '1/4'],
+      ['Key', '1/4'],
+    ],
+  ]) {
     const resultGrid = await page
       .getByTestId('content')
-      .locator(`xpath=./div/div/div[2]/div/div[2]/div/div/div[${index + 1}]/div/div/div[2]`);
+      .locator(`xpath=./div/div/div[2]/div/div[2]/div/div/div[${i}]/div/div/div[2]`);
+    i += 1;
     let j = 1;
-    for (const [i, choice] of scaffold.Selects.at(0).Choices.entries()) {
-      await expect(resultGrid.locator(`xpath=./div[${j}]/span`)).toContainText(
-        JSON.parse(choice).en
-      );
+    for (const [title, totalCount] of expected) {
+      await expect(resultGrid.locator(`xpath=./div[${j}]/span`)).toContainText(title);
       await expect(resultGrid.locator(`xpath=./div[${j + 1}]/div/div[2]`)).toContainText(
-        [
-          ['33.33%', '33.33%', '66.67%'],
-          ['25.00%', '50.00%', '25.00%', '25.00%'],
-        ]
-          .at(index)
-          .at(i)
+        totalCount
       );
       j += 2;
     }
@@ -87,8 +94,8 @@ test('Assert individual results are displayed correctly', async ({ page }) => {
           [true, true, false, false],
         ],
         [
-          [false, false, true],
-          [false, false, false, true],
+          [false, true, true],
+          [true, false, false, true],
         ],
         [
           [false, true, true],

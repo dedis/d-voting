@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import { SelectQuestion } from 'types/configuration';
-import ProgressBar from './ProgressBar';
+import { SelectProgressBar } from './ProgressBar';
 import { countSelectResult } from './utils/countResult';
 import { default as i18n } from 'i18next';
 
@@ -11,12 +11,16 @@ type SelectResultProps = {
 
 // Display the results of a select question.
 const SelectResult: FC<SelectResultProps> = ({ select, selectResult }) => {
-  const { resultsInPercent, maxIndices } = countSelectResult(selectResult);
+  const sortedResults = countSelectResult(selectResult)
+    .map((result, index) => {
+      const tempResult: [string, number, number] = [...result, index];
+      return tempResult;
+    })
+    .sort((x, y) => y[1] - x[1]);
+  const maxCount = sortedResults[0][1];
 
   const displayResults = () => {
-    return resultsInPercent.map((percent, index) => {
-      const isBest = maxIndices.includes(index);
-
+    return sortedResults.map(([percent, totalCount, origIndex], index) => {
       return (
         <React.Fragment key={index}>
           <div className="px-2 sm:px-4 break-words max-w-xs w-max">
@@ -24,12 +28,16 @@ const SelectResult: FC<SelectResultProps> = ({ select, selectResult }) => {
               {
                 (select.ChoicesMap.has(i18n.language)
                   ? select.ChoicesMap.get(i18n.language)
-                  : select.ChoicesMap.get('en'))[index]
+                  : select.ChoicesMap.get('en'))[origIndex]
               }
             </span>
             :
           </div>
-          <ProgressBar isBest={isBest}>{percent}</ProgressBar>
+          <SelectProgressBar
+            percent={percent}
+            totalCount={totalCount}
+            numberOfBallots={selectResult.length}
+            isBest={totalCount === maxCount}></SelectProgressBar>
         </React.Fragment>
       );
     });

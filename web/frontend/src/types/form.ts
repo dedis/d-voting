@@ -80,7 +80,12 @@ type TextResults = Map<ID, string[][]>;
 
 interface DownloadedResults {
   Title: string;
-  Results?: { Candidate: string; Percentage: string }[];
+  Results?: {
+    Candidate: string;
+    Percent?: string;
+    TotalCount?: number;
+    NumberOfBallots?: number;
+  }[];
 }
 interface BallotResults {
   BallotNumber: number;
