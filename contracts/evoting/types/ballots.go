@@ -89,7 +89,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, form Form) error {
 				ID:      ID(questionID),
 				MaxN:    q.GetMaxN(),
 				MinN:    q.GetMinN(),
-				Choices: make([]string, q.GetChoicesLength()),
+				Choices: make([]Choice, q.GetChoicesLength()),
 			}
 
 			results, err := selectQ.unmarshalAnswers(selections)
@@ -108,7 +108,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, form Form) error {
 				ID:      ID(questionID),
 				MaxN:    q.GetMaxN(),
 				MinN:    q.GetMinN(),
-				Choices: make([]string, q.GetChoicesLength()),
+				Choices: make([]Choice, q.GetChoicesLength()),
 			}
 
 			results, err := rankQ.unmarshalAnswers(ranks)
@@ -127,7 +127,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, form Form) error {
 				MaxN:      q.GetMaxN(),
 				MinN:      q.GetMinN(),
 				MaxLength: 0, // TODO: Should the length check be also done at decryption?
-				Choices:   make([]string, q.GetChoicesLength()),
+				Choices:   make([]Choice, q.GetChoicesLength()),
 			}
 
 			results, err := textQ.unmarshalAnswers(texts)
@@ -265,6 +265,12 @@ type Hint struct {
 	En string
 	Fr string
 	De string
+}
+
+// Choice contains a choice and an optional URL
+type Choice struct {
+	Choice string
+	URL    string
 }
 
 // Subject is a wrapper around multiple questions that can be of type "select",
@@ -431,7 +437,7 @@ type Select struct {
 	Title   Title
 	MaxN    uint
 	MinN    uint
-	Choices []string
+	Choices []Choice
 	Hint    Hint
 }
 
@@ -497,7 +503,7 @@ type Rank struct {
 	Title   Title
 	MaxN    uint
 	MinN    uint
-	Choices []string
+	Choices []Choice
 	Hint    Hint
 }
 
@@ -572,7 +578,7 @@ type Text struct {
 	MinN      uint
 	MaxLength uint
 	Regex     string
-	Choices   []string
+	Choices   []Choice
 	Hint      Hint
 }
 
