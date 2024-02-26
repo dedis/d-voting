@@ -37,6 +37,7 @@
     "removetext": "Supprimer le texte",
     "subject": "Sujet",
     "choices": "Choix",
+    "url": "URL",
     "answers": "Réponses",
     "enterMaxLength": "Entrer la longueur max",
     "maxChoices": "Max nombre de choix",

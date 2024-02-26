@@ -50,7 +50,13 @@
                 "MinN": { "type": "number" },
                 "Choices": {
                   "type": "array",
-                  "items": { "type": "string" }
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                       "Choice": { "type": "string" },
+                       "URL": { "type": "string" }
+                    }
+                  }
                 },
                 "Hint": {
                   "type": "object",
@@ -83,7 +89,13 @@
                 "MinN": { "type": "number" },
                 "Choices": {
                   "type": "array",
-                  "items": { "type": "string" }
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                       "Choice": { "type": "string" },
+                       "URL": { "type": "string" }
+                    }
+                  }
                 },
                 "Hint": {
                   "type": "object",
@@ -118,7 +130,13 @@
                 "MaxLength": { "type": "number" },
                 "Choices": {
                   "type": "array",
-                  "items": { "type": "string" }
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                       "Choice": { "type": "string" },
+                       "URL": { "type": "string" }
+                    }
+                  }
                 },
                 "Hint": {
                   "type": "object",

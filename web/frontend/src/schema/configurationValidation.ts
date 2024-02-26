@@ -84,7 +84,12 @@ const selectsSchema = yup.object({
     .required(),
   Choices: yup
     .array()
-    .of(yup.string())
+    .of(
+      yup.object({
+        Choice: yup.string(),
+        URL: yup.string(),
+      })
+    )
     .test({
       name: 'compare-choices-min-max',
       message: 'Choice length comparison failed',
@@ -98,7 +103,7 @@ const selectsSchema = yup.object({
             message: `Choices array length should be at least equal to Max in selects [objectID: ${ID}]`,
           });
         }
-        if (Choices.includes('')) {
+        if (Choices.some((choice) => choice.Choice === '')) {
           return this.createError({
             path,
             message: `Choices should not be empty in selects [objectID: ${ID}]`,
@@ -182,7 +187,12 @@ const ranksSchema = yup.object({
     .required(),
   Choices: yup
     .array()
-    .of(yup.string())
+    .of(
+      yup.object({
+        Choice: yup.string(),
+        URL: yup.string(),
+      })
+    )
     .test({
       name: 'compare-choices-min-max',
       message: 'Choice length comparison failed',
@@ -196,7 +206,7 @@ const ranksSchema = yup.object({
             message: `Choices array length should be equal to MaxN and MinN in ranks [objectID: ${ID}]`,
           });
         }
-        if (Choices.includes('')) {
+        if (Choices.some((choice) => choice.Choice === '')) {
           return this.createError({
             path,
             message: `Choices should not be empty in ranks [objectID: ${ID}]`,
@@ -308,7 +318,12 @@ const textsSchema = yup.object({
   Regex: yup.string().min(0),
   Choices: yup
     .array()
-    .of(yup.string())
+    .of(
+      yup.object({
+        Choice: yup.string(),
+        URL: yup.string(),
+      })
+    )
     .test({
       name: 'compare-choices-min-max',
       message: 'Choice length comparison failed',

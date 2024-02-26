@@ -46,9 +46,9 @@ export const IndividualTextResult: FC<IndividualTextResultProps> = ({ text, text
           <React.Fragment key={`txt_${index}`}>
             <div className="flex flex-row px-2 sm:px-4 break-words max-w-xs w-max">
               <div className="mr-2 font-bold">
-                {i18n.language === 'en' && text.ChoicesMap.get('en')[index]}
-                {i18n.language === 'fr' && text.ChoicesMap.get('fr')[index]}
-                {i18n.language === 'de' && text.ChoicesMap.get('de')[index]}:
+                {i18n.language === 'en' && text.ChoicesMap.ChoicesMap.get('en')[index]}
+                {i18n.language === 'fr' && text.ChoicesMap.ChoicesMap.get('fr')[index]}
+                {i18n.language === 'de' && text.ChoicesMap.ChoicesMap.get('de')[index]}:
               </div>
               <div>{result}</div>
             </div>

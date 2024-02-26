@@ -43,6 +43,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
     addChoice,
     deleteChoice,
     updateChoice,
+    updateURL,
   } = useQuestionForm(question);
   const [language, setLanguage] = useState('en');
   const { Title, MaxN, MinN, ChoicesMap, Hint } = values;
@@ -132,6 +133,9 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
         return;
     }
   };
+  const choices = ChoicesMap.ChoicesMap.has(language)
+    ? ChoicesMap.ChoicesMap.get(language)
+    : ChoicesMap.ChoicesMap.get('en');
 
   return (
     <Transition.Root show={open} as={Fragment}>
@@ -177,7 +181,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
               </div>
               <div className="pb-6 pr-6 pl-6">
                 <div className="flex flex-col sm:flex-row sm:min-h-[18rem] ">
-                  <div className="flex flex-col w-[55%]">
+                  <div className="flex flex-col w-[85%]">
                     <LanguageButtons
                       availableLanguages={availableLanguages}
                       setLanguage={setLanguage}
@@ -263,124 +267,52 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                     <label className="flex pt-2 text-md font-medium text-gray-500">
                       {Type !== TEXT ? t('choices') : t('answers')}
                     </label>
-
-                    {language === 'en' && (
-                      <div className="pb-2">
-                        {ChoicesMap.get('en').map((choice: string, idx: number) => (
-                          <div className="flex w-60" key={`${ID}wrapper${idx}`}>
-                            <input
-                              key={`${ID}choice${idx}`}
-                              value={choice}
-                              onChange={updateChoice(idx, language)}
-                              name="Choice"
-                              type="text"
-                              placeholder={
-                                Type !== TEXT ? `${t('choices')} ${idx + 1}` : `Answer ${idx + 1}`
-                              }
-                              className="my-1 px-1 w-60 ml-2 border rounded-md"
-                            />
-                            <div className="flex ml-1 mt-1.2">
-                              {ChoicesMap.get('en').length > 1 && (
-                                <button
-                                  key={`${ID}deleteChoice${idx}`}
-                                  type="button"
-                                  className="inline-flex items-center border border-transparent rounded-full font-medium text-gray-300 hover:text-gray-400"
-                                  onClick={handleDeleteChoice(idx)}>
-                                  <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
-                                </button>
-                              )}
-                              {idx === ChoicesMap.get('en').length - 1 && (
-                                <button
-                                  key={`${ID}addChoice${idx}`}
-                                  type="button"
-                                  className="inline-flex items-center border border-transparent rounded-full font-medium text-green-600 hover:text-green-800"
-                                  onClick={handleAddChoice}>
-                                  <PlusCircleIcon className="h-5 w-5" aria-hidden="true" />
-                                </button>
-                              )}
-                            </div>
+                    <div className="pb-2">
+                      {choices.map((choice, idx) => (
+                        <div className="flex w-60" key={`${ID}wrapper${idx}`}>
+                          <input
+                            key={`${ID}choice${idx}`}
+                            value={choice}
+                            onChange={updateChoice(idx, language)}
+                            name="Choice"
+                            type="text"
+                            placeholder={
+                              Type !== TEXT ? `${t('choices')} ${idx + 1}` : `Answer ${idx + 1}`
+                            }
+                            className="my-1 px-1 w-60 ml-2 border rounded-md"
+                          />
+                          <input
+                            key={`${ID}url${idx}`}
+                            value={ChoicesMap.URLs[idx]}
+                            onChange={updateURL(idx)}
+                            name="URL"
+                            type="text"
+                            placeholder={`${t('url')} ${idx + 1}`}
+                            className="my-1 px-1 w-60 ml-2 border rounded-md"
+                          />
+                          <div className="flex ml-1 mt-1.2">
+                            {choices.length > 1 && (
+                              <button
+                                key={`${ID}deleteChoice${idx}`}
+                                type="button"
+                                className="inline-flex items-center border border-transparent rounded-full font-medium text-gray-300 hover:text-gray-400"
+                                onClick={handleDeleteChoice(idx)}>
+                                <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
+                              </button>
+                            )}
+                            {idx === choices.length - 1 && (
+                              <button
+                                key={`${ID}addChoice${idx}`}
+                                type="button"
+                                className="inline-flex items-center border border-transparent rounded-full font-medium text-green-600 hover:text-green-800"
+                                onClick={handleAddChoice}>
+                                <PlusCircleIcon className="h-5 w-5" aria-hidden="true" />
+                              </button>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                    {language === 'fr' && (
-                      <div className="pb-2">
-                        {ChoicesMap.get('fr').map((choice: string, idx: number) => (
-                          <div className="flex w-60" key={`${ID}wrapper${idx}`}>
-                            <input
-                              key={`${ID}choice${idx}`}
-                              value={choice}
-                              onChange={updateChoice(idx, language)}
-                              name="Choice"
-                              type="text"
-                              placeholder={
-                                Type !== TEXT ? `${t('choices')} ${idx + 1}` : `Answer ${idx + 1}`
-                              }
-                              className="my-1 px-1 w-60 ml-2 border rounded-md"
-                            />
-                            <div className="flex ml-1 mt-1.2">
-                              {ChoicesMap.get('fr').length > 1 && (
-                                <button
-                                  key={`${ID}deleteChoice${idx}`}
-                                  type="button"
-                                  className="inline-flex items-center border border-transparent rounded-full font-medium text-gray-300 hover:text-gray-400"
-                                  onClick={handleDeleteChoice(idx)}>
-                                  <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
-                                </button>
-                              )}
-                              {idx === ChoicesMap.get('fr').length - 1 && (
-                                <button
-                                  key={`${ID}addChoice${idx}`}
-                                  type="button"
-                                  className="inline-flex items-center border border-transparent rounded-full font-medium text-green-600 hover:text-green-800"
-                                  onClick={handleAddChoice}>
-                                  <PlusCircleIcon className="h-5 w-5" aria-hidden="true" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {language === 'de' && (
-                      <div className="pb-2">
-                        {ChoicesMap.get('de').map((choice: string, idx: number) => (
-                          <div className="flex w-60" key={`${ID}wrapper${idx}`}>
-                            <input
-                              key={`${ID}choice${idx}`}
-                              value={choice}
-                              onChange={updateChoice(idx, language)}
-                              name="Choice"
-                              type="text"
-                              placeholder={
-                                Type !== TEXT ? `${t('choices')} ${idx + 1}` : `Answer ${idx + 1}`
-                              }
-                              className="my-1 px-1 w-60 ml-2 border rounded-md"
-                            />
-                            <div className="flex ml-1 mt-1.2">
-                              {ChoicesMap.get('de').length > 1 && (
-                                <button
-                                  key={`${ID}deleteChoice${idx}`}
-                                  type="button"
-                                  className="inline-flex items-center border border-transparent rounded-full font-medium text-gray-300 hover:text-gray-400"
-                                  onClick={handleDeleteChoice(idx)}>
-                                  <MinusCircleIcon className="h-5 w-5" aria-hidden="true" />
-                                </button>
-                              )}
-                              {idx === ChoicesMap.get('de').length - 1 && (
-                                <button
-                                  key={`${ID}addChoice${idx}`}
-                                  type="button"
-                                  className="inline-flex items-center border border-transparent rounded-full font-medium text-green-600 hover:text-green-800"
-                                  onClick={handleAddChoice}>
-                                  <PlusCircleIcon className="h-5 w-5" aria-hidden="true" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                        </div>
+                      ))}
+                    </div>
                     <div className="text-red-600">
                       {errors
                         .filter((err) => err.startsWith('Choices'))
@@ -389,7 +321,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                         ))}
                     </div>
                   </div>
-                  <div className="w-[45%]">
+                  <div className="w-[20%]">
                     {Type !== RANK && (
                       <>
                         <div className="pb-4">{t('additionalProperties')} </div>

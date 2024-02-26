@@ -78,12 +78,19 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answers]);
 
-  const choiceDisplay = (choice: string, choiceIndex: number) => {
+  const choiceDisplay = (choice: string, url: string, choiceIndex: number) => {
     const columns = text.MaxLength > 50 ? 50 : text.MaxLength;
+    const prettyChoice = url ? (
+      <a href={url} style={{ color: 'blue', textDecoration: 'underline' }}>
+        {choice}
+      </a>
+    ) : (
+      choice
+    );
     return (
       <div className="flex mb-2  md:flex-row flex-col" key={choice}>
         <label htmlFor={choice} className="text-gray-600 mr-2 w-24 break-words text-md">
-          {choice + ': '}
+          {prettyChoice}:
         </label>
 
         <textarea
@@ -110,19 +117,25 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>
-      {language === 'en' && text.ChoicesMap.has('en') && (
+      {language === 'en' && text.ChoicesMap.ChoicesMap.has('en') && (
         <div className="sm:pl-8 mt-2 pl-6">
-          {text.ChoicesMap.get('en').map((choice, index) => choiceDisplay(choice, index))}
+          {text.ChoicesMap.ChoicesMap.get('en').map((choice, index) =>
+            choiceDisplay(choice, text.ChoicesMap.URLs[index], index)
+          )}
         </div>
       )}
-      {language === 'fr' && text.ChoicesMap.has('fr') && (
+      {language === 'fr' && text.ChoicesMap.ChoicesMap.has('fr') && (
         <div className="sm:pl-8 mt-2 pl-6">
-          {text.ChoicesMap.get('fr').map((choice, index) => choiceDisplay(choice, index))}
+          {text.ChoicesMap.ChoicesMap.get('fr').map((choice, index) =>
+            choiceDisplay(choice, text.ChoicesMap.URLs[index], index)
+          )}
         </div>
       )}
-      {language === 'de' && text.ChoicesMap.has('de') && (
+      {language === 'de' && text.ChoicesMap.ChoicesMap.has('de') && (
         <div className="sm:pl-8 mt-2 pl-6">
-          {text.ChoicesMap.get('de').map((choice, index) => choiceDisplay(choice, index))}
+          {text.ChoicesMap.ChoicesMap.get('de').map((choice, index) =>
+            choiceDisplay(choice, text.ChoicesMap.URLs[index], index)
+          )}
         </div>
       )}
       <div className="text-red-600 text-sm py-2 sm:pl-2 pl-1">{answers.Errors.get(text.ID)}</div>
