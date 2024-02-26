@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import { SelectQuestion } from 'types/configuration';
-import ProgressBar from './ProgressBar';
+import { SelectProgressBar } from './ProgressBar';
 import { countSelectResult } from './utils/countResult';
 import { default as i18n } from 'i18next';
 
@@ -11,23 +11,33 @@ type SelectResultProps = {
 
 // Display the results of a select question.
 const SelectResult: FC<SelectResultProps> = ({ select, selectResult }) => {
-  const { resultsInPercent, maxIndices } = countSelectResult(selectResult);
+  const sortedResults = countSelectResult(selectResult)
+    .map((result, index) => {
+      const tempResult: [string, number, number] = [...result, index];
+      return tempResult;
+    })
+    .sort((x, y) => y[1] - x[1]);
+  const maxCount = sortedResults[0][1];
 
   const displayResults = () => {
-    return resultsInPercent.map((percent, index) => {
-      const isBest = maxIndices.includes(index);
-
+    return sortedResults.map(([percent, totalCount, origIndex], index) => {
       return (
         <React.Fragment key={index}>
           <div className="px-2 sm:px-4 break-words max-w-xs w-max">
             <span>
-              {i18n.language === 'en' && select.ChoicesMap.get('en')[index]}
-              {i18n.language === 'fr' && select.ChoicesMap.get('fr')[index]}
-              {i18n.language === 'de' && select.ChoicesMap.get('de')[index]}
+              {
+                (select.ChoicesMap.has(i18n.language)
+                  ? select.ChoicesMap.get(i18n.language)
+                  : select.ChoicesMap.get('en'))[origIndex]
+              }
             </span>
             :
           </div>
-          <ProgressBar isBest={isBest}>{percent}</ProgressBar>
+          <SelectProgressBar
+            percent={percent}
+            totalCount={totalCount}
+            numberOfBallots={selectResult.length}
+            isBest={totalCount === maxCount}></SelectProgressBar>
         </React.Fragment>
       );
     });
@@ -56,9 +66,11 @@ export const IndividualSelectResult: FC<SelectResultProps> = ({ select, selectRe
             <div className="flex flex-row px-2 sm:px-4 break-words max-w-xs w-max">
               <div className="h-4 w-4 mr-2 accent-indigo-500 ">{displayChoices(result, index)}</div>
               <div>
-                {i18n.language === 'en' && select.ChoicesMap.get('en')[index]}
-                {i18n.language === 'fr' && select.ChoicesMap.get('fr')[index]}
-                {i18n.language === 'de' && select.ChoicesMap.get('de')[index]}
+                {
+                  (select.ChoicesMap.has(i18n.language)
+                    ? select.ChoicesMap.get(i18n.language)
+                    : select.ChoicesMap.get('en'))[index]
+                }
               </div>
             </div>
           </React.Fragment>

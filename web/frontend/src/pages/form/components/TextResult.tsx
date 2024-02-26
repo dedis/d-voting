@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import { TextQuestion } from 'types/configuration';
-import ProgressBar from './ProgressBar';
+import { ProgressBar } from './ProgressBar';
 import { countTextResult } from './utils/countResult';
 import { default as i18n } from 'i18next';
 

@@ -3,8 +3,8 @@
   "Configuration": {
     "Title": {
       "En": "Colours",
-      "Fr": "",
-      "De": ""
+      "Fr": "Couleurs",
+      "De": "Farben"
     },
     "Scaffold": [
       {
@@ -42,6 +42,43 @@
         ],
         "Ranks": [],
         "Texts": []
+      },
+      {
+        "ID": "1NqhDffw",
+        "Title": {
+          "En": "Colours",
+          "Fr": "Couleurs",
+          "De": "Farben"
+        },
+        "Order": [
+          "riJFjw0q"
+        ],
+        "Subjects": [],
+        "Selects": [
+          {
+            "ID": "riJFjw0q",
+            "Title": {
+              "En": "CMYK",
+              "Fr": "CMJN",
+              "De": "CMYK"
+            },
+            "MaxN": 3,
+            "MinN": 1,
+            "Choices": [
+              "{\"en\":\"Cyan\",\"fr\":\"Cyan\",\"de\":\"Cyan\"}",
+              "{\"en\":\"Magenta\",\"fr\":\"Magenta\",\"de\":\"Magenta\"}",
+              "{\"en\":\"Yellow\",\"fr\":\"Jaune\",\"de\":\"Gelb\"}",
+              "{\"en\":\"Key\",\"fr\":\"Noir\",\"de\":\"Schwarz\"}"
+            ],
+            "Hint": {
+              "En": "",
+              "Fr": "",
+              "De": ""
+            }
+          }
+        ],
+        "Ranks": [],
+        "Texts": []
       }
     ]
   },
@@ -54,11 +91,13 @@
     "grpc://dela-worker-2:2000",
     "grpc://dela-worker-3:2000"
   ],
-  "ChunksPerBallot": 1,
-  "BallotSize": 23,
+  "ChunksPerBallot": 2,
+  "BallotSize": 48,
   "Voters": [
-    "oUItDdhhEE",
-    "WZyqP1gssL",
-    "K7ZNvumBVc"
+    "brcLwsgGcU",
+    "JThb56JvGF",
+    "zXcZU5QNwn",
+    "bWxTfeq4t5"
   ]
 }
+

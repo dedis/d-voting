@@ -124,9 +124,15 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
           const select = element as SelectQuestion;
 
           if (selectResult.has(id)) {
-            res = countSelectResult(selectResult.get(id)).resultsInPercent.map((percent, index) => {
-              return { Candidate: select.Choices[index], Percentage: `${percent}%` };
-            });
+            res = countSelectResult(selectResult.get(id))
+              .map(([, totalCount], index) => {
+                return {
+                  Candidate: select.Choices[index],
+                  TotalCount: totalCount,
+                  NumberOfBallots: selectResult.get(id).length, // number of combined ballots for this election
+                };
+              })
+              .sort((x, y) => y.TotalCount - x.TotalCount);
             dataToDownload.push({ Title: element.Title.En, Results: res });
           }
           break;
