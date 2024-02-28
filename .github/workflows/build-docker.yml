@@ -48,7 +48,6 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          target: build
           file: Dockerfiles/Dockerfile.dela
           platforms: linux/amd64
           push: true
