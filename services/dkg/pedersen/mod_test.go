@@ -15,6 +15,7 @@ import (
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/core/validation"
+	"go.dedis.ch/dela/mino/minogrpc/session"
 	"golang.org/x/xerrors"
 
 	"github.com/c4dt/d-voting/contracts/evoting"
@@ -96,7 +97,8 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 	hd := HandlerData{
 		StartRes: &state{
 			distKey:      distKey,
-			participants: []mino.Address{fake.NewAddress(0), fake.NewAddress(1)},
+			participants: []mino.Address{session.NewAddress("grpcs://0"), session.NewAddress("grpcs://1")},
+			//participants: []mino.Address{fake.NewAddress(0), fake.NewAddress(1)},
 		},
 		PrivShare: &share.PriShare{
 			I: 1,
@@ -139,7 +141,7 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 	require.NoError(t, err)
 
 	// Initialize a Pedersen
-	p := NewPedersen(fake.Mino{}, &fake.Service{}, fake.NewInMemoryDB(), &fake.Pool{}, fake.Factory{}, fake.Signer{})
+	p := NewPedersen(fake.Mino{}, &fake.Service{}, dkgMap, &fake.Pool{}, fake.Factory{}, fake.Signer{})
 
 	err = dkgMap.View(func(tx kv.ReadableTx) error {
 		bucket := tx.GetBucket([]byte("dkgmap"))
@@ -183,8 +185,8 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 		require.True(t, exists)
 
 		otherActor := Actor{
-			handler: NewHandler(fake.NewAddress(0), &fake.Service{}, &fake.Pool{},
-				fake.Manager{}, fake.Signer{}, handlerData, serdecontext, formFac, nil),
+			handler: NewHandler(session.NewAddress("grpcs://0"), &fake.Service{}, &fake.Pool{},
+				fake.Manager{}, fake.Signer{}, handlerData, serdecontext, formFac, nil, nil),
 		}
 
 		requireActorsEqual(t, actor, &otherActor)
@@ -343,12 +345,16 @@ func TestPedersen_Setup(t *testing.T) {
 		Roster: fake.Authority{},
 	}, serdecontext)
 
+	privKey := suite.Scalar().Pick(suite.RandomStream())
+	pubKey := suite.Point().Mul(privKey, nil)
 	actor := Actor{
 		rpc:     nil,
 		factory: nil,
 		service: &service,
 		handler: &Handler{
 			startRes: &state{},
+			pubKey:   pubKey,
+			privKey:  privKey,
 		},
 		context: serdecontext,
 		formFac: formFac,
@@ -360,7 +366,7 @@ func TestPedersen_Setup(t *testing.T) {
 	actor.formID = wrongFormID
 
 	_, err := actor.Setup()
-	require.EqualError(t, err, "failed to get form: form does not exist: <nil>")
+	require.EqualError(t, err, "failed to get form: while getting data for form: this key doesn't exist")
 	require.Equal(t, float64(dkg.Failed), testutil.ToFloat64(evoting.PromFormDkgStatus))
 
 	initMetrics()
@@ -434,6 +440,7 @@ func TestPedersen_Setup(t *testing.T) {
 	// This will not change startRes since the responses are all
 	// simulated, so running setup() several times will work.
 	// We test that particular behaviour later.
+	actor.db = fake.NewInMemoryDB()
 	_, err = actor.Setup()
 	require.NoError(t, err)
 	require.Equal(t, float64(dkg.Setup), testutil.ToFloat64(evoting.PromFormDkgStatus))
@@ -691,7 +698,7 @@ func requireActorsEqual(t require.TestingT, actor1, actor2 dkg.Actor) {
 	actor2Data, err := actor2.MarshalJSON()
 	require.NoError(t, err)
 
-	require.Equal(t, actor1Data, actor2Data)
+	require.Equal(t, string(actor1Data), string(actor2Data))
 }
 
 func fakeKCPoints(k int, msg string, pubKey kyber.Point) ([]kyber.Point, []kyber.Point, kyber.Point) {

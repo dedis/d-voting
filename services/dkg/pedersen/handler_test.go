@@ -24,7 +24,8 @@ import (
 )
 
 func TestHandler_Stream(t *testing.T) {
-	h := Handler{startRes: &state{}, service: &fake.Service{}}
+	h := Handler{startRes: &state{}, service: &fake.Service{Forms: make(map[string]formTypes.Form),
+		BallotSnap: fake.NewSnapshot()}}
 	receiver := fake.NewBadReceiver()
 	err := h.Stream(fake.Sender{}, receiver)
 	require.EqualError(t, err, fake.Err("failed to receive"))
@@ -44,8 +45,8 @@ func TestHandler_Stream(t *testing.T) {
 		fake.NewRecvMsg(fake.NewAddress(0), types.DecryptRequest{}),
 	)
 	err = h.Stream(fake.NewBadSender(), receiver)
-	require.EqualError(t, err, "could not send pubShares: failed to check"+
-		" if the shuffle is over: could not get the form: form does not exist: <nil>")
+	require.EqualError(t, err, "could not send pubShares: failed to check if the shuffle is over: "+
+		"could not get the form: while getting data for form: this key doesn't exist")
 
 	formIDHex := hex.EncodeToString([]byte("form"))
 
@@ -78,12 +79,13 @@ func TestHandler_Stream(t *testing.T) {
 	h.formFac = formTypes.NewFormFactory(formTypes.CiphervoteFactory{}, fake.RosterFac{})
 
 	h.service = &fake.Service{
-		Err:     nil,
-		Forms:   Forms,
-		Pool:    nil,
-		Status:  false,
-		Channel: nil,
-		Context: json.NewContext(),
+		Err:        nil,
+		Forms:      Forms,
+		Pool:       nil,
+		Status:     false,
+		Channel:    nil,
+		Context:    json.NewContext(),
+		BallotSnap: fake.NewSnapshot(),
 	}
 
 	h.context = json.NewContext()
@@ -313,12 +315,13 @@ func TestHandler_HandlerDecryptRequest(t *testing.T) {
 	h.formFac = formTypes.NewFormFactory(formTypes.CiphervoteFactory{}, fake.RosterFac{})
 
 	service := fake.Service{
-		Err:     nil,
-		Forms:   Forms,
-		Pool:    nil,
-		Status:  false,
-		Channel: nil,
-		Context: json.NewContext(),
+		Err:        nil,
+		Forms:      Forms,
+		Pool:       nil,
+		Status:     false,
+		Channel:    nil,
+		Context:    json.NewContext(),
+		BallotSnap: fake.NewSnapshot(),
 	}
 
 	h.context = json.NewContext()

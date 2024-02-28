@@ -75,16 +75,28 @@ func (f Service) GetProof(key []byte) (ordering.Proof, error) {
 // service.
 func (f Service) GetStore() store.Readable {
 	return readable{
-		snap: f.BallotSnap,
+		snap:    f.BallotSnap,
+		forms:   f.Forms,
+		context: f.Context,
 	}
 }
 
 type readable struct {
-	snap *InMemorySnapshot
+	snap    *InMemorySnapshot
+	forms   map[string]formTypes.Form
+	context serde.Context
 }
 
 func (fr readable) Get(key []byte) ([]byte, error) {
-	return fr.snap.Get(key)
+	ret, err := fr.snap.Get(key)
+	if err != nil || ret != nil {
+		return ret, err
+	}
+	val, ok := fr.forms[hex.EncodeToString(key)]
+	if !ok {
+		return nil, xerrors.Errorf("this key doesn't exist")
+	}
+	return val.Serialize(fr.context)
 }
 
 // Watch implements ordering.Service. It returns the events that occurred within

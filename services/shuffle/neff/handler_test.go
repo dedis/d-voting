@@ -40,6 +40,7 @@ func TestHandler_Stream(t *testing.T) {
 		types.NewStartShuffle("dummyID", make([]mino.Address, 0))))
 
 	handler.txmngr = fake.Manager{}
+	handler.service = &fake.Service{Forms: make(map[string]etypes.Form), BallotSnap: fake.NewSnapshot()}
 
 	err = handler.Stream(fake.Sender{}, receiver)
 	require.EqualError(t, err, "failed to handle StartShuffle message: failed "+
@@ -70,13 +71,13 @@ func TestHandler_StartShuffle(t *testing.T) {
 	// Service not working:
 	badService := fake.Service{
 		Err:        fakeErr,
-		BallotSnap: nil,
+		BallotSnap: fake.NewSnapshot(),
 	}
 	handler.service = &badService
 	handler.txmngr = fake.Manager{}
 
 	err := handler.handleStartShuffle(dummyID)
-	require.EqualError(t, err, "failed to get form: failed to get proof: fake error")
+	require.EqualError(t, err, "failed to get form: while getting data for form: this key doesn't exist")
 
 	// Form does not exist
 	service := fake.Service{
@@ -87,7 +88,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 	handler.service = &service
 
 	err = handler.handleStartShuffle(dummyID)
-	require.EqualError(t, err, "failed to get form: form does not exist")
+	require.EqualError(t, err, "failed to get form: while getting data for form: this key doesn't exist")
 
 	// Form still opened:
 	form := etypes.Form{
