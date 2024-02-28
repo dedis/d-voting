@@ -64,7 +64,6 @@ func TestHandler_Stream(t *testing.T) {
 		Status:           formTypes.ShuffledBallots,
 		Pubkey:           nil,
 		BallotSize:       0,
-		Suffragia:        formTypes.Suffragia{},
 		ShuffleInstances: make([]formTypes.ShuffleInstance, 1),
 		ShuffleThreshold: 0,
 		PubsharesUnits:   units,
@@ -295,7 +294,6 @@ func TestHandler_HandlerDecryptRequest(t *testing.T) {
 		Status:           formTypes.ShuffledBallots,
 		Pubkey:           nil,
 		BallotSize:       0,
-		Suffragia:        formTypes.Suffragia{},
 		ShuffleInstances: make([]formTypes.ShuffleInstance, 1),
 		ShuffleThreshold: 1,
 		PubsharesUnits:   units,
@@ -356,16 +354,18 @@ func TestHandler_HandlerDecryptRequest(t *testing.T) {
 
 	Ks, Cs, _ := fakeKCPoints(k, message, suite.Point())
 
+	snap := fake.NewSnapshot()
 	for i := 0; i < k; i++ {
 		ballot := formTypes.Ciphervote{formTypes.EGPair{
 			K: Ks[i],
 			C: Cs[i],
 		}}
-		form.Suffragia.CastVote("dummyUser"+strconv.Itoa(i), ballot)
+		form.CastVote(service.Context, snap, "dummyUser"+strconv.Itoa(i), ballot)
 	}
 
-	shuffledBallots := form.Suffragia.Ciphervotes
-	shuffleInstance := formTypes.ShuffleInstance{ShuffledBallots: shuffledBallots}
+	shuffledBallots, err := form.Suffragia(service.Context, snap)
+	require.NoError(t, err)
+	shuffleInstance := formTypes.ShuffleInstance{ShuffledBallots: shuffledBallots.Ciphervotes}
 	form.ShuffleInstances = append(form.ShuffleInstances, shuffleInstance)
 
 	Forms[formIDHex] = form

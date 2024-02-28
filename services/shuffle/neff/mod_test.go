@@ -52,10 +52,14 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	rosterLen := 2
 	roster := authority.FromAuthority(fake.NewAuthority(rosterLen, fake.NewSigner))
 
-	form := fake.NewForm(formID)
+	st := fake.InMemorySnapshot{}
+	form, err := fake.NewForm(serdecontext, &st, formID)
+	require.NoError(t, err)
 	form.Roster = roster
 
-	shuffledBallots := append([]etypes.Ciphervote{}, form.Suffragia.Ciphervotes...)
+	suff, err := form.Suffragia(serdecontext, &st)
+	require.NoError(t, err)
+	shuffledBallots := append([]etypes.Ciphervote{}, suff.Ciphervotes...)
 	form.ShuffleInstances = append(form.ShuffleInstances, etypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
 
 	form.ShuffleThreshold = 1

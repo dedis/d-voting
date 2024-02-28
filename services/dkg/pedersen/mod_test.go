@@ -198,10 +198,13 @@ func TestPedersen_SyncDB(t *testing.T) {
 	formID2 := "deadbeef52"
 
 	// Start some forms
+	snap := fake.NewSnapshot()
 	context := fake.NewContext()
-	form1 := fake.NewForm(formID1)
+	form1, err := fake.NewForm(context, snap, formID1)
+	require.NoError(t, err)
 	service := fake.NewService(formID1, form1, context)
-	form2 := fake.NewForm(formID2)
+	form2, err := fake.NewForm(context, snap, formID2)
+	require.NoError(t, err)
 	service.Forms[formID2] = form2
 	pool := fake.Pool{}
 	manager := fake.Manager{}
@@ -498,7 +501,9 @@ func TestPedersen_Scenario(t *testing.T) {
 
 	roster := authority.FromAuthority(fake.NewAuthorityFromMino(fake.NewSigner, minos...))
 
-	form := fake.NewForm(formID)
+	st := fake.InMemorySnapshot{}
+	form, err := fake.NewForm(serdecontext, &st, formID)
+	require.NoError(t, err)
 	form.Roster = roster
 
 	service := fake.NewService(formID, form, serdecontext)
@@ -537,10 +542,12 @@ func TestPedersen_Scenario(t *testing.T) {
 			K: Ks[i],
 			C: Cs[i],
 		}}
-		form.Suffragia.CastVote("dummyUser"+strconv.Itoa(i), ballot)
+		require.NoError(t, form.CastVote(serdecontext, &st, "dummyUser"+strconv.Itoa(i), ballot))
 	}
 
-	shuffledBallots := form.Suffragia.Ciphervotes
+	suff, err := form.Suffragia(serdecontext, &st)
+	require.NoError(t, err)
+	shuffledBallots := suff.Ciphervotes
 	shuffleInstance := etypes.ShuffleInstance{ShuffledBallots: shuffledBallots}
 	form.ShuffleInstances = append(form.ShuffleInstances, shuffleInstance)
 
