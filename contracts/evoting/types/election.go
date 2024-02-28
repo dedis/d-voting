@@ -38,7 +38,7 @@ const (
 	PubSharesSubmitted Status = 4
 	// ResultAvailable is when the ballots have been decrypted
 	ResultAvailable Status = 5
-	// Canceled is when the form has been cancel
+	// Canceled is when the form has been canceled
 	Canceled Status = 6
 )
 
@@ -46,7 +46,7 @@ const (
 // 100 ballots at a time.
 var BallotsPerBlock = uint32(100)
 
-// TestCastBallots: if true, automatically fills every block with ballots.
+// TestCastBallots if true, automatically fills every block with ballots.
 var TestCastBallots = false
 
 // formFormat contains the supported formats for the form. Right now

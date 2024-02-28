@@ -213,9 +213,12 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// send the transaction's informations
-	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
-
+	// send the transaction's information
+	err = h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+	if err != nil {
+		http.Error(w, "couldn't send transaction info: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 // EditForm implements proxy.Proxy
@@ -561,7 +564,7 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// send the transaction's informations
+	// send the transaction's information
 	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 }
 

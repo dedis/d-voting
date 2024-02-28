@@ -113,7 +113,7 @@ func NewHandler(me mino.Address, service ordering.Service, pool pool.Pool,
 // players.
 func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 	// Note: one should never assume any synchronous properties on the messages.
-	// For example we can not expect to receive the start message from the
+	// For example, we can not expect to receive the start message from the
 	// initiator of the DKG protocol first because some node could have received
 	// this start message earlier than us, start their DKG work by sending
 	// messages to the other nodes, and then we might get their messages before
