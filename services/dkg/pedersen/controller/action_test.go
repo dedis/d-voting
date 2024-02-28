@@ -5,6 +5,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/c4dt/d-voting/services/dkg/pedersen"
 	"golang.org/x/xerrors"
 
 	"github.com/c4dt/d-voting/internal/testing/fake"
@@ -130,7 +131,7 @@ func TestSetupAction_Execute(t *testing.T) {
 
 	// Check that the map contains the actor
 	err = db.View(func(tx kv.ReadableTx) error {
-		bucket := tx.GetBucket([]byte(BucketName))
+		bucket := tx.GetBucket([]byte(pedersen.BucketName))
 		require.NotNil(t, bucket)
 
 		pubKeyBuf := bucket.Get(formIDBuf)

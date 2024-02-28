@@ -5,7 +5,6 @@ import (
 	"container/list"
 	"context"
 	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -19,10 +18,10 @@ import (
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/mino/minogrpc/session"
 	jsondela "go.dedis.ch/dela/serde/json"
 
 	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/internal/testing/fake"
 	"github.com/c4dt/d-voting/services/dkg"
 	"github.com/c4dt/d-voting/services/dkg/pedersen/types"
 	"go.dedis.ch/dela"
@@ -72,13 +71,16 @@ type Handler struct {
 	log     zerolog.Logger
 	running bool
 
+	saveState func(*Handler)
+
 	status *dkg.Status
 }
 
 // NewHandler creates a new handler
 func NewHandler(me mino.Address, service ordering.Service, pool pool.Pool,
 	txnmngr txn.Manager, pubSharesSigner crypto.Signer, handlerData HandlerData,
-	context serde.Context, formFac serde.Factory, status *dkg.Status) *Handler {
+	context serde.Context, formFac serde.Factory, status *dkg.Status,
+	saveState func(*Handler)) *Handler {
 
 	privKey := handlerData.PrivKey
 	pubKey := handlerData.PubKey
@@ -105,7 +107,8 @@ func NewHandler(me mino.Address, service ordering.Service, pool pool.Pool,
 		log:     log,
 		running: false,
 
-		status: status,
+		saveState: saveState,
+		status:    status,
 	}
 }
 
@@ -299,6 +302,7 @@ func (h *Handler) doDKG(deals, resps *list.List, out mino.Sender, from mino.Addr
 		dela.Logger.Error().Msgf("got an error while sending pub key: %v", err)
 		return
 	}
+	h.saveState(h)
 }
 
 func (h *Handler) deal(out mino.Sender) error {
@@ -612,7 +616,7 @@ func (hd *HandlerData) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	return json.Marshal(&struct {
+	ret, err := json.Marshal(&struct {
 		StartRes  []byte `json:",omitempty"`
 		PrivShare []byte `json:",omitempty"`
 		PubKey    []byte
@@ -623,6 +627,8 @@ func (hd *HandlerData) MarshalJSON() ([]byte, error) {
 		PubKey:    pubKeyBuf,
 		PrivKey:   privKeyBuf,
 	})
+
+	return ret, err
 }
 
 // UnmarshalJSON fills a HandlerData with previously marshalled data.
@@ -640,7 +646,10 @@ func (hd *HandlerData) UnmarshalJSON(data []byte) error {
 
 	// Unmarshal StartRes
 	hd.StartRes = &state{}
-	hd.StartRes.UnmarshalJSON(aux.StartRes)
+	err = hd.StartRes.UnmarshalJSON(aux.StartRes)
+	if err != nil {
+		return err
+	}
 
 	// Unmarshal PrivShare
 	if aux.PrivShare == nil {
@@ -655,7 +664,10 @@ func (hd *HandlerData) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		privShareV := suite.Scalar()
-		privShareV.UnmarshalBinary(privShareBuf.V)
+		err = privShareV.UnmarshalBinary(privShareBuf.V)
+		if err != nil {
+			return err
+		}
 		privShare := &share.PriShare{
 			I: privShareBuf.I,
 			V: privShareV,
@@ -665,12 +677,18 @@ func (hd *HandlerData) UnmarshalJSON(data []byte) error {
 
 	// Unmarshal PubKey
 	pubKey := suite.Point()
-	pubKey.UnmarshalBinary(aux.PubKey)
+	err = pubKey.UnmarshalBinary(aux.PubKey)
+	if err != nil {
+		return err
+	}
 	hd.PubKey = pubKey
 
 	// Unmarshal PrivKey
 	privKey := suite.Scalar()
-	privKey.UnmarshalBinary(aux.PrivKey)
+	err = privKey.UnmarshalBinary(aux.PrivKey)
+	if err != nil {
+		return err
+	}
 	hd.PrivKey = privKey
 
 	return nil
@@ -739,13 +757,15 @@ func (s *state) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	return json.Marshal(&struct {
+	ret, err := json.Marshal(&struct {
 		DistKey      []byte   `json:",omitempty"`
 		Participants [][]byte `json:",omitempty"`
 	}{
 		DistKey:      distKeyBuf,
 		Participants: participantsBuf,
 	})
+
+	return ret, err
 }
 
 func (s *state) UnmarshalJSON(data []byte) error {
@@ -770,11 +790,11 @@ func (s *state) UnmarshalJSON(data []byte) error {
 	}
 
 	if aux.Participants != nil {
-		// TODO: Is using a fake implementation a problem?
-		f := fake.NewBadMino().GetAddressFactory()
+		// TODO: use addressFactory here
+		f := session.AddressFactory{}
 		var participants = make([]mino.Address, len(aux.Participants))
-		for i := 0; i < len(aux.Participants); i++ {
-			participants[i] = f.FromText(aux.Participants[i])
+		for i, partStr := range aux.Participants {
+			participants[i] = f.FromText(partStr)
 		}
 		s.SetParticipants(participants)
 	} else {

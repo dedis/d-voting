@@ -10,6 +10,7 @@ import (
 	formTypes "github.com/c4dt/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/txn/signed"
+	"go.dedis.ch/dela/mino/minogrpc/session"
 	"go.dedis.ch/dela/serde/json"
 
 	"github.com/c4dt/d-voting/internal/testing/fake"
@@ -264,7 +265,8 @@ func TestState_MarshalJSON(t *testing.T) {
 
 	// Try with some data
 	distKey := suite.Point().Pick(suite.RandomStream())
-	participants := []mino.Address{fake.NewAddress(0), fake.NewAddress(1)}
+	// TODO: use AddressFactory here
+	participants := []mino.Address{session.NewAddress("grpcs://localhost:12345"), session.NewAddress("grpcs://localhost:1234")}
 
 	s1.SetDistKey(distKey)
 	s1.SetParticipants(participants)

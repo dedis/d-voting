@@ -54,7 +54,7 @@ func init() {
 func TestActor_MarshalJSON(t *testing.T) {
 	initMetrics()
 
-	p := NewPedersen(fake.Mino{}, &fake.Service{}, &fake.Pool{}, fake.Factory{}, fake.Signer{})
+	p := NewPedersen(fake.Mino{}, &fake.Service{}, fake.NewInMemoryDB(), &fake.Pool{}, fake.Factory{}, fake.Signer{})
 
 	// Create new actor
 	actor1, err := p.NewActor([]byte("deadbeef"), &fake.Pool{},
@@ -139,7 +139,7 @@ func TestPedersen_InitNonEmptyMap(t *testing.T) {
 	require.NoError(t, err)
 
 	// Initialize a Pedersen
-	p := NewPedersen(fake.Mino{}, &fake.Service{}, &fake.Pool{}, fake.Factory{}, fake.Signer{})
+	p := NewPedersen(fake.Mino{}, &fake.Service{}, fake.NewInMemoryDB(), &fake.Pool{}, fake.Factory{}, fake.Signer{})
 
 	err = dkgMap.View(func(tx kv.ReadableTx) error {
 		bucket := tx.GetBucket([]byte("dkgmap"))
@@ -210,7 +210,7 @@ func TestPedersen_SyncDB(t *testing.T) {
 	manager := fake.Manager{}
 
 	// Initialize a Pedersen
-	p := NewPedersen(fake.Mino{}, &service, &pool, fake.Factory{}, fake.Signer{})
+	p := NewPedersen(fake.Mino{}, &service, fake.NewInMemoryDB(), &pool, fake.Factory{}, fake.Signer{})
 
 	// Create actors
 	formID1buf, err := hex.DecodeString(formID1)
@@ -259,7 +259,7 @@ func TestPedersen_SyncDB(t *testing.T) {
 	require.NoError(t, err)
 
 	// Recover them from the map
-	q := NewPedersen(fake.Mino{}, &service, &pool, fake.Factory{}, fake.Signer{})
+	q := NewPedersen(fake.Mino{}, &service, fake.NewInMemoryDB(), &pool, fake.Factory{}, fake.Signer{})
 
 	err = dkgMap.View(func(tx kv.ReadableTx) error {
 		bucket := tx.GetBucket([]byte("dkgmap"))
@@ -304,7 +304,7 @@ func TestPedersen_Listen(t *testing.T) {
 	service := fake.NewService(formID,
 		etypes.Form{Roster: fake.Authority{}}, serdecontext)
 
-	p := NewPedersen(fake.Mino{}, &service, &fake.Pool{},
+	p := NewPedersen(fake.Mino{}, &service, fake.NewInMemoryDB(), &fake.Pool{},
 		fake.Factory{}, fake.Signer{})
 
 	actor, err := p.Listen(formIDBuf, fake.Manager{})
@@ -322,7 +322,7 @@ func TestPedersen_TwoListens(t *testing.T) {
 	service := fake.NewService(formID,
 		etypes.Form{Roster: fake.Authority{}}, serdecontext)
 
-	p := NewPedersen(fake.Mino{}, &service, &fake.Pool{}, fake.Factory{}, fake.Signer{})
+	p := NewPedersen(fake.Mino{}, &service, fake.NewInMemoryDB(), &fake.Pool{}, fake.Factory{}, fake.Signer{})
 
 	actor1, err := p.Listen(formIDBuf, fake.Manager{})
 	require.NoError(t, err)
@@ -511,7 +511,7 @@ func TestPedersen_Scenario(t *testing.T) {
 	for i, mino := range minos {
 		fac := etypes.NewFormFactory(etypes.CiphervoteFactory{}, fake.NewRosterFac(roster))
 
-		dkg := NewPedersen(mino, &service, &fake.Pool{}, fac, fake.Signer{})
+		dkg := NewPedersen(mino, &service, fake.NewInMemoryDB(), &fake.Pool{}, fac, fake.Signer{})
 
 		actor, err := dkg.Listen(formIDBuf, signed.NewManager(fake.Signer{}, &client{
 			srvc: &fake.Service{},
