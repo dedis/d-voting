@@ -94,8 +94,11 @@ func (s *Pedersen) Listen(formIDBuf []byte, txmngr txn.Manager) (dkg.Actor, erro
 
 	formID := hex.EncodeToString(formIDBuf)
 
-	_, exists := formExists(s.service, formIDBuf)
-	if !exists {
+	formBuf, err := s.service.GetStore().Get(formIDBuf)
+	if err != nil {
+		return nil, xerrors.Errorf("While looking for form: $v", err)
+	}
+	if len(formBuf) == 0 {
 		return nil, xerrors.Errorf("form %s was not found", formID)
 	}
 
@@ -195,7 +198,7 @@ func (a *Actor) Setup() (kyber.Point, error) {
 		return nil, err
 	}
 
-	form, err := a.getForm()
+	form, err := etypes.FormFromStore(a.context, a.formFac, a.formID, a.service.GetStore())
 	if err != nil {
 		err := xerrors.Errorf("failed to get form: %v", err)
 		a.setErr(err, nil)
@@ -409,50 +412,4 @@ func (a *Actor) MarshalJSON() ([]byte, error) {
 // Status implements dkg.Actor
 func (a *Actor) Status() dkg.Status {
 	return *a.status
-}
-
-func formExists(service ordering.Service, formIDBuf []byte) (ordering.Proof, bool) {
-	proof, err := service.GetProof(formIDBuf)
-	if err != nil {
-		return proof, false
-	}
-
-	// this is proof of absence
-	if string(proof.GetValue()) == "" {
-		return proof, false
-	}
-
-	return proof, true
-}
-
-// getForm gets the form from the service.
-func (a Actor) getForm() (etypes.Form, error) {
-	var form etypes.Form
-
-	formID, err := hex.DecodeString(a.formID)
-	if err != nil {
-		return form, xerrors.Errorf("failed to decode formIDHex: %v", err)
-	}
-
-	proof, exists := formExists(a.service, formID)
-	if !exists {
-		return form, xerrors.Errorf("form does not exist: %v", err)
-	}
-
-	message, err := a.formFac.Deserialize(a.context, proof.GetValue())
-	if err != nil {
-		return form, xerrors.Errorf("failed to deserialize Form: %v", err)
-	}
-
-	form, ok := message.(etypes.Form)
-	if !ok {
-		return form, xerrors.Errorf("wrong message type: %T", message)
-	}
-
-	if a.formID != form.FormID {
-		return form, xerrors.Errorf("formID do not match: %q != %q",
-			a.formID, form.FormID)
-	}
-
-	return form, nil
 }

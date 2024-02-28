@@ -158,6 +158,39 @@ func (e FormFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message,
 	return message, nil
 }
 
+// FormFromStore returns a form from the store given the formIDHex.
+// An error indicates a wrong storage of the form.
+func FormFromStore(ctx serde.Context, formFac serde.Factory, formIDHex string,
+	store store.Readable) (Form, error) {
+
+	form := Form{}
+
+	formIDBuf, err := hex.DecodeString(formIDHex)
+	if err != nil {
+		return form, xerrors.Errorf("failed to decode formIDHex: %v", err)
+	}
+
+	formBuff, err := store.Get(formIDBuf)
+	if err != nil {
+		return form, xerrors.Errorf("while getting data for form: %v", err)
+	}
+	if len(formBuff) == 0 {
+		return form, xerrors.Errorf("no form found")
+	}
+
+	message, err := formFac.Deserialize(ctx, formBuff)
+	if err != nil {
+		return form, xerrors.Errorf("failed to deserialize Form: %v", err)
+	}
+
+	form, ok := message.(Form)
+	if !ok {
+		return form, xerrors.Errorf("wrong message type: %T", message)
+	}
+
+	return form, nil
+}
+
 // ChunksPerBallot returns the number of chunks of El Gamal pairs needed to
 // represent an encrypted ballot, knowing that one chunk is 29 bytes at most.
 func (e *Form) ChunksPerBallot() int {

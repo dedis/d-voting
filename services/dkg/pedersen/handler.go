@@ -466,7 +466,7 @@ func (h *Handler) handleDecryptRequest(formID string) error {
 	// loop until our transaction has been accepted, or enough nodes submitted
 	// their pubShares
 	for {
-		form, err := h.getForm(formID)
+		form, err := etypes.FormFromStore(h.context, h.formFac, formID, h.service.GetStore())
 		if err != nil {
 			return xerrors.Errorf("could not get the form: %v", err)
 		}
@@ -521,7 +521,7 @@ func (h *Handler) handleDecryptRequest(formID string) error {
 // getShuffleIfValid allows checking if enough shuffles have been made on the
 // ballots.
 func (h *Handler) getShuffleIfValid(formID string) ([]etypes.ShuffleInstance, error) {
-	form, err := h.getForm(formID)
+	form, err := etypes.FormFromStore(h.context, h.formFac, formID, h.service.GetStore())
 	if err != nil {
 		return nil, xerrors.Errorf("could not get the form: %v", err)
 	}
@@ -873,36 +873,4 @@ func makeTx(ctx serde.Context, form *etypes.Form, pubShares etypes.PubsharesUnit
 	}
 
 	return tx, nil
-}
-
-// getForm gets the form from the service
-func (h *Handler) getForm(formIDHex string) (etypes.Form, error) {
-	var form etypes.Form
-
-	formID, err := hex.DecodeString(formIDHex)
-	if err != nil {
-		return form, xerrors.Errorf("failed to decode formIDHex: %v", err)
-	}
-
-	proof, exists := formExists(h.service, formID)
-	if !exists {
-		return form, xerrors.Errorf("form does not exist: %v", err)
-	}
-
-	message, err := h.formFac.Deserialize(h.context, proof.GetValue())
-	if err != nil {
-		return form, xerrors.Errorf("failed to deserialize Form: %v", err)
-	}
-
-	form, ok := message.(etypes.Form)
-	if !ok {
-		return form, xerrors.Errorf("wrong message type: %T", message)
-	}
-
-	if formIDHex != form.FormID {
-		return form, xerrors.Errorf("formID do not match: %q != %q",
-			formIDHex, form.FormID)
-	}
-
-	return form, nil
 }
