@@ -53,8 +53,8 @@
                   "items": {
                     "type": "object",
                     "properties": {
-                       "Choice": { "type": "string" },
-                       "URL": { "type": "string" }
+                      "Choice": { "type": "string" },
+                      "URL": { "type": "string" }
                     }
                   }
                 },
@@ -92,8 +92,8 @@
                   "items": {
                     "type": "object",
                     "properties": {
-                       "Choice": { "type": "string" },
-                       "URL": { "type": "string" }
+                      "Choice": { "type": "string" },
+                      "URL": { "type": "string" }
                     }
                   }
                 },
@@ -133,8 +133,8 @@
                   "items": {
                     "type": "object",
                     "properties": {
-                       "Choice": { "type": "string" },
-                       "URL": { "type": "string" }
+                      "Choice": { "type": "string" },
+                      "URL": { "type": "string" }
                     }
                   }
                 },
