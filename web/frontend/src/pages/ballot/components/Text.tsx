@@ -117,23 +117,15 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>
-      {language === 'en' && text.ChoicesMap.ChoicesMap.has('en') && (
+      {text.ChoicesMap.ChoicesMap.has(language) ? (
+        <div className="sm:pl-8 mt-2 pl-6">
+          {text.ChoicesMap.ChoicesMap.get(language).map((choice, index) =>
+            choiceDisplay(choice, text.ChoicesMap.URLs[index], index)
+          )}
+        </div>
+      ) : (
         <div className="sm:pl-8 mt-2 pl-6">
           {text.ChoicesMap.ChoicesMap.get('en').map((choice, index) =>
-            choiceDisplay(choice, text.ChoicesMap.URLs[index], index)
-          )}
-        </div>
-      )}
-      {language === 'fr' && text.ChoicesMap.ChoicesMap.has('fr') && (
-        <div className="sm:pl-8 mt-2 pl-6">
-          {text.ChoicesMap.ChoicesMap.get('fr').map((choice, index) =>
-            choiceDisplay(choice, text.ChoicesMap.URLs[index], index)
-          )}
-        </div>
-      )}
-      {language === 'de' && text.ChoicesMap.ChoicesMap.has('de') && (
-        <div className="sm:pl-8 mt-2 pl-6">
-          {text.ChoicesMap.ChoicesMap.get('de').map((choice, index) =>
             choiceDisplay(choice, text.ChoicesMap.URLs[index], index)
           )}
         </div>
