@@ -15,6 +15,7 @@ import (
 	"github.com/c4dt/d-voting/contracts/evoting"
 	"github.com/c4dt/d-voting/proxy/txnmanager"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/contracts/access"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
@@ -103,6 +104,7 @@ func pollTxnInclusion(maxPollCount int, interPollWait time.Duration, proxyAddr, 
 // For integrationTest
 func (m txManager) addAndWait(args ...txn.Arg) ([]byte, error) {
 	for i := 0; i < m.retry; i++ {
+		dela.Logger.Info().Msgf("Adding and waiting for tx to succeed: %d", i)
 		sentTxn, err := m.m.Make(args...)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to Make: %v", err)
@@ -119,8 +121,6 @@ func (m txManager) addAndWait(args ...txn.Arg) ([]byte, error) {
 			continue
 		}
 
-		time.Sleep(time.Second)
-
 		sentTxnID := sentTxn.GetID()
 
 		accepted := isAccepted(events, sentTxnID)
@@ -134,6 +134,8 @@ func (m txManager) addAndWait(args ...txn.Arg) ([]byte, error) {
 		}
 
 		cancel()
+		
+		time.Sleep(time.Millisecond * (1 << i))
 	}
 
 	return nil, xerrors.Errorf("transaction not included after timeout: %v", args)

@@ -295,11 +295,13 @@ func TestCommand_CastVote(t *testing.T) {
 	form, ok := message.(types.Form)
 	require.True(t, ok)
 
-	require.Len(t, form.Suffragia.Ciphervotes, 1)
-	require.True(t, castVote.Ballot.Equal(form.Suffragia.Ciphervotes[0]))
+	require.Equal(t, uint32(1), form.BallotCount)
+	suff, err := form.Suffragia(ctx, snap)
+	require.NoError(t, err)
+	require.True(t, castVote.Ballot.Equal(suff.Ciphervotes[0]))
 
-	require.Equal(t, castVote.UserID, form.Suffragia.UserIDs[0])
-	require.Equal(t, float64(len(form.Suffragia.Ciphervotes)), testutil.ToFloat64(PromFormBallots))
+	require.Equal(t, castVote.UserID, suff.UserIDs[0])
+	require.Equal(t, float64(form.BallotCount), testutil.ToFloat64(PromFormBallots))
 }
 
 func TestCommand_CloseForm(t *testing.T) {
@@ -364,8 +366,8 @@ func TestCommand_CloseForm(t *testing.T) {
 	err = cmd.closeForm(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "at least two ballots are required")
 
-	dummyForm.Suffragia.CastVote("dummyUser1", types.Ciphervote{})
-	dummyForm.Suffragia.CastVote("dummyUser2", types.Ciphervote{})
+	require.NoError(t, dummyForm.CastVote(ctx, snap, "dummyUser1", types.Ciphervote{}))
+	require.NoError(t, dummyForm.CastVote(ctx, snap, "dummyUser2", types.Ciphervote{}))
 
 	formBuf, err = dummyForm.Serialize(ctx)
 	require.NoError(t, err)
@@ -393,14 +395,12 @@ func TestCommand_CloseForm(t *testing.T) {
 func TestCommand_ShuffleBallotsCannotShuffleTwice(t *testing.T) {
 	k := 3
 
-	form, shuffleBallots, contract := initGoodShuffleBallot(t, k)
+	snap, form, shuffleBallots, contract := initGoodShuffleBallot(t, k)
 
 	cmd := evotingCommand{
 		Contract: &contract,
 		prover:   fakeProver,
 	}
-
-	snap := fake.NewSnapshot()
 
 	// Attempts to shuffle twice :
 	shuffleBallots.Round = 1
@@ -439,14 +439,12 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 	k := 3
 
 	// Simple Shuffle from round 0 :
-	form, shuffleBallots, contract := initGoodShuffleBallot(t, k)
+	snap, form, shuffleBallots, contract := initGoodShuffleBallot(t, k)
 
 	cmd := evotingCommand{
 		Contract: &contract,
 		prover:   fakeProver,
 	}
-
-	snap := fake.NewSnapshot()
 
 	formBuf, err := form.Serialize(ctx)
 	require.NoError(t, err)
@@ -697,7 +695,6 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	form.Pubkey = pubKey
 	shuffleBallots.Round = 0
 	form.ShuffleInstances = make([]types.ShuffleInstance, 0)
-	form.Suffragia.Ciphervotes = make([]types.Ciphervote, 0)
 
 	data, err = shuffleBallots.Serialize(ctx)
 	require.NoError(t, err)
@@ -713,9 +710,9 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 
 	// > With only one shuffled ballot the shuffling can't happen
 
-	form.Suffragia.CastVote("user1", types.Ciphervote{
+	require.NoError(t, form.CastVote(ctx, snap, "user1", types.Ciphervote{
 		types.EGPair{K: suite.Point(), C: suite.Point()},
-	})
+	}))
 
 	data, err = shuffleBallots.Serialize(ctx)
 	require.NoError(t, err)
@@ -1118,7 +1115,6 @@ func initFormAndContract() (types.Form, Contract) {
 		FormID:           fakeFormID,
 		Status:           0,
 		Pubkey:           nil,
-		Suffragia:        types.Suffragia{},
 		ShuffleInstances: make([]types.ShuffleInstance, 0),
 		DecryptedBallots: nil,
 		ShuffleThreshold: 0,
@@ -1133,7 +1129,7 @@ func initFormAndContract() (types.Form, Contract) {
 	return dummyForm, contract
 }
 
-func initGoodShuffleBallot(t *testing.T, k int) (types.Form, types.ShuffleBallots, Contract) {
+func initGoodShuffleBallot(t *testing.T, k int) (store.Snapshot, types.Form, types.ShuffleBallots, Contract) {
 	form, shuffleBallots, contract := initBadShuffleBallot(3)
 	form.Status = types.Closed
 
@@ -1156,12 +1152,13 @@ func initGoodShuffleBallot(t *testing.T, k int) (types.Form, types.ShuffleBallot
 	shuffleBallots.Round = 0
 	form.ShuffleInstances = make([]types.ShuffleInstance, 0)
 
+	snap := fake.NewSnapshot()
 	for i := 0; i < k; i++ {
 		ballot := types.Ciphervote{types.EGPair{
 			K: Ks[i],
 			C: Cs[i],
 		}}
-		form.Suffragia.CastVote(fmt.Sprintf("user%d", i), ballot)
+		require.NoError(t, form.CastVote(ctx, snap, fmt.Sprintf("user%d", i), ballot))
 	}
 
 	// Valid Signature of shuffle
@@ -1189,7 +1186,7 @@ func initGoodShuffleBallot(t *testing.T, k int) (types.Form, types.ShuffleBallot
 	}
 	shuffleBallots.RandomVector.LoadFromScalars(e)
 
-	return form, shuffleBallots, contract
+	return snap, form, shuffleBallots, contract
 }
 
 func initBadShuffleBallot(sizeOfForm int) (types.Form, types.ShuffleBallots, Contract) {

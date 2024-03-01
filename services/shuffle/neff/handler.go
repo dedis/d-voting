@@ -260,7 +260,11 @@ func (h *Handler) getShuffledBallots(form *etypes.Form) ([]etypes.Ciphervote,
 	var ciphervotes []etypes.Ciphervote
 
 	if round == 0 {
-		ciphervotes = form.Suffragia.Ciphervotes
+		suff, err := form.Suffragia(h.context, h.service.GetStore())
+		if err != nil {
+			return nil, nil, xerrors.Errorf("couldn't get ballots: %v", err)
+		}
+		ciphervotes = suff.Ciphervotes
 	} else {
 		ciphervotes = form.ShuffleInstances[round-1].ShuffledBallots
 	}

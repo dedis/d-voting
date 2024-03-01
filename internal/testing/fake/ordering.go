@@ -35,12 +35,13 @@ func (f Proof) GetValue() []byte {
 //
 // - implements ordering.Service
 type Service struct {
-	Err     error
-	Forms   map[string]formTypes.Form
-	Pool    *Pool
-	Status  bool
-	Channel chan ordering.Event
-	Context serde.Context
+	Err        error
+	Forms      map[string]formTypes.Form
+	Pool       *Pool
+	Status     bool
+	Channel    chan ordering.Event
+	Context    serde.Context
+	BallotSnap *InMemorySnapshot
 }
 
 // GetProof implements ordering.Service. It returns the proof associated to the
@@ -73,7 +74,17 @@ func (f Service) GetProof(key []byte) (ordering.Proof, error) {
 // GetStore implements ordering.Service. It returns the store associated to the
 // service.
 func (f Service) GetStore() store.Readable {
-	return nil
+	return readable{
+		snap: f.BallotSnap,
+	}
+}
+
+type readable struct {
+	snap *InMemorySnapshot
+}
+
+func (fr readable) Get(key []byte) ([]byte, error) {
+	return fr.snap.Get(key)
 }
 
 // Watch implements ordering.Service. It returns the events that occurred within
@@ -121,12 +132,12 @@ func (f *Service) AddTx(tx Transaction) {
 
 // NewService returns a new initialized service
 func NewService(formID string, form formTypes.Form, ctx serde.Context) Service {
-	forms := make(map[string]formTypes.Form)
-	forms[formID] = form
+	snap := NewSnapshot()
 
 	return Service{
-		Err:     nil,
-		Forms:   forms,
-		Context: ctx,
+		Err:        nil,
+		Forms:      map[string]formTypes.Form{formID: form},
+		BallotSnap: snap,
+		Context:    ctx,
 	}
 }

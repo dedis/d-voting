@@ -91,7 +91,6 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 		Status:        types.Initial,
 		// Pubkey is set by the opening command
 		BallotSize:       tx.Configuration.MaxBallotSize(),
-		Suffragia:        types.Suffragia{},
 		PubsharesUnits:   units,
 		ShuffleInstances: []types.ShuffleInstance{},
 		DecryptedBallots: []types.Ballot{},
@@ -231,7 +230,10 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 			len(tx.Ballot), form.ChunksPerBallot())
 	}
 
-	form.Suffragia.CastVote(tx.UserID, tx.Ballot)
+	err = form.CastVote(e.context, snap, tx.UserID, tx.Ballot)
+	if err != nil {
+		return xerrors.Errorf("couldn't cast vote: %v", err)
+	}
 
 	formBuf, err := form.Serialize(e.context)
 	if err != nil {
@@ -243,7 +245,7 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
 
-	PromFormBallots.WithLabelValues(form.FormID).Set(float64(len(form.Suffragia.Ciphervotes)))
+	PromFormBallots.WithLabelValues(form.FormID).Set(float64(form.BallotCount))
 
 	return nil
 }
@@ -362,7 +364,11 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	var ciphervotes []types.Ciphervote
 
 	if tx.Round == 0 {
-		ciphervotes = form.Suffragia.Ciphervotes
+		suff, err := form.Suffragia(e.context, snap)
+		if err != nil {
+			return xerrors.Errorf("couldn't get ballots: %v", err)
+		}
+		ciphervotes = suff.Ciphervotes
 	} else {
 		// get the form's last shuffled ballots
 		lastIndex := len(form.ShuffleInstances) - 1
@@ -470,7 +476,7 @@ func (e evotingCommand) closeForm(snap store.Snapshot, step execution.Step) erro
 		return xerrors.Errorf("the form is not open, current status: %d", form.Status)
 	}
 
-	if len(form.Suffragia.Ciphervotes) <= 1 {
+	if form.BallotCount <= 1 {
 		return xerrors.Errorf("at least two ballots are required")
 	}
 

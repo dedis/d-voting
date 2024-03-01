@@ -157,7 +157,7 @@ func (a *Actor) waitAndCheckShuffling(formID string, rosterLen int) error {
 	var form etypes.Form
 	var err error
 
-	for i := 0; i < rosterLen*10; i++ {
+	for i := 0; ; i++ {
 		form, err = getForm(a.formFac, a.context, formID, a.service)
 		if err != nil {
 			return xerrors.Errorf("failed to get form: %v", err)
@@ -175,6 +175,10 @@ func (a *Actor) waitAndCheckShuffling(formID string, rosterLen int) error {
 		dela.Logger.Info().Msgf("waiting a while before checking form: %d", i)
 		sleepTime := rosterLen / 2
 		time.Sleep(time.Duration(sleepTime) * time.Second)
+		if i >= form.ShuffleThreshold*((int)(form.BallotCount)/16+1) {
+			break
+		}
+		dela.Logger.Info().Msgf("WaitingRounds is : %d", form.ShuffleThreshold*((int)(form.BallotCount)/10+1))
 	}
 
 	return xerrors.Errorf("threshold of shuffling not reached: %d < %d",
