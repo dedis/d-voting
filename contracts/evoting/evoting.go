@@ -848,24 +848,9 @@ func (e evotingCommand) getForm(formIDHex string,
 		return form, nil, xerrors.Errorf("failed to decode formIDHex: %v", err)
 	}
 
-	formBuff, err := snap.Get(formIDBuf)
+	form, err = types.FormFromStore(e.context, e.formFac, formIDHex, snap)
 	if err != nil {
 		return form, nil, xerrors.Errorf("failed to get key %q: %v", formIDBuf, err)
-	}
-
-	message, err := e.formFac.Deserialize(e.context, formBuff)
-	if err != nil {
-		return form, nil, xerrors.Errorf("failed to deserialize Form: %v", err)
-	}
-
-	form, ok := message.(types.Form)
-	if !ok {
-		return form, nil, xerrors.Errorf("wrong message type: %T", message)
-	}
-
-	if formIDHex != form.FormID {
-		return form, nil, xerrors.Errorf("formID do not match: %q != %q",
-			formIDHex, form.FormID)
 	}
 
 	return form, formIDBuf, nil

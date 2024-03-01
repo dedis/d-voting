@@ -399,8 +399,8 @@ github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
-github.com/c4dt/dela v0.0.0-20240125143006-d9bfc5ad2f59 h1:mYFBc395DeUmimRIgB/Xk+AGXfuDcYWADM/qvocBkW4=
-github.com/c4dt/dela v0.0.0-20240125143006-d9bfc5ad2f59/go.mod h1:Oh/WK8JMO0POQg7nR3u436u+HwsZwPqPzDWAasgmFAU=
+github.com/c4dt/dela v0.0.0-20240301123018-73bff7b74d2f h1:xaUQ/rK337VOD45CjFn6xlDSj6iaTvDxiNjt04pmhrM=
+github.com/c4dt/dela v0.0.0-20240301123018-73bff7b74d2f/go.mod h1:Oh/WK8JMO0POQg7nR3u436u+HwsZwPqPzDWAasgmFAU=
 github.com/c4dt/dela-apps v0.0.0-20231121155105-f3a8a6f4b3b8 h1:ELho4tnVG7lM3c2I42Q5IGNyuk/2FQCterA2zVQGvms=
 github.com/c4dt/dela-apps v0.0.0-20231121155105-f3a8a6f4b3b8/go.mod h1:Rky9YH7R02zSOirr2BhhdJs/9VH4+rxqkQxHU3UTQRA=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=

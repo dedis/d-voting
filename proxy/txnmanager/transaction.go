@@ -203,11 +203,6 @@ func (h *manager) SubmitTxn(ctx context.Context, cmd evoting.Command,
 	h.Lock()
 	defer h.Unlock()
 
-	err := h.mngr.Sync()
-	if err != nil {
-		return nil, 0, xerrors.Errorf("failed to sync manager: %v", err)
-	}
-
 	tx, err := createTransaction(h.mngr, cmd, cmdArg, payload)
 	if err != nil {
 		return nil, 0, xerrors.Errorf("failed to create transaction: %v", err)

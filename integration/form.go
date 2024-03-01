@@ -137,28 +137,7 @@ func openForm(m txManager, formID []byte) error {
 func getForm(formFac serde.Factory, formID []byte,
 	service ordering.Service) (types.Form, error) {
 
-	form := types.Form{}
-
-	proof, err := service.GetProof(formID)
-	if err != nil {
-		return form, xerrors.Errorf("failed to GetProof: %v", err)
-	}
-
-	if proof == nil {
-		return form, xerrors.Errorf("form does not exist: %v", err)
-	}
-
-	message, err := formFac.Deserialize(serdecontext, proof.GetValue())
-	if err != nil {
-		return form, xerrors.Errorf("failed to deserialize Form: %v", err)
-	}
-
-	form, ok := message.(types.Form)
-	if !ok {
-		return form, xerrors.Errorf("wrong message type: %T", message)
-	}
-
-	return form, nil
+	return types.FormFromStore(serdecontext, formFac, hex.EncodeToString(formID), service.GetStore())
 }
 
 // for integration tests

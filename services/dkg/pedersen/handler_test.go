@@ -10,6 +10,7 @@ import (
 	formTypes "github.com/c4dt/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/txn/signed"
+	"go.dedis.ch/dela/mino/minogrpc/session"
 	"go.dedis.ch/dela/serde/json"
 
 	"github.com/c4dt/d-voting/internal/testing/fake"
@@ -23,7 +24,8 @@ import (
 )
 
 func TestHandler_Stream(t *testing.T) {
-	h := Handler{startRes: &state{}, service: &fake.Service{}}
+	h := Handler{startRes: &state{}, service: &fake.Service{Forms: make(map[string]formTypes.Form),
+		BallotSnap: fake.NewSnapshot()}}
 	receiver := fake.NewBadReceiver()
 	err := h.Stream(fake.Sender{}, receiver)
 	require.EqualError(t, err, fake.Err("failed to receive"))
@@ -43,8 +45,8 @@ func TestHandler_Stream(t *testing.T) {
 		fake.NewRecvMsg(fake.NewAddress(0), types.DecryptRequest{}),
 	)
 	err = h.Stream(fake.NewBadSender(), receiver)
-	require.EqualError(t, err, "could not send pubShares: failed to check"+
-		" if the shuffle is over: could not get the form: form does not exist: <nil>")
+	require.EqualError(t, err, "could not send pubShares: failed to check if the shuffle is over: "+
+		"could not get the form: while getting data for form: this key doesn't exist")
 
 	formIDHex := hex.EncodeToString([]byte("form"))
 
@@ -77,12 +79,13 @@ func TestHandler_Stream(t *testing.T) {
 	h.formFac = formTypes.NewFormFactory(formTypes.CiphervoteFactory{}, fake.RosterFac{})
 
 	h.service = &fake.Service{
-		Err:     nil,
-		Forms:   Forms,
-		Pool:    nil,
-		Status:  false,
-		Channel: nil,
-		Context: json.NewContext(),
+		Err:        nil,
+		Forms:      Forms,
+		Pool:       nil,
+		Status:     false,
+		Channel:    nil,
+		Context:    json.NewContext(),
+		BallotSnap: fake.NewSnapshot(),
 	}
 
 	h.context = json.NewContext()
@@ -264,7 +267,8 @@ func TestState_MarshalJSON(t *testing.T) {
 
 	// Try with some data
 	distKey := suite.Point().Pick(suite.RandomStream())
-	participants := []mino.Address{fake.NewAddress(0), fake.NewAddress(1)}
+	// TODO: use AddressFactory here
+	participants := []mino.Address{session.NewAddress("grpcs://localhost:12345"), session.NewAddress("grpcs://localhost:1234")}
 
 	s1.SetDistKey(distKey)
 	s1.SetParticipants(participants)
@@ -311,12 +315,13 @@ func TestHandler_HandlerDecryptRequest(t *testing.T) {
 	h.formFac = formTypes.NewFormFactory(formTypes.CiphervoteFactory{}, fake.RosterFac{})
 
 	service := fake.Service{
-		Err:     nil,
-		Forms:   Forms,
-		Pool:    nil,
-		Status:  false,
-		Channel: nil,
-		Context: json.NewContext(),
+		Err:        nil,
+		Forms:      Forms,
+		Pool:       nil,
+		Status:     false,
+		Channel:    nil,
+		Context:    json.NewContext(),
+		BallotSnap: fake.NewSnapshot(),
 	}
 
 	h.context = json.NewContext()

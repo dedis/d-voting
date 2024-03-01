@@ -91,7 +91,7 @@ func (h *Handler) handleStartShuffle(formID string) error {
 
 	// loop until the threshold is reached or our transaction has been accepted
 	for {
-		form, err := getForm(h.formFac, h.context, formID, h.service)
+		form, err := etypes.FormFromStore(h.context, h.formFac, formID, h.service.GetStore())
 		if err != nil {
 			return xerrors.Errorf("failed to get form: %v", err)
 		}

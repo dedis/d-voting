@@ -2,9 +2,11 @@ package pedersen
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"sync"
 	"time"
 
+	"go.dedis.ch/dela/core/store/kv"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/crypto"
@@ -34,6 +36,9 @@ import (
 	// Register the JSON format for the form
 	_ "github.com/c4dt/d-voting/contracts/evoting/json"
 )
+
+// BucketName is the name of the bucket in the database.
+const BucketName = "dkgmap"
 
 // suite is the Kyber suite for Pedersen.
 var suite = suites.MustFind("Ed25519")
@@ -68,10 +73,12 @@ type Pedersen struct {
 	pool    pool.Pool
 	signer  crypto.Signer
 	actors  map[string]dkg.Actor
+	db      kv.DB
 }
 
 // NewPedersen returns a new DKG Pedersen factory
-func NewPedersen(m mino.Mino, service ordering.Service, pool pool.Pool,
+func NewPedersen(m mino.Mino, service ordering.Service,
+	db kv.DB, pool pool.Pool,
 	formFac serde.Factory, signer crypto.Signer) *Pedersen {
 
 	factory := types.NewMessageFactory(m.GetAddressFactory())
@@ -85,6 +92,7 @@ func NewPedersen(m mino.Mino, service ordering.Service, pool pool.Pool,
 		actors:  actors,
 		signer:  signer,
 		formFac: formFac,
+		db:      db,
 	}
 }
 
@@ -94,8 +102,11 @@ func (s *Pedersen) Listen(formIDBuf []byte, txmngr txn.Manager) (dkg.Actor, erro
 
 	formID := hex.EncodeToString(formIDBuf)
 
-	_, exists := formExists(s.service, formIDBuf)
-	if !exists {
+	formBuf, err := s.service.GetStore().Get(formIDBuf)
+	if err != nil {
+		return nil, xerrors.Errorf("While looking for form: %v", err)
+	}
+	if len(formBuf) == 0 {
 		return nil, xerrors.Errorf("form %s was not found", formID)
 	}
 
@@ -122,7 +133,12 @@ func (s *Pedersen) NewActor(formIDBuf []byte, pool pool.Pool, txmngr txn.Manager
 
 	// link the actor to an RPC by the form ID
 	h := NewHandler(s.mino.GetAddress(), s.service, pool, txmngr, s.signer,
-		handlerData, ctx, s.formFac, status)
+		handlerData, ctx, s.formFac, status, func(h *Handler) {
+			err := storeHandler(formID, s.db, h)
+			if err != nil {
+				dela.Logger.Err(err).Msg("While storing the dkg handler")
+			}
+		})
 
 	no := s.mino.WithSegment(formID)
 	rpc := mino.MustCreateRPC(no, RPC, h, s.factory)
@@ -139,6 +155,7 @@ func (s *Pedersen) NewActor(formIDBuf []byte, pool pool.Pool, txmngr txn.Manager
 		formID:  formID,
 		status:  status,
 		log:     log,
+		db:      s.db,
 	}
 
 	evoting.PromFormDkgStatus.WithLabelValues(formID).Set(float64(dkg.Initialized))
@@ -147,7 +164,7 @@ func (s *Pedersen) NewActor(formIDBuf []byte, pool pool.Pool, txmngr txn.Manager
 	defer s.Unlock()
 	s.actors[formID] = a
 
-	return a, nil
+	return a, a.store()
 }
 
 // GetActor implements dkg.DKG
@@ -156,6 +173,32 @@ func (s *Pedersen) GetActor(formIDBuf []byte) (dkg.Actor, bool) {
 	defer s.RUnlock()
 	actor, exists := s.actors[hex.EncodeToString(formIDBuf)]
 	return actor, exists
+}
+
+func (s *Pedersen) ReadActors(txmngr txn.Manager) error {
+	// Use dkgMap to fill the actors map
+	return s.db.View(func(tx kv.ReadableTx) error {
+		bucket := tx.GetBucket([]byte(BucketName))
+		if bucket == nil {
+			return nil
+		}
+
+		return bucket.ForEach(func(formIDBuf, handlerDataBuf []byte) error {
+
+			handlerData := HandlerData{}
+			err := json.Unmarshal(handlerDataBuf, &handlerData)
+			if err != nil {
+				return err
+			}
+
+			_, err = s.NewActor(formIDBuf, s.pool, txmngr, handlerData)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
+	})
 }
 
 // Actor allows one to perform DKG operations like encrypt/decrypt a message
@@ -171,6 +214,7 @@ type Actor struct {
 	formID  string
 	status  *dkg.Status
 	log     zerolog.Logger
+	db      kv.DB
 }
 
 func (a *Actor) setErr(err error, args map[string]interface{}) {
@@ -195,7 +239,7 @@ func (a *Actor) Setup() (kyber.Point, error) {
 		return nil, err
 	}
 
-	form, err := a.getForm()
+	form, err := etypes.FormFromStore(a.context, a.formFac, a.formID, a.service.GetStore())
 	if err != nil {
 		err := xerrors.Errorf("failed to get form: %v", err)
 		a.setErr(err, nil)
@@ -324,7 +368,31 @@ func (a *Actor) Setup() (kyber.Point, error) {
 	*a.status = dkg.Status{Status: dkg.Setup}
 	evoting.PromFormDkgStatus.WithLabelValues(a.formID).Set(float64(dkg.Setup))
 
-	return dkgPubKeys[0], nil
+	return dkgPubKeys[0], a.store()
+}
+
+func (a *Actor) store() error {
+	return storeHandler(a.formID, a.db, a.handler)
+}
+func storeHandler(formID string, db kv.DB, h *Handler) error {
+	return db.Update(func(tx kv.WritableTx) error {
+		formIDBuf, err := hex.DecodeString(formID)
+		if err != nil {
+			return err
+		}
+
+		bucket, err := tx.GetBucketOrCreate([]byte(BucketName))
+		if err != nil {
+			return err
+		}
+
+		actorBuf, err := h.MarshalJSON()
+		if err != nil {
+			return err
+		}
+
+		return bucket.Set(formIDBuf, actorBuf)
+	})
 }
 
 // GetPublicKey implements dkg.Actor
@@ -409,50 +477,4 @@ func (a *Actor) MarshalJSON() ([]byte, error) {
 // Status implements dkg.Actor
 func (a *Actor) Status() dkg.Status {
 	return *a.status
-}
-
-func formExists(service ordering.Service, formIDBuf []byte) (ordering.Proof, bool) {
-	proof, err := service.GetProof(formIDBuf)
-	if err != nil {
-		return proof, false
-	}
-
-	// this is proof of absence
-	if string(proof.GetValue()) == "" {
-		return proof, false
-	}
-
-	return proof, true
-}
-
-// getForm gets the form from the service.
-func (a Actor) getForm() (etypes.Form, error) {
-	var form etypes.Form
-
-	formID, err := hex.DecodeString(a.formID)
-	if err != nil {
-		return form, xerrors.Errorf("failed to decode formIDHex: %v", err)
-	}
-
-	proof, exists := formExists(a.service, formID)
-	if !exists {
-		return form, xerrors.Errorf("form does not exist: %v", err)
-	}
-
-	message, err := a.formFac.Deserialize(a.context, proof.GetValue())
-	if err != nil {
-		return form, xerrors.Errorf("failed to deserialize Form: %v", err)
-	}
-
-	form, ok := message.(etypes.Form)
-	if !ok {
-		return form, xerrors.Errorf("wrong message type: %T", message)
-	}
-
-	if a.formID != form.FormID {
-		return form, xerrors.Errorf("formID do not match: %q != %q",
-			a.formID, form.FormID)
-	}
-
-	return form, nil
 }

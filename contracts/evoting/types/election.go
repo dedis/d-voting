@@ -38,7 +38,7 @@ const (
 	PubSharesSubmitted Status = 4
 	// ResultAvailable is when the ballots have been decrypted
 	ResultAvailable Status = 5
-	// Canceled is when the form has been cancel
+	// Canceled is when the form has been canceled
 	Canceled Status = 6
 )
 
@@ -46,7 +46,7 @@ const (
 // 100 ballots at a time.
 var BallotsPerBlock = uint32(100)
 
-// TestCastBallots: if true, automatically fills every block with ballots.
+// TestCastBallots if true, automatically fills every block with ballots.
 var TestCastBallots = false
 
 // formFormat contains the supported formats for the form. Right now
@@ -156,6 +156,39 @@ func (e FormFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message,
 	}
 
 	return message, nil
+}
+
+// FormFromStore returns a form from the store given the formIDHex.
+// An error indicates a wrong storage of the form.
+func FormFromStore(ctx serde.Context, formFac serde.Factory, formIDHex string,
+	store store.Readable) (Form, error) {
+
+	form := Form{}
+
+	formIDBuf, err := hex.DecodeString(formIDHex)
+	if err != nil {
+		return form, xerrors.Errorf("failed to decode formIDHex: %v", err)
+	}
+
+	formBuff, err := store.Get(formIDBuf)
+	if err != nil {
+		return form, xerrors.Errorf("while getting data for form: %v", err)
+	}
+	if len(formBuff) == 0 {
+		return form, xerrors.Errorf("no form found")
+	}
+
+	message, err := formFac.Deserialize(ctx, formBuff)
+	if err != nil {
+		return form, xerrors.Errorf("failed to deserialize Form: %v", err)
+	}
+
+	form, ok := message.(Form)
+	if !ok {
+		return form, xerrors.Errorf("wrong message type: %T", message)
+	}
+
+	return form, nil
 }
 
 // ChunksPerBallot returns the number of chunks of El Gamal pairs needed to

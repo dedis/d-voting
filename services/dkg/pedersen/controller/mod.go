@@ -2,16 +2,15 @@ package controller
 
 import (
 	"encoding"
-	"encoding/json"
 	"path/filepath"
 
+	"github.com/c4dt/d-voting/contracts/evoting"
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/bls"
 	"go.dedis.ch/dela/crypto/loader"
 
-	"github.com/c4dt/d-voting/contracts/evoting"
 	"github.com/c4dt/d-voting/services/dkg/pedersen"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
@@ -27,8 +26,6 @@ import (
 	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
 )
 
-// BucketName is the name of the bucket in the database.
-const BucketName = "dkgmap"
 const privateKeyFile = "private.key"
 
 // NewController returns a new controller initializer
@@ -150,31 +147,10 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 
 	formFac := etypes.NewFormFactory(etypes.CiphervoteFactory{}, rosterFac)
 
-	dkg := pedersen.NewPedersen(no, srvc, p, formFac, signer)
+	dkg := pedersen.NewPedersen(no, srvc, db, p, formFac, signer)
 
 	// Use dkgMap to fill the actors map
-	err = db.View(func(tx kv.ReadableTx) error {
-		bucket := tx.GetBucket([]byte(BucketName))
-		if bucket == nil {
-			return nil
-		}
-
-		return bucket.ForEach(func(formIDBuf, handlerDataBuf []byte) error {
-
-			handlerData := pedersen.HandlerData{}
-			err = json.Unmarshal(handlerDataBuf, &handlerData)
-			if err != nil {
-				return err
-			}
-
-			_, err = dkg.NewActor(formIDBuf, p, signed.NewManager(signer, &client), handlerData)
-			if err != nil {
-				return err
-			}
-
-			return nil
-		})
-	})
+	err = dkg.ReadActors(signed.NewManager(signer, &client))
 	if err != nil {
 		return xerrors.Errorf("database read failed: %v", err)
 	}
