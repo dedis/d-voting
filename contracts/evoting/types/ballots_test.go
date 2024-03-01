@@ -59,13 +59,13 @@ func TestBallot_Unmarshal(t *testing.T) {
 			Title:   Title{En: "", Fr: "", De: ""},
 			MaxN:    2,
 			MinN:    2,
-			Choices: make([]string, 3),
+			Choices: make([]Choice, 3),
 		}, {
 			ID:      decodedQuestionID(2),
 			Title:   Title{En: "", Fr: "", De: ""},
 			MaxN:    3,
 			MinN:    3,
-			Choices: make([]string, 5),
+			Choices: make([]Choice, 5),
 		}},
 
 		Ranks: []Rank{{
@@ -73,7 +73,7 @@ func TestBallot_Unmarshal(t *testing.T) {
 			Title:   Title{En: "", Fr: "", De: ""},
 			MaxN:    4,
 			MinN:    0,
-			Choices: make([]string, 4),
+			Choices: make([]Choice, 4),
 		}},
 
 		Texts: []Text{{
@@ -83,7 +83,7 @@ func TestBallot_Unmarshal(t *testing.T) {
 			MinN:      2,
 			MaxLength: 10,
 			Regex:     "",
-			Choices:   make([]string, 2),
+			Choices:   make([]Choice, 2),
 		}},
 	},
 	}}
@@ -318,13 +318,13 @@ func TestSubject_MaxEncodedSize(t *testing.T) {
 			Title:   Title{En: "", Fr: "", De: ""},
 			MaxN:    3,
 			MinN:    0,
-			Choices: make([]string, 3),
+			Choices: make([]Choice, 3),
 		}, {
 			ID:      encodedQuestionID(2),
 			Title:   Title{En: "", Fr: "", De: ""},
 			MaxN:    5,
 			MinN:    0,
-			Choices: make([]string, 5),
+			Choices: make([]Choice, 5),
 		}},
 
 		Ranks: []Rank{{
@@ -332,7 +332,7 @@ func TestSubject_MaxEncodedSize(t *testing.T) {
 			Title:   Title{En: "", Fr: "", De: ""},
 			MaxN:    4,
 			MinN:    0,
-			Choices: make([]string, 4),
+			Choices: make([]Choice, 4),
 		}},
 
 		Texts: []Text{{
@@ -342,7 +342,7 @@ func TestSubject_MaxEncodedSize(t *testing.T) {
 			MinN:      0,
 			MaxLength: 10,
 			Regex:     "",
-			Choices:   make([]string, 2),
+			Choices:   make([]Choice, 2),
 		}, {
 			ID:        encodedQuestionID(5),
 			Title:     Title{En: "", Fr: "", De: ""},
@@ -350,7 +350,7 @@ func TestSubject_MaxEncodedSize(t *testing.T) {
 			MinN:      0,
 			MaxLength: 10,
 			Regex:     "",
-			Choices:   make([]string, 3),
+			Choices:   make([]Choice, 3),
 		}},
 	}
 
@@ -403,7 +403,7 @@ func TestSubject_IsValid(t *testing.T) {
 		Title:   Title{En: "", Fr: "", De: ""},
 		MaxN:    0,
 		MinN:    0,
-		Choices: make([]string, 0),
+		Choices: make([]Choice, 0),
 	}}
 
 	mainSubject.Ranks = []Rank{{
@@ -411,7 +411,7 @@ func TestSubject_IsValid(t *testing.T) {
 		Title:   Title{En: "", Fr: "", De: ""},
 		MaxN:    0,
 		MinN:    0,
-		Choices: make([]string, 0),
+		Choices: make([]Choice, 0),
 	}}
 
 	configuration.Scaffold = []Subject{*mainSubject}
@@ -426,7 +426,7 @@ func TestSubject_IsValid(t *testing.T) {
 		Title:   Title{En: "", Fr: "", De: ""},
 		MaxN:    0,
 		MinN:    2,
-		Choices: make([]string, 0),
+		Choices: make([]Choice, 0),
 	}
 
 	configuration.Scaffold = []Subject{*mainSubject}
@@ -442,7 +442,7 @@ func TestSubject_IsValid(t *testing.T) {
 		Title:   Title{En: "", Fr: "", De: ""},
 		MaxN:    1,
 		MinN:    0,
-		Choices: make([]string, 0),
+		Choices: make([]Choice, 0),
 	}
 
 	configuration.Scaffold = []Subject{*mainSubject}
@@ -460,7 +460,7 @@ func TestSubject_IsValid(t *testing.T) {
 		MinN:      4,
 		MaxLength: 0,
 		Regex:     "",
-		Choices:   make([]string, 0),
+		Choices:   make([]Choice, 0),
 	}}
 
 	configuration.Scaffold = []Subject{*mainSubject}

@@ -210,7 +210,7 @@ func createFormNChunks(m txManager, title types.Title, admin string, numChunks i
 					MinN:      0,
 					MaxLength: uint(base64.StdEncoding.DecodedLen(textSize)),
 					Regex:     "",
-					Choices:   []string{"Your fav snack: "},
+					Choices:   []types.Choice{{Choice: "Your fav snack: ", URL: ""}},
 				}},
 			},
 		},

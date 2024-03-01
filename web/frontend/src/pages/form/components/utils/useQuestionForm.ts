@@ -14,7 +14,7 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
   const handleChange =
     (Exception?: string, optionnalValues?: number) => (e?: React.ChangeEvent<HTMLInputElement>) => {
       const { value, type, name } = e.target;
-      const obj = Object.fromEntries(ChoicesMap);
+      const obj = Object.fromEntries(ChoicesMap.ChoicesMap);
       const newChoicesMap = new Map(Object.entries(obj));
       newChoicesMap.set('en', [...newChoicesMap.get('en'), '']);
       newChoicesMap.set('fr', [...newChoicesMap.get('fr'), '']);
@@ -32,31 +32,34 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
         case 'addChoiceRank':
           setState({
             ...state,
-            ChoicesMap: newChoicesMap,
+            ChoicesMap: { ChoicesMap: newChoicesMap, URLs: [...ChoicesMap.URLs, ''] },
             MaxN: Math.max(
-              ChoicesMap.get('en').length + 1,
-              ChoicesMap.get('fr').length + 1,
-              ChoicesMap.get('de').length + 1
+              ChoicesMap.ChoicesMap.get('en').length + 1,
+              ChoicesMap.ChoicesMap.get('fr').length + 1,
+              ChoicesMap.ChoicesMap.get('de').length + 1
             ),
             MinN: Math.min(
-              ChoicesMap.get('en').length + 1,
-              ChoicesMap.get('fr').length + 1,
-              ChoicesMap.get('de').length + 1
+              ChoicesMap.ChoicesMap.get('en').length + 1,
+              ChoicesMap.ChoicesMap.get('fr').length + 1,
+              ChoicesMap.ChoicesMap.get('de').length + 1
             ),
           });
           break;
         case 'deleteChoiceRank':
           lang.forEach((lg) => {
-            const filteredChoicesMap = ChoicesMap.get(lg).filter(
+            const filteredChoicesMap = ChoicesMap.ChoicesMap.get(lg).filter(
               (item: string, idx: number) => idx !== optionnalValues
             );
-            ChoicesMap.set(lg, filteredChoicesMap);
+            ChoicesMap.ChoicesMap.set(lg, filteredChoicesMap);
           });
+          ChoicesMap.URLs = ChoicesMap.URLs.filter(
+            (item: string, idx: number) => idx !== optionnalValues
+          );
           setState({
             ...state,
             ChoicesMap: ChoicesMap,
-            MaxN: ChoicesMap.get('en').length,
-            MinN: ChoicesMap.get('en').length,
+            MaxN: ChoicesMap.ChoicesMap.get('en').length,
+            MinN: ChoicesMap.ChoicesMap.get('en').length,
           });
           break;
         case 'TextMaxLength':
@@ -82,21 +85,27 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
 
   // updates the ChoicesMap map when the user adds a new choice
   const addChoice = (lg) => {
-    const obj = Object.fromEntries(ChoicesMap);
+    const obj = Object.fromEntries(ChoicesMap.ChoicesMap);
     const newChoicesMap = new Map(Object.entries(obj));
     switch (lg) {
       case lg:
         setState({
           ...state,
-          ChoicesMap: newChoicesMap.set(lg, [...newChoicesMap.get(lg), '']),
-          MaxN: ChoicesMap.get(lg).length + 1,
+          ChoicesMap: {
+            ChoicesMap: newChoicesMap.set(lg, [...newChoicesMap.get(lg), '']),
+            URLs: [...ChoicesMap.URLs, ''],
+          },
+          MaxN: ChoicesMap.ChoicesMap.get(lg).length + 1,
         });
         break;
       default:
         setState({
           ...state,
-          ChoicesMap: newChoicesMap.set('en', [...newChoicesMap.get('en'), '']),
-          MaxN: ChoicesMap.get('en').length + 1,
+          ChoicesMap: {
+            ChoicesMap: newChoicesMap.set('en', [...newChoicesMap.get('en'), '']),
+            URLs: [...ChoicesMap.URLs, ''],
+          },
+          MaxN: ChoicesMap.ChoicesMap.get('en').length + 1,
         });
     }
   };
@@ -104,17 +113,18 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
   // remove a choice from the ChoicesMap map
   const deleteChoice = (index: number) => {
     lang.forEach((lg) => {
-      if (ChoicesMap.get(lg).length > MinN) {
-        const filteredChoicesMap = ChoicesMap.get(lg).filter(
-          (item: string, idx: number) => idx !== index
+      if (ChoicesMap.ChoicesMap.get(lg).length > MinN) {
+        ChoicesMap.ChoicesMap.set(
+          lg,
+          ChoicesMap.ChoicesMap.get(lg).filter((item: string, idx: number) => idx !== index)
         );
-        ChoicesMap.set(lg, filteredChoicesMap);
+        ChoicesMap.URLs = ChoicesMap.URLs.filter((item: string, idx: number) => idx !== index);
       }
     });
     const maxN = Math.max(
-      ChoicesMap.get('en').length + 1,
-      ChoicesMap.get('fr').length + 1,
-      ChoicesMap.get('de').length + 1
+      ChoicesMap.ChoicesMap.get('en').length + 1,
+      ChoicesMap.ChoicesMap.get('fr').length + 1,
+      ChoicesMap.ChoicesMap.get('de').length + 1
     );
     setState({
       ...state,
@@ -126,7 +136,7 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
   // update the choice at the given index
   const updateChoice = (index: number, lg: string) => (e) => {
     e.persist();
-    const obj = Object.fromEntries(ChoicesMap);
+    const obj = Object.fromEntries(ChoicesMap.ChoicesMap);
     switch (lg) {
       case lg:
         const newChoicesMap = new Map(
@@ -139,8 +149,8 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
         );
         setState({
           ...state,
-          ChoicesMap: newChoicesMap,
-          Choices: choicesMapToChoices(newChoicesMap),
+          ChoicesMap: { ChoicesMap: newChoicesMap, URLs: ChoicesMap.URLs },
+          Choices: choicesMapToChoices({ ChoicesMap: newChoicesMap, URLs: ChoicesMap.URLs }),
         });
         break;
 
@@ -153,12 +163,28 @@ const useQuestionForm = (initState: RankQuestion | SelectQuestion | TextQuestion
         );
         setState({
           ...state,
-          ChoicesMap: newChoicesMapDefault,
-          Choices: choicesMapToChoices(newChoicesMapDefault),
+          ChoicesMap: { ChoicesMap: newChoicesMapDefault, URLs: ChoicesMap.URLs },
+          Choices: choicesMapToChoices({ ChoicesMap: newChoicesMapDefault, URLs: ChoicesMap.URLs }),
         });
     }
   };
-  return { state, handleChange, addChoice, deleteChoice, updateChoice };
+
+  // update the URL
+  const updateURL = (index: number) => (e) => {
+    e.persist();
+    const newURLs = [
+      ...ChoicesMap.URLs.slice(0, index),
+      e.target.value,
+      ...ChoicesMap.URLs.slice(index + 1),
+    ];
+    setState({
+      ...state,
+      ChoicesMap: { ChoicesMap: ChoicesMap.ChoicesMap, URLs: newURLs },
+      Choices: choicesMapToChoices({ ChoicesMap: ChoicesMap.ChoicesMap, URLs: newURLs }),
+    });
+  };
+
+  return { state, handleChange, addChoice, deleteChoice, updateChoice, updateURL };
 };
 
 export default useQuestionForm;

@@ -33,6 +33,7 @@
     "removetext": "Remove text",
     "subject": "Subject",
     "choices": "Choices",
+    "url": "URL",
     "answers": "Answers",
     "enterMaxLength": "Enter the MaxLength",
     "maxChoices": "Max number of choices",

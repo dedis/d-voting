@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import { TextQuestion } from 'types/configuration';
 import { ProgressBar } from './ProgressBar';
 import { countTextResult } from './utils/countResult';
-import { default as i18n } from 'i18next';
+import { prettifyChoice } from './utils/display';
 
 type TextResultProps = {
   textResult: string[][];
@@ -45,11 +45,7 @@ export const IndividualTextResult: FC<IndividualTextResultProps> = ({ text, text
         return (
           <React.Fragment key={`txt_${index}`}>
             <div className="flex flex-row px-2 sm:px-4 break-words max-w-xs w-max">
-              <div className="mr-2 font-bold">
-                {i18n.language === 'en' && text.ChoicesMap.get('en')[index]}
-                {i18n.language === 'fr' && text.ChoicesMap.get('fr')[index]}
-                {i18n.language === 'de' && text.ChoicesMap.get('de')[index]}:
-              </div>
+              <div className="mr-2 font-bold">{prettifyChoice(text.ChoicesMap, index)}:</div>
               <div>{result}</div>
             </div>
           </React.Fragment>
