@@ -2,27 +2,11 @@ import React, { FC } from 'react';
 import { SelectQuestion } from 'types/configuration';
 import { SelectProgressBar } from './ProgressBar';
 import { countSelectResult } from './utils/countResult';
-import { default as i18n } from 'i18next';
+import { prettifyChoice } from './utils/display';
 
 type SelectResultProps = {
   select: SelectQuestion;
   selectResult: number[][];
-};
-
-const prettifyChoice = (select, index) => {
-  const choice = (
-    select.ChoicesMap.ChoicesMap.has(i18n.language)
-      ? select.ChoicesMap.ChoicesMap.get(i18n.language)
-      : select.ChoicesMap.ChoicesMap.get('en')
-  )[index];
-  const url = select.ChoicesMap.URLs[index];
-  return url ? (
-    <a href={url} style={{ color: 'blue', textDecoration: 'underline' }}>
-      {choice}
-    </a>
-  ) : (
-    choice
-  );
 };
 
 // Display the results of a select question.
@@ -40,7 +24,7 @@ const SelectResult: FC<SelectResultProps> = ({ select, selectResult }) => {
       return (
         <React.Fragment key={index}>
           <div className="px-2 sm:px-4 break-words max-w-xs w-max">
-            <span>{prettifyChoice(select, origIndex)}</span>:
+            <span>{prettifyChoice(select.ChoicesMap, origIndex)}</span>:
           </div>
           <SelectProgressBar
             percent={percent}
@@ -74,7 +58,7 @@ export const IndividualSelectResult: FC<SelectResultProps> = ({ select, selectRe
           <React.Fragment key={`select_${index}`}>
             <div className="flex flex-row px-2 sm:px-4 break-words max-w-xs w-max">
               <div className="h-4 w-4 mr-2 accent-indigo-500 ">{displayChoices(result, index)}</div>
-              <div>{prettifyChoice(select, index)}</div>
+              <div>{prettifyChoice(select.ChoicesMap, index)}</div>
             </div>
           </React.Fragment>
         );
