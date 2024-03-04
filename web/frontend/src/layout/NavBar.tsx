@@ -22,6 +22,7 @@ import { availableLanguages } from 'language/Configuration';
 import { LanguageSelector } from '../language';
 
 import logo from '../assets/logo.png';
+import { ReactComponent as EPFLLogo } from '../assets/EPFL_Logo_184X53.svg';
 import { Popover, Transition } from '@headlessui/react';
 import { LoginIcon, LogoutIcon, MenuIcon, XIcon } from '@heroicons/react/outline';
 import { PlusIcon } from '@heroicons/react/solid';
@@ -177,6 +178,14 @@ const RightSideNavBar = ({ authCtx, handleLogout, handleChangeId, fctx, t }) => 
 
 const LeftSideNavBar = ({ authCtx, t }) => (
   <div className="flex-1 flex items-center justify-center md:justify-start">
+    <div
+      data-testid="leftSideNavBarEPFLLogo"
+      className="flex-shrink-0 flex items-start"
+      style={{ marginRight: 'auto' }}>
+      <a href="https://epfl.ch">
+        <EPFLLogo className="h-10 w-auto" />
+      </a>
+    </div>
     <div data-testid="leftSideNavBarLogo" className="flex-shrink-0 flex items-center">
       <NavLink to={ROUTE_HOME}>
         <img className="hidden lg:block h-10 w-auto" src={logo} alt="Workflow" />
