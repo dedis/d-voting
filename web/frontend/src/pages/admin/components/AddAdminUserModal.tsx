@@ -107,7 +107,7 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen, handleAd
                     key={personIdx}
                     className={({ active }) =>
                       `relative cursor-default select-none py-2 pl-10 pr-4 ${
-                        active ? 'bg-indigo-100 text-indigo-900' : 'text-gray-900'
+                        active ? 'bg-[#ff0000] text-indigo-900' : 'text-gray-900'
                       }`
                     }
                     value={role}>
@@ -137,7 +137,7 @@ const AddAdminUserModal: FC<AddAdminUserModalProps> = ({ open, setOpen, handleAd
   const actionButton = (
     <button
       type="button"
-      className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm"
+      className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#ff0000] text-base font-medium text-white hover:bg-[#b51f1f] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm"
       onClick={handleAddUser}>
       {loading ? (
         <SpinnerIcon />

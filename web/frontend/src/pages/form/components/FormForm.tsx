@@ -273,7 +273,7 @@ const FormForm: FC<FormFormProps> = () => {
         <div className="my-2">
           <button
             type="button"
-            className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md  text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
+            className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md  text-sm font-medium text-white bg-[#ff0000] hover:bg-[#ff0000]"
             onClick={createHandler}>
             {loading ? (
               <SpinnerIcon />

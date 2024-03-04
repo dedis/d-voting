@@ -152,7 +152,7 @@ const Ballot: FC = () => {
               <div className="flex mb-4 sm:mb-6">
                 <button
                   type="button"
-                  className="inline-flex items-center mr-2 sm:mr-4 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
+                  className="inline-flex items-center mr-2 sm:mr-4 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#ff0000] hover:bg-[#ff0000]"
                   onClick={handleClick}>
                   {castVoteLoading ? (
                     <SpinnerIcon />
