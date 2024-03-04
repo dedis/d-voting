@@ -124,7 +124,7 @@ const AdminTable: FC<AdminTableProps> = ({ users, setUsers }) => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.role}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div
-                      className="cursor-pointer text-indigo-600 hover:text-indigo-900"
+                      className="cursor-pointer text-[#ff0000] hover:text-indigo-900"
                       onClick={() => handleDelete(user.sciper)}>
                       {t('delete')}
                     </div>

@@ -36,7 +36,7 @@ const ACTION_LIST = 'list';
 const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
   <Popover>
     <div className="-mr-2 -my-2 md:hidden">
-      <Popover.Button className="bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+      <Popover.Button className="bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#ff0000]">
         <span className="sr-only">Open menu</span>
         <MenuIcon className="h-6 w-6" aria-hidden="true" />
       </Popover.Button>
@@ -56,7 +56,7 @@ const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
           <div className="pt-5 pb-6 px-5">
             <div className="flex items-center justify-between">
               <div className="-mr-2">
-                <Popover.Button className="bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+                <Popover.Button className="bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#ff0000]">
                   <span className="sr-only">Close menu</span>
                   <XIcon className="h-6 w-6" aria-hidden="true" />
                 </Popover.Button>
@@ -159,7 +159,7 @@ const RightSideNavBar = ({ authCtx, handleLogout, handleChangeId, fctx, t }) => 
   <div className="absolute hidden inset-y-0 right-0 flex items-center pr-2 md:static md:inset-auto md:flex md:ml-6 md:pr-0">
     {authCtx.isLogged && authCtx.isAllowed(SUBJECT_ELECTION, ACTION_CREATE) && (
       <NavLink title={t('navBarCreateForm')} to={ROUTE_FORM_CREATE}>
-        <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border-2 border-indigo-500 rounded-md shadow-sm text-base font-medium text-indigo-500 bg-white hover:bg-[#ff0000] hover:text-white">
+        <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border-2 border-[#ff0000] rounded-md shadow-sm text-base font-medium text-[#ff0000] bg-white hover:bg-[#ff0000] hover:text-white">
           <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
           {t('navBarCreateForm')}
         </div>
@@ -196,15 +196,15 @@ const LeftSideNavBar = ({ authCtx, t }) => (
         <NavLink
           to={ROUTE_FORM_INDEX}
           title={t('navBarStatus')}
-          className={'text-black text-lg hover:text-indigo-700'}>
+          className={'text-black text-lg hover:text-[#b51f1f]'}>
           {t('navBarStatus')}
         </NavLink>
         {authCtx.isLogged && authCtx.isAllowed(SUBJECT_ROLES, ACTION_LIST) && (
-          <NavLink to={ROUTE_ADMIN} className={'text-black text-lg hover:text-indigo-700'}>
+          <NavLink to={ROUTE_ADMIN} className={'text-black text-lg hover:text-[#b51f1f]'}>
             Admin
           </NavLink>
         )}
-        <NavLink to={ROUTE_ABOUT} className={'text-black text-lg hover:text-indigo-700'}>
+        <NavLink to={ROUTE_ABOUT} className={'text-black text-lg hover:text-[#b51f1f]'}>
           {t('navBarAbout')}
         </NavLink>
       </div>

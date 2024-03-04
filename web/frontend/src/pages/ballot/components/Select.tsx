@@ -72,7 +72,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
       <div key={choice}>
         <input
           id={choice}
-          className="h-4 w-4 mt-1 mr-2 cursor-pointer accent-indigo-500"
+          className="h-4 w-4 mt-1 mr-2 cursor-pointer accent-[#ff0000]"
           type="checkbox"
           value={choice}
           checked={isChecked}

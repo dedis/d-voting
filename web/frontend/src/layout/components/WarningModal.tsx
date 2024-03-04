@@ -26,7 +26,7 @@ const WarningModal: FC<WarningModalProps> = ({ message, isShown, setIsShown, act
             <div className="mt-4 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
               <button
                 type="button"
-                className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-[#ff0000] border border-transparent rounded-md hover:bg-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500"
+                className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-[#ff0000] border border-transparent rounded-md hover:bg-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#ff0000]"
                 onClick={() => setIsShown(false)}>
                 {t('cancel')}
               </button>

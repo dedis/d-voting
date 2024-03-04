@@ -365,7 +365,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                 </div>
                 <div className="ml-1 pr-10">
                   <button
-                    className="hover:text-indigo-500 p-1 rounded-md"
+                    className="hover:text-[#ff0000] p-1 rounded-md"
                     onClick={() => setTitleChanging(true)}>
                     <PencilIcon className="m-1 h-3 w-3" aria-hidden="true" />
                   </button>

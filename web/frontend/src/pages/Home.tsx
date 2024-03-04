@@ -15,10 +15,10 @@ const Home: FC = () => {
             <div className="mt-20">
               <div>
                 <a href="https://github.com/c4dt/d-voting" className="inline-flex space-x-4">
-                  <span className="rounded bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-600 tracking-wide uppercase">
+                  <span className="rounded bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-[#ff0000] tracking-wide uppercase">
                     {t('homeWhatsNew')}
                   </span>
-                  <span className="inline-flex items-center text-sm font-medium text-indigo-600 space-x-1">
+                  <span className="inline-flex items-center text-sm font-medium text-[#ff0000] space-x-1">
                     <span>{t('homeJustShippedVersion')} 1.0.0</span>
                     <ChevronRightIcon className="h-5 w-5" aria-hidden="true" />
                   </span>
@@ -33,7 +33,7 @@ const Home: FC = () => {
               <div className="mt-12 sm:max-w-lg sm:w-full sm:flex">
                 <div className="mt-4 sm:mt-0 sm:ml-3">
                   <Link to={ROUTE_FORM_INDEX}>
-                    <button className="block w-full rounded-md border border-transparent px-5 py-3 bg-[#ff0000] text-base font-medium text-white shadow hover:bg-[#b51f1f] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:px-10">
+                    <button className="block w-full rounded-md border border-transparent px-5 py-3 bg-[#ff0000] text-base font-medium text-white shadow hover:bg-[#b51f1f] focus:outline-none focus:ring-2 focus:ring-[#ff0000] focus:ring-offset-2 sm:px-10">
                       Get Started
                     </button>
                   </Link>

@@ -73,7 +73,7 @@ const RedirectToModal: FC<RedirectToModalProps> = ({
               <div className="mt-4">
                 <button
                   type="button"
-                  className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-[#ff0000] border border-transparent rounded-md hover:bg-[#ff0000] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500"
+                  className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-[#ff0000] border border-transparent rounded-md hover:bg-[#ff0000] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#ff0000]"
                   onClick={closeModal}>
                   {buttonRightText}
                 </button>

@@ -20,7 +20,7 @@ export default function ClientError({
       <div className="bg-white min-h-full font-sans px-4 py-16 sm:px-6 sm:py-24 md:grid md:place-items-center lg:px-8">
         <div className="max-w-max mx-auto">
           <main className="sm:flex">
-            <p className="text-4xl font-extrabold text-indigo-600 sm:text-5xl">{statusCode}</p>
+            <p className="text-4xl font-extrabold text-[#ff0000] sm:text-5xl">{statusCode}</p>
             <div className="sm:ml-6">
               <div className="sm:border-l sm:border-gray-200 sm:pl-6">
                 <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">
@@ -35,7 +35,7 @@ export default function ClientError({
                 {statusCode === 401 && (
                   <button
                     id="login-button"
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#ff0000] hover:bg-[#b51f1f] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#ff0000] hover:bg-[#b51f1f] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ff0000]"
                     onClick={() => handleLogin(fctx)}>
                     {t('login')}
                   </button>
@@ -43,7 +43,7 @@ export default function ClientError({
                 {statusCode !== 401 && (
                   <Link
                     to={ROUTE_HOME}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#ff0000] hover:bg-[#b51f1f] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#ff0000] hover:bg-[#b51f1f] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ff0000]">
                     {t('goHome')}
                   </Link>
                 )}
