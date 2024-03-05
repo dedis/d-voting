@@ -23,11 +23,11 @@ asdf_shell() {
 asdf_shell nodejs 16.20.2
 asdf_shell golang 1.21.0
 mkdir -p nodes
+export GOBIN=$(pwd)/bin
+PATH="$PATH":"$GOBIN"
 
 function build_dela() {
   echo "Building dela-node"
-  export GOBIN=$(pwd)/bin
-  PATH="$PATH":"$GOBIN"
   if ! [[ -f $GOBIN/crypto ]]; then
     go install go.dedis.ch/dela/cli/crypto
   fi

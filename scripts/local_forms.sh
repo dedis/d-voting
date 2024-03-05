@@ -4,7 +4,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 . "$SCRIPT_DIR/local_login.sh"
 
 echo "add form"
-RESP=$(curl -sk "$FRONTEND_URL/api/evoting/forms" -X POST -H 'Content-Type: application/json' -b cookies.txt --data-raw $'{"Configuration":{"Title":{"En":"Colours","Fr":"","De":""},"Scaffold":[{"ID":"A7GsJxVJ","Title":{"En":"Colours","Fr":"","De":""},"Order":["GhidLIfw"],"Ranks":[],"Selects":[{"ID":"GhidLIfw","Title":{"En":"RGB","Fr":"","De":"RGB"},"MaxN":3,"MinN":1,"Choices":["{\\"en\\":\\"Red\\",\\"de\\":\\"Rot\\"}","{\\"en\\":\\"Green\\",\\"de\\":\\"Gr\xfcn\\"}","{\\"en\\":\\"Blue\\",\\"de\\":\\"Blau\\"}"],"Hint":{"En":"","Fr":"","De":"RGB"}}],"Texts":[],"Subjects":[]}]}}')
+RESP=$(curl -sk "$FRONTEND_URL/api/evoting/forms" -X POST -H 'Content-Type: application/json' -b cookies.txt --data-raw '{"Title":{"En":"Something","Fr":"","De":""},"Scaffold":[{"ID":"99hYV4uy","Title":{"En":"More stuff","Fr":"","De":""},"Order":["0c7RSRKs"],"Ranks":[],"Selects":[{"ID":"0c7RSRKs","Title":{"En":"Choose","Fr":"","De":""},"MaxN":3,"MinN":1,"Choices":[{"Choice":"{\"en\":\"First\"}","URL":""},{"Choice":"{\"en\":\"Second\"}","URL":""},{"Choice":"{\"en\":\"Third\"}","URL":""}],"Hint":{"En":"","Fr":"","De":""}}],"Texts":[],"Subjects":[]}]}')
 FORMID=$(echo "$RESP" | jq -r .FormID)
 echo "FORMID=$FORMID" > "$SCRIPT_DIR/formid.env"
 
