@@ -61,13 +61,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
   }, [select]);
 
   const choiceDisplay = (isChecked: boolean, choice: string, url: string, choiceIndex: number) => {
-    const prettyChoice = url ? (
-      <a href={url} style={{ color: 'blue', textDecoration: 'underline' }}>
-        {choice}
-      </a>
-    ) : (
-      choice
-    );
+    const prettyChoice = urlizeLabel(choice, url);
     return (
       <div key={choice}>
         <input

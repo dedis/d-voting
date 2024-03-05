@@ -80,13 +80,7 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
 
   const choiceDisplay = (choice: string, url: string, choiceIndex: number) => {
     const columns = text.MaxLength > 50 ? 50 : text.MaxLength;
-    const prettyChoice = url ? (
-      <a href={url} style={{ color: 'blue', textDecoration: 'underline' }}>
-        {choice}
-      </a>
-    ) : (
-      choice
-    );
+    const prettyChoice = urlizeLabel(choice, url);
     return (
       <div className="flex mb-2  md:flex-row flex-col" key={choice}>
         <label htmlFor={choice} className="text-gray-600 mr-2 w-24 break-words text-md">

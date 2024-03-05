@@ -62,13 +62,7 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
     setTitles(rank.Title);
   }, [rank]);
   const choiceDisplay = (choice: string, url: string, rankIndex: number) => {
-    const prettyChoice = url ? (
-      <a href={url} style={{ color: 'blue', textDecoration: 'underline' }}>
-        {choice}
-      </a>
-    ) : (
-      choice
-    );
+    const prettyChoice = urlizeLabel(choice, url);
     return (
       <Draggable key={choice} draggableId={choice} index={rankIndex}>
         {(provided) => (
