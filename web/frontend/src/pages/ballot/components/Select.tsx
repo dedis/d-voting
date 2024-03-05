@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Answers, SelectQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
 import HintButton from 'components/buttons/HintButton';
-import { internationalize } from './../../utils';
+import { internationalize, urlizeLabel } from './../../utils';
 type SelectProps = {
   select: SelectQuestion;
   answers: Answers;
@@ -89,7 +89,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
       <div className="grid grid-rows-1 grid-flow-col">
         <div>
           <h3 className="text-lg break-words text-gray-600">
-            {internationalize(language, titles)}
+            {urlizeLabel(internationalize(language, titles), titles.URL)}
           </h3>
         </div>
         <div className="text-right">

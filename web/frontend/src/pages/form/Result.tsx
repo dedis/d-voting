@@ -12,7 +12,7 @@ import { Tab } from '@headlessui/react';
 import IndividualResult from './IndividualResult';
 import { default as i18n } from 'i18next';
 import GroupedResult from './GroupedResult';
-import { internationalize } from './../utils';
+import { internationalize, urlizeLabel } from './../utils';
 
 // Functional component that displays the result of the votes
 const FormResult: FC = () => {
@@ -98,7 +98,10 @@ const FormResult: FC = () => {
               {t('totalNumberOfVotes', { votes: result.length })}
             </h2>
             <h3 className="py-6 border-t text-2xl text-center text-gray-700">
-              {internationalize(i18n.language, configuration.Title)}
+              {urlizeLabel(
+                internationalize(i18n.language, configuration.Title),
+                configuration.Title.URL
+              )}
             </h3>
 
             <div>

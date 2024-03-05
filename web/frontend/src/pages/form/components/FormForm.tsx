@@ -8,7 +8,7 @@ import { CloudUploadIcon, PencilIcon, TrashIcon } from '@heroicons/react/solid';
 import SubjectComponent from './SubjectComponent';
 import UploadFile from './UploadFile';
 import pollTransaction from './utils/TransactionPoll';
-import { internationalize } from './../../utils';
+import { internationalize, urlizeLabel } from './../../utils';
 
 import configurationSchema from '../../../schema/configurationValidation';
 import { Configuration, ID, Subject } from '../../../types/configuration';
@@ -221,6 +221,14 @@ const FormForm: FC<FormFormProps> = () => {
                     className="m-3 px-1 w-100 text-lg border rounded-md"
                   />
                 )}
+                <input
+                  value={Title.URL}
+                  onChange={(e) => setConf({ ...conf, Title: { ...Title, URL: e.target.value } })}
+                  name="TitleURL"
+                  type="text"
+                  placeholder={t('url')}
+                  className="m-3 px-1 w-100 text-lg border rounded-md"
+                />
                 <div className="ml-1">
                   <button
                     className={`border p-1 rounded-md ${
@@ -237,7 +245,7 @@ const FormForm: FC<FormFormProps> = () => {
                 <div
                   className="mt-1 ml-3 w-[90%] break-words"
                   onClick={() => setTitleChanging(true)}>
-                  {internationalize(language, Title)}
+                  {urlizeLabel(internationalize(language, Title), Title.URL)}
                 </div>
                 <div className="ml-1">
                   <button

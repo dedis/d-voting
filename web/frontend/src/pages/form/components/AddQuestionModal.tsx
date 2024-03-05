@@ -221,6 +221,14 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                           className="my-1 px-1 w-60 ml-1 border rounded-md"
                         />
                       )}
+                      <input
+                        value={Title.URL}
+                        onChange={(e) => handleChange('Title')(e)}
+                        name="QuestionTitleURL"
+                        type="text"
+                        placeholder={t('url')}
+                        className="my-1 px-1 w-60 ml-1 border rounded-md"
+                      />
                     </div>
                     <div className="text-red-600">
                       {errors

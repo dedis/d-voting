@@ -13,7 +13,7 @@ const FormRow: FC<FormRowProps> = ({ form }) => {
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
     if (form.Title === undefined) return;
-    setTitles({ En: form.Title.En, Fr: form.Title.Fr, De: form.Title.De });
+    setTitles({ En: form.Title.En, Fr: form.Title.Fr, De: form.Title.De, URL: form.Title.URL });
   }, [form]);
   // let i18next handle choosing the appropriate language
   const formRowI18n = i18n.createInstance();

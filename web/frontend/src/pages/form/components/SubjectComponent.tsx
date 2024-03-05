@@ -349,6 +349,18 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                     } `}
                   />
                 )}
+                <input
+                  value={Title.URL}
+                  onChange={(e) =>
+                    setSubject({ ...subject, Title: { ...Title, URL: e.target.value } })
+                  }
+                  name="SubjectTitleURL"
+                  type="text"
+                  placeholder={t('url')}
+                  className={`m-3 px-1 w-120 border rounded-md ${
+                    nestedLevel === 0 ? 'text-lg' : 'text-md'
+                  } `}
+                />
                 <div className="ml-1">
                   <button
                     className={`border p-1 rounded-md ${Title.En.length === 0 && 'bg-gray-100'}`}

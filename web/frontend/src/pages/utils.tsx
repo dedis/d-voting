@@ -10,3 +10,13 @@ export function internationalize(language: string, internationalizable: Hint | T
       return internationalizable.En;
   }
 }
+
+export const urlizeLabel = (label: string, url?: string) => {
+  return url ? (
+    <a href={url} style={{ color: 'blue', textDecoration: 'underline' }}>
+      {label}
+    </a>
+  ) : (
+    label
+  );
+};

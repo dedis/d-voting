@@ -9,7 +9,7 @@ import {
 import { IndividualSelectResult } from './components/SelectResult';
 import { IndividualTextResult } from './components/TextResult';
 import { IndividualRankResult } from './components/RankResult';
-import { internationalize } from './../utils';
+import { internationalize, urlizeLabel } from './../utils';
 import { useTranslation } from 'react-i18next';
 import {
   ID,
@@ -77,7 +77,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
               {questionIcons[element.Type]}
             </div>
             <h2 className="flex align-text-middle text-lg pb-2">
-              {internationalize(i18n.language, element.Title)}
+              {urlizeLabel(internationalize(i18n.language, element.Title), element.Title.URL)}
             </h2>
           </div>
           {element.Type === RANK && rankResult.has(element.ID) && (
@@ -109,7 +109,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
       return (
         <div key={subject.ID}>
           <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-            {internationalize(i18n.language, subject.Title)}
+            {urlizeLabel(internationalize(i18n.language, subject.Title), subject.Title.URL)}
           </h2>
           {subject.Order.map((id: ID) => (
             <div key={id}>
@@ -133,7 +133,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
     dataToDownload: DownloadedResults[],
     BallotID: number
   ) => {
-    dataToDownload.push({ Title: subject.Title.En });
+    dataToDownload.push({ Title: subject.Title.En, URL: subject.Title.URL });
 
     subject.Order.forEach((id: ID) => {
       const element = subject.Elements.get(id);
@@ -150,7 +150,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
                 Choice: rankQues.Choices[rankResult.get(id)[BallotID].indexOf(index)],
               };
             });
-            dataToDownload.push({ Title: element.Title.En, Results: res });
+            dataToDownload.push({ Title: element.Title.En, URL: element.Title.URL, Results: res });
           }
           break;
 
@@ -162,7 +162,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
               const checked = select ? 'True' : 'False';
               return { Candidate: selectQues.Choices[index], Checked: checked };
             });
-            dataToDownload.push({ Title: element.Title.En, Results: res });
+            dataToDownload.push({ Title: element.Title.En, URL: element.Title.URL, Results: res });
           }
           break;
 
@@ -177,7 +177,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
             res = textResult.get(id)[BallotID].map((text, index) => {
               return { Field: textQues.Choices[index], Answer: text };
             });
-            dataToDownload.push({ Title: element.Title.En, Results: res });
+            dataToDownload.push({ Title: element.Title.En, URL: element.Title.URL, Results: res });
           }
           break;
       }

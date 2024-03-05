@@ -7,7 +7,7 @@ import { RankQuestion, SelectQuestion, TextQuestion } from 'types/configuration'
 import SubjectDropdown from './SubjectDropdown';
 import AddQuestionModal from './AddQuestionModal';
 import DisplayTypeIcon from './DisplayTypeIcon';
-import { internationalize } from './../../utils';
+import { internationalize, urlizeLabel } from './../../utils';
 type QuestionProps = {
   question: RankQuestion | SelectQuestion | TextQuestion;
   notifyParent(question: RankQuestion | SelectQuestion | TextQuestion): void;
@@ -53,7 +53,9 @@ const Question: FC<QuestionProps> = ({ question, notifyParent, removeQuestion, l
             <div className="h-9 w-9 rounded-full bg-gray-100 mr-2 ml-1">
               <DisplayTypeIcon Type={Type} />
             </div>
-            <div className="pt-1.5 max-w-md pr-8 truncate">{internationalize(language, Title)}</div>
+            <div className="pt-1.5 max-w-md pr-8 truncate">
+              {urlizeLabel(internationalize(language, Title), Title.URL)}
+            </div>
           </div>
 
           <div className="flex mt-2 ml-2">
