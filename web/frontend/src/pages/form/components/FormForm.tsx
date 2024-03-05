@@ -191,7 +191,7 @@ const FormForm: FC<FormFormProps> = () => {
                   setLanguage={setLanguage}
                 />
 
-                {language === 'en' && (
+                {(language === 'en' || !['en', 'fr', 'de'].includes(language)) && (
                   <input
                     value={Title.En}
                     onChange={(e) => setConf({ ...conf, Title: { ...Title, En: e.target.value } })}
