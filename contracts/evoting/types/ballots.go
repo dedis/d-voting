@@ -255,9 +255,10 @@ func (b *Ballot) Equal(other Ballot) bool {
 
 // Title contains the titles in different languages.
 type Title struct {
-	En string
-	Fr string
-	De string
+	En  string
+	Fr  string
+	De  string
+	URL string
 }
 
 // Hint contains explanations in different languages.

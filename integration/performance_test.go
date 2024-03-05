@@ -77,7 +77,7 @@ func customVotesScenario(b *testing.B, stuffing bool) {
 	fmt.Println("Creating form")
 
 	// ##### CREATE FORM #####
-	formID, err := createFormNChunks(m, types.Title{En: "Three votes form", Fr: "", De: ""}, adminID, numChunksPerBallot)
+	formID, err := createFormNChunks(m, types.Title{En: "Three votes form", Fr: "", De: "", URL: ""}, adminID, numChunksPerBallot)
 	require.NoError(b, err)
 
 	time.Sleep(time.Millisecond * 1000)
@@ -198,14 +198,14 @@ func createFormNChunks(m txManager, title types.Title, admin string, numChunks i
 		Scaffold: []types.Subject{
 			{
 				ID:       "aa",
-				Title:    types.Title{En: "subject1", Fr: "", De: ""},
+				Title:    types.Title{En: "subject1", Fr: "", De: "", URL: ""},
 				Order:    nil,
 				Subjects: nil,
 				Selects:  nil,
 				Ranks:    []types.Rank{},
 				Texts: []types.Text{{
 					ID:        "bb",
-					Title:     types.Title{En: "Enter favorite snack", Fr: "", De: ""},
+					Title:     types.Title{En: "Enter favorite snack", Fr: "", De: "", URL: ""},
 					MaxN:      1,
 					MinN:      0,
 					MaxLength: uint(base64.StdEncoding.DecodedLen(textSize)),
