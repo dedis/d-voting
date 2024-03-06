@@ -15,7 +15,7 @@ export const urlizeLabel = (label: string, url?: string) => {
   return url ? (
     <a
       href={url}
-      style={{ color: 'red', textDecoration: 'underline', textDecorationColor: 'white' }}>
+      style={{ color: 'white', textDecoration: 'underline', textDecorationColor: 'red' }}>
       {label}
     </a>
   ) : (
