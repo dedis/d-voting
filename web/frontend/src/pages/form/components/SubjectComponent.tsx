@@ -307,7 +307,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
             </div>
             {titleChanging ? (
               <div className="flex flex-col mt-3  mb-2">
-                {language === 'en' && (
+                {(language === 'en' || !['en', 'fr', 'de'].includes(language)) && (
                   <input
                     value={Title.En}
                     onChange={(e) =>

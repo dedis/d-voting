@@ -191,7 +191,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                       <label className="block text-md mt font-medium text-gray-500">
                         {t('title')}
                       </label>
-                      {language === 'en' && (
+                      {(language === 'en' || !['en', 'fr', 'de'].includes(language)) && (
                         <input
                           value={Title.En}
                           onChange={(e) => handleChange('Title')(e)}
@@ -241,7 +241,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                       <label className="block text-md mt font-medium text-gray-500">
                         {t('hint')}
                       </label>
-                      {language === 'en' && (
+                      {(language === 'en' || !['en', 'fr', 'de'].includes(language)) && (
                         <input
                           value={Hint.En}
                           onChange={(e) => handleChange('Hint')(e)}
