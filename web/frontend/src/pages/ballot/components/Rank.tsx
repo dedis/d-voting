@@ -3,7 +3,7 @@ import { Draggable, DropResult, Droppable } from 'react-beautiful-dnd';
 import { Answers, ID, RankQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
 import HintButton from 'components/buttons/HintButton';
-import { internationalize } from './../../utils';
+import { internationalize, urlizeLabel } from './../../utils';
 
 export const handleOnDragEnd = (
   result: DropResult,
@@ -62,13 +62,7 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
     setTitles(rank.Title);
   }, [rank]);
   const choiceDisplay = (choice: string, url: string, rankIndex: number) => {
-    const prettyChoice = url ? (
-      <a href={url} style={{ color: 'blue', textDecoration: 'underline' }}>
-        {choice}
-      </a>
-    ) : (
-      choice
-    );
+    const prettyChoice = urlizeLabel(choice, url);
     return (
       <Draggable key={choice} draggableId={choice} index={rankIndex}>
         {(provided) => (
@@ -95,7 +89,7 @@ const Rank: FC<RankProps> = ({ rank, answers, language }) => {
       <div className="grid grid-rows-1 grid-flow-col">
         <div>
           <h3 className="text-lg break-words text-gray-600">
-            {internationalize(language, titles)}
+            {urlizeLabel(internationalize(language, titles), titles.URL)}
           </h3>
         </div>
         <div className="text-right">

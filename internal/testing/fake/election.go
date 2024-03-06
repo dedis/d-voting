@@ -21,9 +21,10 @@ func NewForm(ctx serde.Context, snapshot store.Snapshot, formID string) (types.F
 	form := types.Form{
 		Configuration: types.Configuration{
 			Title: types.Title{
-				En: "dummyTitle",
-				Fr: "",
-				De: "",
+				En:  "dummyTitle",
+				Fr:  "",
+				De:  "",
+				URL: "",
 			},
 		},
 		FormID:           formID,
@@ -75,17 +76,17 @@ func NewKCPointsMarshalled(k int) ([]kyber.Point, []kyber.Point, kyber.Point) {
 
 // BasicConfiguration returns a basic form configuration
 var BasicConfiguration = types.Configuration{
-	Title: types.Title{En: "formTitle", Fr: "", De: ""},
+	Title: types.Title{En: "formTitle", Fr: "", De: "", URL: ""},
 	Scaffold: []types.Subject{
 		{
 			ID:       "aa",
-			Title:    types.Title{En: "subject1", Fr: "", De: ""},
+			Title:    types.Title{En: "subject1", Fr: "", De: "", URL: ""},
 			Order:    nil,
 			Subjects: nil,
 			Selects: []types.Select{
 				{
 					ID:      "bb",
-					Title:   types.Title{En: "Select your favorite snacks", Fr: "", De: ""},
+					Title:   types.Title{En: "Select your favorite snacks", Fr: "", De: "", URL: ""},
 					MaxN:    3,
 					MinN:    0,
 					Choices: []types.Choice{{Choice: "snickers", URL: ""}, {Choice: "mars", URL: ""}, {Choice: "vodka", URL: ""}, {Choice: "babibel", URL: ""}},
@@ -96,7 +97,7 @@ var BasicConfiguration = types.Configuration{
 		},
 		{
 			ID:       "dd",
-			Title:    types.Title{En: "subject2", Fr: "", De: ""},
+			Title:    types.Title{En: "subject2", Fr: "", De: "", URL: ""},
 			Order:    nil,
 			Subjects: nil,
 			Selects:  nil,
@@ -104,7 +105,7 @@ var BasicConfiguration = types.Configuration{
 			Texts: []types.Text{
 				{
 					ID:        "ee",
-					Title:     types.Title{En: "dissertation", Fr: "", De: ""},
+					Title:     types.Title{En: "dissertation", Fr: "", De: "", URL: ""},
 					MaxN:      1,
 					MinN:      1,
 					MaxLength: 3,

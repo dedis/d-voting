@@ -10,6 +10,7 @@ interface Title {
   En: string;
   Fr: string;
   De: string;
+  URL: string;
 }
 
 // Hint

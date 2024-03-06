@@ -221,6 +221,14 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                           className="my-1 px-1 w-60 ml-1 border rounded-md"
                         />
                       )}
+                      <input
+                        value={Title.URL}
+                        onChange={(e) => handleChange('Title')(e)}
+                        name="QuestionTitleURL"
+                        type="text"
+                        placeholder={t('url')}
+                        className="my-1 px-1 w-60 ml-1 border rounded-md"
+                      />
                     </div>
                     <div className="text-red-600">
                       {errors
@@ -372,14 +380,14 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                 <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
                   <button
                     type="button"
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm"
+                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#ff0000] text-base font-medium text-white hover:bg-[#b51f1f] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ff0000] sm:col-start-2 sm:text-sm"
                     onClick={handleSave}>
                     <CheckIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
                     {t('saveQuestion')}
                   </button>
                   <button
                     type="button"
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
+                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ff0000] sm:mt-0 sm:col-start-1 sm:text-sm"
                     onClick={handleClose}
                     ref={cancelButtonRef}>
                     {t('cancel')}

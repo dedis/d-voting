@@ -80,6 +80,7 @@ type TextResults = Map<ID, string[][]>;
 
 interface DownloadedResults {
   Title: string;
+  URL: string;
   Results?: {
     Candidate: string;
     Percent?: string;

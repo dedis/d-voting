@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Answers, TextQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
 import HintButton from 'components/buttons/HintButton';
-import { internationalize } from './../../utils';
+import { internationalize, urlizeLabel } from './../../utils';
 
 type TextProps = {
   text: TextQuestion;
@@ -80,13 +80,7 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
 
   const choiceDisplay = (choice: string, url: string, choiceIndex: number) => {
     const columns = text.MaxLength > 50 ? 50 : text.MaxLength;
-    const prettyChoice = url ? (
-      <a href={url} style={{ color: 'blue', textDecoration: 'underline' }}>
-        {choice}
-      </a>
-    ) : (
-      choice
-    );
+    const prettyChoice = urlizeLabel(choice, url);
     return (
       <div className="flex mb-2  md:flex-row flex-col" key={choice}>
         <label htmlFor={choice} className="text-gray-600 mr-2 w-24 break-words text-md">
@@ -109,7 +103,7 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
       <div className="grid grid-rows-1 grid-flow-col">
         <div>
           <h3 className="text-lg break-words text-gray-600 w-96">
-            {internationalize(language, text.Title)}
+            {urlizeLabel(internationalize(language, text.Title), text.Title.URL)}
           </h3>
         </div>
         <div className="text-right">

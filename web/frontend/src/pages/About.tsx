@@ -8,7 +8,7 @@ const About: FC = () => {
     <div className="py-14 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 space-y-8 sm:px-6 lg:px-8">
         <div className="text-base max-w-prose mx-auto lg:max-w-none">
-          <h2 className="text-base text-indigo-600 font-semibold tracking-wide uppercase">
+          <h2 className="text-base text-[#ff0000] font-semibold tracking-wide uppercase">
             {t('aboutPlatform')}
           </h2>
           <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
@@ -30,7 +30,7 @@ const About: FC = () => {
               <div className="rounded-md shadow ml-4">
                 <a
                   href="https://dedis.github.io/d-voting/#/"
-                  className="w-full flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-gray-50">
+                  className="w-full flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-[#ff0000] bg-white hover:bg-gray-50">
                   {t('learnMore')}
                 </a>
               </div>

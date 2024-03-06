@@ -5,6 +5,7 @@ const titleSchema = yup.object({
   En: yup.string().required(),
   Fr: yup.string(),
   De: yup.string(),
+  URL: yup.string(),
 });
 const hintSchema = yup.object({
   En: yup.string(),

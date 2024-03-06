@@ -52,7 +52,7 @@ const useFillFormInfo = (formData: FormInfo) => {
 
 const useFillLightFormInfo = (formData: LightFormInfo) => {
   const [id, setId] = useState<ID>('');
-  const [title, setTitle] = useState<Title>({ En: '', Fr: '', De: '' });
+  const [title, setTitle] = useState<Title>({ En: '', Fr: '', De: '', URL: '' });
   const [status, setStatus] = useState<Status>(null);
   const [pubKey, setPubKey] = useState<string>('');
 

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Answers, SelectQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
 import HintButton from 'components/buttons/HintButton';
-import { internationalize } from './../../utils';
+import { internationalize, urlizeLabel } from './../../utils';
 type SelectProps = {
   select: SelectQuestion;
   answers: Answers;
@@ -61,18 +61,12 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
   }, [select]);
 
   const choiceDisplay = (isChecked: boolean, choice: string, url: string, choiceIndex: number) => {
-    const prettyChoice = url ? (
-      <a href={url} style={{ color: 'blue', textDecoration: 'underline' }}>
-        {choice}
-      </a>
-    ) : (
-      choice
-    );
+    const prettyChoice = urlizeLabel(choice, url);
     return (
       <div key={choice}>
         <input
           id={choice}
-          className="h-4 w-4 mt-1 mr-2 cursor-pointer accent-indigo-500"
+          className="h-4 w-4 mt-1 mr-2 cursor-pointer accent-[#ff0000]"
           type="checkbox"
           value={choice}
           checked={isChecked}
@@ -89,7 +83,7 @@ const Select: FC<SelectProps> = ({ select, answers, setAnswers, language }) => {
       <div className="grid grid-rows-1 grid-flow-col">
         <div>
           <h3 className="text-lg break-words text-gray-600">
-            {internationalize(language, titles)}
+            {urlizeLabel(internationalize(language, titles), titles.URL)}
           </h3>
         </div>
         <div className="text-right">

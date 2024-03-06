@@ -17,7 +17,7 @@ const ResultExplanation = () => {
                 ${open ? '' : 'text-opacity-90'}
                 group inline-flex items-center rounded-md px-3 py-2 text-base font-medium text-white hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75`}>
                 <QuestionMarkCircleIcon
-                  className="-ml-1 mr-2 h-5 w-5 text-gray-500 hover:text-indigo-500"
+                  className="-ml-1 mr-2 h-5 w-5 text-gray-500 hover:text-[#ff0000]"
                   aria-hidden="true"
                 />
               </Popover.Button>

@@ -8,7 +8,7 @@ import { CloudUploadIcon, PencilIcon, TrashIcon } from '@heroicons/react/solid';
 import SubjectComponent from './SubjectComponent';
 import UploadFile from './UploadFile';
 import pollTransaction from './utils/TransactionPoll';
-import { internationalize } from './../../utils';
+import { internationalize, urlizeLabel } from './../../utils';
 
 import configurationSchema from '../../../schema/configurationValidation';
 import { Configuration, ID, Subject } from '../../../types/configuration';
@@ -191,7 +191,7 @@ const FormForm: FC<FormFormProps> = () => {
                   setLanguage={setLanguage}
                 />
 
-                {language === 'en' && (
+                {(language === 'en' || !['en', 'fr', 'de'].includes(language)) && (
                   <input
                     value={Title.En}
                     onChange={(e) => setConf({ ...conf, Title: { ...Title, En: e.target.value } })}
@@ -221,6 +221,14 @@ const FormForm: FC<FormFormProps> = () => {
                     className="m-3 px-1 w-100 text-lg border rounded-md"
                   />
                 )}
+                <input
+                  value={Title.URL}
+                  onChange={(e) => setConf({ ...conf, Title: { ...Title, URL: e.target.value } })}
+                  name="TitleURL"
+                  type="text"
+                  placeholder={t('url')}
+                  className="m-3 px-1 w-100 text-lg border rounded-md"
+                />
                 <div className="ml-1">
                   <button
                     className={`border p-1 rounded-md ${
@@ -237,11 +245,11 @@ const FormForm: FC<FormFormProps> = () => {
                 <div
                   className="mt-1 ml-3 w-[90%] break-words"
                   onClick={() => setTitleChanging(true)}>
-                  {internationalize(language, Title)}
+                  {urlizeLabel(internationalize(language, Title), Title.URL)}
                 </div>
                 <div className="ml-1">
                   <button
-                    className="hover:text-indigo-500 p-1 rounded-md"
+                    className="hover:text-[#ff0000] p-1 rounded-md"
                     onClick={() => setTitleChanging(true)}>
                     <PencilIcon className="m-1 h-3 w-3" aria-hidden="true" />
                   </button>
@@ -273,7 +281,7 @@ const FormForm: FC<FormFormProps> = () => {
         <div className="my-2">
           <button
             type="button"
-            className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md  text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
+            className="inline-flex my-2 ml-2 items-center px-4 py-2 border border-transparent rounded-md  text-sm font-medium text-white bg-[#ff0000] hover:bg-[#ff0000]"
             onClick={createHandler}>
             {loading ? (
               <SpinnerIcon />

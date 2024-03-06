@@ -13,7 +13,7 @@ const FormRow: FC<FormRowProps> = ({ form }) => {
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
     if (form.Title === undefined) return;
-    setTitles({ En: form.Title.En, Fr: form.Title.Fr, De: form.Title.De });
+    setTitles({ En: form.Title.En, Fr: form.Title.Fr, De: form.Title.De, URL: form.Title.URL });
   }, [form]);
   // let i18next handle choosing the appropriate language
   const formRowI18n = i18n.createInstance();
@@ -28,7 +28,7 @@ const FormRow: FC<FormRowProps> = ({ form }) => {
   return (
     <tr className="bg-white border-b hover:bg-gray-50 ">
       <td className="px-1.5 sm:px-6 py-4 font-medium text-gray-900 whitespace-nowrap truncate">
-        <Link className="text-gray-700 hover:text-indigo-500" to={`/forms/${form.FormID}`}>
+        <Link className="text-gray-700 hover:text-[#ff0000]" to={`/forms/${form.FormID}`}>
           <div className="max-w-[20vw] truncate">
             {formRowI18n.t('title', { ns: 'form', fallbackLng: 'en' })}
           </div>

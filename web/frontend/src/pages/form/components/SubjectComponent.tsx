@@ -349,6 +349,18 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                     } `}
                   />
                 )}
+                <input
+                  value={Title.URL}
+                  onChange={(e) =>
+                    setSubject({ ...subject, Title: { ...Title, URL: e.target.value } })
+                  }
+                  name="SubjectTitleURL"
+                  type="text"
+                  placeholder={t('url')}
+                  className={`m-3 px-1 w-120 border rounded-md ${
+                    nestedLevel === 0 ? 'text-lg' : 'text-md'
+                  } `}
+                />
                 <div className="ml-1">
                   <button
                     className={`border p-1 rounded-md ${Title.En.length === 0 && 'bg-gray-100'}`}
@@ -365,7 +377,7 @@ const SubjectComponent: FC<SubjectComponentProps> = ({
                 </div>
                 <div className="ml-1 pr-10">
                   <button
-                    className="hover:text-indigo-500 p-1 rounded-md"
+                    className="hover:text-[#ff0000] p-1 rounded-md"
                     onClick={() => setTitleChanging(true)}>
                     <PencilIcon className="m-1 h-3 w-3" aria-hidden="true" />
                   </button>

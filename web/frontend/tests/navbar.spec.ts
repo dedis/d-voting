@@ -29,6 +29,12 @@ test('Assert D-Voting logo is present', async ({ page }) => {
   await expect(await logo.getByRole('link')).toHaveAttribute('href', '/');
 });
 
+test('Assert EPFL logo is present', async ({ page }) => {
+  const logo = await page.getByTestId('leftSideNavBarEPFLLogo');
+  await expect(logo).toBeVisible();
+  await expect(await logo.getByRole('link')).toHaveAttribute('href', 'https://epfl.ch');
+});
+
 test('Assert link to form table is present', async ({ page }) => {
   const forms = await page.getByRole('link', { name: i18n.t('navBarStatus') });
   await expect(forms).toBeVisible();
