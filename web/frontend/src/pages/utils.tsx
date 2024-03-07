@@ -13,9 +13,7 @@ export function internationalize(language: string, internationalizable: Hint | T
 
 export const urlizeLabel = (label: string, url?: string) => {
   return url ? (
-    <a
-      href={url}
-      style={{ color: 'white', textDecoration: 'underline', textDecorationColor: 'red' }}>
+    <a href={url} style={{ textDecoration: 'underline', textDecorationColor: 'red' }}>
       {label}
     </a>
   ) : (

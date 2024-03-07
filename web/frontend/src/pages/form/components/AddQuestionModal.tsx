@@ -224,7 +224,7 @@ const AddQuestionModal: FC<AddQuestionModalProps> = ({
                       <input
                         value={Title.URL}
                         onChange={(e) => handleChange('Title')(e)}
-                        name="QuestionTitleURL"
+                        name="URL"
                         type="text"
                         placeholder={t('url')}
                         className="my-1 px-1 w-60 ml-1 border rounded-md"
