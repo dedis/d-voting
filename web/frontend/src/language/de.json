@@ -38,6 +38,7 @@
     "subject": "Betreff",
     "choices": "Auswahlmöglichkeiten",
     "url": "URL",
+    "additionalInfo": "Weitere Informationen",
     "answers": "Antworten",
     "enterMaxLength": "Geben Sie die MaxLength",
     "maxChoices": "Maximale Anzahl von Auswahlmöglichkeiten",

@@ -6,6 +6,7 @@ import Select from './Select';
 import Text from './Text';
 import { DragDropContext } from 'react-beautiful-dnd';
 import { internationalize, urlizeLabel } from './../../utils';
+import DOMPurify from 'dompurify';
 
 type BallotDisplayProps = {
   configuration: Configuration;
@@ -82,6 +83,13 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
         <h3 className="pb-6 break-all text-2xl text-center text-gray-700">
           {urlizeLabel(internationalize(language, titles), titles.URL)}
         </h3>
+        <div
+          dangerouslySetInnerHTML={{
+            __html: DOMPurify.sanitize(configuration.AdditionalInfo, {
+              USE_PROFILES: { html: true },
+            }),
+          }}
+        />
         <div className="flex flex-col">
           {configuration.Scaffold.map((subject: types.Subject) => SubjectTree(subject))}
           <div className="text-red-600 text-sm pt-3 pb-1">{userErrors}</div>

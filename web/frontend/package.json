@@ -20,6 +20,7 @@
     "@tailwindcss/typography": "^0.5.2",
     "ajv": "^8.11.0",
     "buffer": "^6.0.3",
+    "dompurify": "^3.0.9",
     "file-saver": "^2.0.5",
     "i18next": "^21.6.10",
     "i18next-browser-languagedetector": "^6.1.3",

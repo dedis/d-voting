@@ -34,6 +34,7 @@
     "subject": "Subject",
     "choices": "Choices",
     "url": "URL",
+    "additionalInfo": "Additional information",
     "answers": "Answers",
     "enterMaxLength": "Enter the MaxLength",
     "maxChoices": "Max number of choices",

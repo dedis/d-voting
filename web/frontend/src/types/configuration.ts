@@ -74,6 +74,7 @@ interface Subject extends SubjectElement {
 interface Configuration {
   Title: Title;
   Scaffold: Subject[];
+  AdditionalInfo: string;
 }
 
 // Answers describes the current answers for each type of question
