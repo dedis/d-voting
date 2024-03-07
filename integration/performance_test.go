@@ -214,6 +214,7 @@ func createFormNChunks(m txManager, title types.Title, admin string, numChunks i
 				}},
 			},
 		},
+		AdditionalInfo: "",
 	}
 
 	createForm := types.CreateForm{

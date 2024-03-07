@@ -26,6 +26,7 @@ func NewForm(ctx serde.Context, snapshot store.Snapshot, formID string) (types.F
 				De:  "",
 				URL: "",
 			},
+			AdditionalInfo: "",
 		},
 		FormID:           formID,
 		Status:           types.Closed,
