@@ -13,6 +13,7 @@ import IndividualResult from './IndividualResult';
 import { default as i18n } from 'i18next';
 import GroupedResult from './GroupedResult';
 import { internationalize, urlizeLabel } from './../utils';
+import DOMPurify from 'dompurify';
 
 // Functional component that displays the result of the votes
 const FormResult: FC = () => {
@@ -103,6 +104,13 @@ const FormResult: FC = () => {
                 configuration.Title.URL
               )}
             </h3>
+            <div
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(configuration.AdditionalInfo, {
+                  USE_PROFILES: { html: true },
+                }),
+              }}
+            />
 
             <div>
               <Tab.Group>

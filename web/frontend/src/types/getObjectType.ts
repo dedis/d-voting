@@ -13,6 +13,7 @@ const emptyConfiguration = (): types.Configuration => {
       URL: '',
     },
     Scaffold: [],
+    AdditionalInfo: '',
   };
 };
 

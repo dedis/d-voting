@@ -29,6 +29,7 @@ import { FlashContext, FlashLevel } from 'index';
 import { availableLanguages } from 'language/Configuration';
 import LanguageButtons from 'language/LanguageButtons';
 import { default as i18n } from 'i18next';
+import DOMPurify from 'dompurify';
 
 // notifyParent must be used by the child to tell the parent if the subject's
 // schema changed.
@@ -55,7 +56,7 @@ const FormForm: FC<FormFormProps> = () => {
   const [marshalledConf, setMarshalledConf] = useState<any>(marshalConfig(conf));
   const { configuration: previewConf, answers, setAnswers } = useConfiguration(marshalledConf);
 
-  const { Title, Scaffold } = conf;
+  const { Title, Scaffold, AdditionalInfo } = conf;
 
   const [language, setLanguage] = useState(i18n.language);
   const regexPattern = /[^a-zA-Z0-9]/g;
@@ -229,6 +230,19 @@ const FormForm: FC<FormFormProps> = () => {
                   placeholder={t('url')}
                   className="m-3 px-1 w-100 text-lg border rounded-md"
                 />
+                <input
+                  value={AdditionalInfo}
+                  onChange={(e) =>
+                    setConf({
+                      ...conf,
+                      AdditionalInfo: e.target.value,
+                    })
+                  }
+                  name="AdditionalInfo"
+                  type="text"
+                  placeholder={t('additionalInfo')}
+                  className="m-3 px-1 w-100 text-lg border rounded-md"
+                />
                 <div className="ml-1">
                   <button
                     className={`border p-1 rounded-md ${
@@ -247,6 +261,11 @@ const FormForm: FC<FormFormProps> = () => {
                   onClick={() => setTitleChanging(true)}>
                   {urlizeLabel(internationalize(language, Title), Title.URL)}
                 </div>
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(AdditionalInfo, { USE_PROFILES: { html: true } }),
+                  }}
+                />
                 <div className="ml-1">
                   <button
                     className="hover:text-[#ff0000] p-1 rounded-md"

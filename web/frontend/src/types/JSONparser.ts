@@ -155,6 +155,7 @@ const unmarshalConfig = (json: any): types.Configuration => {
   const conf = {
     Title: json.Title,
     Scaffold: [],
+    AdditionalInfo: json.AdditionalInfo,
   };
   for (const subject of json.Scaffold) {
     conf.Scaffold.push(unmarshalSubject(subject));
@@ -222,7 +223,11 @@ const marshalSubject = (subject: types.Subject): any => {
 };
 
 const marshalConfig = (configuration: types.Configuration): any => {
-  const conf = { Title: configuration.Title, Scaffold: [] };
+  const conf = {
+    Title: configuration.Title,
+    Scaffold: [],
+    AdditionalInfo: configuration.AdditionalInfo,
+  };
   for (const subject of configuration.Scaffold) {
     conf.Scaffold.push(marshalSubject(subject));
   }
