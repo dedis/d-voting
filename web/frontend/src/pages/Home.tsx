@@ -19,7 +19,7 @@ const Home: FC = () => {
                     {t('homeWhatsNew')}
                   </span>
                   <span className="inline-flex items-center text-sm font-medium text-[#ff0000] space-x-1">
-                    <span>{t('homeJustShippedVersion')} 1.0.0</span>
+                    <span>{t('homeJustShippedVersion')} 2.0.0-rc1</span>
                     <ChevronRightIcon className="h-5 w-5" aria-hidden="true" />
                   </span>
                 </a>

@@ -287,7 +287,7 @@
     "enterHintLg1": "Entrer une indication en Français (optionnel)",
     "enterHintLg2": "Entrer une indication en Allemand (optionnel)",
     "invalidInput": "Entrer s'il vous plaît un nombre entre 1 et {{max}}",
-    "footerCopyright": "DEDIS LAB -",
+    "footerCopyright": "DEDIS LAB & C4DT -",
     "footerUnknown": "?",
     "footerVersion": "version:",
     "footerBuild": "build:",
