@@ -18,6 +18,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set env
+        run: |
+          git describe --tags
+          echo "REACT_APP_VERSION=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV        
+          echo "REACT_APP_BUILD=$(git describe --tags)" >> $GITHUB_ENV        
+          echo "REACT_APP_BUILD_TIME=$(date)" >> $GITHUB_ENV
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -34,6 +42,10 @@ jobs:
           context: .
           file: Dockerfiles/Dockerfile.frontend
           platforms: linux/amd64
+          build-args: |
+            REACT_APP_VERSION
+            REACT_APP_BUILD
+            REACT_APP_BUILD_TIME
           push: true
           tags: ghcr.io/c4dt/d-voting-frontend:${{ env.DockerTag }}
       - name: Build Backend

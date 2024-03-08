@@ -288,7 +288,7 @@
     "continue": "Continue",
     "invalidInput": "Please enter a number between 1 and {{max}}.",
     "hint": "Hint",
-    "footerCopyright": "DEDIS LAB -",
+    "footerCopyright": "DEDIS LAB & C4DT -",
     "footerUnknown": "?",
     "footerVersion": "version:",
     "footerBuild": "build:",

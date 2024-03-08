@@ -19,6 +19,10 @@ export DB_PATH="$(pwd)/nodes/llmdb"
 # Logging in without Gaspar and REACT_APP_SCIPER_ADMIN
 export REACT_APP_DEV_LOGIN="true"
 export REACT_APP_SCIPER_ADMIN=100100
+export REACT_APP_VERSION=$(git describe --tags --abbrev=0)
+export REACT_APP_BUILD=$(git describe --tags)
+export REACT_APP_BUILD_TIME=$(date)
+
 # uncomment this to enable TLS to test gaspar
 #export HTTPS=true
 # Create random voter-IDs to allow easier testing
