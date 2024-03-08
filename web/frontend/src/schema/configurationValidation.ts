@@ -430,6 +430,7 @@ const subjectSchema = yup.object({
 const configurationSchema = yup.object({
   Title: yup.lazy(() => titleSchema),
   Scaffold: yup.array().of(subjectSchema).required(),
+  AdditionalInfo: yup.string(),
 });
 
 export default configurationSchema;
