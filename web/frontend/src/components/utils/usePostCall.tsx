@@ -17,7 +17,9 @@ const usePostCall = (setError) => {
     try {
       const result = await response.json();
       if (result.Token) {
-        pollTransaction(checkTransaction, result.Token, 1000, 30).then(
+        // 600s is the time to shuffle 10'000 votes. This should be enough for
+        // everybody.
+        pollTransaction(checkTransaction, result.Token, 1000, 600).then(
           () => {
             setIsPosting((prev) => !prev);
           },

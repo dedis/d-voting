@@ -12,34 +12,35 @@ const pollTransaction = (
   };
 
   const executePoll = async (resolve, reject): Promise<any> => {
+    let response, result;
     try {
       attempts += 1;
-      const response = await fetch(endpoint(data), request);
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(JSON.stringify(result));
-      }
-
-      data = result.Token;
-
-      if (result.Status === 1) {
-        return resolve(result);
-      }
-
-      if (result.Status === 2) {
-        throw new Error('Transaction Rejected');
-      }
-
-      // Add a timeout
-      if (attempts === maxAttempts) {
-        throw new Error('Timeout');
-      }
-
-      setTimeout(executePoll, interval, resolve, reject);
+      response = await fetch(endpoint(data), request);
+      result = await response.json();
     } catch (e) {
       return reject(e);
     }
+
+    if (!response.ok) {
+      throw new Error(JSON.stringify(result));
+    }
+
+    data = result.Token;
+
+    if (result.Status === 1) {
+      return resolve(result);
+    }
+
+    if (result.Status === 2) {
+      throw new Error('Transaction Rejected');
+    }
+
+    // Add a timeout
+    if (attempts === maxAttempts) {
+      throw new Error('Timeout');
+    }
+
+    setTimeout(executePoll, interval, resolve, reject);
   };
 
   return new Promise(executePoll);
