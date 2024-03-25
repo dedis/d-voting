@@ -12,4 +12,5 @@ func init() {
 	types.RegisterSuffragiaFormat(serde.FormatJSON, suffragiaFormat{})
 	types.RegisterCiphervoteFormat(serde.FormatJSON, ciphervoteFormat{})
 	types.RegisterTransactionFormat(serde.FormatJSON, transactionFormat{})
+	types.RegisterAdminFormFormat(serde.FormatJSON, adminFormFormat{})
 }
