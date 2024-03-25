@@ -61,6 +61,9 @@ func AdminFormFromStore(ctx serde.Context, adminFormFac serde.Factory, adminForm
 	}
 
 	message, err := adminFormFac.Deserialize(ctx, adminFormBuf)
+	if err != nil {
+		return adminForm, xerrors.Errorf("While deserializing: %v", err)
+	}
 
 	adminForm, ok := message.(AdminForm)
 	if !ok {
