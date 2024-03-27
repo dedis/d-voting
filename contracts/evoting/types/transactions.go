@@ -92,7 +92,7 @@ func (t TransactionFactory) Deserialize(ctx serde.Context, data []byte) (serde.M
 // - implements serde.Message
 type CreateForm struct {
 	Configuration Configuration
-	AdminID       string
+	SciperID      string
 }
 
 // Serialize implements serde.Message

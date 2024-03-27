@@ -6,7 +6,7 @@ import (
 
 // CreateFormRequest defines the HTTP request for creating a form
 type CreateFormRequest struct {
-	AdminID       string
+	SciperID      string
 	Configuration etypes.Configuration
 }
 

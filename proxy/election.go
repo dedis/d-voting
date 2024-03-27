@@ -83,7 +83,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 
 	createForm := types.CreateForm{
 		Configuration: req.Configuration,
-		AdminID:       req.AdminID,
+		SciperID:      req.SciperID,
 	}
 
 	// serialize the transaction

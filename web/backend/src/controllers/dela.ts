@@ -253,17 +253,20 @@ delaRouter.use('/*', (req, res) => {
     if (process.env.REACT_APP_RANDOMIZE_VOTE_ID === 'true') {
       // DEBUG: this is only for debugging and needs to be replaced before production
       console.warn('DEV CODE - randomizing the SCIPER ID to allow for unlimited votes');
-      bodyData.UserID = makeid(10);
+      bodyData.UserID = makeid(10); //VoterID
     } else {
       // We must set the UserID to know who this ballot is associated to. This is
       // only needed to allow users to cast multiple ballots, where only the last
       // ballot is taken into account. To preserve anonymity, the web-backend could
       // translate UserIDs to another random ID.
 
-      bodyData.UserID = req.session.userId.toString();
+      bodyData.UserID = req.session.userId.toString(); // VoterID
     }
   }
 
+  bodyData.SciperID = req.session.userId.toString(); //UserID
+
   const dataStr = JSON.stringify(bodyData);
+
   sendToDela(dataStr, req, res);
 });

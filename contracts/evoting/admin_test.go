@@ -21,6 +21,9 @@ func init() {
 	ctxAdminTest = sjson.NewContext()
 }
 
+// This test create an Admin Form structure which is then serialized and
+// deserialized to check whether these operations work as intended.
+// Given an AdminForm we should retrieve the same AdminForm after these operations.
 func TestAdmin_serde(t *testing.T) {
 	adminFormID := "myID"
 	adminFormList := []int{111111, 222222, 333333, 123456}
