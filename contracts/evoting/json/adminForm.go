@@ -9,22 +9,22 @@ import (
 type adminFormFormat struct{}
 
 func (adminFormFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, error) {
-	switch m := message.(type) {
-	case types.AdminForm:
-		adminFormJSON := AdminFormJSON{
-			FormID:    m.FormID,
-			AdminList: m.AdminList,
-		}
-
-		buff, err := ctx.Marshal(&adminFormJSON)
-		if err != nil {
-			return nil, xerrors.Errorf("failed to marshal form: %v", err)
-		}
-
-		return buff, nil
-	default:
+	adminForm, ok := message.(types.AdminForm)
+	if !ok {
 		return nil, xerrors.Errorf("Unknown format: %T", message)
 	}
+
+	adminFormJSON := AdminFormJSON{
+		FormID:    adminForm.FormID,
+		AdminList: adminForm.AdminList,
+	}
+
+	buff, err := ctx.Marshal(&adminFormJSON)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to marshal form: %v", err)
+	}
+
+	return buff, nil
 }
 
 func (adminFormFormat) Decode(ctx serde.Context, data []byte) (serde.Message, error) {
