@@ -593,7 +593,7 @@ func setupSimpleForm(ctx node.Context, secret kyber.Scalar, proxyAddr1 string,
 
 	createSimpleFormRequest := ptypes.CreateFormRequest{
 		Configuration: configuration,
-		SciperID:      "SciperID",
+		UserID:        "UserID",
 	}
 
 	signed, err := createSignedRequest(secret, createSimpleFormRequest)

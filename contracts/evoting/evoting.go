@@ -60,7 +60,7 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 		return xerrors.Errorf(errWrongTx, msg)
 	}
 
-	println("SCIPERRRRR: %i", tx.SciperID)
+	println("SCIPERRRRR: %i", tx.UserID)
 
 	rosterBuf, err := snap.Get(viewchange.GetRosterKey())
 	if err != nil {

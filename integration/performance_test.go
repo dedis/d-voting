@@ -219,7 +219,7 @@ func createFormNChunks(m txManager, title types.Title, admin string, numChunks i
 
 	createForm := types.CreateForm{
 		Configuration: configuration,
-		SciperID:      admin,
+		UserID:        admin,
 	}
 
 	data, err := createForm.Serialize(serdecontext)

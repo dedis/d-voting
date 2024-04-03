@@ -21,7 +21,7 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 	case types.CreateForm:
 		ce := CreateFormJSON{
 			Configuration: t.Configuration,
-			SciperID:      t.SciperID,
+			UserID:        t.UserID,
 		}
 
 		m = TransactionJSON{CreateForm: &ce}
@@ -143,7 +143,7 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 	case m.CreateForm != nil:
 		return types.CreateForm{
 			Configuration: m.CreateForm.Configuration,
-			SciperID:      m.CreateForm.SciperID,
+			UserID:        m.CreateForm.UserID,
 		}, nil
 	case m.OpenForm != nil:
 		return types.OpenForm{
@@ -211,7 +211,7 @@ type TransactionJSON struct {
 // CreateFormJSON is the JSON representation of a CreateForm transaction
 type CreateFormJSON struct {
 	Configuration types.Configuration
-	SciperID      string
+	UserID        string
 }
 
 // OpenFormJSON is the JSON representation of a OpenForm transaction
