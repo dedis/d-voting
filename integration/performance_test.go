@@ -219,7 +219,7 @@ func createFormNChunks(m txManager, title types.Title, admin string, numChunks i
 
 	createForm := types.CreateForm{
 		Configuration: configuration,
-		AdminID:       admin,
+		SciperID:      admin,
 	}
 
 	data, err := createForm.Serialize(serdecontext)
@@ -272,12 +272,12 @@ func castVotesNChunks(m txManager, actor dkg.Actor, form types.Form,
 	start := time.Now()
 	for i := 0; i < numberOfVotes; i++ {
 
-		userID := "user " + strconv.Itoa(i)
+		voterID := "user " + strconv.Itoa(i)
 
 		castVote := types.CastVote{
-			FormID: form.FormID,
-			UserID: userID,
-			Ballot: ballot,
+			FormID:  form.FormID,
+			VoterID: voterID,
+			Ballot:  ballot,
 		}
 
 		data, err := castVote.Serialize(serdecontext)

@@ -132,9 +132,9 @@ func (oe OpenForm) Serialize(ctx serde.Context) ([]byte, error) {
 // - implements serde.Message
 type CastVote struct {
 	// FormID is hex-encoded
-	FormID string
-	UserID string
-	Ballot Ciphervote
+	FormID  string
+	VoterID string
+	Ballot  Ciphervote
 }
 
 // Serialize implements serde.Message

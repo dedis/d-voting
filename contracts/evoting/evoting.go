@@ -232,7 +232,7 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 			len(tx.Ballot), form.ChunksPerBallot())
 	}
 
-	err = form.CastVote(e.context, snap, tx.UserID, tx.Ballot)
+	err = form.CastVote(e.context, snap, tx.VoterID, tx.Ballot)
 	if err != nil {
 		return xerrors.Errorf("couldn't cast vote: %v", err)
 	}

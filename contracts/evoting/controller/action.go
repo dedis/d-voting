@@ -352,8 +352,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	castVoteRequest := ptypes.CastVoteRequest{
-		UserID: "user1",
-		Ballot: ballot1,
+		VoterID: "user1",
+		Ballot:  ballot1,
 	}
 
 	signed, err := createSignedRequest(secret, castVoteRequest)
@@ -377,8 +377,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	castVoteRequest = ptypes.CastVoteRequest{
-		UserID: "user2",
-		Ballot: ballot2,
+		VoterID: "user2",
+		Ballot:  ballot2,
 	}
 
 	signed, err = createSignedRequest(secret, castVoteRequest)
@@ -402,8 +402,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	castVoteRequest = ptypes.CastVoteRequest{
-		UserID: "user3",
-		Ballot: ballot3,
+		VoterID: "user3",
+		Ballot:  ballot3,
 	}
 
 	signed, err = createSignedRequest(secret, castVoteRequest)

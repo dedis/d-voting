@@ -192,9 +192,9 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	castVote := types.CastVote{
-		FormID: formID,
-		UserID: req.UserID,
-		Ballot: ciphervote,
+		FormID:  formID,
+		VoterID: req.VoterID,
+		Ballot:  ciphervote,
 	}
 
 	// serialize the vote
@@ -451,7 +451,7 @@ func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 		Roster:          roster,
 		ChunksPerBallot: form.ChunksPerBallot(),
 		BallotSize:      form.BallotSize,
-		Voters:          suff.UserIDs,
+		Voters:          suff.VoterIDs,
 	}
 
 	txnmanager.SendResponse(w, response)

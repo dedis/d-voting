@@ -18,7 +18,7 @@ type CreateFormResponse struct {
 
 // CastVoteRequest defines the HTTP request for casting a vote
 type CastVoteRequest struct {
-	UserID string
+	VoterID string
 	// Marshalled representation of Ciphervote. It contains []{K:,C:}
 	Ballot CiphervoteJSON
 }

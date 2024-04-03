@@ -71,7 +71,7 @@ This transaction requires the following 3 parameters:
 
 1. `actor` of type dkg.Actor
 2. `formID` (see Create Form above)
-3. `userID` of the voter
+3. `VoterID` of the voter
 4. `vote` to be casted
 
 Key / Value pairs sent in the transaction in order to create a form:
@@ -88,7 +88,7 @@ where:
     evoting.CastVoteArg = "evoting:cast_vote"
     castVoteBuf = a marshalled version of types.CastVoteTransaction{
 			FormID: hex.EncodeToString(formID),
-			UserID:     userID,
+			VoterID:     VoterID,
 			Ballot:     ballot,   // a vote encrypted by the actor
 		}
     evoting.CmdArg = "evoting:command"
@@ -113,7 +113,7 @@ where:
     evoting.CloseFormArg = "evoting:close_form"
     closeFormBuf = marshalled version of types.CloseFormTransaction{
 		FormID: hex.EncodeToString(formID),
-		UserID:     adminID,
+		VoterID:     adminID,
 	}
     evoting.CmdArg = "evoting:command"
     evoting.CmdCloseForm = "CLOSE_FORM"

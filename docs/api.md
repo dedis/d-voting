@@ -183,7 +183,7 @@ Return:
 
 ```json
 {
-  "UserID": "",
+  "VoterID": "",
   "Ballot": [
     {
       "K": "<bin>",

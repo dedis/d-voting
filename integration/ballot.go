@@ -66,12 +66,12 @@ func castVotesRandomly(m txManager, actor dkg.Actor, form types.Form,
 			return nil, xerrors.Errorf("failed to marshallBallot: %v", err)
 		}
 
-		userID := "user " + strconv.Itoa(i)
+		voterID := "user " + strconv.Itoa(i)
 
 		castVote := types.CastVote{
-			FormID: form.FormID,
-			UserID: userID,
-			Ballot: ciphervote,
+			FormID:  form.FormID,
+			VoterID: voterID,
+			Ballot:  ciphervote,
 		}
 
 		data, err := castVote.Serialize(serdecontext)
@@ -122,12 +122,12 @@ func castBadVote(m txManager, actor dkg.Actor, form types.Form, numberOfBadVotes
 			return xerrors.Errorf("failed to marshallBallot: %v", err)
 		}
 
-		userID := "badUser " + strconv.Itoa(i)
+		voterID := "badUser " + strconv.Itoa(i)
 
 		castVote := types.CastVote{
-			FormID: form.FormID,
-			UserID: userID,
-			Ballot: ciphervote,
+			FormID:  form.FormID,
+			VoterID: voterID,
+			Ballot:  ciphervote,
 		}
 
 		data, err := castVote.Serialize(serdecontext)
@@ -348,8 +348,8 @@ func castVotesLoad(numVotesPerSec, numSec, BallotSize, chunksPerBallot int, form
 			idx := i*numVotesPerSec + j
 			randomproxy := proxyArray[rand.Intn(proxyCount)]
 			castVoteRequest := ptypes.CastVoteRequest{
-				UserID: "user" + strconv.Itoa(idx),
-				Ballot: ballot,
+				VoterID: "user" + strconv.Itoa(idx),
+				Ballot:  ballot,
 			}
 			// cast asynchrounously and increment includedVoteCount
 			// if the cast was succesfull
@@ -450,8 +450,8 @@ func castVotesScenario(numVotes, BallotSize, chunksPerBallot int, formID, conten
 		require.NoError(t, err)
 
 		castVoteRequest := ptypes.CastVoteRequest{
-			UserID: "user" + strconv.Itoa(i+1),
-			Ballot: ballot,
+			VoterID: "user" + strconv.Itoa(i+1),
+			Ballot:  ballot,
 		}
 
 		randomproxy := proxyArray[rand.Intn(len(proxyArray))]

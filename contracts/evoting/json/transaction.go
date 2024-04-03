@@ -39,7 +39,7 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 
 		cv := CastVoteJSON{
 			FormID:     t.FormID,
-			UserID:     t.UserID,
+			VoterID:    t.VoterID,
 			Ciphervote: ballot,
 		}
 
@@ -222,7 +222,7 @@ type OpenFormJSON struct {
 // CastVoteJSON is the JSON representation of a CastVote transaction
 type CastVoteJSON struct {
 	FormID     string
-	UserID     string
+	VoterID    string
 	Ciphervote json.RawMessage
 }
 
@@ -285,9 +285,9 @@ func decodeCastVote(ctx serde.Context, m CastVoteJSON) (serde.Message, error) {
 	}
 
 	return types.CastVote{
-		FormID: m.FormID,
-		UserID: m.UserID,
-		Ballot: ciphervote,
+		FormID:  m.FormID,
+		VoterID: m.VoterID,
+		Ballot:  ciphervote,
 	}, nil
 }
 
