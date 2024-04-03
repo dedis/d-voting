@@ -144,7 +144,7 @@ const FormTableFilter: FC<FormTableFilterProps> = ({ setStatusToKeep }) => {
       <button
         type="button"
         onClick={() => handleClick(null, t('filterByStatus'))}
-        className="text-gray-700 my-2 mx-2 items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium hover:text-indigo-500">
+        className="text-gray-700 my-2 mx-2 items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium hover:text-[#ff0000]">
         {t('resetFilter')}
       </button>
     </>

@@ -399,7 +399,7 @@ const useChangeAction = (
       return (
         <div>
           {t('notLoggedInActionText1')}
-          <button id="login-button" className="text-indigo-600" onClick={() => handleLogin(fctx)}>
+          <button id="login-button" className="text-[#ff0000]" onClick={() => handleLogin(fctx)}>
             {t('notLoggedInActionText2')}
           </button>
           {t('notLoggedInActionText3')}

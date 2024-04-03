@@ -301,7 +301,7 @@ const IndividualResult: FC<IndividualResultProps> = ({
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="text-gray-700 my-2 mr-2 items-center px-4 py-2 border rounded-md text-sm hover:text-indigo-500">
+          className="text-gray-700 my-2 mr-2 items-center px-4 py-2 border rounded-md text-sm hover:text-[#ff0000]">
           {t('back')}
         </button>
 

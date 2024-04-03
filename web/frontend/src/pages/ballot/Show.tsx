@@ -147,7 +147,7 @@ const Ballot: FC = () => {
               <div className="flex mb-4 sm:mb-6">
                 <button
                   type="button"
-                  className="inline-flex items-center mr-2 sm:mr-4 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600"
+                  className="inline-flex items-center mr-2 sm:mr-4 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#ff0000] hover:bg-[#ff0000]"
                   onClick={handleClick}>
                   {castVoteLoading ? (
                     <SpinnerIcon />
@@ -159,7 +159,7 @@ const Ballot: FC = () => {
                 <button
                   type="button"
                   onClick={() => navigate(-1)}
-                  className=" text-gray-700 mr-2 items-center px-4 py-2 border rounded-md text-sm hover:text-indigo-500">
+                  className=" text-gray-700 mr-2 items-center px-4 py-2 border rounded-md text-sm hover:text-[#ff0000]">
                   {t('back')}
                 </button>
               </div>

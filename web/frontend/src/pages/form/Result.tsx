@@ -109,8 +109,8 @@ const FormResult: FC = () => {
                     key="grouped"
                     className={({ selected }) =>
                       selected
-                        ? 'w-full focus:ring-0 rounded-lg py-2.5 text-sm font-medium leading-5 text-white bg-indigo-500 shadow'
-                        : 'w-full focus:ring-0 rounded-lg py-2.5 text-sm font-medium leading-5 text-gray-700 hover:bg-indigo-100 hover:text-indigo-500'
+                        ? 'w-full focus:ring-0 rounded-lg py-2.5 text-sm font-medium leading-5 text-white bg-[#ff0000] shadow'
+                        : 'w-full focus:ring-0 rounded-lg py-2.5 text-sm font-medium leading-5 text-gray-700 hover:bg-[#ff0000] hover:text-[#ff0000]'
                     }>
                     {t('resGroup')}
                   </Tab>
@@ -118,8 +118,8 @@ const FormResult: FC = () => {
                     key="individual"
                     className={({ selected }) =>
                       selected
-                        ? 'w-full focus:ring-0 rounded-lg py-2.5 text-sm font-medium leading-5 text-white bg-indigo-500 shadow'
-                        : 'w-full focus:ring-0 rounded-lg py-2.5 text-sm font-medium leading-5 text-gray-600 hover:bg-indigo-100 hover:text-indigo-500'
+                        ? 'w-full focus:ring-0 rounded-lg py-2.5 text-sm font-medium leading-5 text-white bg-[#ff0000] shadow'
+                        : 'w-full focus:ring-0 rounded-lg py-2.5 text-sm font-medium leading-5 text-gray-600 hover:bg-[#ff0000] hover:text-[#ff0000]'
                     }>
                     {t('resIndiv')}
                   </Tab>

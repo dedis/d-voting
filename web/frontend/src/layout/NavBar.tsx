@@ -21,6 +21,7 @@ import { availableLanguages } from 'language/Configuration';
 import { LanguageSelector } from '../language';
 
 import logo from '../assets/logo.png';
+import { ReactComponent as EPFLLogo } from '../assets/EPFL_Logo_184X53.svg';
 import { Popover, Transition } from '@headlessui/react';
 import { LoginIcon, LogoutIcon, MenuIcon, XIcon } from '@heroicons/react/outline';
 import { PlusIcon } from '@heroicons/react/solid';
@@ -34,7 +35,7 @@ const ACTION_LIST = 'list';
 const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
   <Popover>
     <div className="-mr-2 -my-2 md:hidden">
-      <Popover.Button className="bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+      <Popover.Button className="bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#ff0000]">
         <span className="sr-only">Open menu</span>
         <MenuIcon className="h-6 w-6" aria-hidden="true" />
       </Popover.Button>
@@ -54,7 +55,7 @@ const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
           <div className="pt-5 pb-6 px-5">
             <div className="flex items-center justify-between">
               <div className="-mr-2">
-                <Popover.Button className="bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+                <Popover.Button className="bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#ff0000]">
                   <span className="sr-only">Close menu</span>
                   <XIcon className="h-6 w-6" aria-hidden="true" />
                 </Popover.Button>
@@ -97,7 +98,7 @@ const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
             <div className="pt-4">
               {authCtx.isLogged && authCtx.isAllowed(SUBJECT_ELECTION, ACTION_CREATE) && (
                 <NavLink to={ROUTE_FORM_CREATE}>
-                  <Popover.Button className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                  <Popover.Button className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-[#ff0000] hover:bg-[#b51f1f]">
                     <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
                     {t('navBarCreateForm')}
                   </Popover.Button>
@@ -139,7 +140,7 @@ const MobileMenu = ({ authCtx, handleLogout, fctx, t }) => (
                 </div>
               ) : (
                 <div onClick={() => handleLogin(fctx)}>
-                  <Popover.Button className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                  <Popover.Button className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-[#ff0000] hover:bg-[#b51f1f]">
                     <LoginIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
                     {t('login')}
                   </Popover.Button>
@@ -157,7 +158,7 @@ const RightSideNavBar = ({ authCtx, handleLogout, fctx, t }) => (
   <div className="absolute hidden inset-y-0 right-0 flex items-center pr-2 md:static md:inset-auto md:flex md:ml-6 md:pr-0">
     {authCtx.isLogged && authCtx.isAllowed(SUBJECT_ELECTION, ACTION_CREATE) && (
       <NavLink title={t('navBarCreateForm')} to={ROUTE_FORM_CREATE}>
-        <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border-2 border-indigo-500 rounded-md shadow-sm text-base font-medium text-indigo-500 bg-white hover:bg-indigo-500 hover:text-white">
+        <div className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border-2 border-[#ff0000] rounded-md shadow-sm text-base font-medium text-[#ff0000] bg-white hover:bg-[#ff0000] hover:text-white">
           <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
           {t('navBarCreateForm')}
         </div>
@@ -170,9 +171,16 @@ const RightSideNavBar = ({ authCtx, handleLogout, fctx, t }) => (
 
 const LeftSideNavBar = ({ authCtx, t }) => (
   <div className="flex-1 flex items-center justify-center md:justify-start">
-    <div className="flex-shrink-0 flex items-center">
+    <div
+      data-testid="leftSideNavBarEPFLLogo"
+      className="flex-shrink-0 flex items-start"
+      style={{ marginRight: 'auto' }}>
+      <a href="https://epfl.ch">
+        <EPFLLogo className="h-10 w-auto" />
+      </a>
+    </div>
+    <div data-testid="leftSideNavBarLogo" className="flex-shrink-0 flex items-center">
       <NavLink to={ROUTE_HOME}>
-        <img className="block lg:hidden h-10 w-auto" src={logo} alt="Workflow" />
         <img className="hidden lg:block h-10 w-auto" src={logo} alt="Workflow" />
       </NavLink>
     </div>
@@ -181,15 +189,15 @@ const LeftSideNavBar = ({ authCtx, t }) => (
         <NavLink
           to={ROUTE_FORM_INDEX}
           title={t('navBarStatus')}
-          className={'text-black text-lg hover:text-indigo-700'}>
+          className={'text-black text-lg hover:text-[#b51f1f]'}>
           {t('navBarStatus')}
         </NavLink>
         {authCtx.isLogged && authCtx.isAllowed(SUBJECT_ROLES, ACTION_LIST) && (
-          <NavLink to={ROUTE_ADMIN} className={'text-black text-lg hover:text-indigo-700'}>
+          <NavLink to={ROUTE_ADMIN} className={'text-black text-lg hover:text-[#b51f1f]'}>
             Admin
           </NavLink>
         )}
-        <NavLink to={ROUTE_ABOUT} className={'text-black text-lg hover:text-indigo-700'}>
+        <NavLink to={ROUTE_ABOUT} className={'text-black text-lg hover:text-[#b51f1f]'}>
           {t('navBarAbout')}
         </NavLink>
       </div>
