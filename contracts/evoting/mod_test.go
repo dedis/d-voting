@@ -175,8 +175,8 @@ func TestCommand_CastVote(t *testing.T) {
 	initMetrics()
 
 	castVote := types.CastVote{
-		FormID: fakeFormID,
-		UserID: "dummyUserId",
+		FormID:  fakeFormID,
+		VoterID: "dummyVoterId",
 		Ballot: types.Ciphervote{types.EGPair{
 			K: suite.Point(),
 			C: suite.Point(),
@@ -300,7 +300,7 @@ func TestCommand_CastVote(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, castVote.Ballot.Equal(suff.Ciphervotes[0]))
 
-	require.Equal(t, castVote.UserID, suff.UserIDs[0])
+	require.Equal(t, castVote.VoterID, suff.VoterIDs[0])
 	require.Equal(t, float64(form.BallotCount), testutil.ToFloat64(PromFormBallots))
 }
 

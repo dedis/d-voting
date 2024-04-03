@@ -264,7 +264,8 @@ delaRouter.use('/*', (req, res) => {
     }
   }
 
-  bodyData.SciperID = req.session.userId.toString(); //UserID
+  //UserID
+  bodyData.SciperID = req.session.userId.toString();
 
   const dataStr = JSON.stringify(bodyData);
 
