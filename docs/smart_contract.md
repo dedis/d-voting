@@ -113,7 +113,7 @@ where:
     evoting.CloseFormArg = "evoting:close_form"
     closeFormBuf = marshalled version of types.CloseFormTransaction{
 		FormID: hex.EncodeToString(formID),
-		VoterID:     adminID,
+		UserID:     adminID,
 	}
     evoting.CmdArg = "evoting:command"
     evoting.CmdCloseForm = "CLOSE_FORM"

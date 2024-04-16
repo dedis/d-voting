@@ -120,7 +120,7 @@ func TestCommand_CreateForm(t *testing.T) {
 	}
 
 	createForm := types.CreateForm{
-		UserID: "dummyAdminID",
+		UserID: "dummyUserID",
 	}
 
 	data, err := createForm.Serialize(ctx)
