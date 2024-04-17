@@ -1,6 +1,6 @@
 import express from 'express';
 
-import { addPolicy, initEnforcer, isAuthorized, PERMISSIONS } from '../authManager';
+import { addPolicy, addListPolicy, initEnforcer, isAuthorized, PERMISSIONS } from '../authManager';
 
 export const usersRouter = express.Router();
 
@@ -34,14 +34,28 @@ usersRouter.post('/add_role', (req, res, next) => {
     }
   }
 
-  addPolicy(req.body.userId, req.body.subject, req.body.permission)
-    .then(() => {
-      res.set(200).send();
-      next();
-    })
-    .catch((e) => {
-      res.status(400).send(`Error while adding to roles: ${e}`);
-    });
+  if (Object.hasOwn(req.body, 'userId')) {
+    addPolicy(req.body.userId, req.body.subject, req.body.permission)
+      .then(() => {
+        res.set(200).send();
+        next();
+      })
+      .catch((e) => {
+        res.status(400).send(`Error while adding to roles: ${e}`);
+      });
+  } else if(Object.hasOwn(req.body, 'userIds')) {
+    addListPolicy(req.body.userIds, req.body.subject, req.body.permission)
+      .then(() => {
+        res.set(200).send();
+        next();
+      })
+      .catch((e) => {
+        res.status(400).send(`Error while adding to roles: ${e}`);
+      });
+  } else {
+    res.status(400).send(`Error while adding to roles: bad request, both userId and userIds are missing`);
+  }
+
 
   // Call https://search-api.epfl.ch/api/ldap?q=228271, if the answer is
   // empty then sciper unknown, otherwise add it in userDB

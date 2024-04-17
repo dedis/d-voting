@@ -56,6 +56,15 @@ export async function addPolicy(userID: string, subject: string, permission: str
   await authEnforcer.addPolicy(userID, subject, permission);
   await authEnforcer.loadPolicy();
 }
+
+export async function addListPolicy(userIDs: string[], subject: string, permission: string) {
+  const promises = userIDs.map( (userID) => authEnforcer.addPolicy(userID, subject, permission));
+  // TODO: check results...
+  const results = await Promise.all(promises);
+  // Reload ACLs
+  await authEnforcer.loadPolicy();
+}
+
 export async function assignUserPermissionToOwnElection(userID: string, ElectionID: string) {
   return authEnforcer.addPolicy(userID, ElectionID, PERMISSIONS.ACTIONS.OWN);
 }

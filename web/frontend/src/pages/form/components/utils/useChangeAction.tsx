@@ -28,6 +28,7 @@ import ShuffleButton from '../ActionButtons/ShuffleButton';
 import VoteButton from '../ActionButtons/VoteButton';
 import handleLogin from 'pages/session/HandleLogin';
 
+
 const useChangeAction = (
   status: Status,
   formID: ID,
@@ -73,6 +74,20 @@ const useChangeAction = (
   function hasAuthorization(subject: string, action: string): boolean {
     return authorization.has(subject) && authorization.get(subject).indexOf(action) !== -1;
   }
+
+  async function sendVoters(providedScipers, formID) {
+    const chunkSize = 1000;
+    for (let i = 0; i < providedScipers.length; i += chunkSize) {
+      const chunk = providedScipers.slice(i, i + chunkSize);
+      const request = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userIds: chunk, subject: formID, permission: 'vote' }),
+      };
+      await sendFetchRequest(ENDPOINT_ADD_ROLE, request, setIsPosting);
+    }
+  } 
+
 
   const POLLING_INTERVAL = 1000;
   const MAX_ATTEMPTS = 20;
@@ -315,31 +330,37 @@ const useChangeAction = (
   useEffect(() => {
     if (userConfirmedAddVoters.length > 0) {
       const newUsersArray = [];
-      for (const sciperStr of userConfirmedAddVoters.split('\n')) {
-        try {
-          const sciper = parseInt(sciperStr, 10);
-          if (sciper < 100000 || sciper > 999999) {
-            console.error(`SCIPER is out of range. ${sciper} is not between 100000 and 999999`);
-          } else {
-            const request = {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId: sciper, subject: formID, permission: 'vote' }),
-            };
-            sendFetchRequest(ENDPOINT_ADD_ROLE, request, setIsPosting)
-              .catch(console.error)
-              .then(() => {
-                newUsersArray.push(sciper);
-                setNewVoters(newUsersArray.join('\n'));
-                setShowModalAddVotersSuccess(true);
-              });
-          }
-        } catch (e) {
-          console.error(`While adding voter: ${e}`);
+      const badScipers = [];
+
+      const providedScipers=userConfirmedAddVoters.split('\n');
+      setUserConfirmedAddVoters('');
+
+      for (const sciperStr of providedScipers) {
+        const sciper = parseInt(sciperStr, 10);
+        if (sciper < 100000 || sciper > 999999) {
+          console.error(`SCIPER is out of range. ${sciper} is not between 100000 and 999999`);
+          badScipers.push(sciper);
         }
       }
-      setUserConfirmedAddVoters('');
-      setShowModalAddVoters(false);
+      if (badScipers.length > 0) {
+        console.error("There are bad scipers. Stopping here.");
+        // TODO error dialog
+            // setUserConfirmedAddVoters('');
+
+        return;
+      }
+
+      try {
+        sendVoters(providedScipers, formID)
+          .catch(console.error)
+          .then(() => {
+            setShowModalAddVotersSuccess(true);
+          });
+      } catch (e) {
+        console.error(`While adding voter: ${e}`);
+        setUserConfirmedAddVoters('Error uploading scipers');
+        setShowModalAddVoters(false);
+      }
     }
     // setUserConfirmedAddVoters(false);
   }, [formID, sendFetchRequest, userConfirmedAddVoters]);
