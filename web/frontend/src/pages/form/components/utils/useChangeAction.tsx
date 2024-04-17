@@ -75,6 +75,10 @@ const useChangeAction = (
     return authorization.has(subject) && authorization.get(subject).indexOf(action) !== -1;
   }
 
+  // requests to ENDPOINT_ADD_ROLE cannot be done in parallel because on the
+  // backend, auths are reloaded from the DB each time there is an update.
+  // While auths are reloaded, they cannot be checked in a predictable way.
+  // See isAuthorized, addPolicy, and addListPolicy in backend/src/authManager.ts
   async function sendVoters(providedScipers, formID) {
     const chunkSize = 1000;
     for (let i = 0; i < providedScipers.length; i += chunkSize) {
