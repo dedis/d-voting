@@ -3,7 +3,7 @@
 # The script must be called from the root of the github tree, else it returns an error.
 # This script currently only works on Linux due to differences in network management on Windows/macOS.
 
-if [[ $(git rev-parse --show-toplevel) != $(pwd) ]]; then
+if [[ $(git rev-parse --show-toplevel) != $(readlink -fn $(pwd)) ]]; then
   echo "ERROR: This script must be started from the root of the git repo";
   exit 1;
 fi
