@@ -343,3 +343,45 @@ func (rp RegisterPubShares) Fingerprint(writer io.Writer) error {
 
 	return nil
 }
+
+// AddAdmin defines the transaction to Add an Admin
+//
+// - implements serde.Message
+type AddAdmin struct {
+	// FormID is hex-encoded
+	FormID string
+	UserID string
+}
+
+// Serialize implements serde.Message
+func (aa AddAdmin) Serialize(ctx serde.Context) ([]byte, error) {
+	format := transactionFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, aa)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to encode Add Admin: %v", err)
+	}
+
+	return data, nil
+}
+
+// RemoveAdmin defines the transaction to Remove an Admin
+//
+// - implements serde.Message
+type RemoveAdmin struct {
+	// FormID is hex-encoded
+	FormID string
+	UserID string
+}
+
+// Serialize implements serde.Message
+func (ra RemoveAdmin) Serialize(ctx serde.Context) ([]byte, error) {
+	format := transactionFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, ra)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to encode remove admin: %v", err)
+	}
+
+	return data, nil
+}
