@@ -28,7 +28,6 @@ import ShuffleButton from '../ActionButtons/ShuffleButton';
 import VoteButton from '../ActionButtons/VoteButton';
 import handleLogin from 'pages/session/HandleLogin';
 
-
 const useChangeAction = (
   status: Status,
   formID: ID,
@@ -52,7 +51,7 @@ const useChangeAction = (
   const [showModalDelete, setShowModalDelete] = useState(false);
   const [showModalAddVoters, setShowModalAddVoters] = useState(false);
   const [showModalAddVotersSucccess, setShowModalAddVotersSuccess] = useState(false);
-  const [newVoters, setNewVoters] = useState('');
+  const [newVoters] = useState('');
 
   const [userConfirmedProxySetup, setUserConfirmedProxySetup] = useState(false);
   const [userConfirmedClosing, setUserConfirmedClosing] = useState(false);
@@ -74,24 +73,6 @@ const useChangeAction = (
   function hasAuthorization(subject: string, action: string): boolean {
     return authorization.has(subject) && authorization.get(subject).indexOf(action) !== -1;
   }
-
-  // requests to ENDPOINT_ADD_ROLE cannot be done in parallel because on the
-  // backend, auths are reloaded from the DB each time there is an update.
-  // While auths are reloaded, they cannot be checked in a predictable way.
-  // See isAuthorized, addPolicy, and addListPolicy in backend/src/authManager.ts
-  async function sendVoters(providedScipers, formID) {
-    const chunkSize = 1000;
-    for (let i = 0; i < providedScipers.length; i += chunkSize) {
-      const chunk = providedScipers.slice(i, i + chunkSize);
-      const request = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userIds: chunk, subject: formID, permission: 'vote' }),
-      };
-      await sendFetchRequest(ENDPOINT_ADD_ROLE, request, setIsPosting);
-    }
-  } 
-
 
   const POLLING_INTERVAL = 1000;
   const MAX_ATTEMPTS = 20;
@@ -332,11 +313,26 @@ const useChangeAction = (
   }, [userConfirmedDeleting]);
 
   useEffect(() => {
+    // requests to ENDPOINT_ADD_ROLE cannot be done in parallel because on the
+    // backend, auths are reloaded from the DB each time there is an update.
+    // While auths are reloaded, they cannot be checked in a predictable way.
+    // See isAuthorized, addPolicy, and addListPolicy in backend/src/authManager.ts
+    async function sendVoters(providedScipers) {
+      const chunkSize = 1000;
+      for (let i = 0; i < providedScipers.length; i += chunkSize) {
+        const chunk = providedScipers.slice(i, i + chunkSize);
+        const request = {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userIds: chunk, subject: formID, permission: 'vote' }),
+        };
+        await sendFetchRequest(ENDPOINT_ADD_ROLE, request, setIsPosting);
+      }
+    }
     if (userConfirmedAddVoters.length > 0) {
-      const newUsersArray = [];
       const badScipers = [];
 
-      const providedScipers=userConfirmedAddVoters.split('\n');
+      const providedScipers = userConfirmedAddVoters.split('\n');
       setUserConfirmedAddVoters('');
 
       for (const sciperStr of providedScipers) {
@@ -347,15 +343,15 @@ const useChangeAction = (
         }
       }
       if (badScipers.length > 0) {
-        console.error("There are bad scipers. Stopping here.");
+        console.error('There are bad scipers. Stopping here.');
         // TODO error dialog
-            // setUserConfirmedAddVoters('');
+        // setUserConfirmedAddVoters('');
 
         return;
       }
 
       try {
-        sendVoters(providedScipers, formID)
+        sendVoters(providedScipers)
           .catch(console.error)
           .then(() => {
             setShowModalAddVotersSuccess(true);
