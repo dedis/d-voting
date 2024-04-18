@@ -118,6 +118,20 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 		}
 
 		m = TransactionJSON{DeleteForm: &de}
+	case types.AddAdmin:
+		aa := AddAdminJSON{
+			FormID: t.FormID,
+			UserID: t.UserID,
+		}
+
+		m = TransactionJSON{AddAdmin: &aa}
+	case types.RemoveAdmin:
+		ra := RemoveAdminJSON{
+			FormID: t.FormID,
+			UserID: t.UserID,
+		}
+
+		m = TransactionJSON{RemoveAdmin: &ra}
 	default:
 		return nil, xerrors.Errorf("unknown type: '%T", msg)
 	}
@@ -189,6 +203,16 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 		return types.DeleteForm{
 			FormID: m.DeleteForm.FormID,
 		}, nil
+	case m.AddAdmin != nil:
+		return types.AddAdmin{
+			FormID: m.AddAdmin.FormID,
+			UserID: m.AddAdmin.UserID,
+		}, nil
+	case m.RemoveAdmin != nil:
+		return types.RemoveAdmin{
+			FormID: m.RemoveAdmin.FormID,
+			UserID: m.RemoveAdmin.UserID,
+		}, nil
 	}
 
 	return nil, xerrors.Errorf("empty type: %s", data)
@@ -206,6 +230,8 @@ type TransactionJSON struct {
 	CombineShares     *CombineSharesJSON     `json:",omitempty"`
 	CancelForm        *CancelFormJSON        `json:",omitempty"`
 	DeleteForm        *DeleteFormJSON        `json:",omitempty"`
+	AddAdmin          *AddAdminJSON          `json:",omitempty"`
+	RemoveAdmin       *RemoveAdminJSON       `json:",omitempty"`
 }
 
 // CreateFormJSON is the JSON representation of a CreateForm transaction
@@ -266,6 +292,20 @@ type CancelFormJSON struct {
 // DeleteFormJSON is the JSON representation of a DeleteForm transaction
 type DeleteFormJSON struct {
 	FormID string
+}
+
+// AdminForm
+
+// AddAdminJSON is the JSON representation of a AddAdmin transaction
+type AddAdminJSON struct {
+	FormID string
+	UserID string
+}
+
+// RemoveAdminJSON is the JSON representation of a RemoveAdmin transaction
+type RemoveAdminJSON struct {
+	FormID string
+	UserID string
 }
 
 func decodeCastVote(ctx serde.Context, m CastVoteJSON) (serde.Message, error) {

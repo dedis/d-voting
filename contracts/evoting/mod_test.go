@@ -1101,6 +1101,128 @@ func TestRegisterContract(t *testing.T) {
 	RegisterContract(native.NewExecution(), Contract{})
 }
 
+// ===============
+// Admin Form Test
+
+func TestCommand_AdminForm(t *testing.T) {
+	initMetrics()
+
+	dummyUID := "123456"
+
+	addAdmin := types.AddAdmin{FormID: fakeFormID, UserID: dummyUID}
+	data, err := addAdmin.Serialize(ctx)
+	require.NoError(t, err)
+
+	adminForm := types.AdminForm{FormID: fakeFormID, AdminList: make([]int, 0)}
+	adminFormBuf, err := adminForm.Serialize(ctx)
+	require.NoError(t, err)
+
+	dummyForm, contract := initFormAndContract()
+	_, err = dummyForm.Serialize(ctx)
+	require.NoError(t, err)
+
+	cmd := evotingCommand{
+		Contract: &contract,
+	}
+
+	err = cmd.addAdminForm(fake.NewSnapshot(), makeStep(t))
+	require.EqualError(t, err, getTransactionErr)
+
+	err = cmd.addAdminForm(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
+	require.EqualError(t, err, unmarshalTransactionErr)
+
+	err = cmd.addAdminForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
+	require.ErrorContains(t, err, "failed to get key")
+
+	snap := fake.NewSnapshot()
+
+	err = snap.Set(dummyFormIDBuff, invalidForm)
+	require.NoError(t, err)
+
+	err = cmd.addAdminForm(snap, makeStep(t, FormArg, string(data)))
+	require.ErrorContains(t, err, deserializeErr)
+
+	err = snap.Set(dummyFormIDBuff, adminFormBuf) //instead of formBuf
+	require.NoError(t, err)
+
+	fmt.Printf("test")
+
+	/*dummyForm.BallotSize = 29
+
+	formBuf, err = dummyForm.Serialize(ctx)
+	require.NoError(t, err)
+
+	err = snap.Set(dummyFormIDBuff, formBuf)
+	require.NoError(t, err)
+
+	// encrypt a real message :
+	RandomStream := suite.RandomStream()
+	h := suite.Scalar().Pick(RandomStream)
+	pubKey := suite.Point().Mul(h, nil)
+
+	M := suite.Point().Embed([]byte("fakeVote"), random.New())
+
+	// ElGamal-encrypt the point to produce ciphertext (K,C).
+	k := suite.Scalar().Pick(random.New()) // ephemeral private key
+	K := suite.Point().Mul(k, nil)         // ephemeral DH public key
+	S := suite.Point().Mul(k, pubKey)      // ephemeral DH shared secret
+	C := S.Add(S, M)                       // message blinded with secret
+
+	castVote.Ballot = types.Ciphervote{
+		types.EGPair{
+			K: K,
+			C: C,
+		},
+	}
+
+	castVote.FormID = "X"
+
+	data, err = castVote.Serialize(ctx)
+	require.NoError(t, err)
+
+	err = snap.Set(dummyFormIDBuff, formBuf)
+	require.NoError(t, err)
+
+	err = cmd.castVote(snap, makeStep(t, FormArg, string(data)))
+	require.EqualError(t, err, "failed to get form: failed to decode "+
+		"formIDHex: encoding/hex: invalid byte: U+0058 'X'")
+
+	dummyForm.FormID = fakeFormID
+
+	formBuf, err = dummyForm.Serialize(ctx)
+	require.NoError(t, err)
+
+	err = snap.Set(dummyFormIDBuff, formBuf)
+	require.NoError(t, err)
+
+	castVote.FormID = fakeFormID
+
+	data, err = castVote.Serialize(ctx)
+	require.NoError(t, err)
+
+	err = cmd.castVote(snap, makeStep(t, FormArg, string(data)))
+	require.NoError(t, err)
+
+	res, err := snap.Get(dummyFormIDBuff)
+	require.NoError(t, err)
+
+	message, err := formFac.Deserialize(ctx, res)
+	require.NoError(t, err)
+
+	form, ok := message.(types.Form)
+	require.True(t, ok)
+
+	require.Equal(t, uint32(1), form.BallotCount)
+	suff, err := form.Suffragia(ctx, snap)
+	require.NoError(t, err)
+	require.True(t, castVote.Ballot.Equal(suff.Ciphervotes[0]))
+
+	require.Equal(t, castVote.VoterID, suff.VoterIDs[0])
+	require.Equal(t, float64(form.BallotCount), testutil.ToFloat64(PromFormBallots))
+
+	*/
+}
+
 // -----------------------------------------------------------------------------
 // Utility functions
 
