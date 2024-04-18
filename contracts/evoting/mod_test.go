@@ -97,6 +97,12 @@ func TestExecute(t *testing.T) {
 	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdCancelForm)))
 	require.EqualError(t, err, fake.Err("failed to cancel form"))
 
+	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdAddAdminForm)))
+	require.EqualError(t, err, fake.Err("failed to add admin"))
+
+	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdRemoveAdminForm)))
+	require.EqualError(t, err, fake.Err("failed to remove admin"))
+
 	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, "fake"))
 	require.EqualError(t, err, "unknown command: fake")
 
@@ -1329,6 +1335,14 @@ func (s fakeStore) Set(key, value []byte) error {
 
 type fakeCmd struct {
 	err error
+}
+
+func (c fakeCmd) addAdminForm(snap store.Snapshot, step execution.Step) error {
+	return c.err
+}
+
+func (c fakeCmd) removeAdminForm(snap store.Snapshot, step execution.Step) error {
+	return c.err
 }
 
 func (c fakeCmd) createForm(snap store.Snapshot, step execution.Step) error {

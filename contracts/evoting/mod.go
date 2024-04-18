@@ -258,12 +258,12 @@ func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 	case CmdAddAdminForm:
 		err := c.cmd.addAdminForm(snap, step)
 		if err != nil {
-			return xerrors.Errorf("failed to delete form: %v", err)
+			return xerrors.Errorf("failed to add admin: %v", err)
 		}
 	case CmdRemoveAdminForm:
 		err := c.cmd.removeAdminForm(snap, step)
 		if err != nil {
-			return xerrors.Errorf("failed to delete form: %v", err)
+			return xerrors.Errorf("failed to remove admin: %v", err)
 		}
 	default:
 		return xerrors.Errorf("unknown command: %s", cmd)
