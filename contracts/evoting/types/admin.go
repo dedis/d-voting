@@ -6,6 +6,7 @@ import (
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/registry"
 	"golang.org/x/xerrors"
+	"strconv"
 )
 
 var adminFormFormat = registry.NewSimpleRegistry()
@@ -42,6 +43,51 @@ func (af AdminForm) Deserialize(ctx serde.Context, data []byte) (serde.Message, 
 	}
 
 	return message, nil
+}
+
+// AddAdmin add a new admin to the system.
+func (af *AdminForm) AddAdmin(userID string) error {
+	sciperInt, err := strconv.Atoi(userID)
+	if err != nil {
+		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
+	}
+
+	af.AdminList = append(af.AdminList, sciperInt)
+
+	return nil
+}
+
+// IsAdmin return the index of admin if userID is one, else return -1
+func (af *AdminForm) IsAdmin(userID string) int {
+	sciperInt, err := strconv.Atoi(userID)
+	if err != nil {
+		return -1
+	}
+
+	for i := 0; i < len(af.AdminList); i++ {
+		if af.AdminList[i] == sciperInt {
+			return i
+		}
+	}
+
+	return -1
+}
+
+// RemoveAdmin add a new admin to the system.
+func (af *AdminForm) RemoveAdmin(userID string) error {
+	_, err := strconv.Atoi(userID)
+	if err != nil {
+		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
+	}
+
+	index := af.IsAdmin(userID)
+
+	if index < 0 {
+		return xerrors.Errorf("Error while retrieving the index of the element.")
+	}
+
+	af.AdminList = append(af.AdminList[:index], af.AdminList[index+1:]...)
+	return nil
 }
 
 func AdminFormFromStore(ctx serde.Context, adminFormFac serde.Factory, adminFormIDHex string, store store.Readable) (AdminForm, error) {
