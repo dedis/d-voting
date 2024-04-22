@@ -76,6 +76,8 @@ func (formFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, erro
 			PubsharesUnits:   pubsharesUnits,
 			DecryptedBallots: m.DecryptedBallots,
 			RosterBuf:        rosterBuf,
+			Owners:           m.Owners,
+			Voters:           m.Voters,
 		}
 
 		buff, err := ctx.Marshal(&formJSON)
@@ -159,6 +161,8 @@ func (formFormat) Decode(ctx serde.Context, data []byte) (serde.Message, error) 
 		PubsharesUnits:     pubSharesSubmissions,
 		DecryptedBallots:   formJSON.DecryptedBallots,
 		Roster:             roster,
+		Owners:             formJSON.Owners,
+		Voters:             formJSON.Voters,
 	}, nil
 }
 
@@ -206,6 +210,12 @@ type FormJSON struct {
 	// authority.Authority.
 
 	RosterBuf []byte
+
+	// Store the list of admins SCIPER that are Owners of the form.
+	Owners []string
+
+	// Store the list of SCIPER of user that are Voters on the form.
+	Voters []string
 }
 
 // ShuffleInstanceJSON defines the JSON representation of a shuffle instance

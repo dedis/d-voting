@@ -85,6 +85,10 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 		Indexes:   make([]int, 0),
 	}
 
+	// Initial owner is the creator
+	owners := make([]string, 1)
+	owners[0] = tx.UserID
+
 	form := types.Form{
 		FormID:        hex.EncodeToString(formIDBuf),
 		Configuration: tx.Configuration,
@@ -98,6 +102,8 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 		// that 1/3 of the participants go away, the form will never end.
 		Roster:           roster,
 		ShuffleThreshold: threshold.ByzantineThreshold(roster.Len()),
+		Owners:           owners,
+		Voters:           make([]string, 0),
 	}
 
 	PromFormStatus.WithLabelValues(form.FormID).Set(float64(form.Status))

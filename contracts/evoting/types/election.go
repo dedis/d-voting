@@ -111,6 +111,12 @@ type Form struct {
 	// authority.Authority.
 
 	Roster authority.Authority
+
+	// Store the list of admins SCIPER that are Owners of the form.
+	Owners []string
+
+	// Store the list of SCIPER of user that are Voters on the form.
+	Voters []string
 }
 
 // Serialize implements serde.Message
