@@ -1111,21 +1111,25 @@ func TestRegisterContract(t *testing.T) {
 func TestCommand_AdminForm(t *testing.T) {
 	initMetrics()
 
+	// Initialize a contract and an AdminForm
 	adminForm, contract := initAdminFormAndContract()
-
-	dummyUID := "123456"
-
-	addAdmin := types.AddAdmin{FormID: fakeAdminFormID, UserID: dummyUID}
-	data, err := addAdmin.Serialize(ctx)
-	require.NoError(t, err)
-
 	adminFormBuf, err := adminForm.Serialize(ctx)
 	require.NoError(t, err)
 
+	// Initialize the command handler to post on the ledger
 	cmd := evotingCommand{
 		Contract: &contract,
 	}
 
+	// We define a dummy userID which we are going to add admin permission.
+	dummyUID := "123456"
+
+	// We initialize the command to add permission.
+	addAdmin := types.AddAdmin{FormID: fakeAdminFormID, UserID: dummyUID}
+	data, err := addAdmin.Serialize(ctx)
+	require.NoError(t, err)
+
+	// The following test are there to check error handling
 	err = cmd.addAdminForm(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
 
@@ -1143,32 +1147,21 @@ func TestCommand_AdminForm(t *testing.T) {
 	err = cmd.addAdminForm(snap, makeStep(t, FormArg, string(data)))
 	require.ErrorContains(t, err, "failed to deserialize AdminForm")
 
-	err = snap.Set(dummyAdminFormIDBuff, adminFormBuf) //instead of formBuf
-	require.NoError(t, err)
-
+	// We reset everything to perform the real test
 	adminFormBuf, err = adminForm.Serialize(ctx)
 	require.NoError(t, err)
 
 	err = snap.Set(dummyAdminFormIDBuff, adminFormBuf)
 	require.NoError(t, err)
-
-	//dummyForm.FormID = fakeFormID
-	adminForm.FormID = fakeAdminFormID
-
-	adminFormBuf, err = adminForm.Serialize(ctx)
-	require.NoError(t, err)
-
-	err = snap.Set(dummyAdminFormIDBuff, adminFormBuf)
-	require.NoError(t, err)
-
-	addAdmin.FormID = fakeAdminFormID
 
 	data, err = addAdmin.Serialize(ctx)
 	require.NoError(t, err)
 
+	// We perform below the command on the ledger
 	err = cmd.addAdminForm(snap, makeStep(t, FormArg, string(data)))
 	require.NoError(t, err)
 
+	// We retrieve the form on the ledger
 	res, err := snap.Get(dummyAdminFormIDBuff)
 	require.NoError(t, err)
 
@@ -1178,15 +1171,20 @@ func TestCommand_AdminForm(t *testing.T) {
 	adminForm, ok := message.(types.AdminForm)
 	require.True(t, ok)
 
+	// We check that our dummy User is now admin (if not admin return -1; else return admin index in AdminForm).
 	require.True(t, adminForm.IsAdmin(dummyUID) > -1)
 
+	// Now we want to remove its admin privilege.
+	// Initialization of the command
 	removeAdmin := types.RemoveAdmin{FormID: fakeAdminFormID, UserID: dummyUID}
 	data, err = removeAdmin.Serialize(ctx)
 	require.NoError(t, err)
 
+	// Publish the command on the ledger.
 	err = cmd.removeAdminForm(snap, makeStep(t, FormArg, string(data)))
 	require.NoError(t, err)
 
+	// We retrieve the Admin Form from the ledger.
 	res, err = snap.Get(dummyAdminFormIDBuff)
 	require.NoError(t, err)
 
@@ -1196,6 +1194,7 @@ func TestCommand_AdminForm(t *testing.T) {
 	adminForm, ok = message.(types.AdminForm)
 	require.True(t, ok)
 
+	// We check that now our dummy user is not admin anymore (return -1)
 	require.True(t, adminForm.IsAdmin(dummyUID) == -1)
 }
 
