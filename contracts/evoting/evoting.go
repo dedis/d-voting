@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"math/rand"
+	"strconv"
 	"strings"
 
 	"go.dedis.ch/dela"
@@ -86,8 +87,14 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 	}
 
 	// Initial owner is the creator
-	owners := make([]string, 1)
-	owners[0] = tx.UserID
+	owners := make([]int, 1)
+
+	sciperInt, err := strconv.Atoi(tx.UserID)
+	if err != nil {
+		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
+	}
+
+	owners[0] = sciperInt
 
 	form := types.Form{
 		FormID:        hex.EncodeToString(formIDBuf),
@@ -103,7 +110,7 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 		Roster:           roster,
 		ShuffleThreshold: threshold.ByzantineThreshold(roster.Len()),
 		Owners:           owners,
-		Voters:           make([]string, 0),
+		Voters:           make([]int, 0),
 	}
 
 	PromFormStatus.WithLabelValues(form.FormID).Set(float64(form.Status))
