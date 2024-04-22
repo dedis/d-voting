@@ -46,11 +46,13 @@ var invalidForm = []byte("fake form")
 var ctx serde.Context
 
 var formFac serde.Factory
+var adminFormFac serde.Factory
 var transactionFac serde.Factory
 
 func init() {
 	ciphervoteFac := types.CiphervoteFactory{}
 	formFac = types.NewFormFactory(ciphervoteFac, fakeAuthorityFactory{})
+	adminFormFac = types.AdminFormFactory{}
 	transactionFac = types.NewTransactionFactory(ciphervoteFac)
 
 	ctx = sjson.NewContext()
@@ -1150,9 +1152,6 @@ func TestCommand_AdminForm(t *testing.T) {
 	err = snap.Set(dummyAdminFormIDBuff, adminFormBuf)
 	require.NoError(t, err)
 
-	err = cmd.addAdminForm(snap, makeStep(t, FormArg, string(data)))
-	require.ErrorContains(t, err, "failed to get AdminForm: failed to get key ")
-
 	//dummyForm.FormID = fakeFormID
 	adminForm.FormID = fakeAdminFormID
 
@@ -1169,25 +1168,35 @@ func TestCommand_AdminForm(t *testing.T) {
 
 	err = cmd.addAdminForm(snap, makeStep(t, FormArg, string(data)))
 	require.NoError(t, err)
-	/*
-		res, err := snap.Get(dummyFormIDBuff)
-		require.NoError(t, err)
 
-		message, err := formFac.Deserialize(ctx, res)
-		require.NoError(t, err)
+	res, err := snap.Get(dummyAdminFormIDBuff)
+	require.NoError(t, err)
 
-		form, ok := message.(types.Form)
-		require.True(t, ok)
+	message, err := adminFormFac.Deserialize(ctx, res)
+	require.NoError(t, err)
 
-		require.Equal(t, uint32(1), form.BallotCount)
-		suff, err := form.Suffragia(ctx, snap)
-		require.NoError(t, err)
-		require.True(t, castVote.Ballot.Equal(suff.Ciphervotes[0]))
+	adminForm, ok := message.(types.AdminForm)
+	require.True(t, ok)
 
-		require.Equal(t, castVote.VoterID, suff.VoterIDs[0])
-		require.Equal(t, float64(form.BallotCount), testutil.ToFloat64(PromFormBallots))
+	require.True(t, adminForm.IsAdmin(dummyUID) > -1)
 
-	*/
+	removeAdmin := types.RemoveAdmin{FormID: fakeAdminFormID, UserID: dummyUID}
+	data, err = removeAdmin.Serialize(ctx)
+	require.NoError(t, err)
+
+	err = cmd.removeAdminForm(snap, makeStep(t, FormArg, string(data)))
+	require.NoError(t, err)
+
+	res, err = snap.Get(dummyAdminFormIDBuff)
+	require.NoError(t, err)
+
+	message, err = adminFormFac.Deserialize(ctx, res)
+	require.NoError(t, err)
+
+	adminForm, ok = message.(types.AdminForm)
+	require.True(t, ok)
+
+	require.True(t, adminForm.IsAdmin(dummyUID) == -1)
 }
 
 // -----------------------------------------------------------------------------

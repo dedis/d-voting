@@ -938,7 +938,7 @@ func (e evotingCommand) getAdminForm(formIDHex string,
 		return form, nil, xerrors.Errorf("failed to decode adminFormIDHex: %v", err)
 	}
 
-	form, err = types.AdminFormFromStore(e.context, e.formFac, formIDHex, snap)
+	form, err = types.AdminFormFromStore(e.context, e.adminFormFac, formIDHex, snap)
 	if err != nil {
 		return form, nil, xerrors.Errorf("failed to get key %q: %v", formIDBuf, err)
 	}

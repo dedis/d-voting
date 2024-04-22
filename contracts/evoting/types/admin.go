@@ -118,3 +118,21 @@ func AdminFormFromStore(ctx serde.Context, adminFormFac serde.Factory, adminForm
 
 	return adminForm, nil
 }
+
+// AdminFormFactory provides the mean to deserialize a AdminForm. It naturally
+// uses the formFormat.
+//
+// - implements serde.Factory
+type AdminFormFactory struct{}
+
+// Deserialize implements serde.Factory
+func (AdminFormFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
+	format := adminFormFormat.Get(ctx.GetFormat())
+
+	message, err := format.Decode(ctx, data)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to decode: %v", err)
+	}
+
+	return message, nil
+}
