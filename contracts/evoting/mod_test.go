@@ -32,6 +32,7 @@ import (
 var dummyFormIDBuff = []byte("dummyID")
 var dummyAdminFormIDBuff = []byte("dummyAdminID")
 var fakeFormID = hex.EncodeToString(dummyFormIDBuff)
+var fakeAdminFormID = hex.EncodeToString(dummyAdminFormIDBuff)
 var fakeCommonSigner = bls.NewSigner()
 
 const getTransactionErr = "failed to get transaction: \"evoting:arg\" not found in tx arg"
@@ -1108,15 +1109,14 @@ func TestRegisterContract(t *testing.T) {
 func TestCommand_AdminForm(t *testing.T) {
 	initMetrics()
 
-	_, contract := initFormAndContract()
+	adminForm, contract := initAdminFormAndContract()
 
 	dummyUID := "123456"
 
-	addAdmin := types.AddAdmin{FormID: fakeFormID, UserID: dummyUID}
+	addAdmin := types.AddAdmin{FormID: fakeAdminFormID, UserID: dummyUID}
 	data, err := addAdmin.Serialize(ctx)
 	require.NoError(t, err)
 
-	adminForm := types.AdminForm{FormID: fakeFormID, AdminList: make([]int, 0)}
 	adminFormBuf, err := adminForm.Serialize(ctx)
 	require.NoError(t, err)
 
@@ -1154,7 +1154,7 @@ func TestCommand_AdminForm(t *testing.T) {
 	require.ErrorContains(t, err, "failed to get AdminForm: failed to get key ")
 
 	//dummyForm.FormID = fakeFormID
-	adminForm.FormID = fakeFormID
+	adminForm.FormID = fakeAdminFormID
 
 	adminFormBuf, err = adminForm.Serialize(ctx)
 	require.NoError(t, err)
@@ -1162,7 +1162,7 @@ func TestCommand_AdminForm(t *testing.T) {
 	err = snap.Set(dummyAdminFormIDBuff, adminFormBuf)
 	require.NoError(t, err)
 
-	addAdmin.FormID = fakeFormID
+	addAdmin.FormID = fakeAdminFormID
 
 	data, err = addAdmin.Serialize(ctx)
 	require.NoError(t, err)
@@ -1214,6 +1214,25 @@ func initFormAndContract() (types.Form, Contract) {
 		DecryptedBallots: nil,
 		ShuffleThreshold: 0,
 		Roster:           fake.Authority{},
+	}
+
+	service := fakeAccess{err: fake.GetError()}
+	rosterFac := fakeAuthorityFactory{}
+
+	contract := NewContract(service, fakeDkg, rosterFac)
+
+	return dummyForm, contract
+}
+
+func initAdminFormAndContract() (types.AdminForm, Contract) {
+	fakeDkg := fakeDKG{
+		actor: fakeDkgActor{},
+		err:   nil,
+	}
+
+	dummyForm := types.AdminForm{
+		FormID:    fakeAdminFormID,
+		AdminList: make([]int, 0),
 	}
 
 	service := fakeAccess{err: fake.GetError()}
