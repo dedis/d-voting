@@ -34,7 +34,8 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Parallel()
 
-		adminID := "first admin"
+		// Dummy UserID in SCIPER format
+		adminID := "123456"
 
 		// ##### SETUP ENV #####
 

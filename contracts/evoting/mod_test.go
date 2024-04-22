@@ -34,6 +34,7 @@ var dummyAdminFormIDBuff = []byte("dummyAdminID")
 var fakeFormID = hex.EncodeToString(dummyFormIDBuff)
 var fakeAdminFormID = hex.EncodeToString(dummyAdminFormIDBuff)
 var fakeCommonSigner = bls.NewSigner()
+var dummyUserID = "123456"
 
 const getTransactionErr = "failed to get transaction: \"evoting:arg\" not found in tx arg"
 const unmarshalTransactionErr = "failed to get transaction: failed to deserialize " +
@@ -130,7 +131,7 @@ func TestCommand_CreateForm(t *testing.T) {
 	}
 
 	createForm := types.CreateForm{
-		UserID: "dummyUserID",
+		UserID: dummyUserID,
 	}
 
 	data, err := createForm.Serialize(ctx)
@@ -319,7 +320,7 @@ func TestCommand_CloseForm(t *testing.T) {
 
 	closeForm := types.CloseForm{
 		FormID: fakeFormID,
-		UserID: "dummyUserId",
+		UserID: dummyUserID,
 	}
 
 	data, err := closeForm.Serialize(ctx)
@@ -945,7 +946,7 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 func TestCommand_DecryptBallots(t *testing.T) {
 	decryptBallot := types.CombineShares{
 		FormID: fakeFormID,
-		UserID: hex.EncodeToString([]byte("dummyUserId")),
+		UserID: dummyUserID,
 	}
 
 	data, err := decryptBallot.Serialize(ctx)
@@ -1044,7 +1045,7 @@ func TestCommand_DecryptBallots(t *testing.T) {
 func TestCommand_CancelForm(t *testing.T) {
 	cancelForm := types.CancelForm{
 		FormID: fakeFormID,
-		UserID: "dummyUserId",
+		UserID: dummyUserID,
 	}
 
 	data, err := cancelForm.Serialize(ctx)
