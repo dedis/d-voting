@@ -212,10 +212,10 @@ type FormJSON struct {
 	RosterBuf []byte
 
 	// Store the list of admins SCIPER that are Owners of the form.
-	Owners []string
+	Owners []int
 
 	// Store the list of SCIPER of user that are Voters on the form.
-	Voters []string
+	Voters []int
 }
 
 // ShuffleInstanceJSON defines the JSON representation of a shuffle instance

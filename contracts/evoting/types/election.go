@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"strconv"
 
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
@@ -113,10 +114,10 @@ type Form struct {
 	Roster authority.Authority
 
 	// Store the list of admins SCIPER that are Owners of the form.
-	Owners []string
+	Owners []int
 
 	// Store the list of SCIPER of user that are Voters on the form.
-	Voters []string
+	Voters []int
 }
 
 // Serialize implements serde.Message
@@ -415,4 +416,101 @@ type PubsharesUnits struct {
 	// Indexes is the index of the nodes who made each corresponding
 	// PubsharesUnit
 	Indexes []int
+}
+
+// AddVoter add a new admin to the system.
+func (s *Form) AddVoter(userID string) error {
+	sciperInt, err := strconv.Atoi(userID)
+	if err != nil {
+		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
+	}
+
+	s.Voters = append(s.Voters, sciperInt)
+
+	return nil
+}
+
+// IsVoter return the index of admin if userID is one, else return -1
+func (s *Form) IsVoter(userID string) int {
+	sciperInt, err := strconv.Atoi(userID)
+	if err != nil {
+		return -1
+	}
+
+	for i := 0; i < len(s.Voters); i++ {
+		if s.Voters[i] == sciperInt {
+			return i
+		}
+	}
+
+	return -1
+}
+
+// RemoveVoter add a new admin to the system.
+func (s *Form) RemoveVoter(userID string) error {
+	_, err := strconv.Atoi(userID)
+	if err != nil {
+		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
+	}
+
+	index := s.IsVoter(userID)
+
+	if index < 0 {
+		return xerrors.Errorf("Error while retrieving the index of the element.")
+	}
+
+	s.Voters = append(s.Voters[:index], s.Voters[index+1:]...)
+	return nil
+}
+
+// AddOwner add a new admin to the system.
+func (s *Form) AddOwner(userID string) error {
+	sciperInt, err := strconv.Atoi(userID)
+	if err != nil {
+		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
+	}
+
+	// TODO need to check that the new user is admin !
+	s.Owners = append(s.Owners, sciperInt)
+
+	return nil
+}
+
+// IsOwner return the index of admin if userID is one, else return -1
+func (s *Form) IsOwner(userID string) int {
+	sciperInt, err := strconv.Atoi(userID)
+	if err != nil {
+		return -1
+	}
+
+	for i := 0; i < len(s.Owners); i++ {
+		if s.Owners[i] == sciperInt {
+			return i
+		}
+	}
+
+	return -1
+}
+
+// RemoveOwner add a new admin to the system.
+func (s *Form) RemoveOwner(userID string) error {
+	_, err := strconv.Atoi(userID)
+	if err != nil {
+		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
+	}
+
+	index := s.IsOwner(userID)
+
+	if index < 0 {
+		return xerrors.Errorf("Error while retrieving the index of the element.")
+	}
+
+	// We don't want to have a form without any Owners.
+	if len(s.Owners) <= 1 {
+		return xerrors.Errorf("Error, cannot remove this owner because it is the " +
+			"only one remaining for this form")
+	}
+
+	s.Owners = append(s.Owners[:index], s.Owners[index+1:]...)
+	return nil
 }
