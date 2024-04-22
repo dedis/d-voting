@@ -1113,7 +1113,7 @@ func TestCommand_AdminForm(t *testing.T) {
 
 	// Initialize a contract and an AdminForm
 	adminForm, contract := initAdminFormAndContract()
-	adminFormBuf, err := adminForm.Serialize(ctx)
+	_, err := adminForm.Serialize(ctx)
 	require.NoError(t, err)
 
 	// Initialize the command handler to post on the ledger
@@ -1148,7 +1148,7 @@ func TestCommand_AdminForm(t *testing.T) {
 	require.ErrorContains(t, err, "failed to deserialize AdminForm")
 
 	// We reset everything to perform the real test
-	adminFormBuf, err = adminForm.Serialize(ctx)
+	adminFormBuf, err := adminForm.Serialize(ctx)
 	require.NoError(t, err)
 
 	err = snap.Set(dummyAdminFormIDBuff, adminFormBuf)
