@@ -1171,7 +1171,8 @@ func TestCommand_AdminForm(t *testing.T) {
 	adminForm, ok := message.(types.AdminForm)
 	require.True(t, ok)
 
-	// We check that our dummy User is now admin (if not admin return -1; else return admin index in AdminForm).
+	// We check that our dummy User is now admin
+	// (if not admin return -1; else return admin index in AdminForm).
 	require.True(t, adminForm.IsAdmin(dummyUID) > -1)
 
 	// Now we want to remove its admin privilege.
