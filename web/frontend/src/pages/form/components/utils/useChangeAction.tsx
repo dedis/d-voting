@@ -313,57 +313,58 @@ const useChangeAction = (
   }, [userConfirmedDeleting]);
 
   useEffect(() => {
-    // requests to ENDPOINT_ADD_ROLE cannot be done in parallel because on the
-    // backend, auths are reloaded from the DB each time there is an update.
-    // While auths are reloaded, they cannot be checked in a predictable way.
-    // See isAuthorized, addPolicy, and addListPolicy in backend/src/authManager.ts
-    async function sendVoters(providedScipers) {
-      const chunkSize = 1000;
-      for (let i = 0; i < providedScipers.length; i += chunkSize) {
-        const chunk = providedScipers.slice(i, i + chunkSize);
-        const request = {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userIds: chunk, subject: formID, permission: 'vote' }),
-        };
-        await sendFetchRequest(ENDPOINT_ADD_ROLE, request, setIsPosting);
-      }
-    }
     if (userConfirmedAddVoters.length > 0) {
-      const badScipers = [];
+      let sciperErrs = '';
 
       const providedScipers = userConfirmedAddVoters.split('\n');
       setUserConfirmedAddVoters('');
 
       for (const sciperStr of providedScipers) {
         const sciper = parseInt(sciperStr, 10);
+        if (isNaN(sciper)) {
+          sciperErrs += `'${sciperStr}' is not a number; `;
+        }
         if (sciper < 100000 || sciper > 999999) {
-          console.error(`SCIPER is out of range. ${sciper} is not between 100000 and 999999`);
-          badScipers.push(sciper);
+          sciperErrs += `${sciper} is out of range (100000-999999); `;
         }
       }
-      if (badScipers.length > 0) {
-        console.error('There are bad scipers. Stopping here.');
-        // TODO error dialog
-        // setUserConfirmedAddVoters('');
-
+      if (sciperErrs.length > 0) {
+        console.error('Invalid SCIPER numbers found. No request will be send.');
+        setTextModalError(
+          `Invalid SCIPER numbers found. No request has been send. Please fix the following errors: ${sciperErrs}`
+        );
+        setShowModalError(true);
         return;
       }
-
-      try {
-        sendVoters(providedScipers)
-          .catch(console.error)
-          .then(() => {
-            setShowModalAddVotersSuccess(true);
-          });
-      } catch (e) {
-        console.error(`While adding voter: ${e}`);
-        setUserConfirmedAddVoters('Error uploading scipers');
-        setShowModalAddVoters(false);
-      }
+      // requests to ENDPOINT_ADD_ROLE cannot be done in parallel because on the
+      // backend, auths are reloaded from the DB each time there is an update.
+      // While auths are reloaded, they cannot be checked in a predictable way.
+      // See isAuthorized, addPolicy, and addListPolicy in backend/src/authManager.ts
+      (async () => {
+        try {
+          const chunkSize = 1000;
+          for (let i = 0; i < providedScipers.length; i += chunkSize) {
+            await sendFetchRequest(
+              ENDPOINT_ADD_ROLE,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userIds: providedScipers.slice(i, i + chunkSize),
+                  subject: formID,
+                  permission: 'vote',
+                }),
+              },
+              setIsPosting
+            );
+          }
+        } catch (e) {
+          console.error(`While adding voter: ${e}`);
+          setShowModalAddVoters(false);
+        }
+      })();
     }
-    // setUserConfirmedAddVoters(false);
-  }, [formID, sendFetchRequest, userConfirmedAddVoters]);
+  }, [formID, sendFetchRequest, userConfirmedAddVoters, t, setTextModalError, setShowModalError]);
 
   useEffect(() => {
     if (userConfirmedProxySetup) {
