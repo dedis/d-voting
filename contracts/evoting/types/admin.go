@@ -23,10 +23,10 @@ type AdminForm struct {
 	AdminList []int
 }
 
-func (a AdminForm) Serialize(ctx serde.Context) ([]byte, error) {
+func (adminForm AdminForm) Serialize(ctx serde.Context) ([]byte, error) {
 	format := adminFormFormat.Get(ctx.GetFormat())
 
-	data, err := format.Encode(ctx, a)
+	data, err := format.Encode(ctx, adminForm)
 	if err != nil {
 		return nil, xerrors.Errorf("Failed to encode AdminForm: %v", err)
 	}
@@ -34,7 +34,7 @@ func (a AdminForm) Serialize(ctx serde.Context) ([]byte, error) {
 	return data, nil
 }
 
-func (a AdminForm) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
+func (adminForm AdminForm) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
 	format := adminFormFormat.Get(ctx.GetFormat())
 
 	message, err := format.Decode(ctx, data)
@@ -46,26 +46,26 @@ func (a AdminForm) Deserialize(ctx serde.Context, data []byte) (serde.Message, e
 }
 
 // AddAdmin add a new admin to the system.
-func (a *AdminForm) AddAdmin(userID string) error {
+func (adminForm *AdminForm) AddAdmin(userID string) error {
 	sciperInt, err := strconv.Atoi(userID)
 	if err != nil {
 		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
 	}
 
-	a.AdminList = append(a.AdminList, sciperInt)
+	adminForm.AdminList = append(adminForm.AdminList, sciperInt)
 
 	return nil
 }
 
 // IsAdmin return the index of admin if userID is one, else return -1
-func (a *AdminForm) IsAdmin(userID string) int {
+func (adminForm *AdminForm) IsAdmin(userID string) int {
 	sciperInt, err := strconv.Atoi(userID)
 	if err != nil {
 		return -1
 	}
 
-	for i := 0; i < len(a.AdminList); i++ {
-		if a.AdminList[i] == sciperInt {
+	for i := 0; i < len(adminForm.AdminList); i++ {
+		if adminForm.AdminList[i] == sciperInt {
 			return i
 		}
 	}
@@ -74,19 +74,19 @@ func (a *AdminForm) IsAdmin(userID string) int {
 }
 
 // RemoveAdmin add a new admin to the system.
-func (a *AdminForm) RemoveAdmin(userID string) error {
+func (adminForm *AdminForm) RemoveAdmin(userID string) error {
 	_, err := strconv.Atoi(userID)
 	if err != nil {
 		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
 	}
 
-	index := a.IsAdmin(userID)
+	index := adminForm.IsAdmin(userID)
 
 	if index < 0 {
 		return xerrors.Errorf("Error while retrieving the index of the element.")
 	}
 
-	a.AdminList = append(a.AdminList[:index], a.AdminList[index+1:]...)
+	adminForm.AdminList = append(adminForm.AdminList[:index], adminForm.AdminList[index+1:]...)
 	return nil
 }
 
