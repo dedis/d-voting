@@ -132,8 +132,6 @@ const (
 	CmdAddAdminForm Command = "ADD_ADMIN"
 	// CmdRemoveAdminForm is the command to delete a form
 	CmdRemoveAdminForm Command = "REMOVE_ADMIN"
-	// CmdRemoveAdminForm is the command to delete a form
-	CmdManageAdminForm Command = "MANAGE_ADMIN"
 )
 
 type AdminFormAction int

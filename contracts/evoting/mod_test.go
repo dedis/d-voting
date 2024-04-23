@@ -107,9 +107,6 @@ func TestExecute(t *testing.T) {
 	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdRemoveAdminForm)))
 	require.EqualError(t, err, fake.Err("failed to remove admin"))
 
-	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdManageAdminForm)))
-	require.EqualError(t, err, fake.Err("failed to remove admin"))
-
 	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, "fake"))
 	require.EqualError(t, err, "unknown command: fake")
 
