@@ -771,26 +771,52 @@ func (e evotingCommand) deleteForm(snap store.Snapshot, step execution.Step) err
 	return nil
 }
 
-// addAdminForm implements commands. It performs the ADD_ADMIN command
-func (e evotingCommand) addAdminForm(snap store.Snapshot, step execution.Step) error {
+// manageAdminForm implements commands. It performs the ADD or REMOVE ADMIN command
+func (e evotingCommand) manageAdminForm(snap store.Snapshot, step execution.Step, action AdminFormAction) error {
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
 	}
 
-	tx, ok := msg.(types.AddAdmin)
-	if !ok {
-		return xerrors.Errorf(errWrongTx, msg)
-	}
+	var form types.AdminForm
+	var formID []byte
 
-	form, formID, err := e.getAdminForm(tx.FormID, snap)
-	if err != nil {
-		return xerrors.Errorf("failed to get AdminForm: %v", err)
-	}
+	switch action {
+	case ADD:
+		tx, ok := msg.(types.AddAdmin)
+		if !ok {
+			return xerrors.Errorf(errWrongTx, msg)
+		}
 
-	err = form.AddAdmin(tx.UserID)
-	if err != nil {
-		return xerrors.Errorf("couldn't add admin: %v", err)
+		form, formID, err = e.getAdminForm(tx.FormID, snap)
+		if err != nil {
+			return xerrors.Errorf("failed to get AdminForm: %v", err)
+		}
+
+		err = form.AddAdmin(tx.UserID)
+		if err != nil {
+			return xerrors.Errorf("couldn't add admin: %v", err)
+		}
+
+	case REMOVE:
+		tx, ok := msg.(types.RemoveAdmin)
+		if !ok {
+			return xerrors.Errorf(errWrongTx, msg)
+		}
+
+		form, formID, err = e.getAdminForm(tx.FormID, snap)
+		if err != nil {
+			return xerrors.Errorf("failed to get AdminForm: %v", err)
+		}
+
+		err = form.RemoveAdmin(tx.UserID)
+		if err != nil {
+			return xerrors.Errorf("couldn't remove admin: %v", err)
+		}
+
+	default:
+		return xerrors.Errorf("couldn't match the AdminForm action provided")
+
 	}
 
 	formBuf, err := form.Serialize(e.context)
@@ -806,40 +832,75 @@ func (e evotingCommand) addAdminForm(snap store.Snapshot, step execution.Step) e
 	return nil
 }
 
-// removeAdminForm implements commands. It performs the REMOVE_ADMIN command
-func (e evotingCommand) removeAdminForm(snap store.Snapshot, step execution.Step) error {
-	msg, err := e.getTransaction(step.Current)
-	if err != nil {
-		return xerrors.Errorf(errGetTransaction, err)
-	}
-
-	tx, ok := msg.(types.RemoveAdmin)
-	if !ok {
-		return xerrors.Errorf(errWrongTx, msg)
-	}
-
-	form, formID, err := e.getAdminForm(tx.FormID, snap)
-	if err != nil {
-		return xerrors.Errorf("failed to get AdminForm: %v", err)
-	}
-
-	err = form.RemoveAdmin(tx.UserID)
-	if err != nil {
-		return xerrors.Errorf("couldn't remove admin: %v", err)
-	}
-
-	formBuf, err := form.Serialize(e.context)
-	if err != nil {
-		return xerrors.Errorf("failed to marshal Form : %v", err)
-	}
-
-	err = snap.Set(formID, formBuf)
-	if err != nil {
-		return xerrors.Errorf("failed to set value: %v", err)
-	}
-
-	return nil
-}
+//// addAdminForm implements commands. It performs the ADD_ADMIN command
+//func (e evotingCommand) addAdminForm(snap store.Snapshot, step execution.Step) error {
+//	msg, err := e.getTransaction(step.Current)
+//	if err != nil {
+//		return xerrors.Errorf(errGetTransaction, err)
+//	}
+//
+//	tx, ok := msg.(types.AddAdmin)
+//	if !ok {
+//		return xerrors.Errorf(errWrongTx, msg)
+//	}
+//
+//	form, formID, err := e.getAdminForm(tx.FormID, snap)
+//	if err != nil {
+//		return xerrors.Errorf("failed to get AdminForm: %v", err)
+//	}
+//
+//	err = form.AddAdmin(tx.UserID)
+//	if err != nil {
+//		return xerrors.Errorf("couldn't add admin: %v", err)
+//	}
+//
+//	formBuf, err := form.Serialize(e.context)
+//	if err != nil {
+//		return xerrors.Errorf("failed to marshal Form : %v", err)
+//	}
+//
+//	err = snap.Set(formID, formBuf)
+//	if err != nil {
+//		return xerrors.Errorf("failed to set value: %v", err)
+//	}
+//
+//	return nil
+//}
+//
+//// removeAdminForm implements commands. It performs the REMOVE_ADMIN command
+//func (e evotingCommand) removeAdminForm(snap store.Snapshot, step execution.Step) error {
+//	msg, err := e.getTransaction(step.Current)
+//	if err != nil {
+//		return xerrors.Errorf(errGetTransaction, err)
+//	}
+//
+//	tx, ok := msg.(types.RemoveAdmin)
+//	if !ok {
+//		return xerrors.Errorf(errWrongTx, msg)
+//	}
+//
+//	form, formID, err := e.getAdminForm(tx.FormID, snap)
+//	if err != nil {
+//		return xerrors.Errorf("failed to get AdminForm: %v", err)
+//	}
+//
+//	err = form.RemoveAdmin(tx.UserID)
+//	if err != nil {
+//		return xerrors.Errorf("couldn't remove admin: %v", err)
+//	}
+//
+//	formBuf, err := form.Serialize(e.context)
+//	if err != nil {
+//		return xerrors.Errorf("failed to marshal Form : %v", err)
+//	}
+//
+//	err = snap.Set(formID, formBuf)
+//	if err != nil {
+//		return xerrors.Errorf("failed to set value: %v", err)
+//	}
+//
+//	return nil
+//}
 
 // isMemberOf is a utility function to verify if a public key is associated to a
 // member of the roster or not. Returns nil if it's the case.
