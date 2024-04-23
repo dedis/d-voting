@@ -23,10 +23,10 @@ type AdminForm struct {
 	AdminList []int
 }
 
-func (af AdminForm) Serialize(ctx serde.Context) ([]byte, error) {
+func (a AdminForm) Serialize(ctx serde.Context) ([]byte, error) {
 	format := adminFormFormat.Get(ctx.GetFormat())
 
-	data, err := format.Encode(ctx, af)
+	data, err := format.Encode(ctx, a)
 	if err != nil {
 		return nil, xerrors.Errorf("Failed to encode AdminForm: %v", err)
 	}
@@ -34,7 +34,7 @@ func (af AdminForm) Serialize(ctx serde.Context) ([]byte, error) {
 	return data, nil
 }
 
-func (af AdminForm) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
+func (a AdminForm) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
 	format := adminFormFormat.Get(ctx.GetFormat())
 
 	message, err := format.Decode(ctx, data)
@@ -46,26 +46,26 @@ func (af AdminForm) Deserialize(ctx serde.Context, data []byte) (serde.Message, 
 }
 
 // AddAdmin add a new admin to the system.
-func (af *AdminForm) AddAdmin(userID string) error {
+func (a *AdminForm) AddAdmin(userID string) error {
 	sciperInt, err := strconv.Atoi(userID)
 	if err != nil {
 		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
 	}
 
-	af.AdminList = append(af.AdminList, sciperInt)
+	a.AdminList = append(a.AdminList, sciperInt)
 
 	return nil
 }
 
 // IsAdmin return the index of admin if userID is one, else return -1
-func (af *AdminForm) IsAdmin(userID string) int {
+func (a *AdminForm) IsAdmin(userID string) int {
 	sciperInt, err := strconv.Atoi(userID)
 	if err != nil {
 		return -1
 	}
 
-	for i := 0; i < len(af.AdminList); i++ {
-		if af.AdminList[i] == sciperInt {
+	for i := 0; i < len(a.AdminList); i++ {
+		if a.AdminList[i] == sciperInt {
 			return i
 		}
 	}
@@ -74,19 +74,19 @@ func (af *AdminForm) IsAdmin(userID string) int {
 }
 
 // RemoveAdmin add a new admin to the system.
-func (af *AdminForm) RemoveAdmin(userID string) error {
+func (a *AdminForm) RemoveAdmin(userID string) error {
 	_, err := strconv.Atoi(userID)
 	if err != nil {
 		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
 	}
 
-	index := af.IsAdmin(userID)
+	index := a.IsAdmin(userID)
 
 	if index < 0 {
 		return xerrors.Errorf("Error while retrieving the index of the element.")
 	}
 
-	af.AdminList = append(af.AdminList[:index], af.AdminList[index+1:]...)
+	a.AdminList = append(a.AdminList[:index], a.AdminList[index+1:]...)
 	return nil
 }
 

@@ -96,10 +96,10 @@ type CreateForm struct {
 }
 
 // Serialize implements serde.Message
-func (ce CreateForm) Serialize(ctx serde.Context) ([]byte, error) {
+func (c CreateForm) Serialize(ctx serde.Context) ([]byte, error) {
 	format := transactionFormats.Get(ctx.GetFormat())
 
-	data, err := format.Encode(ctx, ce)
+	data, err := format.Encode(ctx, c)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to encode create form: %v", err)
 	}
@@ -116,10 +116,10 @@ type OpenForm struct {
 }
 
 // Serialize implements serde.Message
-func (oe OpenForm) Serialize(ctx serde.Context) ([]byte, error) {
+func (o OpenForm) Serialize(ctx serde.Context) ([]byte, error) {
 	format := transactionFormats.Get(ctx.GetFormat())
 
-	data, err := format.Encode(ctx, oe)
+	data, err := format.Encode(ctx, o)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to encode open form: %v", err)
 	}
@@ -138,10 +138,10 @@ type CastVote struct {
 }
 
 // Serialize implements serde.Message
-func (cv CastVote) Serialize(ctx serde.Context) ([]byte, error) {
+func (c CastVote) Serialize(ctx serde.Context) ([]byte, error) {
 	format := transactionFormats.Get(ctx.GetFormat())
 
-	data, err := format.Encode(ctx, cv)
+	data, err := format.Encode(ctx, c)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to encode cast vote: %v", err)
 	}
@@ -159,10 +159,10 @@ type CloseForm struct {
 }
 
 // Serialize implements serde.Message
-func (ce CloseForm) Serialize(ctx serde.Context) ([]byte, error) {
+func (c CloseForm) Serialize(ctx serde.Context) ([]byte, error) {
 	format := transactionFormats.Get(ctx.GetFormat())
 
-	data, err := format.Encode(ctx, ce)
+	data, err := format.Encode(ctx, c)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to encode close form: %v", err)
 	}
@@ -191,10 +191,10 @@ type ShuffleBallots struct {
 }
 
 // Serialize implements serde.Message
-func (sb ShuffleBallots) Serialize(ctx serde.Context) ([]byte, error) {
+func (s ShuffleBallots) Serialize(ctx serde.Context) ([]byte, error) {
 	format := transactionFormats.Get(ctx.GetFormat())
 
-	data, err := format.Encode(ctx, sb)
+	data, err := format.Encode(ctx, s)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to encode shuffle ballots: %v", err)
 	}
@@ -221,10 +221,10 @@ type RegisterPubShares struct {
 }
 
 // Serialize implements serde.Message
-func (rp RegisterPubShares) Serialize(ctx serde.Context) ([]byte, error) {
+func (r RegisterPubShares) Serialize(ctx serde.Context) ([]byte, error) {
 	format := transactionFormats.Get(ctx.GetFormat())
 
-	data, err := format.Encode(ctx, rp)
+	data, err := format.Encode(ctx, r)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to encode register pubShares: %v", err)
 	}
@@ -243,10 +243,10 @@ type CombineShares struct {
 }
 
 // Serialize implements serde.Message
-func (db CombineShares) Serialize(ctx serde.Context) ([]byte, error) {
+func (c CombineShares) Serialize(ctx serde.Context) ([]byte, error) {
 	format := transactionFormats.Get(ctx.GetFormat())
 
-	data, err := format.Encode(ctx, db)
+	data, err := format.Encode(ctx, c)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to encode decrypt ballot: %v", err)
 	}
@@ -264,10 +264,10 @@ type CancelForm struct {
 }
 
 // Serialize implements serde.Message
-func (ce CancelForm) Serialize(ctx serde.Context) ([]byte, error) {
+func (c CancelForm) Serialize(ctx serde.Context) ([]byte, error) {
 	format := transactionFormats.Get(ctx.GetFormat())
 
-	data, err := format.Encode(ctx, ce)
+	data, err := format.Encode(ctx, c)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to encode cancel form: %v", err)
 	}
@@ -284,10 +284,10 @@ type DeleteForm struct {
 }
 
 // Serialize implements serde.Message
-func (ce DeleteForm) Serialize(ctx serde.Context) ([]byte, error) {
+func (d DeleteForm) Serialize(ctx serde.Context) ([]byte, error) {
 	format := transactionFormats.Get(ctx.GetFormat())
 
-	data, err := format.Encode(ctx, ce)
+	data, err := format.Encode(ctx, d)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to encode cancel form: %v", err)
 	}
@@ -308,13 +308,13 @@ func RandomID() (string, error) {
 
 // Fingerprint implements serde.Fingerprinter. If creates a fingerprint only
 // based on the formID and the shuffled ballots.
-func (sb ShuffleBallots) Fingerprint(writer io.Writer) error {
-	_, err := writer.Write([]byte(sb.FormID))
+func (s ShuffleBallots) Fingerprint(writer io.Writer) error {
+	_, err := writer.Write([]byte(s.FormID))
 	if err != nil {
 		return xerrors.Errorf("failed to write the form ID: %v", err)
 	}
 
-	for _, ballot := range sb.ShuffledBallots {
+	for _, ballot := range s.ShuffledBallots {
 		err := ballot.FingerPrint(writer)
 		if err != nil {
 			return xerrors.Errorf("failed to fingerprint shuffled ballot: %v", err)
@@ -325,18 +325,18 @@ func (sb ShuffleBallots) Fingerprint(writer io.Writer) error {
 }
 
 // Fingerprint implements serde.Fingerprinter
-func (rp RegisterPubShares) Fingerprint(writer io.Writer) error {
-	_, err := writer.Write([]byte(rp.FormID))
+func (r RegisterPubShares) Fingerprint(writer io.Writer) error {
+	_, err := writer.Write([]byte(r.FormID))
 	if err != nil {
 		return xerrors.Errorf("failed to write the form ID: %v", err)
 	}
 
-	_, err = writer.Write([]byte(strconv.Itoa(rp.Index)))
+	_, err = writer.Write([]byte(strconv.Itoa(r.Index)))
 	if err != nil {
 		return xerrors.Errorf("failed to write the pubShare index: %v", err)
 	}
 
-	err = rp.Pubshares.Fingerprint(writer)
+	err = r.Pubshares.Fingerprint(writer)
 	if err != nil {
 		return xerrors.Errorf("failed to fingerprint pubShares: %V", err)
 	}
@@ -354,10 +354,10 @@ type AddAdmin struct {
 }
 
 // Serialize implements serde.Message
-func (aa AddAdmin) Serialize(ctx serde.Context) ([]byte, error) {
+func (a AddAdmin) Serialize(ctx serde.Context) ([]byte, error) {
 	format := transactionFormats.Get(ctx.GetFormat())
 
-	data, err := format.Encode(ctx, aa)
+	data, err := format.Encode(ctx, a)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to encode Add Admin: %v", err)
 	}
@@ -375,10 +375,10 @@ type RemoveAdmin struct {
 }
 
 // Serialize implements serde.Message
-func (ra RemoveAdmin) Serialize(ctx serde.Context) ([]byte, error) {
+func (r RemoveAdmin) Serialize(ctx serde.Context) ([]byte, error) {
 	format := transactionFormats.Get(ctx.GetFormat())
 
-	data, err := format.Encode(ctx, ra)
+	data, err := format.Encode(ctx, r)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to encode remove admin: %v", err)
 	}
