@@ -772,7 +772,7 @@ func (e evotingCommand) deleteForm(snap store.Snapshot, step execution.Step) err
 }
 
 // manageAdminForm implements commands. It performs the ADD or REMOVE ADMIN command
-func (e evotingCommand) manageAdminForm(snap store.Snapshot, step execution.Step, action AdminFormAction) error {
+func (e evotingCommand) manageAdminForm(snap store.Snapshot, step execution.Step) error {
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
@@ -781,42 +781,31 @@ func (e evotingCommand) manageAdminForm(snap store.Snapshot, step execution.Step
 	var form types.AdminForm
 	var formID []byte
 
-	switch action {
-	case ADD:
-		tx, ok := msg.(types.AddAdmin)
-		if !ok {
-			return xerrors.Errorf(errWrongTx, msg)
-		}
+	txAddAdmin, okAddAdmin := msg.(types.AddAdmin)
+	txRemoveAdmin, okRemoveAdmin := msg.(types.RemoveAdmin)
 
-		form, formID, err = e.getAdminForm(tx.FormID, snap)
+	if okAddAdmin {
+		form, formID, err = e.getAdminForm(txAddAdmin.FormID, snap)
 		if err != nil {
 			return xerrors.Errorf("failed to get AdminForm: %v", err)
 		}
 
-		err = form.AddAdmin(tx.UserID)
+		err = form.AddAdmin(txAddAdmin.UserID)
 		if err != nil {
 			return xerrors.Errorf("couldn't add admin: %v", err)
 		}
-
-	case REMOVE:
-		tx, ok := msg.(types.RemoveAdmin)
-		if !ok {
-			return xerrors.Errorf(errWrongTx, msg)
-		}
-
-		form, formID, err = e.getAdminForm(tx.FormID, snap)
+	} else if okRemoveAdmin {
+		form, formID, err = e.getAdminForm(txRemoveAdmin.FormID, snap)
 		if err != nil {
 			return xerrors.Errorf("failed to get AdminForm: %v", err)
 		}
 
-		err = form.RemoveAdmin(tx.UserID)
+		err = form.RemoveAdmin(txRemoveAdmin.UserID)
 		if err != nil {
 			return xerrors.Errorf("couldn't remove admin: %v", err)
 		}
-
-	default:
-		return xerrors.Errorf("couldn't match the AdminForm action provided")
-
+	} else {
+		return xerrors.Errorf(errWrongTx, msg)
 	}
 
 	formBuf, err := form.Serialize(e.context)

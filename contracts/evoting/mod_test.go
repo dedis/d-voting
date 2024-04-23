@@ -1130,13 +1130,13 @@ func TestCommand_AdminForm(t *testing.T) {
 	require.NoError(t, err)
 
 	// The following test are there to check error handling
-	err = cmd.manageAdminForm(fake.NewSnapshot(), makeStep(t), ADD)
+	err = cmd.manageAdminForm(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
 
-	err = cmd.manageAdminForm(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"), ADD)
+	err = cmd.manageAdminForm(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
 	require.EqualError(t, err, unmarshalTransactionErr)
 
-	err = cmd.manageAdminForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)), ADD)
+	err = cmd.manageAdminForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.ErrorContains(t, err, "failed to get key")
 
 	snap := fake.NewSnapshot()
@@ -1144,7 +1144,7 @@ func TestCommand_AdminForm(t *testing.T) {
 	err = snap.Set(dummyAdminFormIDBuff, invalidForm)
 	require.NoError(t, err)
 
-	err = cmd.manageAdminForm(snap, makeStep(t, FormArg, string(data)), ADD)
+	err = cmd.manageAdminForm(snap, makeStep(t, FormArg, string(data)))
 	require.ErrorContains(t, err, "failed to deserialize AdminForm")
 
 	// We reset everything to perform the real test
@@ -1158,7 +1158,7 @@ func TestCommand_AdminForm(t *testing.T) {
 	require.NoError(t, err)
 
 	// We perform below the command on the ledger
-	err = cmd.manageAdminForm(snap, makeStep(t, FormArg, string(data)), ADD)
+	err = cmd.manageAdminForm(snap, makeStep(t, FormArg, string(data)))
 	require.NoError(t, err)
 
 	// We retrieve the form on the ledger
@@ -1182,7 +1182,7 @@ func TestCommand_AdminForm(t *testing.T) {
 	require.NoError(t, err)
 
 	// Publish the command on the ledger.
-	err = cmd.manageAdminForm(snap, makeStep(t, FormArg, string(data)), REMOVE)
+	err = cmd.manageAdminForm(snap, makeStep(t, FormArg, string(data)))
 	require.NoError(t, err)
 
 	// We retrieve the Admin Form from the ledger.
@@ -1454,7 +1454,7 @@ type fakeCmd struct {
 	err error
 }
 
-func (c fakeCmd) manageAdminForm(snap store.Snapshot, step execution.Step, action AdminFormAction) error {
+func (c fakeCmd) manageAdminForm(snap store.Snapshot, step execution.Step) error {
 	return c.err
 }
 
