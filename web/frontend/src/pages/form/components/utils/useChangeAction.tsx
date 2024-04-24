@@ -343,6 +343,7 @@ const useChangeAction = (
       (async () => {
         try {
           const chunkSize = 1000;
+          setOngoingAction(OngoingAction.AddVoters);
           for (let i = 0; i < providedScipers.length; i += chunkSize) {
             await sendFetchRequest(
               ENDPOINT_ADD_ROLE,
@@ -362,9 +363,18 @@ const useChangeAction = (
           console.error(`While adding voter: ${e}`);
           setShowModalAddVoters(false);
         }
+        setOngoingAction(OngoingAction.None);
       })();
     }
-  }, [formID, sendFetchRequest, userConfirmedAddVoters, t, setTextModalError, setShowModalError]);
+  }, [
+    formID,
+    sendFetchRequest,
+    userConfirmedAddVoters,
+    t,
+    setTextModalError,
+    setShowModalError,
+    setOngoingAction,
+  ]);
 
   useEffect(() => {
     if (userConfirmedProxySetup) {
@@ -537,7 +547,11 @@ const useChangeAction = (
               formID={formID}
             />
             <DeleteButton handleDelete={handleDelete} formID={formID} />
-            <AddVotersButton handleAddVoters={handleAddVoters} formID={formID} />
+            <AddVotersButton
+              handleAddVoters={handleAddVoters}
+              formID={formID}
+              ongoingAction={ongoingAction}
+            />
           </>
         );
       case Status.Open:
@@ -557,7 +571,11 @@ const useChangeAction = (
             />
             <VoteButton status={status} formID={formID} />
             <DeleteButton handleDelete={handleDelete} formID={formID} />
-            <AddVotersButton handleAddVoters={handleAddVoters} formID={formID} />
+            <AddVotersButton
+              handleAddVoters={handleAddVoters}
+              formID={formID}
+              ongoingAction={ongoingAction}
+            />
           </>
         );
       case Status.Closed:

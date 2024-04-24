@@ -293,6 +293,7 @@
     "footerBuild": "build:",
     "footerBuildTime": "en:",
     "voteNotVoter": "Interdit de voter.",
-    "voteNotVoterDescription": "Vous n'avez pas le droit de voter dans cette élection. Si vous pensez qu'il s'agit d'une erreur, veuillez contacter le/la reponsable de service."
+    "voteNotVoterDescription": "Vous n'avez pas le droit de voter dans cette élection. Si vous pensez qu'il s'agit d'une erreur, veuillez contacter le/la reponsable de service.",
+    "addVotersLoading": "Ajout d'électeur·rice·s..."
   }
 }

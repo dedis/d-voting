@@ -294,6 +294,7 @@
     "footerBuild": "build:",
     "footerBuildTime": "in:",
     "voteNotVoter": "Voting not allowed.",
-    "voteNotVoterDescription": "You are not allowed to vote in this form. If you believe this is an error, please contact the responsible of the service."
+    "voteNotVoterDescription": "You are not allowed to vote in this form. If you believe this is an error, please contact the responsible of the service.",
+    "addVotersLoading": "Adding voters..."
   }
 }

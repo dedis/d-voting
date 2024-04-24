@@ -293,6 +293,7 @@
     "footerBuild": "build:",
     "footerBuildTime": "in:",
     "voteNotVoter": "Wählen nicht erlaubt.",
-    "voteNotVoterDescription": "Sie sind nicht wahlberechtigt in dieser Wahl. Falls Sie denken, dass ein Fehler vorliegt, wenden Sie sich bitte an die verantwortliche Stelle."
+    "voteNotVoterDescription": "Sie sind nicht wahlberechtigt in dieser Wahl. Falls Sie denken, dass ein Fehler vorliegt, wenden Sie sich bitte an die verantwortliche Stelle.",
+    "addVotersLoading": "WählerInnen werden hinzugefügt..."
   }
 }
