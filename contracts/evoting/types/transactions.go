@@ -385,3 +385,87 @@ func (removeAdmin RemoveAdmin) Serialize(ctx serde.Context) ([]byte, error) {
 
 	return data, nil
 }
+
+// AddVoter defines the transaction to Add an Voter
+//
+// - implements serde.Message
+type AddVoter struct {
+	// FormID is hex-encoded
+	FormID string
+	UserID string
+}
+
+// Serialize implements serde.Message
+func (addVoter AddVoter) Serialize(ctx serde.Context) ([]byte, error) {
+	format := transactionFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, addVoter)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to encode Add Voter: %v", err)
+	}
+
+	return data, nil
+}
+
+// RemoveVoter defines the transaction to Remove an Voter
+//
+// - implements serde.Message
+type RemoveVoter struct {
+	// FormID is hex-encoded
+	FormID string
+	UserID string
+}
+
+// Serialize implements serde.Message
+func (removeVoter RemoveVoter) Serialize(ctx serde.Context) ([]byte, error) {
+	format := transactionFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, removeVoter)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to encode Remove Admin: %v", err)
+	}
+
+	return data, nil
+}
+
+// AddOwner defines the transaction to Add an Owner
+//
+// - implements serde.Message
+type AddOwner struct {
+	// FormID is hex-encoded
+	FormID string
+	UserID string
+}
+
+// Serialize implements serde.Message
+func (addOwner AddOwner) Serialize(ctx serde.Context) ([]byte, error) {
+	format := transactionFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, addOwner)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to encode Add Owner: %v", err)
+	}
+
+	return data, nil
+}
+
+// RemoveOwner defines the transaction to Remove an Owner
+//
+// - implements serde.Message
+type RemoveOwner struct {
+	// FormID is hex-encoded
+	FormID string
+	UserID string
+}
+
+// Serialize implements serde.Message
+func (removeOwner RemoveOwner) Serialize(ctx serde.Context) ([]byte, error) {
+	format := transactionFormats.Get(ctx.GetFormat())
+
+	data, err := format.Encode(ctx, removeOwner)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to encode Remove Owner: %v", err)
+	}
+
+	return data, nil
+}

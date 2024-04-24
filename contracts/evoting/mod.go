@@ -132,6 +132,16 @@ const (
 	CmdAddAdminForm Command = "ADD_ADMIN"
 	// CmdRemoveAdminForm is the command to delete a form
 	CmdRemoveAdminForm Command = "REMOVE_ADMIN"
+
+	// CmdAddOwnerForm is the command to add an Owner to a form
+	CmdAddOwnerForm Command = "ADD_OWNER"
+	// CmdRemoveOwnerForm is the command to remove an Owner to a form
+	CmdRemoveOwnerForm Command = "REMOVE_OWNER"
+
+	// CmdAddVoterForm is the command to add an Voter to a form
+	CmdAddVoterForm Command = "ADD_VOTER"
+	// CmdRemoveVoterForm is the command to remove an Voter to a form
+	CmdRemoveVoterForm Command = "REMOVE_VOTER"
 )
 
 // NewCreds creates new credentials for a evoting contract execution. We might

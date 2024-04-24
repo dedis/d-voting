@@ -834,6 +834,57 @@ func (e evotingCommand) manageAdminForm(snap store.Snapshot, step execution.Step
 	return nil
 }
 
+// TODO modify
+// manageVotersForm implements commands. It performs the ADD or REMOVE VOTERS command
+func (e evotingCommand) manageVotersForm(snap store.Snapshot, step execution.Step) error {
+	msg, err := e.getTransaction(step.Current)
+	if err != nil {
+		return xerrors.Errorf(errGetTransaction, err)
+	}
+
+	var form types.AdminForm
+	var formID []byte
+
+	txAddAdmin, okAddAdmin := msg.(types.AddAdmin)
+	txRemoveAdmin, okRemoveAdmin := msg.(types.RemoveAdmin)
+
+	if okAddAdmin {
+		form, formID, err = e.getAdminForm(txAddAdmin.FormID, snap)
+		if err != nil {
+			return xerrors.Errorf("failed to get AdminForm: %v", err)
+		}
+
+		err = form.AddAdmin(txAddAdmin.UserID)
+		if err != nil {
+			return xerrors.Errorf("couldn't add admin: %v", err)
+		}
+	} else if okRemoveAdmin {
+		form, formID, err = e.getAdminForm(txRemoveAdmin.FormID, snap)
+		if err != nil {
+			return xerrors.Errorf("failed to get AdminForm: %v", err)
+		}
+
+		err = form.RemoveAdmin(txRemoveAdmin.UserID)
+		if err != nil {
+			return xerrors.Errorf("couldn't remove admin: %v", err)
+		}
+	} else {
+		return xerrors.Errorf(errWrongTx, msg)
+	}
+
+	formBuf, err := form.Serialize(e.context)
+	if err != nil {
+		return xerrors.Errorf("failed to marshal Form : %v", err)
+	}
+
+	err = snap.Set(formID, formBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to set value: %v", err)
+	}
+
+	return nil
+}
+
 // isMemberOf is a utility function to verify if a public key is associated to a
 // member of the roster or not. Returns nil if it's the case.
 func isMemberOf(roster authority.Authority, publicKey []byte) error {
