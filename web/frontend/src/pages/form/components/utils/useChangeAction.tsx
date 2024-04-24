@@ -322,17 +322,14 @@ const useChangeAction = (
       for (const sciperStr of providedScipers) {
         const sciper = parseInt(sciperStr, 10);
         if (isNaN(sciper)) {
-          sciperErrs += `'${sciperStr}' is not a number; `;
+          sciperErrs += t('sciperNaN', { sciperStr: sciperStr });
         }
         if (sciper < 100000 || sciper > 999999) {
-          sciperErrs += `${sciper} is out of range (100000-999999); `;
+          sciperErrs += t('sciperOutOfRange', { sciper: sciper });
         }
       }
       if (sciperErrs.length > 0) {
-        console.error('Invalid SCIPER numbers found. No request will be send.');
-        setTextModalError(
-          `Invalid SCIPER numbers found. No request has been send. Please fix the following errors: ${sciperErrs}`
-        );
+        setTextModalError(t('invalidScipersFound', { sciperErrs: sciperErrs }));
         setShowModalError(true);
         return;
       }

@@ -294,6 +294,9 @@
     "footerBuildTime": "en:",
     "voteNotVoter": "Interdit de voter.",
     "voteNotVoterDescription": "Vous n'avez pas le droit de voter dans cette élection. Si vous pensez qu'il s'agit d'une erreur, veuillez contacter le/la reponsable de service.",
-    "addVotersLoading": "Ajout d'électeur·rice·s..."
+    "addVotersLoading": "Ajout d'électeur·rice·s...",
+    "sciperNaN": "'{{sciperStr}}' n'est pas une chiffre; ",
+    "sciperOutOfRange": "{{sciper}} n'est pas dans les valeurs acceptées (100000-999999); ",
+    "invalidScipersFound": "Des SCIPERs invalides ont été trouvés. Aucune requête n'a été envoyée. Veuillez corriger les erreurs suivants: {{sciperErrs}}"
   }
 }
