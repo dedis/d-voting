@@ -55,16 +55,16 @@ func TestAdmin_AddAdminAndRemoveAdmin(t *testing.T) {
 
 	adminForm := types.AdminForm{FormID: adminFormID, AdminList: adminFormList}
 
-	res := adminForm.IsAdmin(myTestID)
+	res := adminForm.GetAdminIndex(myTestID)
 	require.Equal(t, -1, res)
 
 	err := adminForm.AddAdmin(myTestID)
 	require.NoError(t, err)
-	res = adminForm.IsAdmin(myTestID)
+	res = adminForm.GetAdminIndex(myTestID)
 	require.Equal(t, 0, res)
 
 	err = adminForm.RemoveAdmin(myTestID)
 	require.NoError(t, err)
-	res = adminForm.IsAdmin(myTestID)
+	res = adminForm.GetAdminIndex(myTestID)
 	require.Equal(t, -1, res)
 }

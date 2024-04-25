@@ -1130,20 +1130,26 @@ func TestCommand_AdminForm(t *testing.T) {
 	require.NoError(t, err)
 
 	// The following test are there to check error handling
+
+	// Checking that on a Fake Snapshot it won't be able to find the transaction
 	err = cmd.manageAdminForm(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
 
+	// Checking that providing a dummy data as argument, the form will not recognize it
+	// and won't be able to unmarshal it.
 	err = cmd.manageAdminForm(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
 	require.EqualError(t, err, unmarshalTransactionErr)
 
+	// Checking that given a BadSnapshot, it will not be able to retrieve the AdminForm on the store.
 	err = cmd.manageAdminForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.ErrorContains(t, err, "failed to get key")
 
 	snap := fake.NewSnapshot()
 
+	// Checking that given the form set in the Snapshot which is invalid, then it will not be able
+	// to deserialize the AdminForm to perform the command.
 	err = snap.Set(dummyAdminFormIDBuff, invalidForm)
 	require.NoError(t, err)
-
 	err = cmd.manageAdminForm(snap, makeStep(t, FormArg, string(data)))
 	require.ErrorContains(t, err, "failed to deserialize AdminForm")
 
@@ -1173,7 +1179,7 @@ func TestCommand_AdminForm(t *testing.T) {
 
 	// We check that our dummy User is now admin
 	// (if not admin return -1; else return admin index in AdminForm).
-	require.True(t, adminForm.IsAdmin(dummyUID) > -1)
+	require.True(t, adminForm.GetAdminIndex(dummyUID) > -1)
 
 	// Now we want to remove its admin privilege.
 	// Initialization of the command
@@ -1196,7 +1202,7 @@ func TestCommand_AdminForm(t *testing.T) {
 	require.True(t, ok)
 
 	// We check that now our dummy user is not admin anymore (return -1)
-	require.True(t, adminForm.IsAdmin(dummyUID) == -1)
+	require.True(t, adminForm.GetAdminIndex(dummyUID) == -1)
 }
 
 // -----------------------------------------------------------------------------

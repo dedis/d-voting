@@ -57,8 +57,8 @@ func (adminForm *AdminForm) AddAdmin(userID string) error {
 	return nil
 }
 
-// IsAdmin return the index of admin if userID is one, else return -1
-func (adminForm *AdminForm) IsAdmin(userID string) int {
+// GetAdminIndex return the index of admin if userID is one, else return -1
+func (adminForm *AdminForm) GetAdminIndex(userID string) int {
 	sciperInt, err := strconv.Atoi(userID)
 	if err != nil {
 		return -1
@@ -80,7 +80,7 @@ func (adminForm *AdminForm) RemoveAdmin(userID string) error {
 		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
 	}
 
-	index := adminForm.IsAdmin(userID)
+	index := adminForm.GetAdminIndex(userID)
 
 	if index < 0 {
 		return xerrors.Errorf("Error while retrieving the index of the element.")
