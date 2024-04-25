@@ -1131,7 +1131,8 @@ func TestCommand_AdminForm(t *testing.T) {
 
 	// The following test are there to check error handling
 
-	// Checking that on a Fake Snapshot it won't be able to find the transaction
+	// Checking that if no AdminForm is on the blockchain,
+	// It won't be able to find the transaction.
 	err = cmd.manageAdminForm(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
 
@@ -1140,8 +1141,8 @@ func TestCommand_AdminForm(t *testing.T) {
 	err = cmd.manageAdminForm(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
 	require.EqualError(t, err, unmarshalTransactionErr)
 
-	// Checking that given a BadSnapshot, it will not be able to retrieve
-	// the AdminForm on the store.
+	// Checking that given a Blockchain that always returns an error,
+	// it will not be able to retrieve the AdminForm on the store.
 	err = cmd.manageAdminForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.ErrorContains(t, err, "failed to get key")
 

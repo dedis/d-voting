@@ -52,6 +52,10 @@ func (adminForm *AdminForm) AddAdmin(userID string) error {
 		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
 	}
 
+	if sciperInt < 100000 || sciperInt > 999999 {
+		return xerrors.Errorf("SCIPER %v is out of range.", sciperInt)
+	}
+
 	adminForm.AdminList = append(adminForm.AdminList, sciperInt)
 
 	return nil
@@ -75,11 +79,6 @@ func (adminForm *AdminForm) GetAdminIndex(userID string) int {
 
 // RemoveAdmin add a new admin to the system.
 func (adminForm *AdminForm) RemoveAdmin(userID string) error {
-	_, err := strconv.Atoi(userID)
-	if err != nil {
-		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
-	}
-
 	index := adminForm.GetAdminIndex(userID)
 
 	if index < 0 {
