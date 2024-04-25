@@ -1135,19 +1135,20 @@ func TestCommand_AdminForm(t *testing.T) {
 	err = cmd.manageAdminForm(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
 
-	// Checking that providing a dummy data as argument, the form will not recognize it
-	// and won't be able to unmarshal it.
+	// Checking that providing a dummy data as argument, the form will not
+	// recognize it and won't be able to unmarshal it.
 	err = cmd.manageAdminForm(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
 	require.EqualError(t, err, unmarshalTransactionErr)
 
-	// Checking that given a BadSnapshot, it will not be able to retrieve the AdminForm on the store.
+	// Checking that given a BadSnapshot, it will not be able to retrieve
+	// the AdminForm on the store.
 	err = cmd.manageAdminForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.ErrorContains(t, err, "failed to get key")
 
 	snap := fake.NewSnapshot()
 
-	// Checking that given the form set in the Snapshot which is invalid, then it will not be able
-	// to deserialize the AdminForm to perform the command.
+	// Checking that given the form set in the Snapshot which is invalid, then it
+	// will not be able to deserialize the AdminForm to perform the command.
 	err = snap.Set(dummyAdminFormIDBuff, invalidForm)
 	require.NoError(t, err)
 	err = cmd.manageAdminForm(snap, makeStep(t, FormArg, string(data)))
