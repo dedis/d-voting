@@ -842,31 +842,31 @@ func (e evotingCommand) manageVotersForm(snap store.Snapshot, step execution.Ste
 		return xerrors.Errorf(errGetTransaction, err)
 	}
 
-	var form types.AdminForm
+	var form types.Form
 	var formID []byte
 
-	txAddAdmin, okAddAdmin := msg.(types.AddAdmin)
-	txRemoveAdmin, okRemoveAdmin := msg.(types.RemoveAdmin)
+	txAddVoter, okAddVoter := msg.(types.AddVoter)
+	txRemoveVoter, okRemoveVoter := msg.(types.RemoveVoter)
 
-	if okAddAdmin {
-		form, formID, err = e.getAdminForm(txAddAdmin.FormID, snap)
+	if okAddVoter {
+		form, formID, err = e.getForm(txAddVoter.FormID, snap)
 		if err != nil {
-			return xerrors.Errorf("failed to get AdminForm: %v", err)
+			return xerrors.Errorf(errGetForm, err)
 		}
 
-		err = form.AddAdmin(txAddAdmin.UserID)
+		err = form.AddVoter(txAddVoter.UserID)
 		if err != nil {
-			return xerrors.Errorf("couldn't add admin: %v", err)
+			return xerrors.Errorf("couldn't add voter: %v", err)
 		}
-	} else if okRemoveAdmin {
-		form, formID, err = e.getAdminForm(txRemoveAdmin.FormID, snap)
+	} else if okRemoveVoter {
+		form, formID, err = e.getForm(txRemoveVoter.FormID, snap)
 		if err != nil {
-			return xerrors.Errorf("failed to get AdminForm: %v", err)
+			return xerrors.Errorf(errGetForm, err)
 		}
 
-		err = form.RemoveAdmin(txRemoveAdmin.UserID)
+		err = form.RemoveVoter(txRemoveVoter.UserID)
 		if err != nil {
-			return xerrors.Errorf("couldn't remove admin: %v", err)
+			return xerrors.Errorf("couldn't remove voter: %v", err)
 		}
 	} else {
 		return xerrors.Errorf(errWrongTx, msg)
@@ -893,31 +893,31 @@ func (e evotingCommand) manageOwnersForm(snap store.Snapshot, step execution.Ste
 		return xerrors.Errorf(errGetTransaction, err)
 	}
 
-	var form types.AdminForm
+	var form types.Form
 	var formID []byte
 
-	txAddAdmin, okAddAdmin := msg.(types.AddAdmin)
-	txRemoveAdmin, okRemoveAdmin := msg.(types.RemoveAdmin)
+	txAddOwner, okAddOwner := msg.(types.AddAdmin)
+	txRemoveOwner, okRemoveOwner := msg.(types.RemoveAdmin)
 
-	if okAddAdmin {
-		form, formID, err = e.getAdminForm(txAddAdmin.FormID, snap)
+	if okAddOwner {
+		form, formID, err = e.getForm(txAddOwner.FormID, snap)
 		if err != nil {
-			return xerrors.Errorf("failed to get AdminForm: %v", err)
+			return xerrors.Errorf(errGetForm, err)
 		}
 
-		err = form.AddAdmin(txAddAdmin.UserID)
+		err = form.AddOwner(txAddOwner.UserID)
 		if err != nil {
-			return xerrors.Errorf("couldn't add admin: %v", err)
+			return xerrors.Errorf("couldn't add owner: %v", err)
 		}
-	} else if okRemoveAdmin {
-		form, formID, err = e.getAdminForm(txRemoveAdmin.FormID, snap)
+	} else if okRemoveOwner {
+		form, formID, err = e.getForm(txRemoveOwner.FormID, snap)
 		if err != nil {
-			return xerrors.Errorf("failed to get AdminForm: %v", err)
+			return xerrors.Errorf(errGetForm, err)
 		}
 
-		err = form.RemoveAdmin(txRemoveAdmin.UserID)
+		err = form.RemoveOwner(txRemoveOwner.UserID)
 		if err != nil {
-			return xerrors.Errorf("couldn't remove admin: %v", err)
+			return xerrors.Errorf("couldn't remove owner: %v", err)
 		}
 	} else {
 		return xerrors.Errorf(errWrongTx, msg)

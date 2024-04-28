@@ -1467,6 +1467,14 @@ func (c fakeCmd) manageAdminForm(snap store.Snapshot, step execution.Step) error
 	return c.err
 }
 
+func (c fakeCmd) manageOwnersForm(snap store.Snapshot, step execution.Step) error {
+	return c.err
+}
+
+func (c fakeCmd) manageVotersForm(snap store.Snapshot, step execution.Step) error {
+	return c.err
+}
+
 func (c fakeCmd) createForm(snap store.Snapshot, step execution.Step) error {
 	return c.err
 }
