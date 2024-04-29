@@ -1350,6 +1350,118 @@ func TestCommand_OwnerForm(t *testing.T) {
 	require.True(t, form.GetOwnerIndex(dummyUserID) == -1)
 }
 
+func TestCommand_VoterForm(t *testing.T) {
+	addVoter := types.AddVoter{
+		FormID: fakeFormID,
+		UserID: dummyUserID,
+	}
+
+	// Test Serialization of AddVoter command
+	dataAdd, err := addVoter.Serialize(ctx)
+	require.NoError(t, err)
+
+	removeVoter := types.RemoveVoter{
+		FormID: fakeFormID,
+		UserID: dummyUserID,
+	}
+
+	// Test Serialization of RemoveVoter command
+	dataRemove, err := removeVoter.Serialize(ctx)
+	require.NoError(t, err)
+
+	// Initialize the form and contract chain
+	dummyForm, contract := initFormAndContract()
+	dummyForm.FormID = fakeFormID
+
+	// Test the serialization of the Ledger
+	formBuf, err := dummyForm.Serialize(ctx)
+	require.NoError(t, err)
+
+	// Create an evoting command.
+	cmd := evotingCommand{
+		Contract: &contract,
+	}
+
+	err = cmd.manageVotersForm(fake.NewSnapshot(), makeStep(t))
+	require.EqualError(t, err, getTransactionErr)
+
+	err = cmd.manageVotersForm(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
+	require.EqualError(t, err, unmarshalTransactionErr)
+
+	err = cmd.manageVotersForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(dataAdd)))
+	require.ErrorContains(t, err, "failed to get key")
+
+	err = cmd.manageVotersForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(dataRemove)))
+	require.ErrorContains(t, err, "failed to get key")
+
+	snap := fake.NewSnapshot()
+
+	err = snap.Set(dummyFormIDBuff, invalidForm)
+	require.NoError(t, err)
+
+	err = cmd.manageVotersForm(snap, makeStep(t, FormArg, string(dataAdd)))
+	require.ErrorContains(t, err, deserializeErr)
+
+	err = snap.Set(dummyFormIDBuff, formBuf)
+	require.NoError(t, err)
+
+	// We retrieve the Admin Form from the ledger.
+	res, err := snap.Get(dummyFormIDBuff)
+	require.NoError(t, err)
+
+	message, err := formFac.Deserialize(ctx, res)
+	require.NoError(t, err)
+
+	form, ok := message.(types.Form)
+	require.True(t, ok)
+
+	// We check that now our dummy user is not admin anymore (return -1)
+	require.True(t, form.GetVoterIndex(dummyUserID) == -1)
+
+	// =====
+	// Now perform the real test
+	// =====
+
+	err = snap.Set(dummyFormIDBuff, formBuf)
+	require.NoError(t, err)
+
+	// We perform below the command on the ledger
+	err = cmd.manageVotersForm(snap, makeStep(t, FormArg, string(dataAdd)))
+	require.NoError(t, err)
+
+	res, err = snap.Get(dummyFormIDBuff)
+	require.NoError(t, err)
+
+	message, err = formFac.Deserialize(ctx, res)
+	require.NoError(t, err)
+
+	form, ok = message.(types.Form)
+	require.True(t, ok)
+
+	// We check that now our dummy user is an owner (return 0)
+	require.True(t, form.GetVoterIndex(dummyUserID) == 0)
+
+	// ===
+	// Now let's remove it
+	// ===
+
+	// We perform below the command on the ledger
+	err = cmd.manageVotersForm(snap, makeStep(t, FormArg, string(dataRemove)))
+	require.NoError(t, err)
+
+	res, err = snap.Get(dummyFormIDBuff)
+	require.NoError(t, err)
+
+	message, err = formFac.Deserialize(ctx, res)
+	require.NoError(t, err)
+
+	form, ok = message.(types.Form)
+	require.True(t, ok)
+
+	// We check that now our dummy user is an owner (return 0)
+	require.True(t, form.GetVoterIndex(dummyUserID) == -1)
+}
+
 // -----------------------------------------------------------------------------
 // Utility functions
 
