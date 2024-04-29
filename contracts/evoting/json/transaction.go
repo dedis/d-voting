@@ -132,6 +132,34 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 		}
 
 		m = TransactionJSON{RemoveAdmin: &ra}
+	case types.AddOwner:
+		addOwner := AddOwnerJSON{
+			FormID: t.FormID,
+			UserID: t.UserID,
+		}
+
+		m = TransactionJSON{AddOwner: &addOwner}
+	case types.RemoveOwner:
+		removeOwner := RemoveOwnerJSON{
+			FormID: t.FormID,
+			UserID: t.UserID,
+		}
+
+		m = TransactionJSON{RemoveOwner: &removeOwner}
+	case types.AddVoter:
+		addVoter := AddVoterJSON{
+			FormID: t.FormID,
+			UserID: t.UserID,
+		}
+
+		m = TransactionJSON{AddVoter: &addVoter}
+	case types.RemoveVoter:
+		removeVoter := RemoveVoterJSON{
+			FormID: t.FormID,
+			UserID: t.UserID,
+		}
+
+		m = TransactionJSON{RemoveVoter: &removeVoter}
 	default:
 		return nil, xerrors.Errorf("unknown type: '%T", msg)
 	}
@@ -213,6 +241,26 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 			FormID: m.RemoveAdmin.FormID,
 			UserID: m.RemoveAdmin.UserID,
 		}, nil
+	case m.AddOwner != nil:
+		return types.AddOwner{
+			FormID: m.AddOwner.FormID,
+			UserID: m.AddOwner.UserID,
+		}, nil
+	case m.RemoveOwner != nil:
+		return types.RemoveOwner{
+			FormID: m.RemoveOwner.FormID,
+			UserID: m.RemoveOwner.UserID,
+		}, nil
+	case m.AddVoter != nil:
+		return types.AddVoter{
+			FormID: m.AddVoter.FormID,
+			UserID: m.AddVoter.UserID,
+		}, nil
+	case m.RemoveVoter != nil:
+		return types.RemoveVoter{
+			FormID: m.RemoveVoter.FormID,
+			UserID: m.RemoveVoter.UserID,
+		}, nil
 	}
 
 	return nil, xerrors.Errorf("empty type: %s", data)
@@ -232,6 +280,10 @@ type TransactionJSON struct {
 	DeleteForm        *DeleteFormJSON        `json:",omitempty"`
 	AddAdmin          *AddAdminJSON          `json:",omitempty"`
 	RemoveAdmin       *RemoveAdminJSON       `json:",omitempty"`
+	AddOwner          *AddOwnerJSON          `json:",omitempty"`
+	RemoveOwner       *RemoveOwnerJSON       `json:",omitempty"`
+	AddVoter          *AddVoterJSON          `json:",omitempty"`
+	RemoveVoter       *RemoveVoterJSON       `json:",omitempty"`
 }
 
 // CreateFormJSON is the JSON representation of a CreateForm transaction
@@ -304,6 +356,34 @@ type AddAdminJSON struct {
 
 // RemoveAdminJSON is the JSON representation of a RemoveAdmin transaction
 type RemoveAdminJSON struct {
+	FormID string
+	UserID string
+}
+
+// OwnerForm
+
+// AddOwnerJSON is the JSON representation of a AddOwner transaction
+type AddOwnerJSON struct {
+	FormID string
+	UserID string
+}
+
+// RemoveOwnerJSON is the JSON representation of a RemoveOwner transaction
+type RemoveOwnerJSON struct {
+	FormID string
+	UserID string
+}
+
+// VoterForm
+
+// AddVoterJSON is the JSON representation of a AddVoter transaction
+type AddVoterJSON struct {
+	FormID string
+	UserID string
+}
+
+// RemoveVoterJSON is the JSON representation of a RemoveVoter transaction
+type RemoveVoterJSON struct {
 	FormID string
 	UserID string
 }

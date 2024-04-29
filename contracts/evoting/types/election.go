@@ -430,8 +430,8 @@ func (form *Form) AddVoter(userID string) error {
 	return nil
 }
 
-// IsVoter return the index of admin if userID is one, else return -1
-func (form *Form) IsVoter(userID string) int {
+// GetVoterIndex return the index of admin if userID is one, else return -1
+func (form *Form) GetVoterIndex(userID string) int {
 	sciperInt, err := strconv.Atoi(userID)
 	if err != nil {
 		return -1
@@ -453,7 +453,7 @@ func (form *Form) RemoveVoter(userID string) error {
 		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
 	}
 
-	index := form.IsVoter(userID)
+	index := form.GetVoterIndex(userID)
 
 	if index < 0 {
 		return xerrors.Errorf("Error while retrieving the index of the element.")
@@ -476,8 +476,8 @@ func (form *Form) AddOwner(userID string) error {
 	return nil
 }
 
-// IsOwner return the index of admin if userID is one, else return -1
-func (form *Form) IsOwner(userID string) int {
+// GetOwnerIndex return the index of admin if userID is one, else return -1
+func (form *Form) GetOwnerIndex(userID string) int {
 	sciperInt, err := strconv.Atoi(userID)
 	if err != nil {
 		return -1
@@ -499,7 +499,7 @@ func (form *Form) RemoveOwner(userID string) error {
 		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
 	}
 
-	index := form.IsOwner(userID)
+	index := form.GetOwnerIndex(userID)
 
 	if index < 0 {
 		return xerrors.Errorf("Error while retrieving the index of the element.")

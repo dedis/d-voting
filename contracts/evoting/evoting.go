@@ -896,8 +896,8 @@ func (e evotingCommand) manageOwnersForm(snap store.Snapshot, step execution.Ste
 	var form types.Form
 	var formID []byte
 
-	txAddOwner, okAddOwner := msg.(types.AddAdmin)
-	txRemoveOwner, okRemoveOwner := msg.(types.RemoveAdmin)
+	txAddOwner, okAddOwner := msg.(types.AddOwner)
+	txRemoveOwner, okRemoveOwner := msg.(types.RemoveOwner)
 
 	if okAddOwner {
 		form, formID, err = e.getForm(txAddOwner.FormID, snap)
