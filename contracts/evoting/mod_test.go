@@ -1208,6 +1208,15 @@ func TestCommand_AdminForm(t *testing.T) {
 	require.True(t, adminForm.GetAdminIndex(dummyUID) == -1)
 }
 
+/*
+	 Testing Scenario:
+		- We check that the owner field is empty
+	    - We add user: 123456
+	    - We check that 123456 is owner
+	    - We try to remove it. -> failure cause is the only owner.
+	    - We add a second user: 234567
+	    - Now we can remove ownership to: 123456
+*/
 func TestCommand_OwnerForm(t *testing.T) {
 	addOwner := types.AddOwner{
 		FormID: fakeFormID,
@@ -1240,25 +1249,41 @@ func TestCommand_OwnerForm(t *testing.T) {
 		Contract: &contract,
 	}
 
+	// The following test are there to check error handling
+
+	// Checking that if no AdminForm is on the blockchain,
+	// It won't be able to find the transaction.
 	err = cmd.manageOwnersForm(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
 
+	// Checking that providing a dummy data as argument, the form will not
+	// recognize it and won't be able to unmarshal it.
 	err = cmd.manageOwnersForm(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
 	require.EqualError(t, err, unmarshalTransactionErr)
 
+	// Checking that given a Blockchain that always returns an error with an Add cmd,
+	// it will not be able to retrieve the Form on the store.
 	err = cmd.manageOwnersForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(dataAdd)))
 	require.ErrorContains(t, err, "failed to get key")
 
+	// Checking that given a Blockchain that always returns an error with an Remove cmd,
+	// it will not be able to retrieve the Form on the store.
 	err = cmd.manageOwnersForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(dataRemove)))
 	require.ErrorContains(t, err, "failed to get key")
 
 	snap := fake.NewSnapshot()
 
+	// Checking that given the form set in the Snapshot which is invalid, then it
+	// will not be able to deserialize the Form to perform the command.
 	err = snap.Set(dummyFormIDBuff, invalidForm)
 	require.NoError(t, err)
-
 	err = cmd.manageOwnersForm(snap, makeStep(t, FormArg, string(dataAdd)))
 	require.ErrorContains(t, err, deserializeErr)
+
+	// ====
+	// Now that we've performed check on the error, let's
+	// reset everything to perform the real test
+	// ====
 
 	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
@@ -1273,20 +1298,14 @@ func TestCommand_OwnerForm(t *testing.T) {
 	form, ok := message.(types.Form)
 	require.True(t, ok)
 
-	// We check that now our dummy user is not admin anymore (return -1)
+	// We check that now our dummy user is not owner yet (return -1)
 	require.True(t, form.GetOwnerIndex(dummyUserID) == -1)
 
-	// =====
-	// Now perform the real test
-	// =====
-
-	err = snap.Set(dummyFormIDBuff, formBuf)
-	require.NoError(t, err)
-
-	// We perform below the command on the ledger
+	// We perform the Add command on the ledger
 	err = cmd.manageOwnersForm(snap, makeStep(t, FormArg, string(dataAdd)))
 	require.NoError(t, err)
 
+	// Let's see if it added the owner successfully
 	res, err = snap.Get(dummyFormIDBuff)
 	require.NoError(t, err)
 
@@ -1299,14 +1318,14 @@ func TestCommand_OwnerForm(t *testing.T) {
 	// We check that now our dummy user is an owner (return 0)
 	require.True(t, form.GetOwnerIndex(dummyUserID) == 0)
 
-	// ===
 	// Now let's remove it
-	// ===
 
-	// We perform below the command on the ledger
+	// We perform the Remove command on the ledger
+	// but it fails because it is the only owner.
 	err = cmd.manageOwnersForm(snap, makeStep(t, FormArg, string(dataRemove)))
 	require.ErrorContains(t, err, "cannot remove this owner because it is the only one remaining for this form")
 
+	// So first let's add a second owner
 	addOwner2 := types.AddOwner{
 		FormID: fakeFormID,
 		UserID: "234567",
@@ -1329,14 +1348,14 @@ func TestCommand_OwnerForm(t *testing.T) {
 	form, ok = message.(types.Form)
 	require.True(t, ok)
 
-	// We check that now our dummy user is an owner (return 0)
+	// We check that now our second dummy user is also an owner (return 0).
 	require.True(t, form.GetOwnerIndex("234567") == 1)
 
-	// now remove successfully the first one
-
+	// Now remove successfully the first one.
 	err = cmd.manageOwnersForm(snap, makeStep(t, FormArg, string(dataRemove)))
 	require.NoError(t, err)
 
+	// Let's retrieve the form to check whether it worked
 	res, err = snap.Get(dummyFormIDBuff)
 	require.NoError(t, err)
 
@@ -1346,10 +1365,19 @@ func TestCommand_OwnerForm(t *testing.T) {
 	form, ok = message.(types.Form)
 	require.True(t, ok)
 
-	// We check that now our dummy user is not an owner anymore (return -1)
+	// We check that now our first dummy user is not an owner anymore (return -1)
 	require.True(t, form.GetOwnerIndex(dummyUserID) == -1)
+	// But that the second one is still an admin (return != -1)
+	require.True(t, form.GetOwnerIndex("234567") != -1)
 }
 
+/*
+	 Testing Scenario:
+		- We check that the voter field is empty
+	    - We add user: 123456
+	    - We check that 123456 is voter
+	    - We remove 123456 from the voter list.
+*/
 func TestCommand_VoterForm(t *testing.T) {
 	addVoter := types.AddVoter{
 		FormID: fakeFormID,
@@ -1382,25 +1410,41 @@ func TestCommand_VoterForm(t *testing.T) {
 		Contract: &contract,
 	}
 
+	// The following test are there to check error handling
+
+	// Checking that if no AdminForm is on the blockchain,
+	// It won't be able to find the transaction.
 	err = cmd.manageVotersForm(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
 
+	// Checking that providing a dummy data as argument, the form will not
+	// recognize it and won't be able to unmarshal it.
 	err = cmd.manageVotersForm(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
 	require.EqualError(t, err, unmarshalTransactionErr)
 
+	// Checking that given a Blockchain that always returns an error with an Add cmd,
+	// it will not be able to retrieve the Form on the store.
 	err = cmd.manageVotersForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(dataAdd)))
 	require.ErrorContains(t, err, "failed to get key")
 
+	// Checking that given a Blockchain that always returns an error with an Remove cmd,
+	// it will not be able to retrieve the Form on the store.
 	err = cmd.manageVotersForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(dataRemove)))
 	require.ErrorContains(t, err, "failed to get key")
 
 	snap := fake.NewSnapshot()
 
+	// Checking that given the form set in the Snapshot which is invalid, then it
+	// will not be able to deserialize the Form to perform the command.
 	err = snap.Set(dummyFormIDBuff, invalidForm)
 	require.NoError(t, err)
-
 	err = cmd.manageVotersForm(snap, makeStep(t, FormArg, string(dataAdd)))
 	require.ErrorContains(t, err, deserializeErr)
+
+	// ====
+	// Now that we've performed check on the error, let's
+	// reset everything to perform the real test
+	// ====
 
 	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
@@ -1415,20 +1459,14 @@ func TestCommand_VoterForm(t *testing.T) {
 	form, ok := message.(types.Form)
 	require.True(t, ok)
 
-	// We check that now our dummy user is not admin anymore (return -1)
+	// We check that now our dummy user is not a voter yet (return -1)
 	require.True(t, form.GetVoterIndex(dummyUserID) == -1)
 
-	// =====
-	// Now perform the real test
-	// =====
-
-	err = snap.Set(dummyFormIDBuff, formBuf)
-	require.NoError(t, err)
-
-	// We perform below the command on the ledger
+	// We perform the Add command on the ledger
 	err = cmd.manageVotersForm(snap, makeStep(t, FormArg, string(dataAdd)))
 	require.NoError(t, err)
 
+	// We then check that the Add command was a success
 	res, err = snap.Get(dummyFormIDBuff)
 	require.NoError(t, err)
 
@@ -1441,9 +1479,7 @@ func TestCommand_VoterForm(t *testing.T) {
 	// We check that now our dummy user is an owner (return 0)
 	require.True(t, form.GetVoterIndex(dummyUserID) == 0)
 
-	// ===
 	// Now let's remove it
-	// ===
 
 	// We perform below the command on the ledger
 	err = cmd.manageVotersForm(snap, makeStep(t, FormArg, string(dataRemove)))
