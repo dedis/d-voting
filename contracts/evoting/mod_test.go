@@ -1261,13 +1261,13 @@ func TestCommand_OwnerForm(t *testing.T) {
 	err = cmd.manageOwnersForm(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
 	require.EqualError(t, err, unmarshalTransactionErr)
 
-	// Checking that given a Blockchain that always returns an error with an Add cmd,
-	// it will not be able to retrieve the Form on the store.
+	// Checking that given a Blockchain that always returns an error with
+	// an Add cmd, it will not be able to retrieve the Form on the store.
 	err = cmd.manageOwnersForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(dataAdd)))
 	require.ErrorContains(t, err, "failed to get key")
 
-	// Checking that given a Blockchain that always returns an error with an Remove cmd,
-	// it will not be able to retrieve the Form on the store.
+	// Checking that given a Blockchain that always returns an error with
+	// a Remove cmd, it will not be able to retrieve the Form on the store.
 	err = cmd.manageOwnersForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(dataRemove)))
 	require.ErrorContains(t, err, "failed to get key")
 
@@ -1422,13 +1422,13 @@ func TestCommand_VoterForm(t *testing.T) {
 	err = cmd.manageVotersForm(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
 	require.EqualError(t, err, unmarshalTransactionErr)
 
-	// Checking that given a Blockchain that always returns an error with an Add cmd,
-	// it will not be able to retrieve the Form on the store.
+	// Checking that given a Blockchain that always returns an error with
+	// an Add cmd, it will not be able to retrieve the Form on the store.
 	err = cmd.manageVotersForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(dataAdd)))
 	require.ErrorContains(t, err, "failed to get key")
 
-	// Checking that given a Blockchain that always returns an error with an Remove cmd,
-	// it will not be able to retrieve the Form on the store.
+	// Checking that given a Blockchain that always returns an error with
+	// a Remove cmd, it will not be able to retrieve the Form on the store.
 	err = cmd.manageVotersForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(dataRemove)))
 	require.ErrorContains(t, err, "failed to get key")
 
