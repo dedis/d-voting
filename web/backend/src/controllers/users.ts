@@ -36,27 +36,27 @@ usersRouter.post('/add_role', (req, res, next) => {
 
   if ('userId' in req.body) {
     try {
-      addPolicy(req.body.userId, req.body.subject, req.body.permission)
+      addPolicy(req.body.userId, req.body.subject, req.body.permission);
     } catch (error) {
       res.status(400).send(`Error while adding single user to roles: ${error}`);
       return;
     }
     res.set(200).send();
+    next();
   } else if ('userIds' in req.body) {
     try {
-      addListPolicy(req.body.userIds, req.body.subject, req.body.permission)
+      addListPolicy(req.body.userIds, req.body.subject, req.body.permission);
     } catch (error) {
       res.status(400).send(`Error while adding multiple users to roles: ${error}`);
       return;
     }
     res.set(200).send();
+    next();
   } else {
     res
       .status(400)
       .send(`Error: at least one of 'userId' or 'userIds' must be send in the request`);
   }
-
-
 });
 
 // This call (only for admins) allow an admin to remove a role to a user.
