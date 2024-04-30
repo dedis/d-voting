@@ -6,7 +6,6 @@ import (
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/registry"
 	"golang.org/x/xerrors"
-	"strconv"
 )
 
 var adminFormFormat = registry.NewSimpleRegistry()
@@ -47,13 +46,9 @@ func (adminForm AdminForm) Deserialize(ctx serde.Context, data []byte) (serde.Me
 
 // AddAdmin add a new admin to the system.
 func (adminForm *AdminForm) AddAdmin(userID string) error {
-	sciperInt, err := strconv.Atoi(userID)
+	sciperInt, err := SciperToInt(userID)
 	if err != nil {
-		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
-	}
-
-	if sciperInt < 100000 || sciperInt > 999999 {
-		return xerrors.Errorf("SCIPER %v is out of range.", sciperInt)
+		return xerrors.Errorf("Failed SciperToInt: %v", err)
 	}
 
 	adminForm.AdminList = append(adminForm.AdminList, sciperInt)
@@ -62,24 +57,27 @@ func (adminForm *AdminForm) AddAdmin(userID string) error {
 }
 
 // GetAdminIndex return the index of admin if userID is one, else return -1
-func (adminForm *AdminForm) GetAdminIndex(userID string) int {
-	sciperInt, err := strconv.Atoi(userID)
+func (adminForm *AdminForm) GetAdminIndex(userID string) (int, error) {
+	sciperInt, err := SciperToInt(userID)
 	if err != nil {
-		return -1
+		return -1, xerrors.Errorf("Failed SciperToInt: %v", err)
 	}
 
 	for i := 0; i < len(adminForm.AdminList); i++ {
 		if adminForm.AdminList[i] == sciperInt {
-			return i
+			return i, nil
 		}
 	}
 
-	return -1
+	return -1, nil
 }
 
 // RemoveAdmin add a new admin to the system.
 func (adminForm *AdminForm) RemoveAdmin(userID string) error {
-	index := adminForm.GetAdminIndex(userID)
+	index, err := adminForm.GetAdminIndex(userID)
+	if err != nil {
+		return xerrors.Errorf("Failed GetAdnubIndex: %v", err)
+	}
 
 	if index < 0 {
 		return xerrors.Errorf("Error while retrieving the index of the element.")

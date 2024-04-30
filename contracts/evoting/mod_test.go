@@ -1182,7 +1182,8 @@ func TestCommand_AdminForm(t *testing.T) {
 
 	// We check that our dummy User is now admin
 	// (if not admin return -1; else return admin index in AdminForm).
-	require.True(t, adminForm.GetAdminIndex(dummyUID) > -1)
+	dummyUserIDIndex, _ := adminForm.GetAdminIndex(dummyUID)
+	require.True(t, dummyUserIDIndex > -1)
 
 	// Now we want to remove its admin privilege.
 	// Initialization of the command
@@ -1205,7 +1206,8 @@ func TestCommand_AdminForm(t *testing.T) {
 	require.True(t, ok)
 
 	// We check that now our dummy user is not admin anymore (return -1)
-	require.True(t, adminForm.GetAdminIndex(dummyUID) == -1)
+	dummyUserIDIndex, _ = adminForm.GetAdminIndex(dummyUID)
+	require.True(t, dummyUserIDIndex == -1)
 }
 
 /*
