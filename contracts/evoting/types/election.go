@@ -418,7 +418,7 @@ type PubsharesUnits struct {
 	Indexes []int
 }
 
-// AddVoter add a new admin to the system.
+// AddVoter add a new voter to the form.
 func (form *Form) AddVoter(userID string) error {
 	sciperInt, err := strconv.Atoi(userID)
 	if err != nil {
@@ -430,7 +430,7 @@ func (form *Form) AddVoter(userID string) error {
 	return nil
 }
 
-// GetVoterIndex return the index of admin if userID is one, else return -1
+// GetVoterIndex return the index of voter if userID is one, else return -1
 func (form *Form) GetVoterIndex(userID string) (int, error) {
 	sciperInt, err := SciperToInt(userID)
 	if err != nil {
@@ -446,7 +446,7 @@ func (form *Form) GetVoterIndex(userID string) (int, error) {
 	return -1, nil
 }
 
-// RemoveVoter add a new admin to the system.
+// RemoveVoter remove a voter to the form.
 func (form *Form) RemoveVoter(userID string) error {
 	index, err := form.GetVoterIndex(userID)
 	if err != nil {
@@ -461,7 +461,7 @@ func (form *Form) RemoveVoter(userID string) error {
 	return nil
 }
 
-// AddOwner add a new admin to the system.
+// AddOwner add a new owner to the form.
 func (form *Form) AddOwner(userID string) error {
 	sciperInt, err := SciperToInt(userID)
 	if err != nil {
@@ -474,7 +474,7 @@ func (form *Form) AddOwner(userID string) error {
 	return nil
 }
 
-// GetOwnerIndex return the index of admin if userID is one, else return -1
+// GetOwnerIndex return the index of owner if userID is one, else return -1
 func (form *Form) GetOwnerIndex(userID string) (int, error) {
 	sciperInt, err := SciperToInt(userID)
 	if err != nil {
@@ -490,7 +490,7 @@ func (form *Form) GetOwnerIndex(userID string) (int, error) {
 	return -1, nil
 }
 
-// RemoveOwner add a new admin to the system.
+// RemoveOwner remove an owner from the form.
 func (form *Form) RemoveOwner(userID string) error {
 	index, err := form.GetOwnerIndex(userID)
 	if err != nil {
