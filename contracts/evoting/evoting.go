@@ -834,9 +834,9 @@ func (e evotingCommand) manageAdminForm(snap store.Snapshot, step execution.Step
 	return nil
 }
 
-// TODO modify
-// manageVotersForm implements commands. It performs the ADD or REMOVE VOTERS command
-func (e evotingCommand) manageVotersForm(snap store.Snapshot, step execution.Step) error {
+// manageVotersForm implements commands.
+// It performs the ADD or REMOVE VOTERS/OWNERS command
+func (e evotingCommand) manageOwnersVotersForm(snap store.Snapshot, step execution.Step) error {
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
@@ -847,6 +847,8 @@ func (e evotingCommand) manageVotersForm(snap store.Snapshot, step execution.Ste
 
 	txAddVoter, okAddVoter := msg.(types.AddVoter)
 	txRemoveVoter, okRemoveVoter := msg.(types.RemoveVoter)
+	txAddOwner, okAddOwner := msg.(types.AddOwner)
+	txRemoveOwner, okRemoveOwner := msg.(types.RemoveOwner)
 
 	if okAddVoter {
 		form, formID, err = e.getForm(txAddVoter.FormID, snap)
@@ -868,38 +870,7 @@ func (e evotingCommand) manageVotersForm(snap store.Snapshot, step execution.Ste
 		if err != nil {
 			return xerrors.Errorf("couldn't remove voter: %v", err)
 		}
-	} else {
-		return xerrors.Errorf(errWrongTx, msg)
-	}
-
-	formBuf, err := form.Serialize(e.context)
-	if err != nil {
-		return xerrors.Errorf("failed to marshal Form : %v", err)
-	}
-
-	err = snap.Set(formID, formBuf)
-	if err != nil {
-		return xerrors.Errorf("failed to set value: %v", err)
-	}
-
-	return nil
-}
-
-// TODO modify
-// manageOwnersForm implements commands. It performs the ADD or REMOVE Owners command
-func (e evotingCommand) manageOwnersForm(snap store.Snapshot, step execution.Step) error {
-	msg, err := e.getTransaction(step.Current)
-	if err != nil {
-		return xerrors.Errorf(errGetTransaction, err)
-	}
-
-	var form types.Form
-	var formID []byte
-
-	txAddOwner, okAddOwner := msg.(types.AddOwner)
-	txRemoveOwner, okRemoveOwner := msg.(types.RemoveOwner)
-
-	if okAddOwner {
+	} else if okAddOwner {
 		form, formID, err = e.getForm(txAddOwner.FormID, snap)
 		if err != nil {
 			return xerrors.Errorf(errGetForm, err)
