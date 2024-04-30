@@ -61,7 +61,7 @@ export async function addListPolicy(userIDs: string[], subject: string, permissi
   const promises = userIDs.map((userID) => authEnforcer.addPolicy(userID, subject, permission));
   try {
     await Promise.all(promises);
-  } catch(error) {
+  } catch (error) {
     // At least one policy update has failed, but we need to reload ACLs anyway for the succeeding ones
     await authEnforcer.loadPolicy();
     throw new Error(`Failed to add policies for all users: ${error}`);
