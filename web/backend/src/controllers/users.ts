@@ -34,26 +34,26 @@ usersRouter.post('/add_role', (req, res, next) => {
     }
   }
 
-  if (Object.hasOwn(req.body, 'userId')) {
-    addPolicy(req.body.userId, req.body.subject, req.body.permission)
-      .then(() => {
-        res.set(200).send();
-        next();
-      })
-      .catch((e) => {
-        res.status(400).send(`Error while adding to roles: ${e}`);
-      });
-  } else if(Object.hasOwn(req.body, 'userIds')) {
-    addListPolicy(req.body.userIds, req.body.subject, req.body.permission)
-      .then(() => {
-        res.set(200).send();
-        next();
-      })
-      .catch((e) => {
-        res.status(400).send(`Error while adding to roles: ${e}`);
-      });
+  if ('userId' in req.body) {
+    try {
+      addPolicy(req.body.userId, req.body.subject, req.body.permission)
+    } catch (error) {
+      res.status(400).send(`Error while adding single user to roles: ${error}`);
+      return;
+    }
+    res.set(200).send();
+  } else if ('userIds' in req.body) {
+    try {
+      addListPolicy(req.body.userIds, req.body.subject, req.body.permission)
+    } catch (error) {
+      res.status(400).send(`Error while adding multiple users to roles: ${error}`);
+      return;
+    }
+    res.set(200).send();
   } else {
-    res.status(400).send(`Error while adding to roles: bad request, both userId and userIds are missing`);
+    res
+      .status(400)
+      .send(`Error: at least one of 'userId' or 'userIds' must be send in the request`);
   }
 
 
