@@ -57,8 +57,6 @@ usersRouter.post('/add_role', (req, res, next) => {
   }
 
 
-  // Call https://search-api.epfl.ch/api/ldap?q=228271, if the answer is
-  // empty then sciper unknown, otherwise add it in userDB
 });
 
 // This call (only for admins) allow an admin to remove a role to a user.
