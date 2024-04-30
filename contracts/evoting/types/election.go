@@ -431,29 +431,27 @@ func (form *Form) AddVoter(userID string) error {
 }
 
 // GetVoterIndex return the index of admin if userID is one, else return -1
-func (form *Form) GetVoterIndex(userID string) int {
-	sciperInt, err := strconv.Atoi(userID)
+func (form *Form) GetVoterIndex(userID string) (int, error) {
+	sciperInt, err := SciperToInt(userID)
 	if err != nil {
-		return -1
+		return -1, xerrors.Errorf("Failed SciperToInt: %v", err)
 	}
 
 	for i := 0; i < len(form.Voters); i++ {
 		if form.Voters[i] == sciperInt {
-			return i
+			return i, nil
 		}
 	}
 
-	return -1
+	return -1, nil
 }
 
 // RemoveVoter add a new admin to the system.
 func (form *Form) RemoveVoter(userID string) error {
-	_, err := strconv.Atoi(userID)
+	index, err := form.GetVoterIndex(userID)
 	if err != nil {
-		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
+		return xerrors.Errorf("Failed GetVoterIndex: %v", err)
 	}
-
-	index := form.GetVoterIndex(userID)
 
 	if index < 0 {
 		return xerrors.Errorf("Error while retrieving the index of the element.")
@@ -465,9 +463,9 @@ func (form *Form) RemoveVoter(userID string) error {
 
 // AddOwner add a new admin to the system.
 func (form *Form) AddOwner(userID string) error {
-	sciperInt, err := strconv.Atoi(userID)
+	sciperInt, err := SciperToInt(userID)
 	if err != nil {
-		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
+		return xerrors.Errorf("Failed SciperToInt: %v", err)
 	}
 
 	// TODO need to check that the new user is admin !
@@ -477,29 +475,27 @@ func (form *Form) AddOwner(userID string) error {
 }
 
 // GetOwnerIndex return the index of admin if userID is one, else return -1
-func (form *Form) GetOwnerIndex(userID string) int {
-	sciperInt, err := strconv.Atoi(userID)
+func (form *Form) GetOwnerIndex(userID string) (int, error) {
+	sciperInt, err := SciperToInt(userID)
 	if err != nil {
-		return -1
+		return -1, xerrors.Errorf("Failed SciperToInt: %v", err)
 	}
 
 	for i := 0; i < len(form.Owners); i++ {
 		if form.Owners[i] == sciperInt {
-			return i
+			return i, nil
 		}
 	}
 
-	return -1
+	return -1, nil
 }
 
 // RemoveOwner add a new admin to the system.
 func (form *Form) RemoveOwner(userID string) error {
-	_, err := strconv.Atoi(userID)
+	index, err := form.GetOwnerIndex(userID)
 	if err != nil {
-		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
+		return xerrors.Errorf("Failed GetOwnerIndex: %v", err)
 	}
-
-	index := form.GetOwnerIndex(userID)
 
 	if index < 0 {
 		return xerrors.Errorf("Error while retrieving the index of the element.")
@@ -513,4 +509,17 @@ func (form *Form) RemoveOwner(userID string) error {
 
 	form.Owners = append(form.Owners[:index], form.Owners[index+1:]...)
 	return nil
+}
+
+func SciperToInt(userID string) (int, error) {
+	sciperInt, err := strconv.Atoi(userID)
+	if err != nil {
+		return 0, xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
+	}
+
+	if sciperInt < 100000 || sciperInt > 999999 {
+		return 0, xerrors.Errorf("SCIPER %v is out of range.", sciperInt)
+	}
+
+	return sciperInt, nil
 }

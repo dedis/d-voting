@@ -1299,7 +1299,8 @@ func TestCommand_OwnerForm(t *testing.T) {
 	require.True(t, ok)
 
 	// We check that now our dummy user is not owner yet (return -1)
-	require.True(t, form.GetOwnerIndex(dummyUserID) == -1)
+	dummyUserOwnerIndex, _ := form.GetOwnerIndex(dummyUserID)
+	require.True(t, dummyUserOwnerIndex == -1)
 
 	// We perform the Add command on the ledger
 	err = cmd.manageOwnersVotersForm(snap, makeStep(t, FormArg, string(dataAdd)))
@@ -1316,7 +1317,8 @@ func TestCommand_OwnerForm(t *testing.T) {
 	require.True(t, ok)
 
 	// We check that now our dummy user is an owner (return 0)
-	require.True(t, form.GetOwnerIndex(dummyUserID) == 0)
+	dummyUserOwnerIndex, _ = form.GetOwnerIndex(dummyUserID)
+	require.True(t, dummyUserOwnerIndex == 0)
 
 	// Now let's remove it
 
@@ -1349,7 +1351,8 @@ func TestCommand_OwnerForm(t *testing.T) {
 	require.True(t, ok)
 
 	// We check that now our second dummy user is also an owner (return 0).
-	require.True(t, form.GetOwnerIndex("234567") == 1)
+	secondDummyUserOwnerIndex, _ := form.GetOwnerIndex("234567")
+	require.True(t, secondDummyUserOwnerIndex == 1)
 
 	// Now remove successfully the first one.
 	err = cmd.manageOwnersVotersForm(snap, makeStep(t, FormArg, string(dataRemove)))
@@ -1366,9 +1369,11 @@ func TestCommand_OwnerForm(t *testing.T) {
 	require.True(t, ok)
 
 	// We check that now our first dummy user is not an owner anymore (return -1)
-	require.True(t, form.GetOwnerIndex(dummyUserID) == -1)
+	dummyUserOwnerIndex, _ = form.GetOwnerIndex(dummyUserID)
+	require.True(t, dummyUserOwnerIndex == -1)
 	// But that the second one is still an admin (return != -1)
-	require.True(t, form.GetOwnerIndex("234567") != -1)
+	secondDummyUserOwnerIndex, _ = form.GetOwnerIndex("234567")
+	require.True(t, secondDummyUserOwnerIndex != -1)
 }
 
 /*
@@ -1460,7 +1465,8 @@ func TestCommand_VoterForm(t *testing.T) {
 	require.True(t, ok)
 
 	// We check that now our dummy user is not a voter yet (return -1)
-	require.True(t, form.GetVoterIndex(dummyUserID) == -1)
+	dummyUserVoterIndex, _ := form.GetVoterIndex(dummyUserID)
+	require.True(t, dummyUserVoterIndex == -1)
 
 	// We perform the Add command on the ledger
 	err = cmd.manageOwnersVotersForm(snap, makeStep(t, FormArg, string(dataAdd)))
@@ -1477,7 +1483,8 @@ func TestCommand_VoterForm(t *testing.T) {
 	require.True(t, ok)
 
 	// We check that now our dummy user is an owner (return 0)
-	require.True(t, form.GetVoterIndex(dummyUserID) == 0)
+	dummyUserVoterIndex, _ = form.GetVoterIndex(dummyUserID)
+	require.True(t, dummyUserVoterIndex == 0)
 
 	// Now let's remove it
 
@@ -1495,7 +1502,8 @@ func TestCommand_VoterForm(t *testing.T) {
 	require.True(t, ok)
 
 	// We check that now our dummy user is an owner (return 0)
-	require.True(t, form.GetVoterIndex(dummyUserID) == -1)
+	dummyUserVoterIndex, _ = form.GetVoterIndex(dummyUserID)
+	require.True(t, dummyUserVoterIndex == -1)
 }
 
 // -----------------------------------------------------------------------------
