@@ -834,6 +834,63 @@ func (e evotingCommand) manageAdminForm(snap store.Snapshot, step execution.Step
 	return nil
 }
 
+func (e evotingCommand) initializeAdminForm(snap store.Snapshot, step execution.Step, initialAdmin []int) error {
+	// Get the formID, which is the SHA256 of the transaction ID
+	h := sha256.New()
+	h.Write(step.Current.GetID())
+	formIDBuf := h.Sum(nil)
+
+	adminForm := types.AdminForm{
+		FormID:    hex.EncodeToString(formIDBuf),
+		AdminList: initialAdmin,
+	}
+
+	formBuf, err := adminForm.Serialize(e.context)
+	if err != nil {
+		return xerrors.Errorf("failed to marshal Admin Form : %v", err)
+	}
+
+	err = snap.Set(formIDBuf, formBuf)
+	if err != nil {
+		return xerrors.Errorf("failed to set value: %v", err)
+	}
+
+	// Update the form metadata store
+
+	formsMetadataBuf, err := snap.Get([]byte(FormsMetadataKey))
+	if err != nil {
+		return xerrors.Errorf("failed to get key '%s': %v", formsMetadataBuf, err)
+	}
+
+	formsMetadata := &types.FormsMetadata{
+		FormsIDs: types.FormIDs{},
+	}
+
+	if len(formsMetadataBuf) != 0 {
+		err := json.Unmarshal(formsMetadataBuf, formsMetadata)
+		if err != nil {
+			return xerrors.Errorf("failed to unmarshal FormsMetadata: %v", err)
+		}
+	}
+
+	err = formsMetadata.FormsIDs.Add(adminForm.FormID)
+	if err != nil {
+		return xerrors.Errorf("couldn't add new form: %v", err)
+	}
+
+	formMetadataJSON, err := json.Marshal(formsMetadata)
+	if err != nil {
+		return xerrors.Errorf("failed to marshal FormsMetadata: %v", err)
+	}
+
+	err = snap.Set([]byte(FormsMetadataKey), formMetadataJSON)
+	if err != nil {
+		return xerrors.Errorf("failed to set value: %v", err)
+	}
+
+	return nil
+}
+
 // manageVotersForm implements commands.
 // It performs the ADD or REMOVE VOTERS/OWNERS command
 func (e evotingCommand) manageOwnersVotersForm(snap store.Snapshot, step execution.Step) error {
@@ -876,7 +933,7 @@ func (e evotingCommand) manageOwnersVotersForm(snap store.Snapshot, step executi
 			return xerrors.Errorf(errGetForm, err)
 		}
 
-		err = form.AddOwner(txAddOwner.UserID)
+		err = form.AddOwner(e.context, txAddOwner.UserID)
 		if err != nil {
 			return xerrors.Errorf("couldn't add owner: %v", err)
 		}
