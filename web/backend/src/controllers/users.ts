@@ -1,6 +1,13 @@
 import express from 'express';
 
-import { addPolicy, addListPolicy, initEnforcer, isAuthorized, PERMISSIONS } from '../authManager';
+import {
+  addPolicy,
+  addListPolicy,
+  initEnforcer,
+  isAuthorized,
+  PERMISSIONS,
+  readSCIPER,
+} from '../authManager';
 
 export const usersRouter = express.Router();
 
@@ -36,6 +43,7 @@ usersRouter.post('/add_role', (req, res, next) => {
 
   if ('userId' in req.body) {
     try {
+      readSCIPER(req.body.userId);
       addPolicy(req.body.userId, req.body.subject, req.body.permission);
     } catch (error) {
       res.status(400).send(`Error while adding single user to roles: ${error}`);
@@ -45,6 +53,7 @@ usersRouter.post('/add_role', (req, res, next) => {
     next();
   } else if ('userIds' in req.body) {
     try {
+      req.body.userIds.every(readSCIPER);
       addListPolicy(req.body.userIds, req.body.subject, req.body.permission);
     } catch (error) {
       res.status(400).send(`Error while adding multiple users to roles: ${error}`);
