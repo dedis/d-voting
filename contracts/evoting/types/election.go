@@ -420,9 +420,9 @@ type PubsharesUnits struct {
 
 // AddVoter add a new voter to the form.
 func (form *Form) AddVoter(userID string) error {
-	sciperInt, err := strconv.Atoi(userID)
+	sciperInt, err := SciperToInt(userID)
 	if err != nil {
-		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
+		return xerrors.Errorf("Failed SciperToInt: %v", err)
 	}
 
 	form.Voters = append(form.Voters, sciperInt)
