@@ -69,7 +69,14 @@ const App = () => {
                   </RequireAuth>
                 }
               />
-              <Route path={'/forms/:formId'} element={<FormShow />} />
+              <Route
+                path={'/forms/:formId'}
+                element={
+                  <RequireAuth auth={['election', 'create']}>
+                    <FormShow />
+                  </RequireAuth>
+                }
+              />
               <Route path={'/forms/:formId/result'} element={<FormResult />} />
               <Route
                 path={ROUTE_BALLOT_SHOW + '/:formId'}
