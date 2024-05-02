@@ -361,7 +361,7 @@ func TestCommand_CloseForm(t *testing.T) {
 	err = snap.Set(dummyFormIDBuff, formBuf)
 	require.NoError(t, err)
 
-	closeForm.UserID = hex.EncodeToString([]byte("dummyAdminID"))
+	closeForm.UserID = hex.EncodeToString([]byte("123456"))
 
 	data, err = closeForm.Serialize(ctx)
 	require.NoError(t, err)
@@ -382,8 +382,8 @@ func TestCommand_CloseForm(t *testing.T) {
 	err = cmd.closeForm(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "at least two ballots are required")
 
-	require.NoError(t, dummyForm.CastVote(ctx, snap, "dummyUser1", types.Ciphervote{}))
-	require.NoError(t, dummyForm.CastVote(ctx, snap, "dummyUser2", types.Ciphervote{}))
+	require.NoError(t, dummyForm.CastVote(ctx, snap, "123456", types.Ciphervote{}))
+	require.NoError(t, dummyForm.CastVote(ctx, snap, "654321", types.Ciphervote{}))
 
 	formBuf, err = dummyForm.Serialize(ctx)
 	require.NoError(t, err)
