@@ -142,7 +142,7 @@ func TestCommand_CreateForm(t *testing.T) {
 
 	contract := NewContract(service, fakeDkg, rosterFac)
 
-	cmd := evotingCommand{
+	cmd := EvotingCommand{
 		Contract: &contract,
 	}
 
@@ -202,7 +202,7 @@ func TestCommand_CastVote(t *testing.T) {
 	formBuf, err := dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	cmd := evotingCommand{
+	cmd := EvotingCommand{
 		Contract: &contract,
 	}
 
@@ -332,7 +332,7 @@ func TestCommand_CloseForm(t *testing.T) {
 	formBuf, err := dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	cmd := evotingCommand{
+	cmd := EvotingCommand{
 		Contract: &contract,
 	}
 
@@ -408,7 +408,7 @@ func TestCommand_ShuffleBallotsCannotShuffleTwice(t *testing.T) {
 
 	snap, form, shuffleBallots, contract := initGoodShuffleBallot(t, k)
 
-	cmd := evotingCommand{
+	cmd := EvotingCommand{
 		Contract: &contract,
 		prover:   fakeProver,
 	}
@@ -452,7 +452,7 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 	// Simple Shuffle from round 0 :
 	snap, form, shuffleBallots, contract := initGoodShuffleBallot(t, k)
 
-	cmd := evotingCommand{
+	cmd := EvotingCommand{
 		Contract: &contract,
 		prover:   fakeProver,
 	}
@@ -530,7 +530,7 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	formBuf, err := form.Serialize(ctx)
 	require.NoError(t, err)
 
-	cmd := evotingCommand{
+	cmd := EvotingCommand{
 		Contract: &contract,
 		prover:   fakeProver,
 	}
@@ -756,7 +756,7 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 	formBuf, err := form.Serialize(ctx)
 	require.NoError(t, err)
 
-	cmd := evotingCommand{
+	cmd := EvotingCommand{
 		Contract: &contract,
 	}
 
@@ -957,7 +957,7 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	formBuf, err := dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	cmd := evotingCommand{
+	cmd := EvotingCommand{
 		Contract: &contract,
 	}
 
@@ -1057,7 +1057,7 @@ func TestCommand_CancelForm(t *testing.T) {
 	formBuf, err := dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	cmd := evotingCommand{
+	cmd := EvotingCommand{
 		Contract: &contract,
 	}
 
@@ -1118,7 +1118,7 @@ func TestCommand_AdminForm(t *testing.T) {
 	require.NoError(t, err)
 
 	// Initialize the command handler to post on the ledger
-	cmd := evotingCommand{
+	cmd := EvotingCommand{
 		Contract: &contract,
 	}
 
@@ -1247,7 +1247,7 @@ func TestCommand_OwnerForm(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create an evoting command.
-	cmd := evotingCommand{
+	cmd := EvotingCommand{
 		Contract: &contract,
 	}
 
@@ -1413,7 +1413,7 @@ func TestCommand_VoterForm(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create an evoting command.
-	cmd := evotingCommand{
+	cmd := EvotingCommand{
 		Contract: &contract,
 	}
 

@@ -37,19 +37,30 @@ const (
 	errWrongTx            = "wrong type of transaction: %T"
 )
 
-// evotingCommand implements the commands of the Evoting contract.
+// EvotingCommand implements the commands of the Evoting contract.
 //
 // - implements commands
-type evotingCommand struct {
+type EvotingCommand struct {
 	*Contract
 
 	prover prover
 }
 
+func NewEvotingCommand(contract *Contract, prover prover, snap store.Snapshot, step execution.Step, initialAdmin []int) EvotingCommand {
+	evotingCommand := EvotingCommand{
+		Contract: contract,
+		prover:   prover,
+	}
+
+	evotingCommand.initializeAdminForm(snap, step, initialAdmin)
+
+	return evotingCommand
+}
+
 type prover func(suite proof.Suite, protocolName string, verifier proof.Verifier, proof []byte) error
 
 // createForm implements commands. It performs the CREATE_FORM command
-func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) error {
+func (e EvotingCommand) createForm(snap store.Snapshot, step execution.Step) error {
 
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
@@ -163,7 +174,7 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 
 // openForm set the public key on the form. The public key is fetched
 // from the DKG actor. It works only if DKG is set up.
-func (e evotingCommand) openForm(snap store.Snapshot, step execution.Step) error {
+func (e EvotingCommand) openForm(snap store.Snapshot, step execution.Step) error {
 
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
@@ -217,7 +228,7 @@ func (e evotingCommand) openForm(snap store.Snapshot, step execution.Step) error
 }
 
 // castVote implements commands. It performs the CAST_VOTE command
-func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error {
+func (e EvotingCommand) castVote(snap store.Snapshot, step execution.Step) error {
 
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
@@ -264,7 +275,7 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 }
 
 // shuffleBallots implements commands. It performs the SHUFFLE_BALLOTS command
-func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step) error {
+func (e EvotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step) error {
 
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
@@ -436,7 +447,7 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 
 // checkPreviousTransactions checks if a ShuffleBallotsTransaction has already
 // been accepted and executed for a specific round.
-func (e evotingCommand) checkPreviousTransactions(step execution.Step, round int) error {
+func (e EvotingCommand) checkPreviousTransactions(step execution.Step, round int) error {
 	for _, tx := range step.Previous {
 		// skip tx not concerning the evoting contract
 		if string(tx.GetArg(native.ContractArg)) != ContractName {
@@ -468,7 +479,7 @@ func (e evotingCommand) checkPreviousTransactions(step execution.Step, round int
 }
 
 // closeForm implements commands. It performs the CLOSE_FORM command
-func (e evotingCommand) closeForm(snap store.Snapshot, step execution.Step) error {
+func (e EvotingCommand) closeForm(snap store.Snapshot, step execution.Step) error {
 
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
@@ -511,7 +522,7 @@ func (e evotingCommand) closeForm(snap store.Snapshot, step execution.Step) erro
 
 // registerPubshares implements commands. It performs the
 // REGISTER_PUB_SHARES command
-func (e evotingCommand) registerPubshares(snap store.Snapshot, step execution.Step) error {
+func (e EvotingCommand) registerPubshares(snap store.Snapshot, step execution.Step) error {
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
@@ -622,7 +633,7 @@ func (e evotingCommand) registerPubshares(snap store.Snapshot, step execution.St
 }
 
 // combineShares implements commands. It performs the COMBINE_SHARES command
-func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) error {
+func (e EvotingCommand) combineShares(snap store.Snapshot, step execution.Step) error {
 
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
@@ -695,7 +706,7 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 }
 
 // cancelForm implements commands. It performs the CANCEL_FORM command
-func (e evotingCommand) cancelForm(snap store.Snapshot, step execution.Step) error {
+func (e EvotingCommand) cancelForm(snap store.Snapshot, step execution.Step) error {
 
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
@@ -729,7 +740,7 @@ func (e evotingCommand) cancelForm(snap store.Snapshot, step execution.Step) err
 }
 
 // deleteForm implements commands. It performs the DELETE_FORM command
-func (e evotingCommand) deleteForm(snap store.Snapshot, step execution.Step) error {
+func (e EvotingCommand) deleteForm(snap store.Snapshot, step execution.Step) error {
 
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
@@ -785,7 +796,7 @@ func (e evotingCommand) deleteForm(snap store.Snapshot, step execution.Step) err
 }
 
 // manageAdminForm implements commands. It performs the ADD or REMOVE ADMIN command
-func (e evotingCommand) manageAdminForm(snap store.Snapshot, step execution.Step) error {
+func (e EvotingCommand) manageAdminForm(snap store.Snapshot, step execution.Step) error {
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
@@ -834,7 +845,7 @@ func (e evotingCommand) manageAdminForm(snap store.Snapshot, step execution.Step
 	return nil
 }
 
-func (e evotingCommand) initializeAdminForm(snap store.Snapshot, step execution.Step, initialAdmin []int) error {
+func (e EvotingCommand) initializeAdminForm(snap store.Snapshot, step execution.Step, initialAdmin []int) error {
 	// Get the formID, which is the SHA256 of the transaction ID
 	h := sha256.New()
 	h.Write(step.Current.GetID())
@@ -893,7 +904,7 @@ func (e evotingCommand) initializeAdminForm(snap store.Snapshot, step execution.
 
 // manageVotersForm implements commands.
 // It performs the ADD or REMOVE VOTERS/OWNERS command
-func (e evotingCommand) manageOwnersVotersForm(snap store.Snapshot, step execution.Step) error {
+func (e EvotingCommand) manageOwnersVotersForm(snap store.Snapshot, step execution.Step) error {
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
@@ -932,6 +943,8 @@ func (e evotingCommand) manageOwnersVotersForm(snap store.Snapshot, step executi
 		if err != nil {
 			return xerrors.Errorf(errGetForm, err)
 		}
+
+		adminForm, err := e.getAdminForm("id", snap)
 
 		err = form.AddOwner(e.context, txAddOwner.UserID)
 		if err != nil {
@@ -1031,7 +1044,7 @@ func (s SemiRandomStream) XORKeyStream(dst, src []byte) {
 
 // getForm gets the form from the snap. Returns the form ID NOT hex
 // encoded.
-func (e evotingCommand) getForm(formIDHex string,
+func (e EvotingCommand) getForm(formIDHex string,
 	snap store.Snapshot) (types.Form, []byte, error) {
 
 	var form types.Form
@@ -1051,7 +1064,7 @@ func (e evotingCommand) getForm(formIDHex string,
 
 // getAdminForm gets the AdminForm from the snap. Returns the form ID NOT hex
 // encoded.
-func (e evotingCommand) getAdminForm(formIDHex string,
+func (e EvotingCommand) getAdminForm(formIDHex string,
 	snap store.Snapshot) (types.AdminForm, []byte, error) {
 
 	var form types.AdminForm
@@ -1070,7 +1083,7 @@ func (e evotingCommand) getAdminForm(formIDHex string,
 }
 
 // getTransaction extracts the argument from the transaction.
-func (e evotingCommand) getTransaction(tx txn.Transaction) (serde.Message, error) {
+func (e EvotingCommand) getTransaction(tx txn.Transaction) (serde.Message, error) {
 	buff := tx.GetArg(FormArg)
 	if len(buff) == 0 {
 		return nil, xerrors.Errorf("%q not found in tx arg", FormArg)

@@ -199,7 +199,7 @@ func NewContract(srvc access.Service,
 		transactionFac: transactionFac,
 	}
 
-	contract.cmd = evotingCommand{Contract: &contract, prover: proof.HashVerify}
+	contract.cmd = EvotingCommand{Contract: &contract, prover: proof.HashVerify}
 
 	return contract
 }

@@ -462,14 +462,14 @@ func (form *Form) RemoveVoter(userID string) error {
 }
 
 // AddOwner add a new owner to the form.
-func (form *Form) AddOwner(ctx serde.Context, userID string) error {
+func (form *Form) AddOwner(userID string) error {
 	sciperInt, err := SciperToInt(userID)
 	if err != nil {
 		return xerrors.Errorf("Failed SciperToInt: %v", err)
 	}
 
 	// TODO need to check that the new user is admin !
-	//adminForm, err := AdminFormFromStore(ctx)
+
 	form.Owners = append(form.Owners, sciperInt)
 
 	return nil
