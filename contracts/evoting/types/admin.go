@@ -2,6 +2,7 @@ package types
 
 import (
 	"crypto/sha256"
+
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/registry"
@@ -73,7 +74,7 @@ func (adminList *AdminList) GetAdminIndex(userID string) (int, error) {
 func (adminList *AdminList) RemoveAdmin(userID string) error {
 	index, err := adminList.GetAdminIndex(userID)
 	if err != nil {
-		return xerrors.Errorf("Failed GetAdminIndex: %v", err)
+		return xerrors.Errorf("Failed to retrieve the Admin permission: %v", err)
 	}
 
 	if index < 0 {
