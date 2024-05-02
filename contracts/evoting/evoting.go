@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"math/rand"
-	"strconv"
 	"strings"
 
 	"go.dedis.ch/dela"
@@ -103,9 +102,9 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 	// Initial owner is the creator
 	owners := make([]int, 1)
 
-	sciperInt, err := strconv.Atoi(tx.UserID)
+	sciperInt, err := types.SciperToInt(tx.UserID)
 	if err != nil {
-		return xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
+		return xerrors.Errorf("failed to convert SCIPER to integer: %v", err)
 	}
 
 	owners[0] = sciperInt
