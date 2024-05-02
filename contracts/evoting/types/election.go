@@ -422,7 +422,7 @@ type PubsharesUnits struct {
 func (form *Form) AddVoter(userID string) error {
 	sciperInt, err := SciperToInt(userID)
 	if err != nil {
-		return xerrors.Errorf("Failed SciperToInt: %v", err)
+		return xerrors.Errorf("failed to convert SCIPER to integer: %v", err)
 	}
 
 	form.Voters = append(form.Voters, sciperInt)
@@ -434,7 +434,7 @@ func (form *Form) AddVoter(userID string) error {
 func (form *Form) GetVoterIndex(userID string) (int, error) {
 	sciperInt, err := SciperToInt(userID)
 	if err != nil {
-		return -1, xerrors.Errorf("Failed SciperToInt: %v", err)
+		return -1, xerrors.Errorf("failed to convert SCIPER to integer: %v", err)
 	}
 
 	for i := 0; i < len(form.Voters); i++ {
@@ -465,7 +465,7 @@ func (form *Form) RemoveVoter(userID string) error {
 func (form *Form) AddOwner(userID string) error {
 	sciperInt, err := SciperToInt(userID)
 	if err != nil {
-		return xerrors.Errorf("Failed SciperToInt: %v", err)
+		return xerrors.Errorf("failed to convert SCIPER to integer: %v", err)
 	}
 
 	// TODO need to check that the new user is admin !
@@ -479,7 +479,7 @@ func (form *Form) AddOwner(userID string) error {
 func (form *Form) GetOwnerIndex(userID string) (int, error) {
 	sciperInt, err := SciperToInt(userID)
 	if err != nil {
-		return -1, xerrors.Errorf("Failed SciperToInt: %v", err)
+		return -1, xerrors.Errorf("failed to convert SCIPER to integer: %v", err)
 	}
 
 	for i := 0; i < len(form.Owners); i++ {
