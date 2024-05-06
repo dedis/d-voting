@@ -29,7 +29,7 @@ usersRouter.get('/user_rights', (req, res) => {
 });
 
 // This call (only for admins) allows an admin to add a role to a voter.
-usersRouter.post('/add_role', (req, res, next) => {
+usersRouter.post('/add_role', async (req, res, next) => {
   if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.ROLES, PERMISSIONS.ACTIONS.ADD)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
@@ -44,7 +44,7 @@ usersRouter.post('/add_role', (req, res, next) => {
   if ('userId' in req.body) {
     try {
       readSCIPER(req.body.userId);
-      addPolicy(req.body.userId, req.body.subject, req.body.permission);
+      await addPolicy(req.body.userId, req.body.subject, req.body.permission);
     } catch (error) {
       res.status(400).send(`Error while adding single user to roles: ${error}`);
       return;
@@ -54,7 +54,7 @@ usersRouter.post('/add_role', (req, res, next) => {
   } else if ('userIds' in req.body) {
     try {
       req.body.userIds.every(readSCIPER);
-      addListPolicy(req.body.userIds, req.body.subject, req.body.permission);
+      await addListPolicy(req.body.userIds, req.body.subject, req.body.permission);
     } catch (error) {
       res.status(400).send(`Error while adding multiple users to roles: ${error}`);
       return;
