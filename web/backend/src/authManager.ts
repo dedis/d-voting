@@ -99,7 +99,7 @@ export function setMapAuthorization(list: string[][]): Map<String, Array<String>
 // the range between 100000 and 999999, an error is thrown.
 export function readSCIPER(s: string): number {
   const n = parseInt(s, 10);
-  if (isNaN(n)) {
+  if (Number.isNaN(n)) {
     throw new Error(`${s} is not a number`);
   }
   if (n < 100000 || n > 999999) {
