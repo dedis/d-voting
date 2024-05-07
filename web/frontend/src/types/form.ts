@@ -42,6 +42,7 @@ export const enum OngoingAction {
   Decrypting,
   Combining,
   Canceling,
+  AddVoters,
 }
 
 interface FormInfo {

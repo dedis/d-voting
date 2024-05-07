@@ -293,6 +293,10 @@
     "footerBuild": "build:",
     "footerBuildTime": "in:",
     "voteNotVoter": "Wählen nicht erlaubt.",
-    "voteNotVoterDescription": "Sie sind nicht wahlberechtigt in dieser Wahl. Falls Sie denken, dass ein Fehler vorliegt, wenden Sie sich bitte an die verantwortliche Stelle."
+    "voteNotVoterDescription": "Sie sind nicht wahlberechtigt in dieser Wahl. Falls Sie denken, dass ein Fehler vorliegt, wenden Sie sich bitte an die verantwortliche Stelle.",
+    "addVotersLoading": "WählerInnen werden hinzugefügt...",
+    "sciperNaN": "'{{sciperStr}}' ist keine Zahl; ",
+    "sciperOutOfRange": "{{sciper}} ist nicht in dem erlaubten Bereich (100000-999999); ",
+    "invalidScipersFound": "Ungültige SCIPERs wurden gefunden. Es wurde keine Anfrage gesendet. Bitte korrigieren Sie folgende Fehler: {{sciperErrs}}"
   }
 }

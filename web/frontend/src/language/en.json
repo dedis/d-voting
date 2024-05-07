@@ -294,6 +294,10 @@
     "footerBuild": "build:",
     "footerBuildTime": "in:",
     "voteNotVoter": "Voting not allowed.",
-    "voteNotVoterDescription": "You are not allowed to vote in this form. If you believe this is an error, please contact the responsible of the service."
+    "voteNotVoterDescription": "You are not allowed to vote in this form. If you believe this is an error, please contact the responsible of the service.",
+    "addVotersLoading": "Adding voters...",
+    "sciperNaN": "'{{sciperStr}}' is not a number; ",
+    "sciperOutOfRange": "{{sciper}} is out of range (100000-999999); ",
+    "invalidScipersFound": "Invalid SCIPER numbers found. No request has been send. Please fix the following errors: {{sciperErrs}}"
   }
 }

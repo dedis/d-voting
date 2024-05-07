@@ -1,6 +1,13 @@
 import express from 'express';
 
-import { addPolicy, initEnforcer, isAuthorized, PERMISSIONS } from '../authManager';
+import {
+  addPolicy,
+  addListPolicy,
+  initEnforcer,
+  isAuthorized,
+  PERMISSIONS,
+  readSCIPER,
+} from '../authManager';
 
 export const usersRouter = express.Router();
 
@@ -22,7 +29,7 @@ usersRouter.get('/user_rights', (req, res) => {
 });
 
 // This call (only for admins) allows an admin to add a role to a voter.
-usersRouter.post('/add_role', (req, res, next) => {
+usersRouter.post('/add_role', async (req, res, next) => {
   if (!isAuthorized(req.session.userId, PERMISSIONS.SUBJECTS.ROLES, PERMISSIONS.ACTIONS.ADD)) {
     res.status(400).send('Unauthorized - only admins allowed');
     return;
@@ -34,17 +41,31 @@ usersRouter.post('/add_role', (req, res, next) => {
     }
   }
 
-  addPolicy(req.body.userId, req.body.subject, req.body.permission)
-    .then(() => {
-      res.set(200).send();
-      next();
-    })
-    .catch((e) => {
-      res.status(400).send(`Error while adding to roles: ${e}`);
-    });
-
-  // Call https://search-api.epfl.ch/api/ldap?q=228271, if the answer is
-  // empty then sciper unknown, otherwise add it in userDB
+  if ('userId' in req.body) {
+    try {
+      readSCIPER(req.body.userId);
+      await addPolicy(req.body.userId, req.body.subject, req.body.permission);
+    } catch (error) {
+      res.status(400).send(`Error while adding single user to roles: ${error}`);
+      return;
+    }
+    res.set(200).send();
+    next();
+  } else if ('userIds' in req.body) {
+    try {
+      req.body.userIds.every(readSCIPER);
+      await addListPolicy(req.body.userIds, req.body.subject, req.body.permission);
+    } catch (error) {
+      res.status(400).send(`Error while adding multiple users to roles: ${error}`);
+      return;
+    }
+    res.set(200).send();
+    next();
+  } else {
+    res
+      .status(400)
+      .send(`Error: at least one of 'userId' or 'userIds' must be send in the request`);
+  }
 });
 
 // This call (only for admins) allow an admin to remove a role to a user.

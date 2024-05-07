@@ -51,7 +51,7 @@ const useChangeAction = (
   const [showModalDelete, setShowModalDelete] = useState(false);
   const [showModalAddVoters, setShowModalAddVoters] = useState(false);
   const [showModalAddVotersSucccess, setShowModalAddVotersSuccess] = useState(false);
-  const [newVoters, setNewVoters] = useState('');
+  const [newVoters] = useState('');
 
   const [userConfirmedProxySetup, setUserConfirmedProxySetup] = useState(false);
   const [userConfirmedClosing, setUserConfirmedClosing] = useState(false);
@@ -314,35 +314,64 @@ const useChangeAction = (
 
   useEffect(() => {
     if (userConfirmedAddVoters.length > 0) {
-      const newUsersArray = [];
-      for (const sciperStr of userConfirmedAddVoters.split('\n')) {
+      let sciperErrs = '';
+
+      const providedScipers = userConfirmedAddVoters.split('\n');
+      setUserConfirmedAddVoters('');
+
+      for (const sciperStr of providedScipers) {
+        const sciper = parseInt(sciperStr, 10);
+        if (isNaN(sciper)) {
+          sciperErrs += t('sciperNaN', { sciperStr: sciperStr });
+        }
+        if (sciper < 100000 || sciper > 999999) {
+          sciperErrs += t('sciperOutOfRange', { sciper: sciper });
+        }
+      }
+      if (sciperErrs.length > 0) {
+        setTextModalError(t('invalidScipersFound', { sciperErrs: sciperErrs }));
+        setShowModalError(true);
+        return;
+      }
+      // requests to ENDPOINT_ADD_ROLE cannot be done in parallel because on the
+      // backend, auths are reloaded from the DB each time there is an update.
+      // While auths are reloaded, they cannot be checked in a predictable way.
+      // See isAuthorized, addPolicy, and addListPolicy in backend/src/authManager.ts
+      (async () => {
         try {
-          const sciper = parseInt(sciperStr, 10);
-          if (sciper < 100000 || sciper > 999999) {
-            console.error(`SCIPER is out of range. ${sciper} is not between 100000 and 999999`);
-          } else {
-            const request = {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId: sciper, subject: formID, permission: 'vote' }),
-            };
-            sendFetchRequest(ENDPOINT_ADD_ROLE, request, setIsPosting)
-              .catch(console.error)
-              .then(() => {
-                newUsersArray.push(sciper);
-                setNewVoters(newUsersArray.join('\n'));
-                setShowModalAddVotersSuccess(true);
-              });
+          const chunkSize = 1000;
+          setOngoingAction(OngoingAction.AddVoters);
+          for (let i = 0; i < providedScipers.length; i += chunkSize) {
+            await sendFetchRequest(
+              ENDPOINT_ADD_ROLE,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userIds: providedScipers.slice(i, i + chunkSize),
+                  subject: formID,
+                  permission: 'vote',
+                }),
+              },
+              setIsPosting
+            );
           }
         } catch (e) {
           console.error(`While adding voter: ${e}`);
+          setShowModalAddVoters(false);
         }
-      }
-      setUserConfirmedAddVoters('');
-      setShowModalAddVoters(false);
+        setOngoingAction(OngoingAction.None);
+      })();
     }
-    // setUserConfirmedAddVoters(false);
-  }, [formID, sendFetchRequest, userConfirmedAddVoters]);
+  }, [
+    formID,
+    sendFetchRequest,
+    userConfirmedAddVoters,
+    t,
+    setTextModalError,
+    setShowModalError,
+    setOngoingAction,
+  ]);
 
   useEffect(() => {
     if (userConfirmedProxySetup) {
@@ -515,7 +544,11 @@ const useChangeAction = (
               formID={formID}
             />
             <DeleteButton handleDelete={handleDelete} formID={formID} />
-            <AddVotersButton handleAddVoters={handleAddVoters} formID={formID} />
+            <AddVotersButton
+              handleAddVoters={handleAddVoters}
+              formID={formID}
+              ongoingAction={ongoingAction}
+            />
           </>
         );
       case Status.Open:
@@ -535,7 +568,11 @@ const useChangeAction = (
             />
             <VoteButton status={status} formID={formID} />
             <DeleteButton handleDelete={handleDelete} formID={formID} />
-            <AddVotersButton handleAddVoters={handleAddVoters} formID={formID} />
+            <AddVotersButton
+              handleAddVoters={handleAddVoters}
+              formID={formID}
+              ongoingAction={ongoingAction}
+            />
           </>
         );
       case Status.Closed:

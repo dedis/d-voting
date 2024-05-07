@@ -56,6 +56,18 @@ export async function addPolicy(userID: string, subject: string, permission: str
   await authEnforcer.addPolicy(userID, subject, permission);
   await authEnforcer.loadPolicy();
 }
+
+export async function addListPolicy(userIDs: string[], subject: string, permission: string) {
+  const promises = userIDs.map((userID) => authEnforcer.addPolicy(userID, subject, permission));
+  try {
+    await Promise.all(promises);
+  } catch (error) {
+    // At least one policy update has failed, but we need to reload ACLs anyway for the succeeding ones
+    await authEnforcer.loadPolicy();
+    throw new Error(`Failed to add policies for all users: ${error}`);
+  }
+}
+
 export async function assignUserPermissionToOwnElection(userID: string, ElectionID: string) {
   return authEnforcer.addPolicy(userID, ElectionID, PERMISSIONS.ACTIONS.OWN);
 }
@@ -87,6 +99,9 @@ export function setMapAuthorization(list: string[][]): Map<String, Array<String>
 // the range between 100000 and 999999, an error is thrown.
 export function readSCIPER(s: string): number {
   const n = parseInt(s, 10);
+  if (Number.isNaN(n)) {
+    throw new Error(`${s} is not a number`);
+  }
   if (n < 100000 || n > 999999) {
     throw new Error(`SCIPER is out of range. ${n} is not between 100000 and 999999`);
   }
