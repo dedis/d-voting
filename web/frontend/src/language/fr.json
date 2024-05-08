@@ -191,7 +191,7 @@
     "ballotFailure": "Une erreur est survenue lors de l'envoi de votre ballot. Merci de contacter l'administrateur du site. ",
     "incompleteBallot": "Certaines réponses ne sont pas complètes.",
     "selectMin": "Selectionnez {{minSelect}} {{singularPlural}}. ",
-    "selectMax": "Selectionnez au moins {{maxSelect}} {{singularPlural}}. ",
+    "selectMax": "Selectionnez au plus {{maxSelect}} {{singularPlural}}. ",
     "selectBetween": "Selectionnez entre {{minSelect}} et {{maxSelect}} réponses. ",
     "minSelectError": "Vous devez sélectionner au moins {{min}} {{singularPlural}}. ",
     "maxSelectError": "Vous ne pouvez pas sélectionner plus de {{max}} réponses. ",
