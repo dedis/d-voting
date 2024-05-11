@@ -83,6 +83,20 @@ func (e EvotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 		return xerrors.Errorf("failed to get roster")
 	}
 
+	// Check if has Admin Right to create a form
+	adminForm, _, err := e.getAdminForm(e.adminFormID, snap)
+	if err != nil {
+		return xerrors.Errorf("failed to get AdminForm: %v", err)
+	}
+	adminIndex, err := adminForm.GetAdminIndex(tx.UserID)
+	if err != nil {
+		return xerrors.Errorf("Couldn't retrieve the admin right of the user: %v", err)
+	}
+
+	if adminIndex < 0 {
+		return xerrors.Errorf("The user is not admin: %v", err)
+	}
+
 	roster, err := e.rosterFac.AuthorityOf(e.context, rosterBuf)
 	if err != nil {
 		return xerrors.Errorf("failed to get roster: %v", err)
@@ -950,20 +964,6 @@ func (e EvotingCommand) manageOwnersVotersForm(snap store.Snapshot, step executi
 			return xerrors.Errorf(errGetForm, err)
 		}
 
-		adminForm, _, err := e.getAdminForm(e.adminFormID, snap)
-		if err != nil {
-			return xerrors.Errorf("failed to get AdminForm: %v", err)
-		}
-		adminIndex, err := adminForm.GetAdminIndex(txAddOwner.UserID)
-		if err != nil {
-			return xerrors.Errorf("Couldn't retrieve the admin right of the user: %v", err)
-		}
-
-		if adminIndex < 0 {
-			return xerrors.Errorf("The user is not admin: %v", err)
-		}
-
-		// TODO mettre le adminForm en argument du AddOwner et faire la verif dedans
 		err = form.AddOwner(txAddOwner.UserID)
 		if err != nil {
 			return xerrors.Errorf("couldn't add owner: %v", err)

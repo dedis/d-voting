@@ -34,7 +34,8 @@ var dummyAdminFormIDBuff = []byte("dummyAdminID")
 var fakeFormID = hex.EncodeToString(dummyFormIDBuff)
 var fakeAdminFormID = hex.EncodeToString(dummyAdminFormIDBuff)
 var fakeCommonSigner = bls.NewSigner()
-var dummyUserID = "123456"
+var dummyUserAdminID = "123456"
+var dummyUserAdminIDInt = 123456
 
 const getTransactionErr = "failed to get transaction: \"evoting:arg\" not found in tx arg"
 const unmarshalTransactionErr = "failed to get transaction: failed to deserialize " +
@@ -131,7 +132,7 @@ func TestCommand_CreateForm(t *testing.T) {
 	}
 
 	createForm := types.CreateForm{
-		UserID: dummyUserID,
+		UserID: dummyUserAdminID,
 	}
 
 	data, err := createForm.Serialize(ctx)
@@ -142,9 +143,11 @@ func TestCommand_CreateForm(t *testing.T) {
 
 	contract := NewContract(service, fakeDkg, rosterFac)
 
-	cmd := EvotingCommand{
-		Contract: &contract,
-	}
+	snap := fake.NewSnapshot()
+	initialAdmin := []int{dummyUserAdminIDInt}
+	// Create an evoting command.
+	cmd, err := NewEvotingCommand(&contract, proof.HashVerify, snap, makeStep(t, FormArg, "dummy"), initialAdmin)
+	require.NoError(t, err)
 
 	err = cmd.createForm(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
@@ -155,7 +158,6 @@ func TestCommand_CreateForm(t *testing.T) {
 	err = cmd.createForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "failed to get roster")
 
-	snap := fake.NewSnapshot()
 	step := makeStep(t, FormArg, string(data))
 	err = cmd.createForm(snap, step)
 	require.NoError(t, err)
@@ -202,9 +204,11 @@ func TestCommand_CastVote(t *testing.T) {
 	formBuf, err := dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	cmd := EvotingCommand{
-		Contract: &contract,
-	}
+	snap := fake.NewSnapshot()
+	initialAdmin := []int{dummyUserAdminIDInt}
+	// Create an evoting command.
+	cmd, err := NewEvotingCommand(&contract, proof.HashVerify, snap, makeStep(t, FormArg, "dummy"), initialAdmin)
+	require.NoError(t, err)
 
 	err = cmd.castVote(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
@@ -214,8 +218,6 @@ func TestCommand_CastVote(t *testing.T) {
 
 	err = cmd.castVote(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.ErrorContains(t, err, "failed to get key")
-
-	snap := fake.NewSnapshot()
 
 	err = snap.Set(dummyFormIDBuff, invalidForm)
 	require.NoError(t, err)
@@ -320,7 +322,7 @@ func TestCommand_CloseForm(t *testing.T) {
 
 	closeForm := types.CloseForm{
 		FormID: fakeFormID,
-		UserID: dummyUserID,
+		UserID: dummyUserAdminID,
 	}
 
 	data, err := closeForm.Serialize(ctx)
@@ -332,9 +334,11 @@ func TestCommand_CloseForm(t *testing.T) {
 	formBuf, err := dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	cmd := EvotingCommand{
-		Contract: &contract,
-	}
+	snap := fake.NewSnapshot()
+	initialAdmin := []int{dummyUserAdminIDInt}
+	// Create an evoting command.
+	cmd, err := NewEvotingCommand(&contract, proof.HashVerify, snap, makeStep(t, FormArg, "dummy"), initialAdmin)
+	require.NoError(t, err)
 
 	err = cmd.closeForm(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
@@ -344,8 +348,6 @@ func TestCommand_CloseForm(t *testing.T) {
 
 	err = cmd.closeForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.ErrorContains(t, err, "failed to get key")
-
-	snap := fake.NewSnapshot()
 
 	err = snap.Set(dummyFormIDBuff, invalidForm)
 	require.NoError(t, err)
@@ -756,9 +758,11 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 	formBuf, err := form.Serialize(ctx)
 	require.NoError(t, err)
 
-	cmd := EvotingCommand{
-		Contract: &contract,
-	}
+	snap := fake.NewSnapshot()
+	initialAdmin := []int{dummyUserAdminIDInt}
+	// Create an evoting command.
+	cmd, err := NewEvotingCommand(&contract, proof.HashVerify, snap, makeStep(t, FormArg, "dummy"), initialAdmin)
+	require.NoError(t, err)
 
 	err = cmd.registerPubshares(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
@@ -768,8 +772,6 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 
 	err = cmd.registerPubshares(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.ErrorContains(t, err, "failed to get key")
-
-	snap := fake.NewSnapshot()
 
 	err = snap.Set(dummyFormIDBuff, invalidForm)
 	require.NoError(t, err)
@@ -946,7 +948,7 @@ func TestCommand_RegisterPubShares(t *testing.T) {
 func TestCommand_DecryptBallots(t *testing.T) {
 	decryptBallot := types.CombineShares{
 		FormID: fakeFormID,
-		UserID: dummyUserID,
+		UserID: dummyUserAdminID,
 	}
 
 	data, err := decryptBallot.Serialize(ctx)
@@ -957,9 +959,11 @@ func TestCommand_DecryptBallots(t *testing.T) {
 	formBuf, err := dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	cmd := EvotingCommand{
-		Contract: &contract,
-	}
+	snap := fake.NewSnapshot()
+	initialAdmin := []int{dummyUserAdminIDInt}
+	// Create an evoting command.
+	cmd, err := NewEvotingCommand(&contract, proof.HashVerify, snap, makeStep(t, FormArg, "dummy"), initialAdmin)
+	require.NoError(t, err)
 
 	err = cmd.combineShares(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
@@ -969,8 +973,6 @@ func TestCommand_DecryptBallots(t *testing.T) {
 
 	err = cmd.combineShares(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.ErrorContains(t, err, "failed to get key")
-
-	snap := fake.NewSnapshot()
 
 	err = snap.Set(dummyFormIDBuff, invalidForm)
 	require.NoError(t, err)
@@ -1045,7 +1047,7 @@ func TestCommand_DecryptBallots(t *testing.T) {
 func TestCommand_CancelForm(t *testing.T) {
 	cancelForm := types.CancelForm{
 		FormID: fakeFormID,
-		UserID: dummyUserID,
+		UserID: dummyUserAdminID,
 	}
 
 	data, err := cancelForm.Serialize(ctx)
@@ -1057,9 +1059,11 @@ func TestCommand_CancelForm(t *testing.T) {
 	formBuf, err := dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	cmd := EvotingCommand{
-		Contract: &contract,
-	}
+	snap := fake.NewSnapshot()
+	initialAdmin := []int{dummyUserAdminIDInt}
+	// Create an evoting command.
+	cmd, err := NewEvotingCommand(&contract, proof.HashVerify, snap, makeStep(t, FormArg, "dummy"), initialAdmin)
+	require.NoError(t, err)
 
 	err = cmd.cancelForm(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
@@ -1069,8 +1073,6 @@ func TestCommand_CancelForm(t *testing.T) {
 
 	err = cmd.cancelForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.ErrorContains(t, err, "failed to get key")
-
-	snap := fake.NewSnapshot()
 
 	err = snap.Set(dummyFormIDBuff, invalidForm)
 	require.NoError(t, err)
@@ -1222,7 +1224,7 @@ func TestCommand_AdminForm(t *testing.T) {
 func TestCommand_OwnerForm(t *testing.T) {
 	addOwner := types.AddOwner{
 		FormID: fakeFormID,
-		UserID: dummyUserID,
+		UserID: dummyUserAdminID,
 	}
 
 	// Test Serialization of AddOwner command
@@ -1231,7 +1233,7 @@ func TestCommand_OwnerForm(t *testing.T) {
 
 	removeOwner := types.RemoveOwner{
 		FormID: fakeFormID,
-		UserID: dummyUserID,
+		UserID: dummyUserAdminID,
 	}
 
 	// Test Serialization of RemoveOwner command
@@ -1247,15 +1249,10 @@ func TestCommand_OwnerForm(t *testing.T) {
 	require.NoError(t, err)
 
 	snap := fake.NewSnapshot()
-	initialAdmin := []int{123456, 234567}
+	initialAdmin := []int{123456}
 	// Create an evoting command.
 	cmd, err := NewEvotingCommand(&contract, proof.HashVerify, snap, makeStep(t, FormArg, "dummy"), initialAdmin)
 	require.NoError(t, err)
-	/* EvotingCommand{
-	Contract: &contract,
-	}
-
-	*/
 
 	// The following test are there to check error handling
 
@@ -1305,7 +1302,7 @@ func TestCommand_OwnerForm(t *testing.T) {
 	require.True(t, ok)
 
 	// We check that now our dummy user is not owner yet (return -1)
-	dummyUserOwnerIndex, _ := form.GetOwnerIndex(dummyUserID)
+	dummyUserOwnerIndex, _ := form.GetOwnerIndex(dummyUserAdminID)
 	require.True(t, dummyUserOwnerIndex == -1)
 
 	// We perform the Add command on the ledger
@@ -1323,7 +1320,7 @@ func TestCommand_OwnerForm(t *testing.T) {
 	require.True(t, ok)
 
 	// We check that now our dummy user is an owner (return 0)
-	dummyUserOwnerIndex, _ = form.GetOwnerIndex(dummyUserID)
+	dummyUserOwnerIndex, _ = form.GetOwnerIndex(dummyUserAdminID)
 	require.True(t, dummyUserOwnerIndex == 0)
 
 	// Now let's remove it
@@ -1375,7 +1372,7 @@ func TestCommand_OwnerForm(t *testing.T) {
 	require.True(t, ok)
 
 	// We check that now our first dummy user is not an owner anymore (return -1)
-	dummyUserOwnerIndex, _ = form.GetOwnerIndex(dummyUserID)
+	dummyUserOwnerIndex, _ = form.GetOwnerIndex(dummyUserAdminID)
 	require.True(t, dummyUserOwnerIndex == -1)
 	// But that the second one is still an admin (return != -1)
 	secondDummyUserOwnerIndex, _ = form.GetOwnerIndex("234567")
@@ -1392,7 +1389,7 @@ func TestCommand_OwnerForm(t *testing.T) {
 func TestCommand_VoterForm(t *testing.T) {
 	addVoter := types.AddVoter{
 		FormID: fakeFormID,
-		UserID: dummyUserID,
+		UserID: dummyUserAdminID,
 	}
 
 	// Test Serialization of AddVoter command
@@ -1401,7 +1398,7 @@ func TestCommand_VoterForm(t *testing.T) {
 
 	removeVoter := types.RemoveVoter{
 		FormID: fakeFormID,
-		UserID: dummyUserID,
+		UserID: dummyUserAdminID,
 	}
 
 	// Test Serialization of RemoveVoter command
@@ -1471,7 +1468,7 @@ func TestCommand_VoterForm(t *testing.T) {
 	require.True(t, ok)
 
 	// We check that now our dummy user is not a voter yet (return -1)
-	dummyUserVoterIndex, _ := form.GetVoterIndex(dummyUserID)
+	dummyUserVoterIndex, _ := form.GetVoterIndex(dummyUserAdminID)
 	require.True(t, dummyUserVoterIndex == -1)
 
 	// We perform the Add command on the ledger
@@ -1489,7 +1486,7 @@ func TestCommand_VoterForm(t *testing.T) {
 	require.True(t, ok)
 
 	// We check that now our dummy user is an owner (return 0)
-	dummyUserVoterIndex, _ = form.GetVoterIndex(dummyUserID)
+	dummyUserVoterIndex, _ = form.GetVoterIndex(dummyUserAdminID)
 	require.True(t, dummyUserVoterIndex == 0)
 
 	// Now let's remove it
@@ -1508,7 +1505,7 @@ func TestCommand_VoterForm(t *testing.T) {
 	require.True(t, ok)
 
 	// We check that now our dummy user is an owner (return 0)
-	dummyUserVoterIndex, _ = form.GetVoterIndex(dummyUserID)
+	dummyUserVoterIndex, _ = form.GetVoterIndex(dummyUserAdminID)
 	require.True(t, dummyUserVoterIndex == -1)
 }
 
