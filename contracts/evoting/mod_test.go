@@ -1246,10 +1246,16 @@ func TestCommand_OwnerForm(t *testing.T) {
 	formBuf, err := dummyForm.Serialize(ctx)
 	require.NoError(t, err)
 
+	snap := fake.NewSnapshot()
+	initialAdmin := []int{123456, 234567}
 	// Create an evoting command.
-	cmd := EvotingCommand{
-		Contract: &contract,
+	cmd, err := NewEvotingCommand(&contract, proof.HashVerify, snap, makeStep(t, FormArg, "dummy"), initialAdmin)
+	require.NoError(t, err)
+	/* EvotingCommand{
+	Contract: &contract,
 	}
+
+	*/
 
 	// The following test are there to check error handling
 
@@ -1272,8 +1278,6 @@ func TestCommand_OwnerForm(t *testing.T) {
 	// a Remove cmd, it will not be able to retrieve the Form on the store.
 	err = cmd.manageOwnersVotersForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(dataRemove)))
 	require.ErrorContains(t, err, "failed to get key")
-
-	snap := fake.NewSnapshot()
 
 	// Checking that given the form set in the Snapshot which is invalid, then it
 	// will not be able to deserialize the Form to perform the command.

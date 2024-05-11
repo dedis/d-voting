@@ -43,18 +43,24 @@ const (
 type EvotingCommand struct {
 	*Contract
 
-	prover prover
+	prover      prover
+	adminFormID string
 }
 
-func NewEvotingCommand(contract *Contract, prover prover, snap store.Snapshot, step execution.Step, initialAdmin []int) EvotingCommand {
-	evotingCommand := EvotingCommand{
-		Contract: contract,
-		prover:   prover,
+func NewEvotingCommand(contract *Contract, prover prover, snap store.Snapshot, step execution.Step, initialAdmin []int) (EvotingCommand, error) {
+	// TODO add error handling
+	adminFormID, err := initializeAdminForm(snap, step, initialAdmin, contract.context)
+	if err != nil {
+		return EvotingCommand{}, xerrors.Errorf("failed to create an Admin Form: %v", err)
 	}
 
-	evotingCommand.initializeAdminForm(snap, step, initialAdmin)
+	evotingCommand := EvotingCommand{
+		Contract:    contract,
+		prover:      prover,
+		adminFormID: hex.EncodeToString(adminFormID),
+	}
 
-	return evotingCommand
+	return evotingCommand, nil
 }
 
 type prover func(suite proof.Suite, protocolName string, verifier proof.Verifier, proof []byte) error
@@ -845,7 +851,7 @@ func (e EvotingCommand) manageAdminForm(snap store.Snapshot, step execution.Step
 	return nil
 }
 
-func (e EvotingCommand) initializeAdminForm(snap store.Snapshot, step execution.Step, initialAdmin []int) error {
+func initializeAdminForm(snap store.Snapshot, step execution.Step, initialAdmin []int, ctx serde.Context) ([]byte, error) {
 	// Get the formID, which is the SHA256 of the transaction ID
 	h := sha256.New()
 	h.Write(step.Current.GetID())
@@ -856,21 +862,21 @@ func (e EvotingCommand) initializeAdminForm(snap store.Snapshot, step execution.
 		AdminList: initialAdmin,
 	}
 
-	formBuf, err := adminForm.Serialize(e.context)
+	formBuf, err := adminForm.Serialize(ctx)
 	if err != nil {
-		return xerrors.Errorf("failed to marshal Admin Form : %v", err)
+		return nil, xerrors.Errorf("failed to marshal Admin Form : %v", err)
 	}
 
 	err = snap.Set(formIDBuf, formBuf)
 	if err != nil {
-		return xerrors.Errorf("failed to set value: %v", err)
+		return nil, xerrors.Errorf("failed to set value: %v", err)
 	}
 
 	// Update the form metadata store
 
 	formsMetadataBuf, err := snap.Get([]byte(FormsMetadataKey))
 	if err != nil {
-		return xerrors.Errorf("failed to get key '%s': %v", formsMetadataBuf, err)
+		return nil, xerrors.Errorf("failed to get key '%s': %v", formsMetadataBuf, err)
 	}
 
 	formsMetadata := &types.FormsMetadata{
@@ -880,26 +886,26 @@ func (e EvotingCommand) initializeAdminForm(snap store.Snapshot, step execution.
 	if len(formsMetadataBuf) != 0 {
 		err := json.Unmarshal(formsMetadataBuf, formsMetadata)
 		if err != nil {
-			return xerrors.Errorf("failed to unmarshal FormsMetadata: %v", err)
+			return nil, xerrors.Errorf("failed to unmarshal FormsMetadata: %v", err)
 		}
 	}
 
 	err = formsMetadata.FormsIDs.Add(adminForm.FormID)
 	if err != nil {
-		return xerrors.Errorf("couldn't add new form: %v", err)
+		return nil, xerrors.Errorf("couldn't add new form: %v", err)
 	}
 
 	formMetadataJSON, err := json.Marshal(formsMetadata)
 	if err != nil {
-		return xerrors.Errorf("failed to marshal FormsMetadata: %v", err)
+		return nil, xerrors.Errorf("failed to marshal FormsMetadata: %v", err)
 	}
 
 	err = snap.Set([]byte(FormsMetadataKey), formMetadataJSON)
 	if err != nil {
-		return xerrors.Errorf("failed to set value: %v", err)
+		return nil, xerrors.Errorf("failed to set value: %v", err)
 	}
 
-	return nil
+	return formIDBuf, nil
 }
 
 // manageVotersForm implements commands.
@@ -944,7 +950,7 @@ func (e EvotingCommand) manageOwnersVotersForm(snap store.Snapshot, step executi
 			return xerrors.Errorf(errGetForm, err)
 		}
 
-		adminForm, _, err := e.getAdminForm("id", snap)
+		adminForm, _, err := e.getAdminForm(e.adminFormID, snap)
 		if err != nil {
 			return xerrors.Errorf("failed to get AdminForm: %v", err)
 		}
