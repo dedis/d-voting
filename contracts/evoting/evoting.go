@@ -944,9 +944,18 @@ func (e EvotingCommand) manageOwnersVotersForm(snap store.Snapshot, step executi
 			return xerrors.Errorf(errGetForm, err)
 		}
 
-		adminForm, err := e.getAdminForm("id", snap)
+		adminForm, _, err := e.getAdminForm("id", snap)
+		adminIndex, err := adminForm.GetAdminIndex(txAddOwner.UserID)
+		if err != nil {
+			return xerrors.Errorf("Couldn't retrieve the admin right of the user: %v", err)
+		}
 
-		err = form.AddOwner(e.context, txAddOwner.UserID)
+		if adminIndex < 0 {
+			return xerrors.Errorf("The user is not admin: %v", err)
+		}
+
+		// TODO mettre le adminForm en argument du AddOwner et faire la verif dedans
+		err = form.AddOwner(txAddOwner.UserID)
 		if err != nil {
 			return xerrors.Errorf("couldn't add owner: %v", err)
 		}
