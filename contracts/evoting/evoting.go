@@ -945,6 +945,9 @@ func (e EvotingCommand) manageOwnersVotersForm(snap store.Snapshot, step executi
 		}
 
 		adminForm, _, err := e.getAdminForm("id", snap)
+		if err != nil {
+			return xerrors.Errorf("failed to get AdminForm: %v", err)
+		}
 		adminIndex, err := adminForm.GetAdminIndex(txAddOwner.UserID)
 		if err != nil {
 			return xerrors.Errorf("Couldn't retrieve the admin right of the user: %v", err)
