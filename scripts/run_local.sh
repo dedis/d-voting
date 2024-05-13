@@ -94,13 +94,6 @@ function init_nodes() {
 
 function init_dela() {
   echo "Initializing dela"
-  echo "  Share the certificate"
-  for n in $(seq 2 4); do
-    TOKEN_ARGS=$(dvoting --config ./nodes/node-1 minogrpc token)
-    NODEDIR=./nodes/node-$n
-    dvoting --config $NODEDIR minogrpc join --address grpc://localhost:2000 $TOKEN_ARGS
-  done
-
   echo "  Create a new chain with the nodes"
   for n in $(seq 4); do
     NODEDIR=./nodes/node-$n
