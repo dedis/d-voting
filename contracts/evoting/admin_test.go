@@ -63,6 +63,12 @@ func TestAdmin_AddAdminAndRemoveAdmin(t *testing.T) {
 	require.NoError(t, err)
 
 	err = adminForm.RemoveAdmin(myTestID)
+	require.ErrorContains(t, err, "cannot remove this Admin because it is the only one remaining")
+
+	err = adminForm.AddAdmin("654321")
+	require.NoError(t, err)
+
+	err = adminForm.RemoveAdmin(myTestID)
 	require.NoError(t, err)
 	res, err = adminForm.GetAdminIndex(myTestID)
 	require.Equal(t, -1, res)
