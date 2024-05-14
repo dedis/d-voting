@@ -9,13 +9,12 @@ import (
 type adminFormFormat struct{}
 
 func (adminFormFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, error) {
-	adminForm, ok := message.(types.AdminForm)
+	adminForm, ok := message.(types.AdminList)
 	if !ok {
 		return nil, xerrors.Errorf("Unknown format: %T", message)
 	}
 
 	adminFormJSON := AdminFormJSON{
-		FormID:    adminForm.FormID,
 		AdminList: adminForm.AdminList,
 	}
 
@@ -35,16 +34,12 @@ func (adminFormFormat) Decode(ctx serde.Context, data []byte) (serde.Message, er
 		return nil, xerrors.Errorf("failed to unmarshal form: %v", err)
 	}
 
-	return types.AdminForm{
-		FormID:    adminFormJSON.FormID,
+	return types.AdminList{
 		AdminList: adminFormJSON.AdminList,
 	}, nil
 }
 
 type AdminFormJSON struct {
-	// FormID is the hex-encoded SHA265 of the Tx ID that creates the form
-	FormID string
-
 	// List of SCIPER with admin rights
 	AdminList []int
 }

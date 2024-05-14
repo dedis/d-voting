@@ -34,6 +34,29 @@ func encodeID(ID string) types.ID {
 }
 
 // for integration tests
+func addAdmin(m txManager, admin string) error {
+	addAdmin := types.AddAdmin{UserID: admin}
+
+	data, err := addAdmin.Serialize(serdecontext)
+	if err != nil {
+		return xerrors.Errorf("failed to serialize: %v", err)
+	}
+
+	args := []txn.Arg{
+		{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
+		{Key: evoting.FormArg, Value: data},
+		{Key: evoting.CmdArg, Value: []byte(evoting.CmdAddAdminForm)},
+	}
+
+	_, err = m.addAndWait(args...)
+	if err != nil {
+		return xerrors.Errorf(addAndWaitErr, err)
+	}
+
+	return nil
+}
+
+// for integration tests
 func createForm(m txManager, title string, admin string) ([]byte, error) {
 	// Define the configuration :
 	configuration := fake.BasicConfiguration

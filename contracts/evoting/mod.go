@@ -85,6 +85,8 @@ const (
 	// credentialAllCommand defines the credential command that is allowed to
 	// perform all commands.
 	credentialAllCommand = "all"
+
+	AdminListId = ContractUID + "AdminList"
 )
 
 // commands defines the commands of the evoting contract. Using an interface
@@ -199,7 +201,7 @@ func NewContract(srvc access.Service,
 		transactionFac: transactionFac,
 	}
 
-	contract.cmd = EvotingCommand{Contract: &contract, prover: proof.HashVerify}
+	contract.cmd = evotingCommand{Contract: &contract, prover: proof.HashVerify}
 
 	return contract
 }

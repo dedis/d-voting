@@ -348,8 +348,6 @@ func (registerPubShares RegisterPubShares) Fingerprint(writer io.Writer) error {
 //
 // - implements serde.Message
 type AddAdmin struct {
-	// FormID is hex-encoded
-	FormID string
 	UserID string
 }
 
@@ -369,8 +367,6 @@ func (addAdmin AddAdmin) Serialize(ctx serde.Context) ([]byte, error) {
 //
 // - implements serde.Message
 type RemoveAdmin struct {
-	// FormID is hex-encoded
-	FormID string
 	UserID string
 }
 

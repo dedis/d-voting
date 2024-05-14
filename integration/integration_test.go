@@ -64,6 +64,9 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		}
 
 		// ##### CREATE FORM #####
+		err = addAdmin(m, adminID)
+		require.NoError(t, err)
+
 		formID, err := createForm(m, "Three votes form", adminID)
 		require.NoError(t, err)
 
@@ -204,6 +207,9 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		}
 
 		// ##### CREATE FORM #####
+		err = addAdmin(m, adminID)
+		require.NoError(t, err)
+
 		formID, err := createForm(m, "Three votes form", adminID)
 		require.NoError(t, err)
 
@@ -351,6 +357,9 @@ func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 		}
 
 		// ##### CREATE FORM #####
+		err = addAdmin(m, adminID)
+		require.NoError(b, err)
+
 		formID, err := createForm(m, "Three votes form", adminID)
 		require.NoError(b, err)
 

@@ -1,7 +1,7 @@
 package types
 
 import (
-	"encoding/hex"
+	"crypto/sha256"
 	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/registry"
@@ -14,26 +14,23 @@ func RegisterAdminFormFormat(format serde.Format, engine serde.FormatEngine) {
 	adminFormFormat.Register(format, engine)
 }
 
-type AdminForm struct {
-	// FormID is the hex-encoded SHA265 of the Tx ID that creates the form
-	FormID string
-
+type AdminList struct {
 	// List of SCIPER with admin rights
 	AdminList []int
 }
 
-func (adminForm AdminForm) Serialize(ctx serde.Context) ([]byte, error) {
+func (adminList AdminList) Serialize(ctx serde.Context) ([]byte, error) {
 	format := adminFormFormat.Get(ctx.GetFormat())
 
-	data, err := format.Encode(ctx, adminForm)
+	data, err := format.Encode(ctx, adminList)
 	if err != nil {
-		return nil, xerrors.Errorf("Failed to encode AdminForm: %v", err)
+		return nil, xerrors.Errorf("Failed to encode AdminList: %v", err)
 	}
 
 	return data, nil
 }
 
-func (adminForm AdminForm) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
+func (adminList AdminList) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
 	format := adminFormFormat.Get(ctx.GetFormat())
 
 	message, err := format.Decode(ctx, data)
@@ -45,26 +42,26 @@ func (adminForm AdminForm) Deserialize(ctx serde.Context, data []byte) (serde.Me
 }
 
 // AddAdmin add a new admin to the system.
-func (adminForm *AdminForm) AddAdmin(userID string) error {
+func (adminList *AdminList) AddAdmin(userID string) error {
 	sciperInt, err := SciperToInt(userID)
 	if err != nil {
 		return xerrors.Errorf("Failed SciperToInt: %v", err)
 	}
 
-	adminForm.AdminList = append(adminForm.AdminList, sciperInt)
+	adminList.AdminList = append(adminList.AdminList, sciperInt)
 
 	return nil
 }
 
 // GetAdminIndex return the index of admin if userID is one, else return -1
-func (adminForm *AdminForm) GetAdminIndex(userID string) (int, error) {
+func (adminList *AdminList) GetAdminIndex(userID string) (int, error) {
 	sciperInt, err := SciperToInt(userID)
 	if err != nil {
 		return -1, xerrors.Errorf("Failed SciperToInt: %v", err)
 	}
 
-	for i := 0; i < len(adminForm.AdminList); i++ {
-		if adminForm.AdminList[i] == sciperInt {
+	for i := 0; i < len(adminList.AdminList); i++ {
+		if adminList.AdminList[i] == sciperInt {
 			return i, nil
 		}
 	}
@@ -73,27 +70,32 @@ func (adminForm *AdminForm) GetAdminIndex(userID string) (int, error) {
 }
 
 // RemoveAdmin add a new admin to the system.
-func (adminForm *AdminForm) RemoveAdmin(userID string) error {
-	index, err := adminForm.GetAdminIndex(userID)
+func (adminList *AdminList) RemoveAdmin(userID string) error {
+	index, err := adminList.GetAdminIndex(userID)
 	if err != nil {
-		return xerrors.Errorf("Failed GetAdnubIndex: %v", err)
+		return xerrors.Errorf("Failed GetAdminIndex: %v", err)
 	}
 
 	if index < 0 {
 		return xerrors.Errorf("Error while retrieving the index of the element.")
 	}
 
-	adminForm.AdminList = append(adminForm.AdminList[:index], adminForm.AdminList[index+1:]...)
+	// We don't want to have a form without any Owners.
+	if len(adminList.AdminList) <= 1 {
+		return xerrors.Errorf("Error, cannot remove this Admin because it is the " +
+			"only one remaining.")
+	}
+
+	adminList.AdminList = append(adminList.AdminList[:index], adminList.AdminList[index+1:]...)
 	return nil
 }
 
-func AdminFormFromStore(ctx serde.Context, adminFormFac serde.Factory, adminFormIDHex string, store store.Readable) (AdminForm, error) {
-	adminForm := AdminForm{}
+func AdminFormFromStore(ctx serde.Context, adminFormFac serde.Factory, store store.Readable, adminListId string) (AdminList, error) {
+	adminForm := AdminList{}
 
-	adminFormIDBuf, err := hex.DecodeString(adminFormIDHex)
-	if err != nil {
-		return adminForm, xerrors.Errorf("Failed to decode adminFormIDHex: %v", err)
-	}
+	h := sha256.New()
+	h.Write([]byte(adminListId))
+	adminFormIDBuf := h.Sum(nil)
 
 	adminFormBuf, err := store.Get(adminFormIDBuf)
 	if err != nil {
@@ -105,10 +107,10 @@ func AdminFormFromStore(ctx serde.Context, adminFormFac serde.Factory, adminForm
 
 	message, err := adminFormFac.Deserialize(ctx, adminFormBuf)
 	if err != nil {
-		return adminForm, xerrors.Errorf("failed to deserialize AdminForm: %v", err)
+		return adminForm, xerrors.Errorf("failed to deserialize AdminList: %v", err)
 	}
 
-	adminForm, ok := message.(AdminForm)
+	adminForm, ok := message.(AdminList)
 	if !ok {
 		return adminForm, xerrors.Errorf("Wrong message type: %T", message)
 	}
@@ -116,7 +118,7 @@ func AdminFormFromStore(ctx serde.Context, adminFormFac serde.Factory, adminForm
 	return adminForm, nil
 }
 
-// AdminFormFactory provides the mean to deserialize a AdminForm. It naturally
+// AdminFormFactory provides the mean to deserialize a AdminList. It naturally
 // uses the formFormat.
 //
 // - implements serde.Factory

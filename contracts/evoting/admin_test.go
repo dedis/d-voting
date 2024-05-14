@@ -23,37 +23,34 @@ func init() {
 
 // This test create an Admin Form structure which is then serialized and
 // deserialized to check whether these operations work as intended.
-// Serialization/Deserialization of an AdminForm should not change its values.
+// Serialization/Deserialization of an AdminList should not change its values.
 func TestAdmin_Serde(t *testing.T) {
-	adminFormID := "myID"
 	adminFormList := []int{111111, 222222, 333333, 123456}
 
-	adminForm := types.AdminForm{FormID: adminFormID, AdminList: adminFormList}
+	adminForm := types.AdminList{AdminList: adminFormList}
 
 	value, err := adminForm.Serialize(ctxAdminTest)
 
 	require.NoError(t, err)
 
 	// deserialization
-	newAdminForm := types.AdminForm{}
+	newAdminForm := types.AdminList{}
 
 	msgs, err := newAdminForm.Deserialize(ctxAdminTest, value)
 
 	require.NoError(t, err)
 
-	updatedAdminForm := msgs.(types.AdminForm)
+	updatedAdminForm := msgs.(types.AdminList)
 
-	require.Equal(t, adminFormID, updatedAdminForm.FormID)
 	require.Equal(t, adminFormList, updatedAdminForm.AdminList)
 }
 
 func TestAdmin_AddAdminAndRemoveAdmin(t *testing.T) {
-	adminFormID := "myID"
 	adminFormList := []int{}
 
 	myTestID := "123456"
 
-	adminForm := types.AdminForm{FormID: adminFormID, AdminList: adminFormList}
+	adminForm := types.AdminList{AdminList: adminFormList}
 
 	res, err := adminForm.GetAdminIndex(myTestID)
 	require.Equal(t, -1, res)
