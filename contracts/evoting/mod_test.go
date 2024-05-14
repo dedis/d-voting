@@ -33,7 +33,6 @@ var dummyFormIDBuff = []byte("dummyID")
 var fakeFormID = hex.EncodeToString(dummyFormIDBuff)
 var fakeCommonSigner = bls.NewSigner()
 var dummyUserAdminID = "123456"
-var dummyUserAdminIDInt = 123456
 
 const getTransactionErr = "failed to get transaction: \"evoting:arg\" not found in tx arg"
 const unmarshalTransactionErr = "failed to get transaction: failed to deserialize " +
@@ -1158,7 +1157,7 @@ func TestCommand_AdminForm(t *testing.T) {
 	res, err := snap.Get(formIDBuf)
 	require.NoError(t, err)
 
-	message, err := adminFormFac.Deserialize(ctx, res)
+	_, err = adminFormFac.Deserialize(ctx, res)
 	require.ErrorContains(t, err, "failed to unmarshal form")
 
 	// Now Let's add our admin
@@ -1191,7 +1190,7 @@ func TestCommand_AdminForm(t *testing.T) {
 	res, err = snap.Get(formIDBuf)
 	require.NoError(t, err)
 
-	message, err = adminFormFac.Deserialize(ctx, res)
+	message, err := adminFormFac.Deserialize(ctx, res)
 	require.NoError(t, err)
 
 	adminForm, ok := message.(types.AdminList)
