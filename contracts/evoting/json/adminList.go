@@ -6,19 +6,19 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type adminFormFormat struct{}
+type adminListFormat struct{}
 
-func (adminFormFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, error) {
-	adminForm, ok := message.(types.AdminList)
+func (adminListFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, error) {
+	adminList, ok := message.(types.AdminList)
 	if !ok {
 		return nil, xerrors.Errorf("Unknown format: %T", message)
 	}
 
-	adminFormJSON := AdminFormJSON{
-		AdminList: adminForm.AdminList,
+	adminListJSON := AdminListJSON{
+		AdminList: adminList.AdminList,
 	}
 
-	buff, err := ctx.Marshal(&adminFormJSON)
+	buff, err := ctx.Marshal(&adminListJSON)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to marshal form: %v", err)
 	}
@@ -26,20 +26,20 @@ func (adminFormFormat) Encode(ctx serde.Context, message serde.Message) ([]byte,
 	return buff, nil
 }
 
-func (adminFormFormat) Decode(ctx serde.Context, data []byte) (serde.Message, error) {
-	var adminFormJSON AdminFormJSON
+func (adminListFormat) Decode(ctx serde.Context, data []byte) (serde.Message, error) {
+	var adminListJSON AdminListJSON
 
-	err := ctx.Unmarshal(data, &adminFormJSON)
+	err := ctx.Unmarshal(data, &adminListJSON)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to unmarshal form: %v", err)
 	}
 
 	return types.AdminList{
-		AdminList: adminFormJSON.AdminList,
+		AdminList: adminListJSON.AdminList,
 	}, nil
 }
 
-type AdminFormJSON struct {
+type AdminListJSON struct {
 	// List of SCIPER with admin rights
 	AdminList []int
 }

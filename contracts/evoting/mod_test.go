@@ -100,10 +100,10 @@ func TestExecute(t *testing.T) {
 	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdCancelForm)))
 	require.EqualError(t, err, fake.Err("failed to cancel form"))
 
-	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdAddAdminForm)))
+	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdAddAdmin)))
 	require.EqualError(t, err, fake.Err("failed to add admin"))
 
-	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdRemoveAdminForm)))
+	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, string(CmdRemoveAdmin)))
 	require.EqualError(t, err, fake.Err("failed to remove admin"))
 
 	err = contract.Execute(fakeStore{}, makeStep(t, CmdArg, "fake"))
@@ -159,7 +159,7 @@ func TestCommand_CreateForm(t *testing.T) {
 
 	snap := fake.NewSnapshot()
 	step := makeStep(t, FormArg, string(dataAddAdmin))
-	err = cmd.manageAdminForm(snap, step)
+	err = cmd.manageAdminList(snap, step)
 	require.NoError(t, err)
 
 	step = makeStep(t, FormArg, string(data))
@@ -1110,7 +1110,7 @@ func TestRegisterContract(t *testing.T) {
 // ===============
 // Admin Form Test
 
-func TestCommand_AdminForm(t *testing.T) {
+func TestCommand_AdminList(t *testing.T) {
 	initMetrics()
 
 	dummyForm, contract := initFormAndContract()
@@ -1133,17 +1133,17 @@ func TestCommand_AdminForm(t *testing.T) {
 
 	// Checking that if no AdminList is on the blockchain,
 	// It won't be able to find the transaction.
-	err = cmd.manageAdminForm(fake.NewSnapshot(), makeStep(t))
+	err = cmd.manageAdminList(fake.NewSnapshot(), makeStep(t))
 	require.EqualError(t, err, getTransactionErr)
 
 	// Checking that providing a dummy data as argument, the form will not
 	// recognize it and won't be able to unmarshal it.
-	err = cmd.manageAdminForm(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
+	err = cmd.manageAdminList(fake.NewSnapshot(), makeStep(t, FormArg, "dummy"))
 	require.EqualError(t, err, unmarshalTransactionErr)
 
 	// Checking that given a Blockchain that always returns an error,
 	// it will not be able to create the AdminList on the store.
-	err = cmd.manageAdminForm(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
+	err = cmd.manageAdminList(fake.NewBadSnapshot(), makeStep(t, FormArg, string(data)))
 	require.ErrorContains(t, err, "failed to get AdminList")
 
 	snap := fake.NewSnapshot()
@@ -1165,7 +1165,7 @@ func TestCommand_AdminForm(t *testing.T) {
 	require.NoError(t, err)
 
 	// We perform below the command on the ledger
-	err = cmd.manageAdminForm(snap, makeStep(t, FormArg, string(data)))
+	err = cmd.manageAdminList(snap, makeStep(t, FormArg, string(data)))
 	require.NoError(t, err)
 
 	// Now we want to remove its admin privilege.
@@ -1176,14 +1176,14 @@ func TestCommand_AdminForm(t *testing.T) {
 	require.NoError(t, err)
 
 	// Publish the command on the ledger.
-	err = cmd.manageAdminForm(snap, makeStep(t, FormArg, string(data)))
+	err = cmd.manageAdminList(snap, makeStep(t, FormArg, string(data)))
 	require.ErrorContains(t, err, "couldn't remove admin")
 
 	addAdmin2 := types.AddAdmin{UserID: dummyUID}
 	data2, err := addAdmin2.Serialize(ctx)
 	require.NoError(t, err)
 
-	err = cmd.manageAdminForm(snap, makeStep(t, FormArg, string(data2)))
+	err = cmd.manageAdminList(snap, makeStep(t, FormArg, string(data2)))
 	require.NoError(t, err)
 
 	// We retrieve the form on the ledger
@@ -1193,12 +1193,12 @@ func TestCommand_AdminForm(t *testing.T) {
 	message, err := adminListFac.Deserialize(ctx, res)
 	require.NoError(t, err)
 
-	adminForm, ok := message.(types.AdminList)
+	adminList, ok := message.(types.AdminList)
 	require.True(t, ok)
 
 	// We check that our dummy User is now admin
 	// (if not admin return -1; else return admin index in AdminList).
-	dummyUserIDIndex, _ := adminForm.GetAdminIndex(dummyUID)
+	dummyUserIDIndex, _ := adminList.GetAdminIndex(dummyUID)
 	require.True(t, dummyUserIDIndex > -1)
 
 	// Now we want to remove its admin privilege.
@@ -1208,7 +1208,7 @@ func TestCommand_AdminForm(t *testing.T) {
 	require.NoError(t, err)
 
 	// Publish the command on the ledger.
-	err = cmd.manageAdminForm(snap, makeStep(t, FormArg, string(data)))
+	err = cmd.manageAdminList(snap, makeStep(t, FormArg, string(data)))
 	require.NoError(t, err)
 
 	// We retrieve the Admin Form from the ledger.
@@ -1218,11 +1218,11 @@ func TestCommand_AdminForm(t *testing.T) {
 	message, err = adminListFac.Deserialize(ctx, res)
 	require.NoError(t, err)
 
-	adminForm, ok = message.(types.AdminList)
+	adminList, ok = message.(types.AdminList)
 	require.True(t, ok)
 
 	// We check that now our dummy user is not admin anymore (return -1)
-	dummyUserIDIndex, _ = adminForm.GetAdminIndex(dummyUID)
+	dummyUserIDIndex, _ = adminList.GetAdminIndex(dummyUID)
 
 	require.True(t, dummyUserIDIndex == -1)
 }
@@ -1759,7 +1759,7 @@ type fakeCmd struct {
 	err error
 }
 
-func (c fakeCmd) manageAdminForm(snap store.Snapshot, step execution.Step) error {
+func (c fakeCmd) manageAdminList(snap store.Snapshot, step execution.Step) error {
 	return c.err
 }
 

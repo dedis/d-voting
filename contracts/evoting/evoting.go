@@ -66,11 +66,11 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 	}
 
 	// Check if has Admin Right to create a form
-	adminForm, err := e.getAdminForm(snap)
+	adminList, err := e.getAdminList(snap)
 	if err != nil {
 		return xerrors.Errorf("failed to get AdminList: %v", err)
 	}
-	adminIndex, err := adminForm.GetAdminIndex(tx.UserID)
+	adminIndex, err := adminList.GetAdminIndex(tx.UserID)
 	if err != nil {
 		return xerrors.Errorf("Couldn't retrieve the admin right of the user: %v", err)
 	}
@@ -797,8 +797,8 @@ func (e evotingCommand) deleteForm(snap store.Snapshot, step execution.Step) err
 	return nil
 }
 
-// manageAdminForm implements commands. It performs the ADD or REMOVE ADMIN command
-func (e evotingCommand) manageAdminForm(snap store.Snapshot, step execution.Step) error {
+// manageAdminList implements commands. It performs the ADD or REMOVE ADMIN command
+func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step) error {
 	msg, err := e.getTransaction(step.Current)
 	if err != nil {
 		return xerrors.Errorf(errGetTransaction, err)
@@ -814,11 +814,13 @@ func (e evotingCommand) manageAdminForm(snap store.Snapshot, step execution.Step
 	txRemoveAdmin, okRemoveAdmin := msg.(types.RemoveAdmin)
 
 	if okAddAdmin {
-		form, err = e.getAdminForm(snap)
+		form, err = e.getAdminList(snap)
 		if err != nil {
 			if !strings.Contains(err.Error(), "No form found") {
 				return xerrors.Errorf("failed to get AdminList: %v", err)
 			}
+
+			// Trust On First Use System -> if no AdminList, will create one by default.
 
 			intSciper, err := types.SciperToInt(txAddAdmin.UserID)
 			if err != nil {
@@ -835,12 +837,16 @@ func (e evotingCommand) manageAdminForm(snap store.Snapshot, step execution.Step
 			return nil
 		}
 
+		// TODO Check if admin
+		//form.GetAdminIndex()
+
 		err = form.AddAdmin(txAddAdmin.UserID)
 		if err != nil {
 			return xerrors.Errorf("couldn't add admin: %v", err)
 		}
 	} else if okRemoveAdmin {
-		form, err = e.getAdminForm(snap)
+		// TODO Check if admin
+		form, err = e.getAdminList(snap)
 		if err != nil {
 			return xerrors.Errorf("failed to get AdminList: %v", err)
 		}
@@ -871,11 +877,11 @@ func initializeAdminList(snap store.Snapshot, initialAdmin int, ctx serde.Contex
 	h.Write([]byte(AdminListId))
 	formIDBuf := h.Sum(nil)
 
-	adminForm := types.AdminList{
+	adminList := types.AdminList{
 		AdminList: []int{initialAdmin},
 	}
 
-	formBuf, err := adminForm.Serialize(ctx)
+	formBuf, err := adminList.Serialize(ctx)
 	if err != nil {
 		return xerrors.Errorf("failed to marshal Admin Form : %v", err)
 	}
@@ -1079,13 +1085,13 @@ func (e evotingCommand) getForm(formIDHex string,
 	return form, formIDBuf, nil
 }
 
-// getAdminForm gets the AdminList from the snap. Returns the form ID NOT hex
+// getAdminList gets the AdminList from the snap. Returns the form ID NOT hex
 // encoded.
-func (e evotingCommand) getAdminForm(snap store.Snapshot) (types.AdminList, error) {
+func (e evotingCommand) getAdminList(snap store.Snapshot) (types.AdminList, error) {
 
 	var form types.AdminList
 
-	form, err := types.AdminListFromStore(e.context, e.adminFormFac, snap, AdminListId)
+	form, err := types.AdminListFromStore(e.context, e.adminListFac, snap, AdminListId)
 	if err != nil {
 		return form, xerrors.Errorf("failed to get the AdminList: %v", err)
 	}

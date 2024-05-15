@@ -45,7 +45,7 @@ func addAdmin(m txManager, admin string) error {
 	args := []txn.Arg{
 		{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
 		{Key: evoting.FormArg, Value: data},
-		{Key: evoting.CmdArg, Value: []byte(evoting.CmdAddAdminForm)},
+		{Key: evoting.CmdArg, Value: []byte(evoting.CmdAddAdmin)},
 	}
 
 	_, err = m.addAndWait(args...)

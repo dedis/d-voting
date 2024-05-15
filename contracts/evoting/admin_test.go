@@ -46,31 +46,31 @@ func TestAdmin_Serde(t *testing.T) {
 }
 
 func TestAdmin_AddAdminAndRemoveAdmin(t *testing.T) {
-	adminFormList := []int{}
+	initialAdminList := []int{}
 
 	myTestID := "123456"
 
-	adminForm := types.AdminList{AdminList: adminFormList}
+	adminList := types.AdminList{AdminList: initialAdminList}
 
-	res, err := adminForm.GetAdminIndex(myTestID)
+	res, err := adminList.GetAdminIndex(myTestID)
 	require.Equal(t, -1, res)
 	require.NoError(t, err)
 
-	err = adminForm.AddAdmin(myTestID)
+	err = adminList.AddAdmin(myTestID)
 	require.NoError(t, err)
-	res, err = adminForm.GetAdminIndex(myTestID)
+	res, err = adminList.GetAdminIndex(myTestID)
 	require.Equal(t, 0, res)
 	require.NoError(t, err)
 
-	err = adminForm.RemoveAdmin(myTestID)
+	err = adminList.RemoveAdmin(myTestID)
 	require.ErrorContains(t, err, "cannot remove this Admin because it is the only one remaining")
 
-	err = adminForm.AddAdmin("654321")
+	err = adminList.AddAdmin("654321")
 	require.NoError(t, err)
 
-	err = adminForm.RemoveAdmin(myTestID)
+	err = adminList.RemoveAdmin(myTestID)
 	require.NoError(t, err)
-	res, err = adminForm.GetAdminIndex(myTestID)
+	res, err = adminList.GetAdminIndex(myTestID)
 	require.Equal(t, -1, res)
 	require.NoError(t, err)
 }

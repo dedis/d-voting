@@ -91,22 +91,22 @@ func (adminList *AdminList) RemoveAdmin(userID string) error {
 	return nil
 }
 
-func AdminListFromStore(ctx serde.Context, adminFormFac serde.Factory, store store.Readable, adminListId string) (AdminList, error) {
+func AdminListFromStore(ctx serde.Context, adminListFac serde.Factory, store store.Readable, adminListId string) (AdminList, error) {
 	adminList := AdminList{}
 
 	h := sha256.New()
 	h.Write([]byte(adminListId))
-	adminFormIDBuf := h.Sum(nil)
+	adminListIDBuf := h.Sum(nil)
 
-	adminFormBuf, err := store.Get(adminFormIDBuf)
+	adminListBuf, err := store.Get(adminListIDBuf)
 	if err != nil {
 		return adminList, xerrors.Errorf("While getting data for form: %v", err)
 	}
-	if len(adminFormBuf) == 0 {
+	if len(adminListBuf) == 0 {
 		return adminList, xerrors.Errorf("No form found")
 	}
 
-	message, err := adminFormFac.Deserialize(ctx, adminFormBuf)
+	message, err := adminListFac.Deserialize(ctx, adminListBuf)
 	if err != nil {
 		return adminList, xerrors.Errorf("failed to deserialize AdminList: %v", err)
 	}
