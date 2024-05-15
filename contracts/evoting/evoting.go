@@ -1085,7 +1085,7 @@ func (e evotingCommand) getAdminForm(snap store.Snapshot) (types.AdminList, erro
 
 	var form types.AdminList
 
-	form, err := types.AdminFormFromStore(e.context, e.adminFormFac, snap, AdminListId)
+	form, err := types.AdminListFromStore(e.context, e.adminFormFac, snap, AdminListId)
 	if err != nil {
 		return form, xerrors.Errorf("failed to get the AdminList: %v", err)
 	}

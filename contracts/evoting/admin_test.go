@@ -25,24 +25,24 @@ func init() {
 // deserialized to check whether these operations work as intended.
 // Serialization/Deserialization of an AdminList should not change its values.
 func TestAdmin_Serde(t *testing.T) {
-	adminFormList := []int{111111, 222222, 333333, 123456}
+	initialAdminList := []int{111111, 222222, 333333, 123456}
 
-	adminForm := types.AdminList{AdminList: adminFormList}
+	adminList := types.AdminList{AdminList: initialAdminList}
 
-	value, err := adminForm.Serialize(ctxAdminTest)
+	value, err := adminList.Serialize(ctxAdminTest)
 
 	require.NoError(t, err)
 
 	// deserialization
-	newAdminForm := types.AdminList{}
+	deserializedAdminList := types.AdminList{}
 
-	msgs, err := newAdminForm.Deserialize(ctxAdminTest, value)
+	msgs, err := deserializedAdminList.Deserialize(ctxAdminTest, value)
 
 	require.NoError(t, err)
 
-	updatedAdminForm := msgs.(types.AdminList)
+	updatedAdminList := msgs.(types.AdminList)
 
-	require.Equal(t, adminFormList, updatedAdminForm.AdminList)
+	require.Equal(t, initialAdminList, updatedAdminList.AdminList)
 }
 
 func TestAdmin_AddAdminAndRemoveAdmin(t *testing.T) {

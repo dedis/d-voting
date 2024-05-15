@@ -187,7 +187,7 @@ func NewContract(srvc access.Service,
 	ciphervoteFac := types.CiphervoteFactory{}
 	formFac := types.NewFormFactory(ciphervoteFac, rosterFac)
 	transactionFac := types.NewTransactionFactory(ciphervoteFac)
-	adminFormFac := types.AdminFormFactory{}
+	adminFormFac := types.AdminListFactory{}
 
 	contract := Contract{
 		access:   srvc,

@@ -9,10 +9,10 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var adminFormFormat = registry.NewSimpleRegistry()
+var adminListFormat = registry.NewSimpleRegistry()
 
-func RegisterAdminFormFormat(format serde.Format, engine serde.FormatEngine) {
-	adminFormFormat.Register(format, engine)
+func RegisterAdminListFormat(format serde.Format, engine serde.FormatEngine) {
+	adminListFormat.Register(format, engine)
 }
 
 type AdminList struct {
@@ -21,7 +21,7 @@ type AdminList struct {
 }
 
 func (adminList AdminList) Serialize(ctx serde.Context) ([]byte, error) {
-	format := adminFormFormat.Get(ctx.GetFormat())
+	format := adminListFormat.Get(ctx.GetFormat())
 
 	data, err := format.Encode(ctx, adminList)
 	if err != nil {
@@ -32,7 +32,7 @@ func (adminList AdminList) Serialize(ctx serde.Context) ([]byte, error) {
 }
 
 func (adminList AdminList) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
-	format := adminFormFormat.Get(ctx.GetFormat())
+	format := adminListFormat.Get(ctx.GetFormat())
 
 	message, err := format.Decode(ctx, data)
 	if err != nil {
@@ -91,8 +91,8 @@ func (adminList *AdminList) RemoveAdmin(userID string) error {
 	return nil
 }
 
-func AdminFormFromStore(ctx serde.Context, adminFormFac serde.Factory, store store.Readable, adminListId string) (AdminList, error) {
-	adminForm := AdminList{}
+func AdminListFromStore(ctx serde.Context, adminFormFac serde.Factory, store store.Readable, adminListId string) (AdminList, error) {
+	adminList := AdminList{}
 
 	h := sha256.New()
 	h.Write([]byte(adminListId))
@@ -100,34 +100,34 @@ func AdminFormFromStore(ctx serde.Context, adminFormFac serde.Factory, store sto
 
 	adminFormBuf, err := store.Get(adminFormIDBuf)
 	if err != nil {
-		return adminForm, xerrors.Errorf("While getting data for form: %v", err)
+		return adminList, xerrors.Errorf("While getting data for form: %v", err)
 	}
 	if len(adminFormBuf) == 0 {
-		return adminForm, xerrors.Errorf("No form found")
+		return adminList, xerrors.Errorf("No form found")
 	}
 
 	message, err := adminFormFac.Deserialize(ctx, adminFormBuf)
 	if err != nil {
-		return adminForm, xerrors.Errorf("failed to deserialize AdminList: %v", err)
+		return adminList, xerrors.Errorf("failed to deserialize AdminList: %v", err)
 	}
 
-	adminForm, ok := message.(AdminList)
+	adminList, ok := message.(AdminList)
 	if !ok {
-		return adminForm, xerrors.Errorf("Wrong message type: %T", message)
+		return adminList, xerrors.Errorf("Wrong message type: %T", message)
 	}
 
-	return adminForm, nil
+	return adminList, nil
 }
 
-// AdminFormFactory provides the mean to deserialize a AdminList. It naturally
+// AdminListFactory provides the mean to deserialize a AdminList. It naturally
 // uses the formFormat.
 //
 // - implements serde.Factory
-type AdminFormFactory struct{}
+type AdminListFactory struct{}
 
 // Deserialize implements serde.Factory
-func (AdminFormFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
-	format := adminFormFormat.Get(ctx.GetFormat())
+func (AdminListFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
+	format := adminListFormat.Get(ctx.GetFormat())
 
 	message, err := format.Decode(ctx, data)
 	if err != nil {

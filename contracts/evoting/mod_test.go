@@ -45,13 +45,13 @@ var invalidForm = []byte("fake form")
 var ctx serde.Context
 
 var formFac serde.Factory
-var adminFormFac serde.Factory
+var adminListFac serde.Factory
 var transactionFac serde.Factory
 
 func init() {
 	ciphervoteFac := types.CiphervoteFactory{}
 	formFac = types.NewFormFactory(ciphervoteFac, fakeAuthorityFactory{})
-	adminFormFac = types.AdminFormFactory{}
+	adminListFac = types.AdminListFactory{}
 	transactionFac = types.NewTransactionFactory(ciphervoteFac)
 
 	ctx = sjson.NewContext()
@@ -1157,7 +1157,7 @@ func TestCommand_AdminForm(t *testing.T) {
 	res, err := snap.Get(formIDBuf)
 	require.NoError(t, err)
 
-	_, err = adminFormFac.Deserialize(ctx, res)
+	_, err = adminListFac.Deserialize(ctx, res)
 	require.ErrorContains(t, err, "failed to unmarshal form")
 
 	// Now Let's add our admin
@@ -1190,7 +1190,7 @@ func TestCommand_AdminForm(t *testing.T) {
 	res, err = snap.Get(formIDBuf)
 	require.NoError(t, err)
 
-	message, err := adminFormFac.Deserialize(ctx, res)
+	message, err := adminListFac.Deserialize(ctx, res)
 	require.NoError(t, err)
 
 	adminForm, ok := message.(types.AdminList)
@@ -1215,7 +1215,7 @@ func TestCommand_AdminForm(t *testing.T) {
 	res, err = snap.Get(formIDBuf)
 	require.NoError(t, err)
 
-	message, err = adminFormFac.Deserialize(ctx, res)
+	message, err = adminListFac.Deserialize(ctx, res)
 	require.NoError(t, err)
 
 	adminForm, ok = message.(types.AdminList)
