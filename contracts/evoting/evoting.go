@@ -814,6 +814,7 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 	txRemoveAdmin, okRemoveAdmin := msg.(types.RemoveAdmin)
 
 	if okAddAdmin {
+		// Recover the AdminList stored on the blockchain
 		form, err = e.getAdminList(snap)
 		if err != nil {
 			if !strings.Contains(err.Error(), "No form found") {
@@ -837,6 +838,7 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 			return nil
 		}
 
+		// If it found the AdminList
 		// Check that the performing user is Admin
 		performingUserPerm, err := form.GetAdminIndex(txAddAdmin.PerformingUserID)
 		if err != nil {
