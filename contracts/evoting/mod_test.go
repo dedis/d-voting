@@ -1110,6 +1110,16 @@ func TestRegisterContract(t *testing.T) {
 // ===============
 // Admin Form Test
 
+/*
+	 Testing Scenario:
+		- Initialize Contract & Form
+		- Perform error handling test
+		- 123456 add admin 123456
+		- 123456 remove admin 123456 -> error cause only one left
+		- 777777 add admin 777777 -> error cause not an admin
+		- 123456 add admin 777777
+		- 123456 remove admin 123456
+*/
 func TestCommand_AdminList(t *testing.T) {
 	initMetrics()
 
@@ -1123,9 +1133,10 @@ func TestCommand_AdminList(t *testing.T) {
 
 	// We define a dummy userID which we are going to add admin permission.
 	dummyUID := "123456"
+	dummyUID2 := "777777"
 
 	// We initialize the command to add permission.
-	addAdmin := types.AddAdmin{"123455", "123455"}
+	addAdmin := types.AddAdmin{dummyUID, dummyUID}
 	data, err := addAdmin.Serialize(ctx)
 	require.NoError(t, err)
 
@@ -1171,7 +1182,10 @@ func TestCommand_AdminList(t *testing.T) {
 	// Now we want to remove its admin privilege.
 	// Will be a failure cause only one left
 	// Initialization of the command
-	removeAdmin := types.RemoveAdmin{dummyUID, dummyUID}
+	removeAdmin := types.RemoveAdmin{
+		TargetUserID:     dummyUID,
+		PerformingUserID: dummyUID,
+	}
 	data, err = removeAdmin.Serialize(ctx)
 	require.NoError(t, err)
 
@@ -1179,8 +1193,18 @@ func TestCommand_AdminList(t *testing.T) {
 	err = cmd.manageAdminList(snap, makeStep(t, FormArg, string(data)))
 	require.ErrorContains(t, err, "couldn't remove admin")
 
-	addAdmin2 := types.AddAdmin{dummyUID, dummyUID}
+	// We try to add a second admin but the performing user
+	// does not have the permission
+	addAdmin2 := types.AddAdmin{dummyUID2, dummyUID2}
 	data2, err := addAdmin2.Serialize(ctx)
+	require.NoError(t, err)
+
+	err = cmd.manageAdminList(snap, makeStep(t, FormArg, string(data2)))
+	require.ErrorContains(t, err, "doesn't have the permission to add admin")
+
+	// Now we add another admin but with a performing user that is already admin
+	addAdmin2 = types.AddAdmin{dummyUID2, dummyUID}
+	data2, err = addAdmin2.Serialize(ctx)
 	require.NoError(t, err)
 
 	err = cmd.manageAdminList(snap, makeStep(t, FormArg, string(data2)))

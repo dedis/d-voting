@@ -837,18 +837,34 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 			return nil
 		}
 
-		// TODO Check if admin
-		//form.GetAdminIndex()
+		// Check that the performing user is Admin
+		performingUserPerm, err := form.GetAdminIndex(txAddAdmin.PerformingUserID)
+		if err != nil {
+			return xerrors.Errorf("couldn't retrieve admin permission of the performing user: %v", err)
+		}
+
+		if performingUserPerm < 0 {
+			return xerrors.Errorf("the performing user %v doesn't have the permission to add admin", txAddAdmin.PerformingUserID)
+		}
 
 		err = form.AddAdmin(txAddAdmin.TargetUserID)
 		if err != nil {
 			return xerrors.Errorf("couldn't add admin: %v", err)
 		}
 	} else if okRemoveAdmin {
-		// TODO Check if admin
 		form, err = e.getAdminList(snap)
 		if err != nil {
 			return xerrors.Errorf("failed to get AdminList: %v", err)
+		}
+
+		// Check that the performing user is Admin
+		performingUserPerm, err := form.GetAdminIndex(txRemoveAdmin.PerformingUserID)
+		if err != nil {
+			return xerrors.Errorf("couldn't retrieve admin permission of the performing user: %v", err)
+		}
+
+		if performingUserPerm < 0 {
+			return xerrors.Errorf("the performing user %v doesn't have the permission to remove admin", txRemoveAdmin.PerformingUserID)
 		}
 
 		err = form.RemoveAdmin(txRemoveAdmin.TargetUserID)
