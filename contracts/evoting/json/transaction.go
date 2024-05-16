@@ -120,13 +120,15 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 		m = TransactionJSON{DeleteForm: &de}
 	case types.AddAdmin:
 		aa := AddAdminJSON{
-			UserID: t.UserID,
+			PerformingUserID: t.PerformingUserID,
+			TargetUserID:     t.TargetUserID,
 		}
 
 		m = TransactionJSON{AddAdmin: &aa}
 	case types.RemoveAdmin:
 		ra := RemoveAdminJSON{
-			UserID: t.UserID,
+			PerformingUserID: t.PerformingUserID,
+			TargetUserID:     t.TargetUserID,
 		}
 
 		m = TransactionJSON{RemoveAdmin: &ra}
@@ -231,11 +233,13 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 		}, nil
 	case m.AddAdmin != nil:
 		return types.AddAdmin{
-			UserID: m.AddAdmin.UserID,
+			TargetUserID:     m.AddAdmin.TargetUserID,
+			PerformingUserID: m.AddAdmin.PerformingUserID,
 		}, nil
 	case m.RemoveAdmin != nil:
 		return types.RemoveAdmin{
-			UserID: m.RemoveAdmin.UserID,
+			TargetUserID:     m.RemoveAdmin.TargetUserID,
+			PerformingUserID: m.RemoveAdmin.PerformingUserID,
 		}, nil
 	case m.AddOwner != nil:
 		return types.AddOwner{
@@ -346,14 +350,14 @@ type DeleteFormJSON struct {
 
 // AddAdminJSON is the JSON representation of a AddAdmin transaction
 type AddAdminJSON struct {
-	FormID string
-	UserID string
+	TargetUserID     string
+	PerformingUserID string
 }
 
 // RemoveAdminJSON is the JSON representation of a RemoveAdmin transaction
 type RemoveAdminJSON struct {
-	FormID string
-	UserID string
+	TargetUserID     string
+	PerformingUserID string
 }
 
 // OwnerForm

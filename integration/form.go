@@ -35,7 +35,7 @@ func encodeID(ID string) types.ID {
 
 // for integration tests
 func addAdmin(m txManager, admin string) error {
-	addAdmin := types.AddAdmin{UserID: admin}
+	addAdmin := types.AddAdmin{admin, admin}
 
 	data, err := addAdmin.Serialize(serdecontext)
 	if err != nil {

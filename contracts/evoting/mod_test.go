@@ -128,7 +128,7 @@ func TestCommand_CreateForm(t *testing.T) {
 		err:   nil,
 	}
 
-	addAdmin := types.AddAdmin{dummyUserAdminID}
+	addAdmin := types.AddAdmin{dummyUserAdminID, dummyUserAdminID}
 	dataAddAdmin, err := addAdmin.Serialize(ctx)
 	require.NoError(t, err)
 
@@ -1125,7 +1125,7 @@ func TestCommand_AdminList(t *testing.T) {
 	dummyUID := "123456"
 
 	// We initialize the command to add permission.
-	addAdmin := types.AddAdmin{UserID: "123455"}
+	addAdmin := types.AddAdmin{"123455", "123455"}
 	data, err := addAdmin.Serialize(ctx)
 	require.NoError(t, err)
 
@@ -1171,7 +1171,7 @@ func TestCommand_AdminList(t *testing.T) {
 	// Now we want to remove its admin privilege.
 	// Will be a failure cause only one left
 	// Initialization of the command
-	removeAdmin := types.RemoveAdmin{UserID: dummyUID}
+	removeAdmin := types.RemoveAdmin{dummyUID, dummyUID}
 	data, err = removeAdmin.Serialize(ctx)
 	require.NoError(t, err)
 
@@ -1179,7 +1179,7 @@ func TestCommand_AdminList(t *testing.T) {
 	err = cmd.manageAdminList(snap, makeStep(t, FormArg, string(data)))
 	require.ErrorContains(t, err, "couldn't remove admin")
 
-	addAdmin2 := types.AddAdmin{UserID: dummyUID}
+	addAdmin2 := types.AddAdmin{dummyUID, dummyUID}
 	data2, err := addAdmin2.Serialize(ctx)
 	require.NoError(t, err)
 
@@ -1203,7 +1203,7 @@ func TestCommand_AdminList(t *testing.T) {
 
 	// Now we want to remove its admin privilege.
 	// Initialization of the command
-	removeAdmin = types.RemoveAdmin{UserID: dummyUID}
+	removeAdmin = types.RemoveAdmin{dummyUID, dummyUID}
 	data, err = removeAdmin.Serialize(ctx)
 	require.NoError(t, err)
 

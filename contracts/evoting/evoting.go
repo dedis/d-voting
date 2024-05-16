@@ -822,7 +822,7 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 
 			// Trust On First Use System -> if no AdminList, will create one by default.
 
-			intSciper, err := types.SciperToInt(txAddAdmin.UserID)
+			intSciper, err := types.SciperToInt(txAddAdmin.TargetUserID)
 			if err != nil {
 				return xerrors.Errorf("Invalid Sciper: %v", err)
 			}
@@ -840,7 +840,7 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 		// TODO Check if admin
 		//form.GetAdminIndex()
 
-		err = form.AddAdmin(txAddAdmin.UserID)
+		err = form.AddAdmin(txAddAdmin.TargetUserID)
 		if err != nil {
 			return xerrors.Errorf("couldn't add admin: %v", err)
 		}
@@ -851,7 +851,7 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 			return xerrors.Errorf("failed to get AdminList: %v", err)
 		}
 
-		err = form.RemoveAdmin(txRemoveAdmin.UserID)
+		err = form.RemoveAdmin(txRemoveAdmin.TargetUserID)
 		if err != nil {
 			return xerrors.Errorf("couldn't remove admin: %v", err)
 		}
