@@ -890,6 +890,8 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 	return nil
 }
 
+// initializeAdminList initialize an AdminList on the blockchain. It is called the first time that
+// we attempt to add an admin.
 func initializeAdminList(snap store.Snapshot, initialAdmin int, ctx serde.Context) error {
 	h := sha256.New()
 	h.Write([]byte(AdminListId))

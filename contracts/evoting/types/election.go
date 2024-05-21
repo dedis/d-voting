@@ -468,8 +468,6 @@ func (form *Form) AddOwner(userID string) error {
 		return xerrors.Errorf("failed to convert SCIPER to integer: %v", err)
 	}
 
-	// TODO need to check that the new user is admin !
-
 	form.Owners = append(form.Owners, sciperInt)
 
 	return nil
