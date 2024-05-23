@@ -1115,8 +1115,8 @@ func TestRegisterContract(t *testing.T) {
 		- Initialize Contract & Form
 		- Perform error handling test
 		- 123456 add admin 123456
-		- 123456 remove admin 123456 -> error cause only one left
-		- 777777 add admin 777777 -> error cause not an admin
+		- 123456 remove admin 123456 -> error because only one left
+		- 777777 add admin 777777 -> error because not an admin
 		- 123456 add admin 777777
 		- 123456 remove admin 123456
 */
