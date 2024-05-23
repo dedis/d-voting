@@ -46,7 +46,7 @@ func (adminList AdminList) Deserialize(ctx serde.Context, data []byte) (serde.Me
 func (adminList *AdminList) AddAdmin(userID string) error {
 	sciperInt, err := SciperToInt(userID)
 	if err != nil {
-		return xerrors.Errorf("Failed SciperToInt: %v", err)
+		return xerrors.Errorf("Failed to convert SCIPER to int: %v", err)
 	}
 
 	adminList.AdminList = append(adminList.AdminList, sciperInt)
