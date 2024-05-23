@@ -58,7 +58,7 @@ func (adminList *AdminList) AddAdmin(userID string) error {
 func (adminList *AdminList) GetAdminIndex(userID string) (int, error) {
 	sciperInt, err := SciperToInt(userID)
 	if err != nil {
-		return -1, xerrors.Errorf("Failed SciperToInt: %v", err)
+		return -1, xerrors.Errorf("Failed to convert SCIPER to int: %v", err)
 	}
 
 	for i := 0; i < len(adminList.AdminList); i++ {
