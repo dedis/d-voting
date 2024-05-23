@@ -817,7 +817,8 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 		// Recover the AdminList stored on the blockchain
 		form, err = e.getAdminList(snap)
 		if err != nil {
-			if !strings.Contains(err.Error(), "No form found") {
+			// Exact string matching of the error
+			if !strings.Contains(err.Error(), "failed to get the AdminList: No form found") {
 				return xerrors.Errorf("failed to get AdminList: %v", err)
 			}
 
@@ -969,7 +970,7 @@ func (e evotingCommand) manageOwnersVotersForm(snap store.Snapshot, step executi
 			return xerrors.Errorf(errGetForm, err)
 		}
 
-		err = form.AddVoter(txAddVoter.UserID)
+		err = form.AddVoter(txAddVoter.TargetUserID)
 		if err != nil {
 			return xerrors.Errorf("couldn't add voter: %v", err)
 		}
@@ -979,7 +980,7 @@ func (e evotingCommand) manageOwnersVotersForm(snap store.Snapshot, step executi
 			return xerrors.Errorf(errGetForm, err)
 		}
 
-		err = form.RemoveVoter(txRemoveVoter.UserID)
+		err = form.RemoveVoter(txRemoveVoter.TargetUserID)
 		if err != nil {
 			return xerrors.Errorf("couldn't remove voter: %v", err)
 		}
@@ -989,7 +990,7 @@ func (e evotingCommand) manageOwnersVotersForm(snap store.Snapshot, step executi
 			return xerrors.Errorf(errGetForm, err)
 		}
 
-		err = form.AddOwner(txAddOwner.UserID)
+		err = form.AddOwner(txAddOwner.TargetUserID)
 		if err != nil {
 			return xerrors.Errorf("couldn't add owner: %v", err)
 		}
@@ -999,7 +1000,7 @@ func (e evotingCommand) manageOwnersVotersForm(snap store.Snapshot, step executi
 			return xerrors.Errorf(errGetForm, err)
 		}
 
-		err = form.RemoveOwner(txRemoveOwner.UserID)
+		err = form.RemoveOwner(txRemoveOwner.TargetUserID)
 		if err != nil {
 			return xerrors.Errorf("couldn't remove owner: %v", err)
 		}

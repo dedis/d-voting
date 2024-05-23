@@ -1262,8 +1262,9 @@ func TestCommand_AdminList(t *testing.T) {
 */
 func TestCommand_OwnerForm(t *testing.T) {
 	addOwner := types.AddOwner{
-		FormID: fakeFormID,
-		UserID: dummyUserAdminID,
+		FormID:           fakeFormID,
+		TargetUserID:     dummyUserAdminID,
+		PerformingUserID: dummyUserAdminID,
 	}
 
 	// Test Serialization of AddOwner command
@@ -1271,8 +1272,9 @@ func TestCommand_OwnerForm(t *testing.T) {
 	require.NoError(t, err)
 
 	removeOwner := types.RemoveOwner{
-		FormID: fakeFormID,
-		UserID: dummyUserAdminID,
+		FormID:           fakeFormID,
+		TargetUserID:     dummyUserAdminID,
+		PerformingUserID: dummyUserAdminID,
 	}
 
 	// Test Serialization of RemoveOwner command
@@ -1370,8 +1372,9 @@ func TestCommand_OwnerForm(t *testing.T) {
 
 	// So first let's add a second owner
 	addOwner2 := types.AddOwner{
-		FormID: fakeFormID,
-		UserID: "234567",
+		FormID:           fakeFormID,
+		TargetUserID:     "234567",
+		PerformingUserID: "234567",
 	}
 
 	// Test Serialization of AddOwner command
@@ -1426,8 +1429,9 @@ func TestCommand_OwnerForm(t *testing.T) {
 */
 func TestCommand_VoterForm(t *testing.T) {
 	addVoter := types.AddVoter{
-		FormID: fakeFormID,
-		UserID: dummyUserAdminID,
+		FormID:           fakeFormID,
+		TargetUserID:     dummyUserAdminID,
+		PerformingUserID: dummyUserAdminID,
 	}
 
 	// Test Serialization of AddVoter command
@@ -1435,8 +1439,9 @@ func TestCommand_VoterForm(t *testing.T) {
 	require.NoError(t, err)
 
 	removeVoter := types.RemoveVoter{
-		FormID: fakeFormID,
-		UserID: dummyUserAdminID,
+		FormID:           fakeFormID,
+		TargetUserID:     dummyUserAdminID,
+		PerformingUserID: dummyUserAdminID,
 	}
 
 	// Test Serialization of RemoveVoter command

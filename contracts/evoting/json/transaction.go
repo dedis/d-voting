@@ -134,29 +134,33 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 		m = TransactionJSON{RemoveAdmin: &ra}
 	case types.AddOwner:
 		addOwner := AddOwnerJSON{
-			FormID: t.FormID,
-			UserID: t.UserID,
+			FormID:           t.FormID,
+			TargetUserID:     t.TargetUserID,
+			PerformingUserID: t.PerformingUserID,
 		}
 
 		m = TransactionJSON{AddOwner: &addOwner}
 	case types.RemoveOwner:
 		removeOwner := RemoveOwnerJSON{
-			FormID: t.FormID,
-			UserID: t.UserID,
+			FormID:           t.FormID,
+			TargetUserID:     t.TargetUserID,
+			PerformingUserID: t.PerformingUserID,
 		}
 
 		m = TransactionJSON{RemoveOwner: &removeOwner}
 	case types.AddVoter:
 		addVoter := AddVoterJSON{
-			FormID: t.FormID,
-			UserID: t.UserID,
+			FormID:           t.FormID,
+			TargetUserID:     t.TargetUserID,
+			PerformingUserID: t.PerformingUserID,
 		}
 
 		m = TransactionJSON{AddVoter: &addVoter}
 	case types.RemoveVoter:
 		removeVoter := RemoveVoterJSON{
-			FormID: t.FormID,
-			UserID: t.UserID,
+			FormID:           t.FormID,
+			TargetUserID:     t.TargetUserID,
+			PerformingUserID: t.PerformingUserID,
 		}
 
 		m = TransactionJSON{RemoveVoter: &removeVoter}
@@ -243,23 +247,27 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 		}, nil
 	case m.AddOwner != nil:
 		return types.AddOwner{
-			FormID: m.AddOwner.FormID,
-			UserID: m.AddOwner.UserID,
+			FormID:           m.AddOwner.FormID,
+			TargetUserID:     m.AddOwner.TargetUserID,
+			PerformingUserID: m.AddOwner.PerformingUserID,
 		}, nil
 	case m.RemoveOwner != nil:
 		return types.RemoveOwner{
-			FormID: m.RemoveOwner.FormID,
-			UserID: m.RemoveOwner.UserID,
+			FormID:           m.RemoveOwner.FormID,
+			TargetUserID:     m.AddOwner.TargetUserID,
+			PerformingUserID: m.AddOwner.PerformingUserID,
 		}, nil
 	case m.AddVoter != nil:
 		return types.AddVoter{
-			FormID: m.AddVoter.FormID,
-			UserID: m.AddVoter.UserID,
+			FormID:           m.AddVoter.FormID,
+			TargetUserID:     m.AddOwner.TargetUserID,
+			PerformingUserID: m.AddOwner.PerformingUserID,
 		}, nil
 	case m.RemoveVoter != nil:
 		return types.RemoveVoter{
-			FormID: m.RemoveVoter.FormID,
-			UserID: m.RemoveVoter.UserID,
+			FormID:           m.RemoveVoter.FormID,
+			TargetUserID:     m.AddOwner.TargetUserID,
+			PerformingUserID: m.AddOwner.PerformingUserID,
 		}, nil
 	}
 
@@ -364,28 +372,32 @@ type RemoveAdminJSON struct {
 
 // AddOwnerJSON is the JSON representation of a AddOwner transaction
 type AddOwnerJSON struct {
-	FormID string
-	UserID string
+	FormID           string
+	TargetUserID     string
+	PerformingUserID string
 }
 
 // RemoveOwnerJSON is the JSON representation of a RemoveOwner transaction
 type RemoveOwnerJSON struct {
-	FormID string
-	UserID string
+	FormID           string
+	TargetUserID     string
+	PerformingUserID string
 }
 
 // VoterForm
 
 // AddVoterJSON is the JSON representation of a AddVoter transaction
 type AddVoterJSON struct {
-	FormID string
-	UserID string
+	FormID           string
+	TargetUserID     string
+	PerformingUserID string
 }
 
 // RemoveVoterJSON is the JSON representation of a RemoveVoter transaction
 type RemoveVoterJSON struct {
-	FormID string
-	UserID string
+	FormID           string
+	TargetUserID     string
+	PerformingUserID string
 }
 
 func decodeCastVote(ctx serde.Context, m CastVoteJSON) (serde.Message, error) {

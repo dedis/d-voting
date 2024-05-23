@@ -92,7 +92,8 @@ func (transactionFactory TransactionFactory) Deserialize(ctx serde.Context, data
 // - implements serde.Message
 type CreateForm struct {
 	Configuration Configuration
-	UserID        string
+	// UserID of the owner that is performing the action
+	UserID string
 }
 
 // Serialize implements serde.Message
@@ -113,6 +114,8 @@ func (createForm CreateForm) Serialize(ctx serde.Context) ([]byte, error) {
 type OpenForm struct {
 	// FormID is hex-encoded
 	FormID string
+	// UserID of the owner that is performing the action
+	UserID string
 }
 
 // Serialize implements serde.Message
@@ -155,6 +158,7 @@ func (castVote CastVote) Serialize(ctx serde.Context) ([]byte, error) {
 type CloseForm struct {
 	// FormID is hex-encoded
 	FormID string
+	// UserID of the owner that is performing the action
 	UserID string
 }
 
@@ -186,8 +190,10 @@ type ShuffleBallots struct {
 	// Signature is the signature of the result of HashShuffle() with the private
 	// key corresponding to PublicKey
 	Signature []byte
-	//PublicKey is the public key of the signer.
+	// PublicKey is the public key of the signer.
 	PublicKey []byte
+	// UserID of the owner that is performing the action
+	UserID string
 }
 
 // Serialize implements serde.Message
@@ -218,6 +224,10 @@ type RegisterPubShares struct {
 	Signature []byte
 	// PublicKey is the public key of the signer
 	PublicKey []byte
+
+	// TODO Is is needed
+	// UserID of the owner that is performing the action
+	// UserID        string
 }
 
 // Serialize implements serde.Message
@@ -239,6 +249,7 @@ func (registerPubShares RegisterPubShares) Serialize(ctx serde.Context) ([]byte,
 type CombineShares struct {
 	// FormID is hex-encoded
 	FormID string
+	// UserID of the owner that is performing the action
 	UserID string
 }
 
@@ -260,6 +271,7 @@ func (combineShares CombineShares) Serialize(ctx serde.Context) ([]byte, error) 
 type CancelForm struct {
 	// FormID is hex-encoded
 	FormID string
+	// UserID of the owner that is performing the action
 	UserID string
 }
 
@@ -281,6 +293,8 @@ func (cancelForm CancelForm) Serialize(ctx serde.Context) ([]byte, error) {
 type DeleteForm struct {
 	// FormID is hex-encoded
 	FormID string
+	// UserID of the owner that is performing the action
+	UserID string
 }
 
 // Serialize implements serde.Message
@@ -389,8 +403,9 @@ func (removeAdmin RemoveAdmin) Serialize(ctx serde.Context) ([]byte, error) {
 // - implements serde.Message
 type AddVoter struct {
 	// FormID is hex-encoded
-	FormID string
-	UserID string
+	FormID           string
+	TargetUserID     string
+	PerformingUserID string
 }
 
 // Serialize implements serde.Message
@@ -410,8 +425,9 @@ func (addVoter AddVoter) Serialize(ctx serde.Context) ([]byte, error) {
 // - implements serde.Message
 type RemoveVoter struct {
 	// FormID is hex-encoded
-	FormID string
-	UserID string
+	FormID           string
+	TargetUserID     string
+	PerformingUserID string
 }
 
 // Serialize implements serde.Message
@@ -431,8 +447,9 @@ func (removeVoter RemoveVoter) Serialize(ctx serde.Context) ([]byte, error) {
 // - implements serde.Message
 type AddOwner struct {
 	// FormID is hex-encoded
-	FormID string
-	UserID string
+	FormID           string
+	TargetUserID     string
+	PerformingUserID string
 }
 
 // Serialize implements serde.Message
@@ -452,8 +469,9 @@ func (addOwner AddOwner) Serialize(ctx serde.Context) ([]byte, error) {
 // - implements serde.Message
 type RemoveOwner struct {
 	// FormID is hex-encoded
-	FormID string
-	UserID string
+	FormID           string
+	TargetUserID     string
+	PerformingUserID string
 }
 
 // Serialize implements serde.Message
