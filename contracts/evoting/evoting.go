@@ -66,17 +66,12 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 	}
 
 	// Check if has Admin Right to create a form
-	adminList, err := e.getAdminList(snap)
+	isAdmin, _, err := e.isAdmin(snap, tx.UserID)
 	if err != nil {
-		return xerrors.Errorf("failed to get AdminList: %v", err)
+		return err
 	}
-	adminIndex, err := adminList.GetAdminIndex(tx.UserID)
-	if err != nil {
-		return xerrors.Errorf("Couldn't retrieve the admin right of the user: %v", err)
-	}
-
-	if adminIndex < 0 {
-		return xerrors.Errorf("The user is not admin: %v", err)
+	if !isAdmin {
+		return xerrors.Errorf("The performing user is not an admin.")
 	}
 
 	roster, err := e.rosterFac.AuthorityOf(e.context, rosterBuf)
@@ -786,7 +781,7 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 		return xerrors.Errorf(errGetTransaction, err)
 	}
 
-	var form types.AdminList
+	var list types.AdminList
 
 	h := sha256.New()
 	h.Write([]byte(AdminListId))
@@ -796,11 +791,12 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 	txRemoveAdmin, okRemoveAdmin := msg.(types.RemoveAdmin)
 
 	if okAddAdmin {
-		// Recover the AdminList stored on the blockchain
-		form, err = e.getAdminList(snap)
+		isAdmin, listRetrieved, err := e.isAdmin(snap, txAddAdmin.PerformingUserID)
+		list = listRetrieved
 		if err != nil {
 			// Exact string matching of the error
-			if err.Error() != "failed to get the AdminList: No form found" {
+			println("HEYO: " + err.Error())
+			if err.Error() != "failed to get the AdminList: No list found" {
 				return xerrors.Errorf("failed to get AdminList: %v", err)
 			}
 
@@ -820,26 +816,22 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 			// Therefore return
 			return nil
 		}
-
-		isAdmin, err := e.isAdmin(form, txAddAdmin.PerformingUserID)
-		if err != nil {
-			return err
-		}
 		if !isAdmin {
 			return xerrors.Errorf("The performing user is not an admin.")
 		}
 
-		err = form.AddAdmin(txAddAdmin.TargetUserID)
+		err = list.AddAdmin(txAddAdmin.TargetUserID)
 		if err != nil {
 			return xerrors.Errorf("couldn't add admin: %v", err)
 		}
 	} else if okRemoveAdmin {
-		form, err = e.getAdminList(snap)
+		list, err = e.getAdminList(snap)
 		if err != nil {
 			return xerrors.Errorf("failed to get AdminList: %v", err)
 		}
 
-		isAdmin, err := e.isAdmin(form, txRemoveAdmin.PerformingUserID)
+		isAdmin, listRetrieved, err := e.isAdmin(snap, txRemoveAdmin.PerformingUserID)
+		list = listRetrieved
 		if err != nil {
 			return err
 		}
@@ -847,7 +839,7 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 			return xerrors.Errorf("The performing user is not an admin.")
 		}
 
-		err = form.RemoveAdmin(txRemoveAdmin.TargetUserID)
+		err = list.RemoveAdmin(txRemoveAdmin.TargetUserID)
 		if err != nil {
 			return xerrors.Errorf("couldn't remove admin: %v", err)
 		}
@@ -855,7 +847,7 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 		return xerrors.Errorf(errWrongTx, msg)
 	}
 
-	formBuf, err := form.Serialize(e.context)
+	formBuf, err := list.Serialize(e.context)
 	if err != nil {
 		return xerrors.Errorf("failed to marshal Form : %v", err)
 	}
@@ -869,18 +861,23 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 }
 
 // isAdmin Check whether a user is in an Admin List
-func (e evotingCommand) isAdmin(form types.AdminList, txPerformingUser string) (bool, error) {
+func (e evotingCommand) isAdmin(snap store.Snapshot, txPerformingUser string) (bool, types.AdminList, error) {
 	// If it found the AdminList
 	// Check that the performing user is Admin
+	form, err := e.getAdminList(snap)
+	if err != nil {
+		return false, types.AdminList{}, err
+	}
+
 	performingUserPerm, err := form.GetAdminIndex(txPerformingUser)
 	if err != nil {
-		return false, xerrors.Errorf("couldn't retrieve admin permission of the performing user: %v", err)
+		return false, form, xerrors.Errorf("couldn't retrieve admin permission of the performing user: %v", err)
 	}
 
 	if performingUserPerm < 0 {
-		return false, nil
+		return false, form, nil
 	}
-	return true, nil
+	return true, form, nil
 }
 
 // initializeAdminList initialize an AdminList on the blockchain. It is called the first time that

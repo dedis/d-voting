@@ -100,10 +100,10 @@ func AdminListFromStore(ctx serde.Context, adminListFac serde.Factory, store sto
 
 	adminListBuf, err := store.Get(adminListIDBuf)
 	if err != nil {
-		return adminList, xerrors.Errorf("While getting data for form: %v", err)
+		return adminList, xerrors.Errorf("While getting data for list: %v", err)
 	}
 	if len(adminListBuf) == 0 {
-		return adminList, xerrors.Errorf("No form found")
+		return adminList, xerrors.Errorf("No list found")
 	}
 
 	message, err := adminListFac.Deserialize(ctx, adminListBuf)
