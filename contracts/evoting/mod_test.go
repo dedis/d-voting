@@ -1200,7 +1200,7 @@ func TestCommand_AdminList(t *testing.T) {
 	require.NoError(t, err)
 
 	err = cmd.manageAdminList(snap, makeStep(t, FormArg, string(data2)))
-	require.ErrorContains(t, err, "doesn't have the permission to add admin")
+	require.ErrorContains(t, err, "The performing user is not an admin")
 
 	// Now we add another admin but with a performing user that is already admin
 	addAdmin2 = types.AddAdmin{dummyUID2, dummyUID}

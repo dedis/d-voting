@@ -822,8 +822,11 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 		}
 
 		isAdmin, err := e.isAdmin(form, txAddAdmin.PerformingUserID)
-		if err != nil || !isAdmin {
-			return xerrors.Errorf("The performing user is not an admin: %v", err)
+		if err != nil {
+			return err
+		}
+		if !isAdmin {
+			return xerrors.Errorf("The performing user is not an admin.")
 		}
 
 		err = form.AddAdmin(txAddAdmin.TargetUserID)
@@ -837,8 +840,11 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 		}
 
 		isAdmin, err := e.isAdmin(form, txRemoveAdmin.PerformingUserID)
-		if err != nil || !isAdmin {
-			return xerrors.Errorf("The performing user is not an admin: %v", err)
+		if err != nil {
+			return err
+		}
+		if !isAdmin {
+			return xerrors.Errorf("The performing user is not an admin.")
 		}
 
 		err = form.RemoveAdmin(txRemoveAdmin.TargetUserID)
