@@ -872,7 +872,7 @@ func (e evotingCommand) isAdmin(form types.AdminList, txPerformingUser string) (
 	}
 
 	if performingUserPerm < 0 {
-		return false, xerrors.Errorf("the performing user %v doesn't have the permission to add admin", txPerformingUser)
+		return false, nil
 	}
 	return true, nil
 }
