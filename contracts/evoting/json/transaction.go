@@ -254,20 +254,20 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 	case m.RemoveOwner != nil:
 		return types.RemoveOwner{
 			FormID:           m.RemoveOwner.FormID,
-			TargetUserID:     m.AddOwner.TargetUserID,
-			PerformingUserID: m.AddOwner.PerformingUserID,
+			TargetUserID:     m.RemoveOwner.TargetUserID,
+			PerformingUserID: m.RemoveOwner.PerformingUserID,
 		}, nil
 	case m.AddVoter != nil:
 		return types.AddVoter{
 			FormID:           m.AddVoter.FormID,
-			TargetUserID:     m.AddOwner.TargetUserID,
-			PerformingUserID: m.AddOwner.PerformingUserID,
+			TargetUserID:     m.AddVoter.TargetUserID,
+			PerformingUserID: m.AddVoter.PerformingUserID,
 		}, nil
 	case m.RemoveVoter != nil:
 		return types.RemoveVoter{
 			FormID:           m.RemoveVoter.FormID,
-			TargetUserID:     m.AddOwner.TargetUserID,
-			PerformingUserID: m.AddOwner.PerformingUserID,
+			TargetUserID:     m.RemoveVoter.TargetUserID,
+			PerformingUserID: m.RemoveVoter.PerformingUserID,
 		}, nil
 	}
 
