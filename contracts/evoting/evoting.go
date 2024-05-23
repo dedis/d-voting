@@ -903,7 +903,7 @@ func initializeAdminList(snap store.Snapshot, initialAdmin int, ctx serde.Contex
 
 	formBuf, err := adminList.Serialize(ctx)
 	if err != nil {
-		return xerrors.Errorf("failed to marshal Admin Form : %v", err)
+		return xerrors.Errorf("failed to marshal AdminList : %v", err)
 	}
 
 	err = snap.Set(formIDBuf, formBuf)
