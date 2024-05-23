@@ -800,7 +800,7 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 		form, err = e.getAdminList(snap)
 		if err != nil {
 			// Exact string matching of the error
-			if !strings.Contains(err.Error(), "failed to get the AdminList: No form found") {
+			if err.Error() != "failed to get the AdminList: No form found" {
 				return xerrors.Errorf("failed to get AdminList: %v", err)
 			}
 
