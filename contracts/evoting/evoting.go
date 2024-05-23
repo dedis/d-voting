@@ -839,15 +839,9 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 			return nil
 		}
 
-		// If it found the AdminList
-		// Check that the performing user is Admin
-		performingUserPerm, err := form.GetAdminIndex(txAddAdmin.PerformingUserID)
-		if err != nil {
-			return xerrors.Errorf("couldn't retrieve admin permission of the performing user: %v", err)
-		}
-
-		if performingUserPerm < 0 {
-			return xerrors.Errorf("the performing user %v doesn't have the permission to add admin", txAddAdmin.PerformingUserID)
+		isAdmin, err := e.isAdmin(form, txAddAdmin)
+		if err != nil || !isAdmin {
+			return xerrors.Errorf("The performing user is not an admin: %v", err)
 		}
 
 		err = form.AddAdmin(txAddAdmin.TargetUserID)
@@ -860,14 +854,9 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 			return xerrors.Errorf("failed to get AdminList: %v", err)
 		}
 
-		// Check that the performing user is Admin
-		performingUserPerm, err := form.GetAdminIndex(txRemoveAdmin.PerformingUserID)
-		if err != nil {
-			return xerrors.Errorf("couldn't retrieve admin permission of the performing user: %v", err)
-		}
-
-		if performingUserPerm < 0 {
-			return xerrors.Errorf("the performing user %v doesn't have the permission to remove admin", txRemoveAdmin.PerformingUserID)
+		isAdmin, err := e.isAdmin(form, txAddAdmin)
+		if err != nil || !isAdmin {
+			return xerrors.Errorf("The performing user is not an admin: %v", err)
 		}
 
 		err = form.RemoveAdmin(txRemoveAdmin.TargetUserID)
@@ -889,6 +878,21 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 	}
 
 	return nil
+}
+
+// isAdmin Check whether a user is in an Admin List
+func (e evotingCommand) isAdmin(form types.AdminList, txAddAdmin types.AddAdmin) (bool, error) {
+	// If it found the AdminList
+	// Check that the performing user is Admin
+	performingUserPerm, err := form.GetAdminIndex(txAddAdmin.PerformingUserID)
+	if err != nil {
+		return false, xerrors.Errorf("couldn't retrieve admin permission of the performing user: %v", err)
+	}
+
+	if performingUserPerm < 0 {
+		return false, xerrors.Errorf("the performing user %v doesn't have the permission to add admin", txAddAdmin.PerformingUserID)
+	}
+	return true, nil
 }
 
 // initializeAdminList initialize an AdminList on the blockchain. It is called the first time that
