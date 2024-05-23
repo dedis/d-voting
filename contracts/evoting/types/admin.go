@@ -74,14 +74,14 @@ func (adminList *AdminList) GetAdminIndex(userID string) (int, error) {
 func (adminList *AdminList) RemoveAdmin(userID string) error {
 	index, err := adminList.GetAdminIndex(userID)
 	if err != nil {
-		return xerrors.Errorf("Failed GetAdminIndex: %v", err)
+		return xerrors.Errorf("Failed to retrieve the admin from the Admin List: %v", err)
 	}
 
 	if index < 0 {
 		return xerrors.Errorf("Error while retrieving the index of the element.")
 	}
 
-	// We don't want to have a form without any Owners.
+	// We don't want to have a form without any Admin.
 	if len(adminList.AdminList) <= 1 {
 		return xerrors.Errorf("Error, cannot remove this Admin because it is the " +
 			"only one remaining.")

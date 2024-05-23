@@ -138,8 +138,16 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
 
-	// Update the form metadata store
+	err = updateFormMetadataStore(snap, form.FormID)
+	if err != nil {
+		return xerrors.Errorf("failed to update the metadata in the store: %v", err)
+	}
 
+	return nil
+}
+
+// updateFormMetadataStore Update the form metadata store
+func updateFormMetadataStore(snap store.Snapshot, formID string) error {
 	formsMetadataBuf, err := snap.Get([]byte(FormsMetadataKey))
 	if err != nil {
 		return xerrors.Errorf("failed to get key '%s': %v", formsMetadataBuf, err)
@@ -156,7 +164,7 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 		}
 	}
 
-	err = formsMetadata.FormsIDs.Add(form.FormID)
+	err = formsMetadata.FormsIDs.Add(formID)
 	if err != nil {
 		return xerrors.Errorf("couldn't add new form: %v", err)
 	}
@@ -170,7 +178,6 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 	if err != nil {
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
-
 	return nil
 }
 
@@ -764,34 +771,9 @@ func (e evotingCommand) deleteForm(snap store.Snapshot, step execution.Step) err
 		return xerrors.Errorf("failed to delete form: %v", err)
 	}
 
-	// Update the form metadata store
-
-	formsMetadataBuf, err := snap.Get([]byte(FormsMetadataKey))
+	err = updateFormMetadataStore(snap, form.FormID)
 	if err != nil {
-		return xerrors.Errorf("failed to get key '%s': %v", formsMetadataBuf, err)
-	}
-
-	if len(formsMetadataBuf) == 0 {
-		return nil
-	}
-
-	var formsMetadata types.FormsMetadata
-
-	err = json.Unmarshal(formsMetadataBuf, &formsMetadata)
-	if err != nil {
-		return xerrors.Errorf("failed to unmarshal FormsMetadata: %v", err)
-	}
-
-	formsMetadata.FormsIDs.Remove(form.FormID)
-
-	formMetadataJSON, err := json.Marshal(formsMetadata)
-	if err != nil {
-		return xerrors.Errorf("failed to marshal FormsMetadata: %v", err)
-	}
-
-	err = snap.Set([]byte(FormsMetadataKey), formMetadataJSON)
-	if err != nil {
-		return xerrors.Errorf("failed to set value: %v", err)
+		return xerrors.Errorf("failed to update the metadata in the store: %v", err)
 	}
 
 	return nil
@@ -839,7 +821,7 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 			return nil
 		}
 
-		isAdmin, err := e.isAdmin(form, txAddAdmin)
+		isAdmin, err := e.isAdmin(form, txAddAdmin.PerformingUserID)
 		if err != nil || !isAdmin {
 			return xerrors.Errorf("The performing user is not an admin: %v", err)
 		}
@@ -854,7 +836,7 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 			return xerrors.Errorf("failed to get AdminList: %v", err)
 		}
 
-		isAdmin, err := e.isAdmin(form, txAddAdmin)
+		isAdmin, err := e.isAdmin(form, txRemoveAdmin.PerformingUserID)
 		if err != nil || !isAdmin {
 			return xerrors.Errorf("The performing user is not an admin: %v", err)
 		}
@@ -881,16 +863,16 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 }
 
 // isAdmin Check whether a user is in an Admin List
-func (e evotingCommand) isAdmin(form types.AdminList, txAddAdmin types.AddAdmin) (bool, error) {
+func (e evotingCommand) isAdmin(form types.AdminList, txPerformingUser string) (bool, error) {
 	// If it found the AdminList
 	// Check that the performing user is Admin
-	performingUserPerm, err := form.GetAdminIndex(txAddAdmin.PerformingUserID)
+	performingUserPerm, err := form.GetAdminIndex(txPerformingUser)
 	if err != nil {
 		return false, xerrors.Errorf("couldn't retrieve admin permission of the performing user: %v", err)
 	}
 
 	if performingUserPerm < 0 {
-		return false, xerrors.Errorf("the performing user %v doesn't have the permission to add admin", txAddAdmin.PerformingUserID)
+		return false, xerrors.Errorf("the performing user %v doesn't have the permission to add admin", txPerformingUser)
 	}
 	return true, nil
 }
@@ -916,37 +898,9 @@ func initializeAdminList(snap store.Snapshot, initialAdmin int, ctx serde.Contex
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
 
-	// Update the form metadata store
-
-	formsMetadataBuf, err := snap.Get([]byte(FormsMetadataKey))
+	err = updateFormMetadataStore(snap, hex.EncodeToString(formIDBuf))
 	if err != nil {
-		return xerrors.Errorf("failed to get key '%s': %v", formsMetadataBuf, err)
-	}
-
-	formsMetadata := &types.FormsMetadata{
-		FormsIDs: types.FormIDs{},
-	}
-
-	if len(formsMetadataBuf) != 0 {
-		err := json.Unmarshal(formsMetadataBuf, formsMetadata)
-		if err != nil {
-			return xerrors.Errorf("failed to unmarshal FormsMetadata: %v", err)
-		}
-	}
-
-	err = formsMetadata.FormsIDs.Add(hex.EncodeToString(formIDBuf))
-	if err != nil {
-		return xerrors.Errorf("couldn't add new form: %v", err)
-	}
-
-	formMetadataJSON, err := json.Marshal(formsMetadata)
-	if err != nil {
-		return xerrors.Errorf("failed to marshal FormsMetadata: %v", err)
-	}
-
-	err = snap.Set([]byte(FormsMetadataKey), formMetadataJSON)
-	if err != nil {
-		return xerrors.Errorf("failed to set value: %v", err)
+		return xerrors.Errorf("failed to update the metadata in the store: %v", err)
 	}
 
 	return nil
