@@ -66,7 +66,7 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 	}
 
 	// Check if has Admin Right to create a form
-	isAdmin, _, err := e.isAdmin(snap, tx.UserID)
+	isAdmin, _, err := e.fetchAdmin(snap, tx.UserID)
 	if err != nil {
 		return err
 	}
@@ -791,11 +791,10 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 	txRemoveAdmin, okRemoveAdmin := msg.(types.RemoveAdmin)
 
 	if okAddAdmin {
-		isAdmin, listRetrieved, err := e.isAdmin(snap, txAddAdmin.PerformingUserID)
+		isAdmin, listRetrieved, err := e.fetchAdmin(snap, txAddAdmin.PerformingUserID)
 		list = listRetrieved
 		if err != nil {
 			// Exact string matching of the error
-			println("HEYO: " + err.Error())
 			if err.Error() != "failed to get the AdminList: No list found" {
 				return xerrors.Errorf("failed to get AdminList: %v", err)
 			}
@@ -825,12 +824,7 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 			return xerrors.Errorf("couldn't add admin: %v", err)
 		}
 	} else if okRemoveAdmin {
-		list, err = e.getAdminList(snap)
-		if err != nil {
-			return xerrors.Errorf("failed to get AdminList: %v", err)
-		}
-
-		isAdmin, listRetrieved, err := e.isAdmin(snap, txRemoveAdmin.PerformingUserID)
+		isAdmin, listRetrieved, err := e.fetchAdmin(snap, txRemoveAdmin.PerformingUserID)
 		list = listRetrieved
 		if err != nil {
 			return err
@@ -860,8 +854,8 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 	return nil
 }
 
-// isAdmin Check whether a user is in an Admin List
-func (e evotingCommand) isAdmin(snap store.Snapshot, txPerformingUser string) (bool, types.AdminList, error) {
+// fetchAdmin Check whether a user is in an Admin List
+func (e evotingCommand) fetchAdmin(snap store.Snapshot, txPerformingUser string) (bool, types.AdminList, error) {
 	// If it found the AdminList
 	// Check that the performing user is Admin
 	form, err := e.getAdminList(snap)
