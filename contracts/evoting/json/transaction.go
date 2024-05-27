@@ -71,6 +71,7 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 			Proof:        t.Proof,
 			Signature:    t.Signature,
 			PublicKey:    t.PublicKey,
+			UserID:       t.UserID,
 		}
 
 		m = TransactionJSON{ShuffleBallots: &sb}
@@ -327,6 +328,7 @@ type ShuffleBallotsJSON struct {
 	Proof        []byte
 	Signature    []byte
 	PublicKey    []byte
+	UserID       string
 }
 
 type RegisterPubSharesJSON struct {
@@ -453,6 +455,7 @@ func decodeShuffleBallots(ctx serde.Context, m ShuffleBallotsJSON) (serde.Messag
 		Proof:           m.Proof,
 		Signature:       m.Signature,
 		PublicKey:       m.PublicKey,
+		UserID:          m.UserID,
 	}, nil
 }
 

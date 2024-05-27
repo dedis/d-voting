@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"math/rand"
+	"slices"
 	"strings"
 
 	"go.dedis.ch/dela"
@@ -33,6 +34,9 @@ const (
 	shufflingProtocolName = "PairShuffle"
 	errGetTransaction     = "failed to get transaction: %v"
 	errGetForm            = "failed to get form: %v"
+	errIsRole             = "failed check the permission: %v"
+	errNoOwnerPerms       = "The user %v doesn't have the Owner permission on the form."
+	errNoVoterPerms       = "The user %v doesn't have the Voter permission on the form."
 	errWrongTx            = "wrong type of transaction: %T"
 )
 
@@ -44,6 +48,13 @@ type evotingCommand struct {
 
 	prover prover
 }
+
+type Role int
+
+const (
+	Voters Role = iota + 1
+	Owners
+)
 
 type prover func(suite proof.Suite, protocolName string, verifier proof.Verifier, proof []byte) error
 
@@ -195,6 +206,15 @@ func (e evotingCommand) openForm(snap store.Snapshot, step execution.Step) error
 		return xerrors.Errorf(errGetForm, err)
 	}
 
+	isOwner, err := e.isRole(form, tx.UserID, Owners)
+	if err != nil {
+		return xerrors.Errorf(errIsRole, err)
+	}
+
+	if !isOwner {
+		return xerrors.Errorf(errNoOwnerPerms, tx.UserID)
+	}
+
 	if form.Status != types.Initial {
 		return xerrors.Errorf("the form was opened before, current status: %d", form.Status)
 	}
@@ -253,6 +273,15 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 		return xerrors.Errorf("the form is not open, current status: %d", form.Status)
 	}
 
+	isOwner, err := e.isRole(form, tx.VoterID, Voters)
+	if err != nil {
+		return xerrors.Errorf(errIsRole, err)
+	}
+
+	if !isOwner {
+		return xerrors.Errorf(errNoVoterPerms, tx.VoterID)
+	}
+
 	if len(tx.Ballot) != form.ChunksPerBallot() {
 		return xerrors.Errorf("the ballot has unexpected length: %d != %d",
 			len(tx.Ballot), form.ChunksPerBallot())
@@ -304,6 +333,15 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	if form.Status != types.Closed {
 		return xerrors.Errorf("the form is not in state closed (current: %d != closed: %d)",
 			form.Status, types.Closed)
+	}
+
+	isOwner, err := e.isRole(form, tx.UserID, Owners)
+	if err != nil {
+		return xerrors.Errorf(errIsRole, err)
+	}
+
+	if !isOwner {
+		return xerrors.Errorf(errNoOwnerPerms, tx.UserID)
 	}
 
 	// Round starts at 0
@@ -504,6 +542,15 @@ func (e evotingCommand) closeForm(snap store.Snapshot, step execution.Step) erro
 		return xerrors.Errorf("the form is not open, current status: %d", form.Status)
 	}
 
+	isOwner, err := e.isRole(form, tx.UserID, Owners)
+	if err != nil {
+		return xerrors.Errorf(errIsRole, err)
+	}
+
+	if !isOwner {
+		return xerrors.Errorf(errNoOwnerPerms, tx.UserID)
+	}
+
 	if form.BallotCount <= 1 {
 		return xerrors.Errorf("at least two ballots are required")
 	}
@@ -659,6 +706,15 @@ func (e evotingCommand) combineShares(snap store.Snapshot, step execution.Step) 
 			" current status: %d", form.Status)
 	}
 
+	isOwner, err := e.isRole(form, tx.UserID, Owners)
+	if err != nil {
+		return xerrors.Errorf(errIsRole, err)
+	}
+
+	if !isOwner {
+		return xerrors.Errorf(errNoOwnerPerms, tx.UserID)
+	}
+
 	allPubShares := form.PubsharesUnits.Pubshares
 
 	shufflesSize := len(form.ShuffleInstances)
@@ -727,6 +783,15 @@ func (e evotingCommand) cancelForm(snap store.Snapshot, step execution.Step) err
 		return xerrors.Errorf(errGetForm, err)
 	}
 
+	isOwner, err := e.isRole(form, tx.UserID, Owners)
+	if err != nil {
+		return xerrors.Errorf(errIsRole, err)
+	}
+
+	if !isOwner {
+		return xerrors.Errorf(errNoOwnerPerms, tx.UserID)
+	}
+
 	form.Status = types.Canceled
 	PromFormStatus.WithLabelValues(form.FormID).Set(float64(form.Status))
 
@@ -759,6 +824,15 @@ func (e evotingCommand) deleteForm(snap store.Snapshot, step execution.Step) err
 	form, formID, err := e.getForm(tx.FormID, snap)
 	if err != nil {
 		return xerrors.Errorf(errGetForm, err)
+	}
+
+	isOwner, err := e.isRole(form, tx.UserID, Owners)
+	if err != nil {
+		return xerrors.Errorf(errIsRole, err)
+	}
+
+	if !isOwner {
+		return xerrors.Errorf(errNoOwnerPerms, tx.UserID)
 	}
 
 	err = snap.Delete(formID)
@@ -854,6 +928,22 @@ func (e evotingCommand) manageAdminList(snap store.Snapshot, step execution.Step
 	return nil
 }
 
+// isRole check whether the txPerformingUser has the role in the provided form
+func (e evotingCommand) isRole(form types.Form, txPerformingUser string, role Role) (bool, error) {
+	sciperInt, err := types.SciperToInt(txPerformingUser)
+	if err != nil {
+		return false, xerrors.Errorf("Failed to convert SCIPER to int: %v", err)
+	}
+
+	if role == Voters && slices.Contains(form.Voters, sciperInt) {
+		return true, nil
+	} else if role == Owners && slices.Contains(form.Owners, sciperInt) {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 // fetchAdmin Check whether a user is in an Admin List
 func (e evotingCommand) fetchAdmin(snap store.Snapshot, txPerformingUser string) (bool, types.AdminList, error) {
 	// If it found the AdminList
@@ -925,6 +1015,15 @@ func (e evotingCommand) manageOwnersVotersForm(snap store.Snapshot, step executi
 			return xerrors.Errorf(errGetForm, err)
 		}
 
+		isOwner, err := e.isRole(form, txAddVoter.PerformingUserID, Owners)
+		if err != nil {
+			return xerrors.Errorf(errIsRole, err)
+		}
+
+		if !isOwner {
+			return xerrors.Errorf(errNoOwnerPerms, txAddVoter.PerformingUserID)
+		}
+
 		err = form.AddVoter(txAddVoter.TargetUserID)
 		if err != nil {
 			return xerrors.Errorf("couldn't add voter: %v", err)
@@ -933,6 +1032,15 @@ func (e evotingCommand) manageOwnersVotersForm(snap store.Snapshot, step executi
 		form, formID, err = e.getForm(txRemoveVoter.FormID, snap)
 		if err != nil {
 			return xerrors.Errorf(errGetForm, err)
+		}
+
+		isOwner, err := e.isRole(form, txRemoveVoter.PerformingUserID, Owners)
+		if err != nil {
+			return xerrors.Errorf(errIsRole, err)
+		}
+
+		if !isOwner {
+			return xerrors.Errorf(errNoOwnerPerms, txRemoveVoter.PerformingUserID)
 		}
 
 		err = form.RemoveVoter(txRemoveVoter.TargetUserID)
@@ -945,6 +1053,15 @@ func (e evotingCommand) manageOwnersVotersForm(snap store.Snapshot, step executi
 			return xerrors.Errorf(errGetForm, err)
 		}
 
+		isOwner, err := e.isRole(form, txAddOwner.PerformingUserID, Owners)
+		if err != nil {
+			return xerrors.Errorf(errIsRole, err)
+		}
+
+		if !isOwner {
+			return xerrors.Errorf(errNoOwnerPerms, txAddOwner.PerformingUserID)
+		}
+
 		err = form.AddOwner(txAddOwner.TargetUserID)
 		if err != nil {
 			return xerrors.Errorf("couldn't add owner: %v", err)
@@ -953,6 +1070,15 @@ func (e evotingCommand) manageOwnersVotersForm(snap store.Snapshot, step executi
 		form, formID, err = e.getForm(txRemoveOwner.FormID, snap)
 		if err != nil {
 			return xerrors.Errorf(errGetForm, err)
+		}
+
+		isOwner, err := e.isRole(form, txRemoveOwner.PerformingUserID, Owners)
+		if err != nil {
+			return xerrors.Errorf(errIsRole, err)
+		}
+
+		if !isOwner {
+			return xerrors.Errorf(errNoOwnerPerms, txRemoveOwner.PerformingUserID)
 		}
 
 		err = form.RemoveOwner(txRemoveOwner.TargetUserID)
