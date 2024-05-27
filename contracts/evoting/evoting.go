@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"math/rand"
-	"slices"
 	"strings"
 
 	"go.dedis.ch/dela"
@@ -935,10 +934,18 @@ func (e evotingCommand) isRole(form types.Form, txPerformingUser string, role Ro
 		return false, xerrors.Errorf("Failed to convert SCIPER to int: %v", err)
 	}
 
-	if role == Voters && slices.Contains(form.Voters, sciperInt) {
-		return true, nil
-	} else if role == Owners && slices.Contains(form.Owners, sciperInt) {
-		return true, nil
+	if role == Voters {
+		for i := 0; i < len(form.Voters); i++ {
+			if form.Voters[i] == sciperInt {
+				return true, nil
+			}
+		}
+	} else if role == Owners {
+		for i := 0; i < len(form.Owners); i++ {
+			if form.Owners[i] == sciperInt {
+				return true, nil
+			}
+		}
 	}
 
 	return false, nil
