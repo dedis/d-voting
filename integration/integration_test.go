@@ -391,7 +391,7 @@ func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 		err = waitForStatus(types.Closed, formFac, formID, nodes, numNodes,
 			5*time.Second)
 		require.NoError(b, err)
-
+		time.Sleep(time.Second * 5)
 		// ##### SHUFFLE BALLOTS #####
 		sActor, err := initShuffle(nodes)
 		require.NoError(b, err)

@@ -58,7 +58,8 @@ func castVotesRandomly(m txManager, actor dkg.Actor, form types.Form,
 	votes := make([]types.Ballot, numberOfVotes)
 
 	for i := 0; i < numberOfVotes; i++ {
-		voterID := "11111" + strconv.Itoa(i)
+		voterID := strconv.Itoa(i+1) + "11111"
+		voterID = voterID[:6]
 		addVoter := types.AddVoter{
 			FormID:           form.FormID,
 			TargetUserID:     voterID,
@@ -91,7 +92,8 @@ func castVotesRandomly(m txManager, actor dkg.Actor, form types.Form,
 			return nil, xerrors.Errorf("failed to marshallBallot: %v", err)
 		}
 
-		voterID := "11111" + strconv.Itoa(i)
+		voterID := strconv.Itoa(i+1) + "11111"
+		voterID = voterID[:6]
 
 		castVote := types.CastVote{
 			FormID:  form.FormID,

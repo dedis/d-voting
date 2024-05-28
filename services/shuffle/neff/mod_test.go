@@ -74,7 +74,7 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 		formFac: etypes.NewFormFactory(etypes.CiphervoteFactory{}, fake.NewRosterFac(roster)),
 	}
 
-	err = actor.Shuffle(formIDBuf)
+	err = actor.Shuffle(formIDBuf, "123456")
 	require.EqualError(t, err, fake.Err("failed to stream"))
 
 	rpc := fake.NewStreamRPC(fake.NewReceiver(), fake.NewBadSender())
@@ -89,7 +89,7 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	dela.Logger = zerolog.New(out)
 
 	// should only output a warning
-	err = actor.Shuffle(formIDBuf)
+	err = actor.Shuffle(formIDBuf, "123456")
 	require.NoError(t, err)
 	require.True(t, strings.Contains(out.String(), "failed to start shuffle"), out.String())
 
@@ -97,7 +97,7 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	actor.rpc = rpc
 
 	// we no longer use the receiver:
-	err = actor.Shuffle(formIDBuf)
+	err = actor.Shuffle(formIDBuf, "123456")
 	require.NoError(t, err)
 
 	recv := fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), types.NewEndShuffle()))
@@ -105,7 +105,7 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	rpc = fake.NewStreamRPC(recv, fake.Sender{})
 	actor.rpc = rpc
 
-	err = actor.Shuffle(formIDBuf)
+	err = actor.Shuffle(formIDBuf, "123456")
 	require.NoError(t, err)
 }
 
