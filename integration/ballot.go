@@ -93,28 +93,28 @@ func castVotesRandomly(m txManager, actor dkg.Actor, form types.Form,
 		}
 
 		/*
-			For the voters permission verification, we need a voter id. As this method
-			does not use a fix number of voters, we need a way to generate these voters' id.
-			We decided to use the ith voter as an id.
-			As the sciper range from 100000 to 999999 and as we don't know how many voters
-			they will be created in the method, we pad the ith number with 1's,
-			and then we truncate to take the first six number.
+				For the voters permission verification, we need a voter id. As this method
+				does not use a fix number of voters, we need a way to generate these voters'
+				id.	We decided to use the ith voter as an id.
+				As the sciper range from 100000 to 999999 and as we don't know how many
+				voters they will be created in the method, we pad the ith number with
+			 	1's, and then we truncate to take the first six number.
 
-			example run
-			if it generates 10 voters, i is going to vary from 0 to 9
-			with the +1
-			from 1 to 10
-			we are going to get id:
-			1 11111
-			2 11111
-			3 11111
-			4 11111
-			5 11111
-			6 11111
-			7 11111
-			8 11111
-			9 11111
-			10 11111 -> truncate to 6 digits: 101111
+				example run
+				if it generates 10 voters, i is going to vary from 0 to 9
+				with the +1
+				from 1 to 10
+				we are going to get id:
+				1 11111
+				2 11111
+				3 11111
+				4 11111
+				5 11111
+				6 11111
+				7 11111
+				8 11111
+				9 11111
+				10 11111 -> truncate to 6 digits: 101111
 		*/
 		voterID := strconv.Itoa(i+1) + "11111"
 		voterID = voterID[:6]
