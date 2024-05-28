@@ -17,13 +17,13 @@ func init() {
 }
 
 func TestStartShuffle_GetFormId(t *testing.T) {
-	startShuffle := NewStartShuffle("dummyId", nil)
+	startShuffle := NewStartShuffle("dummyId", "123456", nil)
 
 	require.Equal(t, "dummyId", startShuffle.GetFormID())
 }
 
 func TestStartShuffle_GetAddresses(t *testing.T) {
-	startShuffle := NewStartShuffle("", []mino.Address{fake.NewAddress(0)})
+	startShuffle := NewStartShuffle("", "123456", []mino.Address{fake.NewAddress(0)})
 
 	require.Len(t, startShuffle.GetAddresses(), 1)
 }
