@@ -75,9 +75,8 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		// ##### SETUP DKG #####
 		actor, err := initDkg(nodes, formID, m.m)
 		require.NoError(t, err)
-
 		// ##### OPEN FORM #####
-		err = openForm(m, formID)
+		err = openForm(m, formID, adminID)
 		require.NoError(t, err)
 
 		formFac := types.NewFormFactory(types.CiphervoteFactory{}, nodes[0].GetRosterFac())
@@ -86,7 +85,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		form, err := getForm(formFac, formID, nodes[0].GetOrdering())
 		require.NoError(t, err)
 
-		castedVotes, err := castVotesRandomly(m, actor, form, numVotes)
+		castedVotes, err := castVotesRandomly(m, actor, form, numVotes, adminID)
 		require.NoError(t, err)
 
 		fmt.Println("casted votes:", castedVotes)
@@ -220,7 +219,7 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		require.NoError(t, err)
 
 		// ##### OPEN FORM #####
-		err = openForm(m, formID)
+		err = openForm(m, formID, adminID)
 		require.NoError(t, err)
 
 		formFac := types.NewFormFactory(types.CiphervoteFactory{}, nodes[0].GetRosterFac())
@@ -241,7 +240,7 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		err = closeNodes(crashNodeList)
 		require.NoError(t, err)
 
-		castedVotes, err := castVotesRandomly(m, actor, form, numVotes)
+		castedVotes, err := castVotesRandomly(m, actor, form, numVotes, adminID)
 		require.NoError(t, err)
 
 		fmt.Println("casted votes:", castedVotes)
@@ -370,7 +369,7 @@ func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 		require.NoError(b, err)
 
 		// ##### OPEN FORM #####
-		err = openForm(m, formID)
+		err = openForm(m, formID, adminID)
 		require.NoError(b, err)
 
 		formFac := types.NewFormFactory(types.CiphervoteFactory{}, nodes[0].GetRosterFac())
@@ -379,7 +378,7 @@ func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 		form, err := getForm(formFac, formID, nodes[0].GetOrdering())
 		require.NoError(b, err)
 
-		castedVotes, err := castVotesRandomly(m, actor, form, numVotes)
+		castedVotes, err := castVotesRandomly(m, actor, form, numVotes, adminID)
 		require.NoError(b, err)
 
 		fmt.Println("casted votes:", castedVotes)

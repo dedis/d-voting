@@ -44,7 +44,7 @@ func ballotIsNull(ballot types.Ballot) bool {
 // castVotesRandomly chooses numberOfVotes predefined ballots randomly
 // and cast them
 func castVotesRandomly(m txManager, actor dkg.Actor, form types.Form,
-	numberOfVotes int) ([]types.Ballot, error) {
+	numberOfVotes int, ownerID string) ([]types.Ballot, error) {
 
 	possibleBallots := []string{
 		string("select:" + encodeID("bb") + ":0,0,1,0\n" +
@@ -58,6 +58,31 @@ func castVotesRandomly(m txManager, actor dkg.Actor, form types.Form,
 	votes := make([]types.Ballot, numberOfVotes)
 
 	for i := 0; i < numberOfVotes; i++ {
+		voterID := "11111" + strconv.Itoa(i)
+		addVoter := types.AddVoter{
+			FormID:           form.FormID,
+			TargetUserID:     voterID,
+			PerformingUserID: ownerID,
+		}
+
+		data, err := addVoter.Serialize(serdecontext)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to serialize add voter: %v", err)
+		}
+
+		args := []txn.Arg{
+			{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
+			{Key: evoting.FormArg, Value: data},
+			{Key: evoting.CmdArg, Value: []byte(evoting.CmdAddVoterForm)},
+		}
+
+		_, err = m.addAndWait(args...)
+		if err != nil {
+			return nil, xerrors.Errorf(addAndWaitErr, err)
+		}
+	}
+
+	for i := 0; i < numberOfVotes; i++ {
 		randomIndex := rand.Intn(len(possibleBallots))
 		vote := possibleBallots[randomIndex]
 
@@ -66,7 +91,7 @@ func castVotesRandomly(m txManager, actor dkg.Actor, form types.Form,
 			return nil, xerrors.Errorf("failed to marshallBallot: %v", err)
 		}
 
-		voterID := "user " + strconv.Itoa(i)
+		voterID := "11111" + strconv.Itoa(i)
 
 		castVote := types.CastVote{
 			FormID:  form.FormID,

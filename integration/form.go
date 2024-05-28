@@ -133,9 +133,10 @@ func createFormScenario(contentType, proxy string, secret kyber.Scalar, t *testi
 }
 
 // for integration tests
-func openForm(m txManager, formID []byte) error {
+func openForm(m txManager, formID []byte, userID string) error {
 	openForm := &types.OpenForm{
 		FormID: hex.EncodeToString(formID),
+		UserID: userID,
 	}
 
 	data, err := openForm.Serialize(serdecontext)

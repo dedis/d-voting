@@ -87,7 +87,7 @@ func customVotesScenario(b *testing.B, stuffing bool) {
 	require.NoError(b, err)
 
 	// ##### OPEN FORM #####
-	err = openForm(m, formID)
+	err = openForm(m, formID, adminID)
 	require.NoError(b, err)
 
 	formFac := types.NewFormFactory(types.CiphervoteFactory{}, nodes[0].GetRosterFac())

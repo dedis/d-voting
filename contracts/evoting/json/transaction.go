@@ -28,6 +28,7 @@ func (transactionFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, e
 	case types.OpenForm:
 		oe := OpenFormJSON{
 			FormID: t.FormID,
+			UserID: t.UserID,
 		}
 
 		m = TransactionJSON{OpenForm: &oe}
@@ -195,6 +196,7 @@ func (transactionFormat) Decode(ctx serde.Context, data []byte) (serde.Message, 
 	case m.OpenForm != nil:
 		return types.OpenForm{
 			FormID: m.OpenForm.FormID,
+			UserID: m.OpenForm.UserID,
 		}, nil
 	case m.CastVote != nil:
 		msg, err := decodeCastVote(ctx, *m.CastVote)
@@ -304,6 +306,7 @@ type CreateFormJSON struct {
 // OpenFormJSON is the JSON representation of a OpenForm transaction
 type OpenFormJSON struct {
 	FormID string
+	UserID string
 }
 
 // CastVoteJSON is the JSON representation of a CastVote transaction
