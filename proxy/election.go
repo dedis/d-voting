@@ -248,6 +248,7 @@ func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	formID := vars["formID"]
+	userID := vars["userID"]
 
 	elecMD, err := h.getFormsMetadata()
 	if err != nil {
@@ -263,13 +264,13 @@ func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
 
 	switch req.Action {
 	case "open":
-		h.openForm(formID, w, r)
+		h.openForm(formID, userID, w, r)
 	case "close":
-		h.closeForm(formID, w, r)
+		h.closeForm(formID, userID, w, r)
 	case "combineShares":
-		h.combineShares(formID, w, r)
+		h.combineShares(formID, userID, w, r)
 	case "cancel":
-		h.cancelForm(formID, w, r)
+		h.cancelForm(formID, userID, w, r)
 	default:
 		BadRequestError(w, r, xerrors.Errorf("invalid action: %s", req.Action), nil)
 		return
@@ -278,9 +279,10 @@ func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
 
 // openForm allows opening a form, which sets the public key based on
 // the DKG actor.
-func (h *form) openForm(formID string, w http.ResponseWriter, r *http.Request) {
+func (h *form) openForm(formID string, userID string, w http.ResponseWriter, r *http.Request) {
 	openForm := types.OpenForm{
 		FormID: formID,
+		UserID: userID,
 	}
 
 	// serialize the transaction
@@ -303,10 +305,11 @@ func (h *form) openForm(formID string, w http.ResponseWriter, r *http.Request) {
 }
 
 // closeForm closes a form.
-func (h *form) closeForm(formIDHex string, w http.ResponseWriter, r *http.Request) {
+func (h *form) closeForm(formIDHex string, userID string, w http.ResponseWriter, r *http.Request) {
 
 	closeForm := types.CloseForm{
 		FormID: formIDHex,
+		UserID: userID,
 	}
 
 	// serialize the transaction
@@ -330,7 +333,7 @@ func (h *form) closeForm(formIDHex string, w http.ResponseWriter, r *http.Reques
 }
 
 // combineShares decrypts the shuffled ballots in a form.
-func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Request) {
+func (h *form) combineShares(formIDHex string, userID string, w http.ResponseWriter, r *http.Request) {
 
 	form, err := types.FormFromStore(h.context, h.formFac, formIDHex, h.orderingSvc.GetStore())
 	if err != nil {
@@ -346,6 +349,7 @@ func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Re
 
 	decryptBallots := types.CombineShares{
 		FormID: formIDHex,
+		UserID: userID,
 	}
 
 	// serialize the transaction
@@ -368,10 +372,11 @@ func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Re
 }
 
 // cancelForm cancels a form.
-func (h *form) cancelForm(formIDHex string, w http.ResponseWriter, r *http.Request) {
+func (h *form) cancelForm(formIDHex string, userID string, w http.ResponseWriter, r *http.Request) {
 
 	cancelForm := types.CancelForm{
 		FormID: formIDHex,
+		UserID: userID,
 	}
 
 	// serialize the transaction
@@ -517,6 +522,7 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	formID := vars["formID"]
+	userID := vars["userID"]
 
 	elecMD, err := h.getFormsMetadata()
 	if err != nil {
@@ -549,6 +555,7 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 
 	deleteForm := types.DeleteForm{
 		FormID: formID,
+		UserID: userID,
 	}
 
 	data, err := deleteForm.Serialize(h.context)

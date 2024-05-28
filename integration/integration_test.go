@@ -106,7 +106,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		time.Sleep(time.Second * 1)
 
 		t.Logf("shuffling")
-		err = sActor.Shuffle(formID)
+		err = sActor.Shuffle(formID, adminID)
 		require.NoError(t, err)
 
 		err = waitForStatus(types.ShuffledBallots, formFac, formID, nodes,
@@ -131,7 +131,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
 		t.Logf("PubsharesUnit: %v", form.PubsharesUnits)
 		require.NoError(t, err)
-		err = decryptBallots(m, actor, form)
+		err = decryptBallots(m, actor, form, adminID)
 		require.NoError(t, err)
 
 		err = waitForStatus(types.ResultAvailable, formFac, formID, nodes,
@@ -170,6 +170,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 
 		fmt.Println("test done")
 	}
+
 }
 
 func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing.T) {
@@ -261,7 +262,7 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		time.Sleep(time.Second * 1)
 
 		t.Logf("shuffling")
-		err = sActor.Shuffle(formID)
+		err = sActor.Shuffle(formID, adminID)
 
 		// If the number of failing nodes is greater
 		// than the threshold, the shuffle will fail
@@ -298,7 +299,7 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		t.Logf("PubsharesUnit: %v", form.PubsharesUnits)
 		require.NoError(t, err)
 		// Heisenbug: https://github.com/c4dt/d-voting/issues/90
-		err = decryptBallots(m, actor, form)
+		err = decryptBallots(m, actor, form, adminID)
 		require.NoError(t, err)
 
 		err = waitForStatus(types.ResultAvailable, formFac, formID, nodes,
@@ -397,7 +398,7 @@ func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 
 		time.Sleep(time.Second * 1)
 
-		err = sActor.Shuffle(formID)
+		err = sActor.Shuffle(formID, adminID)
 		require.NoError(b, err)
 
 		err = waitForStatus(types.ShuffledBallots, formFac, formID, nodes,
@@ -421,7 +422,7 @@ func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
 		b.Logf("PubsharesUnit: %v", form.PubsharesUnits)
 		require.NoError(b, err)
-		err = decryptBallots(m, actor, form)
+		err = decryptBallots(m, actor, form, adminID)
 		require.NoError(b, err)
 
 		err = waitForStatus(types.ResultAvailable, formFac, formID, nodes,

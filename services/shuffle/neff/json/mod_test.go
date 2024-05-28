@@ -72,7 +72,7 @@ func TestMessageFormat_StartShuffle_Decode(t *testing.T) {
 
 	startShuffle, err := format.Decode(ctx, data)
 	require.NoError(t, err)
-	require.Equal(t, expected.GetFormId(), startShuffle.(types.StartShuffle).GetFormId())
+	require.Equal(t, expected.GetFormID(), startShuffle.(types.StartShuffle).GetFormID())
 	require.Len(t, startShuffle.(types.StartShuffle).GetAddresses(), len(expected.GetAddresses()))
 
 }

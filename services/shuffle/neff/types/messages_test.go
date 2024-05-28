@@ -19,7 +19,7 @@ func init() {
 func TestStartShuffle_GetFormId(t *testing.T) {
 	startShuffle := NewStartShuffle("dummyId", nil)
 
-	require.Equal(t, "dummyId", startShuffle.GetFormId())
+	require.Equal(t, "dummyId", startShuffle.GetFormID())
 }
 
 func TestStartShuffle_GetAddresses(t *testing.T) {

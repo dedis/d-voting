@@ -208,13 +208,14 @@ func marshallBallot(vote io.Reader, actor dkg.Actor, chunks int) (types.Ciphervo
 	return ballot, nil
 }
 
-func decryptBallots(m txManager, actor dkg.Actor, form types.Form) error {
+func decryptBallots(m txManager, actor dkg.Actor, form types.Form, userID string) error {
 	if form.Status != types.PubSharesSubmitted {
 		return xerrors.Errorf("cannot decrypt: not all pubShares submitted")
 	}
 
 	decryptBallots := types.CombineShares{
 		FormID: form.FormID,
+		UserID: userID,
 	}
 
 	data, err := decryptBallots.Serialize(serdecontext)

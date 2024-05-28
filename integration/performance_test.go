@@ -117,7 +117,7 @@ func customVotesScenario(b *testing.B, stuffing bool) {
 	require.NoError(b, err)
 
 	b.Logf("shuffling")
-	err = sActor.Shuffle(formID)
+	err = sActor.Shuffle(formID, adminID)
 	require.NoError(b, err)
 
 	durationShuffling := b.Elapsed()
@@ -146,7 +146,7 @@ func customVotesScenario(b *testing.B, stuffing bool) {
 	require.NoError(b, err)
 
 	b.ResetTimer()
-	err = decryptBallots(m, actor, form)
+	err = decryptBallots(m, actor, form, adminID)
 	require.NoError(b, err)
 	durationDecrypt := b.Elapsed()
 

@@ -15,5 +15,5 @@ type Shuffle interface {
 type Actor interface {
 	// Shuffle must be called by ONE of the actor to shuffle the list of ElGamal
 	// pairs. Each node represented by a player must first execute Listen().
-	Shuffle(formID []byte) (err error)
+	Shuffle(formID []byte, userID string) (err error)
 }

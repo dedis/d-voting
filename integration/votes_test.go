@@ -102,7 +102,7 @@ func getIntegrationTestBadVote(numNodes, numVotes, numBadVotes int) func(*testin
 		time.Sleep(time.Second * 1)
 
 		t.Logf("shuffling")
-		err = sActor.Shuffle(formID)
+		err = sActor.Shuffle(formID, adminID)
 		require.NoError(t, err)
 
 		err = waitForStatus(types.ShuffledBallots, formFac, formID, nodes,
@@ -127,7 +127,7 @@ func getIntegrationTestBadVote(numNodes, numVotes, numBadVotes int) func(*testin
 		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
 		t.Logf("PubsharesUnit: %v", form.PubsharesUnits)
 		require.NoError(t, err)
-		err = decryptBallots(m, actor, form)
+		err = decryptBallots(m, actor, form, adminID)
 		require.NoError(t, err)
 
 		err = waitForStatus(types.ResultAvailable, formFac, formID, nodes,
@@ -240,7 +240,7 @@ func getIntegrationTestRevote(numNodes, numVotes, numRevotes int) func(*testing.
 		time.Sleep(time.Second * 1)
 
 		t.Logf("shuffling")
-		err = sActor.Shuffle(formID)
+		err = sActor.Shuffle(formID, adminID)
 		require.NoError(t, err)
 
 		err = waitForStatus(types.ShuffledBallots, formFac, formID, nodes,
@@ -265,7 +265,7 @@ func getIntegrationTestRevote(numNodes, numVotes, numRevotes int) func(*testing.
 		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
 		t.Logf("PubsharesUnit: %v", form.PubsharesUnits)
 		require.NoError(t, err)
-		err = decryptBallots(m, actor, form)
+		err = decryptBallots(m, actor, form, adminID)
 		require.NoError(t, err)
 
 		err = waitForStatus(types.ResultAvailable, formFac, formID, nodes,
