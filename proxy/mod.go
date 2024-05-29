@@ -31,11 +31,11 @@ type Form interface {
 	Form(http.ResponseWriter, *http.Request)
 	// DELETE /forms/{formID}
 	DeleteForm(http.ResponseWriter, *http.Request)
-	// TODO CHECK CAUSE NEW
-	// POST /addtoadminlist
-	AddToAdminList(http.ResponseWriter, *http.Request)
-	// POST /removetoadminlist
-	RemoveToAdminList(http.ResponseWriter, *http.Request)
+	// TODO CHECK CAUSE NEW -> modif according to blockchain
+	// POST /addadmin
+	AddAdmin(http.ResponseWriter, *http.Request)
+	// POST /removeadmin
+	RemoveAdmin(http.ResponseWriter, *http.Request)
 	// POST /forms/{formID}/addowner
 	AddOwnerToForm(http.ResponseWriter, *http.Request)
 	// POST /forms/{formID}/removeowner
