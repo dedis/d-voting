@@ -49,6 +49,15 @@ func (adminList *AdminList) AddAdmin(userID string) error {
 		return xerrors.Errorf("Failed to convert SCIPER to int: %v", err)
 	}
 
+	index, err := adminList.GetAdminIndex(userID)
+	if err != nil {
+		return err
+	}
+
+	if index > -1 {
+		return xerrors.Errorf("The user %v is already an admin", userID)
+	}
+
 	adminList.AdminList = append(adminList.AdminList, sciperInt)
 
 	return nil
