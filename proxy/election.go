@@ -245,6 +245,9 @@ func (form *form) EditForm(w http.ResponseWriter, r *http.Request) {
 	if vars == nil || vars["formID"] == "" {
 		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
+	} else if vars["userID"] == "" {
+		http.Error(w, fmt.Sprintf("userID not found: %v", vars), http.StatusInternalServerError)
+		return
 	}
 
 	formID := vars["formID"]
@@ -519,6 +522,9 @@ func (form *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 	if vars == nil || vars["formID"] == "" {
 		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
+	} else if vars["userID"] == "" {
+		http.Error(w, fmt.Sprintf("userID not found: %v", vars), http.StatusInternalServerError)
+		return
 	}
 
 	formID := vars["formID"]
@@ -577,7 +583,42 @@ func (form *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 
 // TODO CHECK CAUSE NEW
 // POST /addtoadminlist
-func (form *form) AddToAdminList(http.ResponseWriter, *http.Request) {}
+func (form *form) AddToAdminList(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	// check if the formID is valid
+	if vars == nil || vars["targetUserID"] == "" {
+		http.Error(w, fmt.Sprintf("targetUserID not found: %v", vars), http.StatusInternalServerError)
+		return
+	} else if vars["performingUserID"] == "" {
+		http.Error(w, fmt.Sprintf("performingUserID not found: %v", vars), http.StatusInternalServerError)
+		return
+	}
+
+	targetUserID := vars["targetUserID"]
+	performingUserID := vars["performingUserID"]
+
+	addAdmin := types.AddAdmin{
+		TargetUserID:     targetUserID,
+		PerformingUserID: performingUserID,
+	}
+
+	data, err := addAdmin.Serialize(form.context)
+	if err != nil {
+		InternalError(w, r, xerrors.Errorf("failed to marshal AddAdmin: %v", err), nil)
+		return
+	}
+
+	// create the transaction and add it to the pool
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdAddAdmin, evoting.FormArg, data)
+	if err != nil {
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// send the transaction's information
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+}
 
 // POST /removetoadminlist
 func (form *form) RemoveToAdminList(http.ResponseWriter, *http.Request) {}
