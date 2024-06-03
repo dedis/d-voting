@@ -48,9 +48,12 @@ const (
 	contentType = "application/json"
 	formPath    = "/evoting/forms"
 	// FormPathSlash is the path to the form with a trailing slash
-	FormPathSlash          = formPath + "/"
-	formIDPath             = FormPathSlash + "{formID}"
-	transactionSlash       = "/evoting/transactions/"
+	FormPathSlash    = formPath + "/"
+	formIDPath       = FormPathSlash + "{formID}"
+	transactionSlash = "/evoting/transactions/"
+
+	evotingPathSlash = "/evoting/"
+
 	transactionPath        = transactionSlash + "{token}"
 	unexpectedStatus       = "unexpected status: %s, body: %s"
 	failRetrieveDecryption = "failed to retrieve decryption key: %v"
@@ -175,6 +178,8 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 
 	router := mux.NewRouter()
 
+	router.HandleFunc(evotingPathSlash+"addadmin", ep.AddAdmin).Methods("POST")
+	router.HandleFunc(evotingPathSlash+"adminlist", ep.AdminList).Methods("GET")
 	router.HandleFunc(formPath, ep.NewForm).Methods("POST")
 	router.HandleFunc(formPath, ep.Forms).Methods("GET")
 	router.HandleFunc(formPath, eproxy.AllowCORS).Methods("OPTIONS")
@@ -188,6 +193,7 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 	router.NotFoundHandler = http.HandlerFunc(eproxy.NotFoundHandler)
 	router.MethodNotAllowedHandler = http.HandlerFunc(eproxy.NotAllowedHandler)
 
+	proxy.RegisterHandler(evotingPathSlash, router.ServeHTTP)
 	proxy.RegisterHandler(formPath, router.ServeHTTP)
 	proxy.RegisterHandler(FormPathSlash, router.ServeHTTP)
 	proxy.RegisterHandler(transactionSlash, router.ServeHTTP)

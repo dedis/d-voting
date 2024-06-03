@@ -604,6 +604,8 @@ func (form *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 // POST /addtoadminlist
 func (form *form) AddAdmin(w http.ResponseWriter, r *http.Request) {
 	var req ptypes.AddAdminRequest
+	println("plouf plouf\n\nparfois la vie fait plouf \n\n")
+	println(fmt.Sprintf("ploufi %v", r.Body))
 	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
 		InternalError(w, r, newSignedErr(err), nil)
@@ -616,19 +618,22 @@ func (form *form) AddAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(r)
+	//vars := mux.Vars(r)
 
-	// check if the formID is valid
-	if vars == nil || vars["targetUserID"] == "" {
-		http.Error(w, fmt.Sprintf("targetUserID not found: %v", vars), http.StatusInternalServerError)
-		return
-	} else if vars["performingUserID"] == "" {
-		http.Error(w, fmt.Sprintf("performingUserID not found: %v", vars), http.StatusInternalServerError)
-		return
-	}
+	/*
+		// check if the formID is valid
+		if vars == nil || vars["TargetUserID"] == "" {
+			http.Error(w, fmt.Sprintf("TargetUserID not found: %v", vars), http.StatusInternalServerError)
+			return
+		} else if vars["PerformingUserID"] == "" {
+			http.Error(w, fmt.Sprintf("PerformingUserID not found: %v", vars), http.StatusInternalServerError)
+			return
+		}
 
-	targetUserID := vars["targetUserID"]
-	performingUserID := vars["performingUserID"]
+	*/
+
+	targetUserID := req.TargetUserID         //vars["TargetUserID"]
+	performingUserID := req.PerformingUserID //vars["PerformingUserID"]
 
 	addAdmin := types.AddAdmin{
 		TargetUserID:     targetUserID,
@@ -656,7 +661,10 @@ func (form *form) AddAdmin(w http.ResponseWriter, r *http.Request) {
 func (form *form) RemoveAdmin(http.ResponseWriter, *http.Request) {}
 
 // POST /adminlist
-func (form *form) AdminList(http.ResponseWriter, *http.Request) {}
+func (form *form) AdminList(w http.ResponseWriter, r *http.Request) {
+	println("un test marche parfois\n\n mais parfois pas \n\n")
+	txnmanager.SendResponse(w, "hellow rodl")
+}
 
 // POST /forms/{formID}/addowner
 func (form *form) AddOwnerToForm(http.ResponseWriter, *http.Request) {}
