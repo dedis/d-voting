@@ -19,7 +19,6 @@ import (
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/sign/schnorr"
 	"golang.org/x/xerrors"
 )
 
@@ -516,6 +515,8 @@ func (form *form) Forms(w http.ResponseWriter, r *http.Request) {
 
 // DeleteForm implements proxy.Proxy
 func (form *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
+	var req ptypes.UpdateFormRequest
+
 	vars := mux.Vars(r)
 
 	// check if the formID is valid
@@ -542,20 +543,38 @@ func (form *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// auth should contain the hex-encoded signature on the hex-encoded form
-	// ID
-	auth := r.Header.Get("Authorization")
+	/*
+		// auth should contain the hex-encoded signature on the hex-encoded form
+		// ID
+		auth := r.Header.Get("Authorization")
 
-	signature, err := hex.DecodeString(auth)
+		signature, err := hex.DecodeString(auth)
+		if err != nil {
+			BadRequestError(w, r, xerrors.Errorf("failed to decode auth: %v", err), nil)
+			return
+		}
+
+		// check if the signature is valid
+		//TODO ADD User ID to existing
+		err = schnorr.Verify(suite, form.pk, []byte(formID+userID), signature)
+		if err != nil {
+			ForbiddenError(w, r, xerrors.Errorf("signature verification failed: %v", err), nil)
+			return
+		}
+
+	*/
+
+	// TODO double check
+	// get the signed request
+	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
-		BadRequestError(w, r, xerrors.Errorf("failed to decode auth: %v", err), nil)
+		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
 
-	// check if the signature is valid
-	err = schnorr.Verify(suite, form.pk, []byte(formID), signature)
+	err = signed.GetAndVerify(form.pk, &req)
 	if err != nil {
-		ForbiddenError(w, r, xerrors.Errorf("signature verification failed: %v", err), nil)
+		InternalError(w, r, getSignedErr(err), nil)
 		return
 	}
 
@@ -583,7 +602,20 @@ func (form *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 
 // TODO CHECK CAUSE NEW
 // POST /addtoadminlist
-func (form *form) AddToAdminList(w http.ResponseWriter, r *http.Request) {
+func (form *form) AddAdmin(w http.ResponseWriter, r *http.Request) {
+	var req ptypes.AddAdminRequest
+	signed, err := ptypes.NewSignedRequest(r.Body)
+	if err != nil {
+		InternalError(w, r, newSignedErr(err), nil)
+		return
+	}
+
+	err = signed.GetAndVerify(form.pk, &req)
+	if err != nil {
+		InternalError(w, r, getSignedErr(err), nil)
+		return
+	}
+
 	vars := mux.Vars(r)
 
 	// check if the formID is valid
@@ -621,7 +653,10 @@ func (form *form) AddToAdminList(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /removetoadminlist
-func (form *form) RemoveToAdminList(http.ResponseWriter, *http.Request) {}
+func (form *form) RemoveAdmin(http.ResponseWriter, *http.Request) {}
+
+// POST /adminlist
+func (form *form) AdminList(http.ResponseWriter, *http.Request) {}
 
 // POST /forms/{formID}/addowner
 func (form *form) AddOwnerToForm(http.ResponseWriter, *http.Request) {}

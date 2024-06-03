@@ -10,6 +10,18 @@ type CreateFormRequest struct {
 	Configuration etypes.Configuration
 }
 
+// AddAdminRequest defines the HTTP request for adding an admin
+type AddAdminRequest struct {
+	TargetUserID     string
+	PerformingUserID string
+}
+
+// RemoveAdminRequest defines the HTTP request for Removing an admin
+type RemoveAdminRequest struct {
+	TargetUserID     string
+	PerformingUserID string
+}
+
 // CreateFormResponse defines the HTTP response when creating a form
 type CreateFormResponse struct {
 	FormID string // hex-encoded
