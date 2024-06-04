@@ -37,6 +37,13 @@ func NewForm(srv ordering.Service, p pool.Pool,
 
 	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
 
+	// Compute the ID of the admin list id
+	// We need it to filter the send list of form
+	h := sha256.New()
+	h.Write([]byte(evoting.AdminListId))
+	adminListIDBuf := h.Sum(nil)
+	adminListID := hex.EncodeToString(adminListIDBuf)
+
 	return &form{
 		logger:      logger,
 		orderingSvc: srv,
@@ -46,6 +53,7 @@ func NewForm(srv ordering.Service, p pool.Pool,
 		mngr:        txnManaxer,
 		pool:        p,
 		pk:          pk,
+		adminListID: adminListID,
 	}
 }
 
@@ -63,6 +71,7 @@ type form struct {
 	mngr        txnmanager.Manager
 	pool        pool.Pool
 	pk          kyber.Point
+	adminListID string
 }
 
 // NewForm implements proxy.Proxy
@@ -480,30 +489,32 @@ func (form *form) Forms(w http.ResponseWriter, r *http.Request) {
 
 	// get the forms
 	for i, id := range elecMD.FormsIDs {
-		form, err := types.FormFromStore(form.context, form.formFac, id, form.orderingSvc.GetStore())
-		if err != nil {
-			InternalError(w, r, xerrors.Errorf("failed to get form: %v", err), nil)
-			return
-		}
-
-		var pubkeyBuf []byte
-
-		if form.Pubkey != nil {
-			pubkeyBuf, err = form.Pubkey.MarshalBinary()
+		if id != form.adminListID {
+			form, err := types.FormFromStore(form.context, form.formFac, id, form.orderingSvc.GetStore())
 			if err != nil {
-				InternalError(w, r, xerrors.Errorf("failed to marshal pubkey: %v", err), nil)
+				InternalError(w, r, xerrors.Errorf("failed to get form: %v", err), nil)
 				return
 			}
-		}
 
-		info := ptypes.LightForm{
-			FormID: string(form.FormID),
-			Title:  form.Configuration.Title,
-			Status: uint16(form.Status),
-			Pubkey: hex.EncodeToString(pubkeyBuf),
-		}
+			var pubkeyBuf []byte
 
-		allFormsInfo[i] = info
+			if form.Pubkey != nil {
+				pubkeyBuf, err = form.Pubkey.MarshalBinary()
+				if err != nil {
+					InternalError(w, r, xerrors.Errorf("failed to marshal pubkey: %v", err), nil)
+					return
+				}
+			}
+
+			info := ptypes.LightForm{
+				FormID: string(form.FormID),
+				Title:  form.Configuration.Title,
+				Status: uint16(form.Status),
+				Pubkey: hex.EncodeToString(pubkeyBuf),
+			}
+
+			allFormsInfo[i] = info
+		}
 	}
 
 	response := ptypes.GetFormsResponse{Forms: allFormsInfo}
