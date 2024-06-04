@@ -10,8 +10,8 @@ type CreateFormRequest struct {
 	Configuration etypes.Configuration
 }
 
-// AddAdminRequest defines the HTTP request for adding an admin
-type AddAdminRequest struct {
+// AdminRequest defines the HTTP request for adding an admin
+type AdminRequest struct {
 	TargetUserID     string
 	PerformingUserID string
 }
@@ -47,6 +47,7 @@ type EGPairJSON struct {
 // UpdateFormRequest defines the HTTP request for updating a form
 type UpdateFormRequest struct {
 	Action string
+	UserID string
 }
 
 // GetFormResponse defines the HTTP response when getting the form info

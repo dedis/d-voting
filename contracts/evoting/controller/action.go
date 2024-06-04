@@ -179,6 +179,7 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 	router := mux.NewRouter()
 
 	router.HandleFunc(evotingPathSlash+"addadmin", ep.AddAdmin).Methods("POST")
+	router.HandleFunc(evotingPathSlash+"removeadmin", ep.RemoveAdmin).Methods("POST")
 	router.HandleFunc(evotingPathSlash+"adminlist", ep.AdminList).Methods("GET")
 	router.HandleFunc(formPath, ep.NewForm).Methods("POST")
 	router.HandleFunc(formPath, ep.Forms).Methods("GET")

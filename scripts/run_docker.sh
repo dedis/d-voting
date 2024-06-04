@@ -70,7 +70,7 @@ function init_dela() {
 function local_admin() {
   echo "adding local user $REACT_APP_SCIPER_ADMIN to admins";
   docker compose exec backend npx cli addAdmin --sciper "$REACT_APP_SCIPER_ADMIN";
-  docker compose exec backend npx cli addAdmin --sciper 987654;
+  docker compose exec backend npx cli addAdmin --sciper 654321;
   docker compose restart backend;
 }
 

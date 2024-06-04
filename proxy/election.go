@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 
 	"github.com/dedis/d-voting/contracts/evoting"
@@ -41,6 +42,7 @@ func NewForm(srv ordering.Service, p pool.Pool,
 		orderingSvc: srv,
 		context:     ctx,
 		formFac:     fac,
+		adminFac:    types.AdminListFactory{},
 		mngr:        txnManaxer,
 		pool:        p,
 		pk:          pk,
@@ -57,6 +59,7 @@ type form struct {
 	logger      zerolog.Logger
 	context     serde.Context
 	formFac     serde.Factory
+	adminFac    serde.Factory
 	mngr        txnmanager.Manager
 	pool        pool.Pool
 	pk          kyber.Point
@@ -244,13 +247,9 @@ func (form *form) EditForm(w http.ResponseWriter, r *http.Request) {
 	if vars == nil || vars["formID"] == "" {
 		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
-	} else if vars["userID"] == "" {
-		http.Error(w, fmt.Sprintf("userID not found: %v", vars), http.StatusInternalServerError)
-		return
 	}
 
 	formID := vars["formID"]
-	userID := vars["userID"]
 
 	elecMD, err := form.getFormsMetadata()
 	if err != nil {
@@ -266,13 +265,13 @@ func (form *form) EditForm(w http.ResponseWriter, r *http.Request) {
 
 	switch req.Action {
 	case "open":
-		form.openForm(formID, userID, w, r)
+		form.openForm(formID, req.UserID, w, r)
 	case "close":
-		form.closeForm(formID, userID, w, r)
+		form.closeForm(formID, req.UserID, w, r)
 	case "combineShares":
-		form.combineShares(formID, userID, w, r)
+		form.combineShares(formID, req.UserID, w, r)
 	case "cancel":
-		form.cancelForm(formID, userID, w, r)
+		form.cancelForm(formID, req.UserID, w, r)
 	default:
 		BadRequestError(w, r, xerrors.Errorf("invalid action: %s", req.Action), nil)
 		return
@@ -523,13 +522,9 @@ func (form *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 	if vars == nil || vars["formID"] == "" {
 		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
 		return
-	} else if vars["userID"] == "" {
-		http.Error(w, fmt.Sprintf("userID not found: %v", vars), http.StatusInternalServerError)
-		return
 	}
 
 	formID := vars["formID"]
-	userID := vars["userID"]
 
 	elecMD, err := form.getFormsMetadata()
 	if err != nil {
@@ -542,27 +537,6 @@ func (form *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "the form does not exist", http.StatusNotFound)
 		return
 	}
-
-	/*
-		// auth should contain the hex-encoded signature on the hex-encoded form
-		// ID
-		auth := r.Header.Get("Authorization")
-
-		signature, err := hex.DecodeString(auth)
-		if err != nil {
-			BadRequestError(w, r, xerrors.Errorf("failed to decode auth: %v", err), nil)
-			return
-		}
-
-		// check if the signature is valid
-		//TODO ADD User ID to existing
-		err = schnorr.Verify(suite, form.pk, []byte(formID+userID), signature)
-		if err != nil {
-			ForbiddenError(w, r, xerrors.Errorf("signature verification failed: %v", err), nil)
-			return
-		}
-
-	*/
 
 	// TODO double check
 	// get the signed request
@@ -580,7 +554,7 @@ func (form *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 
 	deleteForm := types.DeleteForm{
 		FormID: formID,
-		UserID: userID,
+		UserID: req.UserID,
 	}
 
 	data, err := deleteForm.Serialize(form.context)
@@ -603,9 +577,8 @@ func (form *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 // TODO CHECK CAUSE NEW
 // POST /addtoadminlist
 func (form *form) AddAdmin(w http.ResponseWriter, r *http.Request) {
-	var req ptypes.AddAdminRequest
-	println("plouf plouf\n\nparfois la vie fait plouf \n\n")
-	println(fmt.Sprintf("ploufi %v", r.Body))
+	var req ptypes.AdminRequest
+
 	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
 		InternalError(w, r, newSignedErr(err), nil)
@@ -618,22 +591,8 @@ func (form *form) AddAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//vars := mux.Vars(r)
-
-	/*
-		// check if the formID is valid
-		if vars == nil || vars["TargetUserID"] == "" {
-			http.Error(w, fmt.Sprintf("TargetUserID not found: %v", vars), http.StatusInternalServerError)
-			return
-		} else if vars["PerformingUserID"] == "" {
-			http.Error(w, fmt.Sprintf("PerformingUserID not found: %v", vars), http.StatusInternalServerError)
-			return
-		}
-
-	*/
-
-	targetUserID := req.TargetUserID         //vars["TargetUserID"]
-	performingUserID := req.PerformingUserID //vars["PerformingUserID"]
+	targetUserID := req.TargetUserID
+	performingUserID := req.PerformingUserID
 
 	addAdmin := types.AddAdmin{
 		TargetUserID:     targetUserID,
@@ -658,12 +617,65 @@ func (form *form) AddAdmin(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /removetoadminlist
-func (form *form) RemoveAdmin(http.ResponseWriter, *http.Request) {}
+func (form *form) RemoveAdmin(w http.ResponseWriter, r *http.Request) {
+	var req ptypes.AdminRequest
 
-// POST /adminlist
+	signed, err := ptypes.NewSignedRequest(r.Body)
+	if err != nil {
+		InternalError(w, r, newSignedErr(err), nil)
+		return
+	}
+
+	err = signed.GetAndVerify(form.pk, &req)
+	if err != nil {
+		InternalError(w, r, getSignedErr(err), nil)
+		return
+	}
+
+	targetUserID := req.TargetUserID
+	performingUserID := req.PerformingUserID
+
+	removeAdmin := types.RemoveAdmin{
+		TargetUserID:     targetUserID,
+		PerformingUserID: performingUserID,
+	}
+
+	data, err := removeAdmin.Serialize(form.context)
+	if err != nil {
+		InternalError(w, r, xerrors.Errorf("failed to marshal RemoveAdmin: %v", err), nil)
+		return
+	}
+
+	// create the transaction and add it to the pool
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdRemoveAdmin, evoting.FormArg, data)
+	if err != nil {
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// send the transaction's information
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+
+}
+
+// GET /adminlist
 func (form *form) AdminList(w http.ResponseWriter, r *http.Request) {
 	println("un test marche parfois\n\n mais parfois pas \n\n")
-	txnmanager.SendResponse(w, "hellow rodl")
+	adminList, err := types.AdminListFromStore(form.context, form.adminFac, form.orderingSvc.GetStore(), evoting.AdminListId)
+	if err != nil {
+		InternalError(w, r, xerrors.Errorf("failed to get form: %v", err), nil)
+		return
+	}
+
+	myAdminList := "{"
+	for id := range adminList.AdminList {
+		myAdminList += strconv.Itoa(adminList.AdminList[id]) + ", "
+	}
+	myAdminList += "}"
+
+	println(myAdminList)
+
+	txnmanager.SendResponse(w, myAdminList)
 }
 
 // POST /forms/{formID}/addowner
