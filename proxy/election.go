@@ -112,6 +112,8 @@ func (form *form) NewForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	println("TXNewForm ID: " + hex.EncodeToString(txnID))
+
 	// hash the transaction
 	hash := sha256.New()
 	hash.Write(txnID)
@@ -618,6 +620,7 @@ func (form *form) AddAdmin(w http.ResponseWriter, r *http.Request) {
 
 	// create the transaction and add it to the pool
 	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdAddAdmin, evoting.FormArg, data)
+	println("TXAddAdmin ID: " + hex.EncodeToString(txnID))
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -663,15 +666,40 @@ func (form *form) RemoveAdmin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	println("TXRemoveAdmin ID: " + hex.EncodeToString(txnID))
 	// send the transaction's information
-	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+
+	// hash the transaction
+	hash := sha256.New()
+	hash.Write(txnID)
+	formID := hash.Sum(nil)
+
+	// create it to get the  token
+	transactionClientInfo, err := form.mngr.CreateTransactionResult(txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+	if err != nil {
+		http.Error(w, "failed to create transaction info: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := ptypes.CreateFormResponse{
+		FormID: hex.EncodeToString(formID),
+		Token:  transactionClientInfo.Token,
+	}
+
+	println("\n\nnew code ...\n")
+
+	// send the response json
+	err = txnmanager.SendResponse(w, response)
+	if err != nil {
+		fmt.Printf("Caught unhandled error: %+v", err)
+	}
+
+	//form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 
 }
 
 // GET /adminlist
 func (form *form) AdminList(w http.ResponseWriter, r *http.Request) {
-	println("un test marche parfois\n\n mais parfois pas \n\n")
 	adminList, err := types.AdminListFromStore(form.context, form.adminFac, form.orderingSvc.GetStore(), evoting.AdminListId)
 	if err != nil {
 		InternalError(w, r, xerrors.Errorf("failed to get form: %v", err), nil)
@@ -683,8 +711,6 @@ func (form *form) AdminList(w http.ResponseWriter, r *http.Request) {
 		myAdminList += strconv.Itoa(adminList.AdminList[id]) + ", "
 	}
 	myAdminList += "}"
-
-	println(myAdminList)
 
 	txnmanager.SendResponse(w, myAdminList)
 }

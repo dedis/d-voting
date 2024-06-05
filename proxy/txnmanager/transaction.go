@@ -7,6 +7,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"go.dedis.ch/dela/core/validation"
 	"net/http"
 	"strconv"
 	"sync"
@@ -32,7 +33,7 @@ const (
 
 // NewTransactionManager returns a new initialized transaction manager
 func NewTransactionManager(mngr txn.Manager, p pool.Pool,
-	ctx serde.Context, pk kyber.Point, blocks blockstore.BlockStore, signer crypto.Signer) Manager {
+	ctx serde.Context, pk kyber.Point, blocks blockstore.BlockStore, signer crypto.Signer, val validation.Service) Manager {
 
 	logger := dela.Logger.With().Timestamp().Str("role", "proxy-txmanager").Logger()
 
@@ -44,6 +45,7 @@ func NewTransactionManager(mngr txn.Manager, p pool.Pool,
 		pk:      pk,
 		blocks:  blocks,
 		signer:  signer,
+		val:     val,
 	}
 }
 
@@ -60,6 +62,7 @@ type manager struct {
 	pk      kyber.Point
 	blocks  blockstore.BlockStore
 	signer  crypto.Signer
+	val     validation.Service
 }
 
 // StatusHandlerGet checks if the transaction is included in the blockchain
@@ -183,10 +186,19 @@ func (h *manager) checkTxnIncluded(transactionID []byte, lastBlockIdx uint64) (T
 		}
 
 		// check if the transaction is in the block
-		transactions := blockLink.GetBlock().GetTransactions()
+		transactions := blockLink.GetBlock().GetData().GetTransactionResults() //blockLink.GetBlock().GetTransactions()
+
 		for _, txn := range transactions {
-			if bytes.Equal(txn.GetID(), transactionID) {
-				return IncludedTransaction, blockLink.GetBlock().GetIndex()
+
+			if bytes.Equal(txn.GetTransaction().GetID(), transactionID) {
+				accepted, reason := txn.GetStatus()
+				if accepted {
+					return IncludedTransaction, blockLink.GetBlock().GetIndex()
+				} else {
+					println(reason)
+					return RejectedTransaction, blockLink.GetBlock().GetIndex()
+				}
+
 			}
 
 		}

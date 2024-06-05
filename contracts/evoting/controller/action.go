@@ -172,7 +172,7 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to unmarshal proxy key: %v", err)
 	}
 
-	transactionManager := txnmanager.NewTransactionManager(mngr, p, sjson.NewContext(), proxykey, blocks, signer)
+	transactionManager := txnmanager.NewTransactionManager(mngr, p, sjson.NewContext(), proxykey, blocks, signer, validation)
 
 	ep := eproxy.NewForm(ordering, p, sjson.NewContext(), formFac, proxykey, transactionManager)
 
