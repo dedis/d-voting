@@ -10,14 +10,8 @@ type CreateFormRequest struct {
 	Configuration etypes.Configuration
 }
 
-// AdminRequest defines the HTTP request for adding an admin
-type AdminRequest struct {
-	TargetUserID     string
-	PerformingUserID string
-}
-
-// RemoveAdminRequest defines the HTTP request for Removing an admin
-type RemoveAdminRequest struct {
+// PermissionOperationRequest defines the HTTP request for performing an operation request
+type PermissionOperationRequest struct {
 	TargetUserID     string
 	PerformingUserID string
 }

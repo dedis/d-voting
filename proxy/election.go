@@ -587,29 +587,16 @@ func (form *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 }
 
-// TODO CHECK CAUSE NEW
 // POST /addtoadminlist
 func (form *form) AddAdmin(w http.ResponseWriter, r *http.Request) {
-	var req ptypes.AdminRequest
-
-	signed, err := ptypes.NewSignedRequest(r.Body)
+	req, err := form.getPermissionOpRequest(w, r)
 	if err != nil {
-		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
-
-	err = signed.GetAndVerify(form.pk, &req)
-	if err != nil {
-		InternalError(w, r, getSignedErr(err), nil)
-		return
-	}
-
-	targetUserID := req.TargetUserID
-	performingUserID := req.PerformingUserID
 
 	addAdmin := types.AddAdmin{
-		TargetUserID:     targetUserID,
-		PerformingUserID: performingUserID,
+		TargetUserID:     req.TargetUserID,
+		PerformingUserID: req.PerformingUserID,
 	}
 
 	data, err := addAdmin.Serialize(form.context)
@@ -620,7 +607,6 @@ func (form *form) AddAdmin(w http.ResponseWriter, r *http.Request) {
 
 	// create the transaction and add it to the pool
 	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdAddAdmin, evoting.FormArg, data)
-	println("TXAddAdmin ID: " + hex.EncodeToString(txnID))
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -632,26 +618,14 @@ func (form *form) AddAdmin(w http.ResponseWriter, r *http.Request) {
 
 // POST /removetoadminlist
 func (form *form) RemoveAdmin(w http.ResponseWriter, r *http.Request) {
-	var req ptypes.AdminRequest
-
-	signed, err := ptypes.NewSignedRequest(r.Body)
+	req, err := form.getPermissionOpRequest(w, r)
 	if err != nil {
-		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
-
-	err = signed.GetAndVerify(form.pk, &req)
-	if err != nil {
-		InternalError(w, r, getSignedErr(err), nil)
-		return
-	}
-
-	targetUserID := req.TargetUserID
-	performingUserID := req.PerformingUserID
 
 	removeAdmin := types.RemoveAdmin{
-		TargetUserID:     targetUserID,
-		PerformingUserID: performingUserID,
+		TargetUserID:     req.TargetUserID,
+		PerformingUserID: req.PerformingUserID,
 	}
 
 	data, err := removeAdmin.Serialize(form.context)
@@ -666,36 +640,8 @@ func (form *form) RemoveAdmin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	println("TXRemoveAdmin ID: " + hex.EncodeToString(txnID))
-	// send the transaction's information
 
-	// hash the transaction
-	hash := sha256.New()
-	hash.Write(txnID)
-	formID := hash.Sum(nil)
-
-	// create it to get the  token
-	transactionClientInfo, err := form.mngr.CreateTransactionResult(txnID, lastBlock, txnmanager.UnknownTransactionStatus)
-	if err != nil {
-		http.Error(w, "failed to create transaction info: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	response := ptypes.CreateFormResponse{
-		FormID: hex.EncodeToString(formID),
-		Token:  transactionClientInfo.Token,
-	}
-
-	println("\n\nnew code ...\n")
-
-	// send the response json
-	err = txnmanager.SendResponse(w, response)
-	if err != nil {
-		fmt.Printf("Caught unhandled error: %+v", err)
-	}
-
-	//form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
-
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 }
 
 // GET /adminlist
@@ -706,9 +652,21 @@ func (form *form) AdminList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Used to check whether it is the last SCIPER printed
+	count := 0
+	lenAdminList := len(adminList.AdminList)
+
 	myAdminList := "{"
 	for id := range adminList.AdminList {
-		myAdminList += strconv.Itoa(adminList.AdminList[id]) + ", "
+		count++
+
+		// If last element, does not add ', ' otherwise add ', '
+		if count == lenAdminList {
+			myAdminList += strconv.Itoa(adminList.AdminList[id])
+		} else {
+			myAdminList += strconv.Itoa(adminList.AdminList[id]) + ", "
+		}
+
 	}
 	myAdminList += "}"
 
@@ -716,16 +674,140 @@ func (form *form) AdminList(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /forms/{formID}/addowner
-func (form *form) AddOwnerToForm(http.ResponseWriter, *http.Request) {}
+func (form *form) AddOwnerToForm(w http.ResponseWriter, r *http.Request) {
+	req, err := form.getPermissionOpRequest(w, r)
+	if err != nil {
+		return
+	}
+
+	formID, hasFailed := form.extractAndRetrieveFormID(w, r)
+	if hasFailed {
+		return
+	}
+
+	addOwner := types.AddOwner{
+		FormID:           formID,
+		TargetUserID:     req.TargetUserID,
+		PerformingUserID: req.PerformingUserID,
+	}
+
+	data, err := addOwner.Serialize(form.context)
+	if err != nil {
+		InternalError(w, r, xerrors.Errorf("failed to marshal AddOwner: %v", err), nil)
+		return
+	}
+
+	// create the transaction and add it to the pool
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdAddOwnerForm, evoting.FormArg, data)
+	if err != nil {
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+}
 
 // POST /forms/{formID}/removeowner
-func (form *form) RemoveOwnerToForm(http.ResponseWriter, *http.Request) {}
+func (form *form) RemoveOwnerToForm(w http.ResponseWriter, r *http.Request) {
+	req, err := form.getPermissionOpRequest(w, r)
+	if err != nil {
+		return
+	}
+
+	formID, hasFailed := form.extractAndRetrieveFormID(w, r)
+	if hasFailed {
+		return
+	}
+
+	removeOwner := types.RemoveOwner{
+		FormID:           formID,
+		TargetUserID:     req.TargetUserID,
+		PerformingUserID: req.PerformingUserID,
+	}
+
+	data, err := removeOwner.Serialize(form.context)
+	if err != nil {
+		InternalError(w, r, xerrors.Errorf("failed to marshal RemoveOwner: %v", err), nil)
+		return
+	}
+
+	// create the transaction and add it to the pool
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdRemoveOwnerForm, evoting.FormArg, data)
+	if err != nil {
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+}
 
 // POST /forms/{formID}/addvoter
-func (form *form) AddVoterToForm(http.ResponseWriter, *http.Request) {}
+func (form *form) AddVoterToForm(w http.ResponseWriter, r *http.Request) {
+	req, err := form.getPermissionOpRequest(w, r)
+	if err != nil {
+		return
+	}
+
+	formID, hasFailed := form.extractAndRetrieveFormID(w, r)
+	if hasFailed {
+		return
+	}
+
+	addVoter := types.AddVoter{
+		FormID:           formID,
+		TargetUserID:     req.TargetUserID,
+		PerformingUserID: req.PerformingUserID,
+	}
+
+	data, err := addVoter.Serialize(form.context)
+	if err != nil {
+		InternalError(w, r, xerrors.Errorf("failed to marshal AddVoter: %v", err), nil)
+		return
+	}
+
+	// create the transaction and add it to the pool
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdAddVoterForm, evoting.FormArg, data)
+	if err != nil {
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+}
 
 // POST /forms/{formID}/removevoter
-func (form *form) RemoveVoterToForm(http.ResponseWriter, *http.Request) {}
+func (form *form) RemoveVoterToForm(w http.ResponseWriter, r *http.Request) {
+	req, err := form.getPermissionOpRequest(w, r)
+	if err != nil {
+		return
+	}
+
+	formID, hasFailed := form.extractAndRetrieveFormID(w, r)
+	if hasFailed {
+		return
+	}
+
+	removeVoter := types.RemoveVoter{
+		FormID:           formID,
+		TargetUserID:     req.TargetUserID,
+		PerformingUserID: req.PerformingUserID,
+	}
+
+	data, err := removeVoter.Serialize(form.context)
+	if err != nil {
+		InternalError(w, r, xerrors.Errorf("failed to marshal RemoveVoter: %v", err), nil)
+		return
+	}
+
+	// create the transaction and add it to the pool
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdRemoveVoterForm, evoting.FormArg, data)
+	if err != nil {
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+}
 
 // ===== HELPER =====
 
@@ -748,4 +830,48 @@ func (form *form) getFormsMetadata() (types.FormsMetadata, error) {
 	}
 
 	return md, nil
+}
+
+func (form *form) getPermissionOpRequest(w http.ResponseWriter, r *http.Request) (ptypes.PermissionOperationRequest, error) {
+	var req ptypes.PermissionOperationRequest
+
+	// get the signed request
+	signed, err := ptypes.NewSignedRequest(r.Body)
+	if err != nil {
+		InternalError(w, r, newSignedErr(err), nil)
+		return ptypes.PermissionOperationRequest{}, err
+	}
+
+	// get the request and verify the signature
+	err = signed.GetAndVerify(form.pk, &req)
+	if err != nil {
+		InternalError(w, r, getSignedErr(err), nil)
+		return ptypes.PermissionOperationRequest{}, err
+	}
+	return req, err
+}
+
+func (form *form) extractAndRetrieveFormID(w http.ResponseWriter, r *http.Request) (string, bool) {
+	vars := mux.Vars(r)
+
+	// check if the formID is valid
+	if vars == nil || vars["formID"] == "" {
+		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
+		return "", true
+	}
+
+	formID := vars["formID"]
+
+	elecMD, err := form.getFormsMetadata()
+	if err != nil {
+		http.Error(w, "failed to get form metadata", http.StatusNotFound)
+		return "", true
+	}
+
+	// check if the form exists
+	if elecMD.FormsIDs.Contains(formID) < 0 {
+		http.Error(w, "the form does not exist", http.StatusNotFound)
+		return "", true
+	}
+	return formID, false
 }
