@@ -10,7 +10,8 @@ type CreateFormRequest struct {
 	Configuration etypes.Configuration
 }
 
-// PermissionOperationRequest defines the HTTP request for performing an operation request
+// PermissionOperationRequest defines the HTTP request for performing
+// an operation request
 type PermissionOperationRequest struct {
 	TargetUserID     string
 	PerformingUserID string

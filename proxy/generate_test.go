@@ -11,7 +11,8 @@ import (
 
 /*
 TestGenerateSignatureAndB64Payload is a code snippet that help developer
-to generate Signature and Base64 Payload to create cURL request for debug environment.
+to generate Signature and Base64 Payload to create cURL request for
+debug environment.
 
 How to use it:
 - Feel free to change the INPUT following docs/api.md
