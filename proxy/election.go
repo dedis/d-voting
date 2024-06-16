@@ -112,8 +112,6 @@ func (form *form) NewForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	println("TXNewForm ID: " + hex.EncodeToString(txnID))
-
 	// hash the transaction
 	hash := sha256.New()
 	hash.Write(txnID)
@@ -550,8 +548,7 @@ func (form *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "the form does not exist", http.StatusNotFound)
 		return
 	}
-
-	// TODO double check
+	
 	// get the signed request
 	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
