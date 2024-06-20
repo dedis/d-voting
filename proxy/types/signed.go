@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io"
 
 	"go.dedis.ch/kyber/v3"
@@ -25,8 +24,6 @@ func NewSignedRequest(r io.Reader) (SignedRequest, error) {
 	if err != nil {
 		return req, xerrors.Errorf("failed to decode signed request: %v", err)
 	}
-
-	println(fmt.Sprintf("helloReq: %v", req))
 
 	return req, nil
 }
