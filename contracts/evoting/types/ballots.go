@@ -333,30 +333,41 @@ func (s *Subject) MaxEncodedSize() int {
 
 	//TODO : optimise by computing max size according to number of choices and maxN
 	for _, rank := range s.Ranks {
-		size += len(rank.GetID() + "::")
+		size += len(rank.GetID())
 		size += len(rank.ID)
-		// at most 3 bytes (128) + ',' per choice
+
+		// ':' separators ('id:id:choice')
+		size += 2
+
+		// 4 bytes per choice (choice and separating comma/newline)
 		size += len(rank.Choices) * 4
 	}
 
 	for _, selection := range s.Selects {
-		size += len(selection.GetID() + "::")
+		size += len(selection.GetID())
 		size += len(selection.ID)
-		// 1 bytes (0/1) + ',' per choice
+
+		// ':' separators ('id:id:choice')
+		size += 2
+
+		// 2 bytes per choice (0/1 and separating comma/newline)
 		size += len(selection.Choices) * 2
 	}
 
 	for _, text := range s.Texts {
-		size += len(text.GetID() + "::")
+		size += len(text.GetID())
 		size += len(text.ID)
 
-		// at most 4 bytes per character + ',' per answer
+		// ':' separators ('id:id:choice')
+		size += 2
+
+		// 4 bytes per character and 1 byte for separating comma/newline
 		maxTextPerAnswer := 4*int(text.MaxLength) + 1
 		size += maxTextPerAnswer*int(text.MaxN) +
 			int(math.Max(float64(len(text.Choices)-int(text.MaxN)), 0))
 	}
 
-	// Last line has 2 '\n'
+	// additional '\n' on last line
 	if size != 0 {
 		size++
 	}
