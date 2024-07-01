@@ -4,7 +4,7 @@ import Worker2 from './../json/api/proxies/dela-worker-2.json';
 import Worker3 from './../json/api/proxies/dela-worker-3.json';
 import { FORMID } from './shared';
 
-export async function mockForms(page: page, empty: boolean = true) {
+export async function mockForms(page: page, formList: string) {
   // clear current mock
   await page.unroute(`${process.env.DELA_PROXY_URL}/evoting/forms`);
   await page.route(`${process.env.DELA_PROXY_URL}/evoting/forms`, async (route) => {
@@ -16,15 +16,19 @@ export async function mockForms(page: page, empty: boolean = true) {
           'Access-Control-Allow-Origin': '*',
         },
       });
-    } else if (empty) {
+    } else if (formList === 'empty') {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: '{"Forms": []}',
       });
-    } else {
+    } else if (formList === 'all') {
       await route.fulfill({
         path: './tests/json/formIndex.json',
+      });
+    } else if (formList === 'default') {
+      await route.fulfill({
+        path: './tests/json/formIndexDefault.json',
       });
     }
   });

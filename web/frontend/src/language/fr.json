@@ -247,7 +247,6 @@
     "nodes": "Noeuds",
     "DKGStatuses": "Les statuts du DKG",
     "proxies": "Proxies",
-    "filterByStatus": "Filtrer par statut",
     "all": "Tout",
     "resetFilter": "Réinitialiser le filtre",
     "showingNOverMOfXResults": "Montrer {{n}}/{{m}} de {{x}} résultats.",

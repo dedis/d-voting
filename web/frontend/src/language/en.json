@@ -249,7 +249,6 @@
     "nodes": "Nodes",
     "DKGStatuses": "DKG Statuses",
     "proxies": "Proxies",
-    "filterByStatus": "Filter by status",
     "all": "All",
     "resetFilter": "Reset filter",
     "showingNOverMOfXResults": "Showing {{n}}/{{m}} of {{x}} results.",
