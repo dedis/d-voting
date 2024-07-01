@@ -14,7 +14,7 @@ const FormIndex: FC = () => {
   const fctx = useContext(FlashContext);
   const pctx = useContext(ProxyContext);
 
-  const [statusToKeep, setStatusToKeep] = useState<Status>(null);
+  const [statusToKeep, setStatusToKeep] = useState<Status>(Status.Open);
   const [forms, setForms] = useState<LightFormInfo[]>(null);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({ Forms: null });
@@ -47,7 +47,7 @@ const FormIndex: FC = () => {
 
   // Apply the filter statusToKeep
   useEffect(() => {
-    if (data === null) return;
+    if (data.Forms === null) return;
 
     if (statusToKeep === null) {
       setForms(data.Forms);

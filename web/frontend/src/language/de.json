@@ -247,7 +247,6 @@
     "nodes": "Knotenpunkte",
     "DKGStatuses": "DKG-Status",
     "proxies": "Proxys",
-    "filterByStatus": "Nach Status filtern",
     "all": "Alle",
     "resetFilter": "Filter zurücksetzen",
     "showingNOverMOfXResults": "Zeigt {{n}}/{{m}} von {{x}} Ergebnissen.",

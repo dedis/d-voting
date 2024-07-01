@@ -13,9 +13,14 @@ async function goForward(page: Page) {
   await page.getByRole('button', { name: i18n.t('next') }).click();
 }
 
+async function disableFilter(page: Page) {
+  await page.getByRole('button', { name: i18n.t('statusOpen') }).click();
+  await page.getByRole('menuitem', { name: i18n.t('all'), exact: true }).click();
+}
+
 test.beforeEach(async ({ page }) => {
   // mock empty list per default
-  await mockForms(page);
+  await mockForms(page, 'empty');
   await mockPersonalInfo(page);
   await setUp(page, '/form/index');
 });
@@ -47,10 +52,22 @@ test('Assert pagination works correctly for empty list', async ({ page }) => {
   }
 });
 
-test('Assert pagination works correctly for non-empty list', async ({ page }) => {
-  // mock non-empty list w/ 11 elements i.e. 2 pages
-  await mockForms(page, false);
+test('Assert "Open" is default list filter', async ({ page }) => {
+  await mockForms(page, 'default');
   await page.reload();
+  const table = await page.getByRole('table');
+  for (let form of Forms.Forms.filter((item) => item.Status === 1)) {
+    let name = translate(form.Title);
+    let row = await table.getByRole('row', { name: name });
+    await expect(row).toBeVisible();
+  }
+});
+
+test('Assert pagination works correctly for non-empty list of all forms', async ({ page }) => {
+  // mock non-empty list w/ 11 elements i.e. 2 pages
+  await mockForms(page, 'all');
+  await page.reload();
+  await disableFilter(page);
   const next = await page.getByRole('button', { name: i18n.t('next') });
   const previous = await page.getByRole('button', { name: i18n.t('previous') });
   // 1st page
@@ -120,9 +137,10 @@ async function assertQuickAction(row: Locator, form: any, sciper?: string) {
   }
 }
 
-test('Assert forms are displayed correctly for unauthenticated user', async ({ page }) => {
-  await mockForms(page, false);
+test('Assert all forms are displayed correctly for unauthenticated user', async ({ page }) => {
+  await mockForms(page, 'all');
   await page.reload();
+  await disableFilter(page);
   const table = await page.getByRole('table');
   for (let form of Forms.Forms.slice(0, -1)) {
     let name = translate(form.Title);
@@ -140,11 +158,14 @@ test('Assert forms are displayed correctly for unauthenticated user', async ({ p
   await assertQuickAction(row, Forms.Forms.at(-1)!);
 });
 
-test('Assert quick actions are displayed correctly for authenticated users', async ({ page }) => {
+test('Assert quick actions are displayed correctly for authenticated users on all forms', async ({
+  page,
+}) => {
   for (let sciper of [SCIPER_USER, SCIPER_ADMIN]) {
     await logIn(page, sciper);
-    await mockForms(page, false);
+    await mockForms(page, 'all');
     await page.reload();
+    await disableFilter(page);
     const table = await page.getByRole('table');
     for (let form of Forms.Forms.slice(0, -1)) {
       let row = await table.getByRole('row', { name: translate(form.Title) });
