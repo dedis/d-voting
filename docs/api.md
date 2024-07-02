@@ -637,7 +637,7 @@ Return:
 
 ```json
 {
-  SCIPERs List
+   "<SCIPER>", "<SCIPER>", "..."
 }
 ```
 
