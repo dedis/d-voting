@@ -11,9 +11,9 @@ jobs:
   build-docker:
     name: Build D-Voting Docker images
     runs-on: ubuntu-22.04
-    if: '! github.event.pull_request.draft'
     env:
-      DockerTag: ${{ (github.ref == 'refs/heads/main') && 'latest' || github.head_ref }}
+      DockerTag: latest
+      push: ${{ (github.ref == 'refs/heads/main') && 'true' || 'false' }}
 
     steps:
       - name: Checkout
@@ -30,6 +30,7 @@ jobs:
         id: buildx
         uses: docker/setup-buildx-action@v1
       - name: Login to GHCR
+        if: ${{ env.push == 'true' }}
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
@@ -46,7 +47,7 @@ jobs:
             REACT_APP_VERSION
             REACT_APP_BUILD
             REACT_APP_BUILD_TIME
-          push: true
+          push: ${{ env.push }}
           tags: ghcr.io/c4dt/d-voting-frontend:${{ env.DockerTag }}
       - name: Build Backend
         uses: docker/build-push-action@v2
@@ -54,7 +55,7 @@ jobs:
           context: .
           file: Dockerfiles/Dockerfile.backend
           platforms: linux/amd64
-          push: true
+          push: ${{ env.push }}
           tags: ghcr.io/c4dt/d-voting-backend:${{ env.DockerTag }}
       - name: Build D-Voting
         uses: docker/build-push-action@v2
@@ -62,5 +63,5 @@ jobs:
           context: .
           file: Dockerfiles/Dockerfile.dela
           platforms: linux/amd64
-          push: true
+          push: ${{ env.push }}
           tags: ghcr.io/c4dt/d-voting-dela:${{ env.DockerTag }}
