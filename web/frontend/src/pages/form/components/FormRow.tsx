@@ -14,9 +14,7 @@ const SUBJECT_ELECTION = 'election';
 const ACTION_CREATE = 'create';
 
 const FormRow: FC<FormRowProps> = ({ form }) => {
-  const Blocklist = process.env.REACT_APP_BLOCKLIST
-    ? process.env.REACT_APP_BLOCKLIST.split(',')
-    : [];
+  const Blocklist = process.env.REACT_APP_BLOCKLIST?.split(',') ?? [];
   const [titles, setTitles] = useState<any>({});
   const authCtx = useContext(AuthContext);
   useEffect(() => {
@@ -41,8 +39,8 @@ const FormRow: FC<FormRowProps> = ({ form }) => {
     ? 'text-gray-700 hover:text-gray-700'
     : 'text-gray-700 hover:text-[#ff0000]';
   const styleBox = isBlocked
-    ? 'bg-gray-200 border-b hover: bg-gray-200'
-    : 'bg-white border-b hover:bg-gray-50 ';
+    ? 'bg-gray-200 border-b hover:bg-gray-200'
+    : 'bg-white border-b hover:bg-gray-50';
 
   return (
     <tr className={styleBox}>
