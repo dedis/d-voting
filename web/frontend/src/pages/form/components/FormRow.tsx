@@ -14,6 +14,7 @@ const SUBJECT_ELECTION = 'election';
 const ACTION_CREATE = 'create';
 
 const FormRow: FC<FormRowProps> = ({ form }) => {
+  const Blocklist = process.env.REACT_APP_BLOCKLIST?.split(',') ?? [];
   const [titles, setTitles] = useState<any>({});
   const authCtx = useContext(AuthContext);
   useEffect(() => {
@@ -31,11 +32,21 @@ const FormRow: FC<FormRowProps> = ({ form }) => {
     }
   });
   const formTitle = formRowI18n.t('title', { ns: 'form', fallbackLng: 'en' });
+  const isAdmin = authCtx.isLogged && authCtx.isAllowed(SUBJECT_ELECTION, ACTION_CREATE);
+  const isBlocked = Blocklist.includes(form.FormID);
+  if (!isAdmin && isBlocked) return null;
+  const styleText = isBlocked
+    ? 'text-gray-700 hover:text-gray-700'
+    : 'text-gray-700 hover:text-[#ff0000]';
+  const styleBox = isBlocked
+    ? 'bg-gray-200 border-b hover:bg-gray-200'
+    : 'bg-white border-b hover:bg-gray-50';
+
   return (
-    <tr className="bg-white border-b hover:bg-gray-50 ">
+    <tr className={styleBox}>
       <td className="px-1.5 sm:px-6 py-4 font-medium text-gray-900 whitespace-nowrap truncate">
-        {authCtx.isLogged && authCtx.isAllowed(SUBJECT_ELECTION, ACTION_CREATE) ? (
-          <Link className="text-gray-700 hover:text-[#ff0000]" to={`/forms/${form.FormID}`}>
+        {isAdmin ? (
+          <Link className={styleText} to={`/forms/${form.FormID}`}>
             <div className="max-w-[20vw] truncate">{formTitle}</div>
           </Link>
         ) : (
