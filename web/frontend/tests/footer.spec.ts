@@ -14,7 +14,7 @@ test('Assert copyright notice is visible', async ({ page }) => {
   const footerCopyright = await page.getByTestId('footerCopyright');
   await expect(footerCopyright).toBeVisible();
   await expect(footerCopyright).toHaveText(
-    `© ${new Date().getFullYear()} ${i18n.t('footerCopyright')} https://github.com/c4dt/d-voting`
+    `© ${new Date().getFullYear()} ${i18n.t('footerCopyright')} https://github.com/dedis/d-voting`
   );
 });
 

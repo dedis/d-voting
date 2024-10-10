@@ -48,7 +48,7 @@ jobs:
             REACT_APP_BUILD
             REACT_APP_BUILD_TIME
           push: ${{ env.push }}
-          tags: ghcr.io/c4dt/d-voting-frontend:${{ env.DockerTag }}
+          tags: ghcr.io/dedis/d-voting-frontend:${{ env.DockerTag }}
       - name: Build Backend
         uses: docker/build-push-action@v2
         with:
@@ -56,7 +56,7 @@ jobs:
           file: Dockerfiles/Dockerfile.backend
           platforms: linux/amd64
           push: ${{ env.push }}
-          tags: ghcr.io/c4dt/d-voting-backend:${{ env.DockerTag }}
+          tags: ghcr.io/dedis/d-voting-backend:${{ env.DockerTag }}
       - name: Build D-Voting
         uses: docker/build-push-action@v2
         with:
@@ -64,4 +64,4 @@ jobs:
           file: Dockerfiles/Dockerfile.dela
           platforms: linux/amd64
           push: ${{ env.push }}
-          tags: ghcr.io/c4dt/d-voting-dela:${{ env.DockerTag }}
+          tags: ghcr.io/dedis/d-voting-dela:${{ env.DockerTag }}

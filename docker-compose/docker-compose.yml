@@ -1,6 +1,6 @@
 version: "3.8"
 x-dela: &dela
-  image: ghcr.io/c4dt/d-voting-dela:latest
+  image: ghcr.io/dedis/d-voting-dela:latest
   env_file: ../.env
 x-dela-env: &dela-env
   PROXYKEY: ${PUBLIC_KEY}
@@ -55,7 +55,7 @@ services:
         ipv4_address: 172.19.44.251
 
   frontend:         # web service frontend
-    image: ghcr.io/c4dt/d-voting-frontend:latest
+    image: ghcr.io/dedis/d-voting-frontend:latest
     build:
       dockerfile: Dockerfiles/Dockerfile.frontend
       context: ../
@@ -67,7 +67,7 @@ services:
         ipv4_address: 172.19.44.2
 
   backend:          # web service backend
-    image: ghcr.io/c4dt/d-voting-backend:latest
+    image: ghcr.io/dedis/d-voting-backend:latest
     build:
       dockerfile: Dockerfiles/Dockerfile.backend
       context: ../

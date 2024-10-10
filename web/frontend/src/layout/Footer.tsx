@@ -8,8 +8,8 @@ const Footer = () => {
         <div className="hidden sm:flex flex-row items-center max-w-7xl mx-auto py-2 px-4 overflow-hidden sm:px-6 lg:px-8">
           <span data-testid="footerCopyright" className="text-gray-400">
             &copy; {new Date().getFullYear()} {t('footerCopyright')}&nbsp;
-            <a className="text-gray-600" href="https://github.com/c4dt/d-voting">
-              https://github.com/c4dt/d-voting
+            <a className="text-gray-600" href="https://github.com/dedis/d-voting">
+              https://github.com/dedis/d-voting
             </a>
           </span>
         </div>

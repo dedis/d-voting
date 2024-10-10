@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/c4dt/d-voting/contracts/evoting"
-	"github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/services/dkg"
+	"github.com/dedis/d-voting/contracts/evoting"
+	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/services/dkg"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering/cosipbft"

@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 
-	"github.com/c4dt/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/serde"

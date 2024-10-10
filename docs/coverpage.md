@@ -5,7 +5,7 @@
 <p style="text-align:center"><img width="100px" src="assets/logotype.png"/></p>
 
 <p style="text-align:center">
-    <a href="https://github.com/c4dt/d-voting/actions/workflows/go_test.yml"><img src="https://github.com/c4dt/d-voting/actions/workflows/go_test.yml/badge.svg"></a>
+    <a href="https://github.com/dedis/d-voting/actions/workflows/go_test.yml"><img src="https://github.com/dedis/d-voting/actions/workflows/go_test.yml/badge.svg"></a>
 </p>
 
 - An open platform to run voting instances on a blockchain

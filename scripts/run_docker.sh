@@ -24,7 +24,7 @@ function setup() {
 function teardown() {
   rm -f cookies.txt;
   docker compose down -v;
-  docker image rm ghcr.io/c4dt/d-voting-frontend:latest ghcr.io/c4dt/d-voting-backend:latest ghcr.io/c4dt/d-voting-dela:latest;
+  docker image rm ghcr.io/dedis/d-voting-frontend:latest ghcr.io/dedis/d-voting-backend:latest ghcr.io/dedis/d-voting-dela:latest;
 }
 
 function init_dela() {

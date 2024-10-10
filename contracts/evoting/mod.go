@@ -1,9 +1,9 @@
 package evoting
 
 import (
-	dvoting "github.com/c4dt/d-voting"
-	"github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/services/dkg"
+	dvoting "github.com/dedis/d-voting"
+	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/services/dkg"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/execution"
@@ -18,7 +18,7 @@ import (
 	"golang.org/x/xerrors"
 
 	// Register the JSON format for the form
-	_ "github.com/c4dt/d-voting/contracts/evoting/json"
+	_ "github.com/dedis/d-voting/contracts/evoting/json"
 )
 
 var (

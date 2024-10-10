@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/c4dt/d-voting/internal/testing/fake"
+	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/access"

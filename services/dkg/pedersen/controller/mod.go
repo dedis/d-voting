@@ -4,14 +4,14 @@ import (
 	"encoding"
 	"path/filepath"
 
-	"github.com/c4dt/d-voting/contracts/evoting"
+	"github.com/dedis/d-voting/contracts/evoting"
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/bls"
 	"go.dedis.ch/dela/crypto/loader"
 
-	"github.com/c4dt/d-voting/services/dkg/pedersen"
+	"github.com/dedis/d-voting/services/dkg/pedersen"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/access/darc"
@@ -23,7 +23,7 @@ import (
 	"go.dedis.ch/dela/mino"
 	"golang.org/x/xerrors"
 
-	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 )
 
 const privateKeyFile = "private.key"

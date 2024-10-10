@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/c4dt/d-voting/proxy/types"
-	dkgSrv "github.com/c4dt/d-voting/services/dkg"
+	"github.com/dedis/d-voting/proxy/types"
+	dkgSrv "github.com/dedis/d-voting/services/dkg"
 
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/cli/node"

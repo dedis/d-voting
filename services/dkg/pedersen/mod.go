@@ -14,16 +14,16 @@ import (
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
 
-	"github.com/c4dt/d-voting/contracts/evoting"
-	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/contracts/evoting"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/rs/zerolog"
 
-	"github.com/c4dt/d-voting/internal/tracing"
-	"github.com/c4dt/d-voting/services/dkg"
+	"github.com/dedis/d-voting/internal/tracing"
+	"github.com/dedis/d-voting/services/dkg"
 
 	// Register the JSON types for Pedersen
-	_ "github.com/c4dt/d-voting/services/dkg/pedersen/json"
-	"github.com/c4dt/d-voting/services/dkg/pedersen/types"
+	_ "github.com/dedis/d-voting/services/dkg/pedersen/json"
+	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/serde"
 	jsonserde "go.dedis.ch/dela/serde/json"
@@ -34,7 +34,7 @@ import (
 	"golang.org/x/xerrors"
 
 	// Register the JSON format for the form
-	_ "github.com/c4dt/d-voting/contracts/evoting/json"
+	_ "github.com/dedis/d-voting/contracts/evoting/json"
 )
 
 // BucketName is the name of the bucket in the database.

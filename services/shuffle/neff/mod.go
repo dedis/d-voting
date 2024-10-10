@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/services/shuffle"
-	"github.com/c4dt/d-voting/services/shuffle/neff/types"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/services/shuffle"
+	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
