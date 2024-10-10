@@ -4,45 +4,64 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
   build-docker:
     name: Build D-Voting Docker images
     runs-on: ubuntu-22.04
+    env:
+      DockerTag: latest
+      push: ${{ (github.ref == 'refs/heads/main') && 'true' || 'false' }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set env
+        run: |
+          git describe --tags
+          echo "REACT_APP_VERSION=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV        
+          echo "REACT_APP_BUILD=$(git describe --tags)" >> $GITHUB_ENV        
+          echo "REACT_APP_BUILD_TIME=$(date)" >> $GITHUB_ENV
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
       - name: Login to GHCR
+        if: ${{ env.push == 'true' }}
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build Frontend
         uses: docker/build-push-action@v2
         with:
           context: .
           file: Dockerfiles/Dockerfile.frontend
           platforms: linux/amd64
-          push: true
-          tags: ghcr.io/c4dt/d-voting-frontend:latest
+          build-args: |
+            REACT_APP_VERSION
+            REACT_APP_BUILD
+            REACT_APP_BUILD_TIME
+          push: ${{ env.push }}
+          tags: ghcr.io/dedis/d-voting-frontend:${{ env.DockerTag }}
       - name: Build Backend
         uses: docker/build-push-action@v2
         with:
           context: .
           file: Dockerfiles/Dockerfile.backend
           platforms: linux/amd64
-          push: true
-          tags: ghcr.io/c4dt/d-voting-backend:latest
+          push: ${{ env.push }}
+          tags: ghcr.io/dedis/d-voting-backend:${{ env.DockerTag }}
       - name: Build D-Voting
         uses: docker/build-push-action@v2
         with:
           context: .
-          target: build
           file: Dockerfiles/Dockerfile.dela
           platforms: linux/amd64
-          push: true
-          tags: ghcr.io/c4dt/d-voting-dela:latest
+          push: ${{ env.push }}
+          tags: ghcr.io/dedis/d-voting-dela:${{ env.DockerTag }}

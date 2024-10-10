@@ -14,58 +14,52 @@ import (
 	"sync"
 	"time"
 
-	"github.com/c4dt/d-voting/contracts/evoting"
-	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/services/dkg"
-	"github.com/c4dt/d-voting/services/dkg/pedersen"
-	"github.com/c4dt/d-voting/services/shuffle"
-	"github.com/c4dt/d-voting/services/shuffle/neff"
-	accessContract "github.com/c4dt/dela/contracts/access"
-	"github.com/c4dt/dela/contracts/value"
-	"github.com/c4dt/dela/core/access"
-	"github.com/c4dt/dela/core/access/darc"
-	"github.com/c4dt/dela/core/execution/native"
-	"github.com/c4dt/dela/core/ordering"
-	"github.com/c4dt/dela/core/ordering/cosipbft"
-	"github.com/c4dt/dela/core/ordering/cosipbft/authority"
-	"github.com/c4dt/dela/core/ordering/cosipbft/blockstore"
-	"github.com/c4dt/dela/core/ordering/cosipbft/types"
-	"github.com/c4dt/dela/core/store/hashtree"
-	"github.com/c4dt/dela/core/store/hashtree/binprefix"
-	"github.com/c4dt/dela/core/store/kv"
-	"github.com/c4dt/dela/core/txn"
-	"github.com/c4dt/dela/core/txn/pool"
-	poolimpl "github.com/c4dt/dela/core/txn/pool/gossip"
-	"github.com/c4dt/dela/core/txn/signed"
-	"github.com/c4dt/dela/core/validation"
-	"github.com/c4dt/dela/core/validation/simple"
-	"github.com/c4dt/dela/cosi/threshold"
-	"github.com/c4dt/dela/crypto"
-	"github.com/c4dt/dela/crypto/bls"
-	"github.com/c4dt/dela/crypto/loader"
-	"github.com/c4dt/dela/mino"
-	"github.com/c4dt/dela/mino/gossip"
-	"github.com/c4dt/dela/mino/minogrpc"
-	"github.com/c4dt/dela/mino/minogrpc/certs"
-	"github.com/c4dt/dela/mino/minogrpc/session"
-	"github.com/c4dt/dela/mino/router/tree"
-	"github.com/c4dt/dela/serde/json"
+	"github.com/dedis/d-voting/contracts/evoting"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/services/dkg"
+	"github.com/dedis/d-voting/services/dkg/pedersen"
+	"github.com/dedis/d-voting/services/shuffle"
+	"github.com/dedis/d-voting/services/shuffle/neff"
 	"github.com/stretchr/testify/require"
+	accessContract "go.dedis.ch/dela/contracts/access"
+	"go.dedis.ch/dela/contracts/value"
+	"go.dedis.ch/dela/core/access"
+	"go.dedis.ch/dela/core/access/darc"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/ordering/cosipbft"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
+	"go.dedis.ch/dela/core/ordering/cosipbft/types"
+	"go.dedis.ch/dela/core/store/hashtree"
+	"go.dedis.ch/dela/core/store/hashtree/binprefix"
+	"go.dedis.ch/dela/core/store/kv"
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/core/txn/pool"
+	poolimpl "go.dedis.ch/dela/core/txn/pool/gossip"
+	"go.dedis.ch/dela/core/txn/signed"
+	"go.dedis.ch/dela/core/validation"
+	"go.dedis.ch/dela/core/validation/simple"
+	"go.dedis.ch/dela/cosi/threshold"
+	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/crypto/bls"
+	"go.dedis.ch/dela/crypto/loader"
+	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/mino/gossip"
+	"go.dedis.ch/dela/mino/minogrpc"
+	"go.dedis.ch/dela/mino/minogrpc/certs"
+	"go.dedis.ch/dela/mino/minogrpc/session"
+	"go.dedis.ch/dela/mino/router/tree"
+	"go.dedis.ch/dela/serde/json"
 	"golang.org/x/xerrors"
 )
 
 const certKeyName = "cert.key"
 const privateKeyFile = "private.key"
 
-var aKey = [32]byte{1}
-var valueAccessKey = [32]byte{2}
-
-// evotingAccessKey is the access key used for the evoting contract.
-var evotingAccessKey = [32]byte{3}
-
-// dela defines the common interface for a Dela node.
-type dela interface {
-	Setup(...dela)
+// delaNode defines the common interface for a Dela node.
+type delaNode interface {
+	Setup(...delaNode)
 	GetMino() mino.Mino
 	GetOrdering() ordering.Service
 	GetTxManager() txn.Manager
@@ -74,7 +68,7 @@ type dela interface {
 
 // dVotingCosiDela defines the interface needed to use a Dela node using cosi.
 type dVotingCosiDela interface {
-	dela
+	delaNode
 
 	GetPublicKey() crypto.PublicKey
 	GetPool() pool.Pool
@@ -130,7 +124,7 @@ func setupDVotingNodes(t require.TestingT, numberOfNodes int, tempDir string) []
 	wait.Wait()
 	close(nodes)
 
-	delaNodes := make([]dela, 0, numberOfNodes)
+	delaNodes := make([]delaNode, 0, numberOfNodes)
 	dVotingNodes := make([]dVotingCosiDela, 0, numberOfNodes)
 
 	for node := range nodes {
@@ -193,7 +187,7 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 	rosterFac := authority.NewFactory(onet.GetAddressFactory(), cosi.GetPublicKeyFactory())
 	cosipbft.RegisterRosterContract(exec, rosterFac, accessService)
 
-	value.RegisterContract(exec, value.NewContract(valueAccessKey[:], accessService))
+	value.RegisterContract(exec, value.NewContract(accessService))
 
 	txFac := signed.NewTransactionFactory()
 	vs := simple.NewService(exec, txFac)
@@ -242,16 +236,14 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 
 	// access
 	accessStore := newAccessStore()
-	contract := accessContract.NewContract(aKey[:], accessService, accessStore)
+	contract := accessContract.NewContract(accessService, accessStore)
 	accessContract.RegisterContract(exec, contract)
 
 	formFac := etypes.NewFormFactory(etypes.CiphervoteFactory{}, rosterFac)
 
-	dkg := pedersen.NewPedersen(onet, srvc, pool, formFac, signer)
+	dkg := pedersen.NewPedersen(onet, srvc, db, pool, formFac, signer)
 
-	rosterKey := [32]byte{}
-	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:],
-		accessService, dkg, rosterFac))
+	evoting.RegisterContract(exec, evoting.NewContract(accessService, dkg, rosterFac))
 
 	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, formFac, signer)
 
@@ -293,7 +285,7 @@ func createDVotingAccess(t require.TestingT, nodes []dVotingCosiDela, dir string
 	require.NoError(t, err)
 
 	pubKey := signer.GetPublicKey()
-	cred := accessContract.NewCreds(aKey[:])
+	cred := accessContract.NewCreds()
 
 	for _, node := range nodes {
 		n := node.(dVotingNode)
@@ -303,14 +295,14 @@ func createDVotingAccess(t require.TestingT, nodes []dVotingCosiDela, dir string
 	return signer
 }
 
-// Setup implements dela. It creates the roster, shares the certificate, and
+// Setup implements delaNode. It creates the roster, shares the certificate, and
 // create an new chain.
-func (c dVotingNode) Setup(nodes ...dela) {
+func (c dVotingNode) Setup(nodes ...delaNode) {
 	// share the certificates
 	joinable, ok := c.onet.(minogrpc.Joinable)
 	require.True(c.t, ok)
 
-	addrURL, err := url.Parse("//" + c.onet.GetAddress().String())
+	addrURL, err := url.Parse(c.onet.GetAddress().String())
 	require.NoError(c.t, err, addrURL)
 
 	token := joinable.GenerateToken(time.Hour)

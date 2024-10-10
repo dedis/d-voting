@@ -5,12 +5,15 @@ import axios, { AxiosError, Method } from 'axios';
 import xss from 'xss';
 import {
   assignUserPermissionToOwnElection,
+  initEnforcer,
   isAuthorized,
   PERMISSIONS,
   revokeUserPermissionToOwnElection,
 } from '../authManager';
 
 export const delaRouter = express.Router();
+
+initEnforcer().catch((e) => console.error(`Couldn't initialize enforcerer: ${e}`));
 
 // get payload creates a payload with a signature on it
 function getPayload(dataStr: string) {
@@ -46,7 +49,7 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
   let payload = getPayload(dataStr);
 
   // we strip the `/api` part: /api/form/xxx => /form/xxx
-  let uri = process.env.DELA_NODE_URL + req.baseUrl.slice(4);
+  let uri = process.env.DELA_PROXY_URL + req.baseUrl.slice(4);
   // boolean to check
   let redirectToDefaultProxy = true;
 
@@ -201,7 +204,7 @@ delaRouter.delete('/forms/:formID', (req, res) => {
   const sign = kyber.sign.schnorr.sign(edCurve, scalar, Buffer.from(formID));
 
   // we strip the `/api` part: /api/form/xxx => /form/xxx
-  const uri = process.env.DELA_NODE_URL + xss(req.url.slice(4));
+  const uri = process.env.DELA_PROXY_URL + xss(req.url.slice(4));
 
   axios({
     method: req.method as Method,

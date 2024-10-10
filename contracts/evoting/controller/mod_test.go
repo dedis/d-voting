@@ -3,8 +3,8 @@ package controller
 import (
 	"testing"
 
-	"github.com/c4dt/dela/cli/node"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/dela/cli/node"
 )
 
 func TestController_OnStart(t *testing.T) {

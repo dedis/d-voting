@@ -3,11 +3,11 @@ package json
 import (
 	"testing"
 
-	"github.com/c4dt/d-voting/internal/testing/fake"
-	"github.com/c4dt/d-voting/services/shuffle/neff/types"
-	"github.com/c4dt/dela/mino"
-	"github.com/c4dt/dela/serde"
+	"github.com/dedis/d-voting/internal/testing/fake"
+	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/serde"
 )
 
 func TestMessageFormat_StartShuffle_Encode(t *testing.T) {

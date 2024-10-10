@@ -6,16 +6,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/c4dt/dela"
-	"github.com/c4dt/dela/core/ordering/cosipbft/authority"
-	"github.com/c4dt/dela/crypto"
-	"github.com/c4dt/dela/mino"
-	"github.com/c4dt/dela/serde"
-	"github.com/c4dt/dela/serde/json"
+	"go.dedis.ch/dela"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/serde"
+	"go.dedis.ch/dela/serde/json"
 
-	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/internal/testing/fake"
-	"github.com/c4dt/d-voting/services/shuffle/neff/types"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/internal/testing/fake"
+	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 )
@@ -52,10 +52,14 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	rosterLen := 2
 	roster := authority.FromAuthority(fake.NewAuthority(rosterLen, fake.NewSigner))
 
-	form := fake.NewForm(formID)
+	st := fake.NewSnapshot()
+	form, err := fake.NewForm(serdecontext, st, formID)
+	require.NoError(t, err)
 	form.Roster = roster
 
-	shuffledBallots := append([]etypes.Ciphervote{}, form.Suffragia.Ciphervotes...)
+	suff, err := form.Suffragia(serdecontext, st)
+	require.NoError(t, err)
+	shuffledBallots := append([]etypes.Ciphervote{}, suff.Ciphervotes...)
 	form.ShuffleInstances = append(form.ShuffleInstances, etypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
 
 	form.ShuffleThreshold = 1

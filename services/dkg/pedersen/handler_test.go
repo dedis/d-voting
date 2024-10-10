@@ -7,23 +7,25 @@ import (
 	"strings"
 	"testing"
 
-	formTypes "github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/dela/core/access"
-	"github.com/c4dt/dela/core/txn/signed"
-	"github.com/c4dt/dela/serde/json"
+	formTypes "github.com/dedis/d-voting/contracts/evoting/types"
+	"go.dedis.ch/dela/core/access"
+	"go.dedis.ch/dela/core/txn/signed"
+	"go.dedis.ch/dela/mino/minogrpc/session"
+	"go.dedis.ch/dela/serde/json"
 
-	"github.com/c4dt/d-voting/internal/testing/fake"
-	"github.com/c4dt/d-voting/services/dkg"
-	"github.com/c4dt/d-voting/services/dkg/pedersen/types"
-	"github.com/c4dt/dela/mino"
+	"github.com/dedis/d-voting/internal/testing/fake"
+	"github.com/dedis/d-voting/services/dkg"
+	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	pedersen "go.dedis.ch/kyber/v3/share/dkg/pedersen"
 )
 
 func TestHandler_Stream(t *testing.T) {
-	h := Handler{startRes: &state{}, service: &fake.Service{}}
+	h := Handler{startRes: &state{}, service: &fake.Service{Forms: make(map[string]formTypes.Form),
+		BallotSnap: fake.NewSnapshot()}}
 	receiver := fake.NewBadReceiver()
 	err := h.Stream(fake.Sender{}, receiver)
 	require.EqualError(t, err, fake.Err("failed to receive"))
@@ -43,8 +45,8 @@ func TestHandler_Stream(t *testing.T) {
 		fake.NewRecvMsg(fake.NewAddress(0), types.DecryptRequest{}),
 	)
 	err = h.Stream(fake.NewBadSender(), receiver)
-	require.EqualError(t, err, "could not send pubShares: failed to check"+
-		" if the shuffle is over: could not get the form: form does not exist: <nil>")
+	require.EqualError(t, err, "could not send pubShares: failed to check if the shuffle is over: "+
+		"could not get the form: while getting data for form: this key doesn't exist")
 
 	formIDHex := hex.EncodeToString([]byte("form"))
 
@@ -64,7 +66,6 @@ func TestHandler_Stream(t *testing.T) {
 		Status:           formTypes.ShuffledBallots,
 		Pubkey:           nil,
 		BallotSize:       0,
-		Suffragia:        formTypes.Suffragia{},
 		ShuffleInstances: make([]formTypes.ShuffleInstance, 1),
 		ShuffleThreshold: 0,
 		PubsharesUnits:   units,
@@ -78,12 +79,13 @@ func TestHandler_Stream(t *testing.T) {
 	h.formFac = formTypes.NewFormFactory(formTypes.CiphervoteFactory{}, fake.RosterFac{})
 
 	h.service = &fake.Service{
-		Err:     nil,
-		Forms:   Forms,
-		Pool:    nil,
-		Status:  false,
-		Channel: nil,
-		Context: json.NewContext(),
+		Err:        nil,
+		Forms:      Forms,
+		Pool:       nil,
+		Status:     false,
+		Channel:    nil,
+		Context:    json.NewContext(),
+		BallotSnap: fake.NewSnapshot(),
 	}
 
 	h.context = json.NewContext()
@@ -265,7 +267,8 @@ func TestState_MarshalJSON(t *testing.T) {
 
 	// Try with some data
 	distKey := suite.Point().Pick(suite.RandomStream())
-	participants := []mino.Address{fake.NewAddress(0), fake.NewAddress(1)}
+	// TODO: https://github.com/dedis/d-voting/issues/391
+	participants := []mino.Address{session.NewAddress("grpcs://localhost:12345"), session.NewAddress("grpcs://localhost:1234")}
 
 	s1.SetDistKey(distKey)
 	s1.SetParticipants(participants)
@@ -295,7 +298,6 @@ func TestHandler_HandlerDecryptRequest(t *testing.T) {
 		Status:           formTypes.ShuffledBallots,
 		Pubkey:           nil,
 		BallotSize:       0,
-		Suffragia:        formTypes.Suffragia{},
 		ShuffleInstances: make([]formTypes.ShuffleInstance, 1),
 		ShuffleThreshold: 1,
 		PubsharesUnits:   units,
@@ -313,12 +315,13 @@ func TestHandler_HandlerDecryptRequest(t *testing.T) {
 	h.formFac = formTypes.NewFormFactory(formTypes.CiphervoteFactory{}, fake.RosterFac{})
 
 	service := fake.Service{
-		Err:     nil,
-		Forms:   Forms,
-		Pool:    nil,
-		Status:  false,
-		Channel: nil,
-		Context: json.NewContext(),
+		Err:        nil,
+		Forms:      Forms,
+		Pool:       nil,
+		Status:     false,
+		Channel:    nil,
+		Context:    json.NewContext(),
+		BallotSnap: fake.NewSnapshot(),
 	}
 
 	h.context = json.NewContext()
@@ -356,16 +359,18 @@ func TestHandler_HandlerDecryptRequest(t *testing.T) {
 
 	Ks, Cs, _ := fakeKCPoints(k, message, suite.Point())
 
+	snap := fake.NewSnapshot()
 	for i := 0; i < k; i++ {
 		ballot := formTypes.Ciphervote{formTypes.EGPair{
 			K: Ks[i],
 			C: Cs[i],
 		}}
-		form.Suffragia.CastVote("dummyUser"+strconv.Itoa(i), ballot)
+		form.CastVote(service.Context, snap, "dummyUser"+strconv.Itoa(i), ballot)
 	}
 
-	shuffledBallots := form.Suffragia.Ciphervotes
-	shuffleInstance := formTypes.ShuffleInstance{ShuffledBallots: shuffledBallots}
+	shuffledBallots, err := form.Suffragia(service.Context, snap)
+	require.NoError(t, err)
+	shuffleInstance := formTypes.ShuffleInstance{ShuffledBallots: shuffledBallots.Ciphervotes}
 	form.ShuffleInstances = append(form.ShuffleInstances, shuffleInstance)
 
 	Forms[formIDHex] = form

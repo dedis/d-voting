@@ -8,16 +8,16 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/c4dt/d-voting/contracts/evoting"
-	"github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/proxy/txnmanager"
-	ptypes "github.com/c4dt/d-voting/proxy/types"
-	"github.com/c4dt/dela"
-	"github.com/c4dt/dela/core/ordering"
-	"github.com/c4dt/dela/core/txn/pool"
-	"github.com/c4dt/dela/serde"
+	"github.com/dedis/d-voting/contracts/evoting"
+	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/proxy/txnmanager"
+	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
+	"go.dedis.ch/dela"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/schnorr"
 	"golang.org/x/xerrors"
@@ -119,7 +119,10 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// send the response json
-	txnmanager.SendResponse(w, response)
+	err = txnmanager.SendResponse(w, response)
+	if err != nil {
+		fmt.Printf("Caught unhandled error: %+v", err)
+	}
 }
 
 // NewFormVote implements proxy.Proxy
@@ -210,9 +213,12 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// send the transaction's informations
-	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
-
+	// send the transaction's information
+	err = h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+	if err != nil {
+		http.Error(w, "couldn't send transaction info: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 // EditForm implements proxy.Proxy
@@ -326,7 +332,7 @@ func (h *form) closeForm(formIDHex string, w http.ResponseWriter, r *http.Reques
 // combineShares decrypts the shuffled ballots in a form.
 func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Request) {
 
-	form, err := getForm(h.context, h.formFac, formIDHex, h.orderingSvc)
+	form, err := types.FormFromStore(h.context, h.formFac, formIDHex, h.orderingSvc.GetStore())
 	if err != nil {
 		http.Error(w, "failed to get form: "+err.Error(),
 			http.StatusInternalServerError)
@@ -404,7 +410,7 @@ func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 	formID := vars["formID"]
 
 	// get the form
-	form, err := getForm(h.context, h.formFac, formID, h.orderingSvc)
+	form, err := types.FormFromStore(h.context, h.formFac, formID, h.orderingSvc.GetStore())
 	if err != nil {
 		http.Error(w, xerrors.Errorf("failed to get form: %v", err).Error(), http.StatusInternalServerError)
 		return
@@ -429,6 +435,13 @@ func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 		roster = append(roster, iter.GetNext().String())
 	}
 
+	suff, err := form.Suffragia(h.context, h.orderingSvc.GetStore())
+	if err != nil {
+		http.Error(w, "couldn't get ballots: "+err.Error(),
+			http.StatusInternalServerError)
+		return
+	}
+
 	response := ptypes.GetFormResponse{
 		FormID:          string(form.FormID),
 		Configuration:   form.Configuration,
@@ -438,7 +451,7 @@ func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 		Roster:          roster,
 		ChunksPerBallot: form.ChunksPerBallot(),
 		BallotSize:      form.BallotSize,
-		Voters:          form.Suffragia.UserIDs,
+		Voters:          suff.UserIDs,
 	}
 
 	txnmanager.SendResponse(w, response)
@@ -461,7 +474,7 @@ func (h *form) Forms(w http.ResponseWriter, r *http.Request) {
 
 	// get the forms
 	for i, id := range elecMD.FormsIDs {
-		form, err := getForm(h.context, h.formFac, id, h.orderingSvc)
+		form, err := types.FormFromStore(h.context, h.formFac, id, h.orderingSvc.GetStore())
 		if err != nil {
 			InternalError(w, r, xerrors.Errorf("failed to get form: %v", err), nil)
 			return
@@ -479,7 +492,7 @@ func (h *form) Forms(w http.ResponseWriter, r *http.Request) {
 
 		info := ptypes.LightForm{
 			FormID: string(form.FormID),
-			Title:  form.Configuration.MainTitle,
+			Title:  form.Configuration.Title,
 			Status: uint16(form.Status),
 			Pubkey: hex.EncodeToString(pubkeyBuf),
 		}
@@ -551,64 +564,27 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// send the transaction's informations
+	// send the transaction's information
 	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 }
 
 func (h *form) getFormsMetadata() (types.FormsMetadata, error) {
 	var md types.FormsMetadata
 
-	proof, err := h.orderingSvc.GetProof([]byte(evoting.FormsMetadataKey))
+	store, err := h.orderingSvc.GetStore().Get([]byte(evoting.FormsMetadataKey))
 	if err != nil {
-		// if the proof doesn't exist we assume there is no metadata, thus no
-		// forms has been created so far.
 		return md, nil
 	}
 
-	// if there is not form created yet the metadata will be empty
-	if len(proof.GetValue()) == 0 {
+	// if there is no form created yet the metadata will be empty
+	if len(store) == 0 {
 		return types.FormsMetadata{}, nil
 	}
 
-	err = json.Unmarshal(proof.GetValue(), &md)
+	err = json.Unmarshal(store, &md)
 	if err != nil {
 		return md, xerrors.Errorf("failed to unmarshal FormMetadata: %v", err)
 	}
 
 	return md, nil
-}
-
-// getForm gets the form from the snap. Returns the form ID NOT hex
-// encoded.
-func getForm(ctx serde.Context, formFac serde.Factory, formIDHex string,
-	srv ordering.Service) (types.Form, error) {
-
-	var form types.Form
-
-	formIDBuf, err := hex.DecodeString(formIDHex)
-	if err != nil {
-		return form, xerrors.Errorf("failed to decode formIDHex: %v", err)
-	}
-
-	proof, err := srv.GetProof(formIDBuf)
-	if err != nil {
-		return form, xerrors.Errorf("failed to get proof: %v", err)
-	}
-
-	formBuff := proof.GetValue()
-	if len(formBuff) == 0 {
-		return form, xerrors.Errorf("form does not exist")
-	}
-
-	message, err := formFac.Deserialize(ctx, formBuff)
-	if err != nil {
-		return form, xerrors.Errorf("failed to deserialize Form: %v", err)
-	}
-
-	form, ok := message.(types.Form)
-	if !ok {
-		return form, xerrors.Errorf("wrong message type: %T", message)
-	}
-
-	return form, nil
 }

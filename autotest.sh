@@ -52,7 +52,7 @@ do
     ./setupnNode.sh -n $N_NODE -d true
     sleep 3
     # Start scenario test and keep logs 
-    NNODES=$N_NODE go test -v -run ^TestScenario$ github.com/c4dt/d-voting/integration -count=1 | tee ./log/log/gotest.log
+    NNODES=$N_NODE go test -v -run ^TestScenario$ github.com/dedis/d-voting/integration -count=1 | tee ./log/log/gotest.log
     sleep 3
     # Stop the test
     ./kill_test.sh

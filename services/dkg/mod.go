@@ -1,7 +1,7 @@
 package dkg
 
 import (
-	"github.com/c4dt/dela/core/txn"
+	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/kyber/v3"
 )
 
@@ -11,7 +11,7 @@ type StatusCode uint16
 // Status defines a struct to hold the status and error context if any.
 type Status struct {
 	Status StatusCode
-	// The following is mostly usefull to return context to a frontend in case
+	// The following is mostly useful to return context to a frontend in case
 	// of error.
 	Err  error
 	Args map[string]interface{}

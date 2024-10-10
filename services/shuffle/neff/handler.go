@@ -8,17 +8,17 @@ import (
 
 	"go.dedis.ch/kyber/v3"
 
-	"github.com/c4dt/d-voting/contracts/evoting"
-	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/services/shuffle/neff/types"
-	"github.com/c4dt/dela"
-	"github.com/c4dt/dela/core/execution/native"
-	"github.com/c4dt/dela/core/ordering"
-	"github.com/c4dt/dela/core/txn"
-	"github.com/c4dt/dela/core/txn/pool"
-	"github.com/c4dt/dela/crypto"
-	"github.com/c4dt/dela/mino"
-	"github.com/c4dt/dela/serde"
+	"github.com/dedis/d-voting/contracts/evoting"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/services/shuffle/neff/types"
+	"go.dedis.ch/dela"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3/proof"
 	shuffleKyber "go.dedis.ch/kyber/v3/shuffle"
 	"go.dedis.ch/kyber/v3/suites"
@@ -91,7 +91,7 @@ func (h *Handler) handleStartShuffle(formID string) error {
 
 	// loop until the threshold is reached or our transaction has been accepted
 	for {
-		form, err := getForm(h.formFac, h.context, formID, h.service)
+		form, err := etypes.FormFromStore(h.context, h.formFac, formID, h.service.GetStore())
 		if err != nil {
 			return xerrors.Errorf("failed to get form: %v", err)
 		}
@@ -108,7 +108,7 @@ func (h *Handler) handleStartShuffle(formID string) error {
 			return xerrors.Errorf("the form must be closed: (%v)", form.Status)
 		}
 
-		tx, err := makeTx(h.context, &form, h.txmngr, h.shuffleSigner)
+		tx, err := h.makeTx(&form)
 		if err != nil {
 			return xerrors.Errorf("failed to make tx: %v", err)
 		}
@@ -149,10 +149,9 @@ func (h *Handler) handleStartShuffle(formID string) error {
 	}
 }
 
-func makeTx(ctx serde.Context, form *etypes.Form, manager txn.Manager,
-	shuffleSigner crypto.Signer) (txn.Transaction, error) {
+func (h *Handler) makeTx(form *etypes.Form) (txn.Transaction, error) {
 
-	shuffledBallots, getProver, err := getShuffledBallots(form)
+	shuffledBallots, getProver, err := h.getShuffledBallots(form)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get shuffled ballots: %v", err)
 	}
@@ -163,17 +162,17 @@ func makeTx(ctx serde.Context, form *etypes.Form, manager txn.Manager,
 		ShuffledBallots: shuffledBallots,
 	}
 
-	h := sha256.New()
+	hash := sha256.New()
 
-	err = shuffleBallots.Fingerprint(h)
+	err = shuffleBallots.Fingerprint(hash)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to get fingerprint: %v", err)
 	}
 
-	hash := h.Sum(nil)
+	seed := hash.Sum(nil)
 
 	// Generate random vector and proof
-	semiRandomStream, err := evoting.NewSemiRandomStream(hash)
+	semiRandomStream, err := evoting.NewSemiRandomStream(seed)
 	if err != nil {
 		return nil, xerrors.Errorf("could not create semi-random stream: %v", err)
 	}
@@ -204,17 +203,17 @@ func makeTx(ctx serde.Context, form *etypes.Form, manager txn.Manager,
 	}
 
 	// Sign the shuffle:
-	signature, err := shuffleSigner.Sign(hash)
+	signature, err := h.shuffleSigner.Sign(seed)
 	if err != nil {
 		return nil, xerrors.Errorf("could not sign the shuffle : %v", err)
 	}
 
-	encodedSignature, err := signature.Serialize(ctx)
+	encodedSignature, err := signature.Serialize(h.context)
 	if err != nil {
 		return nil, xerrors.Errorf("could not encode signature as []byte : %v ", err)
 	}
 
-	publicKey, err := shuffleSigner.GetPublicKey().MarshalBinary()
+	publicKey, err := h.shuffleSigner.GetPublicKey().MarshalBinary()
 	if err != nil {
 		return nil, xerrors.Errorf("could not unmarshal public key from nodeSigner: %v", err)
 	}
@@ -223,7 +222,7 @@ func makeTx(ctx serde.Context, form *etypes.Form, manager txn.Manager,
 	shuffleBallots.PublicKey = publicKey
 	shuffleBallots.Signature = encodedSignature
 
-	data, err := shuffleBallots.Serialize(ctx)
+	data, err := shuffleBallots.Serialize(h.context)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to serialize shuffle ballots: %v", err)
 	}
@@ -242,7 +241,7 @@ func makeTx(ctx serde.Context, form *etypes.Form, manager txn.Manager,
 		Value: data,
 	}
 
-	tx, err := manager.Make(args...)
+	tx, err := h.txmngr.Make(args...)
 	if err != nil {
 		if err != nil {
 			return nil, xerrors.Errorf("failed to use manager: %v", err.Error())
@@ -253,7 +252,7 @@ func makeTx(ctx serde.Context, form *etypes.Form, manager txn.Manager,
 }
 
 // getShuffledBallots returns the shuffled ballots with the shuffling proof.
-func getShuffledBallots(form *etypes.Form) ([]etypes.Ciphervote,
+func (h *Handler) getShuffledBallots(form *etypes.Form) ([]etypes.Ciphervote,
 	func(e []kyber.Scalar) (proof.Prover, error), error) {
 
 	round := len(form.ShuffleInstances)
@@ -261,7 +260,11 @@ func getShuffledBallots(form *etypes.Form) ([]etypes.Ciphervote,
 	var ciphervotes []etypes.Ciphervote
 
 	if round == 0 {
-		ciphervotes = form.Suffragia.Ciphervotes
+		suff, err := form.Suffragia(h.context, h.service.GetStore())
+		if err != nil {
+			return nil, nil, xerrors.Errorf("couldn't get ballots: %v", err)
+		}
+		ciphervotes = suff.Ciphervotes
 	} else {
 		ciphervotes = form.ShuffleInstances[round-1].ShuffledBallots
 	}

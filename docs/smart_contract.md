@@ -15,14 +15,14 @@ This transaction requires the following 3 parameters:
 Key / Value pairs sent in the transaction in order to create a form:
 | | |
 |-|-|
-|"github.com/c4dt/dela.ContractArg"|[]byte(evoting.ContractName)|
+|"go.dedis.ch/dela.ContractArg"|[]byte(evoting.ContractName)|
 |evoting.CreateFormArg|createFormBuf|
 |evoting.CmdArg|[]byte(evoting.CmdCreateForm|
 
 where:
 
 ```go
-evoting.ContractName = "github.com/c4dt/dela.Evoting"
+evoting.ContractName = "go.dedis.ch/dela.Evoting"
 evoting.CreateFormArg = "evoting:create_form"
 createFormBuf = marshalled version of types.CreateFormTransaction{
         Title: title,
@@ -49,14 +49,14 @@ This transaction requires an `formID`
 Key / Value pairs sent in the transaction in order to create a form:
 | | |
 |-|-|
-|"github.com/c4dt/dela.ContractArg"|[]byte(evoting.ContractName)|
+|"go.dedis.ch/dela.ContractArg"|[]byte(evoting.ContractName)|
 |evoting.OpenFormArg|openFormBuf|
 |evoting.CmdArg|[]byte(evoting.CmdOpenForm|
 
 where:
 
 ```go
-    evoting.ContractName = "github.com/c4dt/dela.Evoting"
+    evoting.ContractName = "go.dedis.ch/dela.Evoting"
     evoting.OpenFormArg = "evoting:open_form"
     openFormBuf = marshalled version of types.OpenFormTransaction{
             FormID: hex.EncodeToString(formID),
@@ -77,14 +77,14 @@ This transaction requires the following 3 parameters:
 Key / Value pairs sent in the transaction in order to create a form:
 | | |
 |-|-|
-|"github.com/c4dt/dela.ContractArg"|[]byte(evoting.ContractName)|
+|"go.dedis.ch/dela.ContractArg"|[]byte(evoting.ContractName)|
 |evoting.CastVoteArg|castVoteBuf|
 |evoting.CmdArg|[]byte(evoting.CmdCastVote|
 
 where:
 
 ```go
-    evoting.ContractName = "github.com/c4dt/dela.Evoting"
+    evoting.ContractName = "go.dedis.ch/dela.Evoting"
     evoting.CastVoteArg = "evoting:cast_vote"
     castVoteBuf = a marshalled version of types.CastVoteTransaction{
 			FormID: hex.EncodeToString(formID),
@@ -102,14 +102,14 @@ This transaction requires an `formID` and an `adminID`.
 Key / Value pairs sent in the transaction in order to create a form:
 | | |
 |-|-|
-|"github.com/c4dt/dela.ContractArg"|[]byte(evoting.ContractName)|
+|"go.dedis.ch/dela.ContractArg"|[]byte(evoting.ContractName)|
 |evoting.CloseFormArg|closeFormBuf|
 |evoting.CmdArg|[]byte(evoting.CmdOpenForm|
 
 where:
 
 ```go
-    evoting.ContractName = "github.com/c4dt/dela.Evoting"
+    evoting.ContractName = "go.dedis.ch/dela.Evoting"
     evoting.CloseFormArg = "evoting:close_form"
     closeFormBuf = marshalled version of types.CloseFormTransaction{
 		FormID: hex.EncodeToString(formID),

@@ -9,7 +9,7 @@ const countRankResult = (rankResult: number[][], rank: RankQuestion) => {
   const minIndices: number[] = [];
   // the maximum score achievable is (number of choices - 1) * number of ballots
 
-  let min = (rank.ChoicesMap.get('en').length - 1) * rankResult.length;
+  let min = (rank.ChoicesMap.ChoicesMap.get('en').length - 1) * rankResult.length;
 
   const results = rankResult.reduce((a, b) => {
     return a.map((value, index) => {
@@ -42,31 +42,20 @@ const countRankResult = (rankResult: number[][], rank: RankQuestion) => {
 // percentage of the total number of votes and which candidate(s) in the
 // select.Choices has the most votes
 const countSelectResult = (selectResult: number[][]) => {
-  const resultsInPercent: string[] = [];
-  const maxIndices: number[] = [];
-  let max = 0;
+  const results: [string, number][] = [];
 
-  const results = selectResult.reduce((a, b) => {
-    return a.map((value, index) => {
-      const current = value + b[index];
-
-      if (current >= max) {
-        max = current;
-      }
-      return current;
+  selectResult
+    .reduce(
+      (tally, currBallot) => tally.map((currCount, index) => currCount + currBallot[index]),
+      new Array(selectResult[0].length).fill(0)
+    )
+    .forEach((totalCount) => {
+      results.push([
+        (Math.round((totalCount / selectResult.length) * 100 * 100) / 100).toFixed(2).toString(),
+        totalCount,
+      ]);
     });
-  }, new Array(selectResult[0].length).fill(0));
-
-  results.forEach((count, index) => {
-    if (count === max) {
-      maxIndices.push(index);
-    }
-
-    const percentage = (count / selectResult.length) * 100;
-    const roundedPercentage = (Math.round(percentage * 100) / 100).toFixed(2);
-    resultsInPercent.push(roundedPercentage);
-  });
-  return { resultsInPercent, maxIndices };
+  return results;
 };
 
 // Count the number of votes for each candidate and returns the counts and the

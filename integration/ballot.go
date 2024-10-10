@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
@@ -15,16 +14,16 @@ import (
 
 	"sync/atomic"
 
-	"github.com/c4dt/d-voting/contracts/evoting"
-	"github.com/c4dt/d-voting/contracts/evoting/controller"
-	"github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/internal/testing/fake"
-	"github.com/c4dt/d-voting/proxy/txnmanager"
-	ptypes "github.com/c4dt/d-voting/proxy/types"
-	"github.com/c4dt/d-voting/services/dkg"
-	"github.com/c4dt/dela/core/execution/native"
-	"github.com/c4dt/dela/core/txn"
+	"github.com/dedis/d-voting/contracts/evoting"
+	"github.com/dedis/d-voting/contracts/evoting/controller"
+	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/internal/testing/fake"
+	"github.com/dedis/d-voting/proxy/txnmanager"
+	ptypes "github.com/dedis/d-voting/proxy/types"
+	"github.com/dedis/d-voting/services/dkg"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/random"
@@ -241,7 +240,6 @@ func marshallBallotManual(voteStr string, pubkey kyber.Point, chunks int) (ptype
 
 	ballot := make(ptypes.CiphervoteJSON, chunks)
 	vote := strings.NewReader(voteStr)
-	fmt.Printf("votestr is: %v", voteStr)
 
 	buf := make([]byte, 29)
 
@@ -406,7 +404,7 @@ func cast(idx int, castVoteRequest ptypes.CastVoteRequest, contentType, randompr
 	require.NoError(t, err)
 
 	ok, err := pollTxnInclusion(30, 2*time.Second, randomproxy, infos.Token, t)
-	// if the transaction was not included after 60s, we retry once
+	// if the transaction was not included after 2s, we retry once
 	if !ok && !isRetry {
 		t.Logf("retrying vote %d", idx)
 		return cast(idx, castVoteRequest, contentType, randomproxy, formID, secret, true, t)

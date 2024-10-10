@@ -1,12 +1,13 @@
 package json
 
 import (
+	"encoding/hex"
 	"encoding/json"
 
-	"github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/dela/core/ordering/cosipbft/authority"
-	ctypes "github.com/c4dt/dela/core/ordering/cosipbft/types"
-	"github.com/c4dt/dela/serde"
+	"github.com/dedis/d-voting/contracts/evoting/types"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
+	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
@@ -35,9 +36,14 @@ func (formFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, erro
 			}
 		}
 
-		suffragia, err := encodeSuffragia(ctx, m.Suffragia)
-		if err != nil {
-			return nil, xerrors.Errorf("failed to encode suffragia: %v", err)
+		suffragias := make([]string, len(m.SuffragiaStoreKeys))
+		for i, suf := range m.SuffragiaStoreKeys {
+			suffragias[i] = hex.EncodeToString(suf)
+		}
+
+		suffragiaHashes := make([]string, len(m.SuffragiaHashes))
+		for i, sufH := range m.SuffragiaHashes {
+			suffragiaHashes[i] = hex.EncodeToString(sufH)
 		}
 
 		shuffleInstances, err := encodeShuffleInstances(ctx, m.ShuffleInstances)
@@ -62,7 +68,9 @@ func (formFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, erro
 			Status:           uint16(m.Status),
 			Pubkey:           pubkey,
 			BallotSize:       m.BallotSize,
-			Suffragia:        suffragia,
+			Suffragias:       suffragias,
+			SuffragiaHashes:  suffragiaHashes,
+			BallotCount:      m.BallotCount,
 			ShuffleInstances: shuffleInstances,
 			ShuffleThreshold: m.ShuffleThreshold,
 			PubsharesUnits:   pubsharesUnits,
@@ -100,9 +108,20 @@ func (formFormat) Decode(ctx serde.Context, data []byte) (serde.Message, error) 
 		}
 	}
 
-	suffragia, err := decodeSuffragia(ctx, formJSON.Suffragia)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to decode suffragia: %v", err)
+	suffragias := make([][]byte, len(formJSON.Suffragias))
+	for i, suff := range formJSON.Suffragias {
+		suffragias[i], err = hex.DecodeString(suff)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to decode suffragia-address: %v", err)
+		}
+	}
+
+	suffragiaHashes := make([][]byte, len(formJSON.SuffragiaHashes))
+	for i, suffH := range formJSON.SuffragiaHashes {
+		suffragiaHashes[i], err = hex.DecodeString(suffH)
+		if err != nil {
+			return nil, xerrors.Errorf("failed to decode suffragia-hash: %v", err)
+		}
 	}
 
 	shuffleInstances, err := decodeShuffleInstances(ctx, formJSON.ShuffleInstances)
@@ -127,17 +146,19 @@ func (formFormat) Decode(ctx serde.Context, data []byte) (serde.Message, error) 
 	}
 
 	return types.Form{
-		Configuration:    formJSON.Configuration,
-		FormID:           formJSON.FormID,
-		Status:           types.Status(formJSON.Status),
-		Pubkey:           pubKey,
-		BallotSize:       formJSON.BallotSize,
-		Suffragia:        suffragia,
-		ShuffleInstances: shuffleInstances,
-		ShuffleThreshold: formJSON.ShuffleThreshold,
-		PubsharesUnits:   pubSharesSubmissions,
-		DecryptedBallots: formJSON.DecryptedBallots,
-		Roster:           roster,
+		Configuration:      formJSON.Configuration,
+		FormID:             formJSON.FormID,
+		Status:             types.Status(formJSON.Status),
+		Pubkey:             pubKey,
+		BallotSize:         formJSON.BallotSize,
+		SuffragiaStoreKeys: suffragias,
+		SuffragiaHashes:    suffragiaHashes,
+		BallotCount:        formJSON.BallotCount,
+		ShuffleInstances:   shuffleInstances,
+		ShuffleThreshold:   formJSON.ShuffleThreshold,
+		PubsharesUnits:     pubSharesSubmissions,
+		DecryptedBallots:   formJSON.DecryptedBallots,
+		Roster:             roster,
 	}, nil
 }
 
@@ -157,7 +178,15 @@ type FormJSON struct {
 	// to pad smaller ballots such that all  ballots cast have the same size
 	BallotSize int
 
-	Suffragia SuffragiaJSON
+	// Suffragias are the hex-encoded addresses of the Suffragia storages.
+	Suffragias []string
+
+	// BallotCount represents the total number of ballots cast.
+	BallotCount uint32
+
+	// SuffragiaHashes are the hex-encoded sha256-hashes of the ballots
+	// in every Suffragia.
+	SuffragiaHashes []string
 
 	// ShuffleInstances is all the shuffles, along with their proof and identity
 	// of shuffler.
@@ -177,62 +206,6 @@ type FormJSON struct {
 	// authority.Authority.
 
 	RosterBuf []byte
-}
-
-// SuffragiaJSON defines the JSON representation of a suffragia.
-type SuffragiaJSON struct {
-	UserIDs     []string
-	Ciphervotes []json.RawMessage
-}
-
-func encodeSuffragia(ctx serde.Context, suffragia types.Suffragia) (SuffragiaJSON, error) {
-	ciphervotes := make([]json.RawMessage, len(suffragia.Ciphervotes))
-
-	for i, ciphervote := range suffragia.Ciphervotes {
-		buff, err := ciphervote.Serialize(ctx)
-		if err != nil {
-			return SuffragiaJSON{}, xerrors.Errorf("failed to serialize ciphervote: %v", err)
-		}
-
-		ciphervotes[i] = buff
-	}
-	return SuffragiaJSON{
-		UserIDs:     suffragia.UserIDs,
-		Ciphervotes: ciphervotes,
-	}, nil
-}
-
-func decodeSuffragia(ctx serde.Context, suffragiaJSON SuffragiaJSON) (types.Suffragia, error) {
-	var res types.Suffragia
-	fac := ctx.GetFactory(types.CiphervoteKey{})
-
-	factory, ok := fac.(types.CiphervoteFactory)
-	if !ok {
-		return res, xerrors.Errorf("invalid ciphervote factory: '%T'", fac)
-	}
-
-	ciphervotes := make([]types.Ciphervote, len(suffragiaJSON.Ciphervotes))
-
-	for i, ciphervoteJSON := range suffragiaJSON.Ciphervotes {
-		msg, err := factory.Deserialize(ctx, ciphervoteJSON)
-		if err != nil {
-			return res, xerrors.Errorf("failed to deserialize ciphervote json: %v", err)
-		}
-
-		ciphervote, ok := msg.(types.Ciphervote)
-		if !ok {
-			return res, xerrors.Errorf("wrong type: '%T'", msg)
-		}
-
-		ciphervotes[i] = ciphervote
-	}
-
-	res = types.Suffragia{
-		UserIDs:     suffragiaJSON.UserIDs,
-		Ciphervotes: ciphervotes,
-	}
-
-	return res, nil
 }
 
 // ShuffleInstanceJSON defines the JSON representation of a shuffle instance

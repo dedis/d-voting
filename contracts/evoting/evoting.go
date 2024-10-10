@@ -11,19 +11,19 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/c4dt/dela"
-
+	"go.dedis.ch/dela"
+	"go.dedis.ch/dela/core/ordering/cosipbft/contracts/viewchange"
 	"go.dedis.ch/kyber/v3/share"
 
-	"github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/dela/core/execution"
-	"github.com/c4dt/dela/core/execution/native"
-	"github.com/c4dt/dela/core/ordering/cosipbft/authority"
-	"github.com/c4dt/dela/core/store"
-	"github.com/c4dt/dela/core/txn"
-	"github.com/c4dt/dela/cosi/threshold"
-	"github.com/c4dt/dela/crypto/bls"
-	"github.com/c4dt/dela/serde"
+	"github.com/dedis/d-voting/contracts/evoting/types"
+	"go.dedis.ch/dela/core/execution"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/core/store"
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/cosi/threshold"
+	"go.dedis.ch/dela/crypto/bls"
+	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/shuffle"
 	"golang.org/x/xerrors"
@@ -60,7 +60,7 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 		return xerrors.Errorf(errWrongTx, msg)
 	}
 
-	rosterBuf, err := snap.Get(e.rosterKey)
+	rosterBuf, err := snap.Get(viewchange.GetRosterKey())
 	if err != nil {
 		return xerrors.Errorf("failed to get roster")
 	}
@@ -91,7 +91,6 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 		Status:        types.Initial,
 		// Pubkey is set by the opening command
 		BallotSize:       tx.Configuration.MaxBallotSize(),
-		Suffragia:        types.Suffragia{},
 		PubsharesUnits:   units,
 		ShuffleInstances: []types.ShuffleInstance{},
 		DecryptedBallots: []types.Ballot{},
@@ -131,7 +130,10 @@ func (e evotingCommand) createForm(snap store.Snapshot, step execution.Step) err
 		}
 	}
 
-	formsMetadata.FormsIDs.Add(form.FormID)
+	err = formsMetadata.FormsIDs.Add(form.FormID)
+	if err != nil {
+		return xerrors.Errorf("couldn't add new form: %v", err)
+	}
 
 	formMetadataJSON, err := json.Marshal(formsMetadata)
 	if err != nil {
@@ -228,7 +230,10 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 			len(tx.Ballot), form.ChunksPerBallot())
 	}
 
-	form.Suffragia.CastVote(tx.UserID, tx.Ballot)
+	err = form.CastVote(e.context, snap, tx.UserID, tx.Ballot)
+	if err != nil {
+		return xerrors.Errorf("couldn't cast vote: %v", err)
+	}
 
 	formBuf, err := form.Serialize(e.context)
 	if err != nil {
@@ -240,7 +245,7 @@ func (e evotingCommand) castVote(snap store.Snapshot, step execution.Step) error
 		return xerrors.Errorf("failed to set value: %v", err)
 	}
 
-	PromFormBallots.WithLabelValues(form.FormID).Set(float64(len(form.Suffragia.Ciphervotes)))
+	PromFormBallots.WithLabelValues(form.FormID).Set(float64(form.BallotCount))
 
 	return nil
 }
@@ -269,7 +274,8 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	}
 
 	if form.Status != types.Closed {
-		return xerrors.Errorf("the form is not closed")
+		return xerrors.Errorf("the form is not in state closed (current: %d != closed: %d)",
+			form.Status, types.Closed)
 	}
 
 	// Round starts at 0
@@ -358,7 +364,11 @@ func (e evotingCommand) shuffleBallots(snap store.Snapshot, step execution.Step)
 	var ciphervotes []types.Ciphervote
 
 	if tx.Round == 0 {
-		ciphervotes = form.Suffragia.Ciphervotes
+		suff, err := form.Suffragia(e.context, snap)
+		if err != nil {
+			return xerrors.Errorf("couldn't get ballots: %v", err)
+		}
+		ciphervotes = suff.Ciphervotes
 	} else {
 		// get the form's last shuffled ballots
 		lastIndex := len(form.ShuffleInstances) - 1
@@ -466,7 +476,7 @@ func (e evotingCommand) closeForm(snap store.Snapshot, step execution.Step) erro
 		return xerrors.Errorf("the form is not open, current status: %d", form.Status)
 	}
 
-	if len(form.Suffragia.Ciphervotes) <= 1 {
+	if form.BallotCount <= 1 {
 		return xerrors.Errorf("at least two ballots are required")
 	}
 
@@ -838,24 +848,9 @@ func (e evotingCommand) getForm(formIDHex string,
 		return form, nil, xerrors.Errorf("failed to decode formIDHex: %v", err)
 	}
 
-	formBuff, err := snap.Get(formIDBuf)
+	form, err = types.FormFromStore(e.context, e.formFac, formIDHex, snap)
 	if err != nil {
 		return form, nil, xerrors.Errorf("failed to get key %q: %v", formIDBuf, err)
-	}
-
-	message, err := e.formFac.Deserialize(e.context, formBuff)
-	if err != nil {
-		return form, nil, xerrors.Errorf("failed to deserialize Form: %v", err)
-	}
-
-	form, ok := message.(types.Form)
-	if !ok {
-		return form, nil, xerrors.Errorf("wrong message type: %T", message)
-	}
-
-	if formIDHex != form.FormID {
-		return form, nil, xerrors.Errorf("formID do not match: %q != %q",
-			formIDHex, form.FormID)
 	}
 
 	return form, formIDBuf, nil

@@ -1,29 +1,31 @@
 import express from 'express';
 import axios, { AxiosError } from 'axios';
 import { sciper2sess } from '../session';
-import { getUserPermissions, readSCIPER, setMapAuthorization } from '../authManager';
+import { initEnforcer, getUserPermissions, readSCIPER, setMapAuthorization } from '../authManager';
 
 export const authenticationRouter = express.Router();
 
-authenticationRouter.get('/get_dev_login', (req, res) => {
+initEnforcer().catch((e) => console.error(`Couldn't initialize enforcerer: ${e}`));
+
+authenticationRouter.get('/get_dev_login/:userId', (req, res) => {
   if (process.env.REACT_APP_DEV_LOGIN !== 'true') {
     const err = `/get_dev_login can only be called with REACT_APP_DEV_LOGIN===true: ${process.env.REACT_APP_DEV_LOGIN}`;
     console.error(err);
     res.status(500).send(err);
     return;
   }
-  if (process.env.SCIPER_ADMIN === undefined) {
-    const err = 'Please set SCIPER_ADMIN for /get/dev/login endpoint';
+  if (req.params.userId === undefined) {
+    const err = 'no userId given';
     console.error(err);
     res.status(500).send(err);
     return;
   }
   try {
-    req.session.userId = readSCIPER(process.env.SCIPER_ADMIN);
-    req.session.lastName = 'develo';
-    req.session.firstName = 'pment';
+    req.session.userId = readSCIPER(req.params.userId);
+    req.session.firstName = 'sciper-#';
+    req.session.lastName = req.params.userId;
   } catch (e) {
-    const err = `Invalid SCIPER_ADMIN: ${e}`;
+    const err = `Invalid userId: ${e}`;
     console.error(err);
     res.status(500).send(err);
     return;

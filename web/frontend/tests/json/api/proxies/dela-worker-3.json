@@ -1,0 +1,4 @@
+{
+  "NodeAddr": "grpc://dela-worker-3:2000",
+  "Proxy": "http://172.19.44.251:8080"
+}

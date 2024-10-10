@@ -1,17 +1,19 @@
 FROM golang:1.20.6-bookworm AS base
-RUN apt-get update && apt-get install git
-# make sure we're using the same head as d-voting
-RUN git clone https://github.com/c4dt/dela.git
-WORKDIR /go/dela/cli/crypto
-RUN go install
+RUN apt-get update -y && apt-get install -y git
 WORKDIR /go/d-voting
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
 COPY . .
-
-FROM base AS build
-COPY --from=base /go/dela .
-COPY --from=base /go/d-voting .
+ENV GOCACHE=/root/.cache/go-build
 WORKDIR /go/d-voting/cli/dvoting
-RUN go build
-ENV PATH=/go/dela/cli/crypto:/go/d-voting/cli/dvoting:${PATH}
+RUN --mount=type=cache,target="/root/.cache/go-build" go install
+# make sure we're using the same head as d-voting
+RUN --mount=type=cache,target="/root/.cache/go-build" cd $( go list -f '{{.Dir}}' go.dedis.ch/dela )/cli/crypto && go install
+
+FROM golang:1.20.6-bookworm AS build
+WORKDIR /usr/local/bin
+COPY --from=base /go/bin/crypto .
+COPY --from=base /go/bin/dvoting .
 ENTRYPOINT ["/bin/bash", "-c", "dvoting --config /data/node start --postinstall --proxyaddr :$PROXYPORT --proxykey $PROXYKEY --listen tcp://0.0.0.0:2000 --public $PUBLIC_URL --routing tree --noTLS"]
 CMD []

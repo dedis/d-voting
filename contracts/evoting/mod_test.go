@@ -7,23 +7,23 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/internal/testing/fake"
-	"github.com/c4dt/d-voting/services/dkg"
-	"github.com/c4dt/dela/core/access"
-	"github.com/c4dt/dela/core/execution"
-	"github.com/c4dt/dela/core/execution/native"
-	"github.com/c4dt/dela/core/ordering"
-	"github.com/c4dt/dela/core/ordering/cosipbft/authority"
-	"github.com/c4dt/dela/core/store"
-	"github.com/c4dt/dela/core/txn"
-	"github.com/c4dt/dela/core/txn/signed"
-	"github.com/c4dt/dela/crypto"
-	"github.com/c4dt/dela/crypto/bls"
-	"github.com/c4dt/dela/serde"
-	sjson "github.com/c4dt/dela/serde/json"
+	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/internal/testing/fake"
+	"github.com/dedis/d-voting/services/dkg"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/dela/core/access"
+	"go.dedis.ch/dela/core/execution"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/core/store"
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/core/txn/signed"
+	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/crypto/bls"
+	"go.dedis.ch/dela/serde"
+	sjson "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/util/random"
@@ -63,20 +63,17 @@ func TestExecute(t *testing.T) {
 		actor: fakeDkgActor{},
 		err:   nil,
 	}
-	var evotingAccessKey = [32]byte{3}
-	rosterKey := [32]byte{}
-
 	service := fakeAccess{err: fake.GetError()}
 	rosterFac := fakeAuthorityFactory{}
 
-	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
+	contract := NewContract(service, fakeDkg, rosterFac)
 
 	err := contract.Execute(fakeStore{}, makeStep(t))
 	require.EqualError(t, err, "identity not authorized: fake.PublicKey ("+fake.GetError().Error()+")")
 
 	service = fakeAccess{}
 
-	contract = NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
+	contract = NewContract(service, fakeDkg, rosterFac)
 	err = contract.Execute(fakeStore{}, makeStep(t))
 	require.EqualError(t, err, "\"evoting:command\" not found in tx arg")
 
@@ -129,13 +126,10 @@ func TestCommand_CreateForm(t *testing.T) {
 	data, err := createForm.Serialize(ctx)
 	require.NoError(t, err)
 
-	var evotingAccessKey = [32]byte{3}
-	rosterKey := [32]byte{}
-
 	service := fakeAccess{err: fake.GetError()}
 	rosterFac := fakeAuthorityFactory{}
 
-	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
+	contract := NewContract(service, fakeDkg, rosterFac)
 
 	cmd := evotingCommand{
 		Contract: &contract,
@@ -301,11 +295,13 @@ func TestCommand_CastVote(t *testing.T) {
 	form, ok := message.(types.Form)
 	require.True(t, ok)
 
-	require.Len(t, form.Suffragia.Ciphervotes, 1)
-	require.True(t, castVote.Ballot.Equal(form.Suffragia.Ciphervotes[0]))
+	require.Equal(t, uint32(1), form.BallotCount)
+	suff, err := form.Suffragia(ctx, snap)
+	require.NoError(t, err)
+	require.True(t, castVote.Ballot.Equal(suff.Ciphervotes[0]))
 
-	require.Equal(t, castVote.UserID, form.Suffragia.UserIDs[0])
-	require.Equal(t, float64(len(form.Suffragia.Ciphervotes)), testutil.ToFloat64(PromFormBallots))
+	require.Equal(t, castVote.UserID, suff.UserIDs[0])
+	require.Equal(t, float64(form.BallotCount), testutil.ToFloat64(PromFormBallots))
 }
 
 func TestCommand_CloseForm(t *testing.T) {
@@ -370,8 +366,8 @@ func TestCommand_CloseForm(t *testing.T) {
 	err = cmd.closeForm(snap, makeStep(t, FormArg, string(data)))
 	require.EqualError(t, err, "at least two ballots are required")
 
-	dummyForm.Suffragia.CastVote("dummyUser1", types.Ciphervote{})
-	dummyForm.Suffragia.CastVote("dummyUser2", types.Ciphervote{})
+	require.NoError(t, dummyForm.CastVote(ctx, snap, "dummyUser1", types.Ciphervote{}))
+	require.NoError(t, dummyForm.CastVote(ctx, snap, "dummyUser2", types.Ciphervote{}))
 
 	formBuf, err = dummyForm.Serialize(ctx)
 	require.NoError(t, err)
@@ -399,14 +395,12 @@ func TestCommand_CloseForm(t *testing.T) {
 func TestCommand_ShuffleBallotsCannotShuffleTwice(t *testing.T) {
 	k := 3
 
-	form, shuffleBallots, contract := initGoodShuffleBallot(t, k)
+	snap, form, shuffleBallots, contract := initGoodShuffleBallot(t, k)
 
 	cmd := evotingCommand{
 		Contract: &contract,
 		prover:   fakeProver,
 	}
-
-	snap := fake.NewSnapshot()
 
 	// Attempts to shuffle twice :
 	shuffleBallots.Round = 1
@@ -445,14 +439,12 @@ func TestCommand_ShuffleBallotsValidScenarios(t *testing.T) {
 	k := 3
 
 	// Simple Shuffle from round 0 :
-	form, shuffleBallots, contract := initGoodShuffleBallot(t, k)
+	snap, form, shuffleBallots, contract := initGoodShuffleBallot(t, k)
 
 	cmd := evotingCommand{
 		Contract: &contract,
 		prover:   fakeProver,
 	}
-
-	snap := fake.NewSnapshot()
 
 	formBuf, err := form.Serialize(ctx)
 	require.NoError(t, err)
@@ -555,7 +547,7 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	require.NoError(t, err)
 
 	err = cmd.shuffleBallots(snap, makeStep(t, FormArg, string(data)))
-	require.EqualError(t, err, "the form is not closed")
+	require.EqualError(t, err, "the form is not in state closed (current: 0 != closed: 2)")
 
 	// Wrong round :
 	form.Status = types.Closed
@@ -703,7 +695,6 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 	form.Pubkey = pubKey
 	shuffleBallots.Round = 0
 	form.ShuffleInstances = make([]types.ShuffleInstance, 0)
-	form.Suffragia.Ciphervotes = make([]types.Ciphervote, 0)
 
 	data, err = shuffleBallots.Serialize(ctx)
 	require.NoError(t, err)
@@ -719,9 +710,9 @@ func TestCommand_ShuffleBallotsFormatErrors(t *testing.T) {
 
 	// > With only one shuffled ballot the shuffling can't happen
 
-	form.Suffragia.CastVote("user1", types.Ciphervote{
+	require.NoError(t, form.CastVote(ctx, snap, "user1", types.Ciphervote{
 		types.EGPair{K: suite.Point(), C: suite.Point()},
-	})
+	}))
 
 	data, err = shuffleBallots.Serialize(ctx)
 	require.NoError(t, err)
@@ -1124,25 +1115,21 @@ func initFormAndContract() (types.Form, Contract) {
 		FormID:           fakeFormID,
 		Status:           0,
 		Pubkey:           nil,
-		Suffragia:        types.Suffragia{},
 		ShuffleInstances: make([]types.ShuffleInstance, 0),
 		DecryptedBallots: nil,
 		ShuffleThreshold: 0,
 		Roster:           fake.Authority{},
 	}
 
-	var evotingAccessKey = [32]byte{3}
-	rosterKey := [32]byte{}
-
 	service := fakeAccess{err: fake.GetError()}
 	rosterFac := fakeAuthorityFactory{}
 
-	contract := NewContract(evotingAccessKey[:], rosterKey[:], service, fakeDkg, rosterFac)
+	contract := NewContract(service, fakeDkg, rosterFac)
 
 	return dummyForm, contract
 }
 
-func initGoodShuffleBallot(t *testing.T, k int) (types.Form, types.ShuffleBallots, Contract) {
+func initGoodShuffleBallot(t *testing.T, k int) (store.Snapshot, types.Form, types.ShuffleBallots, Contract) {
 	form, shuffleBallots, contract := initBadShuffleBallot(3)
 	form.Status = types.Closed
 
@@ -1165,12 +1152,13 @@ func initGoodShuffleBallot(t *testing.T, k int) (types.Form, types.ShuffleBallot
 	shuffleBallots.Round = 0
 	form.ShuffleInstances = make([]types.ShuffleInstance, 0)
 
+	snap := fake.NewSnapshot()
 	for i := 0; i < k; i++ {
 		ballot := types.Ciphervote{types.EGPair{
 			K: Ks[i],
 			C: Cs[i],
 		}}
-		form.Suffragia.CastVote(fmt.Sprintf("user%d", i), ballot)
+		require.NoError(t, form.CastVote(ctx, snap, fmt.Sprintf("user%d", i), ballot))
 	}
 
 	// Valid Signature of shuffle
@@ -1198,7 +1186,7 @@ func initGoodShuffleBallot(t *testing.T, k int) (types.Form, types.ShuffleBallot
 	}
 	shuffleBallots.RandomVector.LoadFromScalars(e)
 
-	return form, shuffleBallots, contract
+	return snap, form, shuffleBallots, contract
 }
 
 func initBadShuffleBallot(sizeOfForm int) (types.Form, types.ShuffleBallots, Contract) {

@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -12,31 +11,46 @@ import (
 	"testing"
 	"time"
 
-	"github.com/c4dt/d-voting/contracts/evoting"
-	"github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/services/dkg"
-	delaPkg "github.com/c4dt/dela"
-	"github.com/c4dt/dela/core/execution/native"
-	"github.com/c4dt/dela/core/txn"
-	"github.com/rs/zerolog"
+	"github.com/dedis/d-voting/contracts/evoting"
+	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/services/dkg"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering/cosipbft"
+	"go.dedis.ch/dela/core/txn"
 	"golang.org/x/xerrors"
 )
 
-// Check the shuffled votes versus the casted votes and a few nodes
+// Check the shuffled votes versus the cast votes and a few nodes.
+// One transaction contains one vote.
 func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
+	customVotesScenario(b, false)
+}
 
+// Check the shuffled votes versus the cast votes and a few nodes.
+// One transasction contains many votes
+func BenchmarkIntegration_CustomVotesScenario_StuffBallots(b *testing.B) {
+	customVotesScenario(b, true)
+}
+
+func customVotesScenario(b *testing.B, stuffing bool) {
 	numNodes := 3
-	numVotes := 3
+	numVotes := 200
+	transactions := 200
 	numChunksPerBallot := 3
+	if stuffing {
+		// Fill every block of ballots with bogus votes to test performance.
+		types.TestCastBallots = true
+		defer func() {
+			types.TestCastBallots = false
+		}()
+		numVotes = 10000
+		transactions = numVotes / int(types.BallotsPerBatch)
+	}
 
 	adminID := "I am an admin"
 
 	// ##### SETUP ENV #####
-	// make tests reproducible
-	rand.Seed(1)
-
-	delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 
 	dirPath, err := os.MkdirTemp(os.TempDir(), "d-voting-three-votes")
 	require.NoError(b, err)
@@ -50,7 +64,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 
 	signer := createDVotingAccess(b, nodes, dirPath)
 
-	m := newTxManager(signer, nodes[0], time.Second*time.Duration(numNodes/2+1), numNodes*2)
+	m := newTxManager(signer, nodes[0], cosipbft.DefaultRoundTimeout*time.Duration(numNodes/2+1), numNodes*2)
 
 	err = grantAccess(m, signer)
 	require.NoError(b, err)
@@ -60,8 +74,10 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 		require.NoError(b, err)
 	}
 
+	fmt.Println("Creating form")
+
 	// ##### CREATE FORM #####
-	formID, err := createFormNChunks(m, "Three votes form", adminID, numChunksPerBallot)
+	formID, err := createFormNChunks(m, types.Title{En: "Three votes form", Fr: "", De: "", URL: ""}, adminID, numChunksPerBallot)
 	require.NoError(b, err)
 
 	time.Sleep(time.Millisecond * 1000)
@@ -80,8 +96,11 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	form, err := getForm(formFac, formID, nodes[0].GetOrdering())
 	require.NoError(b, err)
 
-	castedVotes, err := castVotesNChunks(m, actor, form, numVotes)
+	b.ResetTimer()
+	castedVotes, err := castVotesNChunks(m, actor, form, transactions)
 	require.NoError(b, err)
+	durationCasting := b.Elapsed()
+	b.Logf("Casting %d votes took %v", numVotes, durationCasting)
 
 	// ##### CLOSE FORM #####
 	err = closeForm(m, formID, adminID)
@@ -91,7 +110,7 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 
 	// ##### SHUFFLE BALLOTS ####
 
-	//b.ResetTimer()
+	b.ResetTimer()
 
 	b.Logf("initializing shuffle")
 	sActor, err := initShuffle(nodes)
@@ -101,20 +120,35 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	err = sActor.Shuffle(formID)
 	require.NoError(b, err)
 
-	//b.StopTimer()
+	durationShuffling := b.Elapsed()
+
+	b.Logf("submitting public shares")
+
+	b.ResetTimer()
+
+	_, err = getForm(formFac, formID, nodes[0].GetOrdering())
+	require.NoError(b, err)
+	err = actor.ComputePubshares()
+	require.NoError(b, err)
+
+	err = waitForStatus(types.PubSharesSubmitted, formFac, formID, nodes,
+		numNodes, cosipbft.DefaultRoundTimeout*time.Duration(numNodes))
+	require.NoError(b, err)
+
+	durationPubShares := b.Elapsed()
 
 	// ##### DECRYPT BALLOTS #####
 	time.Sleep(time.Second * 1)
 
 	b.Logf("decrypting")
 
-	//b.ResetTimer()
-
 	form, err = getForm(formFac, formID, nodes[0].GetOrdering())
 	require.NoError(b, err)
 
+	b.ResetTimer()
 	err = decryptBallots(m, actor, form)
 	require.NoError(b, err)
+	durationDecrypt := b.Elapsed()
 
 	//b.StopTimer()
 
@@ -124,17 +158,24 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	form, err = getForm(formFac, formID, nodes[0].GetOrdering())
 	require.NoError(b, err)
 
-	fmt.Println("Title of the form : " + form.Configuration.MainTitle)
+	fmt.Println("Title of the form : " + form.Configuration.Title.En)
 	fmt.Println("ID of the form : " + string(form.FormID))
 	fmt.Println("Status of the form : " + strconv.Itoa(int(form.Status)))
 	fmt.Println("Number of decrypted ballots : " + strconv.Itoa(len(form.DecryptedBallots)))
 	fmt.Println("Chunks per ballot : " + strconv.Itoa(form.ChunksPerBallot()))
 
-	require.Len(b, form.DecryptedBallots, len(castedVotes))
+	b.Logf("Casting %d votes took %v", numVotes, durationCasting)
+	b.Logf("Shuffling took: %v", durationShuffling)
+	b.Logf("Submitting shares took: %v", durationPubShares)
+	b.Logf("Decryption took: %v", durationDecrypt)
 
-	for _, ballot := range form.DecryptedBallots {
+	require.Len(b, form.DecryptedBallots, len(castedVotes)*int(types.BallotsPerBatch))
+
+	// There will be a lot of supplementary ballots, but at least the ones that were
+	// cast by the test should be present.
+	for _, casted := range castedVotes {
 		ok := false
-		for _, casted := range castedVotes {
+		for _, ballot := range form.DecryptedBallots {
 			if ballot.Equal(casted) {
 				ok = true
 				break
@@ -146,33 +187,34 @@ func BenchmarkIntegration_CustomVotesScenario(b *testing.B) {
 	closeNodesBench(b, nodes)
 }
 
-func createFormNChunks(m txManager, title string, admin string, numChunks int) ([]byte, error) {
+func createFormNChunks(m txManager, title types.Title, admin string, numChunks int) ([]byte, error) {
 
 	defaultBallotContent := "text:" + encodeID("bb") + ":\n\n"
 	textSize := 29*numChunks - len(defaultBallotContent)
 
 	// Define the configuration :
 	configuration := types.Configuration{
-		MainTitle: title,
+		Title: title,
 		Scaffold: []types.Subject{
 			{
 				ID:       "aa",
-				Title:    "subject1",
+				Title:    types.Title{En: "subject1", Fr: "", De: "", URL: ""},
 				Order:    nil,
 				Subjects: nil,
 				Selects:  nil,
 				Ranks:    []types.Rank{},
 				Texts: []types.Text{{
 					ID:        "bb",
-					Title:     "Enter favorite snack",
+					Title:     types.Title{En: "Enter favorite snack", Fr: "", De: "", URL: ""},
 					MaxN:      1,
 					MinN:      0,
 					MaxLength: uint(base64.StdEncoding.DecodedLen(textSize)),
 					Regex:     "",
-					Choices:   []string{"Your fav snack: "},
+					Choices:   []types.Choice{{Choice: "Your fav snack: ", URL: ""}},
 				}},
 			},
 		},
+		AdditionalInfo: "",
 	}
 
 	createForm := types.CreateForm{
@@ -213,10 +255,10 @@ func castVotesNChunks(m txManager, actor dkg.Actor, form types.Form,
 	ballotBuilder.Write([]byte(encodeID("bb")))
 	ballotBuilder.Write([]byte(":"))
 
-	textSize := 29*form.ChunksPerBallot() - ballotBuilder.Len() - 3
-
-	ballotBuilder.Write([]byte(strings.Repeat("=", textSize)))
 	ballotBuilder.Write([]byte("\n\n"))
+
+	textSize := 29*form.ChunksPerBallot() - ballotBuilder.Len() - 3
+	ballotBuilder.Write([]byte(strings.Repeat("=", textSize)))
 
 	vote := ballotBuilder.String()
 
@@ -227,6 +269,7 @@ func castVotesNChunks(m txManager, actor dkg.Actor, form types.Form,
 
 	votes := make([]types.Ballot, numberOfVotes)
 
+	start := time.Now()
 	for i := 0; i < numberOfVotes; i++ {
 
 		userID := "user " + strconv.Itoa(i)
@@ -251,6 +294,8 @@ func castVotesNChunks(m txManager, actor dkg.Actor, form types.Form,
 		if err != nil {
 			return nil, xerrors.Errorf("failed to addAndWait: %v", err)
 		}
+		fmt.Printf("Got vote %d at %v after %v\n", i, time.Now(), time.Since(start))
+		start = time.Now()
 
 		var ballot types.Ballot
 		err = ballot.Unmarshal(vote, form)

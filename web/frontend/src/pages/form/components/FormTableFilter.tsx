@@ -14,7 +14,7 @@ type FormTableFilterProps = {
 
 const FormTableFilter: FC<FormTableFilterProps> = ({ setStatusToKeep }) => {
   const { t } = useTranslation();
-  const [filterByText, setFilterByText] = useState(t('filterByStatus') as string);
+  const [filterByText, setFilterByText] = useState(t('statusOpen') as string);
 
   const handleClick = (statusToKeep: Status, filterText) => {
     setStatusToKeep(statusToKeep);
@@ -41,18 +41,6 @@ const FormTableFilter: FC<FormTableFilterProps> = ({ setStatusToKeep }) => {
           leaveTo="transform opacity-0 scale-95">
           <Menu.Items className="origin-top-left absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
             <div className="py-1">
-              <Menu.Item>
-                {({ active }) => (
-                  <button
-                    onClick={() => handleClick(Status.Initial, t('statusInitial'))}
-                    className={classNames(
-                      active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
-                      'block px-4 py-2 text-sm w-full text-left'
-                    )}>
-                    {t('statusInitial')}
-                  </button>
-                )}
-              </Menu.Item>
               <Menu.Item>
                 {({ active }) => (
                   <button
@@ -128,7 +116,7 @@ const FormTableFilter: FC<FormTableFilterProps> = ({ setStatusToKeep }) => {
               <Menu.Item>
                 {({ active }) => (
                   <button
-                    onClick={() => handleClick(null, t('filterByStatus'))}
+                    onClick={() => handleClick(null, t('all'))}
                     className={classNames(
                       active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
                       'block px-4 py-2 text-sm w-full text-left'
@@ -143,8 +131,8 @@ const FormTableFilter: FC<FormTableFilterProps> = ({ setStatusToKeep }) => {
       </Menu>
       <button
         type="button"
-        onClick={() => handleClick(null, t('filterByStatus'))}
-        className="text-gray-700 my-2 mx-2 items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium hover:text-indigo-500">
+        onClick={() => handleClick(null, t('statusOpen'))}
+        className="text-gray-700 my-2 mx-2 items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium hover:text-[#ff0000]">
         {t('resetFilter')}
       </button>
     </>

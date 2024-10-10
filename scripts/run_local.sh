@@ -23,13 +23,13 @@ asdf_shell() {
 asdf_shell nodejs 16.20.2
 asdf_shell golang 1.21.0
 mkdir -p nodes
+export GOBIN=$(pwd)/bin
+PATH="$PATH":"$GOBIN"
 
 function build_dela() {
   echo "Building dela-node"
-  export GOBIN=$(pwd)/bin
-  PATH="$PATH":"$GOBIN"
   if ! [[ -f $GOBIN/crypto ]]; then
-    go install github.com/c4dt/dela/cli/crypto
+    go install go.dedis.ch/dela/cli/crypto
   fi
   if ! [[ -f $GOBIN/dvoting ]]; then
     go install ./cli/dvoting
@@ -94,13 +94,6 @@ function init_nodes() {
 
 function init_dela() {
   echo "Initializing dela"
-  echo "  Share the certificate"
-  for n in $(seq 2 4); do
-    TOKEN_ARGS=$(dvoting --config ./nodes/node-1 minogrpc token)
-    NODEDIR=./nodes/node-$n
-    dvoting --config $NODEDIR minogrpc join --address grpc://localhost:2000 $TOKEN_ARGS
-  done
-
   echo "  Create a new chain with the nodes"
   for n in $(seq 4); do
     NODEDIR=./nodes/node-$n
@@ -123,10 +116,10 @@ function init_dela() {
   for n in $(seq 4); do
     NODEDIR=./nodes/node-$n
     IDENTITY=$(crypto bls signer read --path $NODEDIR/private.key --format BASE64_PUBKEY)
-    dvoting --config ./nodes/node-1 pool add --key ./nodes/node-1/private.key --args github.com/c4dt/dela.ContractArg \
-      --args github.com/c4dt/dela.Access --args access:grant_id \
-      --args 0300000000000000000000000000000000000000000000000000000000000000 --args access:grant_contract \
-      --args github.com/c4dt/dela.Evoting --args access:grant_command --args all --args access:identity --args $IDENTITY \
+    dvoting --config ./nodes/node-1 pool add --key ./nodes/node-1/private.key --args go.dedis.ch/dela.ContractArg \
+      --args go.dedis.ch/dela.Access --args access:grant_id \
+      --args 45564f54 --args access:grant_contract \
+      --args go.dedis.ch/dela.Evoting --args access:grant_command --args all --args access:identity --args $IDENTITY \
       --args access:command --args GRANT
   done
 
@@ -146,8 +139,8 @@ function init_db() {
     -e POSTGRES_PASSWORD=$DATABASE_PASSWORD -e POSTGRES_USER=$DATABASE_USERNAME \
     --name postgres_dvoting -p 5432:5432 postgres:15 >/dev/null
 
-  echo "Adding $SCIPER_ADMIN to admin"
-  (cd web/backend && npx ts-node src/cli.ts addAdmin --sciper $SCIPER_ADMIN | grep -v Executing)
+  echo "Adding $REACT_APP_SCIPER_ADMIN to admin"
+  (cd web/backend && npx ts-node src/cli.ts addAdmin --sciper $REACT_APP_SCIPER_ADMIN | grep -v Executing)
 }
 
 function kill_backend() {
@@ -174,7 +167,7 @@ function start_frontend() {
   keypair
 
   echo "Running frontend"
-  (cd web/frontend && npm run start-dev | ts "Frontend: " &)
+  (cd web/frontend && npm run start | ts "Frontend: " &)
 }
 
 case "$1" in
@@ -183,7 +176,7 @@ clean)
   kill_nodes
   kill_backend
   kill_db
-  rm -f bin/*
+  rm -rf bin nodes
   exit
   ;;
 

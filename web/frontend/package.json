@@ -8,8 +8,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "eslint": "./node_modules/.bin/eslint src/",
-    "eslint-fix": "./node_modules/.bin/eslint src/ --fix",
+    "eslint": "./node_modules/.bin/eslint src/ tests/",
+    "eslint-fix": "./node_modules/.bin/eslint src/ tests/ --fix",
     "prettier": "./node_modules/.bin/prettier --write src/",
     "prettier-check": "./node_modules/.bin/prettier --check src/"
   },
@@ -20,9 +20,11 @@
     "@tailwindcss/typography": "^0.5.2",
     "ajv": "^8.11.0",
     "buffer": "^6.0.3",
+    "dompurify": "^3.0.9",
     "file-saver": "^2.0.5",
     "i18next": "^21.6.10",
     "i18next-browser-languagedetector": "^6.1.3",
+    "pg": "^8.11.1",
     "prop-types": "^15.8.1",
     "react": "^17.0.1",
     "react-beautiful-dnd": "^13.1.0",
@@ -33,10 +35,10 @@
     "react-scripts": "5.0.0",
     "short-unique-id": "^4.4.4",
     "web-vitals": "^2.1.4",
-    "yup": "^0.32.11",
-    "pg": "^8.11.1"
+    "yup": "^0.32.11"
   },
   "devDependencies": {
+    "@playwright/test": "^1.40.1",
     "@testing-library/jest-dom": "^5.16.2",
     "@testing-library/react": "^12.1.5",
     "@types/file-saver": "^2.0.5",
@@ -46,6 +48,7 @@
     "@types/react-dom": "^17.0.11",
     "@types/react-router": "^5.1.18",
     "@types/react-router-dom": "^5.3.3",
+    "dotenv": "^16.3.1",
     "eslint": "^8.16.0",
     "eslint-config-airbnb-typescript": "^16.1.0",
     "eslint-config-prettier": "^8.3.0",

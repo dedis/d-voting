@@ -30,25 +30,25 @@ import (
 	"io"
 	"os"
 
-	dkg "github.com/c4dt/d-voting/services/dkg/pedersen/controller"
-	"github.com/c4dt/d-voting/services/dkg/pedersen/json"
-	shuffle "github.com/c4dt/d-voting/services/shuffle/neff/controller"
+	dkg "github.com/dedis/d-voting/services/dkg/pedersen/controller"
+	"github.com/dedis/d-voting/services/dkg/pedersen/json"
+	shuffle "github.com/dedis/d-voting/services/shuffle/neff/controller"
 
-	cosipbft "github.com/c4dt/d-voting/cli/cosipbftcontroller"
-	"github.com/c4dt/d-voting/cli/postinstall"
-	evoting "github.com/c4dt/d-voting/contracts/evoting/controller"
-	metrics "github.com/c4dt/d-voting/metrics/controller"
-	"github.com/c4dt/dela/cli/node"
-	access "github.com/c4dt/dela/contracts/access/controller"
-	db "github.com/c4dt/dela/core/store/kv/controller"
-	pool "github.com/c4dt/dela/core/txn/pool/controller"
-	signed "github.com/c4dt/dela/core/txn/signed/controller"
-	mino "github.com/c4dt/dela/mino/minogrpc/controller"
-	proxy "github.com/c4dt/dela/mino/proxy/http/controller"
+	cosipbft "github.com/dedis/d-voting/cli/cosipbftcontroller"
+	"github.com/dedis/d-voting/cli/postinstall"
+	evoting "github.com/dedis/d-voting/contracts/evoting/controller"
+	metrics "github.com/dedis/d-voting/metrics/controller"
+	"go.dedis.ch/dela/cli/node"
+	access "go.dedis.ch/dela/contracts/access/controller"
+	db "go.dedis.ch/dela/core/store/kv/controller"
+	pool "go.dedis.ch/dela/core/txn/pool/controller"
+	signed "go.dedis.ch/dela/core/txn/signed/controller"
+	mino "go.dedis.ch/dela/mino/minogrpc/controller"
+	proxy "go.dedis.ch/dela/mino/proxy/http/controller"
 
-	_ "github.com/c4dt/d-voting/services/shuffle/neff/json"
+	_ "github.com/dedis/d-voting/services/shuffle/neff/json"
 
-	gapi "github.com/c4dt/dela-apps/gapi/controller"
+	gapi "go.dedis.ch/dela-apps/gapi/controller"
 )
 
 func main() {

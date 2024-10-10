@@ -29,7 +29,7 @@ import {
 import { default as i18n } from 'i18next';
 import SelectResult from './components/SelectResult';
 import TextResult from './components/TextResult';
-import { isJson } from 'types/JSONparser';
+import { internationalize, urlizeLabel } from './../utils';
 
 type GroupedResultProps = {
   rankResult: RankResults;
@@ -53,23 +53,14 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
 
   const SubjectElementResultDisplay = (element: SubjectElement) => {
     let titles;
-    if (isJson(element.Title)) {
-      titles = JSON.parse(element.Title);
-    }
-    if (titles === undefined) {
-      titles = { en: element.Title, fr: element.TitleFr, de: element.TitleDe };
-    }
+    titles = element.Title;
     return (
       <div className="pl-4 pb-4 sm:pl-6 sm:pb-6">
         <div className="flex flex-row">
           <div className="align-text-middle flex mt-1 mr-2 h-5 w-5" aria-hidden="true">
             {questionIcons[element.Type]}
           </div>
-          <h2 className="text-lg pb-2">
-            {i18n.language === 'en' && titles.en}
-            {i18n.language === 'fr' && titles.fr}
-            {i18n.language === 'de' && titles.de}
-          </h2>
+          <h2 className="text-lg pb-2">{internationalize(i18n.language, titles)}</h2>
         </div>
         {element.Type === RANK && rankResult.has(element.ID) && (
           <RankResult rank={element as RankQuestion} rankResult={rankResult.get(element.ID)} />
@@ -88,19 +79,10 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
   };
 
   const displayResults = (subject: Subject) => {
-    let sbj;
-    if (isJson(subject.Title)) {
-      sbj = JSON.parse(subject.Title);
-    }
-    if (sbj === undefined) {
-      sbj = { en: subject.Title, fr: subject.TitleFr, de: subject.TitleDe };
-    }
     return (
       <div key={subject.ID}>
         <h2 className="text-xl pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-          {i18n.language === 'en' && sbj.en}
-          {i18n.language === 'fr' && sbj.fr}
-          {i18n.language === 'de' && sbj.de}
+          {urlizeLabel(internationalize(i18n.language, subject.Title), subject.Title.URL)}
         </h2>
         {subject.Order.map((id: ID) => (
           <div key={id}>
@@ -118,7 +100,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
   };
 
   const getResultData = (subject: Subject, dataToDownload: DownloadedResults[]) => {
-    dataToDownload.push({ Title: subject.Title });
+    dataToDownload.push({ Title: subject.Title.En, URL: subject.Title.URL });
 
     subject.Order.forEach((id: ID) => {
       const element = subject.Elements.get(id);
@@ -134,7 +116,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
                 return { Candidate: rank.Choices[index], Percentage: `${percent}%` };
               }
             );
-            dataToDownload.push({ Title: element.Title, Results: res });
+            dataToDownload.push({ Title: element.Title.En, URL: element.Title.URL, Results: res });
           }
           break;
 
@@ -142,10 +124,16 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
           const select = element as SelectQuestion;
 
           if (selectResult.has(id)) {
-            res = countSelectResult(selectResult.get(id)).resultsInPercent.map((percent, index) => {
-              return { Candidate: select.Choices[index], Percentage: `${percent}%` };
-            });
-            dataToDownload.push({ Title: element.Title, Results: res });
+            res = countSelectResult(selectResult.get(id))
+              .map(([, totalCount], index) => {
+                return {
+                  Candidate: select.Choices[index],
+                  TotalCount: totalCount,
+                  NumberOfBallots: selectResult.get(id).length, // number of combined ballots for this election
+                };
+              })
+              .sort((x, y) => y.TotalCount - x.TotalCount);
+            dataToDownload.push({ Title: element.Title.En, URL: element.Title.URL, Results: res });
           }
           break;
 
@@ -158,7 +146,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
             res = Array.from(countTextResult(textResult.get(id)).resultsInPercent).map((r) => {
               return { Candidate: r[0], Percentage: `${r[1]}%` };
             });
-            dataToDownload.push({ Title: element.Title, Results: res });
+            dataToDownload.push({ Title: element.Title.En, URL: element.Title.URL, Results: res });
           }
           break;
       }
@@ -166,7 +154,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
   };
 
   const exportJSONData = () => {
-    const fileName = `result_${configuration.MainTitle.replace(/[^a-zA-Z0-9]/g, '_').slice(
+    const fileName = `result_${configuration.Title.En.replace(/[^a-zA-Z0-9]/g, '_').slice(
       0,
       99
     )}__grouped`; // replace spaces with underscores;
@@ -178,9 +166,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
     });
 
     const data = {
-      MainTitle: configuration.MainTitle,
-      TitleFr: configuration.TitleFr,
-      TitleDe: configuration.TitleDe,
+      Title: configuration.Title,
       NumberOfVotes: result.length,
       Results: dataToDownload,
     };
@@ -202,7 +188,7 @@ const GroupedResult: FC<GroupedResultProps> = ({ rankResult, selectResult, textR
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="text-gray-700 my-2 mr-2 items-center px-4 py-2 border rounded-md text-sm hover:text-indigo-500">
+          className="text-gray-700 my-2 mr-2 items-center px-4 py-2 border rounded-md text-sm hover:text-[#ff0000]">
           {t('back')}
         </button>
 

@@ -11,17 +11,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/c4dt/d-voting/contracts/evoting"
-	"github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/internal/testing/fake"
-	"github.com/c4dt/d-voting/proxy/txnmanager"
-	ptypes "github.com/c4dt/d-voting/proxy/types"
-	"github.com/c4dt/dela/core/execution/native"
-	"github.com/c4dt/dela/core/ordering"
-	"github.com/c4dt/dela/core/txn"
-	"github.com/c4dt/dela/serde"
-	jsonDela "github.com/c4dt/dela/serde/json"
+	"github.com/dedis/d-voting/contracts/evoting"
+	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/internal/testing/fake"
+	"github.com/dedis/d-voting/proxy/txnmanager"
+	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/serde"
+	jsonDela "go.dedis.ch/dela/serde/json"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/schnorr"
 	"golang.org/x/xerrors"
@@ -137,28 +137,7 @@ func openForm(m txManager, formID []byte) error {
 func getForm(formFac serde.Factory, formID []byte,
 	service ordering.Service) (types.Form, error) {
 
-	form := types.Form{}
-
-	proof, err := service.GetProof(formID)
-	if err != nil {
-		return form, xerrors.Errorf("failed to GetProof: %v", err)
-	}
-
-	if proof == nil {
-		return form, xerrors.Errorf("form does not exist: %v", err)
-	}
-
-	message, err := formFac.Deserialize(serdecontext, proof.GetValue())
-	if err != nil {
-		return form, xerrors.Errorf("failed to deserialize Form: %v", err)
-	}
-
-	form, ok := message.(types.Form)
-	if !ok {
-		return form, xerrors.Errorf("wrong message type: %T", message)
-	}
-
-	return form, nil
+	return types.FormFromStore(serdecontext, formFac, hex.EncodeToString(formID), service.GetStore())
 }
 
 // for integration tests

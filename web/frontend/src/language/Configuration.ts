@@ -18,10 +18,9 @@ use(initReactI18next)
   .use(LanguageDetector)
   .init({
     resources,
-    defaultNS: 'common',
-    fallbackLng: 'en',
+    fallbackLng: ['en', 'fr', 'de'],
     debug: true,
     interpolation: {
-      escapeValue: false, // react already safes from xss => https://www.i18next.com/translation-function/interpolation#unescape
+      escapeValue: false, // react already safe from xss => https://www.i18next.com/translation-function/interpolation#unescape
     },
   });

@@ -7,19 +7,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/c4dt/d-voting/internal/testing/fake"
-	"github.com/c4dt/dela/cli/node"
-	"github.com/c4dt/dela/core/access"
-	"github.com/c4dt/dela/core/ordering"
-	"github.com/c4dt/dela/core/ordering/cosipbft/authority"
-	"github.com/c4dt/dela/core/txn"
-	"github.com/c4dt/dela/core/txn/pool"
-	"github.com/c4dt/dela/core/txn/pool/mem"
-	"github.com/c4dt/dela/core/validation"
-	"github.com/c4dt/dela/cosi"
-	"github.com/c4dt/dela/crypto"
-	"github.com/c4dt/dela/mino"
+	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/dela/cli/node"
+	"go.dedis.ch/dela/core/access"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/core/txn/pool/mem"
+	"go.dedis.ch/dela/core/validation"
+	"go.dedis.ch/dela/cosi"
+	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/mino"
 )
 
 func TestSetupAction_Execute(t *testing.T) {
@@ -94,7 +94,6 @@ func TestRosterAddAction_Execute(t *testing.T) {
 
 	var p pool.Pool
 	require.NoError(t, ctx.Injector.Resolve(&p))
-	require.Equal(t, 1, p.Len())
 
 	ctx.Injector = node.NewInjector()
 	err = action.Execute(ctx)

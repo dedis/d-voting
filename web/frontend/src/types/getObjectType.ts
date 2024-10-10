@@ -6,19 +6,26 @@ const uid: Function = new ShortUniqueId({ length: 8 });
 
 const emptyConfiguration = (): types.Configuration => {
   return {
-    MainTitle: '',
+    Title: {
+      En: '',
+      Fr: '',
+      De: '',
+      URL: '',
+    },
     Scaffold: [],
-    TitleFr: '',
-    TitleDe: '',
+    AdditionalInfo: '',
   };
 };
 
 const newSubject = (): types.Subject => {
   return {
     ID: uid(),
-    Title: '',
-    TitleFr: '',
-    TitleDe: '',
+    Title: {
+      En: '',
+      Fr: '',
+      De: '',
+      URL: '',
+    },
     Order: [],
     Type: SUBJECT,
     Elements: new Map(),
@@ -28,53 +35,68 @@ const obj = { en: [''], fr: [''], de: [''] };
 const newRank = (): types.RankQuestion => {
   return {
     ID: uid(),
-    Title: '',
-    TitleFr: '',
-    TitleDe: '',
+    Title: {
+      En: '',
+      Fr: '',
+      De: '',
+      URL: '',
+    },
     MaxN: 2,
     MinN: 2,
     Choices: [],
-    ChoicesMap: new Map(Object.entries(obj)),
+    ChoicesMap: { ChoicesMap: new Map(Object.entries(obj)), URLs: [''] },
     Type: RANK,
-    Hint: '',
-    HintFr: '',
-    HintDe: '',
+    Hint: {
+      En: '',
+      Fr: '',
+      De: '',
+    },
   };
 };
 
 const newSelect = (): types.SelectQuestion => {
   return {
     ID: uid(),
-    Title: '',
-    TitleDe: '',
-    TitleFr: '',
+    Title: {
+      En: '',
+      Fr: '',
+      De: '',
+      URL: '',
+    },
     MaxN: 1,
     MinN: 1,
     Choices: [],
-    ChoicesMap: new Map(Object.entries(obj)),
+    ChoicesMap: { ChoicesMap: new Map(Object.entries(obj)), URLs: [''] },
     Type: SELECT,
-    Hint: '',
-    HintFr: '',
-    HintDe: '',
+    Hint: {
+      En: '',
+      Fr: '',
+      De: '',
+    },
   };
 };
 
 const newText = (): types.TextQuestion => {
   return {
     ID: uid(),
-    Title: '',
-    TitleFr: '',
-    TitleDe: '',
+    Title: {
+      En: '',
+      Fr: '',
+      De: '',
+      URL: '',
+    },
     MaxN: 1,
     MinN: 0,
     MaxLength: 50,
     Regex: '',
     Choices: [],
-    ChoicesMap: new Map(Object.entries(obj)),
+    ChoicesMap: { ChoicesMap: new Map(Object.entries(obj)), URLs: [''] },
     Type: TEXT,
-    Hint: '',
-    HintFr: '',
-    HintDe: '',
+    Hint: {
+      En: '',
+      Fr: '',
+      De: '',
+    },
   };
 };
 
@@ -97,36 +119,39 @@ const answersFrom = (answers: types.Answers): types.Answers => {
   };
 };
 
-const choicesToChoicesMap = (choices: string[]): Map<string, string[]> => {
-  const choicesMap = new Map<string, string[]>();
+const choicesToChoicesMap = (choices: types.Choice[]): types.ChoicesMap => {
+  const choicesMap = { ChoicesMap: new Map<string, string[]>(), URLs: [] };
 
   // choices is of form `{"en": "choice1", "fr": "choix1"}`
   choices.forEach((choice) => {
-    const choiceObj = JSON.parse(choice) as { [key: string]: string };
+    const choiceObj = JSON.parse(choice.Choice) as { [key: string]: string };
     for (const [lang, c] of Object.entries(choiceObj)) {
-      if (!choicesMap.has(lang)) {
-        choicesMap.set(lang, [c]);
+      if (!choicesMap.ChoicesMap.has(lang)) {
+        choicesMap.ChoicesMap.set(lang, [c]);
       } else {
-        choicesMap.get(lang).push(c);
+        choicesMap.ChoicesMap.get(lang).push(c);
       }
     }
+    choicesMap.URLs.push(choice.URL);
   });
 
   return choicesMap;
 };
 
-const choicesMapToChoices = (ChoicesMap: Map<string, string[]>): string[] => {
-  let choices: string[] = [];
-  for (let i = 0; i < ChoicesMap.get('en').length; i++) {
+const choicesMapToChoices = (ChoicesMap: types.ChoicesMap): types.Choice[] => {
+  let choices: types.Choice[] = [];
+  for (let i = 0; i < ChoicesMap.ChoicesMap.get('en').length; i++) {
     const choiceMap = new Map<string, string>();
-    for (let key of ChoicesMap.keys()) {
-      if (ChoicesMap.get(key)[i] === '') {
+    for (let key of ChoicesMap.ChoicesMap.keys()) {
+      if (ChoicesMap.ChoicesMap.get(key)[i] === '') {
         continue;
       }
-      choiceMap.set(key, ChoicesMap.get(key)[i]);
+      choiceMap.set(key, ChoicesMap.ChoicesMap.get(key)[i]);
     }
-    const s = JSON.stringify(Object.fromEntries(choiceMap));
-    choices.push(s);
+    choices.push({
+      Choice: JSON.stringify(Object.fromEntries(choiceMap)),
+      URL: ChoicesMap.URLs[i],
+    });
   }
   return choices;
 };
@@ -142,79 +167,39 @@ const toArraysOfSubjectElement = (
   const selectQuestion: types.SelectQuestion[] = [];
   const textQuestion: types.TextQuestion[] = [];
   const subjects: types.Subject[] = [];
-  let title = '';
-  let hint = '';
   elements.forEach((element) => {
     switch (element.Type) {
       case RANK:
-        title = JSON.stringify({
-          en: element.Title,
-          fr: element.TitleFr,
-          de: element.TitleDe,
-        });
-        hint = JSON.stringify({
-          en: (element as types.RankQuestion).Hint,
-          fr: (element as types.RankQuestion).HintFr,
-          de: (element as types.RankQuestion).HintDe,
-        });
         rankQuestion.push({
           ...(element as types.RankQuestion),
-          Title: title,
+          Title: element.Title,
           Choices: choicesMapToChoices(
             (element as types.RankQuestion).ChoicesMap
           ),
-          Hint: hint,
         });
         break;
       case SELECT:
-        title = JSON.stringify({
-          en: element.Title,
-          fr: element.TitleFr,
-          de: element.TitleDe,
-        });
-        hint = JSON.stringify({
-          en: (element as types.SelectQuestion).Hint,
-          fr: (element as types.SelectQuestion).HintFr,
-          de: (element as types.SelectQuestion).HintDe,
-        });
         selectQuestion.push({
           ...(element as types.SelectQuestion),
-          Title: title,
+          Title: element.Title,
           Choices: choicesMapToChoices(
             (element as types.SelectQuestion).ChoicesMap
           ),
-          Hint: hint,
         });
         break;
       case TEXT:
-        title = JSON.stringify({
-          en: element.Title,
-          fr: element.TitleFr,
-          de: element.TitleDe,
-        });
-        hint = JSON.stringify({
-          en: (element as types.TextQuestion).Hint,
-          fr: (element as types.TextQuestion).HintFr,
-          de: (element as types.TextQuestion).HintDe,
-        });
         textQuestion.push({
           ...(element as types.TextQuestion),
-          Title: title,
+          Title: element.Title,
           Choices: choicesMapToChoices(
             (element as types.TextQuestion).ChoicesMap
           ),
-          Hint: hint,
         });
         break;
       case SUBJECT:
-        title = JSON.stringify({
-          en: element.Title,
-          fr: element.TitleFr,
-          de: element.TitleDe,
-        });
         subjects.push({
           ...(element as types.Subject),
-          Title: title,
+          Title: element.Title,
         });
         break;
     }

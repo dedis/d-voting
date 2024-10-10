@@ -1,11 +1,16 @@
 import * as yup from 'yup';
 
 const idSchema = yup.string().min(1).required();
-const titleSchema = yup.string().required();
-const formTitleSchema = yup.object({
-  en: yup.string().required(),
-  fr: yup.string(),
-  de: yup.string(),
+const titleSchema = yup.object({
+  En: yup.string().required(),
+  Fr: yup.string(),
+  De: yup.string(),
+  URL: yup.string(),
+});
+const hintSchema = yup.object({
+  En: yup.string(),
+  Fr: yup.string(),
+  De: yup.string(),
 });
 
 const selectsSchema = yup.object({
@@ -80,7 +85,12 @@ const selectsSchema = yup.object({
     .required(),
   Choices: yup
     .array()
-    .of(yup.string())
+    .of(
+      yup.object({
+        Choice: yup.string(),
+        URL: yup.string(),
+      })
+    )
     .test({
       name: 'compare-choices-min-max',
       message: 'Choice length comparison failed',
@@ -94,7 +104,7 @@ const selectsSchema = yup.object({
             message: `Choices array length should be at least equal to Max in selects [objectID: ${ID}]`,
           });
         }
-        if (Choices.includes('')) {
+        if (Choices.some((choice) => choice.Choice === '')) {
           return this.createError({
             path,
             message: `Choices should not be empty in selects [objectID: ${ID}]`,
@@ -104,7 +114,7 @@ const selectsSchema = yup.object({
       },
     })
     .required(),
-  Hint: yup.lazy(() => yup.string()),
+  Hint: yup.lazy(() => hintSchema),
 });
 
 const ranksSchema = yup.object({
@@ -178,7 +188,12 @@ const ranksSchema = yup.object({
     .required(),
   Choices: yup
     .array()
-    .of(yup.string())
+    .of(
+      yup.object({
+        Choice: yup.string(),
+        URL: yup.string(),
+      })
+    )
     .test({
       name: 'compare-choices-min-max',
       message: 'Choice length comparison failed',
@@ -192,7 +207,7 @@ const ranksSchema = yup.object({
             message: `Choices array length should be equal to MaxN and MinN in ranks [objectID: ${ID}]`,
           });
         }
-        if (Choices.includes('')) {
+        if (Choices.some((choice) => choice.Choice === '')) {
           return this.createError({
             path,
             message: `Choices should not be empty in ranks [objectID: ${ID}]`,
@@ -202,7 +217,7 @@ const ranksSchema = yup.object({
       },
     })
     .required(),
-  Hint: yup.lazy(() => yup.string()),
+  Hint: yup.lazy(() => hintSchema),
 });
 
 const textsSchema = yup.object({
@@ -304,7 +319,12 @@ const textsSchema = yup.object({
   Regex: yup.string().min(0),
   Choices: yup
     .array()
-    .of(yup.string())
+    .of(
+      yup.object({
+        Choice: yup.string(),
+        URL: yup.string(),
+      })
+    )
     .test({
       name: 'compare-choices-min-max',
       message: 'Choice length comparison failed',
@@ -322,7 +342,7 @@ const textsSchema = yup.object({
       },
     })
     .required(),
-  Hint: yup.lazy(() => yup.string()),
+  Hint: yup.lazy(() => hintSchema),
 });
 
 const subjectSchema = yup.object({
@@ -408,8 +428,9 @@ const subjectSchema = yup.object({
 });
 
 const configurationSchema = yup.object({
-  MainTitle: yup.lazy(() => formTitleSchema),
+  Title: yup.lazy(() => titleSchema),
   Scaffold: yup.array().of(subjectSchema).required(),
+  AdditionalInfo: yup.string(),
 });
 
 export default configurationSchema;

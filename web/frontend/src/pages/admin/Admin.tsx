@@ -3,9 +3,9 @@ import { ENDPOINT_USER_RIGHTS } from 'components/utils/Endpoints';
 import { FlashContext, FlashLevel } from 'index';
 import Loading from 'pages/Loading';
 import { useTranslation } from 'react-i18next';
+import { fetchCall } from 'components/utils/fetchCall';
 import AdminTable from './AdminTable';
 import DKGTable from './DKGTable';
-import useFetchCall from 'components/utils/useFetchCall';
 import * as endpoints from 'components/utils/Endpoints';
 
 const Admin: FC = () => {
@@ -13,29 +13,37 @@ const Admin: FC = () => {
   const fctx = useContext(FlashContext);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [nodeProxyLoading, setNodeProxyLoading] = useState(true);
+  const [nodeProxyObject, setNodeProxyObject] = useState({ Proxies: [] });
+  const [nodeProxyError, setNodeProxyError] = useState(null);
 
   const abortController = useMemo(() => new AbortController(), []);
-  const signal = abortController.signal;
 
-  const request = {
-    method: 'GET',
-    signal: signal,
-  };
-
-  const [nodeProxyObject, nodeProxyLoading, nodeProxyError] = useFetchCall(
-    endpoints.getProxiesAddresses,
-    request
-  );
-  const [, setNodeProxyLoading] = useState(true);
+  useEffect(() => {
+    fetchCall(
+      endpoints.getProxiesAddresses,
+      {
+        method: 'GET',
+        signal: abortController.signal,
+      },
+      setNodeProxyObject,
+      setNodeProxyLoading
+    ).catch((e) => {
+      setNodeProxyError(e);
+    });
+  }, [abortController.signal]);
 
   const [nodeProxyAddresses, setNodeProxyAddresses] = useState<Map<string, string>>(null);
 
   useEffect(() => {
     if (nodeProxyError !== null) {
       fctx.addMessage(t('errorRetrievingProxy') + nodeProxyError.message, FlashLevel.Error);
+      setNodeProxyError(null);
       setNodeProxyLoading(false);
     }
+  }, [fctx, nodeProxyError, t]);
 
+  useEffect(() => {
     if (nodeProxyObject !== null) {
       const newNodeProxyAddresses = new Map();
 
@@ -52,7 +60,7 @@ const Admin: FC = () => {
     return () => {
       abortController.abort();
     };
-  }, [abortController, fctx, t, nodeProxyObject, nodeProxyError]);
+  }, [abortController, t, nodeProxyObject, nodeProxyError]);
 
   useEffect(() => {
     fetch(ENDPOINT_USER_RIGHTS)

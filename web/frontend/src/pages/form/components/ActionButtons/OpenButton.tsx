@@ -4,15 +4,14 @@ import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OngoingAction, Status } from 'types/form';
 import ActionButton from './ActionButton';
+import { isManager } from './../../../../utils/auth';
 
-const SUBJECT_ELECTION = 'election';
-const ACTION_CREATE = 'create';
-const OpenButton = ({ status, handleOpen, ongoingAction }) => {
-  const authCtx = useContext(AuthContext);
+const OpenButton = ({ status, handleOpen, ongoingAction, formID }) => {
   const { t } = useTranslation();
+  const { authorization, isLogged } = useContext(AuthContext);
 
   return (
-    authCtx.isAllowed(SUBJECT_ELECTION, ACTION_CREATE) &&
+    isManager(formID, authorization, isLogged) &&
     status === Status.Setup && (
       <ActionButton
         handleClick={handleOpen}

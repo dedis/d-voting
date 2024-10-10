@@ -1,8 +1,8 @@
 import React, { FC } from 'react';
 import { RankQuestion } from 'types/configuration';
-import ProgressBar from './ProgressBar';
+import { ProgressBar } from './ProgressBar';
 import { countRankResult } from './utils/countResult';
-import { default as i18n } from 'i18next';
+import { prettifyChoice } from './utils/display';
 
 type RankResultProps = {
   rank: RankQuestion;
@@ -20,12 +20,7 @@ const RankResult: FC<RankResultProps> = ({ rank, rankResult }) => {
       return (
         <React.Fragment key={index}>
           <div className="px-2 sm:px-4 break-words max-w-xs w-max">
-            <span>
-              {i18n.language === 'en' && rank.ChoicesMap.get('en')[index]}
-              {i18n.language === 'fr' && rank.ChoicesMap.get('fr')[index]}
-              {i18n.language === 'de' && rank.ChoicesMap.get('de')[index]}
-            </span>
-            :
+            <span>{prettifyChoice(rank.ChoicesMap, index)}</span>:
           </div>
           <ProgressBar isBest={isBest}>{percent}</ProgressBar>
         </React.Fragment>
@@ -48,11 +43,7 @@ export const IndividualRankResult: FC<RankResultProps> = ({ rank, rankResult }) 
           <React.Fragment key={`rank_${index}`}>
             <div className="flex flex-row px-2 sm:px-4 break-words max-w-xs w-max">
               <div className="mr-2 font-bold">{index + 1}:</div>
-              <div>
-                {i18n.language === 'en' && rank.ChoicesMap.get('en')[rankResult[0].indexOf(index)]}
-                {i18n.language === 'fr' && rank.ChoicesMap.get('fr')[rankResult[0].indexOf(index)]}
-                {i18n.language === 'de' && rank.ChoicesMap.get('de')[rankResult[0].indexOf(index)]}
-              </div>
+              <div>{prettifyChoice(rank.ChoicesMap, rankResult[0].indexOf(index))}</div>
             </div>
           </React.Fragment>
         );

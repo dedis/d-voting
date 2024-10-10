@@ -5,7 +5,6 @@ import (
 	"container/list"
 	"context"
 	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -13,23 +12,23 @@ import (
 	"sync"
 	"time"
 
-	"github.com/c4dt/d-voting/contracts/evoting"
-	"github.com/c4dt/dela/core/execution/native"
-	"github.com/c4dt/dela/core/txn"
-	"github.com/c4dt/dela/core/txn/pool"
-	"github.com/c4dt/dela/crypto"
-	jsondela "github.com/c4dt/dela/serde/json"
+	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/rs/zerolog"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/txn"
+	"go.dedis.ch/dela/core/txn/pool"
+	"go.dedis.ch/dela/crypto"
+	"go.dedis.ch/dela/mino/minogrpc/session"
+	jsondela "go.dedis.ch/dela/serde/json"
 
-	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/internal/testing/fake"
-	"github.com/c4dt/d-voting/services/dkg"
-	"github.com/c4dt/d-voting/services/dkg/pedersen/types"
-	"github.com/c4dt/dela"
-	"github.com/c4dt/dela/core/ordering"
-	"github.com/c4dt/dela/cosi/threshold"
-	"github.com/c4dt/dela/mino"
-	"github.com/c4dt/dela/serde"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/services/dkg"
+	"github.com/dedis/d-voting/services/dkg/pedersen/types"
+	"go.dedis.ch/dela"
+	"go.dedis.ch/dela/core/ordering"
+	"go.dedis.ch/dela/cosi/threshold"
+	"go.dedis.ch/dela/mino"
+	"go.dedis.ch/dela/serde"
 
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
@@ -72,13 +71,16 @@ type Handler struct {
 	log     zerolog.Logger
 	running bool
 
+	saveState func(*Handler)
+
 	status *dkg.Status
 }
 
 // NewHandler creates a new handler
 func NewHandler(me mino.Address, service ordering.Service, pool pool.Pool,
 	txnmngr txn.Manager, pubSharesSigner crypto.Signer, handlerData HandlerData,
-	context serde.Context, formFac serde.Factory, status *dkg.Status) *Handler {
+	context serde.Context, formFac serde.Factory, status *dkg.Status,
+	saveState func(*Handler)) *Handler {
 
 	privKey := handlerData.PrivKey
 	pubKey := handlerData.PubKey
@@ -105,7 +107,8 @@ func NewHandler(me mino.Address, service ordering.Service, pool pool.Pool,
 		log:     log,
 		running: false,
 
-		status: status,
+		saveState: saveState,
+		status:    status,
 	}
 }
 
@@ -113,7 +116,7 @@ func NewHandler(me mino.Address, service ordering.Service, pool pool.Pool,
 // players.
 func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 	// Note: one should never assume any synchronous properties on the messages.
-	// For example we can not expect to receive the start message from the
+	// For example, we can not expect to receive the start message from the
 	// initiator of the DKG protocol first because some node could have received
 	// this start message earlier than us, start their DKG work by sending
 	// messages to the other nodes, and then we might get their messages before
@@ -299,6 +302,7 @@ func (h *Handler) doDKG(deals, resps *list.List, out mino.Sender, from mino.Addr
 		dela.Logger.Error().Msgf("got an error while sending pub key: %v", err)
 		return
 	}
+	h.saveState(h)
 }
 
 func (h *Handler) deal(out mino.Sender) error {
@@ -466,7 +470,7 @@ func (h *Handler) handleDecryptRequest(formID string) error {
 	// loop until our transaction has been accepted, or enough nodes submitted
 	// their pubShares
 	for {
-		form, err := h.getForm(formID)
+		form, err := etypes.FormFromStore(h.context, h.formFac, formID, h.service.GetStore())
 		if err != nil {
 			return xerrors.Errorf("could not get the form: %v", err)
 		}
@@ -521,7 +525,7 @@ func (h *Handler) handleDecryptRequest(formID string) error {
 // getShuffleIfValid allows checking if enough shuffles have been made on the
 // ballots.
 func (h *Handler) getShuffleIfValid(formID string) ([]etypes.ShuffleInstance, error) {
-	form, err := h.getForm(formID)
+	form, err := etypes.FormFromStore(h.context, h.formFac, formID, h.service.GetStore())
 	if err != nil {
 		return nil, xerrors.Errorf("could not get the form: %v", err)
 	}
@@ -612,7 +616,7 @@ func (hd *HandlerData) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	return json.Marshal(&struct {
+	ret, err := json.Marshal(&struct {
 		StartRes  []byte `json:",omitempty"`
 		PrivShare []byte `json:",omitempty"`
 		PubKey    []byte
@@ -623,6 +627,8 @@ func (hd *HandlerData) MarshalJSON() ([]byte, error) {
 		PubKey:    pubKeyBuf,
 		PrivKey:   privKeyBuf,
 	})
+
+	return ret, err
 }
 
 // UnmarshalJSON fills a HandlerData with previously marshalled data.
@@ -640,7 +646,10 @@ func (hd *HandlerData) UnmarshalJSON(data []byte) error {
 
 	// Unmarshal StartRes
 	hd.StartRes = &state{}
-	hd.StartRes.UnmarshalJSON(aux.StartRes)
+	err = hd.StartRes.UnmarshalJSON(aux.StartRes)
+	if err != nil {
+		return err
+	}
 
 	// Unmarshal PrivShare
 	if aux.PrivShare == nil {
@@ -655,7 +664,10 @@ func (hd *HandlerData) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		privShareV := suite.Scalar()
-		privShareV.UnmarshalBinary(privShareBuf.V)
+		err = privShareV.UnmarshalBinary(privShareBuf.V)
+		if err != nil {
+			return err
+		}
 		privShare := &share.PriShare{
 			I: privShareBuf.I,
 			V: privShareV,
@@ -665,12 +677,18 @@ func (hd *HandlerData) UnmarshalJSON(data []byte) error {
 
 	// Unmarshal PubKey
 	pubKey := suite.Point()
-	pubKey.UnmarshalBinary(aux.PubKey)
+	err = pubKey.UnmarshalBinary(aux.PubKey)
+	if err != nil {
+		return err
+	}
 	hd.PubKey = pubKey
 
 	// Unmarshal PrivKey
 	privKey := suite.Scalar()
-	privKey.UnmarshalBinary(aux.PrivKey)
+	err = privKey.UnmarshalBinary(aux.PrivKey)
+	if err != nil {
+		return err
+	}
 	hd.PrivKey = privKey
 
 	return nil
@@ -739,13 +757,15 @@ func (s *state) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	return json.Marshal(&struct {
+	ret, err := json.Marshal(&struct {
 		DistKey      []byte   `json:",omitempty"`
 		Participants [][]byte `json:",omitempty"`
 	}{
 		DistKey:      distKeyBuf,
 		Participants: participantsBuf,
 	})
+
+	return ret, err
 }
 
 func (s *state) UnmarshalJSON(data []byte) error {
@@ -770,11 +790,11 @@ func (s *state) UnmarshalJSON(data []byte) error {
 	}
 
 	if aux.Participants != nil {
-		// TODO: Is using a fake implementation a problem?
-		f := fake.NewBadMino().GetAddressFactory()
+		// TODO: https://github.com/dedis/d-voting/issues/391
+		f := session.AddressFactory{}
 		var participants = make([]mino.Address, len(aux.Participants))
-		for i := 0; i < len(aux.Participants); i++ {
-			participants[i] = f.FromText(aux.Participants[i])
+		for i, partStr := range aux.Participants {
+			participants[i] = f.FromText(partStr)
 		}
 		s.SetParticipants(participants)
 	} else {
@@ -873,36 +893,4 @@ func makeTx(ctx serde.Context, form *etypes.Form, pubShares etypes.PubsharesUnit
 	}
 
 	return tx, nil
-}
-
-// getForm gets the form from the service
-func (h *Handler) getForm(formIDHex string) (etypes.Form, error) {
-	var form etypes.Form
-
-	formID, err := hex.DecodeString(formIDHex)
-	if err != nil {
-		return form, xerrors.Errorf("failed to decode formIDHex: %v", err)
-	}
-
-	proof, exists := formExists(h.service, formID)
-	if !exists {
-		return form, xerrors.Errorf("form does not exist: %v", err)
-	}
-
-	message, err := h.formFac.Deserialize(h.context, proof.GetValue())
-	if err != nil {
-		return form, xerrors.Errorf("failed to deserialize Form: %v", err)
-	}
-
-	form, ok := message.(etypes.Form)
-	if !ok {
-		return form, xerrors.Errorf("wrong message type: %T", message)
-	}
-
-	if formIDHex != form.FormID {
-		return form, xerrors.Errorf("formID do not match: %q != %q",
-			formIDHex, form.FormID)
-	}
-
-	return form, nil
 }

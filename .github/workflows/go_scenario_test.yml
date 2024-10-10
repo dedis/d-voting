@@ -11,14 +11,14 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go ^1.17
-        uses: actions/setup-go@v2
+      - name: Use Go 1.20
+        uses: actions/setup-go@v4
         with:
-          go-version: ^1.17
+          go-version: '1.20'
 
       - name: Install crypto util from Dela
         run: |
-          git clone https://github.com/c4dt/dela.git
+          git clone https://github.com/dedis/dela.git
           cd dela
           go install ./cli/crypto
 

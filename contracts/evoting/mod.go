@@ -1,24 +1,25 @@
 package evoting
 
 import (
-	dvoting "github.com/c4dt/d-voting"
-	"github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/services/dkg"
-	"github.com/c4dt/dela/core/access"
-	"github.com/c4dt/dela/core/execution"
-	"github.com/c4dt/dela/core/execution/native"
-	"github.com/c4dt/dela/core/ordering/cosipbft/authority"
-	"github.com/c4dt/dela/core/store"
-	"github.com/c4dt/dela/serde"
-	"github.com/c4dt/dela/serde/json"
+	dvoting "github.com/dedis/d-voting"
+	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/services/dkg"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.dedis.ch/dela/core/access"
+	"go.dedis.ch/dela/core/execution"
+	"go.dedis.ch/dela/core/execution/native"
+	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
+	"go.dedis.ch/dela/core/store"
+	"go.dedis.ch/dela/core/store/prefixed"
+	"go.dedis.ch/dela/serde"
+	"go.dedis.ch/dela/serde/json"
 
 	"go.dedis.ch/kyber/v3/proof"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 
 	// Register the JSON format for the form
-	_ "github.com/c4dt/d-voting/contracts/evoting/json"
+	_ "github.com/dedis/d-voting/contracts/evoting/json"
 )
 
 var (
@@ -67,8 +68,11 @@ const (
 var suite = suites.MustFind("Ed25519")
 
 const (
+	// ContractUID is the UID of the contract
+	ContractUID = "EVOT"
+
 	// ContractName is the name of the contract.
-	ContractName = "github.com/c4dt/dela.Evoting"
+	ContractName = "go.dedis.ch/dela.Evoting"
 
 	// CmdArg is the argument's name to indicate the kind of command we want to
 	// run on the contract. Should be one of the Command type.
@@ -126,8 +130,8 @@ const (
 
 // NewCreds creates new credentials for a evoting contract execution. We might
 // want to use in the future a separate credential for each command.
-func NewCreds(id []byte) access.Credential {
-	return access.NewContractCreds(id, ContractName, credentialAllCommand)
+func NewCreds() access.Credential {
+	return access.NewContractCreds([]byte(ContractUID), ContractName, credentialAllCommand)
 }
 
 // RegisterContract registers the value contract to the given execution service.
@@ -143,14 +147,9 @@ type Contract struct {
 	// access is the access control service managing this smart contract
 	access access.Service
 
-	// accessKey is the access identifier allowed to use this smart contract
-	accessKey []byte
-
 	cmd commands
 
 	pedersen dkg.DKG
-
-	rosterKey []byte
 
 	context serde.Context
 
@@ -160,7 +159,7 @@ type Contract struct {
 }
 
 // NewContract creates a new Value contract
-func NewContract(accessKey, rosterKey []byte, srvc access.Service,
+func NewContract(srvc access.Service,
 	pedersen dkg.DKG, rosterFac authority.Factory) Contract {
 
 	ctx := json.NewContext()
@@ -170,11 +169,8 @@ func NewContract(accessKey, rosterKey []byte, srvc access.Service,
 	transactionFac := types.NewTransactionFactory(ciphervoteFac)
 
 	contract := Contract{
-		access:    srvc,
-		accessKey: accessKey,
-		pedersen:  pedersen,
-
-		rosterKey: rosterKey,
+		access:   srvc,
+		pedersen: pedersen,
 
 		context: ctx,
 
@@ -190,7 +186,7 @@ func NewContract(accessKey, rosterKey []byte, srvc access.Service,
 
 // Execute implements native.Contract
 func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
-	creds := NewCreds(c.accessKey)
+	creds := NewCreds()
 
 	err := c.access.Match(snap, creds, step.Current.GetIdentity())
 	if err != nil {
@@ -202,6 +198,8 @@ func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 	if len(cmd) == 0 {
 		return xerrors.Errorf("%q not found in tx arg", CmdArg)
 	}
+
+	snap = prefixed.NewSnapshot(ContractUID, snap)
 
 	switch Command(cmd) {
 	case CmdCreateForm:
@@ -254,6 +252,13 @@ func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 	}
 
 	return nil
+}
+
+// UID returns the unique 4-bytes contract identifier.
+//
+// - implements native.Contract
+func (c Contract) UID() string {
+	return ContractUID
 }
 
 func init() {
