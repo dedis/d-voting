@@ -1,5 +1,5 @@
 FROM golang:1.20.6-bookworm AS base
-RUN apt-get update && apt-get install git
+RUN apt-get update -y && apt-get install -y git
 WORKDIR /go/d-voting
 COPY go.mod .
 COPY go.sum .
