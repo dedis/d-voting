@@ -1,7 +1,7 @@
 package fake
 
 import (
-	"github.com/c4dt/d-voting/services/dkg"
+	"github.com/dedis/d-voting/services/dkg"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/kyber/v3"
 )

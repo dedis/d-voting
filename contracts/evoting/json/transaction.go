@@ -3,7 +3,7 @@ package json
 import (
 	"encoding/json"
 
-	"github.com/c4dt/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/serde"
 	"golang.org/x/xerrors"
 )

@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 
-	"github.com/c4dt/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
 	"go.dedis.ch/dela/serde"
@@ -36,8 +36,8 @@ func (formFormat) Encode(ctx serde.Context, message serde.Message) ([]byte, erro
 			}
 		}
 
-		suffragias := make([]string, len(m.SuffragiaIDs))
-		for i, suf := range m.SuffragiaIDs {
+		suffragias := make([]string, len(m.SuffragiaStoreKeys))
+		for i, suf := range m.SuffragiaStoreKeys {
 			suffragias[i] = hex.EncodeToString(suf)
 		}
 
@@ -146,19 +146,19 @@ func (formFormat) Decode(ctx serde.Context, data []byte) (serde.Message, error) 
 	}
 
 	return types.Form{
-		Configuration:    formJSON.Configuration,
-		FormID:           formJSON.FormID,
-		Status:           types.Status(formJSON.Status),
-		Pubkey:           pubKey,
-		BallotSize:       formJSON.BallotSize,
-		SuffragiaIDs:     suffragias,
-		SuffragiaHashes:  suffragiaHashes,
-		BallotCount:      formJSON.BallotCount,
-		ShuffleInstances: shuffleInstances,
-		ShuffleThreshold: formJSON.ShuffleThreshold,
-		PubsharesUnits:   pubSharesSubmissions,
-		DecryptedBallots: formJSON.DecryptedBallots,
-		Roster:           roster,
+		Configuration:      formJSON.Configuration,
+		FormID:             formJSON.FormID,
+		Status:             types.Status(formJSON.Status),
+		Pubkey:             pubKey,
+		BallotSize:         formJSON.BallotSize,
+		SuffragiaStoreKeys: suffragias,
+		SuffragiaHashes:    suffragiaHashes,
+		BallotCount:        formJSON.BallotCount,
+		ShuffleInstances:   shuffleInstances,
+		ShuffleThreshold:   formJSON.ShuffleThreshold,
+		PubsharesUnits:     pubSharesSubmissions,
+		DecryptedBallots:   formJSON.DecryptedBallots,
+		Roster:             roster,
 	}, nil
 }
 

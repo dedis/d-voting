@@ -9,11 +9,11 @@ import (
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/json"
 
-	"github.com/c4dt/d-voting/services/shuffle/neff/types"
+	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"go.dedis.ch/kyber/v3"
 
-	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/internal/testing/fake"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/txn/signed"
@@ -54,7 +54,6 @@ func TestHandler_Stream(t *testing.T) {
 	err = handler.Stream(fake.Sender{}, receiver)
 
 	require.NoError(t, err)
-
 }
 
 func TestHandler_StartShuffle(t *testing.T) {
@@ -110,14 +109,14 @@ func TestHandler_StartShuffle(t *testing.T) {
 	err = handler.handleStartShuffle(dummyID)
 	require.EqualError(t, err, "the form must be closed: (0)")
 
-	t.Skip("Doesn't work with new form because of snap needed by Form")
+	// TODO: think how to re-enable this test
+	t.Skip("Issue 390 - Doesn't work with new form because of snap needed by Form")
 
 	Ks, Cs, pubKey := fakeKCPoints(k)
 
 	// Wrong formatted ballots:
 	form.Status = etypes.Closed
 
-	// TODO: think how to re-enable this test
 	//deleteUserFromSuffragia := func(suff *etypes.Suffragia, userID string) bool {
 	//	for i, u := range suff.UserIDs {
 	//		if u == userID {
@@ -140,7 +139,8 @@ func TestHandler_StartShuffle(t *testing.T) {
 			C: Cs[i],
 		},
 		}
-		form.CastVote(service.Context, snap, "dummyUser"+strconv.Itoa(i), ballot)
+		err := form.CastVote(service.Context, snap, "dummyUser"+strconv.Itoa(i), ballot)
+		require.NoError(t, err)
 	}
 
 	service = updateService(form, dummyID)

@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/c4dt/d-voting/contracts/evoting"
+	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 	"go.dedis.ch/dela"

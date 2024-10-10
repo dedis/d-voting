@@ -198,7 +198,7 @@ sudo apt install rubygems build-essential git
 ## Get the code
 
 ```sh
-git clone https://github.com/c4dt/d-voting.git 
+git clone https://github.com/dedis/d-voting.git 
 ```
 
 ## Build the deb package

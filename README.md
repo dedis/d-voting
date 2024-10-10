@@ -12,13 +12,13 @@
         <a href="https://sonarcloud.io/summary/new_code?id=dedis_d-voting">
             <img src="https://sonarcloud.io/api/project_badges/measure?project=dedis_d-voting&metric=alert_status">
         </a>
-        <a href="https://github.com/c4dt/d-voting/actions/workflows/go_release.yml">
-            <img src="https://github.com/c4dt/d-voting/actions/workflows/go_release.yml/badge.svg">
+        <a href="https://github.com/dedis/d-voting/actions/workflows/go_release.yml">
+            <img src="https://github.com/dedis/d-voting/actions/workflows/go_release.yml/badge.svg">
         </a><br/>
-        <a href="https://github.com/c4dt/d-voting/graphs/contributors">
+        <a href="https://github.com/dedis/d-voting/graphs/contributors">
             <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/dedis/d-voting">
         </a>
-        <a href="https://github.com/c4dt/d-voting/releases">
+        <a href="https://github.com/dedis/d-voting/releases">
             <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/dedis/d-voting">
         </a>
       </td>
@@ -26,37 +26,37 @@
 <tr>
     <td>Blockchain</td>
     <td>
-        <a href="https://github.com/c4dt/d-voting/actions/workflows/go_test.yml">
-            <img src="https://github.com/c4dt/d-voting/actions/workflows/go_test.yml/badge.svg">
+        <a href="https://github.com/dedis/d-voting/actions/workflows/go_test.yml">
+            <img src="https://github.com/dedis/d-voting/actions/workflows/go_test.yml/badge.svg">
         </a>
-        <a href="https://github.com/c4dt/d-voting/actions/workflows/go_dvoting_test.yml">
-            <img src="https://github.com/c4dt/d-voting/actions/workflows/go_dvoting_test.yml/badge.svg">
+        <a href="https://github.com/dedis/d-voting/actions/workflows/go_dvoting_test.yml">
+            <img src="https://github.com/dedis/d-voting/actions/workflows/go_dvoting_test.yml/badge.svg">
         </a>
-        <a href="https://github.com/c4dt/d-voting/actions/workflows/go_scenario_test.yml">
-            <img src="https://github.com/c4dt/d-voting/actions/workflows/go_scenario_test.yml/badge.svg">
+        <a href="https://github.com/dedis/d-voting/actions/workflows/go_scenario_test.yml">
+            <img src="https://github.com/dedis/d-voting/actions/workflows/go_scenario_test.yml/badge.svg">
         </a>
-        <a href="https://github.com/c4dt/d-voting/actions/workflows/go_integration_tests.yml">
-            <img src="https://github.com/c4dt/d-voting/actions/workflows/go_integration_tests.yml/badge.svg">
+        <a href="https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml">
+            <img src="https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml/badge.svg">
         </a><br/>
         <a href="https://coveralls.io/github/dedis/d-voting?branch=main">
             <img src="https://coveralls.io/repos/github/dedis/d-voting/badge.svg?branch=main">
         </a>
-        <a href="https://goreportcard.com/report/github.com/c4dt/d-voting">
-            <img src="https://goreportcard.com/badge/github.com/c4dt/d-voting">
+        <a href="https://goreportcard.com/report/github.com/dedis/d-voting">
+            <img src="https://goreportcard.com/badge/github.com/dedis/d-voting">
         </a>
-        <a href="https://pkg.go.dev/github.com/c4dt/d-voting">
-            <img src="https://pkg.go.dev/badge/github.com/c4dt/d-voting.svg" alt="Go Reference">
+        <a href="https://pkg.go.dev/github.com/dedis/d-voting">
+            <img src="https://pkg.go.dev/badge/github.com/dedis/d-voting.svg" alt="Go Reference">
         </a>
     </td>
 <tr>
 <tr>
     <td>WEB</td>
     <td>
-        <a href="https://github.com/c4dt/d-voting/actions/workflows/web_frontend_lint.yml">
-            <img src="https://github.com/c4dt/d-voting/actions/workflows/web_frontend_lint.yml/badge.svg">
+        <a href="https://github.com/dedis/d-voting/actions/workflows/web_frontend_lint.yml">
+            <img src="https://github.com/dedis/d-voting/actions/workflows/web_frontend_lint.yml/badge.svg">
         </a>
-        <a href="https://github.com/c4dt/d-voting/actions/workflows/web_backend_lint.yml">
-            <img src="https://github.com/c4dt/d-voting/actions/workflows/web_backend_lint.yml/badge.svg">
+        <a href="https://github.com/dedis/d-voting/actions/workflows/web_backend_lint.yml">
+            <img src="https://github.com/dedis/d-voting/actions/workflows/web_backend_lint.yml/badge.svg">
         </a>
     </td>
 </tr>
@@ -67,7 +67,7 @@
 # D-Voting
 
 **D-Voting** is an e-voting platform based on the
-[Dela](https://github.com/c4dt/dela) blockchain. It uses state-of-the-art
+[Dela](https://github.com/dedis/dela) blockchain. It uses state-of-the-art
 protocols that guarantee privacy of votes and a fully decentralized process.
 This project was born in early 2021 and has been iteratively implemented by EPFL
 students under the supervision of DEDIS members.
@@ -147,7 +147,7 @@ sometimes refer to the blockchain node simply as a "node".
 The following component diagrams summarizes the interaction between those
 high-level components:
 
-[minogrpc]: https://github.com/c4dt/dela/tree/master/mino/minogrpc
+[minogrpc]: https://github.com/dedis/dela/tree/master/mino/minogrpc
 
 ![Global component diagram](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/dedis/d-voting/main/docs/assets/component-global.puml)
 
@@ -390,7 +390,7 @@ results.
 2: Install the `crypto` utility from Dela:
 
 ```sh
-git clone https://github.com/c4dt/dela.git
+git clone https://github.com/dedis/dela.git
 cd dela/cli/crypto
 go install
 ```
@@ -601,7 +601,7 @@ Afterwards use the following commands, replace 4 by the desired nb of nodes :
 ./runNode.sh -n 4 -a true -d true
 ./setupnNode.sh -n 4 -d true
 
-NNODES=4 KILLNODE=true go test -v -run ^TestScenario$ github.com/c4dt/d-voting/integration -count=1
+NNODES=4 KILLNODE=true go test -v -run ^TestScenario$ github.com/dedis/d-voting/integration -count=1
 ```
 
 Here we set KILLNODE=true or false to decide whether kill and restart a node
@@ -650,8 +650,8 @@ Build info can be added to the binary with the `ldflags`, at build time. Infos
 are stored on variables in the root `mod.go`. For example:
 
 ```sh
-versionFlag="github.com/c4dt/d-voting.Version=`git describe --tags`"
-timeFlag="github.com/c4dt/d-voting.BuildTime=`date +'%d/%m/%y_%H:%M'`"
+versionFlag="github.com/dedis/d-voting.Version=`git describe --tags`"
+timeFlag="github.com/dedis/d-voting.BuildTime=`date +'%d/%m/%y_%H:%M'`"
 
 go build -ldflags="-X $versionFlag -X $timeFlag" ./cli/dvoting
 ```

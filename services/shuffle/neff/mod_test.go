@@ -13,9 +13,9 @@ import (
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/json"
 
-	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/internal/testing/fake"
-	"github.com/c4dt/d-voting/services/shuffle/neff/types"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/internal/testing/fake"
+	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 )

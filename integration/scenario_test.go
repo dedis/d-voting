@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/c4dt/d-voting/contracts/evoting/types"
-	ptypes "github.com/c4dt/d-voting/proxy/types"
+	"github.com/dedis/d-voting/contracts/evoting/types"
+	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3/util/encoding"
 )

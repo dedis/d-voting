@@ -6,6 +6,6 @@ fi
 
 votes=${2:-120}
 
-npx ts-node src/cli.ts vote -f https://dvoting.c4dt.org \
+npx ts-node src/cli.ts vote -f https://dvoting.dedis.org \
 	-e $1 \
 	-b $votes -a 111111

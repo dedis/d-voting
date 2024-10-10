@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/c4dt/d-voting/contracts/evoting"
+	"github.com/dedis/d-voting/contracts/evoting"
 )
 
 // Manager defines the public HTTP API of the transaction manager

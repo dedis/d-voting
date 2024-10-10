@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/c4dt/d-voting/contracts/evoting"
-	"github.com/c4dt/d-voting/proxy/txnmanager"
+	"github.com/dedis/d-voting/contracts/evoting"
+	"github.com/dedis/d-voting/proxy/txnmanager"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/contracts/access"

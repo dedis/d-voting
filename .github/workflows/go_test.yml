@@ -19,9 +19,10 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v3
         
-      - name: Run lint
-        run: make lint
-
+# TODO: https://github.com/dedis/d-voting/issues/392
+#      - name: Run lint
+#        run: make lint
+#
       - name: Run vet
         run: make vet
 

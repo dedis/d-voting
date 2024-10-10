@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/c4dt/d-voting/contracts/evoting"
+	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/rs/zerolog"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/txn"
@@ -21,9 +21,9 @@ import (
 	"go.dedis.ch/dela/mino/minogrpc/session"
 	jsondela "go.dedis.ch/dela/serde/json"
 
-	etypes "github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/services/dkg"
-	"github.com/c4dt/d-voting/services/dkg/pedersen/types"
+	etypes "github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/services/dkg"
+	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/cosi/threshold"
@@ -790,7 +790,7 @@ func (s *state) UnmarshalJSON(data []byte) error {
 	}
 
 	if aux.Participants != nil {
-		// TODO: use addressFactory here
+		// TODO: https://github.com/dedis/d-voting/issues/391
 		f := session.AddressFactory{}
 		var participants = make([]mino.Address, len(aux.Participants))
 		for i, partStr := range aux.Participants {

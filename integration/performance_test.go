@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/c4dt/d-voting/contracts/evoting"
-	"github.com/c4dt/d-voting/contracts/evoting/types"
-	"github.com/c4dt/d-voting/services/dkg"
+	"github.com/dedis/d-voting/contracts/evoting"
+	"github.com/dedis/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/services/dkg"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering/cosipbft"
@@ -45,7 +45,7 @@ func customVotesScenario(b *testing.B, stuffing bool) {
 			types.TestCastBallots = false
 		}()
 		numVotes = 10000
-		transactions = numVotes / int(types.BallotsPerBlock)
+		transactions = numVotes / int(types.BallotsPerBatch)
 	}
 
 	adminID := "I am an admin"
@@ -169,7 +169,7 @@ func customVotesScenario(b *testing.B, stuffing bool) {
 	b.Logf("Submitting shares took: %v", durationPubShares)
 	b.Logf("Decryption took: %v", durationDecrypt)
 
-	require.Len(b, form.DecryptedBallots, len(castedVotes)*int(types.BallotsPerBlock))
+	require.Len(b, form.DecryptedBallots, len(castedVotes)*int(types.BallotsPerBatch))
 
 	// There will be a lot of supplementary ballots, but at least the ones that were
 	// cast by the test should be present.

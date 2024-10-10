@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/c4dt/d-voting/contracts/evoting/types"
+	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 )

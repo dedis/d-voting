@@ -7,15 +7,15 @@ import (
 	"strings"
 	"testing"
 
-	formTypes "github.com/c4dt/d-voting/contracts/evoting/types"
+	formTypes "github.com/dedis/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/mino/minogrpc/session"
 	"go.dedis.ch/dela/serde/json"
 
-	"github.com/c4dt/d-voting/internal/testing/fake"
-	"github.com/c4dt/d-voting/services/dkg"
-	"github.com/c4dt/d-voting/services/dkg/pedersen/types"
+	"github.com/dedis/d-voting/internal/testing/fake"
+	"github.com/dedis/d-voting/services/dkg"
+	"github.com/dedis/d-voting/services/dkg/pedersen/types"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/kyber/v3"
@@ -267,7 +267,7 @@ func TestState_MarshalJSON(t *testing.T) {
 
 	// Try with some data
 	distKey := suite.Point().Pick(suite.RandomStream())
-	// TODO: use AddressFactory here
+	// TODO: https://github.com/dedis/d-voting/issues/391
 	participants := []mino.Address{session.NewAddress("grpcs://localhost:12345"), session.NewAddress("grpcs://localhost:1234")}
 
 	s1.SetDistKey(distKey)

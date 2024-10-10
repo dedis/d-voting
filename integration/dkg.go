@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	ptypes "github.com/c4dt/d-voting/proxy/types"
-	"github.com/c4dt/d-voting/services/dkg"
+	ptypes "github.com/dedis/d-voting/proxy/types"
+	"github.com/dedis/d-voting/services/dkg"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/kyber/v3"
