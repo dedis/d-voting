@@ -267,7 +267,7 @@ func TestState_MarshalJSON(t *testing.T) {
 
 	// Try with some data
 	distKey := suite.Point().Pick(suite.RandomStream())
-	// TODO: use AddressFactory here
+	// TODO: https://github.com/dedis/d-voting/issues/391
 	participants := []mino.Address{session.NewAddress("grpcs://localhost:12345"), session.NewAddress("grpcs://localhost:1234")}
 
 	s1.SetDistKey(distKey)
