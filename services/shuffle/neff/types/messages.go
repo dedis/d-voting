@@ -19,15 +19,15 @@ func RegisterMessageFormat(c serde.Format, f serde.FormatEngine) {
 //
 // - implements serde.Message
 type StartShuffle struct {
-	formId string
-	addresses  []mino.Address
+	formId    string
+	addresses []mino.Address
 }
 
 // NewStartShuffle creates a new StartShuffle message.
 func NewStartShuffle(formId string, addresses []mino.Address) StartShuffle {
 	return StartShuffle{
-		formId: formId,
-		addresses:  addresses,
+		formId:    formId,
+		addresses: addresses,
 	}
 }
 

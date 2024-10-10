@@ -6,7 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "ts-node -r dotenv/config src/Server.ts dotenv_config_path=config.env",
-    "dev": "./node_modules/.bin/nodemon",
+    "start-dev": "NODE_ENV=development nodemon src/Server.ts dotenv_config_path=config.env",
     "eslint": "./node_modules/.bin/eslint .",
     "eslint-fix": "./node_modules/.bin/eslint . --fix",
     "keygen": "ts-node src/cli.ts keygen",
@@ -35,6 +35,8 @@
     "memorystore": "^1.6.7",
     "morgan": "^1.10.0",
     "pg": "^8.11.1",
+    "request": "^2.88.2",
+    "short-unique-id": "^4.4.4",
     "xss": "^1.0.11"
   },
   "devDependencies": {

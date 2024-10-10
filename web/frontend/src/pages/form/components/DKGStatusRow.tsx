@@ -167,7 +167,6 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
           }
         )
         .finally(() => {
-          console.log('setDKGLoading to false');
           setDKGLoading(false);
         });
     }
@@ -175,7 +174,6 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
 
   // Notify the parent when we are loading or not
   useEffect(() => {
-    console.log('notifyLoading', DKGLoading);
     notifyLoading(node, DKGLoading);
 
     if (DKGLoading) {
@@ -200,6 +198,7 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
   // already fetched)
   useEffect(() => {
     if (node !== null && proxy === null) {
+      var error;
       const fetchNodeProxy = async () => {
         try {
           setTimeout(() => {
@@ -209,29 +208,29 @@ const DKGStatusRow: FC<DKGStatusRowProps> = ({
           const response = await fetch(endpoints.getProxyAddress(node), request);
 
           if (!response.ok) {
-            const js = await response.json();
-            throw new Error(JSON.stringify(js));
+            error = Error(await response.text());
           } else {
             let dataReceived = await response.json();
             return dataReceived as NodeProxyAddress;
           }
         } catch (e) {
-          let errorMessage = t('errorRetrievingProxy');
-
           // Error triggered by timeout
           if (e instanceof DOMException) {
-            errorMessage += t('proxyUnreachable', { node: node });
+            error = t('proxyUnreachable', { node: node });
           } else {
-            errorMessage += t('error');
+            error = t('error');
           }
-
-          setInfo(errorMessage + e.message);
-          setStatus(NodeStatus.Unreachable);
-
-          // if we could not retrieve the proxy still resolve the promise
-          // so that promise.then() goes to onSuccess() but display the error
-          return { NodeAddr: node, Proxy: '' };
+          error += e;
         }
+        let errorMessage = t('errorRetrievingProxy');
+        errorMessage += error;
+
+        setInfo(errorMessage);
+        setStatus(NodeStatus.Unreachable);
+
+        // if we could not retrieve the proxy still resolve the promise
+        // so that promise.then() goes to onSuccess() but display the error
+        return { NodeAddr: node, Proxy: '' };
       };
 
       setDKGLoading(true);

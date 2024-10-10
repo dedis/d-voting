@@ -17,7 +17,7 @@ const Flash = () => {
         <div
           key={msg.id}
           className={`relative
-                      ${msg.getLevel() === FlashLevel.Info && 'bg-indigo-500'} 
+                      ${msg.getLevel() === FlashLevel.Info && 'bg-[#ff0000]'} 
                       ${msg.getLevel() === FlashLevel.Warning && 'bg-orange-500'} 
                       ${msg.getLevel() === FlashLevel.Error && 'bg-red-500'}`}>
           <div
@@ -33,9 +33,7 @@ const Flash = () => {
             <button
               type="button"
               className={`ml-auto -mx-1.5 -my-1.5 rounded-lg focus:ring-2 p-1.5 inline-flex h-8 w-8 
-                ${
-                  msg.getLevel() === FlashLevel.Info && 'focus:ring-indigo-400 hover:bg-indigo-600'
-                } 
+                ${msg.getLevel() === FlashLevel.Info && 'focus:ring-[#ff0000] hover:bg-[#ff0000]'} 
                 ${
                   msg.getLevel() === FlashLevel.Warning &&
                   'focus:ring-orange-400 hover:bg-orange-600'

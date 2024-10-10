@@ -1,4 +1,4 @@
-import { ID } from './configuration';
+import { ID, Title } from './configuration';
 
 export const enum Status {
   // Initial is when the form has just been created
@@ -42,6 +42,7 @@ export const enum OngoingAction {
   Decrypting,
   Combining,
   Canceling,
+  AddVoters,
 }
 
 interface FormInfo {
@@ -58,9 +59,7 @@ interface FormInfo {
 
 interface LightFormInfo {
   FormID: ID;
-  Title: string;
-  TitleFr: string;
-  TitleDe: string;
+  Title: Title;
   Status: Status;
   Pubkey: string;
 }
@@ -82,7 +81,13 @@ type TextResults = Map<ID, string[][]>;
 
 interface DownloadedResults {
   Title: string;
-  Results?: { Candidate: string; Percentage: string }[];
+  URL: string;
+  Results?: {
+    Candidate: string;
+    Percent?: string;
+    TotalCount?: number;
+    NumberOfBallots?: number;
+  }[];
 }
 interface BallotResults {
   BallotNumber: number;

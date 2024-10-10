@@ -9,6 +9,7 @@ import (
 
 func init() {
 	types.RegisterFormFormat(serde.FormatJSON, formFormat{})
+	types.RegisterSuffragiaFormat(serde.FormatJSON, suffragiaFormat{})
 	types.RegisterCiphervoteFormat(serde.FormatJSON, ciphervoteFormat{})
 	types.RegisterTransactionFormat(serde.FormatJSON, transactionFormat{})
 }

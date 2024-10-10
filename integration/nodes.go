@@ -109,5 +109,5 @@ func restartNode(nodeNub int, t *testing.T) {
 }
 
 func getThreshold(numNodes int) int {
-	return numNodes/3
+	return numNodes / 3
 }

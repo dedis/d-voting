@@ -53,8 +53,8 @@ const StatusTimeline: FC<StatusTimelineProps> = ({ status, ongoingAction }) => {
     switch (state) {
       case 'complete':
         return (
-          <div className="group pl-4 py-2 flex flex-col border-l-4 border-indigo-600 hover:border-indigo-800 md:pl-0 md:pt-4 md:pb-0 md:border-l-0 md:border-t-4">
-            <span className="text-xs text-indigo-600 font-semibold tracking-wide uppercase group-hover:text-indigo-800">
+          <div className="group pl-4 py-2 flex flex-col border-l-4 border-[#ff0000] hover:border-indigo-800 md:pl-0 md:pt-4 md:pb-0 md:border-l-0 md:border-t-4">
+            <span className="text-xs text-[#ff0000] font-semibold tracking-wide uppercase group-hover:text-indigo-800">
               {t(step.name)}
             </span>
           </div>
@@ -62,9 +62,9 @@ const StatusTimeline: FC<StatusTimelineProps> = ({ status, ongoingAction }) => {
       case 'current':
         return (
           <div
-            className="pl-4 py-2 flex flex-col border-l-4 border-indigo-600 md:pl-0 md:pt-4 md:pb-0 md:border-l-0 md:border-t-4"
+            className="pl-4 py-2 flex flex-col border-l-4 border-[#ff0000] md:pl-0 md:pt-4 md:pb-0 md:border-l-0 md:border-t-4"
             aria-current="step">
-            <span className="text-xs text-indigo-600 font-semibold tracking-wide uppercase">
+            <span className="text-xs text-[#ff0000] font-semibold tracking-wide uppercase">
               {t(step.name)}
             </span>
           </div>
@@ -73,9 +73,9 @@ const StatusTimeline: FC<StatusTimelineProps> = ({ status, ongoingAction }) => {
         if (ongoingAction === index) {
           return (
             <div
-              className="animate-pulse pl-4 py-2 flex flex-col border-l-4 border-indigo-400 md:pl-0 md:pt-4 md:pb-0 md:border-l-0 md:border-t-4"
+              className="animate-pulse pl-4 py-2 flex flex-col border-l-4 border-[#ff0000] md:pl-0 md:pt-4 md:pb-0 md:border-l-0 md:border-t-4"
               aria-current="step">
-              <span className="text-xs text-indigo-400 font-semibold tracking-wide uppercase">
+              <span className="text-xs text-[#ff0000] font-semibold tracking-wide uppercase">
                 {t(step.ongoing)}
               </span>
             </div>

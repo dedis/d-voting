@@ -1,3 +1,4 @@
+import { ENDPOINT_ADD_ROLE } from 'components/utils/Endpoints';
 import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -9,11 +10,13 @@ import { AuthContext, FlashContext, FlashLevel, ProxyContext } from 'index';
 import { useNavigate } from 'react-router';
 import { ROUTE_FORM_INDEX } from 'Routes';
 
+import { AddVotersModal, AddVotersModalSuccess } from 'pages/form/components/AddVotersModal';
 import ChooseProxyModal from 'pages/form/components/ChooseProxyModal';
 import ConfirmModal from 'components/modal/ConfirmModal';
 import usePostCall from 'components/utils/usePostCall';
 import InitializeButton from '../ActionButtons/InitializeButton';
 import DeleteButton from '../ActionButtons/DeleteButton';
+import AddVotersButton from '../ActionButtons/AddVotersButton';
 import SetupButton from '../ActionButtons/SetupButton';
 import CancelButton from '../ActionButtons/CancelButton';
 import CloseButton from '../ActionButtons/CloseButton';
@@ -46,11 +49,15 @@ const useChangeAction = (
   const [showModalClose, setShowModalClose] = useState(false);
   const [showModalCancel, setShowModalCancel] = useState(false);
   const [showModalDelete, setShowModalDelete] = useState(false);
+  const [showModalAddVoters, setShowModalAddVoters] = useState(false);
+  const [showModalAddVotersSucccess, setShowModalAddVotersSuccess] = useState(false);
+  const [newVoters] = useState('');
 
   const [userConfirmedProxySetup, setUserConfirmedProxySetup] = useState(false);
   const [userConfirmedClosing, setUserConfirmedClosing] = useState(false);
   const [userConfirmedCanceling, setUserConfirmedCanceling] = useState(false);
   const [userConfirmedDeleting, setUserConfirmedDeleting] = useState(false);
+  const [userConfirmedAddVoters, setUserConfirmedAddVoters] = useState('');
 
   const [getError, setGetError] = useState(null);
   const [postError, setPostError] = useState(null);
@@ -92,6 +99,20 @@ const useChangeAction = (
       setShowModal={setShowModalDelete}
       textModal={t('confirmDeleteForm')}
       setUserConfirmedAction={setUserConfirmedDeleting}
+    />
+  );
+  const modalAddVoters = (
+    <AddVotersModal
+      showModal={showModalAddVoters}
+      setShowModal={setShowModalAddVoters}
+      setUserConfirmedAction={setUserConfirmedAddVoters}
+    />
+  );
+  const modalAddVotersSuccess = (
+    <AddVotersModalSuccess
+      showModal={showModalAddVotersSucccess}
+      setShowModal={setShowModalAddVotersSuccess}
+      newVoters={newVoters}
     />
   );
 
@@ -292,6 +313,67 @@ const useChangeAction = (
   }, [userConfirmedDeleting]);
 
   useEffect(() => {
+    if (userConfirmedAddVoters.length > 0) {
+      let sciperErrs = '';
+
+      const providedScipers = userConfirmedAddVoters.split('\n');
+      setUserConfirmedAddVoters('');
+
+      for (const sciperStr of providedScipers) {
+        const sciper = parseInt(sciperStr, 10);
+        if (isNaN(sciper)) {
+          sciperErrs += t('sciperNaN', { sciperStr: sciperStr });
+        }
+        if (sciper < 100000 || sciper > 999999) {
+          sciperErrs += t('sciperOutOfRange', { sciper: sciper });
+        }
+      }
+      if (sciperErrs.length > 0) {
+        setTextModalError(t('invalidScipersFound', { sciperErrs: sciperErrs }));
+        setShowModalError(true);
+        return;
+      }
+      // requests to ENDPOINT_ADD_ROLE cannot be done in parallel because on the
+      // backend, auths are reloaded from the DB each time there is an update.
+      // While auths are reloaded, they cannot be checked in a predictable way.
+      // See isAuthorized, addPolicy, and addListPolicy in backend/src/authManager.ts
+      (async () => {
+        try {
+          const chunkSize = 1000;
+          setOngoingAction(OngoingAction.AddVoters);
+          for (let i = 0; i < providedScipers.length; i += chunkSize) {
+            await sendFetchRequest(
+              ENDPOINT_ADD_ROLE,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userIds: providedScipers.slice(i, i + chunkSize),
+                  subject: formID,
+                  permission: 'vote',
+                }),
+              },
+              setIsPosting
+            );
+          }
+        } catch (e) {
+          console.error(`While adding voter: ${e}`);
+          setShowModalAddVoters(false);
+        }
+        setOngoingAction(OngoingAction.None);
+      })();
+    }
+  }, [
+    formID,
+    sendFetchRequest,
+    userConfirmedAddVoters,
+    t,
+    setTextModalError,
+    setShowModalError,
+    setOngoingAction,
+  ]);
+
+  useEffect(() => {
     if (userConfirmedProxySetup) {
       const setup = async () => {
         setOngoingAction(OngoingAction.SettingUp);
@@ -320,7 +402,7 @@ const useChangeAction = (
         setUserConfirmedProxySetup(false);
       };
 
-      setup();
+      setup().catch(console.error);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userConfirmedProxySetup]);
@@ -392,6 +474,10 @@ const useChangeAction = (
     setShowModalDelete(true);
   };
 
+  const handleAddVoters = () => {
+    setShowModalAddVoters(true);
+  };
+
   const getAction = () => {
     // Except for seeing the results, all actions at least require the users
     // to be logged in
@@ -399,7 +485,7 @@ const useChangeAction = (
       return (
         <div>
           {t('notLoggedInActionText1')}
-          <button id="login-button" className="text-indigo-600" onClick={() => handleLogin(fctx)}>
+          <button id="login-button" className="text-[#ff0000]" onClick={() => handleLogin(fctx)}>
             {t('notLoggedInActionText2')}
           </button>
           {t('notLoggedInActionText3')}
@@ -431,35 +517,62 @@ const useChangeAction = (
               status={status}
               handleInitialize={handleInitialize}
               ongoingAction={ongoingAction}
+              formID={formID}
             />
-            <DeleteButton handleDelete={handleDelete} />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
           </>
         );
       case Status.Initialized:
         return (
           <>
-            <SetupButton status={status} handleSetup={handleSetup} ongoingAction={ongoingAction} />
-            <DeleteButton handleDelete={handleDelete} />
+            <SetupButton
+              status={status}
+              handleSetup={handleSetup}
+              ongoingAction={ongoingAction}
+              formID={formID}
+            />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
           </>
         );
       case Status.Setup:
         return (
           <>
-            <OpenButton status={status} handleOpen={handleOpen} ongoingAction={ongoingAction} />
-            <DeleteButton handleDelete={handleDelete} />
+            <OpenButton
+              status={status}
+              handleOpen={handleOpen}
+              ongoingAction={ongoingAction}
+              formID={formID}
+            />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
+            <AddVotersButton
+              handleAddVoters={handleAddVoters}
+              formID={formID}
+              ongoingAction={ongoingAction}
+            />
           </>
         );
       case Status.Open:
         return (
           <>
-            <CloseButton status={status} handleClose={handleClose} ongoingAction={ongoingAction} />
+            <CloseButton
+              status={status}
+              handleClose={handleClose}
+              ongoingAction={ongoingAction}
+              formID={formID}
+            />
             <CancelButton
               status={status}
               handleCancel={handleCancel}
               ongoingAction={ongoingAction}
+              formID={formID}
             />
             <VoteButton status={status} formID={formID} />
-            <DeleteButton handleDelete={handleDelete} />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
+            <AddVotersButton
+              handleAddVoters={handleAddVoters}
+              formID={formID}
+              ongoingAction={ongoingAction}
+            />
           </>
         );
       case Status.Closed:
@@ -469,8 +582,9 @@ const useChangeAction = (
               status={status}
               handleShuffle={handleShuffle}
               ongoingAction={ongoingAction}
+              formID={formID}
             />
-            <DeleteButton handleDelete={handleDelete} />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
           </>
         );
       case Status.ShuffledBallots:
@@ -480,8 +594,9 @@ const useChangeAction = (
               status={status}
               handleDecrypt={handleDecrypt}
               ongoingAction={ongoingAction}
+              formID={formID}
             />
-            <DeleteButton handleDelete={handleDelete} />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
           </>
         );
       case Status.PubSharesSubmitted:
@@ -491,26 +606,35 @@ const useChangeAction = (
               status={status}
               handleCombine={handleCombine}
               ongoingAction={ongoingAction}
+              formID={formID}
             />
-            <DeleteButton handleDelete={handleDelete} />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
           </>
         );
       case Status.ResultAvailable:
         return (
           <>
             <ResultButton status={status} formID={formID} />
-            <DeleteButton handleDelete={handleDelete} />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
           </>
         );
       default:
         return (
           <>
-            <DeleteButton handleDelete={handleDelete} />
+            <DeleteButton handleDelete={handleDelete} formID={formID} />
           </>
         );
     }
   };
-  return { getAction, modalClose, modalCancel, modalDelete, modalSetup };
+  return {
+    getAction,
+    modalClose,
+    modalCancel,
+    modalDelete,
+    modalSetup,
+    modalAddVoters,
+    modalAddVotersSuccess,
+  };
 };
 
 export default useChangeAction;

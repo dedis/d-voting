@@ -3,9 +3,12 @@ import PropTypes from 'prop-types';
 
 import { Dialog, Transition } from '@headlessui/react';
 
-const Modal = ({ showModal, setShowModal, textModal, buttonRightText }) => {
+const Modal = ({ showModal, setShowModal, textModal, buttonRightText, onClose }) => {
   const closeModal = () => {
     setShowModal(false);
+    if (onClose !== undefined) {
+      onClose();
+    }
   };
 
   return (
@@ -68,6 +71,7 @@ Modal.propTypes = {
   setShowModal: PropTypes.func.isRequired,
   textModal: PropTypes.string.isRequired,
   buttonRightText: PropTypes.string.isRequired,
+  onClose: PropTypes.func,
 };
 
 export default Modal;

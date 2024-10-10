@@ -10,10 +10,17 @@ type ProfileProps = {
   authCtx: AuthState;
   handleLogout: (e: any) => Promise<void>;
   handleLogin: (arg0: FlashState) => Promise<void>;
+  handleChangeId: (e: any) => Promise<void>;
   fctx: FlashState;
 };
 
-const Profile: FC<ProfileProps> = ({ authCtx, handleLogout, handleLogin, fctx }) => {
+const Profile: FC<ProfileProps> = ({
+  authCtx,
+  handleLogout,
+  handleLogin,
+  handleChangeId,
+  fctx,
+}) => {
   const { t } = useTranslation();
 
   return authCtx.isLogged ? (
@@ -38,6 +45,15 @@ const Profile: FC<ProfileProps> = ({ authCtx, handleLogout, handleLogin, fctx })
               Logged as {authCtx.firstName} {authCtx.lastName}
             </p>
           </Menu.Item>
+          {process.env.REACT_APP_DEV_LOGIN === 'true' && (
+            <Menu.Item>
+              <div
+                onClick={handleChangeId}
+                className={'cursor-pointer block px-4 py-2 text-sm text-gray-700'}>
+                {t('changeId')}
+              </div>
+            </Menu.Item>
+          )}
           <Menu.Item>
             <div
               onClick={handleLogout}
@@ -51,7 +67,7 @@ const Profile: FC<ProfileProps> = ({ authCtx, handleLogout, handleLogin, fctx })
   ) : (
     <button
       onClick={() => handleLogin(fctx)}
-      className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+      className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-[#ff0000] hover:bg-[#b51f1f]">
       {t('login')}
     </button>
   );

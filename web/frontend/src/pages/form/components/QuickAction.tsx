@@ -11,7 +11,7 @@ type QuickActionProps = {
 
 const QuickAction: FC<QuickActionProps> = ({ status, formID }) => {
   return (
-    <div>
+    <div data-testid="quickAction">
       {status === Status.Open && <VoteButton status={status} formID={formID} />}
       {status === Status.ResultAvailable && <ResultButton status={status} formID={formID} />}
     </div>

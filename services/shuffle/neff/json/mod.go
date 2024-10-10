@@ -15,8 +15,8 @@ func init() {
 type Address []byte
 
 type StartShuffle struct {
-	FormId string
-	Addresses  []Address
+	FormId    string
+	Addresses []Address
 }
 
 type EndShuffle struct {
@@ -60,8 +60,8 @@ func (f MsgFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, error) 
 		}
 
 		startShuffle := StartShuffle{
-			FormId: in.GetFormId(),
-			Addresses:  addrs,
+			FormId:    in.GetFormId(),
+			Addresses: addrs,
 		}
 		m = Message{StartShuffle: &startShuffle}
 

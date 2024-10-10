@@ -8,7 +8,7 @@ const Loading: FC = () => {
       <div className="text-center pb-2">
         <svg
           role="status"
-          className="inline w-16 h-16 mr-2 text-gray-200 animate-spin dark:text-gray-400 fill-indigo-600"
+          className="inline w-16 h-16 mr-2 text-gray-200 animate-spin dark:text-gray-400 fill-[#ff0000]"
           viewBox="0 0 100 101"
           fill="none"
           xmlns="http://www.w3.org/2000/svg">

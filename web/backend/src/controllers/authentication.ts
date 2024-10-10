@@ -1,9 +1,42 @@
 import express from 'express';
 import axios, { AxiosError } from 'axios';
 import { sciper2sess } from '../session';
-import { getUserPermissions, setMapAuthorization } from '../authManager';
+import { initEnforcer, getUserPermissions, readSCIPER, setMapAuthorization } from '../authManager';
 
 export const authenticationRouter = express.Router();
+
+initEnforcer().catch((e) => console.error(`Couldn't initialize enforcerer: ${e}`));
+
+authenticationRouter.get('/get_dev_login/:userId', (req, res) => {
+  if (process.env.REACT_APP_DEV_LOGIN !== 'true') {
+    const err = `/get_dev_login can only be called with REACT_APP_DEV_LOGIN===true: ${process.env.REACT_APP_DEV_LOGIN}`;
+    console.error(err);
+    res.status(500).send(err);
+    return;
+  }
+  if (req.params.userId === undefined) {
+    const err = 'no userId given';
+    console.error(err);
+    res.status(500).send(err);
+    return;
+  }
+  try {
+    req.session.userId = readSCIPER(req.params.userId);
+    req.session.firstName = 'sciper-#';
+    req.session.lastName = req.params.userId;
+  } catch (e) {
+    const err = `Invalid userId: ${e}`;
+    console.error(err);
+    res.status(500).send(err);
+    return;
+  }
+
+  const sciperSessions = sciper2sess.get(req.session.userId) || new Set<string>();
+  sciperSessions.add(req.sessionID);
+  sciper2sess.set(req.session.userId, sciperSessions);
+
+  res.redirect('/logged');
+});
 
 // This is via this endpoint that the client request the tequila key, this key
 // will then be used for redirection on the tequila server
@@ -66,6 +99,7 @@ authenticationRouter.get('/control_key', (req, res) => {
 authenticationRouter.post('/logout', (req, res) => {
   if (req.session.userId === undefined) {
     res.status(400).send('not logged in');
+    return;
   }
 
   const { userId } = req.session;

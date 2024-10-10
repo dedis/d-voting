@@ -38,7 +38,7 @@ export function voteEncode(
 
   encodedBallot += '\n';
 
-  const encodedBallotSize = Buffer.byteLength(encodedBallot);
+  let encodedBallotSize = Buffer.byteLength(encodedBallot);
 
   // add padding if necessary until encodedBallot.length == ballotSize
   if (encodedBallotSize < ballotSize) {
@@ -46,8 +46,17 @@ export function voteEncode(
     encodedBallot += padding();
   }
 
+  encodedBallotSize = Buffer.byteLength(encodedBallot);
+
   const chunkSize = 29;
+  const maxEncodedBallotSize = chunkSize * chunksPerBallot;
   const ballotChunks: string[] = [];
+
+  if (encodedBallotSize > maxEncodedBallotSize) {
+    throw new Error(
+      `actual encoded ballot size ${encodedBallotSize} is bigger than maximum ballot size ${maxEncodedBallotSize}`
+    );
+  }
 
   // divide into chunksPerBallot chunks, where 1 character === 1 byte
   for (let i = 0; i < chunksPerBallot; i += 1) {

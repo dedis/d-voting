@@ -2,7 +2,7 @@
 
 In the use cases we defined two smart contracts for each of the following purposes:
 
-- storing the forms informations
+- storing the forms information
 - storing a ballot
 
 As (at least for the moment) in a dela there is no notion of “instance of a smart contract”, we have
@@ -172,7 +172,7 @@ Subject2:
 
 And here is the corresponding Configuration:
 
-```bash
+```go
 v := Configuration{
 	MainTitle: "Please give your opinion",
 	Scaffold: []Subject{

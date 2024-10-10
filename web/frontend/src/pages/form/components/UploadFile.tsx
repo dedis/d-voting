@@ -55,7 +55,7 @@ const UploadFile = ({ updateForm, setShowModal, setTextModal }) => {
         onChange={(e) => handleDrop(e.target.files[0])}
       />
       <label
-        className="ml-1 cursor-pointer font-medium text-indigo-600 hover:text-indigo-500"
+        className="ml-1 cursor-pointer font-medium text-[#ff0000] hover:text-[#ff0000]"
         htmlFor="uploadJSON">
         {t('uploadJSON')}
       </label>

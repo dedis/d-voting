@@ -67,28 +67,9 @@ func (a *initAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to make client: %v", err)
 	}
 
-	actor, err := dkg.Listen(formIDBuf, signed.NewManager(signer, &client))
+	_, err = dkg.Listen(formIDBuf, signed.NewManager(signer, &client))
 	if err != nil {
 		return xerrors.Errorf("failed to start the RPC: %v", err)
-	}
-
-	dela.Logger.Info().Msg("DKG has been initialized successfully")
-
-	err = updateDKGStore(ctx.Injector, func(tx kv.WritableTx) error {
-		bucket, err := tx.GetBucketOrCreate([]byte(BucketName))
-		if err != nil {
-			return err
-		}
-
-		actorBuf, err := actor.MarshalJSON()
-		if err != nil {
-			return err
-		}
-
-		return bucket.Set(formIDBuf, actorBuf)
-	})
-	if err != nil {
-		return xerrors.Errorf("failed to update DKG store: %v", err)
 	}
 
 	dela.Logger.Info().Msgf("DKG was successfully linked to form %v", formIDBuf)
@@ -137,23 +118,6 @@ func (a *setupAction) Execute(ctx node.Context) error {
 		Hex("DKG public key", pubkeyBuf).
 		Msg("DKG public key")
 
-	err = updateDKGStore(ctx.Injector, func(tx kv.WritableTx) error {
-		bucket, err := tx.GetBucketOrCreate([]byte(BucketName))
-		if err != nil {
-			return err
-		}
-
-		actorBuf, err := actor.MarshalJSON()
-		if err != nil {
-			return err
-		}
-
-		return bucket.Set(formIDBuf, actorBuf)
-	})
-	if err != nil {
-		return xerrors.Errorf("failed to update DKG store: %v", err)
-	}
-
 	return nil
 }
 
@@ -190,7 +154,7 @@ func (a *exportInfoAction) Execute(ctx node.Context) error {
 	}
 
 	err = db.View(func(tx kv.ReadableTx) error {
-		bucket := tx.GetBucket([]byte(BucketName))
+		bucket := tx.GetBucket([]byte(pedersen.BucketName))
 		if bucket == nil {
 			return nil
 		}
@@ -329,21 +293,6 @@ func (a *RegisterHandlersAction) Execute(ctx node.Context) error {
 	proxy.RegisterHandler("/evoting/services/dkg/", router.ServeHTTP)
 
 	dela.Logger.Info().Msg("DKG handler registered")
-
-	return nil
-}
-
-func updateDKGStore(inj node.Injector, fn func(kv.WritableTx) error) error {
-	var db kv.DB
-	err := inj.Resolve(&db)
-	if err != nil {
-		return xerrors.Errorf("failed to resolve db: %v", err)
-	}
-
-	err = db.Update(fn)
-	if err != nil {
-		return xerrors.Errorf("failed to update: %v", err)
-	}
 
 	return nil
 }

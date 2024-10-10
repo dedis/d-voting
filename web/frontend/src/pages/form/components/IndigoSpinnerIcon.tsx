@@ -1,7 +1,7 @@
 const IndigoSpinnerIcon = () => {
   return (
     <svg
-      className="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-500"
+      className="animate-spin -ml-1 mr-3 h-5 w-5 text-[#ff0000]"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24">

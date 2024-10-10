@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import useForm from 'components/utils/useForm';
 import { OngoingAction, Status } from 'types/form';
 import Modal from 'components/modal/Modal';
+import { ROUTE_FORM_INDEX } from '../../Routes';
 import StatusTimeline from './components/StatusTimeline';
 import Loading from 'pages/Loading';
 import Action from './components/Action';
@@ -14,8 +15,9 @@ import useGetResults from './components/utils/useGetResults';
 import UserIDTable from './components/UserIDTable';
 import DKGStatusTable from './components/DKGStatusTable';
 import LoadingButton from './components/LoadingButton';
+import { internationalize, urlizeLabel } from './../utils';
 import { default as i18n } from 'i18next';
-import { isJson } from 'types/JSONparser';
+import DOMPurify from 'dompurify';
 
 const FormShow: FC = () => {
   const { t } = useTranslation();
@@ -77,7 +79,7 @@ const FormShow: FC = () => {
   // Fetch result when available after a status change
   useEffect(() => {
     if (status === Status.ResultAvailable && isResultAvailable) {
-      getResults(formID, setError, setResult, setIsResultSet);
+      getResults(formID, setError, setResult, setIsResultSet).then();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isResultAvailable, status]);
@@ -201,18 +203,13 @@ const FormShow: FC = () => {
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
     try {
-      if (configObj.MainTitle === '') return;
-      if (isJson(configObj.MainTitle)) {
-        const ts = JSON.parse(configObj.MainTitle);
-        setTitles(ts);
-      } else {
-        const tis = { en: configObj.MainTitle, fr: configObj.TitleFr, de: configObj.TitleDe };
-        setTitles(tis);
-      }
+      if (configObj.Title === undefined) return;
+      setTitles(configObj.Title);
     } catch (e) {
       setError(e.error);
     }
   }, [configObj]);
+
   return (
     <div className="w-[60rem] font-sans px-4 py-4">
       <Modal
@@ -220,14 +217,22 @@ const FormShow: FC = () => {
         setShowModal={setShowModalError}
         textModal={textModalError === null ? '' : textModalError}
         buttonRightText={t('close')}
+        onClose={() => {
+          window.location.href = ROUTE_FORM_INDEX;
+        }}
       />
       {!loading ? (
         <>
           <div className="pt-8 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-            {i18n.language === 'en' && titles.en}
-            {i18n.language === 'fr' && titles.fr}
-            {i18n.language === 'de' && titles.de}
+            {urlizeLabel(internationalize(i18n.language, titles), titles.URL)}
           </div>
+          <div
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(configObj.AdditionalInfo, {
+                USE_PROFILES: { html: true },
+              }),
+            }}
+          />
 
           <div className="pt-2 break-all">Form ID : {formId}</div>
           {status >= Status.Open &&

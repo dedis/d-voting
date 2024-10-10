@@ -1,139 +1,105 @@
+version: "3.8"
+x-dela: &dela
+  build:
+    dockerfile: Dockerfiles/Dockerfile.dela
+    context: ../
+    target: build
+  env_file: ../.env
+  profiles:
+    - dela
+    - all
+x-dela-env: &dela-env
+  PROXYKEY: ${PUBLIC_KEY}
+  PROXY_LOG: info
+  LLVL: debug
+
 services:
 
   dela-worker-0:             # inital DELA leader node
-    image: dela:latest
-    build:
-      dockerfile: Dockerfiles/Dockerfile.dela.debug
-      context: ../
+    <<: *dela
     environment:
-      PROXYKEY: ${PUBLIC_KEY}
-      PROXYPORT: ${PROXYPORT}
-      PROXY_LOG: info
-      LLVL: debug
-      NODEPORT: ${NODEPORT}
+      <<: *dela-env
+      PUBLIC_URL: grpc://dela-worker-0:2000
     volumes:
       - dela-worker-0-data:/data
-    hostname: dela-worker-0
     ports:
       - 127.0.0.1:40000:40000
-    security_opt:
-      - apparmor:unconfined
-    cap_add:
-      - SYS_PTRACE
     networks:
       d-voting:
         ipv4_address: 172.19.44.254
   dela-worker-1:             # DELA worker node
-    image: dela:latest
-    build:
-      dockerfile: Dockerfiles/Dockerfile.dela.debug
-      context: ../
-    environment:
-      PROXYKEY: ${PUBLIC_KEY}
-      PROXYPORT: ${PROXYPORT}
-      PROXY_LOG: info
-      LLVL: debug
-      NODEPORT: ${NODEPORT}
+    <<: *dela
     volumes:
       - dela-worker-1-data:/data
-    hostname: dela-worker-1
+    environment:
+      <<: *dela-env
+      PUBLIC_URL: grpc://dela-worker-1:2000
     ports:
       - 127.0.0.1:40001:40000
-    security_opt:
-      - apparmor:unconfined
-    cap_add:
-      - SYS_PTRACE
     networks:
       d-voting:
         ipv4_address: 172.19.44.253
   dela-worker-2:             # DELA worker node
-    image: dela:latest
-    build:
-      dockerfile: Dockerfiles/Dockerfile.dela.debug
-      context: ../
-    environment:
-      PROXYKEY: ${PUBLIC_KEY}
-      PROXYPORT: ${PROXYPORT}
-      PROXY_LOG: info
-      LLVL: debug
-      NODEPORT: ${NODEPORT}
+    <<: *dela
     volumes:
       - dela-worker-2-data:/data
-    hostname: dela-worker-2
+    environment:
+      <<: *dela-env
+      PUBLIC_URL: grpc://dela-worker-2:2000
     ports:
       - 127.0.0.1:40002:40000
-    security_opt:
-      - apparmor:unconfined
-    cap_add:
-      - SYS_PTRACE
     networks:
       d-voting:
         ipv4_address: 172.19.44.252
   dela-worker-3:             # DELA worker node
-    image: dela:latest
-    build:
-      dockerfile: Dockerfiles/Dockerfile.dela.debug
-      context: ../
-    environment:
-      PROXYKEY: ${PUBLIC_KEY}
-      PROXYPORT: ${PROXYPORT}
-      PROXY_LOG: info
-      LLVL: debug
-      NODEPORT: ${NODEPORT}
+    <<: *dela
     volumes:
       - dela-worker-3-data:/data
-    hostname: dela-worker-3
+    environment:
+      <<: *dela-env
+      PUBLIC_URL: grpc://dela-worker-3:2000
     ports:
       - 127.0.0.1:40003:40000
-    security_opt:
-      - apparmor:unconfined
-    cap_add:
-      - SYS_PTRACE
     networks:
       d-voting:
         ipv4_address: 172.19.44.251
 
   frontend:         # web service frontend
-    image: frontend:latest
+    image: ghcr.io/dedis/d-voting-frontend:latest
     build:
       dockerfile: Dockerfiles/Dockerfile.frontend
       context: ../
     ports:
       - 127.0.0.1:3000:3000
+    command: run start
     volumes:
-      - ../web/frontend/src:/web/frontend/src
-    environment:
-      BACKEND_HOST: ${BACKEND_HOST}
-      BACKEND_PORT: ${BACKEND_PORT}
+      - ../web/frontend/src:/web/frontend/src     # mount codebase for development
+    env_file: ../.env
+    profiles:
+      - client
+      - all
     networks:
       d-voting:
         ipv4_address: 172.19.44.2
 
   backend:          # web service backend
-    image: backend:latest
+    image: ghcr.io/dedis/d-voting-backend:latest
     build:
       dockerfile: Dockerfiles/Dockerfile.backend
       context: ../
-    environment:
-      DATABASE_USERNAME: ${DATABASE_USERNAME}
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
-      DATABASE_HOST: ${DATABASE_HOST}
-      DATABASE_PORT: ${DATABASE_PORT}
-      DB_PATH: /data/${DB_PATH}
-      FRONT_END_URL: ${FRONT_END_URL}
-      DELA_NODE_URL: ${DELA_NODE_URL}
-      SESSION_SECRET: ${SESSION_SECRET}
-      PUBLIC_KEY: ${PUBLIC_KEY}
-      PRIVATE_KEY: ${PRIVATE_KEY}
+    command: run start-dev
+    env_file: ../.env
     ports:
       - 127.0.0.1:5000:5000
-      - 127.0.0.1:80:80
     depends_on:
       db:
         condition: service_started
     volumes:
       - backend-data:/data
-      - ../web/backend/src:/web/backend/src
+      - ../web/backend/src:/web/backend/src       # mount codebase for development
+    profiles:
+      - client
+      - all
     networks:
       d-voting:
         ipv4_address: 172.19.44.3
@@ -146,9 +112,35 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ../web/backend/src/migration.sql:/docker-entrypoint-initdb.d/init.sql
+    profiles:
+      - client
+      - all
     networks:
       d-voting:
         ipv4_address: 172.19.44.4
+
+  shell:            # helper container to execute scripts from within Docker network (macOS/Windows setup)
+    image: buildpack-deps:bookworm-curl
+    env_file: ../.env
+    profiles:
+      - debug
+      - all
+    networks:
+      d-voting:
+        ipv4_address: 172.19.44.5
+    volumes:
+      - ../:/src
+
+  firefox:          # helper container to execute Firefox within Docker network (macOS/Windows setup)
+    image: jlesage/firefox
+    profiles:
+      - debug
+      - all
+    ports:
+      - 127.0.0.1:5800:5800
+    networks:
+      d-voting:
+        ipv4_address: 172.19.44.6
 
 volumes:
   postgres-data:    # PostgreSQL database

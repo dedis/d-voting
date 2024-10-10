@@ -1,0 +1,217 @@
+{
+  "FormID": "b63bcb854121051f2d8cff04bf0ac9b524b534b704509a16a423448bde3321b4",
+  "Configuration": {
+    "Title": {
+      "En": "Colours",
+      "Fr": "Couleurs",
+      "De": "Farben"
+    },
+    "Scaffold": [
+      {
+        "ID": "yOakwFnR",
+        "Title": {
+          "En": "Colours",
+          "Fr": "Couleurs",
+          "De": "Farben"
+        },
+        "Order": [
+          "CLgNiLbC"
+        ],
+        "Subjects": [],
+        "Selects": [
+          {
+            "ID": "CLgNiLbC",
+            "Title": {
+              "En": "RGB",
+              "Fr": "RGB",
+              "De": "RGB"
+            },
+            "MaxN": 2,
+            "MinN": 1,
+            "Choices": [
+              {
+                "Choice": "{\"en\":\"Red\",\"fr\":\"Rouge\",\"de\":\"Rot\"}",
+                "URL": "http://red.example.com"
+              },
+              {
+                "Choice": "{\"en\":\"Green\",\"fr\":\"Vert\",\"de\":\"Grün\"}",
+                "URL": ""
+              },
+              {
+                "Choice": "{\"en\":\"Blue\",\"fr\":\"Bleu\",\"de\":\"Blau\"}",
+                "URL": "http://blue.example.com"
+              }
+            ],
+            "Hint": {
+              "En": "",
+              "Fr": "",
+              "De": ""
+            }
+          }
+        ],
+        "Ranks": [],
+        "Texts": []
+      },
+      {
+        "ID": "1NqhDffw",
+        "Title": {
+          "En": "Colours",
+          "Fr": "Couleurs",
+          "De": "Farben"
+        },
+        "Order": [
+          "riJFjw0q"
+        ],
+        "Subjects": [],
+        "Selects": [
+          {
+            "ID": "riJFjw0q",
+            "Title": {
+              "En": "CMYK",
+              "Fr": "CMJN",
+              "De": "CMYK"
+            },
+            "MaxN": 3,
+            "MinN": 1,
+            "Choices": [
+              {
+                "Choice": "{\"en\":\"Cyan\",\"fr\":\"Cyan\",\"de\":\"Cyan\"}",
+                "URL": "http://cyan.example.com"
+              },
+              {
+                "Choice": "{\"en\":\"Magenta\",\"fr\":\"Magenta\",\"de\":\"Magenta\"}",
+                "URL": "http://magenta.example.com"
+              },
+              {
+                "Choice": "{\"en\":\"Yellow\",\"fr\":\"Jaune\",\"de\":\"Gelb\"}",
+                "URL": ""
+              },
+              {
+                "Choice": "{\"en\":\"Key\",\"fr\":\"Noir\",\"de\":\"Schwarz\"}",
+                "URL": ""
+              }
+            ],
+            "Hint": {
+              "En": "",
+              "Fr": "",
+              "De": ""
+            }
+          }
+        ],
+        "Ranks": [],
+        "Texts": []
+      }
+    ]
+  },
+  "Status": 5,
+  "Pubkey": "612fdc867be1a5faccf16e5aed946880005840ee04aaa382fe181a2b46dc9a24",
+  "Result": [
+    {
+      "SelectResultIDs": [
+        "CLgNiLbC",
+        "riJFjw0q"
+      ],
+      "SelectResult": [
+        [
+          true,
+          false,
+          false
+        ],
+        [
+          true,
+          true,
+          false,
+          false
+        ]
+      ],
+      "RankResultIDs": [],
+      "RankResult": [],
+      "TextResultIDs": [],
+      "TextResult": []
+    },
+    {
+      "SelectResultIDs": [
+        "CLgNiLbC",
+        "riJFjw0q"
+      ],
+      "SelectResult": [
+        [
+          false,
+          true,
+          true
+        ],
+        [
+          true,
+          false,
+          false,
+          true
+        ]
+      ],
+      "RankResultIDs": [],
+      "RankResult": [],
+      "TextResultIDs": [],
+      "TextResult": []
+    },
+    {
+      "SelectResultIDs": [
+        "CLgNiLbC",
+        "riJFjw0q"
+      ],
+      "SelectResult": [
+        [
+          false,
+          true,
+          true
+        ],
+        [
+          false,
+          true,
+          false,
+          false
+        ]
+      ],
+      "RankResultIDs": [],
+      "RankResult": [],
+      "TextResultIDs": [],
+      "TextResult": []
+    },
+    {
+      "SelectResultIDs": [
+        "CLgNiLbC",
+        "riJFjw0q"
+      ],
+      "SelectResult": [
+        [
+          false,
+          false,
+          true
+        ],
+        [
+          false,
+          false,
+          true,
+          false
+        ]
+      ],
+      "RankResultIDs": [],
+      "RankResult": [],
+      "TextResultIDs": [],
+      "TextResult": []
+    }
+  ],
+  "Roster": [
+    "grpc://dela-worker-0:2000",
+    "grpc://dela-worker-1:2000",
+    "grpc://dela-worker-2:2000",
+    "grpc://dela-worker-3:2000"
+  ],
+  "ChunksPerBallot": 2,
+  "BallotSize": 48,
+  "Voters": [
+    "brcLwsgGcU",
+    "JThb56JvGF",
+    "zXcZU5QNwn",
+    "bWxTfeq4t5"
+  ]
+}
+

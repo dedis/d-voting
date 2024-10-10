@@ -20,7 +20,7 @@ const Tabs = ({ currentTab, setCurrentTab }) => {
               }}
               className={classNames(
                 name === currentTab
-                  ? 'border-indigo-500 text-indigo-600'
+                  ? 'border-[#ff0000] text-[#ff0000]'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
                 'w-1/4 py-4 px-1 text-center border-b-2 font-medium text-sm'
               )}

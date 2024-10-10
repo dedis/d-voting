@@ -14,7 +14,7 @@
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "project": "tsconfig.json"
+    "project": ["tsconfig.json", "tests/tsconfig.json"]
   },
   "plugins": ["react", "@typescript-eslint", "jest", "unused-imports"],
   "root": true,
@@ -32,7 +32,7 @@
     "import/no-extraneous-dependencies": ["error", {"devDependencies": [
       "**/*.test.ts", "**/*.test.tsx",
       "**/setupTest.ts", "**/setupProxy.js",
-      "**/mocks/*"
+      "**/mocks/*", "tests/*.ts"
     ]}],
 
     // conflicts with the index.ts (eslint prefers default exports which are not compatible with index.ts)

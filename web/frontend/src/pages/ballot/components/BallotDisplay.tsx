@@ -5,7 +5,8 @@ import Rank, { handleOnDragEnd } from './Rank';
 import Select from './Select';
 import Text from './Text';
 import { DragDropContext } from 'react-beautiful-dnd';
-import { isJson } from 'types/JSONparser';
+import { internationalize, urlizeLabel } from './../../utils';
+import DOMPurify from 'dompurify';
 
 type BallotDisplayProps = {
   configuration: Configuration;
@@ -24,18 +25,8 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
 }) => {
   const [titles, setTitles] = useState<any>({});
   useEffect(() => {
-    if (configuration.MainTitle === '') return;
-    if (isJson(configuration.MainTitle)) {
-      const ts = JSON.parse(configuration.MainTitle);
-      setTitles(ts);
-    } else {
-      const t = {
-        en: configuration.MainTitle,
-        fr: configuration.TitleFr,
-        de: configuration.TitleDe,
-      };
-      setTitles(t);
-    }
+    if (configuration.Title === undefined) return;
+    setTitles(configuration.Title);
   }, [configuration]);
 
   const SubjectElementDisplay = (element: types.SubjectElement) => {
@@ -65,17 +56,11 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
   };
 
   const SubjectTree = (subject: types.Subject) => {
-    let sbj;
-    if (isJson(subject.Title)) {
-      sbj = JSON.parse(subject.Title);
-    }
-    if (sbj === undefined) sbj = { en: subject.Title, fr: subject.TitleFr, de: subject.TitleDe };
+    if (subject.Title === undefined) return;
     return (
       <div key={subject.ID}>
         <h3 className="text-xl break-all pt-1 pb-1 sm:pt-2 sm:pb-2 border-t font-bold text-gray-600">
-          {language === 'en' && sbj.en}
-          {language === 'fr' && sbj.fr}
-          {language === 'de' && sbj.de}
+          {urlizeLabel(internationalize(language, subject.Title), subject.Title.URL)}
         </h3>
         {subject.Order.map((id: ID) => (
           <div key={id}>
@@ -96,10 +81,15 @@ const BallotDisplay: FC<BallotDisplayProps> = ({
     <DragDropContext onDragEnd={(dropRes) => handleOnDragEnd(dropRes, answers, setAnswers)}>
       <div className="w-full mb-0 sm:mb-4 mt-4 sm:mt-6">
         <h3 className="pb-6 break-all text-2xl text-center text-gray-700">
-          {language === 'en' && titles.en}
-          {language === 'fr' && titles.fr}
-          {language === 'de' && titles.de}
+          {urlizeLabel(internationalize(language, titles), titles.URL)}
         </h3>
+        <div
+          dangerouslySetInnerHTML={{
+            __html: DOMPurify.sanitize(configuration.AdditionalInfo, {
+              USE_PROFILES: { html: true },
+            }),
+          }}
+        />
         <div className="flex flex-col">
           {configuration.Scaffold.map((subject: types.Subject) => SubjectTree(subject))}
           <div className="text-red-600 text-sm pt-3 pb-1">{userErrors}</div>

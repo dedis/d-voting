@@ -4,7 +4,7 @@
 
 Verifiability is an important property that enables a voters to check their vote has been cast unaltered, and that it has been registered correctly in the electronic ballot box.
 
-The current d-voting [latest commit](https://github.com/dedis/d-voting/commit/39a2d3363dd064a95186b0c31a44dfdea3325002) did not have this design yet. The current encrypted ballot logic is as follows:
+The current d-voting [latest commit](https://github.com/c4dt/d-voting/commit/39a2d3363dd064a95186b0c31a44dfdea3325002) did not have this design yet. The current encrypted ballot logic is as follows:
 
 ```mermaid
  sequenceDiagram

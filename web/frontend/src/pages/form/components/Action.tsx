@@ -34,7 +34,15 @@ const Action: FC<ActionProps> = ({
   nodeToSetup,
   setNodeToSetup,
 }) => {
-  const { getAction, modalClose, modalCancel, modalDelete, modalSetup } = useChangeAction(
+  const {
+    getAction,
+    modalClose,
+    modalCancel,
+    modalDelete,
+    modalSetup,
+    modalAddVoters,
+    modalAddVotersSuccess,
+  } = useChangeAction(
     status,
     formID,
     roster,
@@ -55,6 +63,8 @@ const Action: FC<ActionProps> = ({
       {modalClose}
       {modalCancel}
       {modalDelete}
+      {modalAddVoters}
+      {modalAddVotersSuccess}
       {modalSetup}
     </>
   );

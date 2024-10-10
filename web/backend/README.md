@@ -10,26 +10,7 @@ Copy the database credentials from `config.env.template` to `/d-voting/bachend/s
 
 ## Generate a keypair
 
-Here is a small piece of code in Go to generate the keypair for the backend:
-
-```go
-package main
-
-import (
-	"fmt"
-	"go.dedis.ch/kyber/v3/group/edwards25519"
-	"go.dedis.ch/kyber/v3/util/key"
-)
-
-func main() {
-	pair := key.NewKeyPair(&edwards25519.SuiteEd25519{})
-
-	fmt.Println("PUBLIC_KEY:", pubK)
-	fmt.Println("PRIVATE_KEY:", privK)
-}
-```
-
-You can also use the `cli` program to generate the keys:
+Use the `cli` program to generate the keys:
 
 ```sh
 npm run keygen

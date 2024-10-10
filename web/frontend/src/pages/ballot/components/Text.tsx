@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Answers, TextQuestion } from 'types/configuration';
 import { answersFrom } from 'types/getObjectType';
 import HintButton from 'components/buttons/HintButton';
+import { internationalize, urlizeLabel } from './../../utils';
 
 type TextProps = {
   text: TextQuestion;
@@ -77,12 +78,13 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answers]);
 
-  const choiceDisplay = (choice: string, choiceIndex: number) => {
+  const choiceDisplay = (choice: string, url: string, choiceIndex: number) => {
     const columns = text.MaxLength > 50 ? 50 : text.MaxLength;
+    const prettyChoice = urlizeLabel(choice, url);
     return (
       <div className="flex mb-2  md:flex-row flex-col" key={choice}>
         <label htmlFor={choice} className="text-gray-600 mr-2 w-24 break-words text-md">
-          {choice + ': '}
+          {prettyChoice}:
         </label>
 
         <textarea
@@ -101,31 +103,25 @@ const Text: FC<TextProps> = ({ text, answers, setAnswers, language }) => {
       <div className="grid grid-rows-1 grid-flow-col">
         <div>
           <h3 className="text-lg break-words text-gray-600 w-96">
-            {language === 'en' && text.Title}
-            {language === 'fr' && text.TitleFr}
-            {language === 'de' && text.TitleDe}
+            {urlizeLabel(internationalize(language, text.Title), text.Title.URL)}
           </h3>
         </div>
         <div className="text-right">
-          {language === 'en' && <HintButton text={text.Hint} />}
-          {language === 'fr' && <HintButton text={text.HintFr} />}
-          {language === 'de' && <HintButton text={text.HintDe} />}
+          {<HintButton text={internationalize(language, text.Hint)} />}
         </div>
       </div>
       <div className="pt-1">{requirementsDisplay()}</div>
-      {language === 'en' && text.ChoicesMap.has('en') && (
+      {text.ChoicesMap.ChoicesMap.has(language) ? (
         <div className="sm:pl-8 mt-2 pl-6">
-          {text.ChoicesMap.get('en').map((choice, index) => choiceDisplay(choice, index))}
+          {text.ChoicesMap.ChoicesMap.get(language).map((choice, index) =>
+            choiceDisplay(choice, text.ChoicesMap.URLs[index], index)
+          )}
         </div>
-      )}
-      {language === 'fr' && text.ChoicesMap.has('fr') && (
+      ) : (
         <div className="sm:pl-8 mt-2 pl-6">
-          {text.ChoicesMap.get('fr').map((choice, index) => choiceDisplay(choice, index))}
-        </div>
-      )}
-      {language === 'de' && text.ChoicesMap.has('de') && (
-        <div className="sm:pl-8 mt-2 pl-6">
-          {text.ChoicesMap.get('de').map((choice, index) => choiceDisplay(choice, index))}
+          {text.ChoicesMap.ChoicesMap.get('en').map((choice, index) =>
+            choiceDisplay(choice, text.ChoicesMap.URLs[index], index)
+          )}
         </div>
       )}
       <div className="text-red-600 text-sm py-2 sm:pl-2 pl-1">{answers.Errors.get(text.ID)}</div>

@@ -7,6 +7,7 @@ import { RankQuestion, SelectQuestion, TextQuestion } from 'types/configuration'
 import SubjectDropdown from './SubjectDropdown';
 import AddQuestionModal from './AddQuestionModal';
 import DisplayTypeIcon from './DisplayTypeIcon';
+import { internationalize, urlizeLabel } from './../../utils';
 type QuestionProps = {
   question: RankQuestion | SelectQuestion | TextQuestion;
   notifyParent(question: RankQuestion | SelectQuestion | TextQuestion): void;
@@ -15,7 +16,7 @@ type QuestionProps = {
 };
 
 const Question: FC<QuestionProps> = ({ question, notifyParent, removeQuestion, language }) => {
-  const { Title, Type, TitleFr, TitleDe } = question;
+  const { Title, Type } = question;
   const [openModal, setOpenModal] = useState<boolean>(false);
 
   const dropdownContent: {
@@ -53,9 +54,7 @@ const Question: FC<QuestionProps> = ({ question, notifyParent, removeQuestion, l
               <DisplayTypeIcon Type={Type} />
             </div>
             <div className="pt-1.5 max-w-md pr-8 truncate">
-              {language === 'en' && (Title.length ? Title : `Enter ${Type} title`)}
-              {language === 'fr' && (TitleFr.length ? TitleFr : Title)}
-              {language === 'de' && (TitleDe.length ? TitleDe : Title)}
+              {urlizeLabel(internationalize(language, Title), Title.URL)}
             </div>
           </div>
 
