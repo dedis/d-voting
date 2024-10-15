@@ -34,7 +34,8 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Parallel()
 
-		adminID := "first admin"
+		// Dummy UserID in SCIPER format
+		adminID := "123456"
 
 		// ##### SETUP ENV #####
 
@@ -63,6 +64,9 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		}
 
 		// ##### CREATE FORM #####
+		err = addAdmin(m, adminID)
+		require.NoError(t, err)
+
 		formID, err := createForm(m, "Three votes form", adminID)
 		require.NoError(t, err)
 
@@ -71,9 +75,8 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		// ##### SETUP DKG #####
 		actor, err := initDkg(nodes, formID, m.m)
 		require.NoError(t, err)
-
 		// ##### OPEN FORM #####
-		err = openForm(m, formID)
+		err = openForm(m, formID, adminID)
 		require.NoError(t, err)
 
 		formFac := types.NewFormFactory(types.CiphervoteFactory{}, nodes[0].GetRosterFac())
@@ -82,7 +85,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		form, err := getForm(formFac, formID, nodes[0].GetOrdering())
 		require.NoError(t, err)
 
-		castedVotes, err := castVotesRandomly(m, actor, form, numVotes)
+		castedVotes, err := castVotesRandomly(m, actor, form, numVotes, adminID)
 		require.NoError(t, err)
 
 		fmt.Println("casted votes:", castedVotes)
@@ -103,7 +106,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		time.Sleep(time.Second * 1)
 
 		t.Logf("shuffling")
-		err = sActor.Shuffle(formID)
+		err = sActor.Shuffle(formID, adminID)
 		require.NoError(t, err)
 
 		err = waitForStatus(types.ShuffledBallots, formFac, formID, nodes,
@@ -128,7 +131,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
 		t.Logf("PubsharesUnit: %v", form.PubsharesUnits)
 		require.NoError(t, err)
-		err = decryptBallots(m, actor, form)
+		err = decryptBallots(m, actor, form, adminID)
 		require.NoError(t, err)
 
 		err = waitForStatus(types.ResultAvailable, formFac, formID, nodes,
@@ -167,13 +170,15 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 
 		fmt.Println("test done")
 	}
+
 }
 
 func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Parallel()
 
-		adminID := "first admin"
+		// Dummy UserID in SCIPER format
+		adminID := "123456"
 
 		// ##### SETUP ENV #####
 
@@ -202,6 +207,9 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		}
 
 		// ##### CREATE FORM #####
+		err = addAdmin(m, adminID)
+		require.NoError(t, err)
+
 		formID, err := createForm(m, "Three votes form", adminID)
 		require.NoError(t, err)
 
@@ -212,7 +220,7 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		require.NoError(t, err)
 
 		// ##### OPEN FORM #####
-		err = openForm(m, formID)
+		err = openForm(m, formID, adminID)
 		require.NoError(t, err)
 
 		formFac := types.NewFormFactory(types.CiphervoteFactory{}, nodes[0].GetRosterFac())
@@ -233,7 +241,7 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		err = closeNodes(crashNodeList)
 		require.NoError(t, err)
 
-		castedVotes, err := castVotesRandomly(m, actor, form, numVotes)
+		castedVotes, err := castVotesRandomly(m, actor, form, numVotes, adminID)
 		require.NoError(t, err)
 
 		fmt.Println("casted votes:", castedVotes)
@@ -254,7 +262,7 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		time.Sleep(time.Second * 1)
 
 		t.Logf("shuffling")
-		err = sActor.Shuffle(formID)
+		err = sActor.Shuffle(formID, adminID)
 
 		// If the number of failing nodes is greater
 		// than the threshold, the shuffle will fail
@@ -291,7 +299,7 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 		t.Logf("PubsharesUnit: %v", form.PubsharesUnits)
 		require.NoError(t, err)
 		// Heisenbug: https://github.com/c4dt/d-voting/issues/90
-		err = decryptBallots(m, actor, form)
+		err = decryptBallots(m, actor, form, adminID)
 		require.NoError(t, err)
 
 		err = waitForStatus(types.ResultAvailable, formFac, formID, nodes,
@@ -321,7 +329,8 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 	return func(b *testing.B) {
 
-		adminID := "first admin"
+		// Dummy UserID in SCIPER format
+		adminID := "123456"
 
 		// ##### SETUP ENV #####
 
@@ -348,6 +357,9 @@ func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 		}
 
 		// ##### CREATE FORM #####
+		err = addAdmin(m, adminID)
+		require.NoError(b, err)
+
 		formID, err := createForm(m, "Three votes form", adminID)
 		require.NoError(b, err)
 
@@ -358,7 +370,7 @@ func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 		require.NoError(b, err)
 
 		// ##### OPEN FORM #####
-		err = openForm(m, formID)
+		err = openForm(m, formID, adminID)
 		require.NoError(b, err)
 
 		formFac := types.NewFormFactory(types.CiphervoteFactory{}, nodes[0].GetRosterFac())
@@ -367,7 +379,7 @@ func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 		form, err := getForm(formFac, formID, nodes[0].GetOrdering())
 		require.NoError(b, err)
 
-		castedVotes, err := castVotesRandomly(m, actor, form, numVotes)
+		castedVotes, err := castVotesRandomly(m, actor, form, numVotes, adminID)
 		require.NoError(b, err)
 
 		fmt.Println("casted votes:", castedVotes)
@@ -386,7 +398,7 @@ func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 
 		time.Sleep(time.Second * 1)
 
-		err = sActor.Shuffle(formID)
+		err = sActor.Shuffle(formID, adminID)
 		require.NoError(b, err)
 
 		err = waitForStatus(types.ShuffledBallots, formFac, formID, nodes,
@@ -410,7 +422,7 @@ func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 		form, err = getForm(formFac, formID, nodes[0].GetOrdering())
 		b.Logf("PubsharesUnit: %v", form.PubsharesUnits)
 		require.NoError(b, err)
-		err = decryptBallots(m, actor, form)
+		err = decryptBallots(m, actor, form, adminID)
 		require.NoError(b, err)
 
 		err = waitForStatus(types.ResultAvailable, formFac, formID, nodes,

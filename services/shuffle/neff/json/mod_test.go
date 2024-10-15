@@ -20,18 +20,18 @@ func TestMessageFormat_StartShuffle_Encode(t *testing.T) {
 	_, err = format.Encode(ctx, fake.Message{})
 	require.EqualError(t, err, "unsupported message of type 'fake.Message'")
 
-	startShuffle := types.NewStartShuffle("", []mino.Address{fake.NewBadAddress()})
+	startShuffle := types.NewStartShuffle("", "123456", []mino.Address{fake.NewBadAddress()})
 
 	_, err = format.Encode(ctx, startShuffle)
 	require.EqualError(t, err, fake.Err("couldn't marshal address"))
 
-	startShuffle = types.NewStartShuffle("dummyId", []mino.Address{fake.NewAddress(0)})
+	startShuffle = types.NewStartShuffle("dummyId", "123456", []mino.Address{fake.NewAddress(0)})
 
 	data, err := format.Encode(ctx, startShuffle)
 	require.NoError(t, err)
 
-	regexp := `{"StartShuffle":{"FormId":"dummyId","Addresses":\["AAAAAA=="\]`
-	require.Regexp(t, regexp, string(data))
+	regexp := `{"StartShuffle":{"FormID":"dummyId","UserID":"123456","Addresses":["AAAAAA=="]}}`
+	require.Equal(t, regexp, string(data))
 }
 
 func TestMessageFormat_EndShuffle_Encode(t *testing.T) {
@@ -64,6 +64,7 @@ func TestMessageFormat_StartShuffle_Decode(t *testing.T) {
 
 	expected := types.NewStartShuffle(
 		"dummyId",
+		"123456",
 		[]mino.Address{fake.NewAddress(0)},
 	)
 
@@ -72,7 +73,7 @@ func TestMessageFormat_StartShuffle_Decode(t *testing.T) {
 
 	startShuffle, err := format.Decode(ctx, data)
 	require.NoError(t, err)
-	require.Equal(t, expected.GetFormId(), startShuffle.(types.StartShuffle).GetFormId())
+	require.Equal(t, expected.GetFormID(), startShuffle.(types.StartShuffle).GetFormID())
 	require.Len(t, startShuffle.(types.StartShuffle).GetAddresses(), len(expected.GetAddresses()))
 
 }

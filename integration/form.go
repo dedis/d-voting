@@ -34,13 +34,36 @@ func encodeID(ID string) types.ID {
 }
 
 // for integration tests
+func addAdmin(m txManager, admin string) error {
+	addAdmin := types.AddAdmin{admin, admin}
+
+	data, err := addAdmin.Serialize(serdecontext)
+	if err != nil {
+		return xerrors.Errorf("failed to serialize: %v", err)
+	}
+
+	args := []txn.Arg{
+		{Key: native.ContractArg, Value: []byte(evoting.ContractName)},
+		{Key: evoting.FormArg, Value: data},
+		{Key: evoting.CmdArg, Value: []byte(evoting.CmdAddAdmin)},
+	}
+
+	_, err = m.addAndWait(args...)
+	if err != nil {
+		return xerrors.Errorf(addAndWaitErr, err)
+	}
+
+	return nil
+}
+
+// for integration tests
 func createForm(m txManager, title string, admin string) ([]byte, error) {
 	// Define the configuration :
 	configuration := fake.BasicConfiguration
 
 	createForm := types.CreateForm{
 		Configuration: configuration,
-		AdminID:       admin,
+		UserID:        admin,
 	}
 
 	data, err := createForm.Serialize(serdecontext)
@@ -75,7 +98,7 @@ func createFormScenario(contentType, proxy string, secret kyber.Scalar, t *testi
 
 	createSimpleFormRequest := ptypes.CreateFormRequest{
 		Configuration: configuration,
-		AdminID:       "adminId",
+		UserID:        "adminId",
 	}
 
 	signed, err := createSignedRequest(secret, createSimpleFormRequest)
@@ -110,9 +133,10 @@ func createFormScenario(contentType, proxy string, secret kyber.Scalar, t *testi
 }
 
 // for integration tests
-func openForm(m txManager, formID []byte) error {
+func openForm(m txManager, formID []byte, userID string) error {
 	openForm := &types.OpenForm{
 		FormID: hex.EncodeToString(formID),
+		UserID: userID,
 	}
 
 	data, err := openForm.Serialize(serdecontext)

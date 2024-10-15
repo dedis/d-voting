@@ -20,6 +20,7 @@ The current d-voting [latest commit](https://github.com/c4dt/d-voting/commit/39a
     Note over User: encrypt ballot via Elgamal encryption using electionPubKey
     Note over User, Backend: data = encrypted ballot
     Note over Backend: check role and sign payload.
+    Note over Backend: add voterID inside payload.
     Note over Backend: add userID inside payload.
     Note over Backend: sign = kyber.sign.schnorr.sign(edCurve, scalar, hash);
     Backend ->>+ NodeX: POST /evoting/elections/
@@ -96,7 +97,7 @@ sequenceDiagram
     Note over User: generate hash of encrypted ballot and show to user
     Note over User, Backend: data = encrypted ballot
     Note over Backend: check role and sign payload.
-    Note over Backend: add userID inside payload.
+    Note over Backend: add VoterID inside payload.
     Note over Backend: sign = kyber.sign.schnorr.sign(edCurve, scalar, hash);
     Backend ->>+ NodeX: POST /evoting/elections/
     Note over Backend, NodeX: data: {"Payload": dataStrB64, "Signature": ""}

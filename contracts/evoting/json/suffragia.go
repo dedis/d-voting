@@ -42,7 +42,7 @@ func (suffragiaFormat) Decode(ctx serde.Context, data []byte) (serde.Message, er
 
 // SuffragiaJSON defines the JSON representation of a suffragia.
 type SuffragiaJSON struct {
-	UserIDs     []string
+	VoterIDs    []string
 	Ciphervotes []json.RawMessage
 }
 
@@ -58,7 +58,7 @@ func encodeSuffragia(ctx serde.Context, suffragia types.Suffragia) (SuffragiaJSO
 		ciphervotes[i] = buff
 	}
 	return SuffragiaJSON{
-		UserIDs:     suffragia.UserIDs,
+		VoterIDs:    suffragia.VoterIDs,
 		Ciphervotes: ciphervotes,
 	}, nil
 }
@@ -89,7 +89,7 @@ func decodeSuffragia(ctx serde.Context, suffragiaJSON SuffragiaJSON) (types.Suff
 	}
 
 	res = types.Suffragia{
-		UserIDs:     suffragiaJSON.UserIDs,
+		VoterIDs:    suffragiaJSON.VoterIDs,
 		Ciphervotes: ciphervotes,
 	}
 

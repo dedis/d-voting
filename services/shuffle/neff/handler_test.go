@@ -37,7 +37,7 @@ func TestHandler_Stream(t *testing.T) {
 	require.EqualError(t, err, "expected StartShuffle message, got: fake.Message")
 
 	receiver = fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0),
-		types.NewStartShuffle("dummyID", make([]mino.Address, 0))))
+		types.NewStartShuffle("dummyID", "123456", make([]mino.Address, 0))))
 
 	handler.txmngr = fake.Manager{}
 	handler.service = &fake.Service{Forms: make(map[string]etypes.Form), BallotSnap: fake.NewSnapshot()}
@@ -50,7 +50,7 @@ func TestHandler_Stream(t *testing.T) {
 	dummyID := hex.EncodeToString([]byte("dummyId"))
 	handler = initValidHandler(dummyID)
 
-	receiver = fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), types.NewStartShuffle(dummyID, make([]mino.Address, 0))))
+	receiver = fake.NewReceiver(fake.NewRecvMsg(fake.NewAddress(0), types.NewStartShuffle(dummyID, "123456", make([]mino.Address, 0))))
 	err = handler.Stream(fake.Sender{}, receiver)
 
 	require.NoError(t, err)
@@ -75,7 +75,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 	handler.service = &badService
 	handler.txmngr = fake.Manager{}
 
-	err := handler.handleStartShuffle(dummyID)
+	err := handler.handleStartShuffle(dummyID, "123456")
 	require.EqualError(t, err, "failed to get form: while getting data for form: this key doesn't exist")
 
 	// Form does not exist
@@ -86,7 +86,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 	}
 	handler.service = &service
 
-	err = handler.handleStartShuffle(dummyID)
+	err = handler.handleStartShuffle(dummyID, "123456")
 	require.EqualError(t, err, "failed to get form: while getting data for form: this key doesn't exist")
 
 	// Form still opened:
@@ -106,7 +106,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 	handler.context = serdecontext
 	handler.formFac = formFac
 
-	err = handler.handleStartShuffle(dummyID)
+	err = handler.handleStartShuffle(dummyID, "123456")
 	require.EqualError(t, err, "the form must be closed: (0)")
 
 	// TODO: think how to re-enable this test
@@ -139,7 +139,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 			C: Cs[i],
 		},
 		}
-		err := form.CastVote(service.Context, snap, "dummyUser"+strconv.Itoa(i), ballot)
+		err := form.CastVote(service.Context, snap, "123456", ballot)
 		require.NoError(t, err)
 	}
 
@@ -155,7 +155,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 
 	handler.shuffleSigner = fake.NewBadSigner()
 
-	err = handler.handleStartShuffle(dummyID)
+	err = handler.handleStartShuffle(dummyID, "123456")
 	require.EqualError(t, err, fake.Err("failed to make tx: could not sign the shuffle "))
 
 	// Bad common signer :
@@ -168,7 +168,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 
 	handler.txmngr = fake.Manager{}
 
-	err = handler.handleStartShuffle(dummyID)
+	err = handler.handleStartShuffle(dummyID, "123456")
 	require.EqualError(t, err, fake.Err("failed to make tx: failed to use manager"))
 
 	manager := signed.NewManager(fake.NewSigner(), fakeClient{})
@@ -181,7 +181,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 	handler.service = &service
 	handler.p = &fakePool
 
-	err = handler.handleStartShuffle(dummyID)
+	err = handler.handleStartShuffle(dummyID, "123456")
 	require.NoError(t, err)
 
 	// Threshold is reached :
@@ -190,7 +190,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 	fakePool = fake.Pool{Service: &service}
 	handler.service = &service
 
-	err = handler.handleStartShuffle(dummyID)
+	err = handler.handleStartShuffle(dummyID, "123456")
 	require.NoError(t, err)
 
 	// Service not working :
@@ -200,7 +200,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 	fakePool = fake.Pool{Service: &service}
 
 	handler.service = &service
-	err = handler.handleStartShuffle(dummyID)
+	err = handler.handleStartShuffle(dummyID, "123456")
 	// all transactions got denied
 	require.NoError(t, err)
 
@@ -219,7 +219,7 @@ func TestHandler_StartShuffle(t *testing.T) {
 	handler = *NewHandler(handler.me, &service, &fakePool, manager,
 		handler.shuffleSigner, serdecontext, formFac)
 
-	err = handler.handleStartShuffle(dummyID)
+	err = handler.handleStartShuffle(dummyID, "123456")
 	require.NoError(t, err)
 }
 

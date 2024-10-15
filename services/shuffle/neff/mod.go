@@ -98,7 +98,7 @@ type Actor struct {
 // Shuffle must be called by ONE of the actors to shuffle the list of ElGamal
 // pairs.
 // Each node represented by a player must first execute Listen().
-func (a *Actor) Shuffle(formID []byte) error {
+func (a *Actor) Shuffle(formID []byte, userID string) error {
 	a.Lock()
 	defer a.Unlock()
 
@@ -133,7 +133,7 @@ func (a *Actor) Shuffle(formID []byte) error {
 
 	dela.Logger.Info().Msgf("sending start shuffle to: %v", addrs)
 
-	message := types.NewStartShuffle(formIDHex, addrs)
+	message := types.NewStartShuffle(formIDHex, userID, addrs)
 
 	errs := sender.Send(message, addrs...)
 	err = <-errs
@@ -142,7 +142,7 @@ func (a *Actor) Shuffle(formID []byte) error {
 		//return xerrors.Errorf("failed to start shuffle: %v", err)
 	}
 
-	err = a.waitAndCheckShuffling(message.GetFormId(), form.Roster.Len())
+	err = a.waitAndCheckShuffling(message.GetFormID(), form.Roster.Len())
 	if err != nil {
 		return xerrors.Errorf("failed to wait and check shuffling: %v", err)
 	}

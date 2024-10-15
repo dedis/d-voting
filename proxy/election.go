@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 
 	"github.com/dedis/d-voting/contracts/evoting"
@@ -19,7 +20,6 @@ import (
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/sign/schnorr"
 	"golang.org/x/xerrors"
 )
 
@@ -37,14 +37,23 @@ func NewForm(srv ordering.Service, p pool.Pool,
 
 	logger := dela.Logger.With().Timestamp().Str("role", "evoting-proxy").Logger()
 
+	// Compute the ID of the admin list id
+	// We need it to filter the send list of form
+	h := sha256.New()
+	h.Write([]byte(evoting.AdminListId))
+	adminListIDBuf := h.Sum(nil)
+	adminListID := hex.EncodeToString(adminListIDBuf)
+
 	return &form{
 		logger:      logger,
 		orderingSvc: srv,
 		context:     ctx,
 		formFac:     fac,
+		adminFac:    types.AdminListFactory{},
 		mngr:        txnManaxer,
 		pool:        p,
 		pk:          pk,
+		adminListID: adminListID,
 	}
 }
 
@@ -58,13 +67,15 @@ type form struct {
 	logger      zerolog.Logger
 	context     serde.Context
 	formFac     serde.Factory
+	adminFac    serde.Factory
 	mngr        txnmanager.Manager
 	pool        pool.Pool
 	pk          kyber.Point
+	adminListID string
 }
 
 // NewForm implements proxy.Proxy
-func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
+func (form *form) NewForm(w http.ResponseWriter, r *http.Request) {
 	var req ptypes.CreateFormRequest
 
 	// get the signed request
@@ -75,7 +86,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get the request and verify the signature
-	err = signed.GetAndVerify(h.pk, &req)
+	err = signed.GetAndVerify(form.pk, &req)
 	if err != nil {
 		InternalError(w, r, getSignedErr(err), nil)
 		return
@@ -83,11 +94,11 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 
 	createForm := types.CreateForm{
 		Configuration: req.Configuration,
-		AdminID:       req.AdminID,
+		UserID:        req.UserID,
 	}
 
 	// serialize the transaction
-	data, err := createForm.Serialize(h.context)
+	data, err := createForm.Serialize(form.context)
 	if err != nil {
 		http.Error(w, "failed to marshal CreateFormTransaction: "+err.Error(),
 			http.StatusInternalServerError)
@@ -95,7 +106,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create the transaction and add it to the pool
-	txnID, blockIdx, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdCreateForm, evoting.FormArg, data)
+	txnID, blockIdx, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdCreateForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -107,7 +118,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 	formID := hash.Sum(nil)
 
 	// create it to get the  token
-	transactionClientInfo, err := h.mngr.CreateTransactionResult(txnID, blockIdx, txnmanager.UnknownTransactionStatus)
+	transactionClientInfo, err := form.mngr.CreateTransactionResult(txnID, blockIdx, txnmanager.UnknownTransactionStatus)
 	if err != nil {
 		http.Error(w, "failed to create transaction info: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -126,7 +137,7 @@ func (h *form) NewForm(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewFormVote implements proxy.Proxy
-func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
+func (form *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 	var req ptypes.CastVoteRequest
 
 	// get the signed request
@@ -137,7 +148,7 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get the request and verify the signature
-	err = signed.GetAndVerify(h.pk, &req)
+	err = signed.GetAndVerify(form.pk, &req)
 	if err != nil {
 		InternalError(w, r, getSignedErr(err), nil)
 		return
@@ -153,7 +164,7 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 
 	formID := vars["formID"]
 
-	elecMD, err := h.getFormsMetadata()
+	elecMD, err := form.getFormsMetadata()
 	if err != nil {
 		http.Error(w, "failed to get form metadata", http.StatusNotFound)
 		return
@@ -192,13 +203,13 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	castVote := types.CastVote{
-		FormID: formID,
-		UserID: req.UserID,
-		Ballot: ciphervote,
+		FormID:  formID,
+		VoterID: req.VoterID,
+		Ballot:  ciphervote,
 	}
 
 	// serialize the vote
-	data, err := castVote.Serialize(h.context)
+	data, err := castVote.Serialize(form.context)
 	if err != nil {
 		http.Error(w, "failed to marshal CastVoteTransaction: "+err.Error(),
 			http.StatusInternalServerError)
@@ -206,15 +217,15 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create the transaction and add it to the pool
-	txnID, lastBlock, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdCastVote, evoting.FormArg, data)
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdCastVote, evoting.FormArg, data)
 	if err != nil {
-		h.logger.Err(err).Msg("failed to submit txn")
+		form.logger.Err(err).Msg("failed to submit txn")
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// send the transaction's information
-	err = h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+	err = form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 	if err != nil {
 		http.Error(w, "couldn't send transaction info: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -222,7 +233,7 @@ func (h *form) NewFormVote(w http.ResponseWriter, r *http.Request) {
 }
 
 // EditForm implements proxy.Proxy
-func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
+func (form *form) EditForm(w http.ResponseWriter, r *http.Request) {
 	var req ptypes.UpdateFormRequest
 
 	// get the signed request
@@ -233,7 +244,7 @@ func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get the request and verify the signature
-	err = signed.GetAndVerify(h.pk, &req)
+	err = signed.GetAndVerify(form.pk, &req)
 	if err != nil {
 		InternalError(w, r, getSignedErr(err), nil)
 		return
@@ -249,7 +260,7 @@ func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
 
 	formID := vars["formID"]
 
-	elecMD, err := h.getFormsMetadata()
+	elecMD, err := form.getFormsMetadata()
 	if err != nil {
 		http.Error(w, "failed to get form metadata", http.StatusNotFound)
 		return
@@ -263,13 +274,13 @@ func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
 
 	switch req.Action {
 	case "open":
-		h.openForm(formID, w, r)
+		form.openForm(formID, req.UserID, w, r)
 	case "close":
-		h.closeForm(formID, w, r)
+		form.closeForm(formID, req.UserID, w, r)
 	case "combineShares":
-		h.combineShares(formID, w, r)
+		form.combineShares(formID, req.UserID, w, r)
 	case "cancel":
-		h.cancelForm(formID, w, r)
+		form.cancelForm(formID, req.UserID, w, r)
 	default:
 		BadRequestError(w, r, xerrors.Errorf("invalid action: %s", req.Action), nil)
 		return
@@ -278,13 +289,14 @@ func (h *form) EditForm(w http.ResponseWriter, r *http.Request) {
 
 // openForm allows opening a form, which sets the public key based on
 // the DKG actor.
-func (h *form) openForm(formID string, w http.ResponseWriter, r *http.Request) {
+func (form *form) openForm(formID string, userID string, w http.ResponseWriter, r *http.Request) {
 	openForm := types.OpenForm{
 		FormID: formID,
+		UserID: userID,
 	}
 
 	// serialize the transaction
-	data, err := openForm.Serialize(h.context)
+	data, err := openForm.Serialize(form.context)
 	if err != nil {
 		http.Error(w, "failed to marshal OpenFormTransaction: "+err.Error(),
 			http.StatusInternalServerError)
@@ -292,25 +304,26 @@ func (h *form) openForm(formID string, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create the transaction and add it to the pool
-	txnID, lastBlock, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdOpenForm, evoting.FormArg, data)
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdOpenForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// send the transaction's informations
-	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 }
 
 // closeForm closes a form.
-func (h *form) closeForm(formIDHex string, w http.ResponseWriter, r *http.Request) {
+func (form *form) closeForm(formIDHex string, userID string, w http.ResponseWriter, r *http.Request) {
 
 	closeForm := types.CloseForm{
 		FormID: formIDHex,
+		UserID: userID,
 	}
 
 	// serialize the transaction
-	data, err := closeForm.Serialize(h.context)
+	data, err := closeForm.Serialize(form.context)
 	if err != nil {
 		http.Error(w, "failed to marshal CloseFormTransaction: "+err.Error(),
 			http.StatusInternalServerError)
@@ -318,27 +331,27 @@ func (h *form) closeForm(formIDHex string, w http.ResponseWriter, r *http.Reques
 	}
 
 	// create the transaction and add it to the pool
-	txnID, lastBlock, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdCloseForm, evoting.FormArg, data)
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdCloseForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// send the transaction's informations
-	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 
 }
 
 // combineShares decrypts the shuffled ballots in a form.
-func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Request) {
+func (form *form) combineShares(formIDHex string, userID string, w http.ResponseWriter, r *http.Request) {
 
-	form, err := types.FormFromStore(h.context, h.formFac, formIDHex, h.orderingSvc.GetStore())
+	formFromStore, err := types.FormFromStore(form.context, form.formFac, formIDHex, form.orderingSvc.GetStore())
 	if err != nil {
 		http.Error(w, "failed to get form: "+err.Error(),
 			http.StatusInternalServerError)
 		return
 	}
-	if form.Status != types.PubSharesSubmitted {
+	if formFromStore.Status != types.PubSharesSubmitted {
 		http.Error(w, "the submission of public shares must be over!",
 			http.StatusUnauthorized)
 		return
@@ -346,10 +359,11 @@ func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Re
 
 	decryptBallots := types.CombineShares{
 		FormID: formIDHex,
+		UserID: userID,
 	}
 
 	// serialize the transaction
-	data, err := decryptBallots.Serialize(h.context)
+	data, err := decryptBallots.Serialize(form.context)
 	if err != nil {
 		http.Error(w, "failed to marshal decryptBallots: "+err.Error(),
 			http.StatusInternalServerError)
@@ -357,25 +371,26 @@ func (h *form) combineShares(formIDHex string, w http.ResponseWriter, r *http.Re
 	}
 
 	// create the transaction and add it to the pool
-	txnID, lastBlock, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdCombineShares, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// send the transaction's informations
-	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 }
 
 // cancelForm cancels a form.
-func (h *form) cancelForm(formIDHex string, w http.ResponseWriter, r *http.Request) {
+func (form *form) cancelForm(formIDHex string, userID string, w http.ResponseWriter, r *http.Request) {
 
 	cancelForm := types.CancelForm{
 		FormID: formIDHex,
+		UserID: userID,
 	}
 
 	// serialize the transaction
-	data, err := cancelForm.Serialize(h.context)
+	data, err := cancelForm.Serialize(form.context)
 	if err != nil {
 		http.Error(w, "failed to marshal CancelForm: "+err.Error(),
 			http.StatusInternalServerError)
@@ -383,19 +398,19 @@ func (h *form) cancelForm(formIDHex string, w http.ResponseWriter, r *http.Reque
 	}
 
 	// create the transaction and add it to the pool
-	txnID, lastBlock, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdCancelForm, evoting.FormArg, data)
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdCancelForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// send the transaction's informations
-	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 }
 
 // Form implements proxy.Proxy. The request should not be signed because it
 // is fetching public data.
-func (h *form) Form(w http.ResponseWriter, r *http.Request) {
+func (form *form) Form(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "*")
 
@@ -410,7 +425,7 @@ func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 	formID := vars["formID"]
 
 	// get the form
-	form, err := types.FormFromStore(h.context, h.formFac, formID, h.orderingSvc.GetStore())
+	formFromStore, err := types.FormFromStore(form.context, form.formFac, formID, form.orderingSvc.GetStore())
 	if err != nil {
 		http.Error(w, xerrors.Errorf("failed to get form: %v", err).Error(), http.StatusInternalServerError)
 		return
@@ -419,8 +434,8 @@ func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 	var pubkeyBuf []byte
 
 	// get the public key
-	if form.Pubkey != nil {
-		pubkeyBuf, err = form.Pubkey.MarshalBinary()
+	if formFromStore.Pubkey != nil {
+		pubkeyBuf, err = formFromStore.Pubkey.MarshalBinary()
 		if err != nil {
 			http.Error(w, "failed to marshal pubkey: "+err.Error(),
 				http.StatusInternalServerError)
@@ -428,14 +443,14 @@ func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	roster := make([]string, 0, form.Roster.Len())
+	roster := make([]string, 0, formFromStore.Roster.Len())
 
-	iter := form.Roster.AddressIterator()
+	iter := formFromStore.Roster.AddressIterator()
 	for iter.HasNext() {
 		roster = append(roster, iter.GetNext().String())
 	}
 
-	suff, err := form.Suffragia(h.context, h.orderingSvc.GetStore())
+	suff, err := formFromStore.Suffragia(form.context, form.orderingSvc.GetStore())
 	if err != nil {
 		http.Error(w, "couldn't get ballots: "+err.Error(),
 			http.StatusInternalServerError)
@@ -443,15 +458,15 @@ func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := ptypes.GetFormResponse{
-		FormID:          string(form.FormID),
-		Configuration:   form.Configuration,
-		Status:          uint16(form.Status),
+		FormID:          string(formFromStore.FormID),
+		Configuration:   formFromStore.Configuration,
+		Status:          uint16(formFromStore.Status),
 		Pubkey:          hex.EncodeToString(pubkeyBuf),
-		Result:          form.DecryptedBallots,
+		Result:          formFromStore.DecryptedBallots,
 		Roster:          roster,
-		ChunksPerBallot: form.ChunksPerBallot(),
-		BallotSize:      form.BallotSize,
-		Voters:          suff.UserIDs,
+		ChunksPerBallot: formFromStore.ChunksPerBallot(),
+		BallotSize:      formFromStore.BallotSize,
+		Voters:          suff.VoterIDs,
 	}
 
 	txnmanager.SendResponse(w, response)
@@ -460,11 +475,11 @@ func (h *form) Form(w http.ResponseWriter, r *http.Request) {
 
 // Forms implements proxy.Proxy. The request should not be signed because it
 // is fecthing public data.
-func (h *form) Forms(w http.ResponseWriter, r *http.Request) {
+func (form *form) Forms(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "*")
 
-	elecMD, err := h.getFormsMetadata()
+	elecMD, err := form.getFormsMetadata()
 	if err != nil {
 		InternalError(w, r, xerrors.Errorf("failed to get form metadata: %v", err), nil)
 		return
@@ -474,30 +489,32 @@ func (h *form) Forms(w http.ResponseWriter, r *http.Request) {
 
 	// get the forms
 	for i, id := range elecMD.FormsIDs {
-		form, err := types.FormFromStore(h.context, h.formFac, id, h.orderingSvc.GetStore())
-		if err != nil {
-			InternalError(w, r, xerrors.Errorf("failed to get form: %v", err), nil)
-			return
-		}
-
-		var pubkeyBuf []byte
-
-		if form.Pubkey != nil {
-			pubkeyBuf, err = form.Pubkey.MarshalBinary()
+		if id != form.adminListID {
+			form, err := types.FormFromStore(form.context, form.formFac, id, form.orderingSvc.GetStore())
 			if err != nil {
-				InternalError(w, r, xerrors.Errorf("failed to marshal pubkey: %v", err), nil)
+				InternalError(w, r, xerrors.Errorf("failed to get form: %v", err), nil)
 				return
 			}
-		}
 
-		info := ptypes.LightForm{
-			FormID: string(form.FormID),
-			Title:  form.Configuration.Title,
-			Status: uint16(form.Status),
-			Pubkey: hex.EncodeToString(pubkeyBuf),
-		}
+			var pubkeyBuf []byte
 
-		allFormsInfo[i] = info
+			if form.Pubkey != nil {
+				pubkeyBuf, err = form.Pubkey.MarshalBinary()
+				if err != nil {
+					InternalError(w, r, xerrors.Errorf("failed to marshal pubkey: %v", err), nil)
+					return
+				}
+			}
+
+			info := ptypes.LightForm{
+				FormID: string(form.FormID),
+				Title:  form.Configuration.Title,
+				Status: uint16(form.Status),
+				Pubkey: hex.EncodeToString(pubkeyBuf),
+			}
+
+			allFormsInfo[i] = info
+		}
 	}
 
 	response := ptypes.GetFormsResponse{Forms: allFormsInfo}
@@ -507,7 +524,9 @@ func (h *form) Forms(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteForm implements proxy.Proxy
-func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
+func (form *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
+	var req ptypes.UpdateFormRequest
+
 	vars := mux.Vars(r)
 
 	// check if the formID is valid
@@ -518,7 +537,7 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 
 	formID := vars["formID"]
 
-	elecMD, err := h.getFormsMetadata()
+	elecMD, err := form.getFormsMetadata()
 	if err != nil {
 		http.Error(w, "failed to get form metadata", http.StatusNotFound)
 		return
@@ -529,49 +548,270 @@ func (h *form) DeleteForm(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "the form does not exist", http.StatusNotFound)
 		return
 	}
-
-	// auth should contain the hex-encoded signature on the hex-encoded form
-	// ID
-	auth := r.Header.Get("Authorization")
-
-	signature, err := hex.DecodeString(auth)
+	
+	// get the signed request
+	signed, err := ptypes.NewSignedRequest(r.Body)
 	if err != nil {
-		BadRequestError(w, r, xerrors.Errorf("failed to decode auth: %v", err), nil)
+		InternalError(w, r, newSignedErr(err), nil)
 		return
 	}
 
-	// check if the signature is valid
-	err = schnorr.Verify(suite, h.pk, []byte(formID), signature)
+	err = signed.GetAndVerify(form.pk, &req)
 	if err != nil {
-		ForbiddenError(w, r, xerrors.Errorf("signature verification failed: %v", err), nil)
+		InternalError(w, r, getSignedErr(err), nil)
 		return
 	}
 
 	deleteForm := types.DeleteForm{
 		FormID: formID,
+		UserID: req.UserID,
 	}
 
-	data, err := deleteForm.Serialize(h.context)
+	data, err := deleteForm.Serialize(form.context)
 	if err != nil {
 		InternalError(w, r, xerrors.Errorf("failed to marshal DeleteForm: %v", err), nil)
 		return
 	}
 
 	// create the transaction and add it to the pool
-	txnID, lastBlock, err := h.mngr.SubmitTxn(r.Context(), evoting.CmdDeleteForm, evoting.FormArg, data)
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdDeleteForm, evoting.FormArg, data)
 	if err != nil {
 		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// send the transaction's information
-	h.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
 }
 
-func (h *form) getFormsMetadata() (types.FormsMetadata, error) {
+// POST /addtoadminlist
+func (form *form) AddAdmin(w http.ResponseWriter, r *http.Request) {
+	req, err := form.getPermissionOpRequest(w, r)
+	if err != nil {
+		return
+	}
+
+	addAdmin := types.AddAdmin{
+		TargetUserID:     req.TargetUserID,
+		PerformingUserID: req.PerformingUserID,
+	}
+
+	data, err := addAdmin.Serialize(form.context)
+	if err != nil {
+		InternalError(w, r, xerrors.Errorf("failed to marshal AddAdmin: %v", err), nil)
+		return
+	}
+
+	// create the transaction and add it to the pool
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdAddAdmin, evoting.FormArg, data)
+	if err != nil {
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// send the transaction's information
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+}
+
+// POST /removetoadminlist
+func (form *form) RemoveAdmin(w http.ResponseWriter, r *http.Request) {
+	req, err := form.getPermissionOpRequest(w, r)
+	if err != nil {
+		return
+	}
+
+	removeAdmin := types.RemoveAdmin{
+		TargetUserID:     req.TargetUserID,
+		PerformingUserID: req.PerformingUserID,
+	}
+
+	data, err := removeAdmin.Serialize(form.context)
+	if err != nil {
+		InternalError(w, r, xerrors.Errorf("failed to marshal RemoveAdmin: %v", err), nil)
+		return
+	}
+
+	// create the transaction and add it to the pool
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdRemoveAdmin, evoting.FormArg, data)
+	if err != nil {
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+}
+
+// GET /adminlist
+func (form *form) AdminList(w http.ResponseWriter, r *http.Request) {
+	adminList, err := types.AdminListFromStore(form.context, form.adminFac, form.orderingSvc.GetStore(), evoting.AdminListId)
+	if err != nil {
+		InternalError(w, r, xerrors.Errorf("failed to get form: %v", err), nil)
+		return
+	}
+
+	// Used to check whether it is the last SCIPER printed
+	count := 0
+	lenAdminList := len(adminList.AdminList)
+
+	myAdminList := "{"
+	for id := range adminList.AdminList {
+		count++
+
+		// If last element, does not add ', ' otherwise add ', '
+		if count == lenAdminList {
+			myAdminList += strconv.Itoa(adminList.AdminList[id])
+		} else {
+			myAdminList += strconv.Itoa(adminList.AdminList[id]) + ", "
+		}
+
+	}
+	myAdminList += "}"
+
+	txnmanager.SendResponse(w, myAdminList)
+}
+
+// POST /forms/{formID}/addowner
+func (form *form) AddOwnerToForm(w http.ResponseWriter, r *http.Request) {
+	req, err := form.getPermissionOpRequest(w, r)
+	if err != nil {
+		return
+	}
+
+	formID, hasFailed := form.extractAndRetrieveFormID(w, r)
+	if hasFailed {
+		return
+	}
+
+	addOwner := types.AddOwner{
+		FormID:           formID,
+		TargetUserID:     req.TargetUserID,
+		PerformingUserID: req.PerformingUserID,
+	}
+
+	data, err := addOwner.Serialize(form.context)
+	if err != nil {
+		InternalError(w, r, xerrors.Errorf("failed to marshal AddOwner: %v", err), nil)
+		return
+	}
+
+	// create the transaction and add it to the pool
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdAddOwnerForm, evoting.FormArg, data)
+	if err != nil {
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+}
+
+// POST /forms/{formID}/removeowner
+func (form *form) RemoveOwnerToForm(w http.ResponseWriter, r *http.Request) {
+	req, err := form.getPermissionOpRequest(w, r)
+	if err != nil {
+		return
+	}
+
+	formID, hasFailed := form.extractAndRetrieveFormID(w, r)
+	if hasFailed {
+		return
+	}
+
+	removeOwner := types.RemoveOwner{
+		FormID:           formID,
+		TargetUserID:     req.TargetUserID,
+		PerformingUserID: req.PerformingUserID,
+	}
+
+	data, err := removeOwner.Serialize(form.context)
+	if err != nil {
+		InternalError(w, r, xerrors.Errorf("failed to marshal RemoveOwner: %v", err), nil)
+		return
+	}
+
+	// create the transaction and add it to the pool
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdRemoveOwnerForm, evoting.FormArg, data)
+	if err != nil {
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+}
+
+// POST /forms/{formID}/addvoter
+func (form *form) AddVoterToForm(w http.ResponseWriter, r *http.Request) {
+	req, err := form.getPermissionOpRequest(w, r)
+	if err != nil {
+		return
+	}
+
+	formID, hasFailed := form.extractAndRetrieveFormID(w, r)
+	if hasFailed {
+		return
+	}
+
+	addVoter := types.AddVoter{
+		FormID:           formID,
+		TargetUserID:     req.TargetUserID,
+		PerformingUserID: req.PerformingUserID,
+	}
+
+	data, err := addVoter.Serialize(form.context)
+	if err != nil {
+		InternalError(w, r, xerrors.Errorf("failed to marshal AddVoter: %v", err), nil)
+		return
+	}
+
+	// create the transaction and add it to the pool
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdAddVoterForm, evoting.FormArg, data)
+	if err != nil {
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+}
+
+// POST /forms/{formID}/removevoter
+func (form *form) RemoveVoterToForm(w http.ResponseWriter, r *http.Request) {
+	req, err := form.getPermissionOpRequest(w, r)
+	if err != nil {
+		return
+	}
+
+	formID, hasFailed := form.extractAndRetrieveFormID(w, r)
+	if hasFailed {
+		return
+	}
+
+	removeVoter := types.RemoveVoter{
+		FormID:           formID,
+		TargetUserID:     req.TargetUserID,
+		PerformingUserID: req.PerformingUserID,
+	}
+
+	data, err := removeVoter.Serialize(form.context)
+	if err != nil {
+		InternalError(w, r, xerrors.Errorf("failed to marshal RemoveVoter: %v", err), nil)
+		return
+	}
+
+	// create the transaction and add it to the pool
+	txnID, lastBlock, err := form.mngr.SubmitTxn(r.Context(), evoting.CmdRemoveVoterForm, evoting.FormArg, data)
+	if err != nil {
+		http.Error(w, "failed to submit txn: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	form.mngr.SendTransactionInfo(w, txnID, lastBlock, txnmanager.UnknownTransactionStatus)
+}
+
+// ===== HELPER =====
+
+func (form *form) getFormsMetadata() (types.FormsMetadata, error) {
 	var md types.FormsMetadata
 
-	store, err := h.orderingSvc.GetStore().Get([]byte(evoting.FormsMetadataKey))
+	store, err := form.orderingSvc.GetStore().Get([]byte(evoting.FormsMetadataKey))
 	if err != nil {
 		return md, nil
 	}
@@ -587,4 +827,48 @@ func (h *form) getFormsMetadata() (types.FormsMetadata, error) {
 	}
 
 	return md, nil
+}
+
+func (form *form) getPermissionOpRequest(w http.ResponseWriter, r *http.Request) (ptypes.PermissionOperationRequest, error) {
+	var req ptypes.PermissionOperationRequest
+
+	// get the signed request
+	signed, err := ptypes.NewSignedRequest(r.Body)
+	if err != nil {
+		InternalError(w, r, newSignedErr(err), nil)
+		return ptypes.PermissionOperationRequest{}, err
+	}
+
+	// get the request and verify the signature
+	err = signed.GetAndVerify(form.pk, &req)
+	if err != nil {
+		InternalError(w, r, getSignedErr(err), nil)
+		return ptypes.PermissionOperationRequest{}, err
+	}
+	return req, err
+}
+
+func (form *form) extractAndRetrieveFormID(w http.ResponseWriter, r *http.Request) (string, bool) {
+	vars := mux.Vars(r)
+
+	// check if the formID is valid
+	if vars == nil || vars["formID"] == "" {
+		http.Error(w, fmt.Sprintf("formID not found: %v", vars), http.StatusInternalServerError)
+		return "", true
+	}
+
+	formID := vars["formID"]
+
+	elecMD, err := form.getFormsMetadata()
+	if err != nil {
+		http.Error(w, "failed to get form metadata", http.StatusNotFound)
+		return "", true
+	}
+
+	// check if the form exists
+	if elecMD.FormsIDs.Contains(formID) < 0 {
+		http.Error(w, "the form does not exist", http.StatusNotFound)
+		return "", true
+	}
+	return formID, false
 }

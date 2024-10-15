@@ -70,7 +70,7 @@ func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 
 	switch msg := msg.(type) {
 	case types.StartShuffle:
-		err := h.handleStartShuffle(msg.GetFormId())
+		err := h.handleStartShuffle(msg.GetFormID(), msg.GetUserID())
 		if err != nil {
 			return xerrors.Errorf("failed to handle StartShuffle message: %v", err)
 		}
@@ -81,7 +81,7 @@ func (h *Handler) Stream(out mino.Sender, in mino.Receiver) error {
 	return nil
 }
 
-func (h *Handler) handleStartShuffle(formID string) error {
+func (h *Handler) handleStartShuffle(formID string, userID string) error {
 	dela.Logger.Info().Msg("Starting the neff shuffle protocol ...")
 
 	err := h.txmngr.Sync()
@@ -108,7 +108,7 @@ func (h *Handler) handleStartShuffle(formID string) error {
 			return xerrors.Errorf("the form must be closed: (%v)", form.Status)
 		}
 
-		tx, err := h.makeTx(&form)
+		tx, err := h.makeTx(&form, userID)
 		if err != nil {
 			return xerrors.Errorf("failed to make tx: %v", err)
 		}
@@ -149,7 +149,7 @@ func (h *Handler) handleStartShuffle(formID string) error {
 	}
 }
 
-func (h *Handler) makeTx(form *etypes.Form) (txn.Transaction, error) {
+func (h *Handler) makeTx(form *etypes.Form, userID string) (txn.Transaction, error) {
 
 	shuffledBallots, getProver, err := h.getShuffledBallots(form)
 	if err != nil {
@@ -158,6 +158,7 @@ func (h *Handler) makeTx(form *etypes.Form) (txn.Transaction, error) {
 
 	shuffleBallots := etypes.ShuffleBallots{
 		FormID:          form.FormID,
+		UserID:          userID,
 		Round:           len(form.ShuffleInstances),
 		ShuffledBallots: shuffledBallots,
 	}
