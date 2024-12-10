@@ -9,12 +9,12 @@ import (
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/json"
 
-	"github.com/dedis/d-voting/services/shuffle/neff/types"
+	"go.dedis.ch/d-voting/services/shuffle/neff/types"
 	"go.dedis.ch/kyber/v3"
 
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/stretchr/testify/require"
+	etypes "go.dedis.ch/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/internal/testing/fake"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/mino"

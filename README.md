@@ -650,8 +650,8 @@ Build info can be added to the binary with the `ldflags`, at build time. Infos
 are stored on variables in the root `mod.go`. For example:
 
 ```sh
-versionFlag="github.com/dedis/d-voting.Version=`git describe --tags`"
-timeFlag="github.com/dedis/d-voting.BuildTime=`date +'%d/%m/%y_%H:%M'`"
+versionFlag="go.dedis.ch/d-voting.Version=`git describe --tags`"
+timeFlag="go.dedis.ch/d-voting.BuildTime=`date +'%d/%m/%y_%H:%M'`"
 
 go build -ldflags="-X $versionFlag -X $timeFlag" ./cli/dvoting
 ```

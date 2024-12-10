@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
+	"go.dedis.ch/d-voting/contracts/evoting"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"

@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting/types"
-	_ "github.com/dedis/d-voting/services/dkg/pedersen/json"
-	_ "github.com/dedis/d-voting/services/shuffle/neff/json"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/contracts/evoting/types"
+	_ "go.dedis.ch/d-voting/services/dkg/pedersen/json"
+	_ "go.dedis.ch/d-voting/services/shuffle/neff/json"
 	delaPkg "go.dedis.ch/dela"
 )
 

@@ -13,11 +13,11 @@ import (
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/json"
 
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/internal/testing/fake"
-	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
+	etypes "go.dedis.ch/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/internal/testing/fake"
+	"go.dedis.ch/d-voting/services/shuffle/neff/types"
 )
 
 var serdecontext serde.Context

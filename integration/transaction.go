@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting"
-	"github.com/dedis/d-voting/proxy/txnmanager"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/contracts/evoting"
+	"go.dedis.ch/d-voting/proxy/txnmanager"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/contracts/access"
 	"go.dedis.ch/dela/core/execution/native"
@@ -134,7 +134,7 @@ func (m txManager) addAndWait(args ...txn.Arg) ([]byte, error) {
 		}
 
 		cancel()
-		
+
 		time.Sleep(time.Millisecond * (1 << i))
 	}
 

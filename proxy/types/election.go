@@ -1,7 +1,7 @@
 package types
 
 import (
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
+	etypes "go.dedis.ch/d-voting/contracts/evoting/types"
 )
 
 // CreateFormRequest defines the HTTP request for creating a form

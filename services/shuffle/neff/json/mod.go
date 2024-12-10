@@ -1,7 +1,7 @@
 package json
 
 import (
-	"github.com/dedis/d-voting/services/shuffle/neff/types"
+	"go.dedis.ch/d-voting/services/shuffle/neff/types"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3/suites"

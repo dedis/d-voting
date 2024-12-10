@@ -1,7 +1,7 @@
 version=$(shell git describe --abbrev=0 --tags || echo '0.0.0')
-versionFlag="github.com/dedis/d-voting.Version=$(version)"
+versionFlag="go.dedis.ch/d-voting.Version=$(version)"
 versionFile=$(shell echo $(version) | tr . _)
-timeFlag="github.com/dedis/d-voting.BuildTime=$(shell date +'%d/%m/%y_%H:%M')"
+timeFlag="go.dedis.ch/d-voting.BuildTime=$(shell date +'%d/%m/%y_%H:%M')"
 
 lint:
 	# Coding style static check.

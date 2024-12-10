@@ -8,9 +8,9 @@ import (
 
 	"go.dedis.ch/kyber/v3"
 
-	"github.com/dedis/d-voting/contracts/evoting"
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/services/shuffle/neff/types"
+	"go.dedis.ch/d-voting/contracts/evoting"
+	etypes "go.dedis.ch/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/services/shuffle/neff/types"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"

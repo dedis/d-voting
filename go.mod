@@ -1,4 +1,4 @@
-module github.com/dedis/d-voting
+module go.dedis.ch/d-voting
 
 go 1.23
 
