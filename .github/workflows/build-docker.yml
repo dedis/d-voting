@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set env
@@ -28,17 +28,17 @@ jobs:
           echo "REACT_APP_BUILD_TIME=$(date)" >> $GITHUB_ENV
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
       - name: Login to GHCR
         if: ${{ env.push == 'true' }}
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Frontend
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfiles/Dockerfile.frontend
@@ -50,7 +50,7 @@ jobs:
           push: ${{ env.push }}
           tags: ghcr.io/dedis/d-voting-frontend:${{ env.DockerTag }}
       - name: Build Backend
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfiles/Dockerfile.backend
@@ -58,7 +58,7 @@ jobs:
           push: ${{ env.push }}
           tags: ghcr.io/dedis/d-voting-backend:${{ env.DockerTag }}
       - name: Build D-Voting
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfiles/Dockerfile.dela

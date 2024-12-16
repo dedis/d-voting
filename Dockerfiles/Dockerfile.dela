@@ -1,4 +1,4 @@
-FROM golang:1.20.6-bookworm AS base
+FROM golang:1.23-bookworm AS base
 RUN apt-get update -y && apt-get install -y git
 WORKDIR /go/d-voting
 COPY go.mod .
@@ -11,7 +11,7 @@ RUN --mount=type=cache,target="/root/.cache/go-build" go install
 # make sure we're using the same head as d-voting
 RUN --mount=type=cache,target="/root/.cache/go-build" cd $( go list -f '{{.Dir}}' go.dedis.ch/dela )/cli/crypto && go install
 
-FROM golang:1.20.6-bookworm AS build
+FROM golang:1.23-bookworm AS build
 WORKDIR /usr/local/bin
 COPY --from=base /go/bin/crypto .
 COPY --from=base /go/bin/dvoting .
