@@ -87,7 +87,7 @@ func customVotesScenario(b *testing.B, stuffing bool) {
 	require.NoError(b, err)
 
 	// ##### OPEN FORM #####
-	err = openForm(m, formID)
+	err = openForm(m, formID, adminID)
 	require.NoError(b, err)
 
 	formFac := types.NewFormFactory(types.CiphervoteFactory{}, nodes[0].GetRosterFac())
@@ -117,7 +117,7 @@ func customVotesScenario(b *testing.B, stuffing bool) {
 	require.NoError(b, err)
 
 	b.Logf("shuffling")
-	err = sActor.Shuffle(formID)
+	err = sActor.Shuffle(formID, adminID)
 	require.NoError(b, err)
 
 	durationShuffling := b.Elapsed()
@@ -146,7 +146,7 @@ func customVotesScenario(b *testing.B, stuffing bool) {
 	require.NoError(b, err)
 
 	b.ResetTimer()
-	err = decryptBallots(m, actor, form)
+	err = decryptBallots(m, actor, form, adminID)
 	require.NoError(b, err)
 	durationDecrypt := b.Elapsed()
 
@@ -219,7 +219,7 @@ func createFormNChunks(m txManager, title types.Title, admin string, numChunks i
 
 	createForm := types.CreateForm{
 		Configuration: configuration,
-		AdminID:       admin,
+		UserID:        admin,
 	}
 
 	data, err := createForm.Serialize(serdecontext)
@@ -272,12 +272,12 @@ func castVotesNChunks(m txManager, actor dkg.Actor, form types.Form,
 	start := time.Now()
 	for i := 0; i < numberOfVotes; i++ {
 
-		userID := "user " + strconv.Itoa(i)
+		voterID := "user " + strconv.Itoa(i)
 
 		castVote := types.CastVote{
-			FormID: form.FormID,
-			UserID: userID,
-			Ballot: ballot,
+			FormID:  form.FormID,
+			VoterID: voterID,
+			Ballot:  ballot,
 		}
 
 		data, err := castVote.Serialize(serdecontext)

@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"strconv"
 
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
@@ -111,13 +112,19 @@ type Form struct {
 	// authority.Authority.
 
 	Roster authority.Authority
+
+	// Store the list of admins SCIPER that are Owners of the form.
+	Owners []int
+
+	// Store the list of SCIPER of user that are Voters on the form.
+	Voters []int
 }
 
 // Serialize implements serde.Message
-func (e Form) Serialize(ctx serde.Context) ([]byte, error) {
+func (form Form) Serialize(ctx serde.Context) ([]byte, error) {
 	format := formFormat.Get(ctx.GetFormat())
 
-	data, err := format.Encode(ctx, e)
+	data, err := format.Encode(ctx, form)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to encode form: %v", err)
 	}
@@ -143,11 +150,11 @@ func NewFormFactory(cf serde.Factory, rf authority.Factory) FormFactory {
 }
 
 // Deserialize implements serde.Factory
-func (e FormFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
+func (formFactory FormFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message, error) {
 	format := formFormat.Get(ctx.GetFormat())
 
-	ctx = serde.WithFactory(ctx, CiphervoteKey{}, e.ciphervoteFac)
-	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, e.rosterFac)
+	ctx = serde.WithFactory(ctx, CiphervoteKey{}, formFactory.ciphervoteFac)
+	ctx = serde.WithFactory(ctx, ctypes.RosterKey{}, formFactory.rosterFac)
 
 	message, err := format.Decode(ctx, data)
 	if err != nil {
@@ -192,40 +199,40 @@ func FormFromStore(ctx serde.Context, formFac serde.Factory, formIDHex string,
 
 // ChunksPerBallot returns the number of chunks of El Gamal pairs needed to
 // represent an encrypted ballot, knowing that one chunk is 29 bytes at most.
-func (e *Form) ChunksPerBallot() int {
-	if e.BallotSize%29 == 0 {
-		return e.BallotSize / 29
+func (form *Form) ChunksPerBallot() int {
+	if form.BallotSize%29 == 0 {
+		return form.BallotSize / 29
 	}
 
-	return e.BallotSize/29 + 1
+	return form.BallotSize/29 + 1
 }
 
 // CastVote stores the new vote in the memory.
-func (s *Form) CastVote(ctx serde.Context, st store.Snapshot, userID string, ciphervote Ciphervote) error {
+func (form *Form) CastVote(ctx serde.Context, st store.Snapshot, userID string, ciphervote Ciphervote) error {
 	var suff Suffragia
 	var batchID []byte
 
-	if s.BallotCount%BallotsPerBatch == 0 {
+	if form.BallotCount%BallotsPerBatch == 0 {
 		// Need to create a random ID for storing the ballots.
 		// H( formID | ballotcount )
 		// should be random enough, even if it's previsible.
-		id, err := hex.DecodeString(s.FormID)
+		id, err := hex.DecodeString(form.FormID)
 		if err != nil {
 			return xerrors.Errorf("couldn't decode formID: %v", err)
 		}
 		h := sha256.New()
 		h.Write(id)
-		binary.LittleEndian.PutUint32(id, s.BallotCount)
+		binary.LittleEndian.PutUint32(id, form.BallotCount)
 		batchID = h.Sum(id[0:4])[:32]
 
 		err = st.Set(batchID, []byte{})
 		if err != nil {
 			return xerrors.Errorf("couldn't store new ballot batch: %v", err)
 		}
-		s.SuffragiaStoreKeys = append(s.SuffragiaStoreKeys, batchID)
-		s.SuffragiaHashes = append(s.SuffragiaHashes, []byte{})
+		form.SuffragiaStoreKeys = append(form.SuffragiaStoreKeys, batchID)
+		form.SuffragiaHashes = append(form.SuffragiaHashes, []byte{})
 	} else {
-		batchID = s.SuffragiaStoreKeys[len(s.SuffragiaStoreKeys)-1]
+		batchID = form.SuffragiaStoreKeys[len(form.SuffragiaStoreKeys)-1]
 		buf, err := st.Get(batchID)
 		if err != nil {
 			return xerrors.Errorf("couldn't get ballots batch: %v", err)
@@ -244,7 +251,7 @@ func (s *Form) CastVote(ctx serde.Context, st store.Snapshot, userID string, cip
 		for i := uint32(1); i < BallotsPerBatch; i++ {
 			suff.CastVote(fmt.Sprintf("%s-%d", userID, i), ciphervote)
 		}
-		s.BallotCount += BallotsPerBatch - 1
+		form.BallotCount += BallotsPerBatch - 1
 	}
 	buf, err := suff.Serialize(ctx)
 	if err != nil {
@@ -254,7 +261,7 @@ func (s *Form) CastVote(ctx serde.Context, st store.Snapshot, userID string, cip
 	if err != nil {
 		xerrors.Errorf("couldn't set new ballots batch: %v", err)
 	}
-	s.BallotCount += 1
+	form.BallotCount += 1
 	return nil
 }
 
@@ -262,9 +269,9 @@ func (s *Form) CastVote(ctx serde.Context, st store.Snapshot, userID string, cip
 // be called rarely, as it might take a long time.
 // It overwrites ballots cast by the same user and keeps only
 // the latest ballot.
-func (s *Form) Suffragia(ctx serde.Context, rd store.Readable) (Suffragia, error) {
+func (form *Form) Suffragia(ctx serde.Context, rd store.Readable) (Suffragia, error) {
 	var suff Suffragia
-	for _, id := range s.SuffragiaStoreKeys {
+	for _, id := range form.SuffragiaStoreKeys {
 		buf, err := rd.Get(id)
 		if err != nil {
 			return suff, xerrors.Errorf("couldn't get ballot batch: %v", err)
@@ -276,7 +283,7 @@ func (s *Form) Suffragia(ctx serde.Context, rd store.Readable) (Suffragia, error
 			return suff, xerrors.Errorf("couldn't unmarshal ballots batch in cast: %v", err)
 		}
 		suffTmp := msg.(Suffragia)
-		for i, uid := range suffTmp.UserIDs {
+		for i, uid := range suffTmp.VoterIDs {
 			suff.CastVote(uid, suffTmp.Ciphervotes[i])
 		}
 	}
@@ -288,10 +295,10 @@ func (s *Form) Suffragia(ctx serde.Context, rd store.Readable) (Suffragia, error
 type RandomVector [][]byte
 
 // Unmarshal returns the native type of a random vector
-func (r RandomVector) Unmarshal() ([]kyber.Scalar, error) {
-	e := make([]kyber.Scalar, len(r))
+func (randomVector RandomVector) Unmarshal() ([]kyber.Scalar, error) {
+	e := make([]kyber.Scalar, len(randomVector))
 
-	for i, v := range r {
+	for i, v := range randomVector {
 		scalar := suite.Scalar()
 		err := scalar.UnmarshalBinary(v)
 		if err != nil {
@@ -305,15 +312,15 @@ func (r RandomVector) Unmarshal() ([]kyber.Scalar, error) {
 
 // LoadFromScalars marshals a given vector of scalars into the current
 // RandomVector
-func (r *RandomVector) LoadFromScalars(e []kyber.Scalar) error {
-	*r = make([][]byte, len(e))
+func (randomVector *RandomVector) LoadFromScalars(e []kyber.Scalar) error {
+	*randomVector = make([][]byte, len(e))
 
 	for i, scalar := range e {
 		v, err := scalar.MarshalBinary()
 		if err != nil {
 			return xerrors.Errorf("could not marshal random vector: %v", err)
 		}
-		(*r)[i] = v
+		(*randomVector)[i] = v
 	}
 
 	return nil
@@ -340,9 +347,9 @@ type Configuration struct {
 }
 
 // MaxBallotSize returns the maximum number of bytes required to store a ballot
-func (c *Configuration) MaxBallotSize() int {
+func (configuration *Configuration) MaxBallotSize() int {
 	size := 0
-	for _, subject := range c.Scaffold {
+	for _, subject := range configuration.Scaffold {
 		size += subject.MaxEncodedSize()
 	}
 	return size
@@ -350,8 +357,8 @@ func (c *Configuration) MaxBallotSize() int {
 
 // GetQuestion finds the question associated to a given ID and returns it.
 // Returns nil if no question found.
-func (c *Configuration) GetQuestion(ID ID) Question {
-	for _, subject := range c.Scaffold {
+func (configuration *Configuration) GetQuestion(ID ID) Question {
+	for _, subject := range configuration.Scaffold {
 		question := subject.GetQuestion(ID)
 
 		if question != nil {
@@ -364,11 +371,11 @@ func (c *Configuration) GetQuestion(ID ID) Question {
 
 // IsValid returns true if and only if the whole configuration is coherent and
 // valid.
-func (c *Configuration) IsValid() bool {
+func (configuration *Configuration) IsValid() bool {
 	// serves as a set to check each ID is unique
 	uniqueIDs := make(map[ID]bool)
 
-	for _, subject := range c.Scaffold {
+	for _, subject := range configuration.Scaffold {
 		if !subject.isValid(uniqueIDs) {
 			return false
 		}
@@ -385,8 +392,8 @@ type Pubshare kyber.Point
 type PubsharesUnit [][]Pubshare
 
 // Fingerprint implements serde.Fingerprinter
-func (p PubsharesUnit) Fingerprint(writer io.Writer) error {
-	for _, ballotShares := range p {
+func (pubshareUnit PubsharesUnit) Fingerprint(writer io.Writer) error {
+	for _, ballotShares := range pubshareUnit {
 		for _, pubShare := range ballotShares {
 			_, err := pubShare.MarshalTo(writer)
 			if err != nil {
@@ -409,4 +416,109 @@ type PubsharesUnits struct {
 	// Indexes is the index of the nodes who made each corresponding
 	// PubsharesUnit
 	Indexes []int
+}
+
+// AddVoter add a new voter to the form.
+func (form *Form) AddVoter(userID string) error {
+	sciperInt, err := SciperToInt(userID)
+	if err != nil {
+		return xerrors.Errorf("failed to convert SCIPER to integer: %v", err)
+	}
+
+	form.Voters = append(form.Voters, sciperInt)
+
+	return nil
+}
+
+// GetVoterIndex return the index of voter if userID is one, else return -1
+func (form *Form) GetVoterIndex(userID string) (int, error) {
+	sciperInt, err := SciperToInt(userID)
+	if err != nil {
+		return -1, xerrors.Errorf("failed to convert SCIPER to integer: %v", err)
+	}
+
+	for i := 0; i < len(form.Voters); i++ {
+		if form.Voters[i] == sciperInt {
+			return i, nil
+		}
+	}
+
+	return -1, nil
+}
+
+// RemoveVoter remove a voter to the form.
+func (form *Form) RemoveVoter(userID string) error {
+	index, err := form.GetVoterIndex(userID)
+	if err != nil {
+		return xerrors.Errorf("Failed GetVoterIndex: %v", err)
+	}
+
+	if index < 0 {
+		return xerrors.Errorf("Error while retrieving the index of the element.")
+	}
+
+	form.Voters = append(form.Voters[:index], form.Voters[index+1:]...)
+	return nil
+}
+
+// AddOwner add a new owner to the form.
+func (form *Form) AddOwner(userID string) error {
+	sciperInt, err := SciperToInt(userID)
+	if err != nil {
+		return xerrors.Errorf("failed to convert SCIPER to integer: %v", err)
+	}
+
+	form.Owners = append(form.Owners, sciperInt)
+
+	return nil
+}
+
+// GetOwnerIndex return the index of owner if userID is one, else return -1
+func (form *Form) GetOwnerIndex(userID string) (int, error) {
+	sciperInt, err := SciperToInt(userID)
+	if err != nil {
+		return -1, xerrors.Errorf("failed to convert SCIPER to integer: %v", err)
+	}
+
+	for i := 0; i < len(form.Owners); i++ {
+		if form.Owners[i] == sciperInt {
+			return i, nil
+		}
+	}
+
+	return -1, nil
+}
+
+// RemoveOwner remove an owner from the form.
+func (form *Form) RemoveOwner(userID string) error {
+	index, err := form.GetOwnerIndex(userID)
+	if err != nil {
+		return xerrors.Errorf("Failed GetOwnerIndex: %v", err)
+	}
+
+	if index < 0 {
+		return xerrors.Errorf("Error while retrieving the index of the element.")
+	}
+
+	// We don't want to have a form without any Owners.
+	if len(form.Owners) <= 1 {
+		return xerrors.Errorf("Error, cannot remove this owner because it is the " +
+			"only one remaining for this form")
+	}
+
+	form.Owners = append(form.Owners[:index], form.Owners[index+1:]...)
+	return nil
+}
+
+func SciperToInt(userID string) (int, error) {
+	sciperInt, err := strconv.Atoi(userID)
+	if err != nil {
+		return 0, xerrors.Errorf("Failed to convert SCIPER to an INT: %v", err)
+	}
+
+	if sciperInt < 100000 || sciperInt > 999999 {
+		return 0, xerrors.Errorf("SCIPER %v is out of range.", sciperInt)
+	}
+
+	return sciperInt, nil
 }

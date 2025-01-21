@@ -19,7 +19,7 @@ func RegisterSuffragiaFormat(format serde.Format, engine serde.FormatEngine) {
 }
 
 type Suffragia struct {
-	UserIDs     []string
+	VoterIDs    []string
 	Ciphervotes []Ciphervote
 }
 
@@ -36,22 +36,22 @@ func (s Suffragia) Serialize(ctx serde.Context) ([]byte, error) {
 }
 
 // CastVote adds a new vote and its associated user or updates a user's vote.
-func (s *Suffragia) CastVote(userID string, ciphervote Ciphervote) {
-	for i, u := range s.UserIDs {
-		if u == userID {
+func (s *Suffragia) CastVote(voterID string, ciphervote Ciphervote) {
+	for i, u := range s.VoterIDs {
+		if u == voterID {
 			s.Ciphervotes[i] = ciphervote
 			return
 		}
 	}
 
-	s.UserIDs = append(s.UserIDs, userID)
+	s.VoterIDs = append(s.VoterIDs, voterID)
 	s.Ciphervotes = append(s.Ciphervotes, ciphervote.Copy())
 }
 
 // Hash returns the hash of this list of ballots.
 func (s *Suffragia) Hash(ctx serde.Context) ([]byte, error) {
 	h := sha256.New()
-	for i, u := range s.UserIDs {
+	for i, u := range s.VoterIDs {
 		h.Write([]byte(u))
 		buf, err := s.Ciphervotes[i].Serialize(ctx)
 		if err != nil {

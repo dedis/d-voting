@@ -31,6 +31,21 @@ type Form interface {
 	Form(http.ResponseWriter, *http.Request)
 	// DELETE /forms/{formID}
 	DeleteForm(http.ResponseWriter, *http.Request)
+	// TODO CHECK CAUSE NEW -> modif according to blockchain
+	// POST /addadmin
+	AddAdmin(http.ResponseWriter, *http.Request)
+	// POST /removeadmin
+	RemoveAdmin(http.ResponseWriter, *http.Request)
+	// GET /adminlist
+	AdminList(http.ResponseWriter, *http.Request)
+	// POST /forms/{formID}/addowner
+	AddOwnerToForm(http.ResponseWriter, *http.Request)
+	// POST /forms/{formID}/removeowner
+	RemoveOwnerToForm(http.ResponseWriter, *http.Request)
+	// POST /forms/{formID}/addvoter
+	AddVoterToForm(http.ResponseWriter, *http.Request)
+	// POST /forms/{formID}/removevoter
+	RemoveVoterToForm(http.ResponseWriter, *http.Request)
 }
 
 // DKG defines the public HTTP API of the DKG service

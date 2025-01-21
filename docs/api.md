@@ -1,6 +1,6 @@
 # API documentation
 
-_Documentation Last Review: 11.04.2022_
+_Documentation Last Review: 27.06.2024_
 
 ## Regular workflow:
 
@@ -183,7 +183,7 @@ Return:
 
 ```json
 {
-  "UserID": "",
+  "VoterID": "",
   "Ballot": [
     {
       "K": "<bin>",
@@ -274,7 +274,7 @@ Return:
 
 ```
 
-# SC?: Form cancel 🔐
+# SC7: Form cancel 🔐
 
 |        |                           |
 | ------ | ------------------------- |
@@ -291,6 +291,7 @@ Return:
 Return:
 
 `200 OK` 
+
 ```json
 {
   "Status": 0,
@@ -298,7 +299,7 @@ Return:
 }
 ```
 
-# SC?: Form delete
+# SC8: Form delete
 
 |         |                            |
 | ------- | -------------------------- |
@@ -317,6 +318,7 @@ formID:
 Return:
 
 `200 OK` 
+
 ```json
 {
   "Status": 0,
@@ -324,7 +326,7 @@ Return:
 }
 ```
 
-# SC?: Form infos from all forms
+# SC9: Form infos from all forms
 
 |        |                  |
 | ------ | ---------------- |
@@ -346,6 +348,106 @@ Return:
       "Pubkey": "<hex encoded>"
     }
   ]
+}
+```
+
+# SC10: Add an owner to a form 🔐
+
+|        |                                   |
+| ------ |-----------------------------------|
+| URL    | `/evoting/form/{formID}/addowner` |
+| Method | `POST`                            |
+| Input  | `application/json`                |
+```json
+{
+  "TargetUserID": "<SCIPER>",
+  "PerformingUserID": "<SCIPER>"
+}
+```
+
+Return:
+
+`200 OK`
+
+```json
+{
+  "Status": 0,
+  "Token": "<URL encoded>"
+}
+```
+
+# SC11: Remove an owner from the form 🔐
+
+|        |                                      |
+|--------|--------------------------------------|
+| URL    | `/evoting/form/{formID}/removeowner` |
+| Method | `POST`                               |
+| Input  | `application/json`                   |
+```json
+{
+  "TargetUserID": "<SCIPER>",
+  "PerformingUserID": "<SCIPER>"
+}
+```
+
+Return:
+
+`200 OK`
+
+```json
+{
+  "Status": 0,
+  "Token": "<URL encoded>"
+}
+```
+
+# SC12: Add a voter to the Form 🔐
+
+|        |                                   |
+| ------ |-----------------------------------|
+| URL    | `/evoting/form/{formID}/addvoter` |
+| Method | `POST`                            |
+| Input  | `application/json`                |
+```json
+{
+  "TargetUserID": "<SCIPER>",
+  "PerformingUserID": "<SCIPER>"
+}
+```
+
+Return:
+
+`200 OK`
+
+```json
+{
+  "Status": 0,
+  "Token": "<URL encoded>"
+}
+```
+
+# SC13: Remove a voter from the Form 🔐
+
+|        |                                      |
+|--------|--------------------------------------|
+| URL    | `/evoting/form/{formID}/removevoter` |
+| Method | `POST`                               |
+| Input  | `application/json`                   |
+```json
+{
+  "TargetUserID": "<SCIPER>",
+  "PerformingUserID": "<SCIPER>"
+}
+```
+
+Return:
+
+`200 OK`
+
+```json
+{
+  "Status": 0,
+  "Token": "<URL encoded>"
 }
 ```
 
@@ -467,3 +569,76 @@ Status can be:
 - 2: transaction not included
 
 The token is an updated version of the token in the URL that can be used to check again the status of the transaction if it is not yet included.
+
+# A1: Add an admin to the AdminList 🔐
+
+|        |                     |
+| ------ |---------------------|
+| URL    | `/evoting/addadmin` |
+| Method | `POST`              |
+| Input  | `application/json`  |
+```json
+{
+  "TargetUserID": "<SCIPER>",
+  "PerformingUserID": "<SCIPER>"
+}
+```
+
+Return:
+
+`200 OK`
+
+```json
+{
+  "Status": 0,
+  "Token": "<URL encoded>"
+}
+```
+
+# A2: Remove an admin from the AdminList 🔐
+
+|        |                        |
+| ------ |------------------------|
+| URL    | `/evoting/removeadmin` |
+| Method | `POST`                 |
+| Input  | `application/json`     |
+
+```json
+{
+  "TargetUserID": "<SCIPER>",
+  "PerformingUserID": "<SCIPER>"
+}
+```
+
+Return:
+
+`200 OK`
+
+```json
+{
+  "Status": 0,
+  "Token": "<URL encoded>"
+}
+```
+
+# A3: Get the AdminList 
+
+
+
+|        |                      |
+| ------ |----------------------|
+| URL    | `/evoting/adminlist` |
+| Method | `GET`                |
+| Input  |                      |
+
+Return:
+
+`200 OK`
+
+```json
+{
+   "<SCIPER>", "<SCIPER>", "..."
+}
+```
+
+

@@ -48,9 +48,12 @@ const (
 	contentType = "application/json"
 	formPath    = "/evoting/forms"
 	// FormPathSlash is the path to the form with a trailing slash
-	FormPathSlash          = formPath + "/"
-	formIDPath             = FormPathSlash + "{formID}"
-	transactionSlash       = "/evoting/transactions/"
+	FormPathSlash    = formPath + "/"
+	formIDPath       = FormPathSlash + "{formID}"
+	transactionSlash = "/evoting/transactions/"
+
+	evotingPathSlash = "/evoting/"
+
 	transactionPath        = transactionSlash + "{token}"
 	unexpectedStatus       = "unexpected status: %s, body: %s"
 	failRetrieveDecryption = "failed to retrieve decryption key: %v"
@@ -169,12 +172,19 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 		return xerrors.Errorf("failed to unmarshal proxy key: %v", err)
 	}
 
-	transactionManager := txnmanager.NewTransactionManager(mngr, p, sjson.NewContext(), proxykey, blocks, signer)
+	transactionManager := txnmanager.NewTransactionManager(mngr, p, sjson.NewContext(), proxykey, blocks, signer, validation)
 
 	ep := eproxy.NewForm(ordering, p, sjson.NewContext(), formFac, proxykey, transactionManager)
 
 	router := mux.NewRouter()
 
+	router.HandleFunc(evotingPathSlash+"addadmin", ep.AddAdmin).Methods("POST")
+	router.HandleFunc(evotingPathSlash+"removeadmin", ep.RemoveAdmin).Methods("POST")
+	router.HandleFunc(evotingPathSlash+"adminlist", ep.AdminList).Methods("GET")
+	router.HandleFunc(formIDPath+"/addowner", ep.AddOwnerToForm).Methods("POST")
+	router.HandleFunc(formIDPath+"/removeowner", ep.RemoveOwnerToForm).Methods("POST")
+	router.HandleFunc(formIDPath+"/addvoter", ep.AddVoterToForm).Methods("POST")
+	router.HandleFunc(formIDPath+"/removevoter", ep.RemoveVoterToForm).Methods("POST")
 	router.HandleFunc(formPath, ep.NewForm).Methods("POST")
 	router.HandleFunc(formPath, ep.Forms).Methods("GET")
 	router.HandleFunc(formPath, eproxy.AllowCORS).Methods("OPTIONS")
@@ -188,6 +198,7 @@ func (a *RegisterAction) Execute(ctx node.Context) error {
 	router.NotFoundHandler = http.HandlerFunc(eproxy.NotFoundHandler)
 	router.MethodNotAllowedHandler = http.HandlerFunc(eproxy.NotAllowedHandler)
 
+	proxy.RegisterHandler(evotingPathSlash, router.ServeHTTP)
 	proxy.RegisterHandler(formPath, router.ServeHTTP)
 	proxy.RegisterHandler(FormPathSlash, router.ServeHTTP)
 	proxy.RegisterHandler(transactionSlash, router.ServeHTTP)
@@ -352,8 +363,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	castVoteRequest := ptypes.CastVoteRequest{
-		UserID: "user1",
-		Ballot: ballot1,
+		VoterID: "user1",
+		Ballot:  ballot1,
 	}
 
 	signed, err := createSignedRequest(secret, castVoteRequest)
@@ -377,8 +388,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	castVoteRequest = ptypes.CastVoteRequest{
-		UserID: "user2",
-		Ballot: ballot2,
+		VoterID: "user2",
+		Ballot:  ballot2,
 	}
 
 	signed, err = createSignedRequest(secret, castVoteRequest)
@@ -402,8 +413,8 @@ func (a *scenarioTestAction) Execute(ctx node.Context) error {
 	}
 
 	castVoteRequest = ptypes.CastVoteRequest{
-		UserID: "user3",
-		Ballot: ballot3,
+		VoterID: "user3",
+		Ballot:  ballot3,
 	}
 
 	signed, err = createSignedRequest(secret, castVoteRequest)
@@ -593,7 +604,7 @@ func setupSimpleForm(ctx node.Context, secret kyber.Scalar, proxyAddr1 string,
 
 	createSimpleFormRequest := ptypes.CreateFormRequest{
 		Configuration: configuration,
-		AdminID:       "adminId",
+		UserID:        "UserID",
 	}
 
 	signed, err := createSignedRequest(secret, createSimpleFormRequest)

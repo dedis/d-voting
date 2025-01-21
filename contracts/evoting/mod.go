@@ -85,6 +85,8 @@ const (
 	// credentialAllCommand defines the credential command that is allowed to
 	// perform all commands.
 	credentialAllCommand = "all"
+
+	AdminListId = ContractUID + "AdminList"
 )
 
 // commands defines the commands of the evoting contract. Using an interface
@@ -99,6 +101,8 @@ type commands interface {
 	combineShares(snap store.Snapshot, step execution.Step) error
 	cancelForm(snap store.Snapshot, step execution.Step) error
 	deleteForm(snap store.Snapshot, step execution.Step) error
+	manageAdminList(snap store.Snapshot, step execution.Step) error
+	manageOwnersVotersForm(snap store.Snapshot, step execution.Step) error
 }
 
 // Command defines a type of command for the value contract
@@ -126,6 +130,21 @@ const (
 
 	// CmdDeleteForm is the command to delete a form
 	CmdDeleteForm Command = "DELETE_FORM"
+
+	// CmdAddAdmin is the command to add an admin to the system
+	CmdAddAdmin Command = "ADD_ADMIN"
+	// CmdRemoveAdmin is the command to remove an admin to the system
+	CmdRemoveAdmin Command = "REMOVE_ADMIN"
+
+	// CmdAddOwnerForm is the command to add an Owner to a form
+	CmdAddOwnerForm Command = "ADD_OWNER"
+	// CmdRemoveOwnerForm is the command to remove an Owner to a form
+	CmdRemoveOwnerForm Command = "REMOVE_OWNER"
+
+	// CmdAddVoterForm is the command to add an Voter to a form
+	CmdAddVoterForm Command = "ADD_VOTER"
+	// CmdRemoveVoterForm is the command to remove an Voter to a form
+	CmdRemoveVoterForm Command = "REMOVE_VOTER"
 )
 
 // NewCreds creates new credentials for a evoting contract execution. We might
@@ -154,6 +173,7 @@ type Contract struct {
 	context serde.Context
 
 	formFac        serde.Factory
+	adminListFac   serde.Factory
 	rosterFac      authority.Factory
 	transactionFac serde.Factory
 }
@@ -167,6 +187,7 @@ func NewContract(srvc access.Service,
 	ciphervoteFac := types.CiphervoteFactory{}
 	formFac := types.NewFormFactory(ciphervoteFac, rosterFac)
 	transactionFac := types.NewTransactionFactory(ciphervoteFac)
+	adminListFac := types.AdminListFactory{}
 
 	contract := Contract{
 		access:   srvc,
@@ -175,6 +196,7 @@ func NewContract(srvc access.Service,
 		context: ctx,
 
 		formFac:        formFac,
+		adminListFac:   adminListFac,
 		rosterFac:      rosterFac,
 		transactionFac: transactionFac,
 	}
@@ -246,6 +268,36 @@ func (c Contract) Execute(snap store.Snapshot, step execution.Step) error {
 		err := c.cmd.deleteForm(snap, step)
 		if err != nil {
 			return xerrors.Errorf("failed to delete form: %v", err)
+		}
+	case CmdAddAdmin:
+		err := c.cmd.manageAdminList(snap, step)
+		if err != nil {
+			return xerrors.Errorf("failed to add admin: %v", err)
+		}
+	case CmdRemoveAdmin:
+		err := c.cmd.manageAdminList(snap, step)
+		if err != nil {
+			return xerrors.Errorf("failed to remove admin: %v", err)
+		}
+	case CmdAddOwnerForm:
+		err := c.cmd.manageOwnersVotersForm(snap, step)
+		if err != nil {
+			return xerrors.Errorf("failed to add owner: %v", err)
+		}
+	case CmdRemoveOwnerForm:
+		err := c.cmd.manageOwnersVotersForm(snap, step)
+		if err != nil {
+			return xerrors.Errorf("failed to remove owner: %v", err)
+		}
+	case CmdAddVoterForm:
+		err := c.cmd.manageOwnersVotersForm(snap, step)
+		if err != nil {
+			return xerrors.Errorf("failed to add voter: %v", err)
+		}
+	case CmdRemoveVoterForm:
+		err := c.cmd.manageOwnersVotersForm(snap, step)
+		if err != nil {
+			return xerrors.Errorf("failed to remove voter: %v", err)
 		}
 	default:
 		return xerrors.Errorf("unknown command: %s", cmd)

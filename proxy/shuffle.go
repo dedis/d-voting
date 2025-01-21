@@ -57,6 +57,7 @@ func (s shuffle) EditShuffle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	formID := vars["formID"]
+	userID := vars["userID"]
 
 	formIDBuf, err := hex.DecodeString(formID)
 	if err != nil {
@@ -67,7 +68,7 @@ func (s shuffle) EditShuffle(w http.ResponseWriter, r *http.Request) {
 	switch req.Action {
 	// shuffle the ballots
 	case "shuffle":
-		err = s.actor.Shuffle(formIDBuf)
+		err = s.actor.Shuffle(formIDBuf, userID)
 		if err != nil {
 			http.Error(w, "failed to shuffle: "+err.Error(), http.StatusInternalServerError)
 			return

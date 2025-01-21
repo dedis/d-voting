@@ -6,8 +6,15 @@ import (
 
 // CreateFormRequest defines the HTTP request for creating a form
 type CreateFormRequest struct {
-	AdminID       string
+	UserID        string
 	Configuration etypes.Configuration
+}
+
+// PermissionOperationRequest defines the HTTP request for performing
+// an operation request
+type PermissionOperationRequest struct {
+	TargetUserID     string
+	PerformingUserID string
 }
 
 // CreateFormResponse defines the HTTP response when creating a form
@@ -18,7 +25,7 @@ type CreateFormResponse struct {
 
 // CastVoteRequest defines the HTTP request for casting a vote
 type CastVoteRequest struct {
-	UserID string
+	VoterID string
 	// Marshalled representation of Ciphervote. It contains []{K:,C:}
 	Ballot CiphervoteJSON
 }
@@ -35,6 +42,7 @@ type EGPairJSON struct {
 // UpdateFormRequest defines the HTTP request for updating a form
 type UpdateFormRequest struct {
 	Action string
+	UserID string
 }
 
 // GetFormResponse defines the HTTP response when getting the form info
