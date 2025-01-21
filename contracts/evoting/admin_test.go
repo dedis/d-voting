@@ -1,11 +1,12 @@
 package evoting
 
 import (
-	"github.com/c4dt/d-voting/contracts/evoting/types"
+	"testing"
+
+	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/dela/serde"
 	sjson "go.dedis.ch/dela/serde/json"
-	"testing"
 )
 
 var ctxAdminTest serde.Context
