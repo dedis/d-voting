@@ -5,7 +5,7 @@ timeFlag="go.dedis.ch/d-voting.BuildTime=$(shell date +'%d/%m/%y_%H:%M')"
 
 lint:
 	# Coding style static check.
-	@go install honnef.co/go/tools/cmd/staticcheck@latest
+	@go install honnef.co/go/tools/cmd/staticcheck@v0.6.1
 	@go mod tidy
 	staticcheck ./...
 #	golint -set_exit_status ./...
