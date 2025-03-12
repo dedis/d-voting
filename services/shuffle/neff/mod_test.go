@@ -13,11 +13,11 @@ import (
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/json"
 
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/internal/testing/fake"
-	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
+	etypes "go.dedis.ch/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/internal/testing/fake"
+	"go.dedis.ch/d-voting/services/shuffle/neff/types"
 )
 
 var serdecontext serde.Context
@@ -52,10 +52,14 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	rosterLen := 2
 	roster := authority.FromAuthority(fake.NewAuthority(rosterLen, fake.NewSigner))
 
-	form := fake.NewForm(formID)
+	st := fake.NewSnapshot()
+	form, err := fake.NewForm(serdecontext, st, formID)
+	require.NoError(t, err)
 	form.Roster = roster
 
-	shuffledBallots := append([]etypes.Ciphervote{}, form.Suffragia.Ciphervotes...)
+	suff, err := form.Suffragia(serdecontext, st)
+	require.NoError(t, err)
+	shuffledBallots := append([]etypes.Ciphervote{}, suff.Ciphervotes...)
 	form.ShuffleInstances = append(form.ShuffleInstances, etypes.ShuffleInstance{ShuffledBallots: shuffledBallots})
 
 	form.ShuffleThreshold = 1
@@ -63,10 +67,10 @@ func TestNeffShuffle_Shuffle(t *testing.T) {
 	service := fake.NewService(formID, form, serdecontext)
 
 	actor := Actor{
-		rpc:         fake.NewBadRPC(),
-		mino:        fake.Mino{},
-		service:     &service,
-		context:     serdecontext,
+		rpc:     fake.NewBadRPC(),
+		mino:    fake.Mino{},
+		service: &service,
+		context: serdecontext,
 		formFac: etypes.NewFormFactory(etypes.CiphervoteFactory{}, fake.NewRosterFac(roster)),
 	}
 

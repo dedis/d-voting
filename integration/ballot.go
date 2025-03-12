@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
@@ -15,14 +14,14 @@ import (
 
 	"sync/atomic"
 
-	"github.com/dedis/d-voting/contracts/evoting"
-	"github.com/dedis/d-voting/contracts/evoting/controller"
-	"github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/internal/testing/fake"
-	"github.com/dedis/d-voting/proxy/txnmanager"
-	ptypes "github.com/dedis/d-voting/proxy/types"
-	"github.com/dedis/d-voting/services/dkg"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/contracts/evoting"
+	"go.dedis.ch/d-voting/contracts/evoting/controller"
+	"go.dedis.ch/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/internal/testing/fake"
+	"go.dedis.ch/d-voting/proxy/txnmanager"
+	ptypes "go.dedis.ch/d-voting/proxy/types"
+	"go.dedis.ch/d-voting/services/dkg"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/kyber/v3"
@@ -241,7 +240,6 @@ func marshallBallotManual(voteStr string, pubkey kyber.Point, chunks int) (ptype
 
 	ballot := make(ptypes.CiphervoteJSON, chunks)
 	vote := strings.NewReader(voteStr)
-	fmt.Printf("votestr is: %v", voteStr)
 
 	buf := make([]byte, 29)
 
@@ -300,7 +298,7 @@ func checkBallots(decryptedBallots, castedVotes []types.Ballot, t *testing.T) {
 
 }
 
-// castVotesLoad casts vote for the load test 
+// castVotesLoad casts vote for the load test
 func castVotesLoad(numVotesPerSec, numSec, BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
 
 	t.Log("cast ballots")
@@ -406,7 +404,7 @@ func cast(idx int, castVoteRequest ptypes.CastVoteRequest, contentType, randompr
 	require.NoError(t, err)
 
 	ok, err := pollTxnInclusion(30, 2*time.Second, randomproxy, infos.Token, t)
-	// if the transaction was not included after 60s, we retry once
+	// if the transaction was not included after 2s, we retry once
 	if !ok && !isRetry {
 		t.Logf("retrying vote %d", idx)
 		return cast(idx, castVoteRequest, contentType, randomproxy, formID, secret, true, t)
@@ -417,7 +415,7 @@ func cast(idx int, castVoteRequest ptypes.CastVoteRequest, contentType, randompr
 	return ok
 }
 
-// castVotesScenario casts votes for the scenario test 
+// castVotesScenario casts votes for the scenario test
 func castVotesScenario(numVotes, BallotSize, chunksPerBallot int, formID, contentType string, proxyArray []string, pubKey kyber.Point, secret kyber.Scalar, t *testing.T) []types.Ballot {
 	// make List of ballots
 	b1 := string("select:" + encodeBallotID("bb") + ":0,0,1,0\n" + "text:" + encodeBallotID("ee") + ":eWVz\n\n") //encoding of "yes"

@@ -87,6 +87,12 @@ func (f Pool) Close() error {
 	return nil
 }
 
+func (f Pool) Stats() pool.Stats {
+	return pool.Stats{}
+}
+
+func (f Pool) ResetStats() {}
+
 // Manager is a fake manager
 //
 // - implements txn.Manager

@@ -1,7 +1,7 @@
 package json
 
 import (
-	"github.com/dedis/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/serde"
 )
 
@@ -9,6 +9,7 @@ import (
 
 func init() {
 	types.RegisterFormFormat(serde.FormatJSON, formFormat{})
+	types.RegisterSuffragiaFormat(serde.FormatJSON, suffragiaFormat{})
 	types.RegisterCiphervoteFormat(serde.FormatJSON, ciphervoteFormat{})
 	types.RegisterTransactionFormat(serde.FormatJSON, transactionFormat{})
 }

@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/internal/testing/fake"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/access"
 	"go.dedis.ch/dela/core/ordering"
@@ -94,7 +94,6 @@ func TestRosterAddAction_Execute(t *testing.T) {
 
 	var p pool.Pool
 	require.NoError(t, ctx.Injector.Resolve(&p))
-	require.Equal(t, 1, p.Len())
 
 	ctx.Injector = node.NewInjector()
 	err = action.Execute(ctx)

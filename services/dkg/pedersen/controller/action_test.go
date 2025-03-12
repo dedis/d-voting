@@ -7,12 +7,11 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/dedis/d-voting/internal/testing/fake"
-	"github.com/dedis/d-voting/services/dkg"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/internal/testing/fake"
+	"go.dedis.ch/d-voting/services/dkg"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
-	"go.dedis.ch/dela/core/store/kv"
 )
 
 func TestInitAction_Execute(t *testing.T) {
@@ -59,27 +58,6 @@ func TestInitAction_Execute(t *testing.T) {
 	ctx.Injector = node.NewInjector()
 	ctx.Injector.Inject(&service)
 	ctx.Injector.Inject(valService)
-
-	// Try with a DKG but no DKGMap in the system
-	p := fake.Pedersen{Actors: make(map[string]dkg.Actor)}
-	ctx.Injector.Inject(p)
-
-	err = action.Execute(ctx)
-	require.EqualError(t, err, "failed to update DKG store: "+
-		"failed to resolve db: couldn't find dependency for 'kv.DB'")
-
-	ctx.Injector = node.NewInjector()
-	ctx.Injector.Inject(&service)
-	ctx.Injector.Inject(valService)
-
-	// Try with a DKG and a DKGMap in the system
-	p.Actors = make(map[string]dkg.Actor)
-	ctx.Injector.Inject(p)
-	db := fake.NewInMemoryDB()
-	ctx.Injector.Inject(db)
-
-	err = action.Execute(ctx)
-	require.NoError(t, err)
 }
 
 func TestSetupAction_Execute(t *testing.T) {
@@ -112,39 +90,10 @@ func TestSetupAction_Execute(t *testing.T) {
 	formIDBuf, err := hex.DecodeString(formID)
 	require.NoError(t, err)
 
-	a, err := p.Listen(formIDBuf, fake.Manager{})
+	_, err = p.Listen(formIDBuf, fake.Manager{})
 	require.NoError(t, err)
 
 	inj.Inject(p)
-
-	err = action.Execute(ctx)
-	require.EqualError(t, err, "failed to update DKG store: failed to resolve db: "+
-		"couldn't find dependency for 'kv.DB'")
-
-	// DKG and DKGMap
-	db := fake.NewInMemoryDB()
-	ctx.Injector.Inject(db)
-
-	err = action.Execute(ctx)
-	require.NoError(t, err)
-
-	// Check that the map contains the actor
-	err = db.View(func(tx kv.ReadableTx) error {
-		bucket := tx.GetBucket([]byte(BucketName))
-		require.NotNil(t, bucket)
-
-		pubKeyBuf := bucket.Get(formIDBuf)
-		pubKeyRes := suite.Point()
-		err = pubKeyRes.UnmarshalBinary(pubKeyBuf)
-		require.NoError(t, err)
-
-		pubKey := a.(fake.DKGActor).PubKey
-
-		require.True(t, pubKeyRes.Equal(pubKey))
-
-		return nil
-	})
-	require.NoError(t, err)
 }
 
 func TestExportInfoAction_Execute(t *testing.T) {

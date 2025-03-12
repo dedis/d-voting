@@ -4,8 +4,8 @@ import (
 	"encoding"
 	"path/filepath"
 
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/services/shuffle/neff"
+	etypes "go.dedis.ch/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/services/shuffle/neff"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
@@ -122,7 +122,7 @@ func getSigner(filePath string) (crypto.Signer, error) {
 	return signer, nil
 }
 
-//getNodeSigner creates a signer with the node's private key
+// getNodeSigner creates a signer with the node's private key
 func getNodeSigner(flags cli.Flags) (crypto.AggregateSigner, error) {
 	loader := loader.NewFileLoader(filepath.Join(flags.Path("config"), privateKeyFile))
 

@@ -650,13 +650,47 @@ Build info can be added to the binary with the `ldflags`, at build time. Infos
 are stored on variables in the root `mod.go`. For example:
 
 ```sh
-versionFlag="github.com/dedis/d-voting.Version=`git describe --tags`"
-timeFlag="github.com/dedis/d-voting.BuildTime=`date +'%d/%m/%y_%H:%M'`"
+versionFlag="go.dedis.ch/d-voting.Version=`git describe --tags`"
+timeFlag="go.dedis.ch/d-voting.BuildTime=`date +'%d/%m/%y_%H:%M'`"
 
 go build -ldflags="-X $versionFlag -X $timeFlag" ./cli/dvoting
 ```
 
 Note that `make build` will do that for you.
+
+# Benchmarks
+
+For more details, see https://github.com/c4dt/d-voting/issues/47
+
+```
++------------+-------------+--------------+
+I            I   1'000     I   10'000     I
++------------+-------------+--------------+
+I CASTING    I  95s        I  888s        I
+I            I  95ms/vote  I   95ms/vote  I
++------------+-------------+--------------+
+I   Blocks   I 179         I 1466         I
+I            I   5.6/block I    6.8/block I
++------------+-------------+--------------+
+I SHUFFLING  I  56s        I  542s        I
++------------+-------------+--------------+
+I   Blocks   I   9         I   10         I
++------------+-------------+--------------+
+I DECRYPTING I   5s        I   49s        I
++------------+-------------+--------------+
+I   Blocks   I   2         I    3         I
++------------+-------------+--------------+
+I COMBINING  I   1s        I   47s        I
++------------+-------------+--------------+
+I   Blocks   I   1         I    1         I
++------------+-------------+--------------+
+I DISPLAYING I  <1s        I    5s        I
++------------+-------------+--------------+
+
+```
+
+- 10'000 votes
+  - casting: 95s, 179 blocks - 95ms/vote, 5.6 votes / block
 
 ---
 

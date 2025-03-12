@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dedis/d-voting/proxy/types"
+	"go.dedis.ch/d-voting/proxy/types"
 	"go.dedis.ch/kyber/v3/suites"
 )
 

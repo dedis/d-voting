@@ -14,13 +14,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting"
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/services/dkg"
-	"github.com/dedis/d-voting/services/dkg/pedersen"
-	"github.com/dedis/d-voting/services/shuffle"
-	"github.com/dedis/d-voting/services/shuffle/neff"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/contracts/evoting"
+	etypes "go.dedis.ch/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/services/dkg"
+	"go.dedis.ch/d-voting/services/dkg/pedersen"
+	"go.dedis.ch/d-voting/services/shuffle"
+	"go.dedis.ch/d-voting/services/shuffle/neff"
 	accessContract "go.dedis.ch/dela/contracts/access"
 	"go.dedis.ch/dela/contracts/value"
 	"go.dedis.ch/dela/core/access"
@@ -57,15 +57,9 @@ import (
 const certKeyName = "cert.key"
 const privateKeyFile = "private.key"
 
-var aKey = [32]byte{1}
-var valueAccessKey = [32]byte{2}
-
-// evotingAccessKey is the access key used for the evoting contract.
-var evotingAccessKey = [32]byte{3}
-
-// dela defines the common interface for a Dela node.
-type dela interface {
-	Setup(...dela)
+// delaNode defines the common interface for a Dela node.
+type delaNode interface {
+	Setup(...delaNode)
 	GetMino() mino.Mino
 	GetOrdering() ordering.Service
 	GetTxManager() txn.Manager
@@ -74,7 +68,7 @@ type dela interface {
 
 // dVotingCosiDela defines the interface needed to use a Dela node using cosi.
 type dVotingCosiDela interface {
-	dela
+	delaNode
 
 	GetPublicKey() crypto.PublicKey
 	GetPool() pool.Pool
@@ -130,7 +124,7 @@ func setupDVotingNodes(t require.TestingT, numberOfNodes int, tempDir string) []
 	wait.Wait()
 	close(nodes)
 
-	delaNodes := make([]dela, 0, numberOfNodes)
+	delaNodes := make([]delaNode, 0, numberOfNodes)
 	dVotingNodes := make([]dVotingCosiDela, 0, numberOfNodes)
 
 	for node := range nodes {
@@ -193,7 +187,7 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 	rosterFac := authority.NewFactory(onet.GetAddressFactory(), cosi.GetPublicKeyFactory())
 	cosipbft.RegisterRosterContract(exec, rosterFac, accessService)
 
-	value.RegisterContract(exec, value.NewContract(valueAccessKey[:], accessService))
+	value.RegisterContract(exec, value.NewContract(accessService))
 
 	txFac := signed.NewTransactionFactory()
 	vs := simple.NewService(exec, txFac)
@@ -242,16 +236,14 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 
 	// access
 	accessStore := newAccessStore()
-	contract := accessContract.NewContract(aKey[:], accessService, accessStore)
+	contract := accessContract.NewContract(accessService, accessStore)
 	accessContract.RegisterContract(exec, contract)
 
 	formFac := etypes.NewFormFactory(etypes.CiphervoteFactory{}, rosterFac)
 
-	dkg := pedersen.NewPedersen(onet, srvc, pool, formFac, signer)
+	dkg := pedersen.NewPedersen(onet, srvc, db, pool, formFac, signer)
 
-	rosterKey := [32]byte{}
-	evoting.RegisterContract(exec, evoting.NewContract(evotingAccessKey[:], rosterKey[:],
-		accessService, dkg, rosterFac))
+	evoting.RegisterContract(exec, evoting.NewContract(accessService, dkg, rosterFac))
 
 	neffShuffle := neff.NewNeffShuffle(onet, srvc, pool, blocks, formFac, signer)
 
@@ -293,7 +285,7 @@ func createDVotingAccess(t require.TestingT, nodes []dVotingCosiDela, dir string
 	require.NoError(t, err)
 
 	pubKey := signer.GetPublicKey()
-	cred := accessContract.NewCreds(aKey[:])
+	cred := accessContract.NewCreds()
 
 	for _, node := range nodes {
 		n := node.(dVotingNode)
@@ -303,14 +295,14 @@ func createDVotingAccess(t require.TestingT, nodes []dVotingCosiDela, dir string
 	return signer
 }
 
-// Setup implements dela. It creates the roster, shares the certificate, and
+// Setup implements delaNode. It creates the roster, shares the certificate, and
 // create an new chain.
-func (c dVotingNode) Setup(nodes ...dela) {
+func (c dVotingNode) Setup(nodes ...delaNode) {
 	// share the certificates
 	joinable, ok := c.onet.(minogrpc.Joinable)
 	require.True(c.t, ok)
 
-	addrURL, err := url.Parse("//" + c.onet.GetAddress().String())
+	addrURL, err := url.Parse(c.onet.GetAddress().String())
 	require.NoError(c.t, err, addrURL)
 
 	token := joinable.GenerateToken(time.Hour)

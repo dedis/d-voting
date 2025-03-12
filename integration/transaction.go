@@ -6,13 +6,17 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
 	"time"
 
-	"github.com/dedis/d-voting/proxy/txnmanager"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/contracts/evoting"
+	"go.dedis.ch/d-voting/proxy/txnmanager"
+	"go.dedis.ch/dela"
+	"go.dedis.ch/dela/contracts/access"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn"
@@ -52,7 +56,6 @@ func pollTxnInclusion(maxPollCount int, interPollWait time.Duration, proxyAddr, 
 			t.Logf("Polling for transaction inclusion: %d/%d", i, maxPollCount)
 		}
 		timeBegin := time.Now()
-
 
 		req, err := http.NewRequest(http.MethodGet, proxyAddr+"/evoting/transactions/"+token, bytes.NewBuffer([]byte("")))
 		if err != nil {
@@ -101,6 +104,7 @@ func pollTxnInclusion(maxPollCount int, interPollWait time.Duration, proxyAddr, 
 // For integrationTest
 func (m txManager) addAndWait(args ...txn.Arg) ([]byte, error) {
 	for i := 0; i < m.retry; i++ {
+		dela.Logger.Info().Msgf("Adding and waiting for tx to succeed: %d", i)
 		sentTxn, err := m.m.Make(args...)
 		if err != nil {
 			return nil, xerrors.Errorf("failed to Make: %v", err)
@@ -113,7 +117,8 @@ func (m txManager) addAndWait(args ...txn.Arg) ([]byte, error) {
 
 		err = m.n.GetPool().Add(sentTxn)
 		if err != nil {
-			return nil, xerrors.Errorf("failed to Add: %v", err)
+			fmt.Printf("Failed to add transaction: %v", err)
+			continue
 		}
 
 		sentTxnID := sentTxn.GetID()
@@ -129,6 +134,8 @@ func (m txManager) addAndWait(args ...txn.Arg) ([]byte, error) {
 		}
 
 		cancel()
+
+		time.Sleep(time.Millisecond * (1 << i))
 	}
 
 	return nil, xerrors.Errorf("transaction not included after timeout: %v", args)
@@ -159,11 +166,11 @@ func grantAccess(m txManager, signer crypto.Signer) error {
 
 	args := []txn.Arg{
 		{Key: native.ContractArg, Value: []byte("go.dedis.ch/dela.Access")},
-		{Key: "access:grant_id", Value: []byte(hex.EncodeToString(evotingAccessKey[:]))},
-		{Key: "access:grant_contract", Value: []byte("go.dedis.ch/dela.Evoting")},
-		{Key: "access:grant_command", Value: []byte("all")},
-		{Key: "access:identity", Value: []byte(base64.StdEncoding.EncodeToString(pubKeyBuf))},
-		{Key: "access:command", Value: []byte("GRANT")},
+		{Key: access.GrantIDArg, Value: []byte(hex.EncodeToString([]byte(evoting.ContractUID)))},
+		{Key: access.GrantContractArg, Value: []byte("go.dedis.ch/dela.Evoting")},
+		{Key: access.GrantCommandArg, Value: []byte("all")},
+		{Key: access.IdentityArg, Value: []byte(base64.StdEncoding.EncodeToString(pubKeyBuf))},
+		{Key: access.CmdArg, Value: []byte(access.CmdSet)},
 	}
 	_, err = m.addAndWait(args...)
 	if err != nil {

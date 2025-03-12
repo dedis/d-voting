@@ -41,14 +41,9 @@ type Ballot struct {
 }
 
 // Unmarshal decodes the given string according to the format described in
-// "state of smart contract.md"
+// "/docs/state_of_smart_contract.md"
+// TODO: actually describe the format in there...
 func (b *Ballot) Unmarshal(marshalledBallot string, form Form) error {
-	if len(marshalledBallot) > form.BallotSize {
-		b.invalidate()
-		return fmt.Errorf("ballot has an unexpected size %d, expected <= %d",
-			len(marshalledBallot), form.BallotSize)
-	}
-
 	lines := strings.Split(marshalledBallot, "\n")
 
 	b.SelectResultIDs = make([]ID, 0)
@@ -94,7 +89,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, form Form) error {
 				ID:      ID(questionID),
 				MaxN:    q.GetMaxN(),
 				MinN:    q.GetMinN(),
-				Choices: make([]string, q.GetChoicesLength()),
+				Choices: make([]Choice, q.GetChoicesLength()),
 			}
 
 			results, err := selectQ.unmarshalAnswers(selections)
@@ -113,7 +108,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, form Form) error {
 				ID:      ID(questionID),
 				MaxN:    q.GetMaxN(),
 				MinN:    q.GetMinN(),
-				Choices: make([]string, q.GetChoicesLength()),
+				Choices: make([]Choice, q.GetChoicesLength()),
 			}
 
 			results, err := rankQ.unmarshalAnswers(ranks)
@@ -132,7 +127,7 @@ func (b *Ballot) Unmarshal(marshalledBallot string, form Form) error {
 				MaxN:      q.GetMaxN(),
 				MinN:      q.GetMinN(),
 				MaxLength: 0, // TODO: Should the length check be also done at decryption?
-				Choices:   make([]string, q.GetChoicesLength()),
+				Choices:   make([]Choice, q.GetChoicesLength()),
 			}
 
 			results, err := textQ.unmarshalAnswers(texts)
@@ -258,12 +253,33 @@ func (b *Ballot) Equal(other Ballot) bool {
 	return true
 }
 
+// Title contains the titles in different languages.
+type Title struct {
+	En  string
+	Fr  string
+	De  string
+	URL string
+}
+
+// Hint contains explanations in different languages.
+type Hint struct {
+	En string
+	Fr string
+	De string
+}
+
+// Choice contains a choice and an optional URL
+type Choice struct {
+	Choice string
+	URL    string
+}
+
 // Subject is a wrapper around multiple questions that can be of type "select",
 // "rank", or "text".
 type Subject struct {
 	ID ID
 
-	Title string
+	Title Title
 
 	// Order defines the order of the different question, which all have a unique
 	// identifier. This is purely for display purpose.
@@ -317,30 +333,47 @@ func (s *Subject) MaxEncodedSize() int {
 
 	//TODO : optimise by computing max size according to number of choices and maxN
 	for _, rank := range s.Ranks {
-		size += len(rank.GetID() + "::")
-		size += len(rank.ID)
-		// at most 3 bytes (128) + ',' per choice
+		size += len(rank.GetID())
+		// the ID arrives Base64-encoded, but rank.ID is decoded
+		// we need the size of the Base64-encoded string
+		size += len(base64.StdEncoding.EncodeToString([]byte(rank.ID)))
+
+		// ':' separators ('id:id:choice')
+		size += 2
+
+		// 4 bytes per choice (choice and separating comma/newline)
 		size += len(rank.Choices) * 4
 	}
 
 	for _, selection := range s.Selects {
-		size += len(selection.GetID() + "::")
-		size += len(selection.ID)
-		// 1 bytes (0/1) + ',' per choice
+		size += len(selection.GetID())
+		// the ID arrives Base64-encoded, but selection.ID is decoded
+		// we need the size of the Base64-encoded string
+		size += len(base64.StdEncoding.EncodeToString([]byte(selection.ID)))
+
+		// ':' separators ('id:id:choice')
+		size += 2
+
+		// 2 bytes per choice (0/1 and separating comma/newline)
 		size += len(selection.Choices) * 2
 	}
 
 	for _, text := range s.Texts {
-		size += len(text.GetID() + "::")
-		size += len(text.ID)
+		size += len(text.GetID())
+		// the ID arrives Base64-encoded, but text.ID is decoded
+		// we need the size of the Base64-encoded string
+		size += len(base64.StdEncoding.EncodeToString([]byte(text.ID)))
 
-		// at most 4 bytes per character + ',' per answer
+		// ':' separators ('id:id:choice')
+		size += 2
+
+		// 4 bytes per character and 1 byte for separating comma/newline
 		maxTextPerAnswer := 4*int(text.MaxLength) + 1
 		size += maxTextPerAnswer*int(text.MaxN) +
 			int(math.Max(float64(len(text.Choices)-int(text.MaxN)), 0))
 	}
 
-	// Last line has 2 '\n'
+	// additional '\n' on last line
 	if size != 0 {
 		size++
 	}
@@ -419,11 +452,11 @@ func isValid(q Question) bool {
 type Select struct {
 	ID ID
 
-	Title   string
+	Title   Title
 	MaxN    uint
 	MinN    uint
-	Choices []string
-	Hint	string
+	Choices []Choice
+	Hint    Hint
 }
 
 // GetID implements Question
@@ -485,11 +518,11 @@ func (s Select) unmarshalAnswers(sforms []string) ([]bool, error) {
 type Rank struct {
 	ID ID
 
-	Title   string
+	Title   Title
 	MaxN    uint
 	MinN    uint
-	Choices []string
-	Hint 	string
+	Choices []Choice
+	Hint    Hint
 }
 
 func (r Rank) GetID() string {
@@ -558,13 +591,13 @@ func (r Rank) unmarshalAnswers(ranks []string) ([]int8, error) {
 type Text struct {
 	ID ID
 
-	Title     string
+	Title     Title
 	MaxN      uint
 	MinN      uint
 	MaxLength uint
 	Regex     string
-	Choices   []string
-	Hint	  string
+	Choices   []Choice
+	Hint      Hint
 }
 
 func (t Text) GetID() string {

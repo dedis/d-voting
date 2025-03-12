@@ -1,8 +1,10 @@
 import express from 'express';
 import lmdb from 'lmdb';
-import { isAuthorized, PERMISSIONS } from '../authManager';
+import { initEnforcer, isAuthorized, PERMISSIONS } from '../authManager';
 
 export const proxiesRouter = express.Router();
+
+initEnforcer().catch((e) => console.error(`Couldn't initialize enforcerer: ${e}`));
 
 const proxiesDB = lmdb.open<string, string>({ path: `${process.env.DB_PATH}proxies` });
 proxiesRouter.post('', (req, res) => {
@@ -13,7 +15,6 @@ proxiesRouter.post('', (req, res) => {
   try {
     const bodydata = req.body;
     proxiesDB.put(bodydata.NodeAddr, bodydata.Proxy);
-    console.log('put', bodydata.NodeAddr, '=>', bodydata.Proxy);
     res.status(200).send('ok');
   } catch (error: any) {
     res.status(500).send(error.toString());
@@ -33,24 +34,23 @@ proxiesRouter.put('/:nodeAddr', (req, res) => {
   const proxy = proxiesDB.get(nodeAddr);
 
   if (proxy === undefined) {
-    res.status(404).send('not found');
+    res.status(404).send(`proxy ${nodeAddr} not found`);
     return;
   }
   try {
     const bodydata = req.body;
     if (bodydata.Proxy === undefined) {
-      res.status(400).send('bad request, proxy is undefined');
+      res.status(400).send(`bad request, proxy ${nodeAddr} is undefined`);
       return;
     }
 
-    const { NewNode } = bodydata.NewNode;
-    if (NewNode !== nodeAddr) {
+    const { NewNode } = bodydata;
+    if (NewNode !== undefined && NewNode !== nodeAddr) {
       proxiesDB.remove(nodeAddr);
       proxiesDB.put(NewNode, bodydata.Proxy);
     } else {
       proxiesDB.put(nodeAddr, bodydata.Proxy);
     }
-    console.log('put', nodeAddr, '=>', bodydata.Proxy);
     res.status(200).send('ok');
   } catch (error: any) {
     res.status(500).send(error.toString());
@@ -70,13 +70,12 @@ proxiesRouter.delete('/:nodeAddr', (req, res) => {
   const proxy = proxiesDB.get(nodeAddr);
 
   if (proxy === undefined) {
-    res.status(404).send('not found');
+    res.status(404).send(`proxy ${nodeAddr} not found`);
     return;
   }
 
   try {
     proxiesDB.remove(nodeAddr);
-    console.log('remove', nodeAddr, '=>', proxy);
     res.status(200).send('ok');
   } catch (error: any) {
     res.status(500).send(error.toString());
@@ -98,7 +97,7 @@ proxiesRouter.get('/:nodeAddr', (req, res) => {
   const proxy = proxiesDB.get(decodeURIComponent(nodeAddr));
 
   if (proxy === undefined) {
-    res.status(404).send('not found');
+    res.status(404).send(`proxy ${nodeAddr} not found`);
     return;
   }
 

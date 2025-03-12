@@ -1,7 +1,7 @@
 package json
 
 import (
-	"github.com/dedis/d-voting/services/shuffle/neff/types"
+	"go.dedis.ch/d-voting/services/shuffle/neff/types"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/kyber/v3/suites"
@@ -15,8 +15,8 @@ func init() {
 type Address []byte
 
 type StartShuffle struct {
-	FormId string
-	Addresses  []Address
+	FormId    string
+	Addresses []Address
 }
 
 type EndShuffle struct {
@@ -60,8 +60,8 @@ func (f MsgFormat) Encode(ctx serde.Context, msg serde.Message) ([]byte, error) 
 		}
 
 		startShuffle := StartShuffle{
-			FormId: in.GetFormId(),
-			Addresses:  addrs,
+			FormId:    in.GetFormId(),
+			Addresses: addrs,
 		}
 		m = Message{StartShuffle: &startShuffle}
 

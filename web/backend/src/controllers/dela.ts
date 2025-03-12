@@ -5,12 +5,15 @@ import axios, { AxiosError, Method } from 'axios';
 import xss from 'xss';
 import {
   assignUserPermissionToOwnElection,
+  initEnforcer,
   isAuthorized,
   PERMISSIONS,
   revokeUserPermissionToOwnElection,
 } from '../authManager';
 
 export const delaRouter = express.Router();
+
+initEnforcer().catch((e) => console.error(`Couldn't initialize enforcerer: ${e}`));
 
 // get payload creates a payload with a signature on it
 function getPayload(dataStr: string) {
@@ -46,7 +49,7 @@ function sendToDela(dataStr: string, req: express.Request, res: express.Response
   let payload = getPayload(dataStr);
 
   // we strip the `/api` part: /api/form/xxx => /form/xxx
-  let uri = process.env.DELA_NODE_URL + req.baseUrl.slice(4);
+  let uri = process.env.DELA_PROXY_URL + req.baseUrl.slice(4);
   // boolean to check
   let redirectToDefaultProxy = true;
 
@@ -177,31 +180,6 @@ delaRouter.use('/services/shuffle/:formID', (req, res, next) => {
   next();
 });
 
-delaRouter.post('/forms/:formID/vote', (req, res) => {
-  if (!req.session.userId) {
-    res.status(401).send('Authentication required!');
-    return;
-  }
-  if (!isAuthorized(req.session.userId, req.params.formID, PERMISSIONS.ACTIONS.VOTE)) {
-    res.status(400).send('Unauthorized');
-    return;
-  }
-
-  // We must set the UserID to know who this ballot is associated to. This is
-  // only needed to allow users to cast multiple ballots, where only the last
-  // ballot is taken into account. To preserve anonymity, the web-backend could
-  // translate UserIDs to another random ID.
-  // bodyData.UserID = req.session.userId.toString();
-
-  // DEBUG: this is only for debugging and needs to be replaced before production
-  const bodyData = req.body;
-  console.warn('DEV CODE - randomizing the SCIPER ID to allow for unlimited votes');
-  bodyData.UserID = makeid(10);
-
-  const dataStr = JSON.stringify(bodyData);
-  sendToDela(dataStr, req, res);
-});
-
 delaRouter.delete('/forms/:formID', (req, res) => {
   if (!req.session.userId) {
     res.status(401).send('Unauthenticated');
@@ -226,7 +204,7 @@ delaRouter.delete('/forms/:formID', (req, res) => {
   const sign = kyber.sign.schnorr.sign(edCurve, scalar, Buffer.from(formID));
 
   // we strip the `/api` part: /api/form/xxx => /form/xxx
-  const uri = process.env.DELA_NODE_URL + xss(req.url.slice(4));
+  const uri = process.env.DELA_PROXY_URL + xss(req.url.slice(4));
 
   axios({
     method: req.method as Method,
@@ -258,11 +236,34 @@ delaRouter.delete('/forms/:formID', (req, res) => {
 // request that needs to go the DELA nodes
 delaRouter.use('/*', (req, res) => {
   if (!req.session.userId) {
-    res.status(400).send('Unauthorized');
+    res.status(401).send('Authentication required!');
     return;
   }
 
   const bodyData = req.body;
+
+  // special case for voting
+  const match = req.baseUrl.match('/api/evoting/forms/(.*)/vote');
+  if (match) {
+    if (!isAuthorized(req.session.userId, match[1], PERMISSIONS.ACTIONS.VOTE)) {
+      res.status(400).send('Unauthorized');
+      return;
+    }
+
+    if (process.env.REACT_APP_RANDOMIZE_VOTE_ID === 'true') {
+      // DEBUG: this is only for debugging and needs to be replaced before production
+      console.warn('DEV CODE - randomizing the SCIPER ID to allow for unlimited votes');
+      bodyData.UserID = makeid(10);
+    } else {
+      // We must set the UserID to know who this ballot is associated to. This is
+      // only needed to allow users to cast multiple ballots, where only the last
+      // ballot is taken into account. To preserve anonymity, the web-backend could
+      // translate UserIDs to another random ID.
+
+      bodyData.UserID = req.session.userId.toString();
+    }
+  }
+
   const dataStr = JSON.stringify(bodyData);
 
   sendToDela(dataStr, req, res);

@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting"
-	"github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/internal/testing/fake"
-	ptypes "github.com/dedis/d-voting/proxy/types"
-	"github.com/dedis/d-voting/proxy/txnmanager"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/contracts/evoting"
+	"go.dedis.ch/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/internal/testing/fake"
+	"go.dedis.ch/d-voting/proxy/txnmanager"
+	ptypes "go.dedis.ch/d-voting/proxy/types"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn"
@@ -137,28 +137,7 @@ func openForm(m txManager, formID []byte) error {
 func getForm(formFac serde.Factory, formID []byte,
 	service ordering.Service) (types.Form, error) {
 
-	form := types.Form{}
-
-	proof, err := service.GetProof(formID)
-	if err != nil {
-		return form, xerrors.Errorf("failed to GetProof: %v", err)
-	}
-
-	if proof == nil {
-		return form, xerrors.Errorf("form does not exist: %v", err)
-	}
-
-	message, err := formFac.Deserialize(serdecontext, proof.GetValue())
-	if err != nil {
-		return form, xerrors.Errorf("failed to deserialize Form: %v", err)
-	}
-
-	form, ok := message.(types.Form)
-	if !ok {
-		return form, xerrors.Errorf("wrong message type: %T", message)
-	}
-
-	return form, nil
+	return types.FormFromStore(serdecontext, formFac, hex.EncodeToString(formID), service.GetStore())
 }
 
 // for integration tests
@@ -239,7 +218,7 @@ func updateForm(secret kyber.Scalar, proxyAddr, formIDHex, action string, t *tes
 	}
 
 	// wait until the update is completed
-	return pollTxnInclusion(60,time.Second, proxyAddr, result.Token, t)
+	return pollTxnInclusion(60, time.Second, proxyAddr, result.Token, t)
 
 }
 

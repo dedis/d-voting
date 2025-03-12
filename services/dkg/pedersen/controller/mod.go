@@ -2,17 +2,16 @@ package controller
 
 import (
 	"encoding"
-	"encoding/json"
 	"path/filepath"
 
+	"go.dedis.ch/d-voting/contracts/evoting"
 	"go.dedis.ch/dela/core/txn/pool"
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/crypto"
 	"go.dedis.ch/dela/crypto/bls"
 	"go.dedis.ch/dela/crypto/loader"
 
-	"github.com/dedis/d-voting/contracts/evoting"
-	"github.com/dedis/d-voting/services/dkg/pedersen"
+	"go.dedis.ch/d-voting/services/dkg/pedersen"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/access/darc"
@@ -24,15 +23,10 @@ import (
 	"go.dedis.ch/dela/mino"
 	"golang.org/x/xerrors"
 
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
+	etypes "go.dedis.ch/d-voting/contracts/evoting/types"
 )
 
-// BucketName is the name of the bucket in the database.
-const BucketName = "dkgmap"
 const privateKeyFile = "private.key"
-
-// evotingAccessKey is the access key used for the evoting contract.
-var evotingAccessKey = [32]byte{3}
 
 // NewController returns a new controller initializer
 func NewController() node.Initializer {
@@ -44,7 +38,7 @@ func NewController() node.Initializer {
 // - implements node.Initializer
 type controller struct{}
 
-// Build implements node.Initializer.
+// SetCommands implements node.Initializer.
 func (m controller) SetCommands(builder node.Builder) {
 
 	formIDFlag := cli.StringFlag{
@@ -153,39 +147,17 @@ func (m controller) OnStart(ctx cli.Flags, inj node.Injector) error {
 
 	formFac := etypes.NewFormFactory(etypes.CiphervoteFactory{}, rosterFac)
 
-	dkg := pedersen.NewPedersen(no, srvc, p, formFac, signer)
+	dkg := pedersen.NewPedersen(no, srvc, db, p, formFac, signer)
 
 	// Use dkgMap to fill the actors map
-	err = db.View(func(tx kv.ReadableTx) error {
-		bucket := tx.GetBucket([]byte(BucketName))
-		if bucket == nil {
-			return nil
-		}
-
-		return bucket.ForEach(func(formIDBuf, handlerDataBuf []byte) error {
-
-			handlerData := pedersen.HandlerData{}
-			err = json.Unmarshal(handlerDataBuf, &handlerData)
-			if err != nil {
-				return err
-			}
-
-			_, err = dkg.NewActor(formIDBuf, p, signed.NewManager(signer, &client), handlerData)
-			if err != nil {
-				return err
-			}
-
-			return nil
-		})
-	})
+	err = dkg.ReadActors(signed.NewManager(signer, &client))
 	if err != nil {
 		return xerrors.Errorf("database read failed: %v", err)
 	}
 
 	inj.Inject(dkg)
 
-	rosterKey := [32]byte{}
-	c := evoting.NewContract(evotingAccessKey[:], rosterKey[:], access, dkg, rosterFac)
+	c := evoting.NewContract(access, dkg, rosterFac)
 	evoting.RegisterContract(exec, c)
 
 	return nil

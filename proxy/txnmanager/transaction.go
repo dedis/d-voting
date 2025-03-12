@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
+	"go.dedis.ch/d-voting/contracts/evoting"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering/cosipbft/blockstore"
@@ -195,18 +195,13 @@ func (h *manager) checkTxnIncluded(transactionID []byte, lastBlockIdx uint64) (T
 	}
 }
 
-// submitTxn submits a transaction
+// SubmitTxn submits a transaction
 // Returns the transaction ID.
 func (h *manager) SubmitTxn(ctx context.Context, cmd evoting.Command,
 	cmdArg string, payload []byte) ([]byte, uint64, error) {
 
 	h.Lock()
 	defer h.Unlock()
-
-	err := h.mngr.Sync()
-	if err != nil {
-		return nil, 0, xerrors.Errorf("failed to sync manager: %v", err)
-	}
 
 	tx, err := createTransaction(h.mngr, cmd, cmdArg, payload)
 	if err != nil {

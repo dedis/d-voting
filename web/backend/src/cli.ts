@@ -8,26 +8,13 @@ Backend CLI, currently providing 3 commands for user management:
 */
 
 import { Command, InvalidArgumentError } from 'commander';
-import { SequelizeAdapter } from 'casbin-sequelize-adapter';
-import { newEnforcer } from 'casbin';
-import { curve } from '@dedis/kyber';
+import { curve, Group } from '@dedis/kyber';
 import * as fs from 'fs';
-import { PERMISSIONS } from './authManager';
+import request from 'request';
+import ShortUniqueId from 'short-unique-id';
+import { initEnforcer, PERMISSIONS, readSCIPER } from './authManager';
 
 const program = new Command();
-
-async function initEnforcer() {
-  const dbAdapter = await SequelizeAdapter.newAdapter({
-    dialect: 'postgres',
-    host: process.env.DATABASE_HOST,
-    port: parseInt(process.env.DATABASE_PORT || '5432', 10),
-    username: process.env.DATABASE_USERNAME,
-    password: process.env.DATABASE_PASSWORD,
-    database: 'casbin',
-  });
-
-  return newEnforcer('src/model.conf', dbAdapter);
-}
 
 program
   .command('addAdmin')
@@ -95,21 +82,195 @@ program
       const scipers: Array<string> = data.split('\n');
       const policies = [];
       for (let i = 0; i < scipers.length; i += 1) {
-        const sciper: number = Number(scipers[i]);
-        if (Number.isNaN(sciper)) {
-          throw new InvalidArgumentError(`SCIPER '${sciper}' on line ${i + 1} is not a number`);
-        }
-        if (sciper > 999999 || sciper < 100000) {
+        try {
+          policies[i] = [readSCIPER(scipers[i]), electionId, PERMISSIONS.ACTIONS.VOTE];
+        } catch (e) {
           throw new InvalidArgumentError(
-            `SCIPER '${sciper}' on line ${i + 1} is outside acceptable range (100000..999999)`
+            `SCIPER '${scipers[i]}' on line ${i + 1} is not a valid sciper: ${e}`
           );
         }
-        policies[i] = [scipers[i], electionId, PERMISSIONS.ACTIONS.VOTE];
       }
       const enforcer = await initEnforcer();
       await enforcer.addPolicies(policies);
       console.log('Added Voting policies successfully!');
     });
+  });
+
+function getRequest(url: string): Promise<{ response: request.Response; body: any }> {
+  return new Promise((resolve, reject) => {
+    request.get({ url: url, followRedirect: false }, (err, response, body) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve({ response, body });
+      }
+    });
+  });
+}
+
+function postRequest(
+  url: string,
+  cookie: string,
+  data: any
+): Promise<{ response: request.Response; body: any }> {
+  return new Promise((resolve, reject) => {
+    request.post(
+      {
+        url: url,
+        headers: {
+          Cookie: cookie,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      },
+      (err, response, body) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({ response, body });
+        }
+      }
+    );
+  });
+}
+
+function encodeBallot(
+  formSelectId: string,
+  choices: number[],
+  ballotSize: number,
+  chunksPerBallot: number
+): string[] {
+  let encodedBallot = `select:${Buffer.from(formSelectId).toString('base64')}:${choices.join(
+    ','
+  )}\n\n`;
+
+  const ebSize = Buffer.byteLength(encodedBallot);
+
+  if (ebSize < ballotSize) {
+    const padding = new ShortUniqueId({ length: ballotSize - ebSize });
+    encodedBallot += padding();
+  }
+
+  const chunkSize = 29;
+  const ballotChunks: string[] = [];
+
+  // divide into chunksPerBallot chunks, where 1 character === 1 byte
+  for (let i = 0; i < chunksPerBallot; i += 1) {
+    const start = i * chunkSize;
+    // substring(start, start + chunkSize), if (start + chunkSize) > string.length
+    // then (start + chunkSize) is treated as if it was equal to string.length
+    ballotChunks.push(encodedBallot.substring(start, start + chunkSize));
+  }
+
+  return ballotChunks;
+}
+
+export function encryptVote(vote: string, dkgKey: Buffer, edCurve: Group) {
+  // embed the vote into a curve point
+  const M = edCurve.point().embed(Buffer.from(vote));
+  // dkg public key as a point on the EC
+  const keyBuff = dkgKey;
+  const p = edCurve.point();
+  p.unmarshalBinary(keyBuff); // unmarshal dkg public key
+  const pubKeyPoint = p.clone(); // get the point corresponding to the dkg public key
+
+  const k = edCurve.scalar().pick(); // ephemeral private key
+  const K = edCurve.point().mul(k); // ephemeral DH public key
+
+  const S = edCurve.point().mul(k, pubKeyPoint); // ephemeral DH shared secret
+  const C = S.add(S, M); // message blinded with secret
+
+  // (K,C) are what we'll send to the backend
+  return [K.marshalBinary(), C.marshalBinary()];
+}
+
+program
+  .command('vote')
+  .description('Votes multiple times - only works with REACT_APP_DEV_LOGIN=true')
+  .requiredOption('-f, --frontend <char>', 'URL of frontend')
+  .requiredOption('-e, --election-id <char>', 'ID of the election')
+  .requiredOption('-b, --ballots <number>', 'how many ballots to cast')
+  .requiredOption('-a, --admin <char>', 'admin ID')
+  .action(async ({ frontend, electionId, ballots, admin }) => {
+    console.log(`Going to cast ${ballots} ballots in election-id ${electionId} over ${frontend}`);
+
+    console.log(`Getting proxies`);
+    const responseProxies = await getRequest(`${frontend}/api/proxies`);
+    const proxies = JSON.parse(responseProxies.body).Proxies;
+    const proxy = Object.values(proxies)[0];
+
+    console.log(`Getting data of form ${electionId}`);
+    const responseForm = await getRequest(`${proxy}/evoting/forms/${electionId}`);
+    console.log(responseForm.body);
+    const form = JSON.parse(responseForm.body);
+    const formPubkey = form.Pubkey;
+    if (!('Selects' in form.Configuration.Scaffold[0])) {
+      throw new Error('Only support forms with 1 scaffold of type selects');
+    }
+    const formSelect = form.Configuration.Scaffold[0].Selects[0];
+    const formSelectId = formSelect.ID;
+    if (formSelect.MinN !== 1) {
+      throw new Error('Only forms with MinN === 1 supported');
+    }
+
+    // Always vote for the first choice.
+    // ballotsize, chunksperballot
+    const choices1 = formSelect.Choices.map(() => 0);
+    choices1[0] = 1;
+    const ballotChunks1 = encodeBallot(
+      formSelectId,
+      choices1,
+      form.BallotSize,
+      form.ChunksPerBallot
+    );
+    if (ballotChunks1.length !== 1) {
+      throw new Error('Should get exactly one ballot-chunk');
+    }
+    const EGPair1 = encryptVote(
+      ballotChunks1[0],
+      Buffer.from(formPubkey, 'hex'),
+      curve.newCurve('edwards25519')
+    );
+    const choices2 = formSelect.Choices.map(() => 0);
+    choices2[1] = 1;
+    const ballotChunks2 = encodeBallot(
+      formSelectId,
+      choices2,
+      form.BallotSize,
+      form.ChunksPerBallot
+    );
+    const EGPair2 = encryptVote(
+      ballotChunks2[0],
+      Buffer.from(formPubkey, 'hex'),
+      curve.newCurve('edwards25519')
+    );
+
+    console.log('Getting login cookie');
+    const { response } = await getRequest(`${frontend}/api/get_dev_login/${admin}`);
+    if (response.headers['set-cookie']?.length !== 1) {
+      throw new Error("Didn't get cookie");
+    }
+    const loginCookie = response.headers['set-cookie']![0];
+
+    console.log('Casting ballots');
+    for (let i = 0; i < ballots; i += 1) {
+      const start = Date.now();
+      // Have 1/3 vote for choice 1, 2/3 for choice 2
+      const EGPair = i % 3 === 0 ? EGPair1 : EGPair2;
+      // eslint-disable-next-line no-await-in-loop
+      const responseCast = await postRequest(
+        `${frontend}/api/evoting/forms/${electionId}/vote`,
+        loginCookie,
+        { Ballot: [{ K: Array.from(EGPair[0]), C: Array.from(EGPair[1]) }], UserId: `${admin}` }
+      );
+      if (responseCast.response.statusCode !== 200) {
+        console.log(responseCast.response.headers);
+      }
+      if (i % 10 === 0) {
+        console.log(`Casting ballot ${i} took ${Date.now() - start}ms`);
+      }
+      // await new Promise(resolve => setTimeout(resolve, 1000));
+    }
   });
 
 program.parse();

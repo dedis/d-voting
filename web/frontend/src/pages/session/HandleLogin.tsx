@@ -1,11 +1,20 @@
-import { ENDPOINT_GET_TEQ_KEY } from 'components/utils/Endpoints';
+import { ENDPOINT_DEV_LOGIN, ENDPOINT_GET_TEQ_KEY } from 'components/utils/Endpoints';
 import { FlashLevel, FlashState } from 'index';
 
 // The backend will provide the client the URL to make a Tequila authentication.
 // We therefore redirect to this address.
-const handleLogin = async (fctx: FlashState) => {
+// If REACT_APP_DEV_LOGIN === "true", we allow an automatic login with SCIPER 100100.
+const handleLogin = async (fctx: FlashState, dev_id = process.env.REACT_APP_SCIPER_ADMIN) => {
+  console.log(`dev_id is: ${dev_id}`);
   try {
-    const res = await fetch(ENDPOINT_GET_TEQ_KEY);
+    let res;
+    if (process.env.REACT_APP_DEV_LOGIN === 'true') {
+      await fetch(ENDPOINT_DEV_LOGIN + `/${dev_id}`);
+      window.location.reload();
+      return;
+    } else {
+      res = await fetch(ENDPOINT_GET_TEQ_KEY);
+    }
 
     const d = new Date();
     d.setTime(d.getTime() + 120000);

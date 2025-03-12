@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting/types"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/contracts/evoting/types"
 	"golang.org/x/xerrors"
 )
 
@@ -109,5 +109,5 @@ func restartNode(nodeNub int, t *testing.T) {
 }
 
 func getThreshold(numNodes int) int {
-	return numNodes/3
+	return numNodes / 3
 }

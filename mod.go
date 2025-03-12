@@ -5,7 +5,7 @@ import "github.com/prometheus/client_golang/prometheus"
 // Version contains the current or build version. This variable can be changed
 // at build time with:
 //
-//   go build -ldflags="-X 'github.com/dedis/d-voting.Version=v1.0.0'"
+//	go build -ldflags="-X 'github.com/dedis/d-voting.Version=v1.0.0'"
 //
 // Version should be fetched from git: `git describe --tags`
 var Version = "unknown"

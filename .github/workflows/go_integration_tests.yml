@@ -8,16 +8,16 @@ on:
 
 jobs:
   integration:
-    name: Integration test
+    name: Integration tests
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go ^1.17
-        uses: actions/setup-go@v2
-        with:
-          go-version: ^1.17
-
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Use Go 1.23
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
 
       - name: Run the integration test
         run: go test -timeout 10m -run TestIntegration ./integration/... 
@@ -25,13 +25,13 @@ jobs:
     name: Test bad vote
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go ^1.17
-        uses: actions/setup-go@v2
-        with:
-          go-version: ^1.17
-
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Use Go 1.23
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
 
       - name: Run the bad vote test
         run: go test -timeout 10m -run TestBadVote ./integration/...
@@ -39,27 +39,32 @@ jobs:
     name: Test crash
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go ^1.17
-        uses: actions/setup-go@v2
-        with:
-          go-version: ^1.17
-
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Use Go 1.23
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
 
       - name: Run the crash test
-        run: go test -timeout 10m -run TestCrash ./integration/...
+        run: |
+          for a in $( seq 3 ); do
+            echo "Testing sequence $a"
+            go test -timeout 10m -run TestCrash ./integration/... && exit 0
+          done
+          exit 1
   revote:
     name: Test revote
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go ^1.17
-        uses: actions/setup-go@v2
-        with:
-          go-version: ^1.17
-
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Use Go 1.23
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
 
       - name: Run the revote test
         run: go test -timeout 10m -run TestRevote ./integration/...

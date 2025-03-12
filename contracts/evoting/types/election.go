@@ -1,10 +1,15 @@
 package types
 
 import (
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/hex"
+	"fmt"
 	"io"
 
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"
 	ctypes "go.dedis.ch/dela/core/ordering/cosipbft/types"
+	"go.dedis.ch/dela/core/store"
 	"go.dedis.ch/dela/serde"
 	"go.dedis.ch/dela/serde/registry"
 	"go.dedis.ch/kyber/v3"
@@ -21,7 +26,6 @@ type ID string
 type Status uint16
 
 const (
-	// DecryptedBallots = 4
 	// Initial is when the form has just been created
 	Initial Status = 0
 	// Open is when the form is open, i.e. it fetched the public key
@@ -34,9 +38,16 @@ const (
 	PubSharesSubmitted Status = 4
 	// ResultAvailable is when the ballots have been decrypted
 	ResultAvailable Status = 5
-	// Canceled is when the form has been cancel
+	// Canceled is when the form has been canceled
 	Canceled Status = 6
 )
+
+// BallotsPerBatch to improve performance, so that (de)serializing only touches
+// 100 ballots at a time.
+var BallotsPerBatch = uint32(100)
+
+// TestCastBallots if true, automatically fills every batch with ballots.
+var TestCastBallots = false
 
 // formFormat contains the supported formats for the form. Right now
 // only JSON is supported.
@@ -67,8 +78,18 @@ type Form struct {
 	// to pad smaller ballots such that all  ballots cast have the same size
 	BallotSize int
 
-	// Suffragia is a map from User ID to their encrypted ballot
-	Suffragia Suffragia
+	// SuffragiaStoreKeys holds a slice of storage-keys to 0 or more Suffragia.
+	// This is to optimize the time it takes to (De)serialize a Form.
+	SuffragiaStoreKeys [][]byte
+
+	// BallotCount is the total number of ballots cast, including double
+	// ballots.
+	BallotCount uint32
+
+	// SuffragiaHashes holds a slice of hashes to all SuffragiaStoreKeys.
+	// In case a Form has also to be proven to be correct outside the nodes,
+	// the hashes are needed to prove the Suffragia are correct.
+	SuffragiaHashes [][]byte
 
 	// ShuffleInstances is all the shuffles, along with their proof and identity
 	// of shuffler.
@@ -136,6 +157,39 @@ func (e FormFactory) Deserialize(ctx serde.Context, data []byte) (serde.Message,
 	return message, nil
 }
 
+// FormFromStore returns a form from the store given the formIDHex.
+// An error indicates a wrong storage of the form.
+func FormFromStore(ctx serde.Context, formFac serde.Factory, formIDHex string,
+	store store.Readable) (Form, error) {
+
+	form := Form{}
+
+	formIDBuf, err := hex.DecodeString(formIDHex)
+	if err != nil {
+		return form, xerrors.Errorf("failed to decode formIDHex: %v", err)
+	}
+
+	formBuff, err := store.Get(formIDBuf)
+	if err != nil {
+		return form, xerrors.Errorf("while getting data for form: %v", err)
+	}
+	if len(formBuff) == 0 {
+		return form, xerrors.Errorf("no form found")
+	}
+
+	message, err := formFac.Deserialize(ctx, formBuff)
+	if err != nil {
+		return form, xerrors.Errorf("failed to deserialize Form: %v", err)
+	}
+
+	form, ok := message.(Form)
+	if !ok {
+		return form, xerrors.Errorf("wrong message type: %T", message)
+	}
+
+	return form, nil
+}
+
 // ChunksPerBallot returns the number of chunks of El Gamal pairs needed to
 // represent an encrypted ballot, knowing that one chunk is 29 bytes at most.
 func (e *Form) ChunksPerBallot() int {
@@ -144,6 +198,89 @@ func (e *Form) ChunksPerBallot() int {
 	}
 
 	return e.BallotSize/29 + 1
+}
+
+// CastVote stores the new vote in the memory.
+func (s *Form) CastVote(ctx serde.Context, st store.Snapshot, userID string, ciphervote Ciphervote) error {
+	var suff Suffragia
+	var batchID []byte
+
+	if s.BallotCount%BallotsPerBatch == 0 {
+		// Need to create a random ID for storing the ballots.
+		// H( formID | ballotcount )
+		// should be random enough, even if it's previsible.
+		id, err := hex.DecodeString(s.FormID)
+		if err != nil {
+			return xerrors.Errorf("couldn't decode formID: %v", err)
+		}
+		h := sha256.New()
+		h.Write(id)
+		binary.LittleEndian.PutUint32(id, s.BallotCount)
+		batchID = h.Sum(id[0:4])[:32]
+
+		err = st.Set(batchID, []byte{})
+		if err != nil {
+			return xerrors.Errorf("couldn't store new ballot batch: %v", err)
+		}
+		s.SuffragiaStoreKeys = append(s.SuffragiaStoreKeys, batchID)
+		s.SuffragiaHashes = append(s.SuffragiaHashes, []byte{})
+	} else {
+		batchID = s.SuffragiaStoreKeys[len(s.SuffragiaStoreKeys)-1]
+		buf, err := st.Get(batchID)
+		if err != nil {
+			return xerrors.Errorf("couldn't get ballots batch: %v", err)
+		}
+		format := suffragiaFormat.Get(ctx.GetFormat())
+		ctx = serde.WithFactory(ctx, CiphervoteKey{}, CiphervoteFactory{})
+		msg, err := format.Decode(ctx, buf)
+		if err != nil {
+			return xerrors.Errorf("couldn't unmarshal ballots batch in cast: %v", err)
+		}
+		suff = msg.(Suffragia)
+	}
+
+	suff.CastVote(userID, ciphervote)
+	if TestCastBallots {
+		for i := uint32(1); i < BallotsPerBatch; i++ {
+			suff.CastVote(fmt.Sprintf("%s-%d", userID, i), ciphervote)
+		}
+		s.BallotCount += BallotsPerBatch - 1
+	}
+	buf, err := suff.Serialize(ctx)
+	if err != nil {
+		return xerrors.Errorf("couldn't marshal ballots batch: %v", err)
+	}
+	err = st.Set(batchID, buf)
+	if err != nil {
+		xerrors.Errorf("couldn't set new ballots batch: %v", err)
+	}
+	s.BallotCount += 1
+	return nil
+}
+
+// Suffragia returns all ballots from the storage. This should only
+// be called rarely, as it might take a long time.
+// It overwrites ballots cast by the same user and keeps only
+// the latest ballot.
+func (s *Form) Suffragia(ctx serde.Context, rd store.Readable) (Suffragia, error) {
+	var suff Suffragia
+	for _, id := range s.SuffragiaStoreKeys {
+		buf, err := rd.Get(id)
+		if err != nil {
+			return suff, xerrors.Errorf("couldn't get ballot batch: %v", err)
+		}
+		format := suffragiaFormat.Get(ctx.GetFormat())
+		ctx = serde.WithFactory(ctx, CiphervoteKey{}, CiphervoteFactory{})
+		msg, err := format.Decode(ctx, buf)
+		if err != nil {
+			return suff, xerrors.Errorf("couldn't unmarshal ballots batch in cast: %v", err)
+		}
+		suffTmp := msg.(Suffragia)
+		for i, uid := range suffTmp.UserIDs {
+			suff.CastVote(uid, suffTmp.Ciphervotes[i])
+		}
+	}
+	return suff, nil
 }
 
 // RandomVector is a slice of kyber.Scalar (encoded) which is used to prove
@@ -197,8 +334,9 @@ type ShuffleInstance struct {
 
 // Configuration contains the configuration of a new poll.
 type Configuration struct {
-	MainTitle string
-	Scaffold  []Subject
+	Title          Title
+	Scaffold       []Subject
+	AdditionalInfo string
 }
 
 // MaxBallotSize returns the maximum number of bytes required to store a ballot
@@ -237,80 +375,6 @@ func (c *Configuration) IsValid() bool {
 	}
 
 	return true
-}
-
-type Suffragia struct {
-	UserIDs     []string
-	Ciphervotes []Ciphervote
-}
-
-// CastVote adds a new vote and its associated user or updates a user's vote.
-func (s *Suffragia) CastVote(userID string, ciphervote Ciphervote) {
-	for i, u := range s.UserIDs {
-		if u == userID {
-			s.Ciphervotes[i] = ciphervote
-			return
-		}
-	}
-
-	s.UserIDs = append(s.UserIDs, userID)
-	s.Ciphervotes = append(s.Ciphervotes, ciphervote.Copy())
-}
-
-// CiphervotesFromPairs transforms two parallel lists of EGPoints to a list of
-// Ciphervotes.
-func CiphervotesFromPairs(X, Y [][]kyber.Point) ([]Ciphervote, error) {
-	if len(X) != len(Y) {
-		return nil, xerrors.Errorf("X and Y must have same length: %d != %d",
-			len(X), len(Y))
-	}
-
-	if len(X) == 0 {
-		return nil, xerrors.Errorf("ElGamal pairs are empty")
-	}
-
-	NQ := len(X)   // sequence size
-	k := len(X[0]) // number of votes
-	res := make([]Ciphervote, k)
-
-	for i := 0; i < k; i++ {
-		x := make([]kyber.Point, NQ)
-		y := make([]kyber.Point, NQ)
-
-		for j := 0; j < NQ; j++ {
-			x[j] = X[j][i]
-			y[j] = Y[j][i]
-		}
-
-		ciphervote, err := ciphervoteFromPairs(x, y)
-		if err != nil {
-			return nil, xerrors.Errorf("failed to init from ElGamal pairs: %v", err)
-		}
-
-		res[i] = ciphervote
-	}
-
-	return res, nil
-}
-
-// ciphervoteFromPairs transforms two parallel lists of EGPoints to a list of
-// ElGamal pairs.
-func ciphervoteFromPairs(ks []kyber.Point, cs []kyber.Point) (Ciphervote, error) {
-	if len(ks) != len(cs) {
-		return Ciphervote{}, xerrors.Errorf("ks and cs must have same length: %d != %d",
-			len(ks), len(cs))
-	}
-
-	res := make(Ciphervote, len(ks))
-
-	for i := range ks {
-		res[i] = EGPair{
-			K: ks[i],
-			C: cs[i],
-		}
-	}
-
-	return res, nil
 }
 
 // Pubshare represents a public share.

@@ -1,7 +1,7 @@
 package types
 
 import (
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
+	etypes "go.dedis.ch/d-voting/contracts/evoting/types"
 )
 
 // CreateFormRequest defines the HTTP request for creating a form
@@ -54,7 +54,7 @@ type GetFormResponse struct {
 // LightForm represents a light version of the form
 type LightForm struct {
 	FormID string
-	Title  string
+	Title  etypes.Title
 	Status uint16
 	Pubkey string
 }
