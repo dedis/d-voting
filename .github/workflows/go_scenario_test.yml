@@ -11,10 +11,10 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     steps:
-      - name: Use Go 1.23.7
+      - name: Use Go 1.23
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23.7'
+          go-version: '1.23'
 
       - name: Install crypto util from Dela
         run: |
