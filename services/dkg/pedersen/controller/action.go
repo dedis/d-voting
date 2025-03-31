@@ -12,9 +12,9 @@ import (
 	"go.dedis.ch/dela/core/txn/signed"
 	"go.dedis.ch/dela/core/validation"
 
-	"github.com/dedis/d-voting/services/dkg"
-	"github.com/dedis/d-voting/services/dkg/pedersen"
 	"github.com/gorilla/mux"
+	"go.dedis.ch/d-voting/services/dkg"
+	"go.dedis.ch/d-voting/services/dkg/pedersen"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/store/kv"
@@ -23,7 +23,7 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 
-	eproxy "github.com/dedis/d-voting/proxy"
+	eproxy "go.dedis.ch/d-voting/proxy"
 )
 
 var suite = suites.MustFind("Ed25519")

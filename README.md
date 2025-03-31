@@ -12,13 +12,13 @@
         <a href="https://sonarcloud.io/summary/new_code?id=dedis_d-voting">
             <img src="https://sonarcloud.io/api/project_badges/measure?project=dedis_d-voting&metric=alert_status">
         </a>
-        <a href="https://github.com/dedis/d-voting/actions/workflows/go_release.yml">
-            <img src="https://github.com/dedis/d-voting/actions/workflows/go_release.yml/badge.svg">
+        <a href="https://go.dedis.ch/d-voting/actions/workflows/go_release.yml">
+            <img src="https://go.dedis.ch/d-voting/actions/workflows/go_release.yml/badge.svg">
         </a><br/>
-        <a href="https://github.com/dedis/d-voting/graphs/contributors">
+        <a href="https://go.dedis.ch/d-voting/graphs/contributors">
             <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/dedis/d-voting">
         </a>
-        <a href="https://github.com/dedis/d-voting/releases">
+        <a href="https://go.dedis.ch/d-voting/releases">
             <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/dedis/d-voting">
         </a>
       </td>
@@ -26,37 +26,37 @@
 <tr>
     <td>Blockchain</td>
     <td>
-        <a href="https://github.com/dedis/d-voting/actions/workflows/go_test.yml">
-            <img src="https://github.com/dedis/d-voting/actions/workflows/go_test.yml/badge.svg">
+        <a href="https://go.dedis.ch/d-voting/actions/workflows/go_test.yml">
+            <img src="https://go.dedis.ch/d-voting/actions/workflows/go_test.yml/badge.svg">
         </a>
-        <a href="https://github.com/dedis/d-voting/actions/workflows/go_dvoting_test.yml">
-            <img src="https://github.com/dedis/d-voting/actions/workflows/go_dvoting_test.yml/badge.svg">
+        <a href="https://go.dedis.ch/d-voting/actions/workflows/go_dvoting_test.yml">
+            <img src="https://go.dedis.ch/d-voting/actions/workflows/go_dvoting_test.yml/badge.svg">
         </a>
-        <a href="https://github.com/dedis/d-voting/actions/workflows/go_scenario_test.yml">
-            <img src="https://github.com/dedis/d-voting/actions/workflows/go_scenario_test.yml/badge.svg">
+        <a href="https://go.dedis.ch/d-voting/actions/workflows/go_scenario_test.yml">
+            <img src="https://go.dedis.ch/d-voting/actions/workflows/go_scenario_test.yml/badge.svg">
         </a>
-        <a href="https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml">
-            <img src="https://github.com/dedis/d-voting/actions/workflows/go_integration_tests.yml/badge.svg">
+        <a href="https://go.dedis.ch/d-voting/actions/workflows/go_integration_tests.yml">
+            <img src="https://go.dedis.ch/d-voting/actions/workflows/go_integration_tests.yml/badge.svg">
         </a><br/>
         <a href="https://coveralls.io/github/dedis/d-voting?branch=main">
             <img src="https://coveralls.io/repos/github/dedis/d-voting/badge.svg?branch=main">
         </a>
-        <a href="https://goreportcard.com/report/github.com/dedis/d-voting">
-            <img src="https://goreportcard.com/badge/github.com/dedis/d-voting">
+        <a href="https://goreportcard.com/report/go.dedis.ch/d-voting">
+            <img src="https://goreportcard.com/badge/go.dedis.ch/d-voting">
         </a>
-        <a href="https://pkg.go.dev/github.com/dedis/d-voting">
-            <img src="https://pkg.go.dev/badge/github.com/dedis/d-voting.svg" alt="Go Reference">
+        <a href="https://pkg.go.dev/go.dedis.ch/d-voting">
+            <img src="https://pkg.go.dev/badge/go.dedis.ch/d-voting.svg" alt="Go Reference">
         </a>
     </td>
 <tr>
 <tr>
     <td>WEB</td>
     <td>
-        <a href="https://github.com/dedis/d-voting/actions/workflows/web_frontend_lint.yml">
-            <img src="https://github.com/dedis/d-voting/actions/workflows/web_frontend_lint.yml/badge.svg">
+        <a href="https://go.dedis.ch/d-voting/actions/workflows/web_frontend_lint.yml">
+            <img src="https://go.dedis.ch/d-voting/actions/workflows/web_frontend_lint.yml/badge.svg">
         </a>
-        <a href="https://github.com/dedis/d-voting/actions/workflows/web_backend_lint.yml">
-            <img src="https://github.com/dedis/d-voting/actions/workflows/web_backend_lint.yml/badge.svg">
+        <a href="https://go.dedis.ch/d-voting/actions/workflows/web_backend_lint.yml">
+            <img src="https://go.dedis.ch/d-voting/actions/workflows/web_backend_lint.yml/badge.svg">
         </a>
     </td>
 </tr>
@@ -601,7 +601,7 @@ Afterwards use the following commands, replace 4 by the desired nb of nodes :
 ./runNode.sh -n 4 -a true -d true
 ./setupnNode.sh -n 4 -d true
 
-NNODES=4 KILLNODE=true go test -v -run ^TestScenario$ github.com/dedis/d-voting/integration -count=1
+NNODES=4 KILLNODE=true go test -v -run ^TestScenario$ go.dedis.ch/d-voting/integration -count=1
 ```
 
 Here we set KILLNODE=true or false to decide whether kill and restart a node

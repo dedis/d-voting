@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting"
 	"github.com/rs/zerolog"
+	"go.dedis.ch/d-voting/contracts/evoting"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/dela/core/txn/pool"
@@ -21,9 +21,9 @@ import (
 	"go.dedis.ch/dela/mino/minogrpc/session"
 	jsondela "go.dedis.ch/dela/serde/json"
 
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/services/dkg"
-	"github.com/dedis/d-voting/services/dkg/pedersen/types"
+	etypes "go.dedis.ch/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/services/dkg"
+	"go.dedis.ch/d-voting/services/dkg/pedersen/types"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/cosi/threshold"

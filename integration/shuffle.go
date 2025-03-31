@@ -1,7 +1,7 @@
 package integration
 
 import (
-	"github.com/dedis/d-voting/services/shuffle"
+	"go.dedis.ch/d-voting/services/shuffle"
 	"go.dedis.ch/dela/core/txn/signed"
 	"golang.org/x/xerrors"
 )

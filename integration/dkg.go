@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	ptypes "github.com/dedis/d-voting/proxy/types"
-	"github.com/dedis/d-voting/services/dkg"
 	"github.com/stretchr/testify/require"
+	ptypes "go.dedis.ch/d-voting/proxy/types"
+	"go.dedis.ch/d-voting/services/dkg"
 	"go.dedis.ch/dela/core/txn"
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"

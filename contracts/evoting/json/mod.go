@@ -1,7 +1,7 @@
 package json
 
 import (
-	"github.com/dedis/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/serde"
 )
 
