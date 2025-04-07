@@ -650,9 +650,9 @@ func setupSimpleForm(ctx node.Context, secret kyber.Scalar, proxyAddr1 string,
 		return "", types.Form{}, nil, xerrors.Errorf("formID mismatch: %s != %s", form.FormID, formID)
 	}
 
-	fmt.Fprintf(ctx.Out, "Title of the form: "+form.Configuration.Title.En)
-	fmt.Fprintf(ctx.Out, "ID of the form: "+form.FormID)
-	fmt.Fprintf(ctx.Out, "Status of the form: "+strconv.Itoa(int(form.Status)))
+	fmt.Fprintf(ctx.Out, "Title of the form: %v", form.Configuration.Title.En)
+	fmt.Fprintf(ctx.Out, "ID of the form: %v", form.FormID)
+	fmt.Fprintf(ctx.Out, "Status of the form: %v", strconv.Itoa(int(form.Status)))
 
 	return formID, form, formIDBuf, nil
 }

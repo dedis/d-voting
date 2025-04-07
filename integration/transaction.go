@@ -83,12 +83,12 @@ func pollTxnInclusion(maxPollCount int, interPollWait time.Duration, proxyAddr, 
 		// check if the transaction is included in the blockchain
 
 		switch result.Status {
-		case 2:
+		case txnmanager.RejectedTransaction:
 			return false, nil
-		case 1:
+		case txnmanager.IncludedTransaction:
 			t.Logf("Transaction included in the blockchain at iteration: %d/%d", i, maxPollCount)
 			return true, nil
-		case 0:
+		case txnmanager.UnknownTransactionStatus:
 			token = result.Token
 		}
 

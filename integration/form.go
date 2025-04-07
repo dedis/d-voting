@@ -104,7 +104,7 @@ func createFormScenario(contentType, proxy string, secret kyber.Scalar, t *testi
 	require.NoError(t, err)
 	require.True(t, ok)
 
-	t.Logf("ID of the form : " + formID)
+	t.Logf("ID of the form : %v", formID)
 
 	return formID
 }

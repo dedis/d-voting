@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 
 	"testing"
@@ -36,10 +35,7 @@ func getIntegrationTestBadVote(numNodes, numVotes, numBadVotes int) func(*testin
 
 		delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 
-		dirPath, err := os.MkdirTemp(os.TempDir(), "d-voting-three-votes")
-		require.NoError(t, err)
-
-		defer os.RemoveAll(dirPath)
+		dirPath := t.TempDir()
 
 		t.Logf("using temp dir %s", dirPath)
 
@@ -50,7 +46,7 @@ func getIntegrationTestBadVote(numNodes, numVotes, numBadVotes int) func(*testin
 
 		m := newTxManager(signer, nodes[0], time.Second*time.Duration(numNodes/2+1), numNodes*4)
 
-		err = grantAccess(m, signer)
+		err := grantAccess(m, signer)
 		require.NoError(t, err)
 
 		for _, n := range nodes {
@@ -174,10 +170,7 @@ func getIntegrationTestRevote(numNodes, numVotes, numRevotes int) func(*testing.
 
 		delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 
-		dirPath, err := os.MkdirTemp(os.TempDir(), "d-voting-three-votes")
-		require.NoError(t, err)
-
-		defer os.RemoveAll(dirPath)
+		dirPath := t.TempDir()
 
 		t.Logf("using temp dir %s", dirPath)
 
@@ -188,7 +181,7 @@ func getIntegrationTestRevote(numNodes, numVotes, numRevotes int) func(*testing.
 
 		m := newTxManager(signer, nodes[0], time.Second*time.Duration(numNodes/2+1), numNodes*4)
 
-		err = grantAccess(m, signer)
+		err := grantAccess(m, signer)
 		require.NoError(t, err)
 
 		for _, n := range nodes {

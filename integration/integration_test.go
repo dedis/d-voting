@@ -3,7 +3,6 @@ package integration
 import (
 	"fmt"
 	"math/rand"
-	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -40,11 +39,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 
 		delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 
-		dirPath, err := os.MkdirTemp(os.TempDir(), "d-voting-three-votes")
-		require.NoError(t, err)
-
-		defer os.RemoveAll(dirPath)
-
+		dirPath := t.TempDir()
 		t.Logf("using temp dir %s", dirPath)
 
 		// ##### CREATE NODES #####
@@ -54,7 +49,7 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 
 		m := newTxManager(signer, nodes[0], time.Second*time.Duration(numNodes/2+1), numNodes*4)
 
-		err = grantAccess(m, signer)
+		err := grantAccess(m, signer)
 		require.NoError(t, err)
 
 		for _, n := range nodes {
@@ -63,16 +58,19 @@ func getIntegrationTest(numNodes, numVotes int) func(*testing.T) {
 		}
 
 		// ##### CREATE FORM #####
+		t.Log("create form")
 		formID, err := createForm(m, "Three votes form", adminID)
 		require.NoError(t, err)
 
 		time.Sleep(time.Second * 1)
 
 		// ##### SETUP DKG #####
+		t.Log("setup DKG")
 		actor, err := initDkg(nodes, formID, m.m)
 		require.NoError(t, err)
 
 		// ##### OPEN FORM #####
+		t.Log("open form")
 		err = openForm(m, formID)
 		require.NoError(t, err)
 
@@ -179,10 +177,7 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 
 		delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 
-		dirPath, err := os.MkdirTemp(os.TempDir(), "d-voting-three-votes")
-		require.NoError(t, err)
-
-		defer os.RemoveAll(dirPath)
+		dirPath := t.TempDir()
 
 		t.Logf("using temp dir %s", dirPath)
 
@@ -193,7 +188,7 @@ func getIntegrationTestCrash(numNodes, numVotes, failingNodes int) func(*testing
 
 		m := newTxManager(signer, nodes[0], time.Second*time.Duration(numNodes/2+1), numNodes*4)
 
-		err = grantAccess(m, signer)
+		err := grantAccess(m, signer)
 		require.NoError(t, err)
 
 		for _, n := range nodes {
@@ -327,10 +322,7 @@ func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 
 		delaPkg.Logger = delaPkg.Logger.Level(zerolog.WarnLevel)
 
-		dirPath, err := os.MkdirTemp(os.TempDir(), "d-voting-three-votes")
-		require.NoError(b, err)
-
-		defer os.RemoveAll(dirPath)
+		dirPath := b.TempDir()
 
 		// ##### CREATE NODES #####
 		nodes := setupDVotingNodes(b, numNodes, dirPath)
@@ -339,7 +331,7 @@ func getIntegrationBenchmark(numNodes, numVotes int) func(*testing.B) {
 
 		m := newTxManager(signer, nodes[0], time.Second*time.Duration(numNodes/2+1), numNodes*4)
 
-		err = grantAccess(m, signer)
+		err := grantAccess(m, signer)
 		require.NoError(b, err)
 
 		for _, n := range nodes {

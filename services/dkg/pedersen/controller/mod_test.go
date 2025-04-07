@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -26,8 +25,6 @@ func TestMinimal_OnStart(t *testing.T) {
 
 	ctx := node.Context{
 		Injector: node.NewInjector(),
-		Flags:    flags,
-		Out:      io.Discard,
 	}
 
 	// Should miss mino.Mino
@@ -83,8 +80,7 @@ func TestMinimal_OnStart(t *testing.T) {
 	err = c.OnStart(nil, ctx.Injector)
 	require.EqualError(t, err, "no flags")
 
-	dir, err := os.MkdirTemp(os.TempDir(), "dvoting1")
-	require.NoError(t, err)
+	dir := t.TempDir()
 	flags.strings["config"] = dir
 
 	signerFilePath := filepath.Join(dir, privateKeyFile)

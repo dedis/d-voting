@@ -104,13 +104,9 @@ func TestMinimal_MalformedKey_OnStart(t *testing.T) {
 }
 
 func TestMinimal_OnStop(t *testing.T) {
-	dir, err := os.MkdirTemp(os.TempDir(), "dela-test-")
-	require.NoError(t, err)
-
+	dir := t.TempDir()
 	db, err := kv.New(filepath.Join(dir, "test.db"))
 	require.NoError(t, err)
-
-	defer os.RemoveAll(dir)
 
 	m := NewController()
 
@@ -151,13 +147,12 @@ func TestMinimal_OnStop(t *testing.T) {
 // Utility functions
 
 func makeFlags(t *testing.T) (cli.Flags, string, func()) {
-	dir, err := os.MkdirTemp(os.TempDir(), "dela-")
-	require.NoError(t, err)
+	dir := t.TempDir()
 
 	fset := make(node.FlagSet)
 	fset["config"] = dir
 
-	return fset, dir, func() { os.RemoveAll(dir) }
+	return fset, dir, func() {}
 }
 
 func badFn() encoding.BinaryMarshaler {

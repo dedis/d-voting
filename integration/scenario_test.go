@@ -143,7 +143,7 @@ func startFormProcess(wg *sync.WaitGroup, numNodes, numVotes, numSec int, proxyA
 
 	chunksPerBallot := form.ChunksPerBallot()
 
-	t.Logf("Publickey of the form : " + formpubkey)
+	t.Logf("Publickey of the form : %v", formpubkey)
 	t.Logf("Status of the form : %v", formStatus)
 
 	require.NoError(t, err)

@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -52,10 +51,7 @@ func customVotesScenario(b *testing.B, stuffing bool) {
 
 	// ##### SETUP ENV #####
 
-	dirPath, err := os.MkdirTemp(os.TempDir(), "d-voting-three-votes")
-	require.NoError(b, err)
-
-	defer os.RemoveAll(dirPath)
+	dirPath := b.TempDir()
 
 	b.Logf("using temp dir %s", dirPath)
 
@@ -66,7 +62,7 @@ func customVotesScenario(b *testing.B, stuffing bool) {
 
 	m := newTxManager(signer, nodes[0], cosipbft.DefaultRoundTimeout*time.Duration(numNodes/2+1), numNodes*2)
 
-	err = grantAccess(m, signer)
+	err := grantAccess(m, signer)
 	require.NoError(b, err)
 
 	for _, n := range nodes {

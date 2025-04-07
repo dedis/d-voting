@@ -20,9 +20,9 @@ jobs:
         uses: actions/checkout@v4
         
 # TODO: https://go.dedis.ch/d-voting/issues/392
-#      - name: Run lint
-#        run: make lint
-#
+      - name: Run lint
+        run: make lint
+
       - name: Run vet
         run: make vet
 
