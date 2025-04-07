@@ -8,9 +8,9 @@ import (
 
 	"go.dedis.ch/kyber/v3"
 
-	"github.com/dedis/d-voting/contracts/evoting"
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/services/shuffle/neff/types"
+	"go.dedis.ch/d-voting/contracts/evoting"
+	etypes "go.dedis.ch/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/services/shuffle/neff/types"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
@@ -243,9 +243,7 @@ func (h *Handler) makeTx(form *etypes.Form) (txn.Transaction, error) {
 
 	tx, err := h.txmngr.Make(args...)
 	if err != nil {
-		if err != nil {
-			return nil, xerrors.Errorf("failed to use manager: %v", err.Error())
-		}
+		return nil, xerrors.Errorf("failed to use manager: %v", err.Error())
 	}
 
 	return tx, nil

@@ -15,7 +15,7 @@ import (
 	"go.dedis.ch/dela/core/ordering/cosipbft/contracts/viewchange"
 	"go.dedis.ch/kyber/v3/share"
 
-	"github.com/dedis/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/contracts/evoting/types"
 	"go.dedis.ch/dela/core/execution"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering/cosipbft/authority"

@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,8 +9,8 @@ import (
 	"go.dedis.ch/dela/core/validation/simple"
 	"go.dedis.ch/dela/crypto/bls"
 
-	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/internal/testing/fake"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/access/darc"
 	"go.dedis.ch/dela/core/execution/native"
@@ -26,8 +25,6 @@ func TestMinimal_OnStart(t *testing.T) {
 
 	ctx := node.Context{
 		Injector: node.NewInjector(),
-		Flags:    flags,
-		Out:      io.Discard,
 	}
 
 	// Should miss mino.Mino
@@ -83,8 +80,7 @@ func TestMinimal_OnStart(t *testing.T) {
 	err = c.OnStart(nil, ctx.Injector)
 	require.EqualError(t, err, "no flags")
 
-	dir, err := os.MkdirTemp(os.TempDir(), "dvoting1")
-	require.NoError(t, err)
+	dir := t.TempDir()
 	flags.strings["config"] = dir
 
 	signerFilePath := filepath.Join(dir, privateKeyFile)

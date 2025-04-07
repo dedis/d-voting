@@ -7,9 +7,9 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/dedis/d-voting/internal/testing/fake"
-	"github.com/dedis/d-voting/services/dkg"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/internal/testing/fake"
+	"go.dedis.ch/d-voting/services/dkg"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
 )

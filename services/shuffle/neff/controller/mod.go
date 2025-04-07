@@ -4,8 +4,8 @@ import (
 	"encoding"
 	"path/filepath"
 
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/services/shuffle/neff"
+	etypes "go.dedis.ch/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/services/shuffle/neff"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"

@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/dedis/d-voting/services/dkg"
+	"go.dedis.ch/d-voting/services/dkg"
 	"go.dedis.ch/dela/core/ordering"
 
-	"github.com/dedis/d-voting/internal/testing/fake"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/internal/testing/fake"
 	"go.dedis.ch/dela/cli"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/store/kv"
@@ -104,13 +104,9 @@ func TestMinimal_MalformedKey_OnStart(t *testing.T) {
 }
 
 func TestMinimal_OnStop(t *testing.T) {
-	dir, err := os.MkdirTemp(os.TempDir(), "dela-test-")
-	require.NoError(t, err)
-
+	dir := t.TempDir()
 	db, err := kv.New(filepath.Join(dir, "test.db"))
 	require.NoError(t, err)
-
-	defer os.RemoveAll(dir)
 
 	m := NewController()
 
@@ -151,13 +147,12 @@ func TestMinimal_OnStop(t *testing.T) {
 // Utility functions
 
 func makeFlags(t *testing.T) (cli.Flags, string, func()) {
-	dir, err := os.MkdirTemp(os.TempDir(), "dela-")
-	require.NoError(t, err)
+	dir := t.TempDir()
 
 	fset := make(node.FlagSet)
 	fset["config"] = dir
 
-	return fset, dir, func() { os.RemoveAll(dir) }
+	return fset, dir, func() {}
 }
 
 func badFn() encoding.BinaryMarshaler {

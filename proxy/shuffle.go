@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dedis/d-voting/proxy/types"
-	shuffleSrv "github.com/dedis/d-voting/services/shuffle"
 	"github.com/gorilla/mux"
+	"go.dedis.ch/d-voting/proxy/types"
+	shuffleSrv "go.dedis.ch/d-voting/services/shuffle"
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/xerrors"
 )

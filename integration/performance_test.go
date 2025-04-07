@@ -4,17 +4,16 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting"
-	"github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/services/dkg"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/contracts/evoting"
+	"go.dedis.ch/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/services/dkg"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering/cosipbft"
 	"go.dedis.ch/dela/core/txn"
@@ -52,10 +51,7 @@ func customVotesScenario(b *testing.B, stuffing bool) {
 
 	// ##### SETUP ENV #####
 
-	dirPath, err := os.MkdirTemp(os.TempDir(), "d-voting-three-votes")
-	require.NoError(b, err)
-
-	defer os.RemoveAll(dirPath)
+	dirPath := b.TempDir()
 
 	b.Logf("using temp dir %s", dirPath)
 
@@ -66,7 +62,7 @@ func customVotesScenario(b *testing.B, stuffing bool) {
 
 	m := newTxManager(signer, nodes[0], cosipbft.DefaultRoundTimeout*time.Duration(numNodes/2+1), numNodes*2)
 
-	err = grantAccess(m, signer)
+	err := grantAccess(m, signer)
 	require.NoError(b, err)
 
 	for _, n := range nodes {

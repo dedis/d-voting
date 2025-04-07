@@ -3,9 +3,9 @@ package json
 import (
 	"testing"
 
-	"github.com/dedis/d-voting/internal/testing/fake"
-	"github.com/dedis/d-voting/services/shuffle/neff/types"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/internal/testing/fake"
+	"go.dedis.ch/d-voting/services/shuffle/neff/types"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/serde"
 )

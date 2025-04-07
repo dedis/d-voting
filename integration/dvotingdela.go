@@ -5,22 +5,24 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/x509"
+	"fmt"
+	ma "github.com/multiformats/go-multiaddr"
+	"go.dedis.ch/dela/mino/minows"
+	"go.dedis.ch/dela/mino/minows/key"
 	"io"
 	"math/rand"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"sync"
-	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting"
-	etypes "github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/services/dkg"
-	"github.com/dedis/d-voting/services/dkg/pedersen"
-	"github.com/dedis/d-voting/services/shuffle"
-	"github.com/dedis/d-voting/services/shuffle/neff"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/contracts/evoting"
+	etypes "go.dedis.ch/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/services/dkg"
+	"go.dedis.ch/d-voting/services/dkg/pedersen"
+	"go.dedis.ch/d-voting/services/shuffle"
+	"go.dedis.ch/d-voting/services/shuffle/neff"
 	accessContract "go.dedis.ch/dela/contracts/access"
 	"go.dedis.ch/dela/contracts/value"
 	"go.dedis.ch/dela/core/access"
@@ -46,10 +48,6 @@ import (
 	"go.dedis.ch/dela/crypto/loader"
 	"go.dedis.ch/dela/mino"
 	"go.dedis.ch/dela/mino/gossip"
-	"go.dedis.ch/dela/mino/minogrpc"
-	"go.dedis.ch/dela/mino/minogrpc/certs"
-	"go.dedis.ch/dela/mino/minogrpc/session"
-	"go.dedis.ch/dela/mino/router/tree"
 	"go.dedis.ch/dela/serde/json"
 	"golang.org/x/xerrors"
 )
@@ -111,12 +109,11 @@ func setupDVotingNodes(t require.TestingT, numberOfNodes int, tempDir string) []
 
 	nodes := make(chan dVotingCosiDela, numberOfNodes)
 
-	randSource := rand.NewSource(int64(0))
-
 	for n := 0; n < numberOfNodes; n++ {
 		go func(i int) {
 			defer wait.Done()
 			filePath := filepath.Join(tempDir, "node", strconv.Itoa(i))
+			randSource := rand.NewSource(int64(i))
 			nodes <- newDVotingNode(t, filePath, randSource)
 		}(n)
 	}
@@ -147,30 +144,19 @@ func newDVotingNode(t require.TestingT, path string, randSource rand.Source) dVo
 	db, err := kv.New(filepath.Join(path, "dela.db"))
 	require.NoError(t, err)
 
-	// mino
-	router := tree.NewRouter(minogrpc.NewAddressFactory())
-	addr := minogrpc.ParseAddress("127.0.0.1", uint16(0))
-
-	certs := certs.NewDiskStore(db, session.AddressFactory{})
-
-	fload := loader.NewFileLoader(filepath.Join(path, certKeyName))
-
-	keydata, err := fload.LoadOrCreate(newCertGenerator(rand.New(randSource), elliptic.P521()))
+	// minows
+	port := 0
+	listen, err := ma.NewMultiaddr(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d/ws", port))
 	require.NoError(t, err)
 
-	key, err := x509.ParseECPrivateKey(keydata)
-	require.NoError(t, err)
+	storage := key.NewStorage(db)
+	privKey, _ := storage.LoadOrCreate()
 
-	opts := []minogrpc.Option{
-		minogrpc.WithStorage(certs),
-		minogrpc.WithCertificateKey(key, key.Public()),
-	}
-
-	onet, err := minogrpc.NewMinogrpc(addr, nil, router, opts...)
+	onet, err := minows.NewMinows(listen, nil, privKey)
 	require.NoError(t, err)
 
 	// ordering + validation + execution
-	fload = loader.NewFileLoader(filepath.Join(path, privateKeyFile))
+	fload := loader.NewFileLoader(filepath.Join(path, privateKeyFile))
 
 	signerdata, err := fload.LoadOrCreate(newKeyGenerator())
 	require.NoError(t, err)
@@ -298,25 +284,26 @@ func createDVotingAccess(t require.TestingT, nodes []dVotingCosiDela, dir string
 // Setup implements delaNode. It creates the roster, shares the certificate, and
 // create an new chain.
 func (c dVotingNode) Setup(nodes ...delaNode) {
-	// share the certificates
-	joinable, ok := c.onet.(minogrpc.Joinable)
-	require.True(c.t, ok)
 
-	addrURL, err := url.Parse(c.onet.GetAddress().String())
-	require.NoError(c.t, err, addrURL)
-
-	token := joinable.GenerateToken(time.Hour)
-
-	certHash, err := joinable.GetCertificateStore().Hash(joinable.GetCertificateChain())
-	require.NoError(c.t, err)
-
-	for _, n := range nodes {
-		otherJoinable, ok := n.GetMino().(minogrpc.Joinable)
-		require.True(c.t, ok)
-
-		err = otherJoinable.Join(addrURL, token, certHash)
-		require.NoError(c.t, err)
-	}
+	//// share the certificates
+	//joinable, ok := c.onet.(minogrpc.Joinable)
+	//require.True(c.t, ok)
+	//
+	//addrURL, err := url.Parse(c.onet.GetAddress().String())
+	//require.NoError(c.t, err, addrURL)
+	//
+	//token := joinable.GenerateToken(time.Hour)
+	//
+	//certHash, err := joinable.GetCertificateStore().Hash(joinable.GetCertificateChain())
+	//require.NoError(c.t, err)
+	//
+	//for _, n := range nodes {
+	//	otherJoinable, ok := n.GetMino().(minogrpc.Joinable)
+	//	require.True(c.t, ok)
+	//
+	//	err = otherJoinable.Join(addrURL, token, certHash)
+	//	require.NoError(c.t, err)
+	//}
 
 	type extendedService interface {
 		GetRoster() (authority.Authority, error)
@@ -348,7 +335,7 @@ func (c dVotingNode) Setup(nodes ...delaNode) {
 	roster := authority.New(minoAddrs, pubKeys)
 
 	// create chain
-	err = extended.Setup(context.Background(), roster)
+	err := extended.Setup(context.Background(), roster)
 	require.NoError(c.t, err)
 }
 

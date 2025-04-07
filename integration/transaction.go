@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting"
-	"github.com/dedis/d-voting/proxy/txnmanager"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/contracts/evoting"
+	"go.dedis.ch/d-voting/proxy/txnmanager"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/contracts/access"
 	"go.dedis.ch/dela/core/execution/native"
@@ -83,12 +83,12 @@ func pollTxnInclusion(maxPollCount int, interPollWait time.Duration, proxyAddr, 
 		// check if the transaction is included in the blockchain
 
 		switch result.Status {
-		case 2:
+		case txnmanager.RejectedTransaction:
 			return false, nil
-		case 1:
+		case txnmanager.IncludedTransaction:
 			t.Logf("Transaction included in the blockchain at iteration: %d/%d", i, maxPollCount)
 			return true, nil
-		case 0:
+		case txnmanager.UnknownTransactionStatus:
 			token = result.Token
 		}
 

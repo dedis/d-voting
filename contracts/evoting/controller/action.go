@@ -17,14 +17,14 @@ import (
 	"go.dedis.ch/kyber/v3/sign/schnorr"
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/internal/testing/fake"
-	eproxy "github.com/dedis/d-voting/proxy"
-	"github.com/dedis/d-voting/proxy/txnmanager"
-	ptypes "github.com/dedis/d-voting/proxy/types"
-	"github.com/dedis/d-voting/services/dkg"
-	"github.com/dedis/d-voting/services/shuffle"
 	"github.com/gorilla/mux"
+	"go.dedis.ch/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/internal/testing/fake"
+	eproxy "go.dedis.ch/d-voting/proxy"
+	"go.dedis.ch/d-voting/proxy/txnmanager"
+	ptypes "go.dedis.ch/d-voting/proxy/types"
+	"go.dedis.ch/d-voting/services/dkg"
+	"go.dedis.ch/d-voting/services/shuffle"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/ordering"
@@ -650,9 +650,9 @@ func setupSimpleForm(ctx node.Context, secret kyber.Scalar, proxyAddr1 string,
 		return "", types.Form{}, nil, xerrors.Errorf("formID mismatch: %s != %s", form.FormID, formID)
 	}
 
-	fmt.Fprintf(ctx.Out, "Title of the form: "+form.Configuration.Title.En)
-	fmt.Fprintf(ctx.Out, "ID of the form: "+form.FormID)
-	fmt.Fprintf(ctx.Out, "Status of the form: "+strconv.Itoa(int(form.Status)))
+	fmt.Fprintf(ctx.Out, "Title of the form: %v", form.Configuration.Title.En)
+	fmt.Fprintf(ctx.Out, "ID of the form: %v", form.FormID)
+	fmt.Fprintf(ctx.Out, "Status of the form: %v", strconv.Itoa(int(form.Status)))
 
 	return formID, form, formIDBuf, nil
 }

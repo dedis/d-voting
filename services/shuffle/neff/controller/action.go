@@ -4,8 +4,8 @@ import (
 	"encoding/hex"
 	"net/http"
 
-	"github.com/dedis/d-voting/services/shuffle"
 	"github.com/gorilla/mux"
+	"go.dedis.ch/d-voting/services/shuffle"
 	"go.dedis.ch/dela"
 	"go.dedis.ch/dela/cli/node"
 	"go.dedis.ch/dela/core/access"
@@ -16,7 +16,7 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 
-	eproxy "github.com/dedis/d-voting/proxy"
+	eproxy "go.dedis.ch/d-voting/proxy"
 )
 
 var suite = suites.MustFind("ed25519")

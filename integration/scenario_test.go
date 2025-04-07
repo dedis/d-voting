@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting/types"
-	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/contracts/evoting/types"
+	ptypes "go.dedis.ch/d-voting/proxy/types"
 	"go.dedis.ch/kyber/v3/util/encoding"
 )
 
@@ -143,7 +143,7 @@ func startFormProcess(wg *sync.WaitGroup, numNodes, numVotes, numSec int, proxyA
 
 	chunksPerBallot := form.ChunksPerBallot()
 
-	t.Logf("Publickey of the form : " + formpubkey)
+	t.Logf("Publickey of the form : %v", formpubkey)
 	t.Logf("Status of the form : %v", formStatus)
 
 	require.NoError(t, err)

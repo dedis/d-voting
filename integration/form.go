@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dedis/d-voting/contracts/evoting"
-	"github.com/dedis/d-voting/contracts/evoting/types"
-	"github.com/dedis/d-voting/internal/testing/fake"
-	"github.com/dedis/d-voting/proxy/txnmanager"
-	ptypes "github.com/dedis/d-voting/proxy/types"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/d-voting/contracts/evoting"
+	"go.dedis.ch/d-voting/contracts/evoting/types"
+	"go.dedis.ch/d-voting/internal/testing/fake"
+	"go.dedis.ch/d-voting/proxy/txnmanager"
+	ptypes "go.dedis.ch/d-voting/proxy/types"
 	"go.dedis.ch/dela/core/execution/native"
 	"go.dedis.ch/dela/core/ordering"
 	"go.dedis.ch/dela/core/txn"
@@ -104,7 +104,7 @@ func createFormScenario(contentType, proxy string, secret kyber.Scalar, t *testi
 	require.NoError(t, err)
 	require.True(t, ok)
 
-	t.Logf("ID of the form : " + formID)
+	t.Logf("ID of the form : %v", formID)
 
 	return formID
 }
