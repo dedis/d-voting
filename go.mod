@@ -14,7 +14,7 @@ require (
 	go.dedis.ch/dela v0.1.0
 	go.dedis.ch/dela-apps v0.0.0-20211201124511-8d285ec1fa45
 	go.dedis.ch/kyber/v3 v3.1.0
-	golang.org/x/net v0.37.0
+	golang.org/x/net v0.38.0
 	golang.org/x/tools v0.31.0
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
 )
