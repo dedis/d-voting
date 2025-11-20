@@ -1,8 +1,6 @@
 module github.com/dedis/d-voting
 
-go 1.23.0
-
-toolchain go1.23.7
+go 1.24.0
 
 require (
 	github.com/gorilla/mux v1.8.1
@@ -14,8 +12,8 @@ require (
 	go.dedis.ch/dela v0.1.0
 	go.dedis.ch/dela-apps v0.0.0-20211201124511-8d285ec1fa45
 	go.dedis.ch/kyber/v3 v3.1.0
-	golang.org/x/net v0.37.0
-	golang.org/x/tools v0.31.0
+	golang.org/x/net v0.47.0
+	golang.org/x/tools v0.38.0
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
 )
 
@@ -45,11 +43,11 @@ require (
 	go.dedis.ch/protobuf v1.0.11 // indirect
 	go.etcd.io/bbolt v1.3.9 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	golang.org/x/crypto v0.36.0 // indirect
-	golang.org/x/mod v0.24.0 // indirect
-	golang.org/x/sync v0.12.0 // indirect
-	golang.org/x/sys v0.31.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
+	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240227224415-6ceb2ff114de // indirect
 	google.golang.org/grpc v1.63.0 // indirect
 	google.golang.org/protobuf v1.36.1 // indirect
