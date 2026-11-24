@@ -15,9 +15,14 @@ const clientId = process.env.MS_ENTRA_CLIENT_ID || '';
 const redirectUri = process.env.MS_ENTRA_REDIRECT_URI || '';
 const clientSecret = process.env.MS_ENTRA_CLIENT_SECRET || '';
 const devLoginEnabled = process.env.REACT_APP_DEV_LOGIN === 'true';
+const devLoginPSK = process.env.REACT_APP_DEV_PSK || '';
 
 if (!devLoginEnabled && !(tenantId && clientId && redirectUri && clientSecret)) {
   throw new Error('required Microsoft Entra ID environment variables are not set');
+}
+
+if (devLoginEnabled && !devLoginPSK) {
+  throw new Error('missing required dev login pre shared key. Please set env var REACT_APP_DEV_PSK');
 }
 
 const codeChallengeMethod = 'S256';
@@ -126,7 +131,13 @@ authenticationRouter.get('/get_dev_login/:userId', (req, res) => {
   if (req.params.userId === undefined) {
     const err = 'no userId given';
     console.error(err);
-    res.status(500).send(err);
+    res.status(400).send(err);
+    return;
+  }
+  if (req.params.psk === undefined || req.params.psk != devLoginPSK) {
+    const err = 'incorrect or absent dev login psk';
+    console.error(err);
+    res.status(403).send(err);
     return;
   }
   try {
